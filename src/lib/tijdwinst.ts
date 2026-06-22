@@ -50,7 +50,7 @@ const CFG: Record<string, Cfg> = {
     label: "Rapporten geschreven", kort: "Rapporten", icon: "📝", kleur: "#7c3aed",
   },
   analyse: {
-    basis: 18, perItem: 1.0, max: 180, vast: 120,
+    basis: 25, perItem: 1.3, max: 180, vast: 120,
     label: "Toetsanalyses gedaan", kort: "Analyses", icon: "📊", kleur: "#2f9e6e",
   },
   gesprek: {
