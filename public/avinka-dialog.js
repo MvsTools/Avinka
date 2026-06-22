@@ -118,6 +118,22 @@
     "Klaar, eentje van je lijst",
     "Dat staat",
   ];
+  // Wisselende teksten met de gewonnen tijd erin (%m% = bv. "18 minuten").
+  var WINST_TEKSTEN = [
+    "Hoppa! %m% bespaard",
+    "Mooi, %m% gewonnen",
+    "Lekker bezig, %m% bespaard",
+    "Weer %m% terug voor je klas",
+    "Kassa! %m% bespaard",
+    "Top, dat scheelt %m%",
+    "Boem, %m% gewonnen",
+    "Dat staat. %m% bespaard",
+  ];
+  function winstTekst(min) {
+    var label = min + (min === 1 ? " minuut" : " minuten");
+    var sjabloon = WINST_TEKSTEN[Math.floor(Math.random() * WINST_TEKSTEN.length)];
+    return sjabloon.replace("%m%", label);
+  }
   var vinkHuidig = null;
   // customTekst (optioneel) → bv. "Hoppa! 18 minuten bespaard"; anders een
   // wisselende "afgevinkt"-tekst.
@@ -184,7 +200,7 @@
         .then(function (d) {
           clearTimeout(val);
           var m = d && typeof d.gewonnen === "number" ? d.gewonnen : 0;
-          if (m > 0) toon("Hoppa! " + m + (m === 1 ? " minuut" : " minuten") + " bespaard");
+          if (m > 0) toon(winstTekst(m));
           else toon();
         })
         .catch(function () { clearTimeout(val); toon(); });
