@@ -1639,7 +1639,6 @@ async function genereerVerhaal() {
     l.verhaal = schoon(tekst);
     document.getElementById('verhaal-tekst').value = l.verhaal;
     document.getElementById('verhaal-box').classList.add('visible');
-    if (typeof avinkaTel === 'function') avinkaTel('rapport', { woorden: avinkaWoorden(l.verhaal) });
   } catch (e) {
     err.textContent = 'Er ging iets mis: ' + e.message;
     err.classList.add('visible');
@@ -1696,6 +1695,9 @@ function keurGoed() {
   if (!l.verhaal) return;
   if (l.status !== 'klaar') {
     state.goedgekeurd.push(l.verhaal);   // voor anti-herhaling over de klas
+    // Pas hier telt de tijdwinst: één keer, als jij dit rapport afrondt (niet bij
+    // genereren of opnieuw goedkeuren). Meet de tekst zoals jij hem houdt.
+    if (typeof avinkaTel === 'function') avinkaTel('rapport', { woorden: avinkaWoorden(l.verhaal) });
   }
   l.status = 'klaar';
   renderOverzicht();
