@@ -19,7 +19,7 @@ export default async function AdminLayout({
       <header className="sticky top-0 z-20 border-b border-black/5 bg-white/90 backdrop-blur">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 md:px-6">
           <div className="flex items-center gap-2.5">
-            <Link href="/" title="Naar de startpagina">
+            <Link href="/?startpagina" title="Naar de startpagina">
               <Logo vol className="h-10 w-auto" />
             </Link>
             <span className="text-lg font-extrabold tracking-tight text-ink/40">· Admin</span>

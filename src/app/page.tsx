@@ -1,6 +1,7 @@
 import { existsSync } from "fs";
 import path from "path";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { signout } from "@/app/auth/actions";
 import Prijzen from "@/components/Prijzen";
@@ -243,11 +244,24 @@ function AppMock() {
 
 /* ── De pagina ─────────────────────────────────────────────────────────── */
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ startpagina?: string }>;
+}) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Bekende (ingelogde) bezoeker die de site opent → meteen door naar het
+  // dashboard, niet eerst de publieke startpagina. Uitzondering: wie de
+  // startpagina bewust bekijkt via het logo (link met ?startpagina) krijgt 'm
+  // wél te zien (anders zou hij meteen worden teruggekaatst).
+  const params = await searchParams;
+  if (user && params.startpagina === undefined) {
+    redirect("/dashboard");
+  }
 
   // Toont automatisch de foto zodra die in public/ staat; anders een MvS-monogram.
   const fotoBestand = ["michael.jpg", "michael.jpeg", "michael.png", "michael.webp"].find(
