@@ -285,6 +285,14 @@ export async function getStatistiek(): Promise<Tellers> {
   return (data.tellers as Tellers) ?? {};
 }
 
+// Opgetelde bespaarde minuten per soort (adaptief opgebouwd door de tools).
+export async function getMinuten(): Promise<Tellers> {
+  const sb = createClient();
+  const { data, error } = await sb.from("statistiek").select("minuten").maybeSingle();
+  if (error || !data) return {};
+  return (data.minuten as Tellers) ?? {};
+}
+
 // Huidige streak (opeenvolgende werkdagen actief) + je persoonlijke record.
 // streak is 0 als de reeks inmiddels verbroken is (zie streakLeeftNog).
 export type StreakInfo = { streak: number; record: number };
@@ -301,13 +309,25 @@ export async function getStreak(): Promise<StreakInfo> {
   return { streak: streakLeeftNog(laatste, new Date()) ? opgeslagen : 0, record };
 }
 
-export type CommunityStats = { gebruikers: number; som: Record<string, number> };
+export type CommunityStats = {
+  gebruikers: number;
+  som: Record<string, number>; // aantallen per soort, over alle gebruikers
+  somMinuten: Record<string, number>; // bespaarde minuten per soort, over alle gebruikers
+};
 export async function getCommunityStats(): Promise<CommunityStats | null> {
   const sb = createClient();
   const { data, error } = await sb.rpc("wijs_community_stats");
   if (error || !data) return null;
-  const d = data as { gebruikers?: number; som?: Record<string, number> };
-  return { gebruikers: d.gebruikers ?? 0, som: d.som ?? {} };
+  const d = data as {
+    gebruikers?: number;
+    som?: Record<string, number>;
+    som_minuten?: Record<string, number>;
+  };
+  return {
+    gebruikers: d.gebruikers ?? 0,
+    som: d.som ?? {},
+    somMinuten: d.som_minuten ?? {},
+  };
 }
 
 // ── UITNODIGINGEN (referral) ──────────────────────────────────────────────

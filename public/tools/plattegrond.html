@@ -1003,7 +1003,7 @@ async function bewaarInBestanden(){
     if(r.status===401){ avinkaAlert('Log eerst in om in je bestanden te bewaren.'); return; }
     if(!r.ok){ avinkaAlert('Opslaan mislukt. Probeer het zo opnieuw.'); return; }
     var res=await r.json(); huidigBestandId=res.id; bewaarLokaal();
-    if(wasNieuw && typeof avinkaTel==='function') avinkaTel('plattegrond');
+    if(wasNieuw && typeof avinkaTel==='function') avinkaTel('plattegrond', { leerlingen: (state.students||[]).length });
     if(btn){ btn.textContent='✓ Bewaard in mijn bestanden'; setTimeout(function(){ btn.textContent='☁ Bewaar in mijn bestanden'; }, 1800); }
   }catch(e){ avinkaAlert('Er ging iets mis bij het opslaan.'); }
   finally{ if(btn) btn.disabled=false; }

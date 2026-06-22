@@ -201,6 +201,7 @@ grant select, insert, update, delete on public.bestanden to authenticated;
 create table if not exists public.statistiek (
   user_id        uuid primary key default auth.uid() references auth.users(id) on delete cascade,
   tellers        jsonb not null default '{}'::jsonb,
+  minuten        jsonb not null default '{}'::jsonb,  -- bespaarde minuten per soort (adaptief opgeteld)
   streak         int not null default 0,    -- opeenvolgende werkdagen actief
   streak_max     int not null default 0,    -- langste streak ooit (voor het "record")
   laatste_actief date,                       -- laatste werkdag waarop iets gedaan is
@@ -210,6 +211,15 @@ create table if not exists public.statistiek (
 --   alter table public.statistiek add column if not exists streak int not null default 0;
 --   alter table public.statistiek add column if not exists streak_max int not null default 0;
 --   alter table public.statistiek add column if not exists laatste_actief date;
+--   alter table public.statistiek add column if not exists minuten jsonb not null default '{}'::jsonb;
+-- BACKFILL bestaande tijdwinst (aantal × oude vaste minuten), zodat huidige totalen blijven:
+--   update public.statistiek s set minuten = (
+--     select coalesce(jsonb_object_agg(t.key, (t.value)::numeric * v.vast), '{}'::jsonb)
+--     from jsonb_each_text(s.tellers) t
+--     join (values ('rapport',10),('analyse',120),('gesprek',20),('weekbericht',15),
+--                  ('nieuwsbrief',30),('bericht',10),('brief',15),('uitnodiging',20),('plattegrond',15)
+--          ) as v(key,vast) on v.key = t.key)
+--   where (s.minuten is null or s.minuten = '{}'::jsonb) and s.tellers <> '{}'::jsonb;
 drop trigger if exists trg_statistiek_updated on public.statistiek;
 create trigger trg_statistiek_updated
   before update on public.statistiek
@@ -233,10 +243,15 @@ as $$
     select key, sum((value)::numeric) as totaal
     from public.statistiek s, jsonb_each_text(s.tellers)
     group by key
+  ), mv as (
+    select key, sum((value)::numeric) as totaal
+    from public.statistiek s, jsonb_each_text(s.minuten)
+    group by key
   )
   select jsonb_build_object(
     'gebruikers', (select count(*)::int from public.statistiek),
-    'som', coalesce((select jsonb_object_agg(key, totaal) from kv), '{}'::jsonb)
+    'som', coalesce((select jsonb_object_agg(key, totaal) from kv), '{}'::jsonb),
+    'som_minuten', coalesce((select jsonb_object_agg(key, totaal) from mv), '{}'::jsonb)
   );
 $$;
 grant execute on function public.wijs_community_stats() to authenticated;

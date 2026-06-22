@@ -3,26 +3,18 @@
 import { useEffect, useState } from "react";
 import {
   getStatistiek,
+  getMinuten,
   getCommunityStats,
   getStreak,
   type Tellers,
   type CommunityStats,
 } from "@/lib/db";
 import { huidigeMijlpaal, volgendeMijlpaal } from "@/lib/streak";
+import { TIJD_DEFS } from "@/lib/tijdwinst";
 
-// Per actie-type: label, icoon, minuten bespaard, en een kleur voor de grafiek.
-type Def = { sleutel: string; label: string; kort: string; icon: string; min: number; kleur: string };
-const DEFS: Def[] = [
-  { sleutel: "rapport", label: "Rapporten geschreven", kort: "Rapporten", icon: "📝", min: 10, kleur: "#7c3aed" },
-  { sleutel: "analyse", label: "Toetsanalyses gedaan", kort: "Analyses", icon: "📊", min: 120, kleur: "#2f9e6e" },
-  { sleutel: "gesprek", label: "Oudergesprekken uitgewerkt", kort: "Gesprekken", icon: "🗣️", min: 20, kleur: "#0ea5e9" },
-  { sleutel: "weekbericht", label: "Weekberichten", kort: "Weekbericht", icon: "🗓️", min: 15, kleur: "#f59e0b" },
-  { sleutel: "nieuwsbrief", label: "Nieuwsbrieven", kort: "Nieuwsbrief", icon: "📰", min: 30, kleur: "#db2777" },
-  { sleutel: "bericht", label: "Oudercontact-berichten", kort: "Oudercontact", icon: "💬", min: 10, kleur: "#059669" },
-  { sleutel: "brief", label: "Informatiebrieven", kort: "Brieven", icon: "📄", min: 15, kleur: "#0891b2" },
-  { sleutel: "uitnodiging", label: "Uitnodigingen", kort: "Uitnodiging", icon: "✉️", min: 20, kleur: "#e11d48" },
-  { sleutel: "plattegrond", label: "Plattegronden gemaakt", kort: "Plattegrond", icon: "🗺️", min: 15, kleur: "#6366f1" },
-];
+// Label, icoon, kleur en terugvalwaarde per actie-soort komen uit de centrale
+// tijdwinst-bron (src/lib/tijdwinst.ts), zodat alles op één plek staat.
+const DEFS = TIJD_DEFS;
 
 function tijdTekst(min: number): string {
   const u = Math.floor(min / 60);
@@ -33,12 +25,14 @@ function tijdTekst(min: number): string {
 
 export default function StatistiekenView() {
   const [tellers, setTellers] = useState<Tellers | null>(null);
+  const [minuten, setMinuten] = useState<Tellers>({});
   const [comm, setComm] = useState<CommunityStats | null>(null);
   const [streak, setStreak] = useState(0);
   const [record, setRecord] = useState(0);
 
   useEffect(() => {
     getStatistiek().then(setTellers);
+    getMinuten().then(setMinuten);
     getCommunityStats().then(setComm);
     getStreak().then((s) => {
       setStreak(s.streak);
@@ -52,11 +46,16 @@ export default function StatistiekenView() {
   const gemiddeld = (s: string) =>
     comm && comm.gebruikers > 0 ? (comm.som[s] ?? 0) / comm.gebruikers : 0;
 
-  const totaalMin = DEFS.reduce((s, d) => s + aantal(d.sleutel) * d.min, 0);
+  // Adaptieve bespaarde minuten per soort: het opgetelde echte getal, met een
+  // terugval op aantal × vaste waarde voor (oude) tellingen zonder opgeslagen tijd.
+  const minVan = (d: (typeof DEFS)[number]) =>
+    minuten[d.sleutel] ?? aantal(d.sleutel) * d.vast;
+  const commMinVan = (d: (typeof DEFS)[number]) =>
+    comm ? (comm.somMinuten[d.sleutel] ?? (comm.som[d.sleutel] ?? 0) * d.vast) : 0;
+
+  const totaalMin = DEFS.reduce((s, d) => s + minVan(d), 0);
   const totaalActies = DEFS.reduce((s, d) => s + aantal(d.sleutel), 0);
-  const communityMin = comm
-    ? DEFS.reduce((s, d) => s + (comm.som[d.sleutel] ?? 0) * d.min, 0)
-    : 0;
+  const communityMin = comm ? DEFS.reduce((s, d) => s + commMinVan(d), 0) : 0;
   const gemMin = comm && comm.gebruikers > 0 ? communityMin / comm.gebruikers : 0;
 
   // Schaal voor de balken
@@ -199,7 +198,7 @@ export default function StatistiekenView() {
                 </td>
                 <td className="px-3 py-3 text-right font-bold text-ink">{aantal(d.sleutel)}</td>
                 <td className="px-3 py-3 text-right text-ink/70">
-                  {tijdTekst(aantal(d.sleutel) * d.min)}
+                  {tijdTekst(minVan(d))}
                 </td>
                 {comm && comm.gebruikers > 1 && (
                   <td className="px-5 py-3 text-right text-ink/50">{gemiddeld(d.sleutel).toFixed(1)}</td>

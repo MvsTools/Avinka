@@ -2286,7 +2286,7 @@ async function genereer() {
     setBericht(week.bericht);
     document.getElementById('result-box').classList.add('visible');
     setStap(3);
-    if (typeof avinkaTel === 'function') avinkaTel('weekbericht');
+    if (typeof avinkaTel === 'function') avinkaTel('weekbericht', { woorden: avinkaWoorden(week.bericht) });
     document.getElementById('result-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) {
     err.textContent = 'Er ging iets mis: ' + e.message;
@@ -2811,13 +2811,14 @@ async function nbGenereer() {
   nbBezig('Je nieuwsbrief wordt geschreven…');
   try {
     let bodies = {};
+    let nbRuw = '';
     if (schrijfRubrieken.length) {
-      const ruw = await callClaude(MODEL, nbBouwSysteemprompt(), nbBouwUserContent(schrijfRubrieken), 3000);
-      bodies = nbParseBodies(ruw);
+      nbRuw = await callClaude(MODEL, nbBouwSysteemprompt(), nbBouwUserContent(schrijfRubrieken), 3000);
+      bodies = nbParseBodies(nbRuw);
     }
     brief.blokken = nbBouwBlokken(gevuld, schrijfRubrieken, bodies);
     document.getElementById('nb-result-box').classList.add('visible');   // eerst tonen…
-    if (typeof avinkaTel === 'function') avinkaTel('nieuwsbrief');
+    if (typeof avinkaTel === 'function') avinkaTel('nieuwsbrief', { woorden: avinkaWoorden(nbRuw) });
     nbRenderResultaat();                                                  // …dan renderen, zodat de vakken goed meten
     setStap(3);
     document.getElementById('nb-result-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3056,7 +3057,7 @@ async function mailGenereer() {
     mailSetResultaat(mail.resultaat);
     document.getElementById('mail-result-box').classList.add('visible');
     setStap(3);
-    if (typeof avinkaTel === 'function') avinkaTel('bericht');
+    if (typeof avinkaTel === 'function') avinkaTel('bericht', { woorden: avinkaWoorden(mail.resultaat) });
     document.getElementById('mail-result-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) {
     err.textContent = 'Er ging iets mis: ' + e.message;
@@ -3532,7 +3533,7 @@ async function gespGenereer() {
     gespRenderAfspraken();
     document.getElementById('gesp-result-box').classList.add('visible');
     setStap(3);
-    if (typeof avinkaTel === 'function') avinkaTel('gesprek');
+    if (typeof avinkaTel === 'function') avinkaTel('gesprek', { woorden: avinkaWoorden((k.verslag || '') + ' ' + ((k.afspraken || []).join(' '))) });
     document.getElementById('gesp-result-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) {
     err.textContent = 'Er ging iets mis: ' + e.message;
@@ -4004,7 +4005,7 @@ async function infoGenereer() {
     infoSetResultaat(info.resultaat);
     document.getElementById('info-result-box').classList.add('visible');
     setStap(3);
-    if (typeof avinkaTel === 'function') avinkaTel('brief');
+    if (typeof avinkaTel === 'function') avinkaTel('brief', { woorden: avinkaWoorden(info.resultaat) });
     document.getElementById('info-result-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) {
     err.textContent = 'Er ging iets mis: ' + e.message;
@@ -4430,7 +4431,7 @@ async function uitnGenereer() {
     document.getElementById('uitn-titel').value = uitn.titel;
     document.getElementById('uitn-tekst').value = uitn.tekst;
     document.getElementById('uitn-result-box').classList.add('visible');
-    if (typeof avinkaTel === 'function') avinkaTel('uitnodiging');
+    if (typeof avinkaTel === 'function') avinkaTel('uitnodiging', { woorden: avinkaWoorden(uitn.tekst) });
     uitnAutoGrow(document.getElementById('uitn-tekst'));
     setStap(3);
     uitnLaadFontsEnTeken();

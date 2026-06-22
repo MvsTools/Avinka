@@ -1639,7 +1639,7 @@ async function genereerVerhaal() {
     l.verhaal = schoon(tekst);
     document.getElementById('verhaal-tekst').value = l.verhaal;
     document.getElementById('verhaal-box').classList.add('visible');
-    if (typeof avinkaTel === 'function') avinkaTel('rapport');
+    if (typeof avinkaTel === 'function') avinkaTel('rapport', { woorden: avinkaWoorden(l.verhaal) });
   } catch (e) {
     err.textContent = 'Er ging iets mis: ' + e.message;
     err.classList.add('visible');

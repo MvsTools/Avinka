@@ -2,19 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { getCommunityStats, type CommunityStats } from "@/lib/db";
+import { TIJD_DEFS } from "@/lib/tijdwinst";
 
-// Zelfde acties als in "Mijn statistieken" — label, icoon en bespaarde minuten.
-const DEFS = [
-  { sleutel: "rapport", label: "Rapporten", icon: "📝", min: 10 },
-  { sleutel: "analyse", label: "Toetsanalyses", icon: "📊", min: 120 },
-  { sleutel: "gesprek", label: "Oudergesprekken", icon: "🗣️", min: 20 },
-  { sleutel: "weekbericht", label: "Weekberichten", icon: "🗓️", min: 15 },
-  { sleutel: "nieuwsbrief", label: "Nieuwsbrieven", icon: "📰", min: 30 },
-  { sleutel: "bericht", label: "Oudercontact", icon: "💬", min: 10 },
-  { sleutel: "brief", label: "Informatiebrieven", icon: "📄", min: 15 },
-  { sleutel: "uitnodiging", label: "Uitnodigingen", icon: "✉️", min: 20 },
-  { sleutel: "plattegrond", label: "Plattegronden", icon: "🗺️", min: 15 },
-];
+// Zelfde acties als in "Mijn statistieken" — uit de centrale tijdwinst-bron.
+const DEFS = TIJD_DEFS;
 
 function urenTekst(min: number): string {
   const u = Math.round(min / 60);
@@ -46,7 +37,10 @@ export default function AdminTools() {
   const aantal = (s: string) => comm.som[s] ?? 0;
   const rijen = DEFS.map((d) => ({ ...d, n: aantal(d.sleutel) })).sort((a, b) => b.n - a.n);
   const totaalActies = rijen.reduce((s, r) => s + r.n, 0);
-  const totaalMin = rijen.reduce((s, r) => s + r.n * r.min, 0);
+  const totaalMin = rijen.reduce(
+    (s, r) => s + (comm.somMinuten[r.sleutel] ?? r.n * r.vast),
+    0,
+  );
   const maxN = Math.max(...rijen.map((r) => r.n), 1);
 
   return (

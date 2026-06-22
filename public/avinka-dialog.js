@@ -152,13 +152,21 @@
     opts = opts || {};
     return maak({ type: "alert", tekst: tekst, titel: opts.titel, bevestig: opts.bevestig });
   };
+  // Telt het aantal woorden in een stuk tekst (voor de adaptieve tijdwinst).
+  window.avinkaWoorden = function (tekst) {
+    if (!tekst) return 0;
+    var m = String(tekst).trim().match(/\S+/g);
+    return m ? m.length : 0;
+  };
   // Telt één actie bij in "Mijn statistieken" (fire-and-forget; faalt stil).
-  window.avinkaTel = function (type) {
+  // signaal (optioneel) = { woorden } / { items } / { leerlingen } → de server
+  // rekent daaruit de adaptieve tijdwinst uit (zie src/lib/tijdwinst.ts).
+  window.avinkaTel = function (type, signaal) {
     try {
       fetch("/api/statistiek", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ type: type }),
+        body: JSON.stringify({ type: type, signaal: signaal || null }),
         keepalive: true,
       });
     } catch (e) {

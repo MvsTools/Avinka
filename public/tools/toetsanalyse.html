@@ -3578,7 +3578,11 @@ async function genereerEigenTemplate() {
   w.classList.add('visible');
   document.getElementById('result-box').classList.add('visible');
   markStepDone('step2', 'step3');
-  if (typeof avinkaTel === 'function') avinkaTel('analyse');
+  if (typeof avinkaTel === 'function') {
+    var _items = 0;
+    try { _items = Object.values(analysisResult).filter(function (s) { return s && s.indexOf('In te vullen door leerkracht') === -1; }).length; } catch (e) {}
+    avinkaTel('analyse', { items: _items });
+  }
 }
 
 async function startAnalyse() {
