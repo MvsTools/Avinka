@@ -3578,11 +3578,21 @@ async function genereerEigenTemplate() {
   w.classList.add('visible');
   document.getElementById('result-box').classList.add('visible');
   markStepDone('step2', 'step3');
-  if (typeof avinkaTel === 'function') {
-    var _items = 0;
-    try { _items = Object.values(analysisResult).filter(function (s) { return s && s.indexOf('In te vullen door leerkracht') === -1; }).length; } catch (e) {}
-    avinkaTel('analyse', { items: _items });
-  }
+  meldAnalyseGedaan();
+}
+
+// Eén "analyse klaar"-melding voor beide wegen (eigen template én schooltemplate).
+// Omvang = leerlingen × analyseerbare vakken (de hoeveelheid geduide data).
+function analyseItems() {
+  try {
+    var leerlingen = (iepData && iepData.groepsoverzicht && iepData.groepsoverzicht.length) || 0;
+    var vakken = (iepData && iepData.vakken) ? Object.keys(iepData.vakken).length : 0;
+    var n = leerlingen * vakken;
+    return n > 0 ? n : leerlingen;
+  } catch (e) { return 0; }
+}
+function meldAnalyseGedaan() {
+  if (typeof avinkaTel === 'function') avinkaTel('analyse', { items: analyseItems() });
 }
 
 async function startAnalyse() {
@@ -3687,6 +3697,7 @@ async function startAnalyse() {
       w.classList.add('visible');
     }
     markStepDone('step2', 'step3');
+    meldAnalyseGedaan();
     if (naamCorrecties.some(c => !c.auto)) toonNaamModal();
 
   } catch(err) {
