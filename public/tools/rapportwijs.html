@@ -1,0 +1,1998 @@
+<!DOCTYPE html>
+<!--
+  Rapporten — AI-hulp bij rapportteksten voor het basisonderwijs
+  Ontworpen en gemaakt door Michael van Spanje.
+  © 2026 Michael van Spanje. Alle rechten voorbehouden.
+  Ongeoorloofd kopiëren, verspreiden of als eigen werk presenteren is niet toegestaan.
+
+  Architectuur (gelijk aan Toetsanalyse):
+  - Eén lokaal HTML-bestand, draait volledig in de browser. Geen backend.
+  - Strikte scheiding code/AI: de code regelt invoer, structuur, pseudonimisering
+    en het Word-document. De AI doet ALLEEN het schrijven van de rapporttekst op
+    basis van wat de leerkracht heeft ingevuld. De AI verzint niets.
+  - Privacy by design: namen worden vóór elke AI-aanroep lokaal vervangen door
+    codes (LL-01, ...) en pas in het eigen document teruggezet. Ook andere namen,
+    plaatsen en contactgegevens worden afgeschermd; een detector signaleert
+    gevoelige inhoud. Niets wordt opgeslagen. Geen "AVG-proof"-claim: de tool neemt
+    passende maatregelen om het risico zo klein mogelijk te houden.
+-->
+<html lang="nl">
+<head>
+  <script>
+  /* Platform: de login regelt de toegang. Dummy-sleutel zodat de tool
+     doorloopt; de ECHTE sleutel staat veilig op de server (/api/claude). */
+  try { localStorage.setItem("toetswijs_apikey", "sk-ant-proxy"); } catch (e) {}
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Michael van Spanje">
+<meta name="copyright" content="© 2026 Michael van Spanje — Rapporten">
+<title>Rapporten — Rapportteksten met AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Fraunces:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #221c3a; --cream: #fbf6ee; --warm: #e9e1d2;
+    --accent: #2f9e6e; --accent2: #25855a; --muted: #6b6880; --card: #ffffff;
+    --violet: #25855a; --violet-soft: #e7f4ed; --brand-soft: #e7f4ed;
+    --emerald: #059669; --emerald-soft: #e7f6ef; --amber: #f59e0b;
+    --line: rgba(34,28,58,0.07); --line-strong: rgba(34,28,58,0.13);
+    --shadow-sm: 0 1px 2px rgba(34,28,58,0.06), 0 2px 6px rgba(34,28,58,0.05);
+    --shadow-md: 0 12px 32px rgba(34,28,58,0.12);
+  }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+  body::before { content: ''; position: fixed; inset: 0; background-image:
+      radial-gradient(circle at 10% 4%, rgba(47,158,110,0.10) 0%, transparent 42%),
+      radial-gradient(circle at 92% 0%, rgba(47,158,110,0.10) 0%, transparent 40%),
+      radial-gradient(rgba(47,158,110,0.05) 1.3px, transparent 1.3px);
+    background-size: auto, auto, 24px 24px; pointer-events: none; z-index: 0; }
+  .container { max-width: 900px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+  .terug-balk { padding-top: 24px; }
+  .terug-menu { display: inline-flex; align-items: center; gap: 7px; font-family: inherit; font-size: 14px; font-weight: 600; color: var(--muted); text-decoration: none; padding: 9px 16px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--card); box-shadow: var(--shadow-sm); transition: all .18s ease; }
+  .terug-menu:hover { color: var(--accent); border-color: var(--accent); transform: translateX(-2px); }
+  header { padding: 42px 0 26px; text-align: center; }
+  .logo-mark { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+  .logo-icon { width: 46px; height: 46px; background: linear-gradient(135deg, var(--violet), var(--accent)); border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; box-shadow: 0 8px 20px rgba(47,158,110,0.30); }
+  .logo-text { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+  h1 { font-family: 'Fraunces', serif; font-size: clamp(36px, 5.5vw, 56px); font-weight: 600; line-height: 1.04; letter-spacing: -1.5px; margin-bottom: 16px; }
+  h1 em { font-style: italic; color: var(--accent); }
+  .subtitle { font-size: 17px; color: var(--muted); font-weight: 400; max-width: 540px; margin: 0 auto; line-height: 1.65; }
+
+  .steps { display: flex; justify-content: center; align-items: center; margin: 34px 0 28px; flex-wrap: wrap; gap: 4px; }
+  .step { display: flex; align-items: center; gap: 9px; font-size: 13.5px; font-weight: 600; color: var(--muted); }
+  .step.active { color: var(--accent); }
+  .step.done { color: var(--ink); }
+  .step-num { width: 30px; height: 30px; border-radius: 10px; border: 2px solid currentColor; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; transition: all .2s ease; }
+  .step.active .step-num { background: var(--brand-soft); }
+  .step.done .step-num { background: var(--accent); border-color: var(--accent); color: white; }
+  .step-line { width: 30px; height: 2px; border-radius: 2px; background: var(--line-strong); margin: 0 4px; }
+
+  .apikey-card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 20px 24px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; box-shadow: var(--shadow-sm); }
+  .apikey-label { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; white-space: nowrap; flex-shrink: 0; }
+  .apikey-input-wrap { flex: 1; min-width: 200px; position: relative; }
+  .apikey-input { width: 100%; border: 1px solid var(--line-strong); background: var(--cream); font-family: inherit; font-size: 13px; color: var(--ink); padding: 10px 36px 10px 12px; border-radius: 10px; outline: none; transition: border-color 0.2s; }
+  .apikey-input:focus { border-color: var(--accent); }
+  .apikey-input.valid { border-color: var(--accent); background: var(--brand-soft); }
+  .apikey-toggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 14px; color: var(--muted); padding: 2px; }
+  .apikey-remember { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+  .apikey-remember input { cursor: pointer; accent-color: var(--accent); }
+  .apikey-status { font-size: 11px; color: var(--ink); font-weight: 500; flex-basis: 100%; display: none; }
+  .apikey-status.visible { display: block; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 26px; margin-bottom: 18px; box-shadow: var(--shadow-sm); }
+  .card-label { font-size: 12.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.9px; margin-bottom: 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .avg-badge { display: inline-flex; align-items: center; gap: 5px; background: var(--violet-soft); color: var(--violet); font-weight: 600; font-size: 11.5px; letter-spacing: 0.2px; padding: 4px 11px; border: 1px solid transparent; border-radius: 999px; cursor: pointer; user-select: none; position: relative; text-transform: none; }
+  .avg-badge:hover { border-color: var(--violet); }
+  .avg-badge .privacy-pop { position: absolute; top: 30px; left: 0; width: 250px; max-width: 72vw; background: var(--card); border: 1px solid var(--line-strong); border-radius: 14px; box-shadow: var(--shadow-md); padding: 13px 15px; z-index: 20; opacity: 0; transform: translateY(-6px); pointer-events: none; transition: opacity 0.22s ease, transform 0.22s ease; text-align: left; color: var(--ink); font-weight: 400; letter-spacing: 0; font-size: 12px; line-height: 1.5; text-transform: none; }
+  .avg-badge:hover .privacy-pop { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+  .fields-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .fields-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 620px) { .fields-3, .fields-2 { grid-template-columns: 1fr; } }
+  .field-wrap { display: flex; flex-direction: column; gap: 6px; }
+  .field-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; }
+  .field-required { color: var(--accent); margin-left: 2px; }
+  .field-select, .field-input { width: 100%; border: 1px solid var(--line-strong); background: var(--card); font-family: inherit; font-size: 14px; color: var(--ink); padding: 11px 13px; border-radius: 12px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; appearance: none; -webkit-appearance: none; }
+  .field-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6880' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 13px center; padding-right: 34px; cursor: pointer; }
+  .field-select:focus, .field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,158,110,0.15); }
+  .field-select.filled, .field-input.filled { border-color: var(--accent); background: var(--brand-soft); }
+  textarea.field-input { resize: vertical; min-height: 82px; line-height: 1.6; border-radius: 14px; padding: 13px 15px; }
+  .field-hint { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .gevoelig-note { margin-top: 8px; font-size: 12px; line-height: 1.45; color: #9a3412; background: #fff4e6; border-left: 3px solid var(--amber); padding: 8px 11px; border-radius: 8px; }
+  .privacy-tip { margin: 4px 0 20px; border: 1px solid var(--line-strong); background: var(--cream); border-radius: 14px; overflow: hidden; }
+  .privacy-tip > summary { cursor: pointer; list-style: none; padding: 11px 14px; font-size: 13px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 8px; user-select: none; }
+  .privacy-tip > summary::-webkit-details-marker { display: none; }
+  .privacy-tip > summary::after { content: '›'; margin-left: auto; transition: transform .2s; opacity: .55; font-size: 17px; line-height: 1; }
+  .privacy-tip[open] > summary::after { transform: rotate(90deg); }
+  .privacy-tip-body { padding: 0 14px 14px; font-size: 13px; line-height: 1.55; color: var(--ink); }
+  .privacy-tip-body p { margin: 0 0 10px; }
+  .privacy-vb { border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+  .privacy-vb-tekst { font-style: italic; margin-bottom: 5px; }
+  .privacy-vb-label { font-size: 12px; font-weight: 600; }
+  .privacy-vb-goed { background: var(--emerald-soft); border-left: 3px solid var(--emerald); }
+  .privacy-vb-goed .privacy-vb-label { color: #047857; }
+  .privacy-vb-fout { background: #fdeef0; border-left: 3px solid #be123c; }
+  .privacy-vb-fout .privacy-vb-label { color: #be123c; }
+  .privacy-tip-slot { font-size: 12px; color: var(--muted); margin: 0 !important; }
+
+  .btn-primary { width: 100%; padding: 17px; background: var(--accent); color: #fff; border: none; border-radius: 16px; font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 10px; letter-spacing: -0.2px; box-shadow: 0 10px 24px rgba(47,158,110,0.28); }
+  .btn-primary:hover:not(:disabled) { background: var(--accent2); transform: translateY(-2px); box-shadow: 0 14px 30px rgba(47,158,110,0.34); }
+  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+  .btn-soft { padding: 12px 18px; background: var(--card); border: 1px solid var(--line-strong); border-radius: 14px; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.2s; }
+  .btn-soft:hover { color: var(--accent); border-color: var(--accent); }
+  .btn-green { width: 100%; padding: 16px; background: var(--emerald); color: white; border: none; border-radius: 14px; font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s ease; box-shadow: 0 10px 24px rgba(5,150,105,0.26); }
+  .btn-green:hover:not(:disabled) { background: #047857; transform: translateY(-2px); box-shadow: 0 14px 30px rgba(5,150,105,0.32); }
+  .btn-green:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .scherm { display: none; animation: fadeUp 0.45s ease both; }
+  .scherm.actief { display: block; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+  .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .topbar .btn-back { background: none; border: none; color: var(--muted); font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; padding: 6px 0; transition: color 0.2s; }
+  .topbar .btn-back:hover { color: var(--accent); }
+  .reset-knop { display: block; margin: 16px auto 0; background: none; border: none; color: var(--muted); font-family: inherit; font-size: 13px; cursor: pointer; text-decoration: underline; opacity: 0.7; transition: opacity 0.15s, color 0.15s; }
+  .reset-knop:hover { opacity: 1; color: var(--ink); }
+  .topbar .ctx-badge { margin-left: auto; background: var(--brand-soft); color: var(--accent); font-size: 12px; font-weight: 700; padding: 6px 13px; border-radius: 999px; }
+
+  .tag-input { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-height: 140px; align-content: flex-start; border: 1px solid var(--line-strong); background: var(--cream); border-radius: 14px; padding: 13px 15px; cursor: text; transition: border-color 0.2s, box-shadow 0.2s; }
+  .tag-input.focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,158,110,0.15); }
+  .naam-tag { display: inline-flex; align-items: center; gap: 7px; background: var(--violet-soft); color: var(--ink); border: 1px solid rgba(47,158,110,0.30); border-radius: 999px; padding: 6px 8px 6px 13px; font-size: 14px; font-weight: 600; }
+  .naam-tag button { background: none; border: none; color: var(--violet); cursor: pointer; font-size: 15px; line-height: 1; padding: 0 2px; opacity: 0.7; transition: opacity 0.15s; }
+  .naam-tag button:hover { opacity: 1; }
+  .tag-input input { flex: 1; min-width: 120px; border: none; background: none; outline: none; font-family: inherit; font-size: 15px; color: var(--ink); padding: 6px 2px; }
+  .namen-teller { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+  .anders-input { width: 100%; margin-top: 9px; border: 1px solid var(--line-strong); background: var(--card); font-family: inherit; font-size: 14px; color: var(--ink); padding: 11px 14px; border-radius: 12px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
+  .anders-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,158,110,0.15); }
+
+  .ll-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 14px; }
+  .ll-kaart { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 17px 15px; cursor: pointer; transition: all 0.18s ease; text-align: left; font-family: inherit; box-shadow: var(--shadow-sm); }
+  .ll-kaart:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: var(--shadow-md); }
+  .ll-kaart .ll-naam { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; color: var(--ink); }
+  .ll-kaart .ll-stat { font-size: 11.5px; color: var(--muted); margin-top: 5px; display: flex; align-items: center; gap: 6px; }
+  .ll-kaart .ll-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); flex-shrink: 0; }
+  .ll-kaart.klaar { border-color: var(--emerald); background: var(--emerald-soft); }
+  .ll-kaart.klaar .ll-dot { background: var(--emerald); }
+  .ll-kaart.klaar .ll-stat { color: #047857; }
+  .ll-kaart .ll-vink { position: absolute; top: 11px; right: 11px; width: 22px; height: 22px; border-radius: 50%; background: var(--emerald); color: #fff; font-size: 13px; display: none; align-items: center; justify-content: center; }
+  .ll-kaart.klaar .ll-vink { display: flex; }
+
+  .voortgangsregel { font-size: 13.5px; color: var(--muted); margin: 4px 0 18px; }
+  .voortgangsregel b { color: var(--ink); }
+
+  .vraag-sectie { margin-bottom: 30px; }
+  .vraag-sectie-kop { font-family: inherit; font-size: 11.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--violet); margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+  .vraag-sectie-kop::after { content: ''; flex: 1; height: 1px; background: var(--line-strong); }
+  .vraag { margin-bottom: 22px; }
+  .vraag-label { font-size: 15.5px; font-weight: 600; color: var(--ink); margin-bottom: 11px; }
+  .vraag-label .vr-opt { color: var(--muted); font-weight: 500; font-size: 12.5px; }
+  .opt-rij { display: flex; flex-wrap: wrap; gap: 9px; }
+  .opt { padding: 10px 16px; border: 1.5px solid var(--line-strong); border-radius: 13px; background: var(--card); font-size: 14px; font-weight: 600; color: var(--ink); cursor: pointer; transition: all 0.15s ease; user-select: none; }
+  .opt:hover { border-color: var(--accent); }
+  .opt.sel { border-color: var(--accent); background: var(--violet-soft); font-weight: 700; color: var(--accent); box-shadow: 0 4px 14px rgba(47,158,110,0.13); }
+  .opt.nvt.sel { border-color: var(--muted); background: rgba(107,104,128,0.12); color: var(--muted); box-shadow: none; }
+  /* Enkelvoudige keuze als net rooster van kaartjes (zoals de toon-kaartjes op scherm 1) */
+  .opt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 10px; }
+  .opt-grid .opt { text-align: center; padding: 14px 12px; line-height: 1.3; display: flex; align-items: center; justify-content: center; }
+
+  .loading-box { display: none; background: var(--card); border-radius: 24px; padding: 38px; text-align: center; margin-top: 18px; border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
+  .loading-box.visible { display: block; }
+  .spinner { width: 36px; height: 36px; border: 3px solid var(--brand-soft); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 500; }
+
+  .verhaal-box { display: none; background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 26px; margin-top: 18px; box-shadow: var(--shadow-md); position: relative; overflow: hidden; }
+  .verhaal-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--violet), var(--accent)); }
+  .verhaal-box.visible { display: block; }
+  .verhaal-kop { display: flex; align-items: center; gap: 13px; margin-bottom: 16px; }
+  .verhaal-icon { width: 42px; height: 42px; background: var(--violet-soft); color: var(--violet); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .verhaal-titel { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; }
+  .verhaal-sub { font-size: 12.5px; color: var(--muted); }
+  .verhaal-tekst { width: 100%; min-height: 165px; border: 1px solid var(--line-strong); background: var(--cream); border-radius: 14px; padding: 15px 17px; font-family: inherit; font-size: 14.5px; line-height: 1.7; color: var(--ink); outline: none; resize: vertical; transition: border-color 0.15s, box-shadow 0.15s; }
+  .verhaal-tekst:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,158,110,0.15); }
+  .verhaal-hint { font-size: 11.5px; color: var(--muted); margin: 9px 0 16px; }
+  .verhaal-acties { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 540px) { .verhaal-acties { grid-template-columns: 1fr; } }
+  .aanpas-wrap { display: none; margin-top: 14px; background: var(--cream); border: 1px solid var(--line-strong); border-radius: 14px; padding: 17px; }
+  .aanpas-wrap.visible { display: block; }
+  .aanpas-wrap .field-label { margin-bottom: 8px; }
+
+  .error-box { display: none; background: #fdeef0; border: 1px solid rgba(190,18,60,0.28); border-radius: 14px; padding: 14px 18px; font-size: 14px; color: var(--ink); margin-top: 14px; line-height: 1.5; }
+  .error-box.visible { display: block; }
+  .note { margin: 28px 2px 0; max-width: 560px; font-size: 12px; line-height: 1.5; color: var(--muted); display: flex; gap: 8px; align-items: flex-start; text-align: left; }
+  .note span:first-child { flex-shrink: 0; font-size: 13px; opacity: .7; }
+  .note strong { color: var(--muted); font-weight: 700; }
+  footer { text-align: center; padding: 40px 0 32px; font-size: 12px; color: var(--muted); }
+  .privacy-link { background: none; border: none; color: var(--muted); font-size: 12px; font-family: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; padding: 0; }
+  .privacy-link:hover { color: var(--accent); }
+  .privacy-overlay { display: none; position: fixed; inset: 0; background: rgba(34,28,58,0.50); backdrop-filter: blur(3px); z-index: 100; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; }
+  .privacy-overlay.open { display: flex; }
+  .privacy-sheet { position: relative; background: var(--card); border-radius: 24px; max-width: 560px; width: 100%; padding: 34px 32px 28px; box-shadow: 0 30px 70px rgba(34,28,58,0.30); animation: psIn 0.24s ease; }
+  @keyframes psIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .privacy-close { position: absolute; top: 18px; right: 20px; background: none; border: none; font-size: 26px; line-height: 1; color: var(--muted); cursor: pointer; }
+  .privacy-close:hover { color: var(--ink); }
+  .privacy-sheet h2 { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 600; color: var(--ink); margin-bottom: 8px; padding-right: 24px; }
+  .ps-intro { font-size: 13.5px; color: var(--muted); line-height: 1.55; margin-bottom: 22px; }
+  .ps-item { display: flex; gap: 14px; margin-bottom: 18px; align-items: flex-start; }
+  .ps-ic { font-size: 20px; flex-shrink: 0; line-height: 1; width: 40px; height: 40px; background: var(--brand-soft); border-radius: 11px; display: flex; align-items: center; justify-content: center; }
+  .ps-item h3 { font-size: 14.5px; color: var(--ink); margin-bottom: 4px; font-weight: 700; }
+  .ps-item p { font-size: 13px; color: var(--ink); line-height: 1.55; }
+  .ps-caveat { margin-top: 20px; font-size: 12.5px; color: var(--ink); line-height: 1.6; background: #fff4e6; border-left: 3px solid var(--amber); padding: 13px 15px; border-radius: 10px; }
+  .ps-caveat strong { color: var(--ink); }
+
+  /* ───────── Speelse details — professioneel maar met karakter ───────── */
+  /* Hero: hand-getekende swoosh onder het accentwoord + warme vertrouwens-pillen */
+  .hero-swoosh { display: block; width: min(330px, 72%); height: 13px; margin: -4px auto 0; color: var(--violet); }
+  .hero-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 9px; margin-top: 24px; }
+  .hero-pill { display: inline-flex; align-items: center; gap: 7px; background: var(--card); border: 1px solid var(--line-strong); border-radius: 999px; padding: 7px 14px; font-size: 13px; font-weight: 600; color: var(--ink); box-shadow: var(--shadow-sm); }
+  .hero-pill .hp-ic { font-size: 15px; line-height: 1; }
+
+  /* Kaart-kop met kleurige icoonbadge — maakt van een formulier een vriendelijke vraag */
+  .card-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 22px; }
+  .card-ic { flex-shrink: 0; width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 23px; background: var(--violet-soft); box-shadow: inset 0 0 0 1px rgba(47,158,110,0.14); }
+  .card-head .card-tt { flex: 1; min-width: 0; }
+  .card-title { font-family: 'Fraunces', serif; font-size: 21px; font-weight: 600; letter-spacing: -0.4px; color: var(--ink); line-height: 1.2; }
+  .card-desc { font-size: 13px; color: var(--muted); line-height: 1.5; margin-top: 4px; }
+  .card-head .avg-badge { align-self: center; flex-shrink: 0; }
+
+
+  /* Vrolijke leerling-avatar in het klasoverzicht */
+  .ll-kaart { padding-top: 17px; }
+  .ll-avatar { width: 40px; height: 40px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; color: #fff; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(34,28,58,0.16); }
+
+  /* Stappen: speels gestippelde verbinding */
+  .step-line { background: repeating-linear-gradient(90deg, var(--line-strong) 0 5px, transparent 5px 10px); }
+
+  /* ── Elk instelveld een eigen vriendelijk tegeltje (i.p.v. kale dropdowns in één hok) ── */
+  .fields-3, .fields-2 { gap: 12px; }
+  .field-wrap { gap: 8px; background: var(--cream); border: 1px solid var(--line-strong); border-radius: 15px; padding: 13px 15px; transition: border-color .16s, box-shadow .16s, background .16s; }
+  .field-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,158,110,0.15); background: #fff; }
+  .field-wrap:has(.filled) { border-color: rgba(47,158,110,0.40); background: var(--brand-soft); }
+  .field-wrap .field-label { display: flex; align-items: center; gap: 6px; }
+  .field-label .fl-ic { font-size: 15px; line-height: 1; filter: saturate(1.1); }
+  /* het veld zelf wordt vlak — het tegeltje vormt de rand */
+  .field-wrap .field-select, .field-wrap .field-input { border: none; background-color: transparent; padding: 0; border-radius: 0; font-size: 15px; font-weight: 600; color: var(--ink); }
+  .field-wrap .field-select { padding-right: 22px; background-position: right 2px center; }
+  .field-wrap .field-select:focus, .field-wrap .field-input:focus { box-shadow: none; }
+  .field-wrap .field-select.filled, .field-wrap .field-input.filled { background-color: transparent; border: none; }
+  .field-wrap textarea.field-input { min-height: 0; font-weight: 500; }
+  .field-wrap .field-hint { margin-top: 2px; font-weight: 400; }
+
+  /* ═══════════ SCHIL: gecentreerde kolom, topbalk + voortgang ═══════════ */
+  .app { position: relative; z-index: 1; max-width: 780px; margin: 0 auto; padding: 22px 26px 30px; }
+  main { min-width: 0; display: block; }
+  .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .top-logo { display: inline-flex; align-items: center; gap: 9px; font-family: 'Fraunces', serif; font-weight: 700; font-size: 17px; color: var(--ink); }
+  .top-logo .mk { width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(135deg, var(--violet), var(--accent)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; box-shadow: 0 5px 13px rgba(47,158,110,0.3); }
+
+  /* slanke voortgang (gedeeld over alle schermen) */
+  .steps { display: flex; align-items: center; margin: 0 2px 28px; }
+  .step { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; color: var(--muted); }
+  .step .lbl { white-space: nowrap; }
+  .step-num { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--line-strong); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .step.active { color: var(--ink); }
+  .step.active .step-num { border-color: var(--accent); color: var(--accent); background: #fff; }
+  .step.done { color: var(--ink); }
+  .step.done .step-num { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .step-line { flex: 1; height: 0; border-top: 2px dashed var(--line-strong); margin: 0 10px; }
+  .step.done + .step-line { border-color: var(--accent); }
+  @media (max-width: 540px) { .step .lbl { display: none; } }
+
+  /* HERO scherm 1: tekst + mini app-venster */
+  .hero { display: grid; grid-template-columns: 1fr 250px; gap: 30px; align-items: center; margin: 4px 0 30px; }
+  @media (max-width: 720px) { .hero { grid-template-columns: 1fr; } .heroart { display: none; } }
+  .hero h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(30px, 4.6vw, 40px); letter-spacing: -1px; line-height: 1.08; }
+  .hero h1 .sw { position: relative; white-space: nowrap; font-style: italic; color: var(--accent); }
+  .hero h1 .sw svg { position: absolute; left: 0; bottom: -7px; width: 100%; height: 11px; color: var(--violet); }
+  .hero .lead { font-size: 15px; color: var(--muted); line-height: 1.55; margin-top: 14px; max-width: 380px; }
+  .heroart { position: relative; width: 250px; align-self: center; display: flex; align-items: center; justify-content: center; padding: 10px 0; }
+  .mockwin { position: relative; width: 228px; background: #fff; border-radius: 18px; box-shadow: 0 22px 46px rgba(34,28,58,0.16); border: 1px solid rgba(34,28,58,0.06); overflow: hidden; transform: rotate(1.2deg); }
+  .mockbar { display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: #f7f5f0; border-bottom: 1px solid rgba(34,28,58,0.06); }
+  .mockbar i { width: 9px; height: 9px; border-radius: 50%; }
+  .mocktab { margin-left: 6px; font-size: 9.5px; font-weight: 700; color: var(--muted); background: #fff; border: 1px solid rgba(34,28,58,0.08); border-radius: 6px; padding: 3px 8px; }
+  .mockbody { padding: 13px 14px; }
+  .mtop { font-size: 10px; font-weight: 700; color: var(--muted); margin-bottom: 10px; }
+  .mwrow { display: flex; align-items: center; gap: 9px; padding: 6px 0; }
+  .mav { width: 26px; height: 26px; border-radius: 8px; color: #fff; font-family: 'Fraunces', serif; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .mname { height: 7px; border-radius: 4px; background: rgba(34,28,58,0.16); width: 62px; }
+  .mok { margin-left: auto; width: 18px; height: 18px; border-radius: 50%; background: var(--emerald); color: #fff; font-size: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .mdash { margin-left: auto; width: 32px; height: 7px; border-radius: 4px; background: rgba(34,28,58,0.10); flex-shrink: 0; }
+  .fbadge { position: absolute; background: #fff; border-radius: 12px; padding: 9px 13px; font-size: 11px; font-weight: 700; color: var(--ink); box-shadow: 0 8px 18px rgba(34,28,58,0.14); border: 1px solid rgba(34,28,58,0.05); top: -6px; left: -18px; transform: rotate(-5deg); white-space: normal; max-width: 156px; line-height: 1.3; }
+  .fbadge b { color: var(--accent); font-weight: 800; }
+
+  /* groepskopjes */
+  .grouplabel { font-size: 11.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--violet); margin: 26px 0 8px; display: flex; align-items: center; gap: 9px; }
+  .grouplabel::after { content: ''; flex: 1; height: 1px; background: var(--line-strong); }
+
+  /* open keuzeregel */
+  .setrow { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 15px 2px; border-bottom: 1px solid var(--line); }
+  .setrow-l { font-size: 15.5px; font-weight: 600; color: var(--ink); min-width: 0; }
+  .setrow-l .req { color: var(--violet); margin-left: 1px; }
+  .setrow-l small { display: block; font-size: 12.5px; font-weight: 500; color: var(--muted); margin-top: 2px; }
+  .setrow-foot { font-size: 12.5px; color: var(--muted); line-height: 1.5; margin: 10px 2px 0; }
+
+  /* stepper (aantal) */
+  .stepper { display: inline-flex; align-items: center; gap: 4px; background: #fff; border: 1px solid var(--line-strong); border-radius: 999px; padding: 4px; }
+  .stepper button { width: 30px; height: 30px; border: none; background: var(--violet-soft); color: var(--accent); border-radius: 50%; font-size: 18px; font-weight: 700; cursor: pointer; line-height: 1; }
+  .stepper .val { min-width: 36px; text-align: center; font-size: 16px; font-weight: 800; color: var(--ink); }
+
+  /* keuze-kaartjes (rapport) */
+  .cards { display: flex; gap: 10px; margin: 4px 0 2px; }
+  .pick { flex: 1; border: 1.5px solid var(--line-strong); background: #fff; border-radius: 16px; padding: 13px 14px; cursor: pointer; display: flex; gap: 11px; align-items: center; transition: .15s; }
+  .pick .pic { width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .pick .pt { font-size: 14.5px; font-weight: 700; color: var(--ink); }
+  .pick .ps { font-size: 12px; color: var(--muted); }
+  .pick.on { border-color: var(--accent); background: var(--violet-soft); box-shadow: 0 6px 16px rgba(47,158,110,0.12); }
+
+  /* toon-kaartjes (tekst, geen kleuren) */
+  .tones { display: grid; grid-template-columns: repeat(5, 1fr); gap: 9px; margin: 4px 0 2px; }
+  @media (max-width: 560px) { .tones { grid-template-columns: repeat(3, 1fr); } }
+  .tone { position: relative; border: 1.5px solid var(--line-strong); background: #fff; border-radius: 14px; padding: 14px 8px 12px; text-align: center; cursor: pointer; transition: .15s; }
+  .tone .tn { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .tone .td { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .tone.on { border-color: var(--accent); background: var(--violet-soft); box-shadow: 0 6px 16px rgba(47,158,110,0.13); }
+  .tone.on::after { content: '✓'; position: absolute; top: 7px; right: 8px; width: 16px; height: 16px; background: var(--accent); color: #fff; border-radius: 50%; font-size: 10px; line-height: 16px; font-weight: 700; }
+
+  /* lengte als staafjes-grafiek */
+  .bars { display: flex; gap: 9px; margin: 4px 0 2px; }
+  .bar { flex: 1; border: 1.5px solid var(--line-strong); background: #fff; border-radius: 14px; padding: 12px; cursor: pointer; text-align: center; transition: .15s; }
+  .bar .bg { height: 46px; display: flex; align-items: flex-end; justify-content: center; gap: 4px; margin-bottom: 9px; }
+  .bar .bg i { width: 7px; border-radius: 3px; background: var(--line-strong); display: block; }
+  .bar.on { border-color: var(--accent); background: var(--violet-soft); }
+  .bar.on .bg i { background: var(--accent); }
+  .bar .bt { font-size: 12.5px; font-weight: 700; color: var(--ink); }
+  .bar .bs { font-size: 11px; color: var(--muted); }
+
+  /* eigen uitklapmenu (i.p.v. wit OS-menu met ander lettertype) */
+  .dd { position: relative; display: inline-block; }
+  .dd-btn { display: inline-flex; align-items: center; gap: 9px; border: 1px solid transparent; background: transparent; font-family: inherit; font-size: 15.5px; font-weight: 700; color: var(--ink); cursor: pointer; padding: 8px 13px; border-radius: 999px; transition: .15s; max-width: min(60vw, 330px); }
+  .dd-btn .dd-lb { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dd-btn:hover, .dd.open .dd-btn { background: #fff; border-color: rgba(47,158,110,0.35); }
+  .dd-cv { width: 7px; height: 7px; flex-shrink: 0; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg) translateY(-1px); transition: transform .18s; }
+  .dd.open .dd-cv { transform: rotate(-135deg); }
+  .dd-pop { position: absolute; right: 0; top: calc(100% + 6px); min-width: 215px; background: #fff; border: 1px solid var(--line-strong); border-radius: 15px; box-shadow: 0 16px 38px rgba(34,28,58,0.17); padding: 6px; z-index: 40; opacity: 0; visibility: hidden; transform: translateY(-6px); transition: .16s; }
+  .dd.open .dd-pop { opacity: 1; visibility: visible; transform: translateY(0); }
+  .dd-opt { font-family: inherit; font-size: 14px; font-weight: 600; color: var(--ink); padding: 10px 12px; border-radius: 10px; cursor: pointer; white-space: nowrap; }
+  .dd-opt:hover { background: var(--violet-soft); }
+  .dd-opt.sel { color: var(--accent); background: var(--violet-soft); }
+  .dd-div { height: 1px; background: var(--line); margin: 6px 4px; }
+  .combi-toggle { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; color: var(--muted); padding: 10px 12px; border-radius: 10px; cursor: pointer; }
+  .combi-toggle:hover { background: var(--violet-soft); color: var(--accent); }
+  .ct-cv { margin-left: auto; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform .18s; }
+  .combi-toggle.open .ct-cv { transform: rotate(-135deg); }
+  .combi-wrap { display: none; padding-top: 2px; }
+  .combi-wrap.show { display: block; }
+  .dd-combilabel { font-size: 10.5px; font-weight: 800; letter-spacing: .5px; color: var(--muted); padding: 4px 12px 6px; text-transform: uppercase; }
+  .combichips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 10px 8px; }
+  .cchip { width: 30px; height: 30px; border-radius: 9px; border: 1.5px solid var(--line-strong); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--ink); cursor: pointer; transition: .12s; }
+  .cchip:hover { border-color: rgba(47,158,110,0.45); }
+  .cchip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .combi-apply { margin: 0 10px 6px; width: calc(100% - 20px); padding: 9px; border: none; border-radius: 10px; background: var(--violet-soft); color: var(--accent); font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+
+  /* live voorbeeld */
+  .preview { position: relative; margin: 30px 0 4px; background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 24px; box-shadow: 0 16px 36px rgba(34,28,58,0.10); transform: rotate(-1deg); }
+  .preview::before { content: '✨ Zo gaat het klinken'; position: absolute; top: -13px; left: 20px; background: var(--amber); color: #3a2a05; font-size: 11.5px; font-weight: 800; padding: 5px 12px; border-radius: 999px; box-shadow: 0 4px 10px rgba(245,158,11,0.3); }
+  .pv-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .pv-av { width: 34px; height: 34px; border-radius: 10px; background: var(--violet); color: #fff; font-family: 'Fraunces', serif; font-weight: 600; font-size: 17px; display: flex; align-items: center; justify-content: center; }
+  .pv-name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 17px; }
+  .pv-text { font-family: 'Caveat', cursive; font-size: 22px; line-height: 1.5; color: var(--ink); }
+
+  .hidden-fields { display: none; }
+
+  /* footer */
+  footer.app-foot { margin-top: 34px; text-align: center; padding: 22px 0 30px; border-top: 1px solid rgba(34,28,58,0.07); font-size: 12.5px; color: #6b6880; line-height: 1.7; }
+  .priv-badge { display:inline-flex; align-items:center; gap:6px; margin-top:10px; font-size:12px; font-weight:700; color:#2f9e6e; background:#e7f4ed; border:1px solid rgba(34,28,58,0.13); border-radius:999px; padding:5px 12px; font-family:inherit; cursor:pointer; transition:.15s; }
+  .priv-badge:hover { background:#d8ecdf; border-color:#2f9e6e; }
+  .priv-badge svg{ width:13px; height:13px; }
+
+  /* vervolgschermen: topbalk + open inhoud (geen doosjes) */
+  .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .scherm .card { background: transparent; border: none; box-shadow: none; padding: 0; border-radius: 0; }
+
+  /* Schermkoppen (scherm 2-4): zelfde speelse Fraunces-kop + amber swoosh als de hero */
+  .kop { margin: 2px 0 22px; }
+  .kop h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(26px, 4vw, 34px); letter-spacing: -1px; line-height: 1.08; display: inline-block; position: relative; }
+  .kop .sw { position: relative; white-space: nowrap; }
+  .kop .sw svg { position: absolute; left: 0; bottom: -7px; width: 100%; height: 11px; color: var(--amber); }
+  .ksub { font-size: 15px; color: var(--muted); line-height: 1.55; margin-top: 14px; max-width: 520px; }
+  .kop-leerling { display: flex; align-items: center; gap: 14px; margin: 2px 0 22px; }
+  .kop-av { width: 48px; height: 48px; border-radius: 14px; background: var(--violet); color: #fff; font-family: 'Fraunces', serif; font-weight: 600; font-size: 23px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 6px 16px rgba(47,158,110,0.25); }
+  .kop-leerling h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(25px, 4vw, 33px); letter-spacing: -1px; line-height: 1.05; }
+  .kop-leerling .ksub { margin-top: 3px; }
+  /* ═══════════ Invul-scherm (scherm 4): thema-kaarten ═══════════ */
+  :root{
+    --sun-bg:#fff2dd; --sun-ink:#b45309;
+    --sky-bg:#e6f1fe; --sky-ink:#0369a1;
+    --rose-bg:#fdeef4; --rose-ink:#be185d;
+    --leaf-bg:#e7f6ef; --leaf-ink:#047857;
+    --viol-bg:#e7f4ed; --viol-ink:#25855a;
+  }
+  .geslacht-rij{ display:flex; align-items:center; flex-wrap:wrap; gap:10px 14px; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:13px 16px; margin:0 0 18px; box-shadow:var(--shadow-sm); }
+  .gr-label{ font-size:14px; font-weight:700; color:var(--ink); }
+  .gr-note{ font-size:12px; color:var(--muted); flex:1; min-width:170px; line-height:1.45; }
+
+  .thema-balk{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 22px; padding:0 2px; }
+  .tb-tekst{ font-size:13.5px; font-weight:700; color:var(--ink); margin-right:6px; }
+  .tb-tekst b{ color:var(--accent); }
+  .tb-dot{ width:30px; height:30px; border-radius:10px; display:flex; align-items:center; justify-content:center; border:1.5px solid var(--line-strong); background:#fff; color:var(--muted); }
+  .tb-dot svg{ width:16px; height:16px; }
+  .tb-dot.done{ border-color:transparent; }
+  .tb-dot.done.t-sun{ background:var(--sun-bg); color:var(--sun-ink); }
+  .tb-dot.done.t-sky{ background:var(--sky-bg); color:var(--sky-ink); }
+  .tb-dot.done.t-rose{ background:var(--rose-bg); color:var(--rose-ink); }
+  .tb-dot.done.t-leaf{ background:var(--leaf-bg); color:var(--leaf-ink); }
+  .tb-dot.done.t-viol{ background:var(--viol-bg); color:var(--viol-ink); }
+
+  .kaart{ background:var(--card); border:1px solid var(--line); border-radius:22px; margin-bottom:16px; box-shadow:var(--shadow-sm); overflow:hidden; transition:box-shadow .2s; }
+  .kaart:hover{ box-shadow:var(--shadow-md); }
+  .kaart-kop{ display:flex; align-items:center; gap:14px; padding:18px 20px; cursor:pointer; user-select:none; }
+  .kaart-ic{ flex-shrink:0; width:48px; height:48px; border-radius:15px; display:flex; align-items:center; justify-content:center; }
+  .kaart-ic svg{ width:24px; height:24px; }
+  .kaart-tt{ flex:1; min-width:0; }
+  .kaart-titel{ font-family:'Fraunces',serif; font-size:20px; font-weight:600; letter-spacing:-0.3px; color:var(--ink); line-height:1.15; }
+  .kaart-status{ flex-shrink:0; display:flex; align-items:center; gap:10px; }
+  .kaart-chev{ width:9px; height:9px; border-right:2px solid var(--muted); border-bottom:2px solid var(--muted); transform:rotate(45deg); transition:transform .2s; opacity:.6; }
+  .kaart.open .kaart-chev{ transform:rotate(-135deg); }
+  .klaar-pil{ display:none; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:#047857; background:var(--emerald-soft); padding:5px 11px; border-radius:999px; }
+  .kaart.ingevuld .klaar-pil{ display:inline-flex; }
+  .klaar-pil svg{ width:13px; height:13px; }
+  .t-sun .kaart-ic{ background:var(--sun-bg); color:var(--sun-ink); }
+  .t-sky .kaart-ic{ background:var(--sky-bg); color:var(--sky-ink); }
+  .t-rose .kaart-ic{ background:var(--rose-bg); color:var(--rose-ink); }
+  .t-leaf .kaart-ic{ background:var(--leaf-bg); color:var(--leaf-ink); }
+  .t-viol .kaart-ic{ background:var(--viol-bg); color:var(--viol-ink); }
+  .kaart-body{ padding:4px 20px 22px; display:none; }
+  .kaart.open .kaart-body{ display:block; animation:rwFade .3s ease both; }
+  @keyframes rwFade{ from{opacity:0; transform:translateY(-4px);} to{opacity:1; transform:none;} }
+  .kaart-vat{ padding:0 20px 16px; display:none; }
+  .kaart:not(.open) .kaart-vat.heeft{ display:block; }
+  .vat-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+  .vat-chip{ font-size:12px; font-weight:600; color:var(--ink); background:var(--cream); border:1px solid var(--line-strong); border-radius:999px; padding:4px 11px; }
+  .kaart .vr{ padding:14px 0; border-top:1px solid var(--line); }
+  .kaart .vr:first-child{ border-top:none; }
+  .kaart .vr-label{ display:block; font-size:15px; font-weight:600; color:var(--ink); margin-bottom:10px; }
+  .kaart .vr-label .vr-opt{ color:var(--muted); font-weight:500; font-size:12px; }
+  .seg{ display:inline-flex; background:var(--cream); border:1px solid var(--line-strong); border-radius:13px; padding:4px; gap:3px; flex-wrap:wrap; }
+  .seg span{ padding:8px 15px; border-radius:10px; font-size:13.5px; font-weight:600; color:var(--muted); cursor:pointer; transition:.14s; white-space:nowrap; }
+  .seg span:hover{ color:var(--ink); }
+  .seg span.on{ background:#fff; color:var(--accent); font-weight:700; box-shadow:0 3px 9px rgba(34,28,58,0.10); }
+  .seg span.nvt.on{ color:var(--muted); }
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chips .chip{ padding:9px 15px; border:1.5px solid var(--line-strong); border-radius:12px; background:#fff; font-size:13.5px; font-weight:600; color:var(--ink); cursor:pointer; transition:.14s; }
+  .chips .chip:hover{ border-color:var(--accent); }
+  .chips .chip.on{ border-color:var(--accent); background:var(--violet-soft); color:var(--accent); font-weight:700; box-shadow:0 4px 12px rgba(47,158,110,0.12); }
+  .kaart .rw-ta{ width:100%; border:1px solid var(--line-strong); background:var(--cream); border-radius:13px; padding:12px 14px; font-family:inherit; font-size:14.5px; color:var(--ink); line-height:1.6; outline:none; resize:vertical; min-height:64px; transition:.15s; }
+  .kaart .rw-ta:focus{ border-color:var(--accent); background:#fff; box-shadow:0 0 0 3px rgba(47,158,110,0.13); }
+  .kaart-privacy{ font-size:12px; color:var(--muted); display:flex; gap:8px; align-items:flex-start; margin-top:14px; padding-top:12px; border-top:1px dashed var(--line-strong); line-height:1.5; }
+  .kaart-privacy svg{ width:14px; height:14px; flex-shrink:0; margin-top:1px; }
+  .vakrij{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 0; border-top:1px solid var(--line); flex-wrap:wrap; }
+  .vakrij:first-child{ border-top:none; }
+  .vakrij .vaknaam{ font-size:14.5px; font-weight:600; color:var(--ink); }
+</style>
+  <link rel="stylesheet" href="/wijs-huisstijl.css">
+  <script src="/wijs-dialog.js"></script>
+  <script src="/wijs-privacy.js"></script>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <a href="/dashboard" class="terug-menu">← Terug naar menu</a>
+    <a href="/dashboard" aria-label="Avinka" style="display:inline-flex;flex-shrink:0;"><img src="/Avinka_wordmerk.png" alt="Avinka" style="height:18px;width:auto;display:block;opacity:.82;"></a>
+    <span class="top-logo"><span class="mk">✎</span>Rapporten</span>
+  </div>
+
+  <main>
+
+  <!-- ════════ SCHERM 1: INSTELLINGEN ════════ -->
+  <div class="scherm actief" id="scherm-start">
+    <div class="apikey-card">
+      <div class="apikey-label">API Sleutel</div>
+      <div class="apikey-input-wrap">
+        <input type="password" class="apikey-input" id="apikey-input" placeholder="sk-ant-api03-..." oninput="handleApiKey(this)" autocomplete="off">
+        <button class="apikey-toggle" onclick="toggleApiKeyVisibility()" title="Toon/verberg">👁</button>
+      </div>
+      <label class="apikey-remember"><input type="checkbox" id="apikey-remember" onchange="handleRemember(this)"> Onthouden</label>
+      <div class="apikey-status" id="apikey-status"></div>
+    </div>
+
+    <!-- echte waarden voor de logica (verborgen); de knoppen hieronder vullen deze -->
+    <div class="hidden-fields">
+      <input type="text" id="f-groep" value="">
+      <input type="number" id="f-aantal" value="">
+      <input type="text" id="f-moment" value="">
+      <input type="text" id="f-lengte" value="">
+      <input type="text" id="f-richt" value="">
+      <input type="text" id="f-toon" value="warm">
+      <input type="text" id="f-afsluiting" value="vooruit">
+      <input type="text" id="f-taalniveau" value="standaard">
+    </div>
+
+    <div class="hero">
+      <div>
+        <h1>Hoe gaan jouw <span class="sw">rapporten<svg viewBox="0 0 200 12" fill="none" aria-hidden="true"><path d="M3 8C46 3 154 3 197 6" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg></span> klinken?</h1>
+        <p class="lead">Laat Rapporten meeschrijven aan je rapporten. Een paar keuzes, de AI als hulpmiddel, jij controleert en stelt bij, en je bent een stuk sneller klaar.</p>
+      </div>
+      <div class="heroart">
+        <div class="mockwin">
+          <div class="mockbar"><i style="background:#fb7185"></i><i style="background:#fbbf24"></i><i style="background:#34d399"></i><span class="mocktab">Groep 5 · 26 lln</span></div>
+          <div class="mockbody">
+            <div class="mtop">3 van de 4 rapporten klaar</div>
+            <div class="mwrow"><span class="mav" style="background:#25855a">S</span><span class="mname"></span><span class="mok">✓</span></div>
+            <div class="mwrow"><span class="mav" style="background:#2f9e6e">D</span><span class="mname" style="width:52px"></span><span class="mok">✓</span></div>
+            <div class="mwrow"><span class="mav" style="background:#0ea5e9">M</span><span class="mname" style="width:70px"></span><span class="mok">✓</span></div>
+            <div class="mwrow"><span class="mav" style="background:#f59e0b">L</span><span class="mname" style="width:46px"></span><span class="mdash"></span></div>
+          </div>
+        </div>
+        <span class="fbadge">⏱️ <b>Gemiddeld 2 uur</b> sneller met je rapporten</span>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step active" data-step="1"><span class="step-num">1</span><span class="lbl">Instellen</span></div>
+      <div class="step-line"></div>
+      <div class="step" data-step="2"><span class="step-num">2</span><span class="lbl">Leerlingen</span></div>
+      <div class="step-line"></div>
+      <div class="step" data-step="3"><span class="step-num">3</span><span class="lbl">Schrijven</span></div>
+      <div class="step-line"></div>
+      <div class="step" data-step="4"><span class="step-num">4</span><span class="lbl">Klaar</span></div>
+    </div>
+
+    <div class="grouplabel">De basis</div>
+    <div class="setrow">
+      <label class="setrow-l">Groep <span class="req">*</span></label>
+      <div class="dd" id="dd-groep">
+        <button class="dd-btn" type="button"><span class="dd-lb">Kies…</span><span class="dd-cv"></span></button>
+        <div class="dd-pop">
+          <div class="dd-opt" data-v="1">Groep 1</div><div class="dd-opt" data-v="2">Groep 2</div><div class="dd-opt" data-v="3">Groep 3</div><div class="dd-opt" data-v="4">Groep 4</div>
+          <div class="dd-opt" data-v="5">Groep 5</div><div class="dd-opt" data-v="6">Groep 6</div><div class="dd-opt" data-v="7">Groep 7</div><div class="dd-opt" data-v="8">Groep 8</div>
+          <div class="dd-div"></div>
+          <div class="combi-toggle">➕ Combinatieklas<span class="ct-cv"></span></div>
+          <div class="combi-wrap">
+            <div class="dd-combilabel">Vink de groepen aan die samen in de klas zitten</div>
+            <div class="combichips">
+              <span class="cchip" data-g="1">1</span><span class="cchip" data-g="2">2</span><span class="cchip" data-g="3">3</span><span class="cchip" data-g="4">4</span><span class="cchip" data-g="5">5</span><span class="cchip" data-g="6">6</span><span class="cchip" data-g="7">7</span><span class="cchip" data-g="8">8</span>
+            </div>
+            <button class="combi-apply" type="button">Toepassen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="setrow">
+      <label class="setrow-l">Aantal leerlingen <span class="req">*</span></label>
+      <div class="stepper"><button type="button" onclick="aantalStap(-1)">−</button><span class="val" id="aantal-val">—</span><button type="button" onclick="aantalStap(1)">+</button></div>
+    </div>
+    <div class="setrow" style="border:none;padding-bottom:4px"><label class="setrow-l">Soort rapport <span class="req">*</span></label></div>
+    <div class="cards" id="rapport-cards">
+      <div class="pick" data-v="middenrapport"><span class="pic" style="background:#e7f4ed"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f9e6e" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round"/></svg></span><span><span class="pt">Middenrapport</span><br><span class="ps">halverwege het jaar</span></span></div>
+      <div class="pick" data-v="eindrapport"><span class="pic" style="background:#e7f6ef"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><span class="pt">Eindrapport</span><br><span class="ps">einde schooljaar</span></span></div>
+    </div>
+
+    <div class="grouplabel">Hoe het klinkt</div>
+    <div class="setrow" style="border:none;padding-bottom:8px"><label class="setrow-l">Toon<small>de sfeer van de tekst</small></label></div>
+    <div class="tones" id="tone-cards">
+      <div class="tone on" data-v="warm"><div class="tn">Warm</div><div class="td">hartelijk</div></div>
+      <div class="tone" data-v="neutraal"><div class="tn">Neutraal</div><div class="td">feitelijk</div></div>
+      <div class="tone" data-v="zakelijk"><div class="tn">Zakelijk</div><div class="td">nuchter</div></div>
+      <div class="tone" data-v="formeel"><div class="tn">Formeel</div><div class="td">professioneel</div></div>
+      <div class="tone" data-v="speels"><div class="tn">Speels</div><div class="td">luchtig</div></div>
+    </div>
+    <div class="setrow" style="border:none;padding-bottom:8px"><label class="setrow-l">Lengte <span class="req">*</span><small>hoeveel zinnen per kind</small></label></div>
+    <div class="bars" id="lengte-bars">
+      <div class="bar" data-v="kort"><div class="bg"><i style="height:16px"></i><i style="height:24px"></i></div><div class="bt">Kort</div><div class="bs">3–4 zinnen</div></div>
+      <div class="bar" data-v="gemiddeld"><div class="bg"><i style="height:16px"></i><i style="height:26px"></i><i style="height:36px"></i></div><div class="bt">Gemiddeld</div><div class="bs">5–7 zinnen</div></div>
+      <div class="bar" data-v="uitgebreid"><div class="bg"><i style="height:16px"></i><i style="height:26px"></i><i style="height:36px"></i><i style="height:46px"></i></div><div class="bt">Uitgebreid</div><div class="bs">8–11 zinnen</div></div>
+    </div>
+    <div class="setrow">
+      <label class="setrow-l">Perspectief<small>vanuit wie je schrijft</small></label>
+      <div class="dd" data-field="f-richt">
+        <button class="dd-btn" type="button"><span class="dd-lb">Kies…</span><span class="dd-cv"></span></button>
+        <div class="dd-pop"><div class="dd-opt" data-v="over">Over het kind (hij/zij)</div><div class="dd-opt" data-v="tegen">In de jij-vorm</div><div class="dd-opt" data-v="ouders">Aan de ouders</div></div>
+      </div>
+    </div>
+    <div class="setrow">
+      <label class="setrow-l">Afsluiting</label>
+      <div class="dd" data-field="f-afsluiting">
+        <button class="dd-btn" type="button"><span class="dd-lb">Positief en vooruitkijkend</span><span class="dd-cv"></span></button>
+        <div class="dd-pop"><div class="dd-opt sel" data-v="vooruit">Positief en vooruitkijkend</div><div class="dd-opt" data-v="doel">Met een ontwikkeldoel</div><div class="dd-opt" data-v="sterk">Met een sterke kant</div><div class="dd-opt" data-v="neutraal">Neutraal, kort</div><div class="dd-opt" data-v="geen">Geen vaste afsluiting</div></div>
+      </div>
+    </div>
+    <div class="setrow">
+      <label class="setrow-l">Taalniveau<small>moeilijkheid van de tekst</small></label>
+      <div class="dd" data-field="f-taalniveau">
+        <button class="dd-btn" type="button"><span class="dd-lb">Standaard</span><span class="dd-cv"></span></button>
+        <div class="dd-pop"><div class="dd-opt sel" data-v="standaard">Standaard</div><div class="dd-opt" data-v="b1">Eenvoudig (B1)</div><div class="dd-opt" data-v="a2">Heel eenvoudig (A2)</div></div>
+      </div>
+    </div>
+
+    <div class="preview">
+      <div class="pv-head"><span class="pv-av">S</span><span class="pv-name">Sara</span></div>
+      <p class="pv-text" id="pv-text"></p>
+    </div>
+
+    <button class="btn-primary" id="btn-naar-namen" onclick="naarNamen()" disabled>
+      <span>Verder naar de leerlingen</span><span>→</span>
+    </button>
+    <div class="error-box" id="err-start"></div>
+    <button class="reset-knop" onclick="resetAlles()">↺ Alles leegmaken</button>
+
+    <div class="note">
+      <span>👁️</span>
+      <span><strong>Jij blijft eindverantwoordelijk.</strong> Rapporten zet een eerste versie klaar; jij leest na, schaaft bij en bepaalt wat je gebruikt.</span>
+    </div>
+  </div>
+
+  <!-- ════════ SCHERM 2: NAMEN ════════ -->
+  <div class="scherm" id="scherm-namen">
+    <div class="topbar">
+      <button class="btn-back" onclick="toonScherm('scherm-start',1)">← Instellingen</button>
+      <span class="ctx-badge" id="namen-ctx"></span>
+    </div>
+    <div class="kop">
+      <h2>Wie zitten er in <span class="sw">jouw klas?<svg viewBox="0 0 200 12" fill="none" aria-hidden="true"><path d="M3 8C46 3 154 3 197 6" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg></span></h2>
+      <p class="ksub">Typ de voornamen los in (met Enter of een komma), of plak je hele klassenlijst in één keer. Je gebruikt alleen voornamen en die blijven op je eigen computer.</p>
+    </div>
+    <div class="steps">
+      <div class="step done" data-step="1"><span class="step-num">1</span><span class="lbl">Instellen</span></div>
+      <div class="step-line"></div>
+      <div class="step active" data-step="2"><span class="step-num">2</span><span class="lbl">Leerlingen</span></div>
+      <div class="step-line"></div>
+      <div class="step" data-step="3"><span class="step-num">3</span><span class="lbl">Schrijven</span></div>
+      <div class="step-line"></div>
+      <div class="step" data-step="4"><span class="step-num">4</span><span class="lbl">Klaar</span></div>
+    </div>
+    <div class="tag-input" id="tag-input" onclick="document.getElementById('naam-veld').focus()">
+      <input type="text" id="naam-veld" placeholder="Typ een naam en druk op Enter…" autocomplete="off"
+        onkeydown="naamKeydown(event)" onpaste="naamPaste(event)" onblur="naamCommit()"
+        onfocus="this.parentNode.classList.add('focus')">
+    </div>
+    <div class="namen-teller" id="namen-teller">Nog geen namen</div>
+    <button class="btn-primary" id="btn-maak-kaarten" onclick="maakKaarten()" disabled>
+      <span>Maak leerlingkaarten</span><span>→</span>
+    </button>
+    <div class="error-box" id="err-namen"></div>
+  </div>
+
+  <!-- ════════ SCHERM 3: OVERZICHT ════════ -->
+  <div class="scherm" id="scherm-overzicht">
+    <div class="topbar">
+      <button class="btn-back" onclick="terugNaarNamen()">← Namen aanpassen</button>
+      <span class="ctx-badge" id="overzicht-ctx"></span>
+    </div>
+    <div class="kop">
+      <h2>Jouw <span class="sw">klas<svg viewBox="0 0 200 12" fill="none" aria-hidden="true"><path d="M3 8C46 3 154 3 197 6" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg></span></h2>
+      <p class="ksub">Klik op een kind om de rapporttekst te maken. Groen betekent: klaar.</p>
+    </div>
+    <div class="steps">
+      <div class="step done" data-step="1"><span class="step-num">1</span><span class="lbl">Instellen</span></div>
+      <div class="step-line"></div>
+      <div class="step done" data-step="2"><span class="step-num">2</span><span class="lbl">Leerlingen</span></div>
+      <div class="step-line"></div>
+      <div class="step active" data-step="3"><span class="step-num">3</span><span class="lbl">Schrijven</span></div>
+      <div class="step-line"></div>
+      <div class="step" data-step="4"><span class="step-num">4</span><span class="lbl">Klaar</span></div>
+    </div>
+    <p class="voortgangsregel" id="voortgang"></p>
+    <div class="ll-grid" id="ll-grid"></div>
+    <button class="btn-green" id="btn-download" style="margin-top:22px;" onclick="downloadAlleVerhalen()" disabled>
+      <span>⬇</span><span>Download rapportteksten als Word</span>
+    </button>
+    <p class="field-hint" style="text-align:center;margin-top:10px;">Je kunt ook al downloaden als nog niet iedereen klaar is; dan komen alleen de afgeronde rapportteksten erin.</p>
+  </div>
+
+  <!-- ════════ SCHERM 4: LEERLING ════════ -->
+  <div class="scherm" id="scherm-leerling">
+    <div class="topbar">
+      <button class="btn-back" onclick="terugNaarOverzicht()">← Alle leerlingen</button>
+      <span class="ctx-badge" id="leerling-ctx"></span>
+    </div>
+    <div class="kop-leerling">
+      <span class="kop-av" id="leerling-av"></span>
+      <div>
+        <h2 id="leerling-naam"></h2>
+        <p class="ksub">Vul in wat je weet. Niets is verplicht, en wat je leeg laat, laat Rapporten ook weg.</p>
+      </div>
+    </div>
+    <div class="steps">
+      <div class="step done" data-step="1"><span class="step-num">1</span><span class="lbl">Instellen</span></div>
+      <div class="step-line"></div>
+      <div class="step done" data-step="2"><span class="step-num">2</span><span class="lbl">Leerlingen</span></div>
+      <div class="step-line"></div>
+      <div class="step active" data-step="3"><span class="step-num">3</span><span class="lbl">Schrijven</span></div>
+      <div class="step-line"></div>
+      <div class="step" data-step="4"><span class="step-num">4</span><span class="lbl">Klaar</span></div>
+    </div>
+
+    <details class="privacy-tip" onmouseenter="this.open=true" onmouseleave="this.open=false">
+      <summary>🔒 Lees hoe je slim met privacy omgaat</summary>
+      <div class="privacy-tip-body">
+        <p>Rapporten schermt namen en contactgegevens automatisch af voordat er iets wordt verstuurd, en zet onderwijskundige diagnoses om in een lichtere omschrijving. Toch blijft het belangrijk dat je zelf geen bijzondere persoonsgegevens opschrijft, zoals dingen over gezondheid, geloof of justitie. Zulke details zijn vaak makkelijk terug te leiden naar één kind, ook zonder de naam.</p>
+        <div class="privacy-vb privacy-vb-goed">
+          <div class="privacy-vb-tekst">"Rekenen blijft een aandachtspunt, de werkhouding is positief en zij werkt hard."</div>
+          <div class="privacy-vb-label">✅ Goed: dit kan over heel veel kinderen gaan.</div>
+        </div>
+        <div class="privacy-vb privacy-vb-fout">
+          <div class="privacy-vb-tekst">"Was er een tijd niet vanwege haar diabetes en het ziekenhuis, en thuis speelt de scheiding van haar ouders."</div>
+          <div class="privacy-vb-label">⛔ Liever niet: dit bevat bijzondere gegevens en is zo terug te leiden naar één kind.</div>
+        </div>
+        <p class="privacy-tip-slot">Houd het bij wat nodig is voor het rapport. De rest hoort niet in een AI-aanvraag.</p>
+      </div>
+    </details>
+
+    <div class="thema-balk" id="thema-balk"></div>
+    <div id="vragen-container"></div>
+
+    <button class="btn-primary" id="btn-genereer" onclick="genereerVerhaal()">
+      <span>✎</span><span>Schrijf de rapporttekst</span>
+    </button>
+    <div class="error-box" id="err-leerling"></div>
+
+    <div class="loading-box" id="leerling-loading">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loading-text">Even afvinken…</div>
+    </div>
+
+    <div class="verhaal-box" id="verhaal-box">
+      <div class="verhaal-kop">
+        <div class="verhaal-icon">✎</div>
+        <div>
+          <div class="verhaal-titel">Concept-rapporttekst</div>
+          <div class="verhaal-sub">Je kunt hier direct in typen om iets bij te schaven.</div>
+        </div>
+      </div>
+      <textarea class="verhaal-tekst" id="verhaal-tekst"></textarea>
+      <p class="verhaal-hint">Klopt het niet helemaal? Pas het zelf aan in het vak hierboven, of laat de tool het herschrijven met jouw aanwijzing.</p>
+      <div class="verhaal-acties">
+        <button class="btn-soft" style="padding:14px;font-size:14px;" onclick="toggleAanpas()">↻ Tekst aanpassen</button>
+        <button class="btn-green" onclick="keurGoed()"><span>✓</span><span>Goedkeuren</span></button>
+      </div>
+      <div class="aanpas-wrap" id="aanpas-wrap">
+        <label class="field-label">Wat zou je anders willen?</label>
+        <textarea class="field-input" id="aanpas-input" placeholder="bijv. korter, minder over rekenen, warmer van toon, benoem dat ze veel gegroeid is in zelfvertrouwen…"></textarea>
+        <button class="btn-primary" style="margin-top:12px;padding:13px;font-size:14px;" onclick="herschrijfVerhaal()"><span>↻</span><span>Opnieuw schrijven met deze aanwijzing</span></button>
+      </div>
+    </div>
+  </div>
+
+    <footer class="app-foot">
+      Rapporten · gemaakt door Michael van Spanje · © 2026<br>
+      <button type="button" class="priv-badge" onclick="openPrivacy()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2.2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>Privacyvriendelijk</button>
+    </footer>
+  </main>
+</div>
+
+<div id="privacy-overlay" class="privacy-overlay" onclick="if(event.target===this)closePrivacy()">
+  <div class="privacy-sheet" role="dialog" aria-modal="true" aria-label="Privacybescherming">
+    <button type="button" class="privacy-close" onclick="closePrivacy()" aria-label="Sluiten">×</button>
+    <h2>Hoe Rapporten je gegevens beschermt</h2>
+    <p class="ps-intro">Rapporten is gebouwd met privacy als uitgangspunt. Hieronder zie je precies wat de tool doet om de gegevens van je leerlingen zo goed mogelijk te beschermen.</p>
+
+    <div class="ps-item"><span class="ps-ic">💻</span><div><h3>Alles draait op je eigen computer</h3><p>De tool werkt lokaal in je browser. Wat je intypt blijft op je eigen apparaat. Alleen voor het schrijven van een rapporttekst wordt er kort iets naar de AI gestuurd.</p></div></div>
+
+    <div class="ps-item"><span class="ps-ic">🏷️</span><div><h3>Namen worden afgeschermd</h3><p>Voordat er iets wordt verstuurd, vervangt de tool de voornamen automatisch door codes (LL-01, LL-02 …). Ook andere namen, plaatsen, e-mailadressen, telefoonnummers en postcodes worden zo afgeschermd. Pas in jóuw afgeronde rapporttekst worden de namen lokaal weer teruggezet.</p></div></div>
+
+    <div class="ps-item"><span class="ps-ic">🩺</span><div><h3>Diagnoses gaan er niet doorheen</h3><p>Onderwijskundige diagnoses zoals ADHD, dyslexie of autisme worden vóór verzending vervangen door een neutrale, lichtere omschrijving (bijvoorbeeld "heeft wat meer moeite met concentratie"). De diagnose zelf verlaat je computer dus niet.</p></div></div>
+
+    <div class="ps-item"><span class="ps-ic">⚠️</span><div><h3>Een seintje bij gevoelige informatie</h3><p>Typ je toch iets gevoeligs (een diagnose, een gezinssituatie, contactgegevens), dan geeft de tool een rustige tip om het algemener te houden. Geen pop-ups die je telkens onderbreken; alleen wanneer het er echt toe doet.</p></div></div>
+
+    <div class="ps-item"><span class="ps-ic">🗑️</span><div><h3>Er wordt niets bewaard</h3><p>De tool slaat geen leerlinggegevens en geen rapportteksten op. Wat klaar is, staat alleen in het Word-document dat jíj downloadt.</p></div></div>
+
+    <div class="ps-item"><span class="ps-ic">✍️</span><div><h3>Zo min mogelijk gevoelige informatie nodig</h3><p>De tool werkt vooral met aanklikbare keuzes en korte velden, zodat wat wordt verstuurd zo algemeen mogelijk blijft en zelden tot één kind te herleiden is.</p></div></div>
+
+    <div class="ps-caveat"><strong>Eerlijk over de grenzen.</strong> Geen enkele digitale tool kan 100% garanderen. Rapporten neemt passende maatregelen om het risico zo klein mogelijk te maken, precies zoals de privacywetgeving (AVG) vraagt. Jij bepaalt zelf wat je invult; houd de tekstvelden algemeen en vermijd bijzondere privégegevens. Zo houden we het samen veilig.</div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════════
+let apiKey = '';
+// Schrijfmodel. Opus = beste schrijfkwaliteit (standaard).
+// Wil je later overstappen op sneller/goedkoper, zet dit op 'claude-sonnet-4-6'.
+const MODEL = 'claude-opus-4-8';
+let nameMap = [], nameMapCodes = [];
+const aiCallLog = [];
+const state = {
+  groep: '', aantal: '', moment: '', lengte: '', richt: '',
+  toon: 'warm', afsluiting: 'vooruit', taalniveau: 'standaard',
+  leerlingen: [],            // { id, naam, antwoorden:{}, verhaal, status }
+  huidigeId: null,
+  goedgekeurd: []            // eerder goedgekeurde verhalen (anti-herhaling over de klas)
+};
+
+// ════════════════════════════════════════════════════════════
+// API-SLEUTEL
+// ════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  let saved = null;
+  try { saved = localStorage.getItem('toetswijs_apikey'); } catch(e) {}
+  if (saved) {
+    apiKey = saved;
+    const inp = document.getElementById('apikey-input');
+    inp.value = saved; inp.classList.add('valid');
+    document.getElementById('apikey-remember').checked = true;
+    showApiStatus('✓ Sleutel onthouden');
+  }
+});
+function handleApiKey(input) {
+  apiKey = input.value.trim();
+  const ok = apiKey.startsWith('sk-ant-');
+  input.classList.toggle('valid', ok);
+  if (ok) showApiStatus('✓ Sleutel herkend');
+  else if (apiKey) showApiStatus('Sleutel lijkt onvolledig…');
+  else { const s = document.getElementById('apikey-status'); s.classList.remove('visible'); }
+  if (document.getElementById('apikey-remember').checked && apiKey) {
+    try { localStorage.setItem('toetswijs_apikey', apiKey); } catch(e) {}
+  }
+  checkStartReady();
+}
+function handleRemember(cb) {
+  if (cb.checked && apiKey) { try { localStorage.setItem('toetswijs_apikey', apiKey); showApiStatus('✓ Opgeslagen'); } catch(e){} }
+  else { try { localStorage.removeItem('toetswijs_apikey'); } catch(e){} showApiStatus('Verwijderd'); }
+}
+function toggleApiKeyVisibility() {
+  const i = document.getElementById('apikey-input');
+  i.type = i.type === 'password' ? 'text' : 'password';
+}
+function showApiStatus(msg) {
+  const s = document.getElementById('apikey-status');
+  s.textContent = msg; s.classList.add('visible');
+}
+
+// ════════════════════════════════════════════════════════════
+// SCHERMEN
+// ════════════════════════════════════════════════════════════
+function toonScherm(id, stap) {
+  document.querySelectorAll('.scherm').forEach(s => s.classList.remove('actief'));
+  document.getElementById(id).classList.add('actief');
+  if (stap) setStap(stap);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function setStap(n) {
+  document.querySelectorAll('.steps .step').forEach(function (el) {
+    const i = parseInt(el.getAttribute('data-step'), 10);
+    el.classList.remove('active', 'done');
+    if (i < n) el.classList.add('done');
+    else if (i === n) el.classList.add('active');
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// SCHERM 1 — INSTELLINGEN
+// ════════════════════════════════════════════════════════════
+function handleStartField(el) {
+  el.classList.toggle('filled', !!el.value);
+  checkStartReady();
+}
+function checkStartReady() {
+  const ok = apiKey && document.getElementById('f-groep').value &&
+    document.getElementById('f-aantal').value &&
+    document.getElementById('f-moment').value &&
+    document.getElementById('f-lengte').value &&
+    document.getElementById('f-richt').value;
+  document.getElementById('btn-naar-namen').disabled = !ok;
+}
+async function resetAlles() {
+  if (!(await wijsBevestig('Alle ingevulde gegevens en gemaakte rapportteksten worden gewist.', { titel: 'Alles leegmaken?', bevestig: 'Leegmaken', gevaar: true }))) return;
+  state.groep = ''; state.aantal = ''; state.moment = ''; state.lengte = ''; state.richt = '';
+  state.toon = 'warm'; state.afsluiting = 'vooruit'; state.taalniveau = 'standaard';
+  state.leerlingen = []; state.huidigeId = null; state.goedgekeurd = [];
+  naamLijst = [];
+  nameMap = []; nameMapCodes = [];
+  ['f-groep', 'f-aantal', 'f-moment', 'f-lengte', 'f-richt'].forEach(id => { const e = document.getElementById(id); if (e) { e.value = ''; e.classList.remove('filled'); } });
+  const setSel = (id, v) => { const e = document.getElementById(id); if (e) { e.value = v; e.classList.add('filled'); } };
+  setSel('f-toon', 'warm'); setSel('f-afsluiting', 'vooruit'); setSel('f-taalniveau', 'standaard');
+  checkStartReady();
+  toonScherm('scherm-start', 1);
+}
+function naarNamen() {
+  state.groep = document.getElementById('f-groep').value;
+  state.aantal = document.getElementById('f-aantal').value;
+  state.moment = document.getElementById('f-moment').value;
+  state.lengte = document.getElementById('f-lengte').value;
+  state.richt = document.getElementById('f-richt').value;
+  state.toon = document.getElementById('f-toon').value;
+  state.afsluiting = document.getElementById('f-afsluiting').value;
+  state.taalniveau = document.getElementById('f-taalniveau').value;
+  const badge = 'Groep ' + state.groep + ' · ' + state.moment;
+  document.getElementById('namen-ctx').textContent = badge;
+  document.getElementById('overzicht-ctx').textContent = badge;
+  document.getElementById('leerling-ctx').textContent = badge;
+  toonScherm('scherm-namen', 2);
+  renderTags();
+}
+
+// ════════════════════════════════════════════════════════════
+// SCHERM 2 — NAMEN
+// ════════════════════════════════════════════════════════════
+let naamLijst = [];
+function renderTags() {
+  const cont = document.getElementById('tag-input');
+  const veld = document.getElementById('naam-veld');
+  cont.querySelectorAll('.naam-tag').forEach(t => t.remove());
+  naamLijst.forEach((naam, i) => {
+    const tag = document.createElement('span');
+    tag.className = 'naam-tag';
+    tag.innerHTML = escapeHtml(naam) + '<button title="Verwijderen" onclick="verwijderNaam(' + i + ');event.stopPropagation();">×</button>';
+    cont.insertBefore(tag, veld);
+  });
+  const t = document.getElementById('namen-teller');
+  let txt = naamLijst.length === 0 ? 'Nog geen namen'
+    : naamLijst.length + (naamLijst.length === 1 ? ' naam' : ' namen');
+  if (state.aantal && naamLijst.length && +state.aantal !== naamLijst.length) {
+    txt += ' (je gaf ' + state.aantal + ' leerlingen op)';
+  }
+  t.textContent = txt;
+  document.getElementById('btn-maak-kaarten').disabled = naamLijst.length === 0;
+}
+function capNaam(n) {
+  return n.charAt(0).toUpperCase() + n.slice(1);
+}
+function voegNaamToe(ruw) {
+  String(ruw).split(/[\n,;]+/).map(n => n.trim()).filter(Boolean).forEach(n => {
+    n = capNaam(n);
+    if (!naamLijst.some(x => x.toLowerCase() === n.toLowerCase())) naamLijst.push(n);
+  });
+  renderTags();
+}
+function verwijderNaam(i) { naamLijst.splice(i, 1); renderTags(); }
+function naamCommit() {
+  const veld = document.getElementById('naam-veld');
+  if (veld.value.trim()) { voegNaamToe(veld.value); veld.value = ''; }
+  document.getElementById('tag-input').classList.remove('focus');
+}
+function naamKeydown(e) {
+  const veld = e.target;
+  if (e.key === 'Enter' || e.key === ',' || e.key === ';') {
+    e.preventDefault();
+    if (veld.value.trim()) { voegNaamToe(veld.value); veld.value = ''; }
+  } else if (e.key === 'Backspace' && !veld.value && naamLijst.length) {
+    naamLijst.pop(); renderTags();
+  }
+}
+function naamPaste(e) {
+  e.preventDefault();
+  voegNaamToe((e.clipboardData || window.clipboardData).getData('text'));
+}
+function leesNamen() { return [...naamLijst]; }
+function maakKaarten() {
+  naamCommit();
+  const namen = leesNamen();
+  const err = document.getElementById('err-namen');
+  err.classList.remove('visible');
+  // Dubbele namen detecteren
+  const lower = namen.map(n => n.toLowerCase());
+  const dubbel = lower.filter((n, i) => lower.indexOf(n) !== i);
+  if (dubbel.length) {
+    err.textContent = 'Er staan dubbele namen tussen (' + [...new Set(dubbel)].join(', ') + '). Maak ze uniek, bijvoorbeeld met een beginletter van de achternaam: "Sara K." en "Sara V.".';
+    err.classList.add('visible');
+    return;
+  }
+  // Behoud bestaande antwoorden als de naam al bestond
+  const oud = {};
+  state.leerlingen.forEach(l => oud[l.naam] = l);
+  state.leerlingen = namen.map((naam, i) => oud[naam] || {
+    id: 'll-' + i + '-' + Math.random().toString(36).slice(2, 7),
+    naam, antwoorden: {}, verhaal: '', status: 'open',
+    geslacht: (window.wijsKlasGeslacht && window.wijsKlasGeslacht[naam.toLowerCase()]) || ''
+  });
+  buildNameMap(namen);
+  renderOverzicht();
+  toonScherm('scherm-overzicht', 3);
+}
+function terugNaarNamen() { toonScherm('scherm-namen', 2); }
+
+// ════════════════════════════════════════════════════════════
+// SCHERM 3 — OVERZICHT
+// ════════════════════════════════════════════════════════════
+function renderOverzicht() {
+  const grid = document.getElementById('ll-grid');
+  grid.innerHTML = '';
+  const LL_KLEUREN = ['#25855a', '#2f9e6e', '#0ea5e9', '#059669', '#f59e0b', '#e11d48', '#db2777', '#0891b2'];
+  state.leerlingen.forEach((l, i) => {
+    const klaar = l.status === 'klaar';
+    const div = document.createElement('button');
+    div.className = 'll-kaart' + (klaar ? ' klaar' : '');
+    div.onclick = () => openLeerling(l.id);
+    const kleur = LL_KLEUREN[i % LL_KLEUREN.length];
+    const initiaal = escapeHtml((String(l.naam).trim()[0] || '?').toUpperCase());
+    div.innerHTML =
+      '<div class="ll-vink">✓</div>' +
+      '<div class="ll-avatar" style="background:' + kleur + '">' + initiaal + '</div>' +
+      '<div class="ll-naam">' + escapeHtml(l.naam) + '</div>' +
+      '<div class="ll-stat"><span class="ll-dot"></span>' + (klaar ? 'Rapporttekst klaar' : 'Nog invullen') + '</div>';
+    grid.appendChild(div);
+  });
+  const klaarN = state.leerlingen.filter(l => l.status === 'klaar').length;
+  const tot = state.leerlingen.length;
+  document.getElementById('voortgang').innerHTML =
+    '<b>' + klaarN + '</b> van de ' + tot + ' rapportteksten klaar.';
+  document.getElementById('btn-download').disabled = klaarN === 0;
+  if (klaarN === tot && tot > 0) setStap(4); else setStap(3);
+}
+
+// ════════════════════════════════════════════════════════════
+// VRAGENSETS (code bepaalt de structuur; kleuters apart)
+// type: 'enkel' (één keuze), 'multi' (meerdere), 'tekst' (vrij veld)
+// ════════════════════════════════════════════════════════════
+// Elke sectie = één thema-kaart (icon + kleur). 'min' op een vraag bepaalt vanaf
+// welke rapportlengte hij verschijnt; zonder 'min' = altijd (ook bij kort).
+const VRAGEN_REGULIER = [
+  { kop: 'Hoe gaat het op school?', icon: 'sun', kleur: 'sun', vragen: [
+    { key: 'welbevinden', label: 'Hoe gaat dit kind naar school?', type: 'enkel', opties: ['met plezier', 'meestal prima', 'wisselend', 'vindt het soms lastig'] }
+  ]},
+  { kop: 'Werkhouding & aanpak', icon: 'target', kleur: 'sky', vragen: [
+    { key: 'werkhouding', label: 'Werkhouding', type: 'enkel', opties: ['sterk', 'prima', 'wisselend', 'heeft sturing nodig'] },
+    { key: 'concentratie', label: 'Concentratie', type: 'enkel', min: 'gemiddeld', opties: ['lang gefocust', 'voldoende', 'snel afgeleid'] },
+    { key: 'zelfstandig', label: 'Zelfstandig werken', type: 'enkel', min: 'gemiddeld', opties: ['zelfstandig', 'af en toe hulp', 'veel begeleiding nodig'] },
+    { key: 'tempo', label: 'Werktempo', type: 'enkel', min: 'uitgebreid', opties: ['vlot', 'gemiddeld', 'rustig'] },
+    { key: 'doorzetten', label: 'Doorzettingsvermogen', type: 'enkel', min: 'uitgebreid', opties: ['zet door bij moeilijk werk', 'wisselend', 'geeft snel op'] }
+  ]},
+  { kop: 'Wie is dit kind?', icon: 'heart', kleur: 'rose', vragen: [
+    { key: 'karakter', label: 'Wat past bij dit kind?', type: 'multi', anders: true,
+      opties: ['vrolijk', 'vriendelijk', 'behulpzaam', 'sociaal', 'zelfverzekerd', 'nieuwsgierig', 'enthousiast', 'rustig', 'zorgzaam', 'humoristisch', 'eerlijk', 'creatief', 'leergierig', 'verlegen', 'onzeker', 'snel afgeleid', 'druk/beweeglijk', 'snel gefrustreerd', 'faalangstig', 'eigenwijs', 'gevoelig', 'perfectionistisch', 'vraagt veel aandacht'] },
+    { key: 'omgang', label: 'Omgang met andere kinderen', type: 'enkel', opties: ['heeft vaste vriendjes', 'speelt met wisselende kinderen', 'vindt aansluiting soms lastig', 'speelt vaak alleen'] },
+    { key: 'zelfvertrouwen', label: 'Zelfvertrouwen', type: 'enkel', min: 'gemiddeld', opties: ['zelfverzekerd', 'wisselend', 'onzeker / faalangstig'] },
+    { key: 'klasgenoot', label: 'Wat maakt dit kind een fijne klasgenoot?', type: 'tekst', min: 'uitgebreid', placeholder: 'optioneel — bijv. helpt anderen, zorgt voor sfeer, komt voor een ander op…' }
+  ]},
+  { kop: 'Leerontwikkeling', icon: 'book', kleur: 'leaf', vragen: [
+    { key: 'rekenen', label: 'Rekenen', type: 'enkel', vak: true, min: 'gemiddeld', opties: ['sterk', 'gemiddeld', 'zwak', 'n.v.t.'] },
+    { key: 'begrijpend', label: 'Begrijpend lezen', type: 'enkel', vak: true, min: 'gemiddeld', opties: ['sterk', 'gemiddeld', 'zwak', 'n.v.t.'] },
+    { key: 'spelling', label: 'Spelling', type: 'enkel', vak: true, min: 'gemiddeld', opties: ['sterk', 'gemiddeld', 'zwak', 'n.v.t.'] },
+    { key: 'lezen', label: 'Lezen', type: 'enkel', vak: true, min: 'uitgebreid', opties: ['sterk', 'gemiddeld', 'zwak', 'n.v.t.'] },
+    { key: 'verkeer', label: 'Verkeer', type: 'enkel', vak: true, min: 'uitgebreid', opties: ['sterk', 'gemiddeld', 'zwak', 'n.v.t.'] },
+    { key: 'taal', label: 'Taal', type: 'enkel', vak: true, min: 'uitgebreid', opties: ['sterk', 'gemiddeld', 'zwak', 'n.v.t.'] }
+  ]},
+  { kop: 'In jouw woorden', icon: 'pen', kleur: 'viol', vragen: [
+    { key: 'persoonlijk', label: 'Iets persoonlijks of opvallends over dit kind', type: 'tekst', placeholder: 'een talent, een rol in de klas, een mooie anekdote…' },
+    { key: 'doel', label: 'Aandachtspunt of doel voor de komende periode', type: 'tekst', placeholder: 'optioneel' },
+    { key: 'interesses', label: 'Waar geniet dit kind van / wordt het enthousiast van?', type: 'tekst', min: 'gemiddeld', placeholder: 'hobby, onderwerp, activiteit op school…' },
+    { key: 'trots', label: 'Waarin is dit kind gegroeid / waar ben je trots op?', type: 'tekst', min: 'uitgebreid', placeholder: 'optioneel' }
+  ]}
+];
+
+const VRAGEN_KLEUTER = [
+  { kop: 'Hoe gaat het op school?', icon: 'sun', kleur: 'sun', vragen: [
+    { key: 'welbevinden', label: 'Hoe gaat dit kind naar school?', type: 'enkel', opties: ['met plezier', 'meestal prima', 'wisselend', 'vindt het soms lastig'] }
+  ]},
+  { kop: 'Spel & werken', icon: 'target', kleur: 'sky', vragen: [
+    { key: 'spel', label: 'Spel', type: 'enkel', opties: ['speelt gevarieerd', 'wisselend', 'heeft sturing nodig in spelkeuze'] },
+    { key: 'samenspel', label: 'Samenspel', type: 'enkel', min: 'gemiddeld', opties: ['speelt graag samen', 'speelt soms samen', 'speelt vooral alleen'] },
+    { key: 'kring', label: 'Aandacht in de kring', type: 'enkel', min: 'gemiddeld', opties: ['lang gefocust', 'voldoende', 'kort'] },
+    { key: 'zelfredzaam', label: 'Zelfredzaamheid', type: 'enkel', min: 'uitgebreid', opties: ['zelfstandig', 'op weg', 'heeft veel hulp nodig'] },
+    { key: 'opdrachtjes', label: 'Houding bij opdrachtjes', type: 'enkel', min: 'uitgebreid', opties: ['enthousiast', 'wisselend', 'vermijdt opdrachtjes'] }
+  ]},
+  { kop: 'Wie is dit kind?', icon: 'heart', kleur: 'rose', vragen: [
+    { key: 'karakter', label: 'Wat past bij dit kind?', type: 'multi', anders: true,
+      opties: ['vrolijk', 'sociaal', 'behulpzaam', 'zelfverzekerd', 'nieuwsgierig', 'enthousiast', 'zorgzaam', 'speels', 'rustig', 'verlegen', 'onzeker', 'druk/beweeglijk', 'snel afgeleid', 'snel gefrustreerd', 'aanhankelijk', 'eigenwijs', 'gevoelig', 'vraagt veel aandacht'] },
+    { key: 'omgang', label: 'Omgang met andere kinderen', type: 'enkel', opties: ['speelt graag samen', 'speelt soms samen', 'speelt vooral alleen'] },
+    { key: 'zelfvertrouwen', label: 'Zelfvertrouwen', type: 'enkel', min: 'gemiddeld', opties: ['zelfverzekerd', 'wisselend', 'onzeker'] },
+    { key: 'klasgenoot', label: 'Wat maakt dit kind een fijne klasgenoot?', type: 'tekst', min: 'uitgebreid', placeholder: 'optioneel — bijv. helpt anderen, troost, zorgt voor plezier…' }
+  ]},
+  { kop: 'Ontwikkeling', icon: 'book', kleur: 'leaf', vragen: [
+    { key: 'fijnemotoriek', label: 'Fijne motoriek', type: 'enkel', vak: true, min: 'gemiddeld', opties: ['sterk', 'leeftijdsadequaat', 'vraagt oefening', 'n.v.t.'] },
+    { key: 'grovemotoriek', label: 'Grove motoriek', type: 'enkel', vak: true, min: 'gemiddeld', opties: ['sterk', 'leeftijdsadequaat', 'vraagt oefening', 'n.v.t.'] },
+    { key: 'taal', label: 'Taal & communicatie', type: 'enkel', vak: true, min: 'gemiddeld', opties: ['sterk', 'leeftijdsadequaat', 'vraagt aandacht', 'n.v.t.'] },
+    { key: 'geletterdheid', label: 'Beginnende geletterdheid (letters, rijmen)', type: 'enkel', vak: true, min: 'uitgebreid', opties: ['ver', 'op weg', 'nog beginnend', 'n.v.t.'] },
+    { key: 'gecijferdheid', label: 'Beginnende gecijferdheid (tellen, begrippen)', type: 'enkel', vak: true, min: 'uitgebreid', opties: ['ver', 'op weg', 'nog beginnend', 'n.v.t.'] }
+  ]},
+  { kop: 'In jouw woorden', icon: 'pen', kleur: 'viol', vragen: [
+    { key: 'persoonlijk', label: 'Iets persoonlijks of opvallends over dit kind', type: 'tekst', placeholder: 'een talent, rol in de groep, mooie anekdote…' },
+    { key: 'doel', label: 'Aandachtspunt of doel voor de komende periode', type: 'tekst', placeholder: 'optioneel' },
+    { key: 'interesses', label: 'Waar geniet dit kind van / wordt het enthousiast van?', type: 'tekst', min: 'gemiddeld', placeholder: 'een hoek, activiteit, onderwerp…' },
+    { key: 'trots', label: 'Waarin is dit kind gegroeid / waar ben je trots op?', type: 'tekst', min: 'uitgebreid', placeholder: 'optioneel' }
+  ]}
+];
+
+function isKleuter() { return state.groep === '1' || state.groep === '2' || state.groep === '1/2'; }
+function vragenset() { return isKleuter() ? VRAGEN_KLEUTER : VRAGEN_REGULIER; }
+
+// Rapportlengte stuurt hoeveel je invult: kort = de kern (vragen zonder 'min');
+// gemiddeld en uitgebreid voegen per vraag meer toe (veld 'min' op de vraag).
+const LENGTE_RANK = { kort: 1, gemiddeld: 2, uitgebreid: 3 };
+function vraagDefVoorKey(key) {
+  for (const sec of vragenset()) for (const v of sec.vragen) if (v.key === key) return v;
+  return null;
+}
+function vraagZichtbaar(key) {
+  const v = vraagDefVoorKey(key);
+  if (!v) return false;
+  const rank = LENGTE_RANK[state.lengte] || 2;
+  return rank >= (LENGTE_RANK[v.min] || 1);
+}
+
+// Lijn-iconen voor de thema-kaarten + status (geen emoji).
+function RW_ICON(name) {
+  const o = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">', c = '</svg>';
+  switch (name) {
+    case 'sun':    return o + '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.8v2M12 19.2v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.8 12h2M19.2 12h2M4.6 19.4l1.4-1.4M18 6l1.4-1.4"/>' + c;
+    case 'target': return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1.2"/></svg>';
+    case 'heart':  return o + '<path d="M12 20.3l-1.3-1.2C6 14.9 3 12.2 3 8.8 3 6.1 5.1 4 7.8 4c1.5 0 3 .7 3.9 1.9l.3.4.3-.4C13.2 4.7 14.7 4 16.2 4 18.9 4 21 6.1 21 8.8c0 3.4-3 6.1-7.7 10.3L12 20.3z"/>' + c;
+    case 'book':   return o + '<path d="M12 6.5C10.5 5.3 8.5 5 6 5H3.5v13H6c2.5 0 4.5.3 6 1.5M12 6.5C13.5 5.3 15.5 5 18 5h2.5v13H18c-2.5 0-4.5.3-6 1.5M12 6.5v13"/>' + c;
+    case 'pen':    return o + '<path d="M16.5 4.5l3 3M4 20l.9-3.6a1 1 0 0 1 .26-.46L16.1 4.9a2 2 0 0 1 2.8 0l.2.2a2 2 0 0 1 0 2.8L8.06 18.84a1 1 0 0 1-.46.26L4 20z"/>' + c;
+    default:       return o + '<circle cx="12" cy="12" r="8"/>' + c;
+  }
+}
+const RW_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 6.5"/></svg>';
+const RW_LOCK  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2.2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>';
+
+// ════════════════════════════════════════════════════════════
+// SCHERM 4 — LEERLING: vragen renderen
+// ════════════════════════════════════════════════════════════
+function huidige() { return state.leerlingen.find(l => l.id === state.huidigeId); }
+
+function openLeerling(id) {
+  state.huidigeId = id;
+  const l = huidige();
+  document.getElementById('leerling-naam').textContent = l.naam;
+  const _av = document.getElementById('leerling-av'); if (_av) _av.textContent = (String(l.naam).trim()[0] || '?').toUpperCase();
+  document.getElementById('err-leerling').classList.remove('visible');
+  document.getElementById('leerling-loading').classList.remove('visible');
+  renderVragen(l);
+  // bestaand verhaal tonen of verbergen
+  const box = document.getElementById('verhaal-box');
+  if (l.verhaal) {
+    document.getElementById('verhaal-tekst').value = l.verhaal;
+    box.classList.add('visible');
+  } else {
+    box.classList.remove('visible');
+  }
+  document.getElementById('aanpas-wrap').classList.remove('visible');
+  document.getElementById('aanpas-input').value = '';
+  toonScherm('scherm-leerling', 3);
+}
+
+function renderVragen(l) {
+  const cont = document.getElementById('vragen-container');
+  cont.innerHTML = '';
+
+  // Geslacht: functioneel nodig zodat de tool hij/zij netjes kan afwisselen.
+  const g = l.geslacht || '';
+  let gh = '<div class="geslacht-rij"><span class="gr-label">Jongen of meisje</span><div class="seg gr-seg">';
+  [['', 'niet opgeven'], ['jongen', 'jongen'], ['meisje', 'meisje']].forEach(([val, lab]) => {
+    gh += '<span class="' + (g === val ? 'on' : '') + '" data-g="' + val + '" onclick="kiesGeslachtSeg(this)">' + lab + '</span>';
+  });
+  gh += '</div><span class="gr-note">Zo kan de tool hij/zij afwisselen met de naam. Geef je niets op, dan gebruikt de tool geen hij/zij.</span></div>';
+  cont.insertAdjacentHTML('beforeend', gh);
+
+  // Thema-kaarten (elke zichtbare sectie = één kaart)
+  const dots = [];
+  vragenset().forEach(sec => {
+    const zichtbaar = sec.vragen.filter(v => vraagZichtbaar(v.key));
+    if (!zichtbaar.length) return;
+    const kleur = sec.kleur || 'viol';
+    dots.push('<span class="tb-dot t-' + kleur + '">' + RW_ICON(sec.icon) + '</span>');
+    let body = '', heeftTekst = false;
+    zichtbaar.forEach(v => {
+      if (v.type === 'tekst') {
+        heeftTekst = true;
+        const val = l.antwoorden[v.key] || '';
+        body += '<div class="vr"><label class="vr-label">' + escapeHtml(v.label) + ' <span class="vr-opt">(optioneel)</span></label>'
+          + '<textarea class="rw-ta" data-key="' + v.key + '" maxlength="220" placeholder="' + escapeHtml(v.placeholder || '') + '" oninput="setTekst(this); checkGevoelig(this); verversAlles();">' + escapeHtml(val) + '</textarea>'
+          + '<div class="gevoelig-note" style="display:none;">Dit lijkt een gevoelig of goed herleidbaar detail. Voor de privacy van het kind kun je het beter algemener houden.</div></div>';
+      } else if (v.type === 'multi') {
+        const arr = Array.isArray(l.antwoorden[v.key]) ? l.antwoorden[v.key] : [];
+        body += '<div class="vr"><label class="vr-label">' + escapeHtml(v.label) + ' <span class="vr-opt">meerdere mogelijk</span></label><div class="chips">';
+        v.opties.forEach(opt => {
+          body += '<span class="chip' + (arr.includes(opt) ? ' on' : '') + '" data-key="' + v.key + '" data-opt="' + escapeHtml(opt) + '" onclick="kiesChip(this)">' + escapeHtml(opt) + '</span>';
+        });
+        body += '</div>';
+        if (v.anders) {
+          const av = l.antwoorden[v.key + '__anders'] || '';
+          body += '<input type="text" class="anders-input" data-key="' + v.key + '__anders" placeholder="Anders, namelijk… (optioneel)" value="' + escapeHtml(av) + '" oninput="setTekst(this); verversAlles();">';
+        }
+        body += '</div>';
+      } else {
+        const cur = l.antwoorden[v.key];
+        let seg = '<div class="seg">';
+        v.opties.forEach(opt => {
+          const nvt = (opt === 'n.v.t.') ? ' nvt' : '';
+          seg += '<span class="' + (cur === opt ? 'on' : '') + nvt + '" data-key="' + v.key + '" data-opt="' + escapeHtml(opt) + '" onclick="kiesSeg(this)">' + escapeHtml(opt) + '</span>';
+        });
+        seg += '</div>';
+        body += v.vak
+          ? '<div class="vakrij"><span class="vaknaam">' + escapeHtml(v.label) + '</span>' + seg + '</div>'
+          : '<div class="vr"><label class="vr-label">' + escapeHtml(v.label) + '</label>' + seg + '</div>';
+      }
+    });
+    if (heeftTekst) body += '<div class="kaart-privacy">' + RW_LOCK + '<span>Houd het algemeen; geen privégegevens of bijzonderheden over thuis. Rapporten schermt namen automatisch af.</span></div>';
+    cont.insertAdjacentHTML('beforeend',
+      '<div class="kaart open t-' + kleur + '">'
+      + '<div class="kaart-kop" onclick="toggleKaart(this)">'
+      + '<span class="kaart-ic">' + RW_ICON(sec.icon) + '</span>'
+      + '<div class="kaart-tt"><div class="kaart-titel">' + escapeHtml(sec.kop) + '</div></div>'
+      + '<div class="kaart-status"><span class="klaar-pil">' + RW_CHECK + 'ingevuld</span><span class="kaart-chev"></span></div>'
+      + '</div><div class="kaart-vat"></div><div class="kaart-body">' + body + '</div></div>');
+  });
+
+  const balk = document.getElementById('thema-balk');
+  if (balk) balk.innerHTML = '<span class="tb-tekst"></span>' + dots.join('');
+  verversAlles();
+}
+
+function toggleKaart(el) { el.closest('.kaart').classList.toggle('open'); }
+
+// Bouwt per kaart een samenvatting uit de gekozen antwoorden (zichtbaar bij inklappen).
+function bouwSamenvatting(kaart) {
+  const vat = kaart.querySelector('.kaart-vat');
+  if (!vat) return;
+  const chips = [];
+  kaart.querySelectorAll('.vr, .vakrij').forEach(q => {
+    if (q.style.display === 'none') return;
+    const seg = q.querySelector('.seg');
+    if (seg) {
+      const on = seg.querySelector('span.on');
+      if (on && on.dataset.opt && on.dataset.opt !== 'n.v.t.') {
+        const vak = q.querySelector('.vaknaam');
+        chips.push(vak ? vak.textContent + ': ' + on.textContent : on.textContent);
+      }
+      return;
+    }
+    const multi = q.querySelector('.chips');
+    if (multi) {
+      multi.querySelectorAll('.chip.on').forEach(c => chips.push(c.textContent));
+      const anders = q.querySelector('.anders-input');
+      if (anders && anders.value.trim()) chips.push(anders.value.trim());
+      return;
+    }
+    const ta = q.querySelector('textarea');
+    if (ta && ta.value.trim()) {
+      const lbl = q.querySelector('.vr-label');
+      chips.push(lbl ? lbl.childNodes[0].textContent.trim().replace(/\?$/, '') : 'ingevuld');
+    }
+  });
+  vat.innerHTML = chips.length ? '<div class="vat-chips">' + chips.map(c => '<span class="vat-chip">' + escapeHtml(c) + '</span>').join('') + '</div>' : '';
+  vat.classList.toggle('heeft', chips.length > 0);
+  kaart.classList.toggle('ingevuld', chips.length > 0);
+}
+
+function updateBalk() {
+  const balk = document.getElementById('thema-balk');
+  if (!balk) return;
+  const kaarten = [...document.querySelectorAll('#vragen-container .kaart')];
+  const dots = balk.querySelectorAll('.tb-dot');
+  let n = 0;
+  kaarten.forEach((k, i) => {
+    const heeft = k.classList.contains('ingevuld');
+    if (heeft) n++;
+    if (dots[i]) dots[i].classList.toggle('done', heeft);
+  });
+  const t = balk.querySelector('.tb-tekst');
+  if (t) t.innerHTML = '<b>' + n + "</b> van de " + kaarten.length + " thema's ingevuld";
+}
+
+function verversAlles() {
+  document.querySelectorAll('#vragen-container .kaart').forEach(bouwSamenvatting);
+  updateBalk();
+}
+
+function openPrivacy() { document.getElementById('privacy-overlay').classList.add('open'); }
+function closePrivacy() { document.getElementById('privacy-overlay').classList.remove('open'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePrivacy(); });
+
+function kiesGeslachtSeg(el) {
+  const l = huidige();
+  l.geslacht = el.dataset.g;
+  el.parentNode.querySelectorAll('span').forEach(s => s.classList.remove('on'));
+  el.classList.add('on');
+}
+function kiesSeg(el) {
+  const l = huidige();
+  const key = el.dataset.key, opt = el.dataset.opt;
+  if (l.antwoorden[key] === opt) {
+    delete l.antwoorden[key];
+    el.classList.remove('on');
+  } else {
+    l.antwoorden[key] = opt;
+    el.parentNode.querySelectorAll('span').forEach(s => s.classList.remove('on'));
+    el.classList.add('on');
+  }
+  verversAlles();
+}
+function kiesChip(el) {
+  const l = huidige();
+  const key = el.dataset.key, opt = el.dataset.opt;
+  let arr = Array.isArray(l.antwoorden[key]) ? l.antwoorden[key] : [];
+  if (arr.includes(opt)) arr = arr.filter(o => o !== opt);
+  else arr.push(opt);
+  l.antwoorden[key] = arr;
+  el.classList.toggle('on');
+  verversAlles();
+}
+function setTekst(el) {
+  const l = huidige();
+  const v = el.value.trim();
+  if (v) l.antwoorden[el.dataset.key] = v;
+  else delete l.antwoorden[el.dataset.key];
+}
+function terugNaarOverzicht() { renderOverzicht(); toonScherm('scherm-overzicht', state.leerlingen.every(l=>l.status==='klaar') ? 4 : 3); }
+
+// ════════════════════════════════════════════════════════════
+// PSEUDONIMISERING (gelijk aan Toetsanalyse)
+// ════════════════════════════════════════════════════════════
+function buildNameMap(names) {
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const reVoor = s => {
+    const startB = /^[A-Za-zÀ-ÿ0-9]/.test(s) ? '\\b' : '';
+    const endB = /[A-Za-zÀ-ÿ0-9]$/.test(s) ? '\\b' : '';
+    return new RegExp(startB + esc(s) + endB, 'g');
+  };
+  const clean = [...new Set((names || []).filter(n => n && n.trim().length >= 2))];
+  const ordered = [...clean].sort((a, b) => a.localeCompare(b, 'nl'));
+  const codeVoor = new Map();
+  ordered.forEach((n, i) => codeVoor.set(n, 'LL-' + String(i + 1).padStart(2, '0')));
+  const langsteEerst = [...clean].sort((a, b) => b.length - a.length);
+  nameMap = langsteEerst.map(real => ({ real, code: codeVoor.get(real), re: reVoor(real) }));
+  nameMapCodes = nameMap
+    .map(m => ({ code: m.code, real: m.real, re: reVoor(m.code) }))
+    .sort((a, b) => b.code.length - a.code.length);
+}
+function maskText(s) {
+  if (!s) return s;
+  let out = s;
+  if (nameMap.length) nameMap.forEach(m => { out = out.replace(m.re, m.code); });
+  extraMap.forEach(m => { out = out.replace(m.re, m.code); });
+  return out;
+}
+function unmaskText(s) {
+  if (!s) return s;
+  let out = s;
+  if (nameMapCodes.length) nameMapCodes.forEach(m => { out = out.replace(m.re, m.real); });
+  extraMap.forEach(m => { out = out.replace(new RegExp(m.code, 'g'), m.real); });
+  return out;
+}
+
+// Extra, stille maskering: identifiers (e-mail, telefoon, postcode) en losse
+// eigennamen/plaatsen midden in een zin. Codes worden ná het AI-antwoord lokaal
+// weer teruggeplakt, dus de kwaliteit van de tekst blijft behouden.
+let extraMap = [];
+const MASK_WHITELIST = new Set(['nederlands','engels','rekenen','taal','spelling','lezen','schrijven','gym','gymnastiek','begrijpend','wereldorientatie','wereldoriëntatie','aardrijkskunde','geschiedenis','biologie','natuur','verkeer','muziek','tekenen','handvaardigheid','cito','iep','kanjertraining','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag','zondag','januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december','sinterklaas','kerst','pasen','koningsdag','pinksteren','hemelvaart','carnaval','nederland','ouders','groep','school','klas','juf','meester','ik','je','jij','jullie','hij','zij','we','wij','u','een','de','het','ook','deze','dit','die','dan','dus','daarnaast','verder','over','voor','vanwege','door','tijdens','er','op','bent','wilt','graag','wel','niet','meer','even','samen']);
+const NAAM_LIJST = new Set([
+  'daan','sem','liam','luuk','noah','lucas','finn','levi','milan','mees','james','bram','thomas','jesse','sam','max','adam','julian','gijs','thijs','tim','ruben','teun','stijn','lars','tijn','luca','jens','sven','cas','jan','kees','piet','henk','willem','dirk','bas','rick','niels','koen','joep','sjoerd','wout','wessel','jasper','bart','jort','floris','olivier','vince','boaz','dex','dean','mason','jayden','sepp','guus','jurre','siem','colin','hugo','jacob','david','daniel','simon','benjamin','nathan','aaron','isaac','oscar','victor','quinten','jip','mats','pepijn','roan','tobias','xavi','ravi',
+  'emma','julia','mila','tess','sophie','zoe','sara','nora','liv','evi','lotte','saar','fenna','noor','anna','eva','lieke','isa','elin','fleur','sofie','lente','roos','lize','jasmijn','vera','maud','feline','sanne','laura','iris','daphne','femke','britt','esmee','amber','demi','lynn','luna','maria','lisa','suze','lola','noa','olivia','mirthe','floor','puck','jet','bo','guusje','famke','lara','nina','elena','sofia','isabella','charlotte','amy','jade','indy','yara','livia','norah','lina','aya',
+  'mohammed','mohamed','ahmed','ali','omar','yusuf','ibrahim','bilal','amir','hamza','ayoub','younes','soufiane','rayan','samir','karim','hakim','mehmet','emir','kaya','deniz','baran','arda','efe','can','burak','eren','enes','berat','zeynep','elif','esma','sumeyye','rania','salma','imane','nour','fatima','aicha','khadija','wiktor','kacper','jakub','filip','szymon','antoni','franek','zofia','maja','lena','oliwia','amelia','natan','dominik','igor','matteo','leonardo','alessandro','giulia','aurora','diego','mateo','santiago','lucia','valentina'
+]);
+function buildExtraMap(text) {
+  extraMap = [];
+  if (!text) return;
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const seen = new Set();
+  let teller = 0;
+  const voegToe = real => {
+    const key = real.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    teller++;
+    extraMap.push({ real, code: 'XG-' + String(teller).padStart(2, '0'), re: new RegExp('\\b' + esc(real) + '\\b', 'g') });
+  };
+  // identifiers
+  (text.match(/\b[\w.+-]+@[\w-]+\.[\w.-]+\b/g) || []).forEach(voegToe);
+  (text.match(/\b\d{4}\s?[A-Za-z]{2}\b/g) || []).forEach(voegToe);          // postcode
+  (text.match(/(?:\+?\d[\d\s-]{7,}\d)/g) || []).forEach(m => voegToe(m.trim()));
+  // eigennamen/plaatsen midden in een zin (niet aan zinsbegin), met whitelist
+  const re = /(?<=[a-zà-ÿ,]\s)([A-ZÀ-Þ][a-zà-ÿ]{2,})/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const w = m[1];
+    if (!MASK_WHITELIST.has(w.toLowerCase())) voegToe(w);
+  }
+  // Bekende voornamen overal afvangen, óók aan het begin van een zin.
+  (text.match(/\b[A-Za-zÀ-ÿ]{2,}\b/g) || []).forEach(w => {
+    if (NAAM_LIJST.has(w.toLowerCase()) && !MASK_WHITELIST.has(w.toLowerCase())) voegToe(w);
+  });
+  // langste eerst, zodat deelvervangingen niet botsen
+  extraMap.sort((a, b) => b.real.length - a.real.length);
+}
+
+// Onderwijskundige diagnoses worden NIET als code verstuurd, maar vervangen door
+// een neutrale, veel lichtere omschrijving (eenrichting; wordt niet teruggeplakt).
+// Zo verlaat de diagnose zelf nooit het apparaat, maar kan de rapporttekst er wel
+// rekening mee houden. Deze lijst is eenvoudig uit te breiden.
+const DIAGNOSE_MAP = [
+  { re: /(?:\b(?:heeft|met)\s+)?\badhd\b/gi, v: 'heeft wat meer moeite met concentratie en stilzitten' },
+  { re: /(?:\b(?:heeft|met)\s+)?\badd\b/gi, v: 'heeft wat meer moeite met de concentratie' },
+  { re: /(?:\b(?:is|heeft|met)\s+)?\b(?:autisme|autistisch|ass|autismespectrum\w*)\b/gi, v: 'heeft behoefte aan duidelijkheid en structuur' },
+  { re: /(?:\b(?:heeft|met)\s+)?\b(?:dyslexie|dyslectisch)\b/gi, v: 'vindt lezen en spelling wat lastiger' },
+  { re: /(?:\b(?:heeft|met)\s+)?\bdyscalculie\b/gi, v: 'vindt rekenen wat lastiger' },
+  { re: /(?:\b(?:heeft|met)\s+)?\b(?:dyspraxie|dcd)\b/gi, v: 'vindt de fijne motoriek wat lastiger' },
+  { re: /(?:\b(?:heeft|met)\s+)?\b(?:tos|taalontwikkelingsstoornis|dysfasie)\b/gi, v: 'heeft extra aandacht nodig voor de taalontwikkeling' },
+  { re: /(?:\b(?:is|heeft)\s+)?\b(?:hoogbegaafd\w*|meerbegaafd\w*)\b/gi, v: 'heeft meer uitdaging nodig' },
+  { re: /(?:\b(?:is|heeft)\s+)?\b(?:hoogsensitief|hooggevoelig|hsp)\b/gi, v: 'is gevoelig voor prikkels' },
+  { re: /(?:\b(?:heeft|met)\s+)?\bodd\b/gi, v: 'vindt regels en grenzen soms lastig' }
+];
+function ontdoeGevoelig(text) {
+  if (!text) return text;
+  let out = text;
+  DIAGNOSE_MAP.forEach(d => { out = out.replace(d.re, d.v); });
+  return out;
+}
+
+// Gevoelig-detector: slaat ALLEEN aan op echte privacy-gevoelige inhoud,
+// niet op gewone zinnen over werkhouding, karakter of hobby's.
+const GEVOELIG_RE = new RegExp('\\b(' + [
+  'adhd', 'add', 'autis\\w*', 'ass', 'dyslexie', 'dyscalculie', 'diagnose', 'stoornis',
+  'medicat\\w*', 'medicij\\w*', 'ritalin', 'concerta', 'depress\\w*', 'angststoornis',
+  'hechting\\w*', 'trauma\\w*', 'therapie', 'psycholoog', 'psychiater', 'behandel\\w*',
+  'scheiding', 'gescheiden', 'vechtscheiding', 'pleeg\\w*', 'uithuisplaats\\w*',
+  'jeugdzorg', 'veilig thuis', 'mishandel\\w*', 'misbruik', 'verslav\\w*', 'verslaafd',
+  'gevangenis', 'overleden', 'overlijden', 'rouw', 'kanker', 'ziekenhuis'
+].join('|') + ')\\b', 'i');
+function checkGevoelig(el) {
+  const note = el.parentNode.querySelector('.gevoelig-note');
+  if (!note) return;
+  const heeftContact = /\b[\w.+-]+@[\w-]+\.[\w.-]+\b/.test(el.value) || /\b\d{4}\s?[A-Za-z]{2}\b/.test(el.value) || /\+?\d[\d\s-]{7,}\d/.test(el.value);
+  note.style.display = (GEVOELIG_RE.test(el.value) || heeftContact) ? 'block' : 'none';
+}
+
+// ════════════════════════════════════════════════════════════
+// AI-AANROEP (gelijk aan Toetsanalyse: mask vóór verzenden, unmask erna)
+// ════════════════════════════════════════════════════════════
+async function callClaude(model, system, userContent, maxTokens) {
+  const veiligUser = ontdoeGevoelig(userContent);
+  buildExtraMap(veiligUser);
+  const safeUser = maskText(veiligUser);
+  const safeSystem = system ? maskText(system) : system;
+  const body = { model, max_tokens: maxTokens || 1500, messages: [{ role: 'user', content: safeUser }] };
+  // Prompt caching: de (vrijwel constante) systeemprompt wordt gecachet, zodat
+  // herhaalde acties in dezelfde sessie (opnieuw, korter, herschrijven, en de
+  // volgende leerlingen) veel goedkoper zijn. De eerste aanroep schrijft de cache;
+  // daarna kosten de herhalingen ~90% minder op dat deel. ZDR-compatibel, dus de
+  // privacyaanpak blijft overeind.
+  if (safeSystem) body.system = [{ type: 'text', text: safeSystem, cache_control: { type: 'ephemeral' } }];
+  const resp = await fetch('/api/claude', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!resp.ok) {
+    let msg = 'API-fout (' + resp.status + ')';
+    try { const e = await resp.json(); msg = e.error?.message || msg; } catch(_) {}
+    if (resp.status === 401) msg = 'API-sleutel ongeldig of verlopen.';
+    if (resp.status === 429) msg = 'API-limiet bereikt. Probeer het over even opnieuw.';
+    if (resp.status === 529) msg = 'Claude is tijdelijk overbelast. Probeer het zo opnieuw.';
+    throw new Error(msg);
+  }
+  const data = await resp.json();
+  const rawText = (data.content || []).map(b => b.text || '').join('');
+  aiCallLog.push({ model, system: safeSystem || '', user: safeUser || '', response: rawText });
+  return unmaskText(rawText).trim();
+}
+
+// ════════════════════════════════════════════════════════════
+// DE PROMPT — het hart van de tool
+// ════════════════════════════════════════════════════════════
+const RICHT_INSTRUCTIE = {
+  over: 'Schrijf OVER het kind, in de derde persoon ("' + 'LL-01 werkt graag samen", "' + 'LL-01 is dit jaar gegroeid in ..."). Herhaal de naam NIET in elke zin; dat leest als een opsomming. Wissel af zoals een leerkracht dat doet, en herschrijf zinnen zo dat de naam niet steeds nodig is. Verzin nooit een geslacht.',
+  tegen: 'Schrijf RECHTSTREEKS TEGEN het kind, in de jij-vorm ("Je werkt graag samen", "Je bent dit jaar gegroeid in ..."). Gebruik de naam dan nauwelijks of niet; spreek het kind direct aan. Warm en persoonlijk, maar passend bij de basisschool.',
+  ouders: 'Schrijf GERICHT AAN DE OUDERS, over hun kind in de derde persoon ("' + 'LL-01 laat op school zien dat ..."). Iets formeler dan tegen het kind, maar nog steeds warm en concreet. Spreek de ouders niet rechtstreeks aan met "u". Herhaal de naam NIET in elke zin; wissel af zodat het natuurlijk loopt.'
+};
+const LENGTE_INSTRUCTIE = {
+  kort: 'Kort betekent echt kort: 3 à 4 zinnen, niet meer. Dat dwingt je te kiezen, dus je kunt NIET alles noemen. Pak alleen wat dit kind het best typeert en laat de rest bewust weg. Niet elk ingevuld punt hoeft erin.',
+  gemiddeld: 'Ongeveer 5 à 7 zinnen, één tot twee alinea\'s. Een lopend beeld van het kind, geen opsomming. Je hoeft niet alles te noemen.',
+  uitgebreid: 'Ongeveer 8 à 11 zinnen, twee alinea\'s. Een vollediger beeld, maar zonder vulling, herhaling of het langslopen van elk onderdeel.'
+};
+
+function bouwSysteemprompt() {
+  const niveau = isKleuter() ? 'de onderbouw (groep 1-2, kleuters)' : 'groep ' + state.groep;
+  let p = '';
+  p += 'Je bent een ervaren, betrokken leerkracht in het Nederlandse basisonderwijs. Je schrijft met de hand de rapporttekst voor één leerling uit ' + niveau + ', voor het ' + state.moment + '.\n';
+  p += 'Hieronder staan een paar korte steekwoorden over dit kind. Jouw vak is om die om te zetten in één warme, vloeiende rapporttekst die klinkt alsof je het kind goed kent en het zo uit je hoofd opschrijft. Dat omzetten is precies waar het om draait: een rijtje feiten kan een leerkracht zelf ook opschrijven; jouw meerwaarde is dat jij er een lopend, persoonlijk verhaal van maakt. Vertrouw op je eigen taalgevoel; de punten hieronder zijn richting, geen strikte invuloefening.\n\n';
+  p += '━━━ ZO WERK JE (in één antwoord) ━━━\n';
+  p += '1) Een kort kladblok tussen <denk> en </denk>. Hierin vertaal je elk steekwoord naar wat het betekent voor dit kind, bepaal je de rode draad, en kies je welke twee à drie dingen (plus het aandachtspunt) je gebruikt en wat je weglaat. Bijvoorbeeld: "moeder van de groep" -> zorgt voor anderen, heeft oog voor de groep; "oog voor anderen / houdt anderen in de gaten" -> merkt wanneer een klasgenoot hulp kan gebruiken; "druk" -> zit vol energie; "faalangstig" -> vindt het spannend om fouten te maken. Dit kladblok komt niet in het rapport.\n';
+  p += '2) Daarna, ná </denk>, schrijf je de rapporttekst vanuit dat begrepen beeld, in je eigen woorden. Neem de steekwoorden nooit letterlijk over; je verwoordt de bedoeling.\n\n';
+  p += '━━━ HET BELANGRIJKSTE: ÉÉN LOPEND VERHAAL, GEEN OPSOMMING ━━━\n';
+  p += 'Dit is je grootste meerwaarde, dus hier draait alles om. Vorm eerst in je hoofd één beeld van het kind en schrijf daar vandaan, niet veld voor veld. Meerdere eigenschappen worden samen één rake typering; het leren en werken wordt één lopende gedachte, niet vak na vak. Laat zinnen op elkaar voortbouwen en houd bij elkaar wat bij elkaar hoort (het sociale; het leren en de werkhouding), in plaats van heen en weer te springen of losse mededelingen achter elkaar te zetten. Verbind met de inhoud zelf, niet met plakwoorden als "Daarnaast", "Verder", "Ook" of "Wat opvalt". Schrijf het als een écht verhaal: voeg gerust eigen verbindende zinnen en natuurlijke inkleding toe zodat het soepel loopt. Verzin daarbij alleen geen nieuwe feiten over het kind (een vak, gebeurtenis, hobby of persoon die niet genoemd is); de verbindende taal eromheen maak je wél zelf.\n\n';
+  p += '━━━ KIES, EN LAAT VOORAL VEEL WEG ━━━\n';
+  p += 'Je hoeft NIET alles wat de leerkracht invult te gebruiken; dat moet je juist niet, want dan wordt het een opsomming. Kies de twee à drie dingen die dit kind het meest typeren, samen met het aandachtspunt, en laat de rest gerust weg. Een korte, rake tekst die een paar dingen écht neerzet is veel beter dan een volledige tekst die alles even aanstipt. Volledigheid is niet het doel; een mooi, kloppend en lekker lopend verhaal wel. Mist de leerkracht iets, dan voegt hij dat achteraf zelf toe.\n';
+  p += '- Overlappende dingen voeg je samen of kies je er één van ("vrolijk" en "lacht veel" -> één daarvan). Niet elk ingevuld veld hoeft terug te komen.\n';
+  p += '- Het aandachtspunt of doel is wél een van de dingen die je meeneemt (zacht verwoord), als het is ingevuld. Wat de leerkracht zelf intypte (een doel, iets persoonlijks, een trots) is vaak goed materiaal om te kiezen.\n';
+  p += '- Is er juist weinig ingevuld, gebruik dan wat er is en maak daar een mooi, kort verhaal van.\n\n';
+  p += '━━━ NATUURLIJKE TAAL ━━━\n';
+  p += '- Schrijf zoals een leerkracht praat: concreet en gewoon. Maak van een eigenschap concreet gedrag ("goede werkhouding" -> "gaat na de uitleg meteen aan de slag en werkt rustig door"; "sociaal" -> "speelt makkelijk met verschillende kinderen"). Wissel korte en langere zinnen af.\n';
+  p += '- Laat het nooit klinken als door een computer geschreven. Vermijd: "niet alleen ..., maar ook ...", rijtjes van precies drie, "We zien dat ...", "mooi/fijn om te zien dat ...", grote woorden en clichés ("fantastisch", "een echte aanwinst", "straalt", "bloeit op"), en gestapelde bijvoeglijke naamwoorden ("een vrolijke, sociale, behulpzame leerling").\n';
+  p += '- Houd zinnen kort en schoon: één gedachte per zin. Koppel hooguit twee dingen in één zin; heb je meer te zeggen, maak er dan aparte zinnen van. Rijg dus nooit meerdere dingen aan elkaar met komma\'s of met meerdere keren "en" (hooguit één "en" per zin, en alleen tussen dingen die echt bij elkaar horen). Geen gedachtestreepje als zinsstreepje, geen komma direct gevolgd door "en", en geen rij opgesomde vakken (vat samen of noem het vak dat eruit springt).\n';
+  p += '- Gebruik hooguit één dubbele punt in het hele verhaaltje, en liever geen. Varieer hoe je zinnen verbindt; maak er geen vast trucje van.\n\n';
+
+  p += '━━━ MAAK HET CONCREET, NIET VAAG ━━━\n';
+  p += 'Een lezer moet ná het lezen dít kind voor zich zien, geen willekeurig kind. Als een zin net zo goed over de halve klas zou kunnen gaan, is hij te vaag: maak hem concreter of laat hem weg.\n';
+  p += '- Vertaal innerlijke of abstracte dingen naar zichtbaar gedrag. Schrijf wat je een kind ziet dóen, niet een algemene karaktersamenvatting. Dus niet "je wilt alles goed doen", maar "je legt de lat hoog en wilt het het liefst in één keer goed doen"; niet "perfectionistisch", maar "een kleine fout kan je flink uit het veld slaan".\n';
+  p += '- Vermijd vage groei- en therapietaal die nergens concreet wordt, zoals "jezelf ruimte geven", "rust voor jezelf", "lekker in je vel", "in je kracht staan", "tot bloei komen" of "het beste uit jezelf halen". Zeg in gewone woorden wat het in de klas of in de praktijk betekent.\n\n';
+
+  const TOON_TXT = {
+    warm: 'Schrijf warm, persoonlijk en betrokken, alsof je dit kind goed kent en er met genegenheid over vertelt.',
+    neutraal: 'Schrijf vriendelijk en gewoon: niet overdreven warm, maar ook niet afstandelijk. Een prettige, normale leerkrachttoon.',
+    zakelijk: 'Schrijf nuchter en zakelijk: feitelijk, helder en beknopt, zonder opsmuk. Wel respectvol en netjes, niet kil.',
+    formeel: 'Schrijf professioneel en formeel: verzorgd taalgebruik, een nette en iets afstandelijke toon zoals in een formeel schoolrapport. Geen spreektaal of familiaire uitdrukkingen.',
+    speels: 'Schrijf luchtig en speels: vlot en levendig, met een lichte toets en wat speelse woordkeus. Blijf wel netjes en professioneel, dus zonder overdrijving.'
+  };
+  p += '━━━ DE TOON (door de leerkracht ingesteld) ━━━\n';
+  p += '- ' + (TOON_TXT[state.toon] || TOON_TXT.warm) + '\n';
+  if (state.toon === 'zakelijk') {
+    p += '- Minder sterke kanten mag je helder en direct benoemen, maar altijd respectvol en feitelijk, nooit hard of oordelend.\n';
+  } else {
+    p += '- Benoem minder sterke kanten met TACT, niet als kale, stellige feiten. Verzacht en richt op groei: gebruik woorden als "nog", "soms", "is op weg", "mag nog", "lukt steeds beter". Dus niet "je bent snel afgeleid en hebt veel begeleiding nodig", maar bijvoorbeeld "het lukt je nog niet altijd om je aandacht erbij te houden, daar helpen we je bij". Houd het eerlijk, maar zacht en opbouwend.\n';
+  }
+  p += '- Houd het professioneel: GEEN uitroeptekens en geen aanmoedigende kreten ("ga zo door!", "knap gedaan!"). Beschrijf rustig in plaats van toe te juichen.\n';
+  if (state.richt === 'tegen') p += '- Je mag het kind bij de naam (de code) aanspreken; varieer of en hoe je dat doet per kind.\n';
+  p += '- Wees concreet, MAAR alleen met details die de leerkracht heeft aangeleverd (een klusje, een moment, een plek in de klas). Verzin zulke details nooit zelf.\n';
+  const AFSLUIT_TXT = {
+    vooruit: 'Sluit af met één korte, positieve en vooruitkijkende zin die bij dít kind past.',
+    doel: 'Sluit af met één zin over een ontwikkeldoel of aandachtspunt voor de komende periode, subtiel en positief verwoord (iets waar je samen aan verder werkt).',
+    sterk: 'Sluit af met één zin die een sterke kant of mooie ontwikkeling van dit kind benoemt.',
+    neutraal: 'Sluit kort en neutraal af, zonder nadrukkelijke afsluitformule.',
+    geen: ''
+  };
+  if (state.afsluiting === 'geen') {
+    p += '- Forceer geen vaste slotzin. Eindig waar de rapporttekst natuurlijk eindigt.\n';
+  } else {
+    p += '- ' + (AFSLUIT_TXT[state.afsluiting] || AFSLUIT_TXT.vooruit) + ' Het is ÉÉN zin, niet meer.\n';
+    p += '- Maak die slotzin concreet en specifiek voor dít kind. Vermijd vage algemeenheden als "blijf jezelf ontwikkelen", "blijf zo doorgaan" of "zet door"; verwijs naar iets concreets uit deze rapporttekst.\n';
+    p += '- De slotzin komt voort uit waar het verhaal echt over ging. Eindigt het op een aandachtspunt, sluit daar dan ook op aan (bijvoorbeeld dat jullie er samen aan werken). Haal er geen losse sterke kant van elders bij om maar positief te kunnen eindigen; is er geen vooruitblik die echt aansluit, eindig dan liever nuchter en kloppend dan met een opgewekt maar verzonnen verband.\n';
+  }
+  p += '- Maak die slotzin elke keer anders, nooit een vast sjabloon, zodat de rapportteksten van de klas niet allemaal hetzelfde eindigen.\n\n';
+
+  p += '━━━ AANSPREEKVORM EN LENGTE ━━━\n';
+  p += '- ' + (RICHT_INSTRUCTIE[state.richt] || RICHT_INSTRUCTIE.over) + '\n';
+  p += '- ' + (LENGTE_INSTRUCTIE[state.lengte] || LENGTE_INSTRUCTIE.gemiddeld) + '\n\n';
+
+  p += '━━━ PRIVACY ━━━\n';
+  p += 'De leerling heeft een anonieme code (zoals LL-01) in plaats van een naam. Gebruik die code exact waar je een naam zou gebruiken; verander de code niet en verzin er geen echte naam bij.\n\n';
+
+  if (state.taalniveau === 'b1') {
+    p += '━━━ TAALNIVEAU: BEGRIJPELIJKE TAAL (B1) ━━━\n';
+    p += 'Schrijf in begrijpelijke taal, zodat vrijwel iedere ouder het makkelijk kan lezen. Gebruik korte zinnen en alledaagse woorden, en vermijd moeilijke, formele of abstracte woorden en vaktaal. Dit gaat alleen over de woordkeuze, niet over de inhoud: je laat niets weg.\n\n';
+  } else if (state.taalniveau === 'a2') {
+    p += '━━━ TAALNIVEAU: EENVOUDIGE TAAL (A2) ━━━\n';
+    p += 'Schrijf in heel eenvoudige taal, ook geschikt voor ouders die moeite hebben met lezen. Gebruik korte, simpele zinnen met één gedachte per zin, en heel gewone, korte woorden. Vermijd moeilijke en abstracte woorden. Blijf warm en respectvol. Dit gaat alleen over de woordkeuze, niet over de inhoud.\n\n';
+  }
+
+  p += '━━━ CONTROLEER VOOR JE AFRONDT ━━━\n';
+  p += 'Lees je tekst na voor je hem geeft: heb je gekozen en veel weggelaten (dus geen rijtje waarin alles voorkomt), loopt het als één verhaal in plaats van losse mededelingen, en komt dit kind als persoon naar voren? Verbeter wat dat niet doet.\n\n';
+
+  p += '━━━ UITVOER ━━━\n';
+  p += 'Eerst het korte <denk>...</denk>-kladblok, daarna alleen de rapporttekst als platte tekst: geen kop, geen naam als titel, geen aanhef of ondertekening, geen aanhalingstekens om het geheel, geen uitleg. Na </denk> begin je direct met de eerste zin van de rapporttekst.';
+  return p;
+}
+
+// Zet de antwoorden om naar leesbare, gegroepeerde tekst — alleen wat is ingevuld.
+function bouwLeerlingData(l) {
+  const lijnen = [];
+  vragenset().forEach(sec => {
+    const stukjes = [];
+    sec.vragen.forEach(v => {
+      if (!vraagZichtbaar(v.key)) return;
+      const w = l.antwoorden[v.key];
+      const andersVal = v.anders ? String(l.antwoorden[v.key + '__anders'] || '').trim() : '';
+      let waarden = [];
+      if (v.type === 'multi') {
+        if (Array.isArray(w) && w.length) waarden = waarden.concat(w);
+      } else if (v.type === 'tekst') {
+        if (w && String(w).trim()) waarden.push(String(w).trim());
+      } else {
+        if (w && w !== 'n.v.t.') waarden.push(w);
+      }
+      if (andersVal) waarden.push(andersVal);
+      if (waarden.length) stukjes.push(v.label + ': ' + waarden.join(', '));
+    });
+    if (stukjes.length) {
+      stukjes.forEach(s => lijnen.push('- ' + s));
+    }
+  });
+  return lijnen.join('\n');
+}
+
+function antiHerhalingBlok() {
+  if (!state.goedgekeurd.length) return '';
+  let b = '\n\n━━━ VOORKOM HERHALING IN DEZE KLAS (heel belangrijk) ━━━\n';
+  b += 'Je schrijft voor een hele groep; ouders en leerkracht lezen de rapportteksten naast elkaar. Ze mogen NIET op elkaar lijken, niet in woorden, niet in boodschap, niet in opbouw en niet in afsluiting.\n';
+  b += 'Hieronder de rapportteksten die je al voor deze klas schreef. Vermijd bij dit kind nadrukkelijk:\n';
+  b += '- dezelfde of een bijna gelijke openingszin;\n';
+  b += '- hetzelfde soort afsluiting (gebruik dus niet weer een "hou ... vast", "blijf ... doorzetten" of "vertrouw op jezelf"-slot als die er al staat);\n';
+  b += '- terugkerende kernzinnen en formuleringen (gebruik bijvoorbeeld niet bij meerdere kinderen "je kunt meer dan je denkt", "vertrouw op jezelf" of "een fijne klasgenoot");\n';
+  b += '- dezelfde opbouw. Als de vorige rapportteksten steeds beginnen bij het karakter en eindigen met een aanmoediging, kies dan bewust een andere ingang en volgorde (begin eens bij een vak, een interesse, het doel of een concreet moment).\n\n';
+  b += 'Al geschreven rapportteksten in deze klas:\n';
+  state.goedgekeurd.slice(-8).forEach((t, i) => { b += (i + 1) + '. "' + t + '"\n'; });
+  b += '\nMaak de rapporttekst voor dit kind duidelijk herkenbaar anders dan de bovenstaande.';
+  return b;
+}
+
+function bouwLeerlingPrompt(l) {
+  const data = bouwLeerlingData(l);
+  let u = 'Schrijf de rapporttekst voor leerling ' + l.naam + '.\n\n';
+  u += 'Hieronder staan geheugensteuntjes van de leerkracht over dit kind, in willekeurige volgorde (de volgorde zegt niets). Gebruik ze om je beeld van het kind te vormen, niet als een lijst om af te werken. Verzin niets wat hier niet staat. Laat het beeld doorklinken, maar verweef het tot één lopende rapporttekst in plaats van veld voor veld.\n\n';
+  u += 'AANTEKENINGEN:\n';
+  u += (data || '(de leerkracht heeft nog niets specifieks aangeklikt of getypt)') + '\n';
+  u += antiHerhalingBlok();
+  if (state.richt === 'over' || state.richt === 'ouders') {
+    if (l.geslacht === 'jongen') u += '\n\nDit kind is een jongen: gebruik waar het natuurlijk loopt "hij/hem/zijn", afgewisseld met de naam. Niet de naam in elke zin herhalen.';
+    else if (l.geslacht === 'meisje') u += '\n\nDit kind is een meisje: gebruik waar het natuurlijk loopt "zij/haar", afgewisseld met de naam. Niet de naam in elke zin herhalen.';
+    else u += '\n\nHet geslacht van dit kind is niet opgegeven. Gebruik dus GEEN hij/zij/hem/haar. Herhaal ook niet steeds de naam: herschrijf zinnen zo dat ze vaak geen voornaamwoord of naam nodig hebben, zodat het toch natuurlijk loopt.';
+  }
+  u += '\n\nLENGTE (houd je hier strikt aan): ' + (LENGTE_INSTRUCTIE[state.lengte] || LENGTE_INSTRUCTIE.gemiddeld);
+  return u;
+}
+
+// ════════════════════════════════════════════════════════════
+// GENEREREN
+// ════════════════════════════════════════════════════════════
+async function genereerVerhaal() {
+  const l = huidige();
+  const err = document.getElementById('err-leerling');
+  err.classList.remove('visible');
+  if (!bouwLeerlingData(l)) {
+    err.textContent = 'Vul eerst wat dingen in of klik wat aan. Helemaal leeg kan de tool geen rapporttekst maken zonder iets te verzinnen.';
+    err.classList.add('visible');
+    return;
+  }
+  document.getElementById('btn-genereer').disabled = true;
+  document.getElementById('verhaal-box').classList.remove('visible');
+  document.getElementById('loading-text').textContent = 'De rapporttekst van ' + l.naam + ' wordt geschreven…';
+  document.getElementById('leerling-loading').classList.add('visible');
+  try {
+    const tekst = await callClaude(MODEL, bouwSysteemprompt(), bouwLeerlingPrompt(l), 1500);
+    l.verhaal = schoon(tekst);
+    document.getElementById('verhaal-tekst').value = l.verhaal;
+    document.getElementById('verhaal-box').classList.add('visible');
+    if (typeof wijsTel === 'function') wijsTel('rapport');
+  } catch (e) {
+    err.textContent = 'Er ging iets mis: ' + e.message;
+    err.classList.add('visible');
+  } finally {
+    document.getElementById('leerling-loading').classList.remove('visible');
+    document.getElementById('btn-genereer').disabled = false;
+    document.getElementById('verhaal-box').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+function toggleAanpas() {
+  document.getElementById('aanpas-wrap').classList.toggle('visible');
+}
+
+async function herschrijfVerhaal() {
+  const l = huidige();
+  const aanwijzing = document.getElementById('aanpas-input').value.trim();
+  const err = document.getElementById('err-leerling');
+  err.classList.remove('visible');
+  if (!aanwijzing) {
+    err.textContent = 'Schrijf even kort wat je anders wilt, dan herschrijf ik het.';
+    err.classList.add('visible');
+    return;
+  }
+  // huidige (mogelijk handmatig aangepaste) tekst meenemen
+  l.verhaal = document.getElementById('verhaal-tekst').value.trim();
+  document.getElementById('loading-text').textContent = 'De rapporttekst wordt herschreven…';
+  document.getElementById('leerling-loading').classList.add('visible');
+  document.getElementById('leerling-loading').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  try {
+    let u = 'Hieronder staat een eerder concept van de rapporttekst voor ' + l.naam + '.\n\n';
+    u += 'HUIDIG CONCEPT:\n"""' + l.verhaal + '"""\n\n';
+    u += 'De leerkracht wil dit aangepast hebben. AANWIJZING:\n' + aanwijzing + '\n\n';
+    u += 'Herschrijf de rapporttekst volgens deze aanwijzing. Blijf je houden aan alle regels (verzin niets nieuws wat de leerkracht niet heeft aangegeven, klink niet als AI). Gebruik onderstaande ingevulde gegevens als bron:\n\n';
+    u += (bouwLeerlingData(l) || '(geen losse gegevens)') + '\n';
+    u += '\nGeef alleen de herschreven rapporttekst als platte tekst.';
+    const tekst = await callClaude(MODEL, bouwSysteemprompt(), u, 1500);
+    l.verhaal = schoon(tekst);
+    document.getElementById('verhaal-tekst').value = l.verhaal;
+    document.getElementById('aanpas-wrap').classList.remove('visible');
+    document.getElementById('aanpas-input').value = '';
+  } catch (e) {
+    err.textContent = 'Er ging iets mis: ' + e.message;
+    err.classList.add('visible');
+  } finally {
+    document.getElementById('leerling-loading').classList.remove('visible');
+    document.getElementById('verhaal-box').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+function keurGoed() {
+  const l = huidige();
+  l.verhaal = document.getElementById('verhaal-tekst').value.trim();
+  if (!l.verhaal) return;
+  if (l.status !== 'klaar') {
+    state.goedgekeurd.push(l.verhaal);   // voor anti-herhaling over de klas
+  }
+  l.status = 'klaar';
+  renderOverzicht();
+  terugNaarOverzicht();
+}
+
+// Lichte opschoning: gedachtestreepjes weg, nette witregels.
+function schoon(t) {
+  let s = (t || '').trim();
+  // Intern denk-kladblok eruit: pak alles ná de laatste </denk>, of verwijder een volledig blok.
+  const idx = s.toLowerCase().lastIndexOf('</denk>');
+  if (idx !== -1) s = s.slice(idx + '</denk>'.length).trim();
+  s = s.replace(/<\/?denk>/gi, '').trim();          // eventuele losse tags weg
+  s = s.replace(/^["'“”]+|["'“”]+$/g, '').trim();   // omsluitende aanhalingstekens weg
+  s = s.replace(/\s+—\s+/g, ', ').replace(/\s+–\s+/g, ', '); // zinsstreepjes weg
+  s = s.replace(/,\s+en\b/g, ' en');                 // ", en" -> " en"
+  s = s.replace(/\n{3,}/g, '\n\n');
+  return s.trim();
+}
+
+// ════════════════════════════════════════════════════════════
+// WORD-DOWNLOAD (docx vanaf nul, in de browser, met JSZip)
+// ════════════════════════════════════════════════════════════
+function docxEsc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function docxAlineas(tekst) {
+  return String(tekst).split(/\n+/).map(t => t.trim()).filter(Boolean);
+}
+function docxP(text, style) {
+  const pPr = style ? '<w:pPr><w:pStyle w:val="' + style + '"/></w:pPr>' : '';
+  return '<w:p>' + pPr + '<w:r><w:t xml:space="preserve">' + docxEsc(text) + '</w:t></w:r></w:p>';
+}
+function docxLeeg() { return '<w:p/>'; }
+
+function bouwDocumentXml() {
+  const klaar = state.leerlingen.filter(l => l.status === 'klaar' && l.verhaal);
+  const momentLabel = state.moment === 'eindrapport' ? 'Eindrapport' : 'Middenrapport';
+  let body = '';
+  body += docxP('Rapportteksten groep ' + state.groep + ' — ' + momentLabel, 'Titel');
+  klaar.forEach((l, idx) => {
+    if (idx > 0) body += docxLeeg();
+    body += docxP(l.naam, 'Kop');
+    docxAlineas(l.verhaal).forEach(a => { body += docxP(a, null); });
+  });
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+    '<w:body>' + body +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1417" w:right="1417" w:bottom="1417" w:left="1417" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr>' +
+    '</w:body></w:document>';
+}
+
+const DOCX_CONTENT_TYPES = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+  '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+  '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+  '<Default Extension="xml" ContentType="application/xml"/>' +
+  '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+  '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+  '</Types>';
+
+const DOCX_RELS = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+  '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+  '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+  '</Relationships>';
+
+const DOCX_DOC_RELS = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+  '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+  '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+  '</Relationships>';
+
+const DOCX_STYLES = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+  '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+  '<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="22"/></w:rPr></w:rPrDefault>' +
+  '<w:pPrDefault><w:pPr><w:spacing w:after="160" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>' +
+  '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>' +
+  '<w:style w:type="paragraph" w:styleId="Titel"><w:name w:val="Title"/><w:pPr><w:spacing w:after="320"/></w:pPr>' +
+  '<w:rPr><w:b/><w:sz w:val="40"/><w:color w:val="1A1A2E"/></w:rPr></w:style>' +
+  '<w:style w:type="paragraph" w:styleId="Kop"><w:name w:val="Heading 1"/><w:pPr><w:spacing w:before="240" w:after="80"/></w:pPr>' +
+  '<w:rPr><w:b/><w:sz w:val="28"/><w:color w:val="C8553D"/></w:rPr></w:style>' +
+  '</w:styles>';
+
+async function downloadAlleVerhalen() {
+  const klaar = state.leerlingen.filter(l => l.status === 'klaar' && l.verhaal);
+  if (!klaar.length) return;
+  const zip = new JSZip();
+  zip.file('[Content_Types].xml', DOCX_CONTENT_TYPES);
+  zip.folder('_rels').file('.rels', DOCX_RELS);
+  const w = zip.folder('word');
+  w.file('document.xml', bouwDocumentXml());
+  w.file('styles.xml', DOCX_STYLES);
+  w.folder('_rels').file('document.xml.rels', DOCX_DOC_RELS);
+  const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'rapportteksten_groep' + state.groep.replace(/\//g, '-') + '_' + state.moment + '_' + new Date().toISOString().slice(0, 10) + '.docx';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ════════════════════════════════════════════════════════════
+// HULP
+// ════════════════════════════════════════════════════════════
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+</script>
+<script>
+async function vulMijnKlas(toevoegFn){
+  try{
+    const r = await fetch('/api/klas', { headers: { accept: 'application/json' } });
+    if(r.status === 401){ wijsAlert('Log eerst in om je klas te gebruiken.'); return; }
+    if(!r.ok){ wijsAlert('Kon je klas niet ophalen. Probeer het zo opnieuw.'); return; }
+    const data = await r.json();
+    const namen = (data && data.leerlingen) || [];
+    if(!namen.length){ wijsAlert('Je hebt nog geen klas ingevuld.\n\nGa naar je dashboard, naar "Mijn klas", om je klassenlijst klaar te zetten.'); return; }
+    window.wijsKlasGeslacht = {};
+    ((data && data.leerlingenData) || []).forEach(function(l){ if(l && l.naam) window.wijsKlasGeslacht[l.naam.toLowerCase()] = l.geslacht==='j'?'jongen':(l.geslacht==='m'?'meisje':''); });
+    toevoegFn(namen.join('\n'));
+  }catch(e){ wijsAlert('Er ging iets mis bij het ophalen van je klas.'); }
+}
+</script>
+<script>/* SCHERM 1 — visuele besturing + live voorbeeld (vult de verborgen velden) */
+(function(){
+  function $(id){ return document.getElementById(id); }
+  function setVeld(id, val){ var e=$(id); if(!e) return; e.value=val; if(typeof handleStartField==='function') handleStartField(e); pvUpdate(); }
+
+  // Aantal-stepper
+  window.aantalStap = function(d){
+    var e=$('f-aantal'); if(!e) return; var cur=parseInt(e.value,10); if(isNaN(cur)) cur=0;
+    var v=cur+d; if(v<1){ v=(cur>=1?1:''); } if(v>40) v=40;
+    e.value=(v===''?'':v); $('aantal-val').textContent=e.value||'—';
+    if(typeof handleStartField==='function') handleStartField(e);
+  };
+
+  // Rapport-, toon- en lengte-kaartjes
+  function kaartGroep(containerId, sel, veld){
+    var c=$(containerId); if(!c) return;
+    c.addEventListener('click', function(ev){ var k=ev.target.closest(sel); if(!k) return; c.querySelectorAll(sel).forEach(function(x){x.classList.remove('on');}); k.classList.add('on'); setVeld(veld, k.dataset.v); });
+  }
+  kaartGroep('rapport-cards', '.pick', 'f-moment');
+  kaartGroep('tone-cards', '.tone', 'f-toon');
+  kaartGroep('lengte-bars', '.bar', 'f-lengte');
+
+  function closeAllDD(){ document.querySelectorAll('.dd').forEach(function(d){ d.classList.remove('open'); }); }
+  // Eigen dropdowns (perspectief, afsluiting, taalniveau)
+  document.querySelectorAll('.dd[data-field]').forEach(function(dd){
+    var field=dd.dataset.field, btn=dd.querySelector('.dd-btn'), lb=dd.querySelector('.dd-lb'), pop=dd.querySelector('.dd-pop');
+    pop.addEventListener('click', function(e){ e.stopPropagation(); });
+    btn.addEventListener('click', function(e){ e.stopPropagation(); var open=dd.classList.contains('open'); closeAllDD(); if(!open) dd.classList.add('open'); });
+    dd.querySelectorAll('.dd-opt').forEach(function(o){
+      o.addEventListener('click', function(){ dd.querySelectorAll('.dd-opt').forEach(function(x){x.classList.remove('sel');}); o.classList.add('sel'); lb.textContent=o.textContent; setVeld(field, o.dataset.v); dd.classList.remove('open'); });
+    });
+  });
+  // Groep-dropdown met combinatieklas
+  var g=$('dd-groep');
+  if(g){
+    var glb=g.querySelector('.dd-lb'), gpop=g.querySelector('.dd-pop'), gbtn=g.querySelector('.dd-btn');
+    var ctoggle=g.querySelector('.combi-toggle'), cwrap=g.querySelector('.combi-wrap');
+    gpop.addEventListener('click', function(e){ e.stopPropagation(); });
+    gbtn.addEventListener('click', function(e){ e.stopPropagation(); var open=g.classList.contains('open'); closeAllDD(); if(!open) g.classList.add('open'); });
+    g.querySelectorAll('.dd-opt').forEach(function(o){
+      o.addEventListener('click', function(){ g.querySelectorAll('.dd-opt').forEach(function(x){x.classList.remove('sel');}); o.classList.add('sel'); g.querySelectorAll('.cchip').forEach(function(c){c.classList.remove('on');}); cwrap.classList.remove('show'); ctoggle.classList.remove('open'); glb.textContent='Groep '+o.dataset.v; setVeld('f-groep', o.dataset.v); g.classList.remove('open'); });
+    });
+    ctoggle.addEventListener('click', function(){ cwrap.classList.toggle('show'); ctoggle.classList.toggle('open'); });
+    g.querySelectorAll('.cchip').forEach(function(c){ c.addEventListener('click', function(){ c.classList.toggle('on'); }); });
+    g.querySelector('.combi-apply').addEventListener('click', function(){
+      var sel=[].slice.call(g.querySelectorAll('.cchip.on')).map(function(c){return c.dataset.g;}).sort(function(a,b){return a-b;});
+      if(sel.length<2) return;
+      g.querySelectorAll('.dd-opt').forEach(function(x){x.classList.remove('sel');});
+      var v=sel.join('/'); glb.textContent='Groep '+v; setVeld('f-groep', v);
+      g.classList.remove('open'); cwrap.classList.remove('show'); ctoggle.classList.remove('open');
+    });
+  }
+  document.addEventListener('click', closeAllDD);
+
+  /* ── Live voorbeeld (lokaal samengesteld; de echte tekst schrijft de AI) ── */
+  var NAAM='Sara';
+  function pron(richt){ if(richt==='tegen') return {sub:'je',poss:'je',naam:'Je'}; return {sub:'zij',poss:'haar',naam:NAAM}; }
+  var OPEN={warm:'{N} komt elke dag met een glimlach de klas binnen',neutraal:'{N} laat een prettige, stabiele werkhouding zien',zakelijk:'{N} functioneert naar verwachting in de groep',formeel:'{N} toont zich een betrokken en plichtsgetrouwe leerling',speels:'{N} draait lekker mee en heeft er flink zin in'};
+  var MID={warm:'Wat fijn om te zien hoe {s} doorzet bij rekenen en graag een ander helpt',neutraal:'{Sub} werkt geconcentreerd en pakt nieuwe stof goed op',zakelijk:'De inzet bij rekenen en lezen is voldoende tot goed',formeel:'De resultaten bij rekenen en lezen zijn naar behoren',speels:'Bij rekenen knalt {s} er lekker doorheen, en helpen vindt {s} ook nog leuk'};
+  var EXTRA={warm:'Ook in de omgang met klasgenoten zien we een warme, sociale kant',neutraal:'In de samenwerking met anderen stelt {s} zich positief op',zakelijk:'De samenwerking met klasgenoten verloopt zonder problemen',formeel:'In de samenwerking toont {s} respect en zelfstandigheid',speels:'En in de klas zorgt {s} regelmatig voor een vrolijke noot'};
+  var END={vooruit:'Een mooie basis om de komende periode op door te bouwen.',doel:'Komende periode oefenen we extra met het vasthouden van de aandacht.',sterk:'{Poss} grootste kracht is doorzetten, ook als iets niet meteen lukt.',neutraal:'Een prima periode.',geen:''};
+  var OPEN_S={warm:'{N} komt elke dag vrolijk de klas in',neutraal:'{N} werkt op een fijne, rustige manier',zakelijk:'{N} doet het goed in de groep',formeel:'{N} is een actieve en nette leerling',speels:'{N} doet lekker mee en heeft er zin in'};
+  var MID_S={warm:'Fijn om te zien hoe {s} goed doorzet bij rekenen en graag helpt',neutraal:'{Sub} werkt rustig en leert nieuwe dingen snel',zakelijk:'Rekenen en lezen gaan goed',formeel:'Rekenen en lezen gaan naar wens',speels:'Bij rekenen gaat het lekker, en {s} helpt ook graag'};
+  var EXTRA_S={warm:'Met andere kinderen is {s} warm en sociaal',neutraal:'Samenwerken met anderen gaat positief',zakelijk:'Samenwerken met andere kinderen gaat goed',formeel:'{Sub} heeft respect en werkt zelfstandig',speels:'In de klas zorgt {s} vaak voor een vrolijke sfeer'};
+  var END_S={vooruit:'Hier kunnen we de komende tijd mooi op verder',doel:'De komende tijd oefenen we extra met goed opletten',sterk:'{Poss} sterke kant is volhouden, ook als iets lastig is',neutraal:'Een prima periode',geen:''};
+  var BODY=['{s} pakt nieuwe uitleg snel op en durft vragen te stellen','bij lezen en taal zien we een mooie, gestage groei','in de samenwerking met andere kinderen gaat het prettig','{s} krijgt steeds meer zelfvertrouwen in wat {s} kan','ook als iets niet meteen lukt, zet {s} door','in de groep heeft {s} een fijne plek en wordt {s} gewaardeerd','met meer aandacht en concentratie gaat het van dag tot dag beter','het is mooi om te zien hoeveel plezier {s} uit het leren haalt','{s} neemt steeds meer verantwoordelijkheid voor het eigen werk'];
+  var AANTAL={kort:2,gemiddeld:5,uitgebreid:9};
+  function fill(t,p){ var Sub=p.sub.charAt(0).toUpperCase()+p.sub.slice(1); var Poss=p.poss.charAt(0).toUpperCase()+p.poss.slice(1); return t.replace('{N}',p.naam).replace('{Sub}',Sub).replace('{Poss}',Poss).replace(/\{s\}/g,p.sub); }
+  function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+  window.pvUpdate = function(){
+    var el=$('pv-text'); if(!el) return;
+    var toon=$('f-toon').value||'warm', lengte=$('f-lengte').value||'gemiddeld', taal=$('f-taalniveau').value||'standaard';
+    var p=pron($('f-richt').value||'over'), afsl=$('f-afsluiting').value||'vooruit', eenv=(taal!=='standaard');
+    var opener=fill((eenv?OPEN_S:OPEN)[toon],p), mid=fill((eenv?MID_S:MID)[toon],p), extra=fill((eenv?EXTRA_S:EXTRA)[toon],p);
+    var pool=[mid,extra].concat(BODY.map(function(b){ return fill(b,p); }));
+    var n=AANTAL[lengte]||5;
+    var zinnen=[opener].concat(pool.slice(0,n));
+    var endt=(eenv?END_S:END)[afsl]; if(endt) zinnen.push(fill(endt,p));
+    zinnen=zinnen.map(function(z){ return cap(z.replace(/\.$/,'')); });
+    if(taal==='a2') zinnen=zinnen.map(function(z){ return cap(z.split(' en ')[0].split(', ')[0]); });
+    var punt=toon==='speels'?'! ':'. ', eind=toon==='speels'?'!':'.';
+    el.textContent='“'+zinnen.join(punt)+eind+'”';
+  };
+
+  // Visuele knoppen spiegelen aan de (eventueel auto-ingevulde) verborgen velden
+  window.syncControls = function(){
+    if(g){ var gv=$('f-groep').value; if(gv){ var lbl=(gv.indexOf('/')>=0?'Groep '+gv:'Groep '+gv); g.querySelector('.dd-lb').textContent=lbl; } }
+    var av=$('aantal-val'); if(av) av.textContent=$('f-aantal').value||'—';
+    ['rapport-cards|.pick|f-moment','tone-cards|.tone|f-toon','lengte-bars|.bar|f-lengte'].forEach(function(spec){
+      var p=spec.split('|'), c=$(p[0]); if(!c) return; var val=$(p[2]).value;
+      c.querySelectorAll(p[1]).forEach(function(x){ x.classList.toggle('on', x.dataset.v===val); });
+    });
+    document.querySelectorAll('.dd[data-field]').forEach(function(dd){
+      var val=$(dd.dataset.field).value, lb=dd.querySelector('.dd-lb');
+      dd.querySelectorAll('.dd-opt').forEach(function(o){ var on=o.dataset.v===val; o.classList.toggle('sel', on); if(on) lb.textContent=o.textContent; });
+    });
+    pvUpdate();
+  };
+  function boot(){ syncControls(); }
+  if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded', boot);
+  setTimeout(syncControls, 500); setTimeout(syncControls, 1600);
+})();
+</script>
+<script>/* WIJS-SMART */
+(function(){
+  function api(u,o){ return fetch(u, Object.assign({headers:{accept:'application/json'}}, o||{})); }
+  async function haalKlas(){ try{ var r=await api('/api/klas'); if(!r.ok)return {naam:'',leerlingen:[]}; var d=await r.json(); window.wijsKlasGeslacht={}; ((d&&d.leerlingenData)||[]).forEach(function(l){ if(l&&l.naam) window.wijsKlasGeslacht[l.naam.toLowerCase()] = l.geslacht==='j'?'jongen':(l.geslacht==='m'?'meisje':''); }); return {naam:d.naam||'', leerlingen:d.leerlingen||[]}; }catch(e){ return {naam:'',leerlingen:[]}; } }
+  async function haalRapporten(){ try{ var r=await api('/api/rapporten'); if(!r.ok)return []; var d=await r.json(); return d.rapporten||[]; }catch(e){ return []; } }
+  async function slaOp(naam,verhaal){ if(!naam||!verhaal||!verhaal.trim())return; try{ await fetch('/api/rapporten',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({naam:naam,verhaal:verhaal})}); }catch(e){} }
+  function NL(arr){ return arr.join(String.fromCharCode(10)); }
+  function groepUitNaam(naam){ if(!naam)return ''; var s=String(naam); if(s.indexOf('1/2')>=0||s.indexOf('1 / 2')>=0)return '1/2'; for(var i=0;i<s.length;i++){ var c=s.charCodeAt(i); if(c>=49&&c<=56) return s.charAt(i); } return ''; }
+  function zet(id,val){ var e=document.getElementById(id); if(e&&val){ e.value=val; if(e.value) e.classList.add('filled'); } }
+  async function prefillStart(){ var k=await haalKlas(); if(!k.leerlingen.length)return; var g=groepUitNaam(k.naam); if(g) zet('f-groep',g); zet('f-aantal', String(k.leerlingen.length)); if(typeof checkStartReady==='function') checkStartReady(); }
+  function notitie(klasNamen, af){
+    var teller=document.getElementById('namen-teller'); if(!teller)return;
+    var el=document.getElementById('klas-notitie');
+    if(!el){ el=document.createElement('div'); el.id='klas-notitie'; el.style.cssText='margin-top:10px;font-size:13px;line-height:1.5;color:var(--muted);'; teller.insertAdjacentElement('afterend', el); }
+    if(af>0){
+      el.innerHTML='✓ <strong style="color:var(--ink)">'+af+'</strong> rapport'+(af===1?'':'en')+' had je al af; die zijn overgeslagen. <a href="#" id="klas-reset" style="color:var(--accent);font-weight:600">Hele klas opnieuw</a>';
+      var rr=document.getElementById('klas-reset');
+      if(rr) rr.onclick=async function(e){ e.preventDefault(); if(!(await wijsBevestig('Alle opgeslagen rapporten van deze klas wissen en met de hele klas opnieuw beginnen?', { titel: 'Hele klas opnieuw?', bevestig: 'Opnieuw beginnen', gevaar: true })))return; try{ await fetch('/api/rapporten',{method:'DELETE'}); }catch(_){} naamLijst.length=0; renderTags(); var k=await haalKlas(); var kl=k.leerlingen||[]; if(kl.length) voegNaamToe(NL(kl)); notitie(kl,0); };
+    } else { el.innerHTML='Je klas is automatisch ingevuld vanuit je dashboard.'; }
+  }
+  async function autoVul(){
+    if(typeof naamLijst==='undefined'||naamLijst.length)return;
+    var res=await Promise.all([haalKlas(),haalRapporten()]);
+    var klas=res[0].leerlingen, opg=res[1];
+    if(!klas.length)return;
+    var done={}; opg.forEach(function(x){ done[String(x.naam).toLowerCase()]=1; });
+    var teDoen=klas.filter(function(n){ return !done[String(n).toLowerCase()]; });
+    if(teDoen.length) voegNaamToe(NL(teDoen));
+    notitie(klas, klas.length-teDoen.length);
+  }
+  if(typeof naarNamen==='function'){ var _n=naarNamen; naarNamen=function(){ _n.apply(this,arguments); autoVul(); }; }
+  if(typeof genereerVerhaal==='function'){ var _g=genereerVerhaal; genereerVerhaal=function(){ var p=_g.apply(this,arguments); Promise.resolve(p).then(function(){ try{ var l=huidige(); if(l&&l.verhaal) slaOp(l.naam,l.verhaal); }catch(e){} }); return p; }; }
+  var box=document.getElementById('verhaal-tekst');
+  if(box) box.addEventListener('blur', function(){ try{ var l=huidige(); if(l){ l.verhaal=box.value; slaOp(l.naam, box.value); } }catch(e){} });
+  prefillStart();
+})();
+</script>
+<script>/* Privacy-pop-up bij openen van Rapporten */
+(function(){
+  function start(){
+    if(!window.wijsPrivacy) return;
+    wijsPrivacy.gate({
+      key:'rapportwijs',
+      intro:'In een rapporttekst schrijf je over één leerling, soms over gevoelig gedrag of de ontwikkeling. Schrijf daarom zorgvuldig:',
+      wel:[
+        'Beschrijf de schoolse ontwikkeling en het gedrag feitelijk',
+        'Gebruik hooguit de voornaam',
+        'Gevoelige of herleidbare details voeg je zelf toe ná het resultaat'
+      ],
+      niet:[
+        'Geen achternamen, adressen of contactgegevens',
+        'Geen medische gegevens of gevoelige thuissituaties'
+      ]
+    });
+  }
+  if(document.readyState!=='loading') start(); else document.addEventListener('DOMContentLoaded', start);
+})();
+</script>
+<script>/* Moment automatisch voorinvullen op basis van de periode van het jaar.
+   Augustus t/m februari → middenrapport, maart t/m juli → eindrapport.
+   Alleen als er nog niets gekozen is; een eigen keuze van de leerkracht wint. */
+(function(){
+  function start(){
+    var f=document.getElementById('f-moment'); if(!f || f.value) return;
+    var m=new Date().getMonth()+1; // 1=januari … 12=december
+    f.value=(m>=3 && m<=7) ? 'eindrapport' : 'middenrapport';
+    f.classList.add('filled');
+    if(typeof window.syncControls==='function') window.syncControls();
+    if(typeof window.checkStartReady==='function') window.checkStartReady();
+  }
+  if(document.readyState!=='loading') start(); else document.addEventListener('DOMContentLoaded', start);
+})();
+</script>
+</body>
+</html>

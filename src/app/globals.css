@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme {
+  /* Lettertypen */
+  --font-sans: var(--font-jakarta);
+  --font-display: var(--font-fraunces);
+
+  /* Warm, onderwijsvriendelijk palet */
+  --color-cream: #fbf6ee; /* warme papierachtige achtergrond */
+  --color-sand: #f4ecdb; /* iets dieper warm zand, voor accent-secties */
+  --color-ink: #221c3a; /* diep inkt-violet voor tekst */
+  --color-brand: #2f9e6e; /* groen, hoofdkleur (Avinka-logo) */
+  --color-brand-dark: #25855a;
+  --color-brand-soft: #e7f4ed;
+  --color-accent: #f59e0b; /* warm amber accent */
+  --color-accent-soft: #fff2d6;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Koppen krijgen automatisch de serif */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display), Georgia, serif;
+}
+
+/* Subtiel stippenpatroon voor achtergronden */
+.bg-dots {
+  background-image: radial-gradient(rgba(47, 158, 110, 0.12) 1.4px, transparent 1.4px);
+  background-size: 22px 22px;
+}
+
+/* Subtiel ruitjespatroon (schoolschrift-gevoel) */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgba(34, 28, 58, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(34, 28, 58, 0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
+}

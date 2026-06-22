@@ -1,0 +1,645 @@
+-- ════════════════════════════════════════════════════════════════════════
+--  Wijs — database-schema
+--
+--  Plak dit volledige bestand in Supabase → SQL Editor → Run.
+--  Het is veilig om opnieuw te draaien (idempotent): bestaande tabellen
+--  blijven staan, beleid wordt vernieuwd.
+--
+--  Beveiliging: elke tabel heeft Row Level Security (RLS). Een leerkracht kan
+--  UITSLUITEND zijn eigen rijen zien/bewerken. Dat bewaakt de database zelf —
+--  niemand kan daar in de app omheen.
+-- ════════════════════════════════════════════════════════════════════════
+
+-- ── Hulp: updated_at automatisch bijwerken ──────────────────────────────
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+-- ── 1) INSTELLINGEN (voorkeuren) — één rij per gebruiker ────────────────
+create table if not exists public.instellingen (
+  user_id        uuid primary key references auth.users(id) on delete cascade,
+  schoolnaam     text default '',
+  standaardgroep text default '',
+  toon           text default 'warm',
+  ref_code       text,        -- eigen uitnodigingscode (voor de invite-link)
+  verwezen_door  text,        -- de code van wie deze gebruiker uitnodigde
+  -- ── Abonnement (Fase 2, Mollie) ──────────────────────────────────────
+  abon_plan        text,                       -- 'start' | 'compleet' | 'pro' (null = nog op proef)
+  abon_vorm        text,                       -- 'maand' | 'jaar'
+  abon_status      text default 'proef',       -- 'proef' | 'actief' | 'opgezegd' | 'verlopen'
+  proef_eindigt    timestamptz default now() + interval '7 days',
+  periode_eindigt  timestamptz,               -- einde van de betaalde periode
+  start_tool       text,                       -- gekozen tool bij het Start-pakket
+  start_tool_sinds date,                       -- wanneer voor het laatst gewisseld (max 1×/maand)
+  mollie_customer_id text,                     -- Mollie-klant (voor terugkerende incasso)
+  mollie_payment_id  text,                     -- lopende betaling (om terugkomst te verifiëren)
+  created_at     timestamptz default now(),
+  updated_at     timestamptz default now()
+);
+-- MIGRATIE voor een bestaande database (één keer draaien in de Supabase SQL Editor):
+--   alter table public.instellingen add column if not exists ref_code text;
+--   alter table public.instellingen add column if not exists verwezen_door text;
+--   alter table public.instellingen add column if not exists abon_plan text;
+--   alter table public.instellingen add column if not exists abon_vorm text;
+--   alter table public.instellingen add column if not exists abon_status text default 'proef';
+--   alter table public.instellingen add column if not exists proef_eindigt timestamptz default now() + interval '7 days';
+--   alter table public.instellingen add column if not exists periode_eindigt timestamptz;
+--   alter table public.instellingen add column if not exists start_tool text;
+--   alter table public.instellingen add column if not exists start_tool_sinds date;
+--   alter table public.instellingen add column if not exists mollie_customer_id text;
+--   alter table public.instellingen add column if not exists mollie_payment_id text;
+create index if not exists idx_instellingen_verwezen on public.instellingen(verwezen_door);
+
+-- ── 2) KLASSEN — je klassenlijst (meerdere klassen per leerkracht mogelijk) ───
+--  leerlingen      = platte namenlijst (text[]) — blijft bestaan zodat de
+--                    bestaande tools ongewijzigd blijven werken.
+--  leerlingen_data = rijkere lijst per leerling [{naam, geslacht}] — voor
+--                    profielen, geslacht (hij/zij) en koppeling met rapporten.
+--  actief          = welke klas de tools invullen (één actieve klas per user).
+create table if not exists public.klassen (
+  id              uuid primary key default gen_random_uuid(),
+  user_id         uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  naam            text default '',
+  leerlingen      text[] default '{}',
+  leerlingen_data jsonb not null default '[]'::jsonb,
+  actief          boolean not null default true,
+  created_at      timestamptz default now(),
+  updated_at      timestamptz default now()
+);
+
+-- MIGRATIE voor een bestaande database (draai dit één keer in de Supabase SQL Editor):
+--   alter table public.klassen drop constraint if exists klassen_user_id_key;
+--   alter table public.klassen add column if not exists leerlingen_data jsonb not null default '[]'::jsonb;
+--   alter table public.klassen add column if not exists actief boolean not null default true;
+
+-- ── 3) TEKSTEN — bewaarde teksten-bibliotheek ───────────────────────────
+create table if not exists public.teksten (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  titel       text not null default 'Naamloze tekst',
+  inhoud      text not null,
+  tool        text,
+  created_at  timestamptz default now()
+);
+
+-- ── Indexen (snel zoeken per gebruiker) ─────────────────────────────────
+create index if not exists idx_klassen_user on public.klassen(user_id);
+create index if not exists idx_teksten_user on public.teksten(user_id);
+
+-- ── Triggers voor updated_at ────────────────────────────────────────────
+drop trigger if exists trg_instellingen_updated on public.instellingen;
+create trigger trg_instellingen_updated
+  before update on public.instellingen
+  for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_klassen_updated on public.klassen;
+create trigger trg_klassen_updated
+  before update on public.klassen
+  for each row execute function public.set_updated_at();
+
+-- ── ROW LEVEL SECURITY ──────────────────────────────────────────────────
+alter table public.instellingen enable row level security;
+alter table public.klassen      enable row level security;
+alter table public.teksten      enable row level security;
+
+-- Beleid: iedereen mag alleen zijn EIGEN rijen (lezen + schrijven).
+drop policy if exists "eigen instellingen" on public.instellingen;
+create policy "eigen instellingen" on public.instellingen
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "eigen klassen" on public.klassen;
+create policy "eigen klassen" on public.klassen
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "eigen teksten" on public.teksten;
+create policy "eigen teksten" on public.teksten
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ── Tabel-rechten ───────────────────────────────────────────────────────
+-- Ingelogde gebruikers mogen de tabellen gebruiken; RLS hierboven bepaalt
+-- vervolgens dat ze alleen bij hun EIGEN rijen kunnen. (anon = niet ingelogd
+-- krijgt bewust niets.)
+grant select, insert, update, delete on public.instellingen to authenticated;
+grant select, insert, update, delete on public.klassen      to authenticated;
+grant select, insert, update, delete on public.teksten      to authenticated;
+
+-- ── 4) RAPPORTEN — opgeslagen rapportteksten per kind (RapportWijs) ──────
+-- Concept/afgeronde rapportteksten zodat een leerkracht over meerdere sessies
+-- kan werken. Bewaartermijn-gedachte: tijdelijk, met "wissen"-knop in de tool.
+create table if not exists public.rapporten (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  naam        text not null,
+  verhaal     text not null,
+  created_at  timestamptz default now(),
+  updated_at  timestamptz default now(),
+  unique (user_id, naam)
+);
+create index if not exists idx_rapporten_user on public.rapporten(user_id);
+
+drop trigger if exists trg_rapporten_updated on public.rapporten;
+create trigger trg_rapporten_updated
+  before update on public.rapporten
+  for each row execute function public.set_updated_at();
+
+alter table public.rapporten enable row level security;
+drop policy if exists "eigen rapporten" on public.rapporten;
+create policy "eigen rapporten" on public.rapporten
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.rapporten to authenticated;
+
+-- ── 5) BESTANDEN — mappen + bestanden (teksten, plattegronden) in één boom ──
+--  parent_id leeg = in de wortel; anders de map waarin het zit (map-in-map kan).
+--  type 'map'  = een map      → kinderen verwijzen ernaar via parent_id
+--  type 'tekst' = bewaarde tekst (inhoud)
+--  type 'plattegrond' = opgeslagen plattegrond (data = JSON uit PlattegrondWijs)
+create table if not exists public.bestanden (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  parent_id   uuid references public.bestanden(id) on delete cascade,
+  type        text not null default 'tekst',
+  naam        text not null default 'Naamloos',
+  inhoud      text,
+  data        jsonb,
+  tool        text,
+  created_at  timestamptz default now(),
+  updated_at  timestamptz default now()
+);
+create index if not exists idx_bestanden_user on public.bestanden(user_id);
+create index if not exists idx_bestanden_parent on public.bestanden(parent_id);
+
+drop trigger if exists trg_bestanden_updated on public.bestanden;
+create trigger trg_bestanden_updated
+  before update on public.bestanden
+  for each row execute function public.set_updated_at();
+
+alter table public.bestanden enable row level security;
+drop policy if exists "eigen bestanden" on public.bestanden;
+create policy "eigen bestanden" on public.bestanden
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.bestanden to authenticated;
+
+-- MIGRATIE van bestaande bewaarde teksten naar Bestanden (draai één keer):
+--   insert into public.bestanden (user_id, parent_id, type, naam, inhoud, tool, created_at)
+--   select user_id, null, 'tekst', titel, inhoud, tool, created_at from public.teksten;
+
+-- ── 6) STATISTIEK — cumulatieve tellers per gebruiker (voor "Mijn statistieken") ─
+--  tellers = jsonb-map { 'rapport': 12, 'analyse': 3, 'gesprek': 8, ... }.
+--  Wordt opgehoogd door de tools bij elke afgeronde actie; nooit verlaagd
+--  (dus blijft staan ook als een rapport later verwijderd wordt).
+create table if not exists public.statistiek (
+  user_id        uuid primary key default auth.uid() references auth.users(id) on delete cascade,
+  tellers        jsonb not null default '{}'::jsonb,
+  streak         int not null default 0,    -- opeenvolgende werkdagen actief
+  streak_max     int not null default 0,    -- langste streak ooit (voor het "record")
+  laatste_actief date,                       -- laatste werkdag waarop iets gedaan is
+  updated_at     timestamptz default now()
+);
+-- MIGRATIE voor een bestaande database (één keer draaien):
+--   alter table public.statistiek add column if not exists streak int not null default 0;
+--   alter table public.statistiek add column if not exists streak_max int not null default 0;
+--   alter table public.statistiek add column if not exists laatste_actief date;
+drop trigger if exists trg_statistiek_updated on public.statistiek;
+create trigger trg_statistiek_updated
+  before update on public.statistiek
+  for each row execute function public.set_updated_at();
+alter table public.statistiek enable row level security;
+drop policy if exists "eigen statistiek" on public.statistiek;
+create policy "eigen statistiek" on public.statistiek
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.statistiek to authenticated;
+
+-- Community-aggregaat voor "Mijn statistieken" (vergelijking met andere gebruikers).
+-- SECURITY DEFINER: leest álle tellers maar geeft ALLEEN totalen/aantallen terug —
+-- nooit gegevens van een individuele gebruiker. Daarom veilig voor alle ingelogden.
+create or replace function public.wijs_community_stats()
+returns jsonb
+language sql
+security definer
+set search_path = public
+as $$
+  with kv as (
+    select key, sum((value)::numeric) as totaal
+    from public.statistiek s, jsonb_each_text(s.tellers)
+    group by key
+  )
+  select jsonb_build_object(
+    'gebruikers', (select count(*)::int from public.statistiek),
+    'som', coalesce((select jsonb_object_agg(key, totaal) from kv), '{}'::jsonb)
+  );
+$$;
+grant execute on function public.wijs_community_stats() to authenticated;
+
+-- Aantal BETALENDE aanmeldingen via een uitnodigingscode (referral-teller).
+-- SECURITY DEFINER: geeft alleen een aantal terug, geen gegevens van gebruikers.
+-- FRAUDEBESCHERMING: een uitnodiging telt pas mee als de uitgenodigde collega
+-- daadwerkelijk een betaald abonnement heeft (abon_status 'actief' of 'opgezegd').
+-- Een gratis proef of nepaccount levert dus niets op — dat haalt de hele
+-- fraudeprikkel weg (elk betalend account = een echte iDEAL-betaling).
+create or replace function public.wijs_aantal_verwijzingen(code text)
+returns int
+language sql
+security definer
+set search_path = public
+as $$
+  select count(*)::int
+  from public.instellingen
+  where verwezen_door = code and code is not null and code <> ''
+    and abon_status in ('actief', 'opgezegd');
+$$;
+grant execute on function public.wijs_aantal_verwijzingen(text) to authenticated;
+
+-- Aantal uitgenodigde collega's dat nog in de gratis proef zit (nog niet betaald).
+-- Puur voor een motiverend tweede getal bij de uitnodiger ("X proberen Wijs nu").
+create or replace function public.wijs_aantal_verwijzingen_proef(code text)
+returns int
+language sql
+security definer
+set search_path = public
+as $$
+  select count(*)::int
+  from public.instellingen
+  where verwezen_door = code and code is not null and code <> ''
+    and (abon_status = 'proef' or abon_status is null);
+$$;
+grant execute on function public.wijs_aantal_verwijzingen_proef(text) to authenticated;
+
+-- ── 7) REVIEWS — beoordelingen van leerkrachten (beloning + testimonials) ──
+--  Eén review per gebruiker. mag_tonen = toestemming om de review (met voornaam)
+--  op de website/landingspagina te tonen. Voedt de mond-tot-mond-groei.
+create table if not exists public.reviews (
+  user_id    uuid primary key default auth.uid() references auth.users(id) on delete cascade,
+  sterren    int not null default 5 check (sterren between 1 and 5),
+  tekst      text not null default '',
+  mag_tonen  boolean not null default false,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+drop trigger if exists trg_reviews_updated on public.reviews;
+create trigger trg_reviews_updated
+  before update on public.reviews
+  for each row execute function public.set_updated_at();
+alter table public.reviews enable row level security;
+drop policy if exists "eigen reviews" on public.reviews;
+create policy "eigen reviews" on public.reviews
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.reviews to authenticated;
+
+-- ── 8) ADMIN — wie mag het admin-dashboard zien + aggregaat-statistieken ──
+-- Eigenaar voegt zichzelf één keer toe aan deze tabel (via deze SQL-editor).
+-- Een gewone gebruiker kan zichzelf NIET admin maken (geen insert-policy).
+create table if not exists public.admins (
+  user_id    uuid primary key references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+alter table public.admins enable row level security;
+drop policy if exists admins_self on public.admins;
+-- Je mag alleen zien of JE ZELF admin bent (niet de hele lijst).
+create policy admins_self on public.admins for select using (auth.uid() = user_id);
+grant select on public.admins to authenticated;
+
+-- Ben ik (de ingelogde gebruiker) admin?
+create or replace function public.wijs_is_admin()
+returns boolean language sql security definer set search_path = public as $$
+  select exists(select 1 from public.admins where user_id = auth.uid());
+$$;
+grant execute on function public.wijs_is_admin() to authenticated;
+
+-- Admin-overzicht: alleen aantallen/totalen, nooit persoonsgegevens. Geeft null
+-- terug als je geen admin bent (dubbele afscherming naast de pagina/middleware).
+create or replace function public.wijs_admin_overzicht()
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare r jsonb;
+begin
+  if not public.wijs_is_admin() then return null; end if;
+  select jsonb_build_object(
+    'gebruikers', (select count(*) from auth.users),
+    'status', jsonb_build_object(
+      'actief',   (select count(*) from public.instellingen where abon_status='actief'),
+      'opgezegd', (select count(*) from public.instellingen where abon_status='opgezegd'),
+      'verlopen', (select count(*) from public.instellingen where abon_status='verlopen')
+    ),
+    'plan', jsonb_build_object(
+      'start',    (select count(*) from public.instellingen where abon_plan='start'    and abon_status in ('actief','opgezegd')),
+      'compleet', (select count(*) from public.instellingen where abon_plan='compleet' and abon_status in ('actief','opgezegd')),
+      'pro',      (select count(*) from public.instellingen where abon_plan='pro'      and abon_status in ('actief','opgezegd'))
+    ),
+    'verwijzingen', jsonb_build_object(
+      'uitnodigers', (select count(*) from public.instellingen where ref_code is not null),
+      'uitgenodigd', (select count(*) from public.instellingen where verwezen_door is not null),
+      'betalend',    (select count(*) from public.instellingen where verwezen_door is not null and abon_status in ('actief','opgezegd'))
+    )
+  ) into r;
+  return r;
+end; $$;
+grant execute on function public.wijs_admin_overzicht() to authenticated;
+
+-- ── 9) AI-VERBRUIK — gebruiksmetadata per AI-call (voor de admin-kostenmodule) ──
+-- ALLEEN metadata: tokens, model, welke tool, tijdstip, user-id. NOOIT de inhoud
+-- (geen prompt/antwoord, geen leerlinggegevens). De server-route schrijft hier
+-- één rij per AI-aanroep. Gewone gebruikers kunnen NIET lezen (geen select-policy);
+-- alleen via de admin-functie hieronder.
+create table if not exists public.ai_verbruik (
+  id                    bigint generated always as identity primary key,
+  user_id               uuid references auth.users(id) on delete set null,
+  tool                  text,
+  model                 text,
+  input_tokens          int not null default 0,
+  output_tokens         int not null default 0,
+  cache_creation_tokens int not null default 0,
+  cache_read_tokens     int not null default 0,
+  created_at            timestamptz not null default now()
+);
+create index if not exists idx_ai_verbruik_created on public.ai_verbruik(created_at);
+alter table public.ai_verbruik enable row level security;
+drop policy if exists ai_verbruik_insert_self on public.ai_verbruik;
+-- Je mag alleen je eigen verbruik wegschrijven (de server-route doet dit namens jou).
+create policy ai_verbruik_insert_self on public.ai_verbruik
+  for insert with check (auth.uid() = user_id);
+grant insert on public.ai_verbruik to authenticated;
+
+-- Admin-verbruik: per (tool, model) de aantallen + tokensommen over de laatste
+-- N dagen. Kosten rekenen we in de app uit (instelbare prijstabel). Alleen admin.
+create or replace function public.wijs_admin_verbruik(dagen int default 30)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare r jsonb;
+begin
+  if not public.wijs_is_admin() then return null; end if;
+  select coalesce(jsonb_agg(x), '[]'::jsonb) into r from (
+    select coalesce(tool,'onbekend')  as tool,
+           coalesce(model,'onbekend') as model,
+           count(*)                          as calls,
+           coalesce(sum(input_tokens),0)          as input,
+           coalesce(sum(output_tokens),0)         as output,
+           coalesce(sum(cache_creation_tokens),0) as cache_creation,
+           coalesce(sum(cache_read_tokens),0)     as cache_read
+    from public.ai_verbruik
+    where created_at >= now() - (dagen || ' days')::interval
+    group by coalesce(tool,'onbekend'), coalesce(model,'onbekend')
+  ) x;
+  return r;
+end; $$;
+grant execute on function public.wijs_admin_verbruik(int) to authenticated;
+
+-- ── 10) ADMIN — grafieken over tijd ───────────────────────────────────────
+
+-- Aanmeldingen per maand (groei). Uit auth.users.created_at, alleen admin.
+create or replace function public.wijs_admin_groei(maanden int default 12)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare r jsonb;
+begin
+  if not public.wijs_is_admin() then return null; end if;
+  select coalesce(jsonb_agg(to_jsonb(x) order by x.maand), '[]'::jsonb) into r from (
+    select date_trunc('month', created_at)::date as maand, count(*) as aantal
+    from auth.users
+    where created_at >= (date_trunc('month', now()) - ((maanden - 1) || ' months')::interval)
+    group by 1
+  ) x;
+  return r;
+end; $$;
+grant execute on function public.wijs_admin_groei(int) to authenticated;
+
+-- AI-kosten over tijd: per dag + model (kosten rekenen we in de app). Alleen admin.
+create or replace function public.wijs_admin_verbruik_tijd(dagen int default 30)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare r jsonb;
+begin
+  if not public.wijs_is_admin() then return null; end if;
+  select coalesce(jsonb_agg(to_jsonb(x) order by x.dag), '[]'::jsonb) into r from (
+    select date_trunc('day', created_at)::date as dag,
+           coalesce(model,'onbekend') as model,
+           coalesce(sum(input_tokens),0)          as input,
+           coalesce(sum(output_tokens),0)         as output,
+           coalesce(sum(cache_creation_tokens),0) as cache_creation,
+           coalesce(sum(cache_read_tokens),0)     as cache_read
+    from public.ai_verbruik
+    where created_at >= now() - (dagen || ' days')::interval
+    group by 1, 2
+  ) x;
+  return r;
+end; $$;
+grant execute on function public.wijs_admin_verbruik_tijd(int) to authenticated;
+
+-- Maandelijkse momentopname van de abonnement-aantallen (voor de omzetgrafiek).
+-- We bewaren AANTALLEN per pakket; de MRR rekent de app uit met de prijzen uit
+-- de code (één bron van waarheid). De grafiek bouwt zich op vanaf de eerste snapshot.
+create table if not exists public.abon_snapshot (
+  maand      date primary key,
+  gebruikers int not null default 0,
+  start      int not null default 0,
+  compleet   int not null default 0,
+  pro        int not null default 0,
+  gemaakt_op timestamptz not null default now()
+);
+alter table public.abon_snapshot enable row level security;
+-- Geen policies → alleen via de admin-functie leesbaar; de functie schrijft als definer.
+
+create or replace function public.wijs_snapshot_abon()
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.abon_snapshot (maand, gebruikers, start, compleet, pro)
+  values (
+    date_trunc('month', now())::date,
+    (select count(*) from auth.users),
+    (select count(*) from public.instellingen where abon_plan='start'    and abon_status in ('actief','opgezegd')),
+    (select count(*) from public.instellingen where abon_plan='compleet' and abon_status in ('actief','opgezegd')),
+    (select count(*) from public.instellingen where abon_plan='pro'      and abon_status in ('actief','opgezegd'))
+  )
+  on conflict (maand) do update set
+    gebruikers = excluded.gebruikers,
+    start      = excluded.start,
+    compleet   = excluded.compleet,
+    pro        = excluded.pro,
+    gemaakt_op = now();
+end; $$;
+grant execute on function public.wijs_snapshot_abon() to authenticated;
+
+create or replace function public.wijs_admin_snapshots(maanden int default 12)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare r jsonb;
+begin
+  if not public.wijs_is_admin() then return null; end if;
+  select coalesce(jsonb_agg(to_jsonb(x) order by x.maand), '[]'::jsonb) into r from (
+    select maand, gebruikers, start, compleet, pro
+    from public.abon_snapshot
+    where maand >= (date_trunc('month', now()) - ((maanden - 1) || ' months')::interval)::date
+  ) x;
+  return r;
+end; $$;
+grant execute on function public.wijs_admin_snapshots(int) to authenticated;
+
+-- ── 11) PROEF-FEEDBACK + CONVERSIE ────────────────────────────────────────
+-- Aan het eind van de proef vragen we kort: ga je een abonnement nemen?
+-- (zeker / twijfel / nee) + eventueel waarom. Eén antwoord per gebruiker.
+create table if not exists public.proef_feedback (
+  user_id    uuid primary key default auth.uid() references auth.users(id) on delete cascade,
+  intentie   text not null check (intentie in ('zeker','twijfel','nee')),
+  categorie  text not null default '',  -- snelle keuze (bv. "Prijs"); leeg = niet gekozen
+  reden      text not null default '',  -- optionele vrije toelichting
+  created_at timestamptz not null default now()
+);
+-- Als de tabel al bestond zonder categorie-kolom:
+alter table public.proef_feedback add column if not exists categorie text not null default '';
+alter table public.proef_feedback enable row level security;
+drop policy if exists pf_self on public.proef_feedback;
+create policy pf_self on public.proef_feedback
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update on public.proef_feedback to authenticated;
+
+-- Conversie-overzicht voor de admin: de funnel + de intentie-uitslag + de
+-- laatste redenen. Alleen aantallen/eigen-feedback, geen leerlinggegevens.
+create or replace function public.wijs_admin_conversie()
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare r jsonb;
+begin
+  if not public.wijs_is_admin() then return null; end if;
+  select jsonb_build_object(
+    'funnel', jsonb_build_object(
+      'aangemeld', (select count(*) from auth.users),
+      'betalend',  (select count(*) from public.instellingen where abon_status in ('actief','opgezegd')),
+      'verlopen',  (select count(*) from public.instellingen where abon_status='verlopen')
+    ),
+    'intentie', jsonb_build_object(
+      'zeker',   (select count(*) from public.proef_feedback where intentie='zeker'),
+      'twijfel', (select count(*) from public.proef_feedback where intentie='twijfel'),
+      'nee',     (select count(*) from public.proef_feedback where intentie='nee')
+    ),
+    'categorieen', (
+      select coalesce(jsonb_agg(to_jsonb(x) order by x.aantal desc), '[]'::jsonb)
+      from (
+        select intentie, categorie, count(*) as aantal from public.proef_feedback
+        where categorie <> '' group by intentie, categorie
+      ) x
+    ),
+    'redenen', (
+      select coalesce(jsonb_agg(to_jsonb(x) order by x.created_at desc), '[]'::jsonb)
+      from (
+        select intentie, reden, created_at from public.proef_feedback
+        where reden <> '' order by created_at desc limit 50
+      ) x
+    )
+  ) into r;
+  return r;
+end; $$;
+grant execute on function public.wijs_admin_conversie() to authenticated;
+
+-- ── 12) FEEDBACK — algemene in-app feedback (idee/probleem/compliment) ─────
+-- Leerkrachten kunnen op elk moment iets sturen via de feedbackknop in het
+-- dashboard. Meerdere berichten per gebruiker mag (eigen id per bericht).
+-- pagina = waar de leerkracht was (context); status = nieuw/afgehandeld voor
+-- jouw eigen werklijst in admin. Geen leerlinggegevens: vrije tekst van de
+-- leerkracht zelf.
+create table if not exists public.feedback (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  soort      text not null default 'idee' check (soort in ('idee','probleem','compliment','anders')),
+  bericht    text not null,
+  pagina     text not null default '',
+  tool       text not null default '',     -- slug van de tool (rapportwijs/...) of '' = algemeen dashboard
+  categorie  text not null default '',     -- snelle keuze "waar gaat het over?" (per tool anders); '' = niet gekozen
+  status     text not null default 'nieuw' check (status in ('nieuw','afgehandeld')),
+  created_at timestamptz not null default now()
+);
+-- Als de tabel al bestond zonder tool/categorie-kolom:
+alter table public.feedback add column if not exists tool text not null default '';
+alter table public.feedback add column if not exists categorie text not null default '';
+alter table public.feedback enable row level security;
+-- Leerkracht mag alleen eigen feedback insturen; niemand leest mee (alleen de
+-- admin, via de SECURITY DEFINER-functie hieronder).
+drop policy if exists fb_insert_self on public.feedback;
+create policy fb_insert_self on public.feedback
+  for insert with check (auth.uid() = user_id);
+grant insert on public.feedback to authenticated;
+
+-- Admin-overzicht: tellingen + de laatste berichten, mét voornaam/e-mail van de
+-- INZENDER zodat je kunt terugmailen ("bedankt, opgelost!"). Dit is de eigen
+-- account-gegeven van de leerkracht, nooit leerlinggegevens. Admin-gated.
+create or replace function public.wijs_admin_feedback(dagen int default 90)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare r jsonb;
+begin
+  if not public.wijs_is_admin() then return null; end if;
+  select jsonb_build_object(
+    'totaal', (select count(*) from public.feedback
+               where created_at >= now() - (dagen || ' days')::interval),
+    'open',   (select count(*) from public.feedback where status='nieuw'),
+    'per_soort', (
+      select coalesce(jsonb_object_agg(soort, aantal), '{}'::jsonb)
+      from (select soort, count(*) as aantal from public.feedback
+            where created_at >= now() - (dagen || ' days')::interval
+            group by soort) s
+    ),
+    'per_tool', (
+      select coalesce(jsonb_object_agg(coalesce(nullif(tool,''),'dashboard'), aantal), '{}'::jsonb)
+      from (select tool, count(*) as aantal from public.feedback
+            where created_at >= now() - (dagen || ' days')::interval
+            group by tool) t
+    ),
+    'categorieen', (
+      select coalesce(jsonb_agg(to_jsonb(x) order by x.aantal desc), '[]'::jsonb)
+      from (
+        select coalesce(nullif(tool,''),'dashboard') as tool, categorie, count(*) as aantal
+        from public.feedback
+        where categorie <> '' and created_at >= now() - (dagen || ' days')::interval
+        group by 1, categorie
+      ) x
+    ),
+    'items', (
+      select coalesce(jsonb_agg(to_jsonb(x) order by x.created_at desc), '[]'::jsonb)
+      from (
+        select f.id, f.soort, f.bericht, f.pagina, f.tool, f.categorie, f.status, f.created_at,
+               coalesce(u.raw_user_meta_data->>'first_name','') as voornaam,
+               u.email as email
+        from public.feedback f
+        join auth.users u on u.id = f.user_id
+        where f.created_at >= now() - (dagen || ' days')::interval
+        order by f.created_at desc
+        limit 200
+      ) x
+    )
+  ) into r;
+  return r;
+end; $$;
+grant execute on function public.wijs_admin_feedback(int) to authenticated;
+
+-- Een feedback-item markeren als afgehandeld (of terug naar nieuw). Admin-gated.
+create or replace function public.wijs_admin_feedback_status(fid uuid, nieuwe_status text)
+returns boolean language plpgsql security definer set search_path = public as $$
+begin
+  if not public.wijs_is_admin() then return false; end if;
+  if nieuwe_status not in ('nieuw','afgehandeld') then return false; end if;
+  update public.feedback set status = nieuwe_status where id = fid;
+  return true;
+end; $$;
+grant execute on function public.wijs_admin_feedback_status(uuid, text) to authenticated;
+
+-- ── 13) TAKEN — persoonlijke takenlijst (van to-do naar gedaan) ───────────
+-- Eigen takenlijst van de leerkracht. Privé in het account (RLS), gaat nooit
+-- naar AI. Afgevinkte taken kun je in de app wissen; geen automatische opschoning.
+create table if not exists public.taken (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  tekst      text not null,
+  gedaan     boolean not null default false,
+  deadline   date,
+  wekelijks  boolean not null default false,
+  created_at timestamptz not null default now(),
+  gedaan_op  timestamptz
+);
+-- Als de tabel al bestond zonder deadline/wekelijks-kolom:
+alter table public.taken add column if not exists deadline date;
+alter table public.taken add column if not exists wekelijks boolean not null default false;
+alter table public.taken enable row level security;
+drop policy if exists "eigen taken" on public.taken;
+create policy "eigen taken" on public.taken
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.taken to authenticated;
+create index if not exists idx_taken_user on public.taken(user_id);
+
+-- Klaar. Je tabellen staan klaar en zijn per gebruiker afgeschermd.

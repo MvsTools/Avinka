@@ -1,0 +1,31 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   Wijs — centrale huisstijl voor de tools.
+
+   DIT IS DE ÉÉN PLEK. Wil je de look van álle tools tegelijk aanpassen
+   (bijv. een andere accentkleur)? Verander het hier, en elke tool gaat mee.
+
+   De tools gebruiken allemaal dezelfde variabelen (--ink, --cream, --accent …).
+   Dit bestand laadt ná de eigen stijl van een tool en overschrijft die kleuren,
+   zodat de werking van de tool ongemoeid blijft maar de look het platform volgt.
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+  --ink: #221c3a;      /* diep inkt-violet — tekst */
+  --cream: #fbf6ee;    /* warme papier-achtergrond */
+  --warm: #e9e1d2;     /* zachte rand/lijnen */
+  --accent: #2f9e6e;   /* indigo — hoofdkleur (was terracotta) */
+  --accent2: #25855a;  /* donkerder indigo — secundair (was groen) */
+  --muted: #6b6880;    /* gedempt grijs-violet */
+  --card: #ffffff;     /* kaarten/vlakken */
+}
+
+/* Het API-sleutelveld uit de tools verbergen: op het platform regelt de login
+   de toegang en staat de sleutel veilig op de server. */
+.apikey-card { display: none !important; }
+
+/* Indigo blijft een ACCENT, niet de tekstkleur. Eén bewuste uitzondering:
+   een schuingedrukt woord in een kop mag indigo zijn — net als op de
+   landingspagina ("Win elke week 2 uur terug"). Dat geeft de gewenste pit. */
+h1 em, h2 em { color: var(--accent); font-style: italic; }
+
+/* Foutmeldingen in rood (niet indigo). */
+.error-box { color: #be123c; }
