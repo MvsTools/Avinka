@@ -54,8 +54,9 @@ export async function POST(req: Request) {
   tellers[type] = (tellers[type] ?? 0) + 1;
 
   // Adaptieve tijdwinst voor déze actie, opgeteld bij het totaal per soort.
+  const gewonnen = minutenVoor(type, signaal);
   const minuten = { ...((data?.minuten as Record<string, number>) ?? {}) };
-  minuten[type] = (minuten[type] ?? 0) + minutenVoor(type, signaal);
+  minuten[type] = (minuten[type] ?? 0) + gewonnen;
 
   // ── Streak bijwerken (alleen op werkdagen; weekend telt niet mee) ──
   const vandaag = amsterdamDatum(new Date());
@@ -73,5 +74,5 @@ export async function POST(req: Request) {
     { onConflict: "user_id" },
   );
   if (error) return NextResponse.json({ error: "db_error" }, { status: 500 });
-  return NextResponse.json({ ok: true, tellers, minuten, streak });
+  return NextResponse.json({ ok: true, tellers, minuten, streak, gewonnen });
 }

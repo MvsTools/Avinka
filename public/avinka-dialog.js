@@ -119,7 +119,9 @@
     "Dat staat",
   ];
   var vinkHuidig = null;
-  function toonAfgevinkt() {
+  // customTekst (optioneel) → bv. "Hoppa! 18 minuten bespaard"; anders een
+  // wisselende "afgevinkt"-tekst.
+  function toonAfgevinkt(customTekst) {
     zorgStijl();
     try {
       if (vinkHuidig && vinkHuidig.parentNode) vinkHuidig.remove();
@@ -129,7 +131,7 @@
         '<span class="avinka-vink-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>' +
         '<span class="avinka-vink-tx"></span>';
       t.querySelector(".avinka-vink-tx").textContent =
-        VINK_TEKSTEN[Math.floor(Math.random() * VINK_TEKSTEN.length)];
+        customTekst || VINK_TEKSTEN[Math.floor(Math.random() * VINK_TEKSTEN.length)];
       document.body.appendChild(t);
       vinkHuidig = t;
       requestAnimationFrame(function () {
@@ -162,17 +164,34 @@
   // signaal (optioneel) = { woorden } / { items } / { leerlingen } → de server
   // rekent daaruit de adaptieve tijdwinst uit (zie src/lib/tijdwinst.ts).
   window.avinkaTel = function (type, signaal) {
+    var getoond = false;
+    function toon(tekst) {
+      if (getoond) return;
+      getoond = true;
+      toonAfgevinkt(tekst);
+    }
+    // De toast verschijnt zodra de server de gewonnen minuten teruggeeft. Blijft
+    // dat antwoord uit (offline/traag), dan na 1,2s gewoon het "afgevinkt"-toastje.
+    var val = setTimeout(function () { toon(); }, 1200);
     try {
       fetch("/api/statistiek", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ type: type, signaal: signaal || null }),
         keepalive: true,
-      });
+      })
+        .then(function (r) { return r && r.ok ? r.json() : null; })
+        .then(function (d) {
+          clearTimeout(val);
+          var m = d && typeof d.gewonnen === "number" ? d.gewonnen : 0;
+          if (m > 0) toon("Hoppa! " + m + (m === 1 ? " minuut" : " minuten") + " bespaard");
+          else toon();
+        })
+        .catch(function () { clearTimeout(val); toon(); });
     } catch (e) {
-      /* stil */
+      clearTimeout(val);
+      toon();
     }
-    toonAfgevinkt();
   };
   window.avinkaBevestig = function (tekst, opts) {
     opts = opts || {};
