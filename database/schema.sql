@@ -1,5 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════
---  Wijs — database-schema
+--  Avinka — database-schema
+--
+--  NB: databasefuncties hebben nog de historische prefix `wijs_` (de oude
+--  werknaam van het platform, nu Avinka). Bewust niet hernoemd: het is
+--  onzichtbaar voor gebruikers en hernoemen van live DB-objecten is risicovol
+--  (afhankelijkheden + de maandelijkse cron-taak). Functioneel identiek.
 --
 --  Plak dit volledige bestand in Supabase → SQL Editor → Run.
 --  Het is veilig om opnieuw te draaien (idempotent): bestaande tabellen
@@ -129,7 +134,7 @@ grant select, insert, update, delete on public.instellingen to authenticated;
 grant select, insert, update, delete on public.klassen      to authenticated;
 grant select, insert, update, delete on public.teksten      to authenticated;
 
--- ── 4) RAPPORTEN — opgeslagen rapportteksten per kind (RapportWijs) ──────
+-- ── 4) RAPPORTEN — opgeslagen rapportteksten per kind (Rapporten) ──────
 -- Concept/afgeronde rapportteksten zodat een leerkracht over meerdere sessies
 -- kan werken. Bewaartermijn-gedachte: tijdelijk, met "wissen"-knop in de tool.
 create table if not exists public.rapporten (
@@ -158,7 +163,7 @@ grant select, insert, update, delete on public.rapporten to authenticated;
 --  parent_id leeg = in de wortel; anders de map waarin het zit (map-in-map kan).
 --  type 'map'  = een map      → kinderen verwijzen ernaar via parent_id
 --  type 'tekst' = bewaarde tekst (inhoud)
---  type 'plattegrond' = opgeslagen plattegrond (data = JSON uit PlattegrondWijs)
+--  type 'plattegrond' = opgeslagen plattegrond (data = JSON uit Plattegrond)
 create table if not exists public.bestanden (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null default auth.uid() references auth.users(id) on delete cascade,
@@ -256,7 +261,7 @@ $$;
 grant execute on function public.wijs_aantal_verwijzingen(text) to authenticated;
 
 -- Aantal uitgenodigde collega's dat nog in de gratis proef zit (nog niet betaald).
--- Puur voor een motiverend tweede getal bij de uitnodiger ("X proberen Wijs nu").
+-- Puur voor een motiverend tweede getal bij de uitnodiger ("X proberen Avinka nu").
 create or replace function public.wijs_aantal_verwijzingen_proef(code text)
 returns int
 language sql
