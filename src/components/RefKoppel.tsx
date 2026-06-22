@@ -9,14 +9,14 @@ export default function RefKoppel() {
   useEffect(() => {
     let ref: string | null = null;
     try {
-      ref = localStorage.getItem("wijs_ref");
+      ref = localStorage.getItem("avinka_ref");
     } catch {
       /* niets */
     }
     if (!ref) return;
     koppelVerwijzing(ref).finally(() => {
       try {
-        localStorage.removeItem("wijs_ref");
+        localStorage.removeItem("avinka_ref");
       } catch {
         /* niets */
       }

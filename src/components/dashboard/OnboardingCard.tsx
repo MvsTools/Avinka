@@ -10,7 +10,7 @@ import { createClient } from "@/utils/supabase/client";
 // blijft daarna weg. De "weggeklikt"-vlag staat PER ACCOUNT in de browser-opslag
 // (sleutel + user-id), zodat een nieuw account op dezelfde computer niet de stand
 // van een ander account erft.
-const STORAGE_PREFIX = "wijs_onboarding_dismissed_";
+const STORAGE_PREFIX = "avinka_onboarding_dismissed_";
 
 type Stap = {
   sleutel: "klas" | "voorkeuren" | "tool";

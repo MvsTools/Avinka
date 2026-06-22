@@ -6,7 +6,7 @@ import { getVoorkeuren, saveVoorkeuren, type Voorkeuren } from "@/lib/db";
 // Voorkeuren staan in je eigen account (Supabase, per user-id afgeschermd).
 // BEWUST geen localStorage-import meer: die data is apparaat-gebonden en lekte
 // tussen accounts op dezelfde browser. De oude sleutel wordt opgeruimd.
-const OUD_KEY = "wijs_voorkeuren";
+const OUD_KEY = "avinka_voorkeuren";
 
 const tonen = [
   { waarde: "warm", label: "Warm & persoonlijk" },

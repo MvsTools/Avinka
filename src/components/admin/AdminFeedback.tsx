@@ -26,10 +26,10 @@ const SOORT_KLEUR: Record<FeedbackSoort, string> = {
 const TOOL_LABEL: Record<string, string> = {
   "": "Dashboard",
   dashboard: "Dashboard",
-  toetswijs: "Toetsanalyse",
-  rapportwijs: "Rapporten",
-  ouderwijs: "Oudercontact",
-  plattegrondwijs: "Plattegrond",
+  toetsanalyse: "Toetsanalyse",
+  rapporten: "Rapporten",
+  oudercontact: "Oudercontact",
+  plattegrond: "Plattegrond",
   "nieuwe-tool": "Nieuwe tool",
 };
 function toolLabel(slug: string): string {

@@ -1,13 +1,13 @@
 import { tools } from "@/lib/tools";
 
 const uitleg: Record<string, string> = {
-  toetswijs:
+  toetsanalyse:
     "Plak je toetsresultaten en Toetsanalyse laat in één oogopslag zien hoe je groep ervoor staat. De cijfers worden door de tool zelf uitgerekend — die kloppen dus altijd.",
-  rapportwijs:
+  rapporten:
     "Vertel kort wat je over een leerling weet, en Rapporten schrijft een warme rapporttekst die klinkt alsof jij 'm zelf schreef. Daarna pas je 'm aan naar smaak.",
-  ouderwijs:
+  oudercontact:
     "Voor weekberichten, nieuwsbrieven en ouderbrieven. Je geeft de hoofdpunten, Oudercontact maakt er een nette tekst van die zo de deur uit kan.",
-  plattegrondwijs:
+  plattegrond:
     "Maak je klasplattegrond met een paar klikken. Sleep de tafels op hun plek en je bent klaar. Hier komt geen AI aan te pas.",
 };
 

@@ -49,7 +49,7 @@ export default function AuthCard({ mode }: { mode: "signin" | "signup" }) {
   // invullen en het vinkje aanzetten.
   useEffect(() => {
     if (isSignup) return;
-    const bewaard = localStorage.getItem("wijs_onthoud_email");
+    const bewaard = localStorage.getItem("avinka_onthoud_email");
     if (bewaard) {
       setEmail(bewaard);
       setOnthoud(true);
@@ -60,8 +60,8 @@ export default function AuthCard({ mode }: { mode: "signin" | "signup" }) {
   // vinkje. Hangt aan de inlog-knop, dus loopt vlak vóór de server-actie.
   function bewaarKeuze() {
     if (isSignup) return;
-    if (onthoud && email) localStorage.setItem("wijs_onthoud_email", email);
-    else localStorage.removeItem("wijs_onthoud_email");
+    if (onthoud && email) localStorage.setItem("avinka_onthoud_email", email);
+    else localStorage.removeItem("avinka_onthoud_email");
   }
 
   // Na een geslaagde registratie tonen we alleen de "check je mail"-boodschap.
@@ -218,7 +218,7 @@ export default function AuthCard({ mode }: { mode: "signin" | "signup" }) {
               onChange={(e) => {
                 const aan = e.target.checked;
                 setOnthoud(aan);
-                if (!aan) localStorage.removeItem("wijs_onthoud_email");
+                if (!aan) localStorage.removeItem("avinka_onthoud_email");
               }}
               className="h-5 w-5 flex-shrink-0 rounded border-black/20 text-brand focus:ring-brand/30"
             />

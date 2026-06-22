@@ -23,7 +23,7 @@
   <script>
   /* Platform: login regelt toegang. Dummy-sleutel zodat de tool
      doorloopt; de echte sleutel staat op de server (/api/claude). */
-  try { localStorage.setItem("toetswijs_apikey", "sk-ant-proxy"); } catch (e) {}
+  try { localStorage.setItem("avinka_apikey", "sk-ant-proxy"); } catch (e) {}
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -442,9 +442,9 @@
   .land-note { display: flex; gap: 8px; align-items: flex-start; margin: 26px 2px 0; font-size: 12px; line-height: 1.5; color: var(--muted); max-width: 560px; }
   .land-note-ic { flex-shrink: 0; font-size: 13px; opacity: .7; }
 </style>
-  <link rel="stylesheet" href="/wijs-huisstijl.css">
-  <script src="/wijs-dialog.js"></script>
-  <script src="/wijs-privacy.js"></script>
+  <link rel="stylesheet" href="/avinka-huisstijl.css">
+  <script src="/avinka-dialog.js"></script>
+  <script src="/avinka-privacy.js"></script>
 </head>
 <body>
 
@@ -1620,7 +1620,7 @@ const NB_SUGGESTIES = ['Nieuws uit de groep', 'Even voorstellen', 'Studiedag', '
 // ════════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
   let saved = null;
-  try { saved = localStorage.getItem('toetswijs_apikey'); } catch(e) {}
+  try { saved = localStorage.getItem('avinka_apikey'); } catch(e) {}
   if (saved) {
     apiKey = saved;
     const inp = document.getElementById('apikey-input');
@@ -1654,12 +1654,12 @@ function handleApiKey(input) {
   else if (apiKey) showApiStatus('Sleutel lijkt onvolledig…');
   else { const s = document.getElementById('apikey-status'); s.classList.remove('visible'); }
   if (document.getElementById('apikey-remember').checked && apiKey) {
-    try { localStorage.setItem('toetswijs_apikey', apiKey); } catch(e) {}
+    try { localStorage.setItem('avinka_apikey', apiKey); } catch(e) {}
   }
 }
 function handleRemember(cb) {
-  if (cb.checked && apiKey) { try { localStorage.setItem('toetswijs_apikey', apiKey); showApiStatus('✓ Opgeslagen'); } catch(e){} }
-  else { try { localStorage.removeItem('toetswijs_apikey'); } catch(e){} showApiStatus('Verwijderd'); }
+  if (cb.checked && apiKey) { try { localStorage.setItem('avinka_apikey', apiKey); showApiStatus('✓ Opgeslagen'); } catch(e){} }
+  else { try { localStorage.removeItem('avinka_apikey'); } catch(e){} showApiStatus('Verwijderd'); }
 }
 function toggleApiKeyVisibility() {
   const i = document.getElementById('apikey-input');
@@ -1716,7 +1716,7 @@ function renderTegels() {
   });
 }
 function kiesType(id) {
-  if (!apiKey) { wijsAlert('Vul eerst je API-sleutel in bovenaan.'); return; }
+  if (!apiKey) { avinkaAlert('Vul eerst je API-sleutel in bovenaan.'); return; }
   if (id === 'weekbericht') {
     if (!week.kopjes.length) {
       // standaardkopjes van de school
@@ -2286,7 +2286,7 @@ async function genereer() {
     setBericht(week.bericht);
     document.getElementById('result-box').classList.add('visible');
     setStap(3);
-    if (typeof wijsTel === 'function') wijsTel('weekbericht');
+    if (typeof avinkaTel === 'function') avinkaTel('weekbericht');
     document.getElementById('result-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) {
     err.textContent = 'Er ging iets mis: ' + e.message;
@@ -2817,7 +2817,7 @@ async function nbGenereer() {
     }
     brief.blokken = nbBouwBlokken(gevuld, schrijfRubrieken, bodies);
     document.getElementById('nb-result-box').classList.add('visible');   // eerst tonen…
-    if (typeof wijsTel === 'function') wijsTel('nieuwsbrief');
+    if (typeof avinkaTel === 'function') avinkaTel('nieuwsbrief');
     nbRenderResultaat();                                                  // …dan renderen, zodat de vakken goed meten
     setStap(3);
     document.getElementById('nb-result-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3056,7 +3056,7 @@ async function mailGenereer() {
     mailSetResultaat(mail.resultaat);
     document.getElementById('mail-result-box').classList.add('visible');
     setStap(3);
-    if (typeof wijsTel === 'function') wijsTel('bericht');
+    if (typeof avinkaTel === 'function') avinkaTel('bericht');
     document.getElementById('mail-result-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) {
     err.textContent = 'Er ging iets mis: ' + e.message;
@@ -3216,7 +3216,7 @@ function gespStartCheck() {
   b.disabled = !ok;
 }
 async function gespReset() {
-  if (!(await wijsBevestig('Alle ingevulde gegevens en gemaakte verslagen in Oudergesprekken worden gewist.', { titel: 'Alles leegmaken?', bevestig: 'Leegmaken', gevaar: true }))) return;
+  if (!(await avinkaBevestig('Alle ingevulde gegevens en gemaakte verslagen in Oudergesprekken worden gewist.', { titel: 'Alles leegmaken?', bevestig: 'Leegmaken', gevaar: true }))) return;
   gesp.mode = 'een';
   gesp.groep = ''; gesp.aantal = ''; gesp.datum = ''; gesp.aanleiding = '';
   gesp.kinderen = []; gesp.huidigeId = null;
@@ -3532,7 +3532,7 @@ async function gespGenereer() {
     gespRenderAfspraken();
     document.getElementById('gesp-result-box').classList.add('visible');
     setStap(3);
-    if (typeof wijsTel === 'function') wijsTel('gesprek');
+    if (typeof avinkaTel === 'function') avinkaTel('gesprek');
     document.getElementById('gesp-result-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) {
     err.textContent = 'Er ging iets mis: ' + e.message;
@@ -3717,7 +3717,7 @@ const GD_STYLES = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
 async function gespDownloadAlles() {
   const klaar = gesp.kinderen.filter(k => k.status === 'klaar' && k.verslag);
   if (!klaar.length) return;
-  if (typeof JSZip === 'undefined') { wijsAlert('De Word-maker kon niet laden (waarschijnlijk geen internet). Probeer het met internet opnieuw, of kopieer de verslagen los per kaart.'); return; }
+  if (typeof JSZip === 'undefined') { avinkaAlert('De Word-maker kon niet laden (waarschijnlijk geen internet). Probeer het met internet opnieuw, of kopieer de verslagen los per kaart.'); return; }
   const zip = new JSZip();
   zip.file('[Content_Types].xml', GD_CONTENT_TYPES);
   zip.folder('_rels').file('.rels', GD_RELS);
@@ -4004,7 +4004,7 @@ async function infoGenereer() {
     infoSetResultaat(info.resultaat);
     document.getElementById('info-result-box').classList.add('visible');
     setStap(3);
-    if (typeof wijsTel === 'function') wijsTel('brief');
+    if (typeof avinkaTel === 'function') avinkaTel('brief');
     document.getElementById('info-result-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) {
     err.textContent = 'Er ging iets mis: ' + e.message;
@@ -4430,7 +4430,7 @@ async function uitnGenereer() {
     document.getElementById('uitn-titel').value = uitn.titel;
     document.getElementById('uitn-tekst').value = uitn.tekst;
     document.getElementById('uitn-result-box').classList.add('visible');
-    if (typeof wijsTel === 'function') wijsTel('uitnodiging');
+    if (typeof avinkaTel === 'function') avinkaTel('uitnodiging');
     uitnAutoGrow(document.getElementById('uitn-tekst'));
     setStap(3);
     uitnLaadFontsEnTeken();
@@ -4758,7 +4758,7 @@ function uitnPdf() {
   const cv = document.getElementById('uitn-canvas');
   if (!cv) return;
   const lib = window.jspdf && window.jspdf.jsPDF;
-  if (!lib) { wijsAlert('De pdf-maker kon niet laden (waarschijnlijk geen internet). Gebruik de printknop en kies daar "Opslaan als pdf".'); return; }
+  if (!lib) { avinkaAlert('De pdf-maker kon niet laden (waarschijnlijk geen internet). Gebruik de printknop en kies daar "Opslaan als pdf".'); return; }
   const naam = (uitn.titel ? uitn.titel.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_').slice(0, 40) : 'uitnodiging') || 'uitnodiging';
   const url = cv.toDataURL('image/png');
   const doc = new lib({ unit: 'mm', format: 'a4', orientation: 'portrait' });
@@ -4783,27 +4783,27 @@ function uitnPdf() {
 async function vulMijnKlas(toevoegFn){
   try{
     const r = await fetch('/api/klas', { headers: { accept: 'application/json' } });
-    if(r.status === 401){ wijsAlert('Log eerst in om je klas te gebruiken.'); return; }
-    if(!r.ok){ wijsAlert('Kon je klas niet ophalen. Probeer het zo opnieuw.'); return; }
+    if(r.status === 401){ avinkaAlert('Log eerst in om je klas te gebruiken.'); return; }
+    if(!r.ok){ avinkaAlert('Kon je klas niet ophalen. Probeer het zo opnieuw.'); return; }
     const data = await r.json();
     const namen = (data && data.leerlingen) || [];
-    if(!namen.length){ wijsAlert('Je hebt nog geen klas ingevuld.\n\nGa naar je dashboard, naar "Mijn klas", om je klassenlijst klaar te zetten.'); return; }
+    if(!namen.length){ avinkaAlert('Je hebt nog geen klas ingevuld.\n\nGa naar je dashboard, naar "Mijn klas", om je klassenlijst klaar te zetten.'); return; }
     toevoegFn(namen.join('\n'));
-  }catch(e){ wijsAlert('Er ging iets mis bij het ophalen van je klas.'); }
+  }catch(e){ avinkaAlert('Er ging iets mis bij het ophalen van je klas.'); }
 }
 </script>
 <script>/* Privacy-pop-up voor de Oudergesprekken-module (gevoeligste tekst) */
 (function(){
   function init(){
-    if(!window.wijsPrivacy || typeof window.kiesType!=='function' || typeof window.toonScherm!=='function'){
+    if(!window.avinkaPrivacy || typeof window.kiesType!=='function' || typeof window.toonScherm!=='function'){
       return setTimeout(init, 200);
     }
     var origKies = window.kiesType;
     window.kiesType = function(id){
       var r = origKies.apply(this, arguments);
       if(id === 'gesprekken'){
-        wijsPrivacy.gate({
-          key:'ouderwijs-gesprek',
+        avinkaPrivacy.gate({
+          key:'oudercontact-gesprek',
           intro:'Bij een oudergesprek is veel informatie herleidbaar. Schrijf daarom zorgvuldig:',
           wel:[
             'Vat zakelijk samen wat er op school speelt',
@@ -4822,7 +4822,7 @@ async function vulMijnKlas(toevoegFn){
     window.toonScherm = function(id, stap){
       var r = origScherm.apply(this, arguments);
       // Terug in het modulemenu? Dan het privacy-tagje weer verbergen.
-      if(id === 'scherm-start') wijsPrivacy.leave('ouderwijs-gesprek');
+      if(id === 'scherm-start') avinkaPrivacy.leave('oudercontact-gesprek');
       return r;
     };
   }

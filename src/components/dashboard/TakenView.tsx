@@ -378,23 +378,23 @@ function capitaliseer(s: string): string {
 // Eerste (meest specifieke) match wint, dus modules staan boven de tool.
 type Verwijzing = { naam: string; href: string; emoji: string; woorden: string[] };
 const VERWIJZINGEN: Verwijzing[] = [
-  { naam: "Rapporten", emoji: "📝", href: "/tools/rapportwijs.html",
+  { naam: "Rapporten", emoji: "📝", href: "/tools/rapporten.html",
     woorden: ["rapport", "rapporten", "rapportje", "rapporttekst", "rapportage", "rapportcijfer", "getuigschrift"] },
-  { naam: "Weekbericht", emoji: "🗓️", href: "/tools/ouderwijs.html?m=weekbericht",
+  { naam: "Weekbericht", emoji: "🗓️", href: "/tools/oudercontact.html?m=weekbericht",
     woorden: ["weekbericht", "weekbrief", "weekupdate", "weekmail", "week bericht"] },
-  { naam: "Nieuwsbrief", emoji: "📰", href: "/tools/ouderwijs.html?m=nieuwsbrief",
+  { naam: "Nieuwsbrief", emoji: "📰", href: "/tools/oudercontact.html?m=nieuwsbrief",
     woorden: ["nieuwsbrief", "maandbrief", "infobrief", "schoolkrant"] },
-  { naam: "Uitnodiging", emoji: "✉️", href: "/tools/ouderwijs.html?m=uitnodiging",
+  { naam: "Uitnodiging", emoji: "✉️", href: "/tools/oudercontact.html?m=uitnodiging",
     woorden: ["uitnodiging", "uitnodigen", "ouderavond", "informatieavond", "inloopavond", "kaartje"] },
-  { naam: "Oudergesprek", emoji: "🗣️", href: "/tools/ouderwijs.html?m=gesprekken",
+  { naam: "Oudergesprek", emoji: "🗣️", href: "/tools/oudercontact.html?m=gesprekken",
     woorden: ["oudergesprek", "tienminutengesprek", "voortgangsgesprek", "rapportgesprek", "kindgesprek", "gesprekken", "ouder gesprek"] },
-  { naam: "Informatiebrief", emoji: "📄", href: "/tools/ouderwijs.html?m=informatiebrief",
+  { naam: "Informatiebrief", emoji: "📄", href: "/tools/oudercontact.html?m=informatiebrief",
     woorden: ["ouderbrief", "informatiebrief", "brief aan ouders"] },
-  { naam: "Oudercontact", emoji: "💬", href: "/tools/ouderwijs.html?m=bericht",
+  { naam: "Oudercontact", emoji: "💬", href: "/tools/oudercontact.html?m=bericht",
     woorden: ["oudercontact", "ouders mailen", "mail naar ouders", "oudermail", "ouderbericht", "mededeling"] },
-  { naam: "Toetsanalyse", emoji: "📊", href: "/tools/toetswijs.html",
+  { naam: "Toetsanalyse", emoji: "📊", href: "/tools/toetsanalyse.html",
     woorden: ["toetsanalyse", "toetsresultaat", "toetsresultaten", "methodetoets", "toetsen", "toets", "cito", "iep", "lvs", "scores"] },
-  { naam: "Plattegrond", emoji: "🪑", href: "/tools/plattegrondwijs.html",
+  { naam: "Plattegrond", emoji: "🪑", href: "/tools/plattegrond.html",
     woorden: ["plattegrond", "klasplattegrond", "klasopstelling", "opstelling", "tafelschikking", "sociogram", "groepjes"] },
 ];
 

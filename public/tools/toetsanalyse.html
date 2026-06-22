@@ -10,7 +10,7 @@
   <script>
   /* Platform: de login regelt de toegang. Dummy-sleutel zodat de tool
      doorloopt; de ECHTE sleutel staat veilig op de server (/api/claude). */
-  try { localStorage.setItem("toetswijs_apikey", "sk-ant-proxy"); } catch (e) {}
+  try { localStorage.setItem("avinka_apikey", "sk-ant-proxy"); } catch (e) {}
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -451,8 +451,8 @@
   .ps-caveat { margin-top:18px; font-size:12.5px; color:#221c3a; line-height:1.6; background:#e7f4ed; border-left:3px solid #2f9e6e; padding:12px 14px; border-radius:10px; }
   .ps-caveat strong { color:#2f9e6e; }
 </style>
-  <link rel="stylesheet" href="/wijs-huisstijl.css">
-  <script src="/wijs-dialog.js"></script>
+  <link rel="stylesheet" href="/avinka-huisstijl.css">
+  <script src="/avinka-dialog.js"></script>
 </head><body>
 
 <div class="container landing-container iepui" id="landing">
@@ -784,7 +784,7 @@
       <button class="apikey-toggle" onclick="var i=document.getElementById('cito-apikey-input');i.type=i.type==='password'?'text':'password';" title="Toon/verberg">👁</button>
     </div>
     <label class="apikey-remember">
-      <input type="checkbox" id="cito-apikey-remember" onchange="if(this.checked&&apiKey){try{localStorage.setItem('toetswijs_apikey',apiKey);}catch(e){}}else{try{localStorage.removeItem('toetswijs_apikey');}catch(e){}}"> Onthouden
+      <input type="checkbox" id="cito-apikey-remember" onchange="if(this.checked&&apiKey){try{localStorage.setItem('avinka_apikey',apiKey);}catch(e){}}else{try{localStorage.removeItem('avinka_apikey');}catch(e){}}"> Onthouden
     </label>
     <div class="apikey-status" id="cito-apikey-status"></div>
   </div>
@@ -1087,7 +1087,7 @@ function hoogsteVoor(meetmoment, vakKey) {
 // ════════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
   let saved = null;
-  try { saved = localStorage.getItem('toetswijs_apikey'); } catch(e) {}
+  try { saved = localStorage.getItem('avinka_apikey'); } catch(e) {}
   if (saved) {
     const input = document.getElementById('apikey-input');
     input.value = saved; input.classList.add('valid');
@@ -1125,14 +1125,14 @@ function handleApiKey(input) {
   apiKey = input.value.trim();
   if (apiKey.startsWith('sk-ant-')) {
     input.classList.add('valid'); showApiStatus('✓ Sleutel herkend');
-    if (document.getElementById('apikey-remember').checked) { try { localStorage.setItem('toetswijs_apikey', apiKey); } catch(e) {} }
+    if (document.getElementById('apikey-remember').checked) { try { localStorage.setItem('avinka_apikey', apiKey); } catch(e) {} }
   } else { input.classList.remove('valid'); showApiStatus(''); }
   checkReady();
 }
 function handleRemember(cb) {
   try {
-    if (cb.checked && apiKey) { localStorage.setItem('toetswijs_apikey', apiKey); showApiStatus('✓ Opgeslagen'); }
-    else { localStorage.removeItem('toetswijs_apikey'); showApiStatus('Verwijderd'); }
+    if (cb.checked && apiKey) { localStorage.setItem('avinka_apikey', apiKey); showApiStatus('✓ Opgeslagen'); }
+    else { localStorage.removeItem('avinka_apikey'); showApiStatus('Verwijderd'); }
   } catch(e) { showApiStatus(cb.checked ? '✓ Ingevuld' : ''); }
 }
 function toggleApiKeyVisibility() {
@@ -1339,7 +1339,7 @@ async function iepPrefillKlas() {
     data = await r.json();
   } catch (e) { return; }
   iepKlasNamen = (data && data.leerlingen) || [];
-  wijsKlasNamen = iepKlasNamen;
+  avinkaKlasNamen = iepKlasNamen;
   if (!iepKlasNamen.length) return;
   // Groep uit de klasnaam (de IEP-keuzelijst kent alleen groep 3 t/m 8).
   let g = '';
@@ -1795,13 +1795,13 @@ function naamIsOnzeker(naam) {
 // De klas uit het dashboard (voornamen). Wordt gevuld door iepPrefillKlas/citoPrefillKlas.
 // Hiermee slaan we de naam-popup over: kent de klas de voornaam van dit kind, dan gebruiken
 // we díe en hoeven we niets te vragen (bv. "Sam Reints Bok" -> klas kent "Sam" -> "Sam").
-let wijsKlasNamen = [];
+let avinkaKlasNamen = [];
 function voornaamUitKlas(volledigeNaam) {
-  if (!wijsKlasNamen.length) return null;
+  if (!avinkaKlasNamen.length) return null;
   const full = String(volledigeNaam || '').trim().split(/\s+/);
   const fullLow = full.map(t => t.toLowerCase());
   let best = null, bestLen = 0;
-  wijsKlasNamen.forEach(kn => {
+  avinkaKlasNamen.forEach(kn => {
     const kt = String(kn || '').trim().split(/\s+/);
     if (!kt.length || !kt[0] || kt.length > full.length) return;
     // Alle woorden van de klasnaam moeten de eerste woorden van de volledige naam zijn.
@@ -3578,7 +3578,7 @@ async function genereerEigenTemplate() {
   w.classList.add('visible');
   document.getElementById('result-box').classList.add('visible');
   markStepDone('step2', 'step3');
-  if (typeof wijsTel === 'function') wijsTel('analyse');
+  if (typeof avinkaTel === 'function') avinkaTel('analyse');
 }
 
 async function startAnalyse() {
@@ -4656,7 +4656,7 @@ function downloadDiagnose() {
     const blob = new Blob([txt + verif], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'toetswijs_diagnose.txt'; a.click();
+    a.href = url; a.download = 'toetsanalyse_diagnose.txt'; a.click();
     URL.revokeObjectURL(url);
   } catch(e) {}
 }
@@ -6596,7 +6596,7 @@ async function citoPrefillKlas() {
     data = await r.json();
   } catch (e) { return; }
   const namen = (data && data.leerlingen) || [];
-  wijsKlasNamen = namen;
+  avinkaKlasNamen = namen;
   if (!namen.length) return;
   const naam = String((data && data.naam) || '').trim();
   const gveld = document.getElementById('cito-ctx-groep');
@@ -8005,7 +8005,7 @@ function citoHandleWordApiKey(input) {
   if (apiKey.startsWith('sk-ant-')) {
     input.classList.add('valid'); if (st){st.textContent='✓ Sleutel herkend'; st.classList.add('visible');}
     const rem = document.getElementById('cito-apikey-remember');
-    if (rem && rem.checked) { try { localStorage.setItem('toetswijs_apikey', apiKey); } catch(e){} }
+    if (rem && rem.checked) { try { localStorage.setItem('avinka_apikey', apiKey); } catch(e){} }
   } else { input.classList.remove('valid'); if(st){st.textContent=''; st.classList.remove('visible');} }
 }
 
@@ -8127,7 +8127,7 @@ function citoToonUitlezing() {
 // Init: opgeslagen sleutel tonen (voor latere AI-proza) + lijst/knop bijwerken.
 window.addEventListener('DOMContentLoaded', () => {
   try {
-    const saved = localStorage.getItem('toetswijs_apikey');
+    const saved = localStorage.getItem('avinka_apikey');
     if (saved) { apiKey = saved; const inp=document.getElementById('cito-apikey-input'); if(inp){inp.value=saved;inp.classList.add('valid');} const rem=document.getElementById('cito-apikey-remember'); if(rem)rem.checked=true; const st=document.getElementById('cito-apikey-status'); if(st){st.textContent='✓ Sleutel geladen';st.classList.add('visible');} }
   } catch(e) {}
   citoToonFormulierLijst();

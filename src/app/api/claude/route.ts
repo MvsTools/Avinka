@@ -16,7 +16,7 @@ import {
 //   overzicht — nooit de inhoud (geen prompt/antwoord, geen leerlinggegevens).
 
 // Haalt de tool-naam uit de Referer (de pagina vanwaar de call komt), bijv.
-// "/tools/rapportwijs.html" → "rapportwijs". Null als onbekend.
+// "/tools/rapporten.html" → "rapporten". Null als onbekend.
 function toolUitReferer(referer: string | null): string | null {
   if (!referer) return null;
   const m = referer.match(/\/tools\/([a-z0-9-]+)\.html/i);

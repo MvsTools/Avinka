@@ -21,7 +21,7 @@
   <script>
   /* Platform: de login regelt de toegang. Dummy-sleutel zodat de tool
      doorloopt; de ECHTE sleutel staat veilig op de server (/api/claude). */
-  try { localStorage.setItem("toetswijs_apikey", "sk-ant-proxy"); } catch (e) {}
+  try { localStorage.setItem("avinka_apikey", "sk-ant-proxy"); } catch (e) {}
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -470,9 +470,9 @@
   .vakrij:first-child{ border-top:none; }
   .vakrij .vaknaam{ font-size:14.5px; font-weight:600; color:var(--ink); }
 </style>
-  <link rel="stylesheet" href="/wijs-huisstijl.css">
-  <script src="/wijs-dialog.js"></script>
-  <script src="/wijs-privacy.js"></script>
+  <link rel="stylesheet" href="/avinka-huisstijl.css">
+  <script src="/avinka-dialog.js"></script>
+  <script src="/avinka-privacy.js"></script>
 </head>
 <body>
 <div class="app">
@@ -806,7 +806,7 @@ const state = {
 // ════════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
   let saved = null;
-  try { saved = localStorage.getItem('toetswijs_apikey'); } catch(e) {}
+  try { saved = localStorage.getItem('avinka_apikey'); } catch(e) {}
   if (saved) {
     apiKey = saved;
     const inp = document.getElementById('apikey-input');
@@ -823,13 +823,13 @@ function handleApiKey(input) {
   else if (apiKey) showApiStatus('Sleutel lijkt onvolledig…');
   else { const s = document.getElementById('apikey-status'); s.classList.remove('visible'); }
   if (document.getElementById('apikey-remember').checked && apiKey) {
-    try { localStorage.setItem('toetswijs_apikey', apiKey); } catch(e) {}
+    try { localStorage.setItem('avinka_apikey', apiKey); } catch(e) {}
   }
   checkStartReady();
 }
 function handleRemember(cb) {
-  if (cb.checked && apiKey) { try { localStorage.setItem('toetswijs_apikey', apiKey); showApiStatus('✓ Opgeslagen'); } catch(e){} }
-  else { try { localStorage.removeItem('toetswijs_apikey'); } catch(e){} showApiStatus('Verwijderd'); }
+  if (cb.checked && apiKey) { try { localStorage.setItem('avinka_apikey', apiKey); showApiStatus('✓ Opgeslagen'); } catch(e){} }
+  else { try { localStorage.removeItem('avinka_apikey'); } catch(e){} showApiStatus('Verwijderd'); }
 }
 function toggleApiKeyVisibility() {
   const i = document.getElementById('apikey-input');
@@ -874,7 +874,7 @@ function checkStartReady() {
   document.getElementById('btn-naar-namen').disabled = !ok;
 }
 async function resetAlles() {
-  if (!(await wijsBevestig('Alle ingevulde gegevens en gemaakte rapportteksten worden gewist.', { titel: 'Alles leegmaken?', bevestig: 'Leegmaken', gevaar: true }))) return;
+  if (!(await avinkaBevestig('Alle ingevulde gegevens en gemaakte rapportteksten worden gewist.', { titel: 'Alles leegmaken?', bevestig: 'Leegmaken', gevaar: true }))) return;
   state.groep = ''; state.aantal = ''; state.moment = ''; state.lengte = ''; state.richt = '';
   state.toon = 'warm'; state.afsluiting = 'vooruit'; state.taalniveau = 'standaard';
   state.leerlingen = []; state.huidigeId = null; state.goedgekeurd = [];
@@ -975,7 +975,7 @@ function maakKaarten() {
   state.leerlingen = namen.map((naam, i) => oud[naam] || {
     id: 'll-' + i + '-' + Math.random().toString(36).slice(2, 7),
     naam, antwoorden: {}, verhaal: '', status: 'open',
-    geslacht: (window.wijsKlasGeslacht && window.wijsKlasGeslacht[naam.toLowerCase()]) || ''
+    geslacht: (window.avinkaKlasGeslacht && window.avinkaKlasGeslacht[naam.toLowerCase()]) || ''
   });
   buildNameMap(namen);
   renderOverzicht();
@@ -1639,7 +1639,7 @@ async function genereerVerhaal() {
     l.verhaal = schoon(tekst);
     document.getElementById('verhaal-tekst').value = l.verhaal;
     document.getElementById('verhaal-box').classList.add('visible');
-    if (typeof wijsTel === 'function') wijsTel('rapport');
+    if (typeof avinkaTel === 'function') avinkaTel('rapport');
   } catch (e) {
     err.textContent = 'Er ging iets mis: ' + e.message;
     err.classList.add('visible');
@@ -1807,15 +1807,15 @@ function escapeHtml(s) {
 async function vulMijnKlas(toevoegFn){
   try{
     const r = await fetch('/api/klas', { headers: { accept: 'application/json' } });
-    if(r.status === 401){ wijsAlert('Log eerst in om je klas te gebruiken.'); return; }
-    if(!r.ok){ wijsAlert('Kon je klas niet ophalen. Probeer het zo opnieuw.'); return; }
+    if(r.status === 401){ avinkaAlert('Log eerst in om je klas te gebruiken.'); return; }
+    if(!r.ok){ avinkaAlert('Kon je klas niet ophalen. Probeer het zo opnieuw.'); return; }
     const data = await r.json();
     const namen = (data && data.leerlingen) || [];
-    if(!namen.length){ wijsAlert('Je hebt nog geen klas ingevuld.\n\nGa naar je dashboard, naar "Mijn klas", om je klassenlijst klaar te zetten.'); return; }
-    window.wijsKlasGeslacht = {};
-    ((data && data.leerlingenData) || []).forEach(function(l){ if(l && l.naam) window.wijsKlasGeslacht[l.naam.toLowerCase()] = l.geslacht==='j'?'jongen':(l.geslacht==='m'?'meisje':''); });
+    if(!namen.length){ avinkaAlert('Je hebt nog geen klas ingevuld.\n\nGa naar je dashboard, naar "Mijn klas", om je klassenlijst klaar te zetten.'); return; }
+    window.avinkaKlasGeslacht = {};
+    ((data && data.leerlingenData) || []).forEach(function(l){ if(l && l.naam) window.avinkaKlasGeslacht[l.naam.toLowerCase()] = l.geslacht==='j'?'jongen':(l.geslacht==='m'?'meisje':''); });
     toevoegFn(namen.join('\n'));
-  }catch(e){ wijsAlert('Er ging iets mis bij het ophalen van je klas.'); }
+  }catch(e){ avinkaAlert('Er ging iets mis bij het ophalen van je klas.'); }
 }
 </script>
 <script>/* SCHERM 1 — visuele besturing + live voorbeeld (vult de verborgen velden) */
@@ -1924,7 +1924,7 @@ async function vulMijnKlas(toevoegFn){
 <script>/* WIJS-SMART */
 (function(){
   function api(u,o){ return fetch(u, Object.assign({headers:{accept:'application/json'}}, o||{})); }
-  async function haalKlas(){ try{ var r=await api('/api/klas'); if(!r.ok)return {naam:'',leerlingen:[]}; var d=await r.json(); window.wijsKlasGeslacht={}; ((d&&d.leerlingenData)||[]).forEach(function(l){ if(l&&l.naam) window.wijsKlasGeslacht[l.naam.toLowerCase()] = l.geslacht==='j'?'jongen':(l.geslacht==='m'?'meisje':''); }); return {naam:d.naam||'', leerlingen:d.leerlingen||[]}; }catch(e){ return {naam:'',leerlingen:[]}; } }
+  async function haalKlas(){ try{ var r=await api('/api/klas'); if(!r.ok)return {naam:'',leerlingen:[]}; var d=await r.json(); window.avinkaKlasGeslacht={}; ((d&&d.leerlingenData)||[]).forEach(function(l){ if(l&&l.naam) window.avinkaKlasGeslacht[l.naam.toLowerCase()] = l.geslacht==='j'?'jongen':(l.geslacht==='m'?'meisje':''); }); return {naam:d.naam||'', leerlingen:d.leerlingen||[]}; }catch(e){ return {naam:'',leerlingen:[]}; } }
   async function haalRapporten(){ try{ var r=await api('/api/rapporten'); if(!r.ok)return []; var d=await r.json(); return d.rapporten||[]; }catch(e){ return []; } }
   async function slaOp(naam,verhaal){ if(!naam||!verhaal||!verhaal.trim())return; try{ await fetch('/api/rapporten',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({naam:naam,verhaal:verhaal})}); }catch(e){} }
   function NL(arr){ return arr.join(String.fromCharCode(10)); }
@@ -1938,7 +1938,7 @@ async function vulMijnKlas(toevoegFn){
     if(af>0){
       el.innerHTML='✓ <strong style="color:var(--ink)">'+af+'</strong> rapport'+(af===1?'':'en')+' had je al af; die zijn overgeslagen. <a href="#" id="klas-reset" style="color:var(--accent);font-weight:600">Hele klas opnieuw</a>';
       var rr=document.getElementById('klas-reset');
-      if(rr) rr.onclick=async function(e){ e.preventDefault(); if(!(await wijsBevestig('Alle opgeslagen rapporten van deze klas wissen en met de hele klas opnieuw beginnen?', { titel: 'Hele klas opnieuw?', bevestig: 'Opnieuw beginnen', gevaar: true })))return; try{ await fetch('/api/rapporten',{method:'DELETE'}); }catch(_){} naamLijst.length=0; renderTags(); var k=await haalKlas(); var kl=k.leerlingen||[]; if(kl.length) voegNaamToe(NL(kl)); notitie(kl,0); };
+      if(rr) rr.onclick=async function(e){ e.preventDefault(); if(!(await avinkaBevestig('Alle opgeslagen rapporten van deze klas wissen en met de hele klas opnieuw beginnen?', { titel: 'Hele klas opnieuw?', bevestig: 'Opnieuw beginnen', gevaar: true })))return; try{ await fetch('/api/rapporten',{method:'DELETE'}); }catch(_){} naamLijst.length=0; renderTags(); var k=await haalKlas(); var kl=k.leerlingen||[]; if(kl.length) voegNaamToe(NL(kl)); notitie(kl,0); };
     } else { el.innerHTML='Je klas is automatisch ingevuld vanuit je dashboard.'; }
   }
   async function autoVul(){
@@ -1961,9 +1961,9 @@ async function vulMijnKlas(toevoegFn){
 <script>/* Privacy-pop-up bij openen van Rapporten */
 (function(){
   function start(){
-    if(!window.wijsPrivacy) return;
-    wijsPrivacy.gate({
-      key:'rapportwijs',
+    if(!window.avinkaPrivacy) return;
+    avinkaPrivacy.gate({
+      key:'rapporten',
       intro:'In een rapporttekst schrijf je over één leerling, soms over gevoelig gedrag of de ontwikkeling. Schrijf daarom zorgvuldig:',
       wel:[
         'Beschrijf de schoolse ontwikkeling en het gedrag feitelijk',

@@ -99,7 +99,7 @@ export async function POST(req: Request) {
       naam,
       data: body.data,
       parent_id: mapId,
-      tool: "plattegrondwijs",
+      tool: "plattegrond",
     })
     .select("id, naam")
     .single();

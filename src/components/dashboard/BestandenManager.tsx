@@ -240,7 +240,7 @@ export default function BestandenManager() {
                 onClick={() => {
                   if (b.type === "map") setMapId(b.id);
                   else if (b.type === "tekst") setBekijk(b);
-                  else window.open(`/tools/plattegrondwijs.html?bestand=${b.id}`, "_blank");
+                  else window.open(`/tools/plattegrond.html?bestand=${b.id}`, "_blank");
                 }}
                 className="flex min-w-0 flex-1 items-center gap-3 text-left"
               >
@@ -258,7 +258,7 @@ export default function BestandenManager() {
               <div className="flex shrink-0 items-center gap-1 opacity-0 transition group-hover:opacity-100">
                 {b.type === "plattegrond" && (
                   <a
-                    href={`/tools/plattegrondwijs.html?bestand=${b.id}&print=1`}
+                    href={`/tools/plattegrond.html?bestand=${b.id}&print=1`}
                     target="_blank"
                     title="Printen"
                     className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/45 transition hover:bg-cream hover:text-brand"

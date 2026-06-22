@@ -17,10 +17,10 @@ type Onderwerp = {
 };
 
 const TOOLS: Onderwerp[] = [
-  { slug: "toetswijs", naam: "Toetsanalyse", sub: "IEP en Cito", emoji: "📊", tint: "bg-sky-100" },
-  { slug: "rapportwijs", naam: "Rapporten", sub: "Rapportteksten", emoji: "📝", tint: "bg-violet-100" },
-  { slug: "ouderwijs", naam: "Oudercontact", sub: "Oudercommunicatie", emoji: "✉️", tint: "bg-rose-100" },
-  { slug: "plattegrondwijs", naam: "Plattegrond", sub: "Klasplattegrond", emoji: "🪑", tint: "bg-amber-100" },
+  { slug: "toetsanalyse", naam: "Toetsanalyse", sub: "IEP en Cito", emoji: "📊", tint: "bg-sky-100" },
+  { slug: "rapporten", naam: "Rapporten", sub: "Rapportteksten", emoji: "📝", tint: "bg-violet-100" },
+  { slug: "oudercontact", naam: "Oudercontact", sub: "Oudercommunicatie", emoji: "✉️", tint: "bg-rose-100" },
+  { slug: "plattegrond", naam: "Plattegrond", sub: "Klasplattegrond", emoji: "🪑", tint: "bg-amber-100" },
 ];
 
 const FEEDBACK_ONDERWERPEN: Onderwerp[] = [
@@ -35,10 +35,10 @@ const IDEE_ONDERWERPEN: Onderwerp[] = [
 ];
 
 const FEEDBACK_CATS: Record<string, string[]> = {
-  toetswijs: ["Analyse klopt niet", "Mist een vak of onderdeel", "Upload/inlezen ging mis", "Te ingewikkeld", "Snelheid", "Iets anders"],
-  rapportwijs: ["Toon of stijl klopt niet", "Feitelijk onjuist", "Te lang of te kort", "Mist een onderdeel", "Snelheid", "Iets anders"],
-  ouderwijs: ["Toon of stijl klopt niet", "Mist informatie", "Niet wat ik bedoelde", "Opmaak of lay-out", "Iets anders"],
-  plattegrondwijs: ["Slepen of plaatsen werkt niet", "Mist een functie", "Opslaan of laden", "Weergave", "Iets anders"],
+  toetsanalyse: ["Analyse klopt niet", "Mist een vak of onderdeel", "Upload/inlezen ging mis", "Te ingewikkeld", "Snelheid", "Iets anders"],
+  rapporten: ["Toon of stijl klopt niet", "Feitelijk onjuist", "Te lang of te kort", "Mist een onderdeel", "Snelheid", "Iets anders"],
+  oudercontact: ["Toon of stijl klopt niet", "Mist informatie", "Niet wat ik bedoelde", "Opmaak of lay-out", "Iets anders"],
+  plattegrond: ["Slepen of plaatsen werkt niet", "Mist een functie", "Opslaan of laden", "Weergave", "Iets anders"],
   "": ["Account of inloggen", "Abonnement of prijs", "De website", "Een tool", "Iets anders"],
 };
 

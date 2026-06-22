@@ -324,8 +324,8 @@
   .vu-no .vi { color:var(--accent); }
   .vu-info { background:var(--cream); border:1.5px solid var(--warm); border-radius:9px; padding:9px 11px; font-size:12px; line-height:1.5; color:var(--muted); }
 </style>
-  <link rel="stylesheet" href="/wijs-huisstijl.css">
-  <script src="/wijs-dialog.js"></script>
+  <link rel="stylesheet" href="/avinka-huisstijl.css">
+  <script src="/avinka-dialog.js"></script>
   <style>
     /* Vormtaal-afstemming (laadt ná huisstijl.css) — zelfde look als de andere Avinka-tools */
     :root {
@@ -680,8 +680,8 @@ function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.rand
 function plaatsWillekeurig(){
   let seats=legeStoelen().map(s=>({o:s.o,i:s.i,c:cellCenter(s.o,s.o.desks[s.i])}));
   const unplaced=ongeplaatst();
-  if(!seats.length){ wijsAlert('Er zijn nog geen lege stoelen. Sleep eerst tafels op het raster.'); return; }
-  if(!unplaced.length){ wijsAlert('Alle leerlingen staan al op de plattegrond.'); return; }
+  if(!seats.length){ avinkaAlert('Er zijn nog geen lege stoelen. Sleep eerst tafels op het raster.'); return; }
+  if(!unplaced.length){ avinkaAlert('Alle leerlingen staan al op de plattegrond.'); return; }
   const used=new Set(); const avail=()=>seats.filter(s=>!used.has(s));
   const assign=(stu,seat)=>{ seat.o.desks[seat.i].studentId=stu.id; used.add(seat); };
   const nearest=pt=>{ let best=null,bd=Infinity; avail().forEach(s=>{const dx=s.c.x-pt.x,dy=s.c.y-pt.y,d=dx*dx+dy*dy; if(d<bd){bd=d;best=s;}}); return best; };
@@ -693,8 +693,8 @@ function plaatsWillekeurig(){
   const los=shuffle(unplaced.filter(s=>!s.groep||!state.groups.some(g=>g.id===s.groep)));
   los.forEach(stu=>{ const av=avail(); if(!av.length)return; assign(stu,av[Math.floor(Math.random()*av.length)]); });
   armed=null; render();
-  if(unplaced.length>seats.length) wijsAlert('Niet genoeg stoelen voor iedereen — '+(unplaced.length-seats.length)+' leerling(en) staan nog in de lijst.'); }
-function husselOpnieuw(){ if(!legeStoelen().length && !state.students.some(s=>isPlaced(s.id))){ wijsAlert('Er zijn nog geen stoelen. Sleep eerst tafels op het raster.'); return; }
+  if(unplaced.length>seats.length) avinkaAlert('Niet genoeg stoelen voor iedereen — '+(unplaced.length-seats.length)+' leerling(en) staan nog in de lijst.'); }
+function husselOpnieuw(){ if(!legeStoelen().length && !state.students.some(s=>isPlaced(s.id))){ avinkaAlert('Er zijn nog geen stoelen. Sleep eerst tafels op het raster.'); return; }
   state.objects.forEach(o=>{ if(o.desks)o.desks.forEach(d=>d.studentId=null); }); plaatsWillekeurig(); }
 function groepKleur(id){ const g=state.groups.find(x=>x.id===id); return g?g.kleur:'#c9b79c'; }
 function groepLeden(id){ return state.students.filter(s=>s.groep===id).length; }
@@ -985,7 +985,7 @@ function opslaan(){ const data={versie:14,titel:document.getElementById('titel')
   const naam=(data.titel||'plattegrond').replace(/[^\w\- ]+/g,'').trim()||'plattegrond'; a.href=URL.createObjectURL(blob); a.download=naam+'.json'; a.click(); URL.revokeObjectURL(a.href); }
 function openen(file){ const r=new FileReader(); r.onload=()=>{ try{ const d=JSON.parse(r.result);
   state.students=d.students||[]; state.objects=d.objects||[]; state.groups=d.groups||[]; state.regels=d.regels||[]; actieveGroep=null; seq=d._seq||(seq+20); if(d.titel)document.getElementById('titel').value=d.titel; armed=null;selected=null;render(); zoomFit();
-} catch(_){ wijsAlert('Dit bestand kon niet geopend worden. Is het een Plattegrond-bestand (.json)?'); } }; r.readAsText(file); }
+} catch(_){ avinkaAlert('Dit bestand kon niet geopend worden. Is het een Plattegrond-bestand (.json)?'); } }; r.readAsText(file); }
 
 /* ---- koppeling met "Mijn bestanden" (account) ---- */
 let huidigBestandId = null;
@@ -995,17 +995,17 @@ function bewaarLokaal(){ try{ localStorage.setItem('plg_laatste', JSON.stringify
 async function bewaarInBestanden(){
   var t=document.getElementById('titel'); var naam=(t&&t.value.trim())||'Plattegrond';
   var id=huidigBestandId;
-  if(id){ var over=await wijsBevestig('Wil je deze plattegrond bijwerken, of als nieuwe plattegrond bewaren?', { titel:'In mijn bestanden bewaren', bevestig:'Overschrijven', annuleer:'Als nieuwe' }); if(!over) id=null; }
+  if(id){ var over=await avinkaBevestig('Wil je deze plattegrond bijwerken, of als nieuwe plattegrond bewaren?', { titel:'In mijn bestanden bewaren', bevestig:'Overschrijven', annuleer:'Als nieuwe' }); if(!over) id=null; }
   var wasNieuw=!id;
   var btn=document.getElementById('cloudBtn'); if(btn) btn.disabled=true;
   try{
     var r=await fetch('/api/bestanden',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:id,naam:naam,data:huidigData()})});
-    if(r.status===401){ wijsAlert('Log eerst in om in je bestanden te bewaren.'); return; }
-    if(!r.ok){ wijsAlert('Opslaan mislukt. Probeer het zo opnieuw.'); return; }
+    if(r.status===401){ avinkaAlert('Log eerst in om in je bestanden te bewaren.'); return; }
+    if(!r.ok){ avinkaAlert('Opslaan mislukt. Probeer het zo opnieuw.'); return; }
     var res=await r.json(); huidigBestandId=res.id; bewaarLokaal();
-    if(wasNieuw && typeof wijsTel==='function') wijsTel('plattegrond');
+    if(wasNieuw && typeof avinkaTel==='function') avinkaTel('plattegrond');
     if(btn){ btn.textContent='✓ Bewaard in mijn bestanden'; setTimeout(function(){ btn.textContent='☁ Bewaar in mijn bestanden'; }, 1800); }
-  }catch(e){ wijsAlert('Er ging iets mis bij het opslaan.'); }
+  }catch(e){ avinkaAlert('Er ging iets mis bij het opslaan.'); }
   finally{ if(btn) btn.disabled=false; }
 }
 async function initBestand(){
@@ -1098,11 +1098,11 @@ function toggleDD(id){ const dd=document.getElementById(id); const open=dd.class
 document.getElementById('ddVormenBtn').addEventListener('click',e=>{e.stopPropagation();toggleDD('ddVormen');});
 document.getElementById('ddMeubelBtn').addEventListener('click',e=>{e.stopPropagation();toggleDD('ddMeubel');});
 document.addEventListener('click',e=>{ if(!e.target.closest('.dd'))closeDD(); });
-document.getElementById('leegBtn').addEventListener('click',async ()=>{ if(state.objects.length&&!(await wijsBevestig('Alles op het canvas verwijderen? De namenlijst blijft staan.', { titel:'Canvas leegmaken?', bevestig:'Leegmaken', gevaar:true })))return; state.objects=[];selected=null;render(); });
+document.getElementById('leegBtn').addEventListener('click',async ()=>{ if(state.objects.length&&!(await avinkaBevestig('Alles op het canvas verwijderen? De namenlijst blijft staan.', { titel:'Canvas leegmaken?', bevestig:'Leegmaken', gevaar:true })))return; state.objects=[];selected=null;render(); });
 document.getElementById('naamAdd').addEventListener('click',()=>{ const i=document.getElementById('naamInput'); if(i.value.trim()){voegNamen(i.value);i.value='';i.focus();} });
 document.getElementById('naamInput').addEventListener('keydown',e=>{ if(e.key==='Enter')document.getElementById('naamAdd').click(); });
 document.getElementById('naamInput').addEventListener('paste',e=>{ const t=(e.clipboardData||window.clipboardData).getData('text'); if(t&&/[\n,;]/.test(t)){e.preventDefault();voegNamen(t);e.target.value='';} });
-document.getElementById('wisAlle').addEventListener('click',async ()=>{ if(state.students.length&&(await wijsBevestig('Hele namenlijst wissen?', { bevestig:'Wissen', gevaar:true }))){state.students=[];state.objects.forEach(o=>o.desks&&o.desks.forEach(d=>d.studentId=null));armed=null;render();} });
+document.getElementById('wisAlle').addEventListener('click',async ()=>{ if(state.students.length&&(await avinkaBevestig('Hele namenlijst wissen?', { bevestig:'Wissen', gevaar:true }))){state.students=[];state.objects.forEach(o=>o.desks&&o.desks.forEach(d=>d.studentId=null));armed=null;render();} });
 document.getElementById('randomBtn').addEventListener('click',plaatsWillekeurig);
 document.getElementById('shuffleBtn').addEventListener('click',husselOpnieuw);
 document.getElementById('groepTrigger').addEventListener('click',()=>{ const fly=document.getElementById('groepFlyout'); openGroepFlyout(!fly.classList.contains('open')); });
@@ -1136,7 +1136,7 @@ function toggleWensB(){ const t=document.getElementById('wensType').value; const
   document.getElementById('wensBwrap').style.display=dual?'':'none'; }
 function voegWens(){ const t=document.getElementById('wensType').value, a=document.getElementById('wensA').value;
   const dual=(t==='apart'||t==='apartGroep'||t==='samen'); const b=dual?document.getElementById('wensB').value:null;
-  if(dual){ if(a===b){ wijsAlert('Kies twee verschillende leerlingen.'); return; }
+  if(dual){ if(a===b){ avinkaAlert('Kies twee verschillende leerlingen.'); return; }
     if(state.regels.some(r=>r.bron==='leerkracht'&&r.type===t&&((r.a===a&&r.b===b)||(r.a===b&&r.b===a)))) return; }
   else if(state.regels.some(r=>r.bron==='leerkracht'&&r.type===t&&r.a===a)) return;
   state.regels.push({id:nid(),type:t,a,b,bron:'leerkracht',hard:(t==='apart'||t==='apartGroep')}); renderRegels(); commitHist(); }
@@ -1521,7 +1521,7 @@ const SNELTOETSEN='Sneltoetsen\n\n'+
  'Esc — selectie opheffen\n'+
  'Ctrl/Cmd + Z — ongedaan maken   ·   Ctrl/Cmd + Shift + Z — opnieuw\n'+
  'Ctrl/Cmd + S — opslaan';
-document.getElementById('hulpBtn').addEventListener('click',()=>wijsAlert(SNELTOETSEN));
+document.getElementById('hulpBtn').addEventListener('click',()=>avinkaAlert(SNELTOETSEN));
 document.getElementById('undoBtn').addEventListener('click',undo);
 document.getElementById('redoBtn').addEventListener('click',redo);
 function objSize(o){ if(o.desks){const f=footprint(o);return {w:f.cols*C,h:f.rows*C};} const m=MEUBELS[o.mtype]; return {w:m.w,h:m.h}; }
@@ -1562,14 +1562,14 @@ function pasKlasGeslachtToe(leerlingenData){
 async function vulMijnKlas(toevoegFn){
   try{
     const r = await fetch('/api/klas', { headers: { accept: 'application/json' } });
-    if(r.status === 401){ wijsAlert('Log eerst in om je klas te gebruiken.'); return; }
-    if(!r.ok){ wijsAlert('Kon je klas niet ophalen. Probeer het zo opnieuw.'); return; }
+    if(r.status === 401){ avinkaAlert('Log eerst in om je klas te gebruiken.'); return; }
+    if(!r.ok){ avinkaAlert('Kon je klas niet ophalen. Probeer het zo opnieuw.'); return; }
     const data = await r.json();
     const namen = (data && data.leerlingen) || [];
-    if(!namen.length){ wijsAlert('Je hebt nog geen klas ingevuld.\n\nGa naar je dashboard, naar "Mijn klas", om je klassenlijst klaar te zetten.'); return; }
+    if(!namen.length){ avinkaAlert('Je hebt nog geen klas ingevuld.\n\nGa naar je dashboard, naar "Mijn klas", om je klassenlijst klaar te zetten.'); return; }
     toevoegFn(namen.join('\n'));
     pasKlasGeslachtToe(data.leerlingenData);
-  }catch(e){ wijsAlert('Er ging iets mis bij het ophalen van je klas.'); }
+  }catch(e){ avinkaAlert('Er ging iets mis bij het ophalen van je klas.'); }
 }
 </script>
 <script>/* WIJS-SMART */

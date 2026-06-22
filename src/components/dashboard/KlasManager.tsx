@@ -16,9 +16,9 @@ import { klasLimiet, type Abonnement } from "@/lib/abonnement";
 
 // Je klassen staan in je eigen account (Supabase, EU) — ze synchroniseren tussen
 // apparaten en blijven bewaard. Wordt automatisch opgeslagen terwijl je typt.
-const OUD_GROEP = "wijs_klas_groep";
-const OUD_LIJST = "wijs_klas_lijst";
-const OUD_NAMEN = "wijs_klas_namen"; // alleroudste (plak-tekst)
+const OUD_GROEP = "avinka_klas_groep";
+const OUD_LIJST = "avinka_klas_lijst";
+const OUD_NAMEN = "avinka_klas_namen"; // alleroudste (plak-tekst)
 
 function netjes(s: string): string {
   return s

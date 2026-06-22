@@ -8,7 +8,7 @@ export default function RefVangst() {
   useEffect(() => {
     try {
       const ref = new URLSearchParams(window.location.search).get("ref");
-      if (ref) localStorage.setItem("wijs_ref", ref.trim().slice(0, 32));
+      if (ref) localStorage.setItem("avinka_ref", ref.trim().slice(0, 32));
     } catch {
       /* niets */
     }

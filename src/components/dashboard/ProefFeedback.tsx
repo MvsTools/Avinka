@@ -6,7 +6,7 @@ import { BETALINGEN_LIVE, proefLoopt, proefDagenResterend } from "@/lib/abonneme
 
 // Korte intentie-vraag aan het eind van de proef (≤2 dagen te gaan). Eén keer:
 // is 'm beantwoord, dan komt 'ie nooit meer. Weggeklikt = deze sessie niet meer.
-const SESSIE_WEG = "wijs_proeffb_weg";
+const SESSIE_WEG = "avinka_proeffb_weg";
 
 // Snelle keuzes per soort antwoord — één tik scheelt de drempel van typen.
 const CATS: Record<"twijfel" | "nee", string[]> = {

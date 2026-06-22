@@ -16,27 +16,27 @@ export type Tool = {
 
 export const tools: Tool[] = [
   {
-    slug: "toetswijs",
+    slug: "toetsanalyse",
     naam: "Toetsanalyse",
     emoji: "📊",
     tekst: "Zie in één oogopslag hoe je groep ervoor staat en wie wat extra aandacht kan gebruiken.",
     badge: "bg-sky-500",
     tint: "bg-sky-50",
     rand: "hover:border-sky-300",
-    pad: "/tools/toetswijs.html",
+    pad: "/tools/toetsanalyse.html",
   },
   {
-    slug: "rapportwijs",
+    slug: "rapporten",
     naam: "Rapporten",
     emoji: "📝",
     tekst: "Warme, persoonlijke rapportteksten die klinken alsof jij ze schreef.",
     badge: "bg-violet-500",
     tint: "bg-violet-50",
     rand: "hover:border-violet-300",
-    pad: "/tools/rapportwijs.html",
+    pad: "/tools/rapporten.html",
   },
   {
-    slug: "ouderwijs",
+    slug: "oudercontact",
     naam: "Oudercontact",
     emoji: "✉️",
     tekst: "Weekberichten, nieuwsbrieven en ouderbrieven die zo de deur uit kunnen.",
@@ -44,17 +44,17 @@ export const tools: Tool[] = [
     tint: "bg-rose-50",
     rand: "hover:border-rose-300",
     wekelijks: true,
-    pad: "/tools/ouderwijs.html",
+    pad: "/tools/oudercontact.html",
   },
   {
-    slug: "plattegrondwijs",
+    slug: "plattegrond",
     naam: "Plattegrond",
     emoji: "🪑",
     tekst: "Schuif je klasplattegrond in elkaar met een paar klikken. Slepen, schikken, klaar.",
     badge: "bg-amber-500",
     tint: "bg-amber-50",
     rand: "hover:border-amber-300",
-    pad: "/tools/plattegrondwijs.html",
+    pad: "/tools/plattegrond.html",
   },
 ];
 

@@ -16,10 +16,10 @@ function dagLabel(d: string): string {
 }
 
 const TOOL_NAMEN: Record<string, string> = {
-  rapportwijs: "Rapporten",
-  toetswijs: "Toetsanalyse",
-  ouderwijs: "Oudercontact",
-  plattegrondwijs: "Plattegrond",
+  rapporten: "Rapporten",
+  toetsanalyse: "Toetsanalyse",
+  oudercontact: "Oudercontact",
+  plattegrond: "Plattegrond",
   onbekend: "Onbekend",
 };
 
