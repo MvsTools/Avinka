@@ -48,7 +48,7 @@ export async function POST(req: Request) {
 
   const { data } = await sb
     .from("statistiek")
-    .select("tellers, minuten, streak, streak_max, laatste_actief")
+    .select("tellers, minuten, per_dag, streak, streak_max, laatste_actief")
     .maybeSingle();
   const tellers = { ...((data?.tellers as Record<string, number>) ?? {}) };
   tellers[type] = (tellers[type] ?? 0) + 1;
@@ -58,8 +58,14 @@ export async function POST(req: Request) {
   const minuten = { ...((data?.minuten as Record<string, number>) ?? {}) };
   minuten[type] = (minuten[type] ?? 0) + gewonnen;
 
-  // ── Streak bijwerken (alleen op werkdagen; weekend telt niet mee) ──
   const vandaag = amsterdamDatum(new Date());
+
+  // Per dag bijhouden (minuten + acties) voor de periode-filters op de statistiekenpagina.
+  const perDag = { ...((data?.per_dag as Record<string, { m: number; n: number }>) ?? {}) };
+  const dag = perDag[vandaag] ?? { m: 0, n: 0 };
+  perDag[vandaag] = { m: dag.m + gewonnen, n: dag.n + 1 };
+
+  // ── Streak bijwerken (alleen op werkdagen; weekend telt niet mee) ──
   let streak = (data?.streak as number) ?? 0;
   let streakMax = (data?.streak_max as number) ?? 0;
   let laatste = (data?.laatste_actief as string | null) ?? null;
@@ -70,7 +76,7 @@ export async function POST(req: Request) {
   }
 
   const { error } = await sb.from("statistiek").upsert(
-    { user_id: user.id, tellers, minuten, streak, streak_max: streakMax, laatste_actief: laatste },
+    { user_id: user.id, tellers, minuten, per_dag: perDag, streak, streak_max: streakMax, laatste_actief: laatste },
     { onConflict: "user_id" },
   );
   if (error) return NextResponse.json({ error: "db_error" }, { status: 500 });

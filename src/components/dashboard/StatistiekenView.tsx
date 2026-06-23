@@ -1,38 +1,126 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import {
   getStatistiek,
   getMinuten,
+  getPerDag,
   getCommunityStats,
   getStreak,
   type Tellers,
+  type PerDag,
   type CommunityStats,
 } from "@/lib/db";
-import { huidigeMijlpaal, volgendeMijlpaal } from "@/lib/streak";
+import Logo from "@/components/Logo";
+import { amsterdamDatum, huidigeMijlpaal, volgendeMijlpaal } from "@/lib/streak";
 import { TIJD_DEFS } from "@/lib/tijdwinst";
 
 // Label, icoon, kleur en terugvalwaarde per actie-soort komen uit de centrale
 // tijdwinst-bron (src/lib/tijdwinst.ts), zodat alles op één plek staat.
 const DEFS = TIJD_DEFS;
 
+// De hoofdtools en welke actie-soorten (subtools) eronder vallen. In de tabel tonen
+// we de hoofdtool met het OPGETELDE cijfer van z'n subtools; de subtools staan achter
+// een inklapmenu (ze tellen wél individueel mee). Zo blijft het overzichtelijk als er
+// meer tools/subtools bijkomen.
+const HOOFDTOOLS: { id: string; label: string; icon: string }[] = [
+  { id: "toetsanalyse", label: "Toetsanalyse", icon: "📊" },
+  { id: "rapporten", label: "Rapporten", icon: "📝" },
+  { id: "oudercontact", label: "Oudercontact", icon: "💬" },
+  { id: "plattegrond", label: "Plattegrond", icon: "🪑" },
+];
+const SUB_NAAR_HOOFD: Record<string, string> = {
+  analyse: "toetsanalyse",
+  rapport: "rapporten",
+  gesprek: "oudercontact",
+  weekbericht: "oudercontact",
+  nieuwsbrief: "oudercontact",
+  bericht: "oudercontact",
+  brief: "oudercontact",
+  uitnodiging: "oudercontact",
+  plattegrond: "plattegrond",
+};
+
+// Periodekiezer voor de grote teller: hoeveel tijd bespaarde je per X.
+type Periode = "vandaag" | "week" | "maand" | "schooljaar";
+const PERIODEN: { id: Periode; label: string }[] = [
+  { id: "vandaag", label: "Vandaag" },
+  { id: "week", label: "Deze week" },
+  { id: "maand", label: "Deze maand" },
+  { id: "schooljaar", label: "Dit schooljaar" },
+];
+
+function isoDatum(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
+// Eerste dag (YYYY-MM-DD) van de gekozen periode, t.o.v. vandaag. Het schooljaar
+// loopt van 1 augustus tot en met 31 juli.
+function periodeStart(periode: Periode, vandaag: string): string {
+  if (periode === "vandaag") return vandaag;
+  const d = new Date(vandaag + "T00:00:00");
+  if (periode === "week") {
+    const maandag = new Date(d);
+    maandag.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // maandag = begin van de week
+    return isoDatum(maandag);
+  }
+  if (periode === "maand") return vandaag.slice(0, 7) + "-01";
+  const jaar = d.getMonth() + 1 >= 8 ? d.getFullYear() : d.getFullYear() - 1;
+  return `${jaar}-08-01`;
+}
+
+// Tel minuten + acties uit per_dag binnen de periode (t/m vandaag).
+function periodeSom(perDag: PerDag, periode: Periode, vandaag: string): { m: number; n: number } {
+  const start = periodeStart(periode, vandaag);
+  let m = 0;
+  let n = 0;
+  for (const [dag, v] of Object.entries(perDag)) {
+    if (dag >= start && dag <= vandaag) {
+      m += v?.m ?? 0;
+      n += v?.n ?? 0;
+    }
+  }
+  return { m, n };
+}
+
+// Leesbare tijd. Onder een dag: "X uur Y min". Vanaf een dag schakelt 'ie over op
+// dagen ("X d Y u Z min") zodat een groot community-totaal niet "872 uur" wordt.
 function tijdTekst(min: number): string {
-  const u = Math.floor(min / 60);
-  const m = Math.round(min % 60);
-  if (u > 0) return m > 0 ? `${u} uur ${m} min` : `${u} uur`;
-  return `${m} min`;
+  const totaal = Math.max(0, Math.round(min));
+  if (totaal < 60) return `${totaal} min`;
+  const totU = Math.floor(totaal / 60);
+  const m = totaal % 60;
+  if (totU < 24) return m > 0 ? `${totU} uur ${m} min` : `${totU} uur`;
+  const d = Math.floor(totU / 24);
+  const u = totU % 24;
+  let s = `${d} d`;
+  if (u > 0) s += ` ${u} u`;
+  if (m > 0) s += ` ${m} min`;
+  return s;
 }
 
 export default function StatistiekenView() {
   const [tellers, setTellers] = useState<Tellers | null>(null);
   const [minuten, setMinuten] = useState<Tellers>({});
+  const [perDag, setPerDag] = useState<PerDag>({});
+  const [periode, setPeriode] = useState<Periode>("schooljaar");
   const [comm, setComm] = useState<CommunityStats | null>(null);
   const [streak, setStreak] = useState(0);
   const [record, setRecord] = useState(0);
+  const [openTools, setOpenTools] = useState<Set<string>>(new Set());
+  const toggleTool = (id: string) =>
+    setOpenTools((s) => {
+      const n = new Set(s);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
 
   useEffect(() => {
     getStatistiek().then(setTellers);
     getMinuten().then(setMinuten);
+    getPerDag().then(setPerDag);
     getCommunityStats().then(setComm);
     getStreak().then((s) => {
       setStreak(s.streak);
@@ -43,8 +131,6 @@ export default function StatistiekenView() {
   if (!tellers) return null;
 
   const aantal = (s: string) => tellers[s] ?? 0;
-  const gemiddeld = (s: string) =>
-    comm && comm.gebruikers > 0 ? (comm.som[s] ?? 0) / comm.gebruikers : 0;
 
   // Adaptieve bespaarde minuten per soort: het opgetelde echte getal, met een
   // terugval op aantal × vaste waarde voor (oude) tellingen zonder opgeslagen tijd.
@@ -55,16 +141,15 @@ export default function StatistiekenView() {
 
   const totaalMin = DEFS.reduce((s, d) => s + minVan(d), 0);
   const totaalActies = DEFS.reduce((s, d) => s + aantal(d.sleutel), 0);
-  const communityMin = comm ? DEFS.reduce((s, d) => s + commMinVan(d), 0) : 0;
-  const gemMin = comm && comm.gebruikers > 0 ? communityMin / comm.gebruikers : 0;
 
-  // Schaal voor de balken
-  const maxBar = Math.max(
-    1,
-    ...DEFS.map((d) => Math.max(aantal(d.sleutel), gemiddeld(d.sleutel))),
-  );
-  const actieveDefs = DEFS.filter((d) => aantal(d.sleutel) > 0 || gemiddeld(d.sleutel) > 0);
-  const verdict = gemMin <= 0 ? "" : totaalMin >= gemMin ? "boven" : "onder";
+  // Tijd + acties voor de gekozen periode (uit per_dag). Voor "dit schooljaar"
+  // vallen we terug op het lifetime-totaal als per_dag nog niet gevuld is (bv. de
+  // backfill is nog niet gedraaid), zodat de hero nooit onterecht op nul staat.
+  const vandaagIso = amsterdamDatum(new Date());
+  const som = periodeSom(perDag, periode, vandaagIso);
+  const heroMin = periode === "schooljaar" && som.m === 0 ? totaalMin : som.m;
+  const heroActies = periode === "schooljaar" && som.n === 0 ? totaalActies : som.n;
+  const communityMin = comm ? DEFS.reduce((s, d) => s + commMinVan(d), 0) : 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -77,19 +162,38 @@ export default function StatistiekenView() {
         </div>
         <div className="relative flex flex-col gap-8 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <p className="text-sm font-semibold uppercase tracking-wider text-white/70">
+            <p className="text-base font-semibold uppercase tracking-wider text-white/70">
               ⏱️ Tijd bespaard met Avinka
             </p>
-            <TijdTeller minuten={totaalMin} />
+            {/* Subtiele periodekiezer: hoeveel tijd bespaarde je per vandaag/week/maand/schooljaar */}
+            <div className="mt-3 inline-flex flex-wrap gap-1 rounded-full bg-white/10 p-1">
+              {PERIODEN.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setPeriode(p.id)}
+                  className={
+                    "rounded-full px-3 py-1 text-xs font-semibold transition " +
+                    (periode === p.id
+                      ? "bg-white text-brand shadow-sm"
+                      : "text-white/70 hover:text-white")
+                  }
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <TijdTeller minuten={heroMin} />
             <p className="mt-3 max-w-md text-sm leading-6 text-white/85">
-              {totaalActies > 0 ? (
+              {totaalActies === 0 ? (
+                <>Zodra je de tools gebruikt, telt je bespaarde tijd hier vanzelf op.</>
+              ) : heroActies > 0 ? (
                 <>
-                  Geschat op basis van <strong>{totaalActies}</strong>{" "}
-                  {totaalActies === 1 ? "actie" : "acties"} met de tools — tijd die je
-                  terugkrijgt voor je klas.
+                  Geschat op basis van <strong>{heroActies}</strong>{" "}
+                  {heroActies === 1 ? "actie" : "acties"} met de tools.
                 </>
               ) : (
-                <>Zodra je de tools gebruikt, telt je bespaarde tijd hier vanzelf op.</>
+                <>In deze periode nog geen tijd bespaard.</>
               )}
             </p>
           </div>
@@ -97,131 +201,199 @@ export default function StatistiekenView() {
         </div>
       </div>
 
-      {/* Balkgrafiek: jouw acties, met het gemiddelde als streepje */}
-      <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-sm sm:p-7">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-lg font-bold text-ink">Jouw acties</h2>
-          {comm && comm.gebruikers > 1 && (
-            <span className="flex items-center gap-1.5 text-xs text-ink/55">
-              <span className="inline-block h-3 w-0.5 bg-ink/40" /> = gemiddelde Avinka-gebruiker
-            </span>
-          )}
-        </div>
-        {actieveDefs.length === 0 ? (
-          <p className="mt-4 rounded-2xl border border-dashed border-black/15 bg-cream/50 px-4 py-8 text-center text-sm text-ink/55">
-            Nog niets te zien — gebruik een tool en je grafiek vult zich vanzelf.
-          </p>
-        ) : (
-          <div className="mt-5 flex flex-col gap-3.5">
-            {actieveDefs.map((d) => {
-              const n = aantal(d.sleutel);
-              const g = gemiddeld(d.sleutel);
-              return (
-                <div key={d.sleutel} className="flex items-center gap-3">
-                  <span className="flex w-28 shrink-0 items-center gap-1.5 text-sm font-medium text-ink/70 sm:w-32">
-                    <span>{d.icon}</span>
-                    <span className="truncate">{d.kort}</span>
-                  </span>
-                  <div className="relative h-3.5 flex-1 rounded-full bg-cream">
-                    <div
-                      className="absolute inset-y-0 left-0 rounded-full transition-all"
-                      style={{ width: `${(n / maxBar) * 100}%`, background: d.kleur }}
-                    />
-                    {comm && comm.gebruikers > 1 && g > 0 && (
-                      <div
-                        className="absolute -inset-y-1 w-0.5 rounded bg-ink/40"
-                        style={{ left: `${Math.min(100, (g / maxBar) * 100)}%` }}
-                        title={`Gemiddeld: ${g.toFixed(1)}`}
-                      />
-                    )}
-                  </div>
-                  <span className="w-8 shrink-0 text-right text-sm font-bold text-ink">{n}</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      {/* Highlight-kaartjes: meest gebruikte tool · productiefste dag · hoogste streak */}
+      <Highlights tellers={tellers} streak={streak} record={record} perDag={perDag} vandaag={vandaagIso} />
 
-      {/* Vergelijking met de gemeenschap */}
-      <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-sm sm:p-7">
-        <h2 className="text-lg font-bold text-ink">Jij &amp; de Avinka-gemeenschap</h2>
-        {comm ? (
-          <>
-            <p className="mt-1 text-sm text-ink/65">
-              Samen bespaarden <strong>{comm.gebruikers}</strong>{" "}
-              {comm.gebruikers === 1 ? "leerkracht" : "leerkrachten"} al{" "}
-              <strong>{tijdTekst(communityMin)}</strong> met Avinka.
-              {comm.gebruikers <= 3 && " Je hoort bij de eerste pioniers ✨"}
-            </p>
-            {comm.gebruikers > 1 && (
-              <div className="mt-5 flex flex-col gap-3">
-                <VergBalk label="Jij" minuten={totaalMin} max={Math.max(totaalMin, gemMin, 1)} kleur="#2f9e6e" />
-                <VergBalk label="Gemiddeld" minuten={gemMin} max={Math.max(totaalMin, gemMin, 1)} kleur="#c7c9f0" />
-                {verdict && (
-                  <p className="mt-1 text-sm font-semibold text-ink/75">
-                    {verdict === "boven"
-                      ? "💪 Je bespaart meer tijd dan de gemiddelde Avinka-gebruiker."
-                      : "Je bent goed op weg — de gemiddelde gebruiker zit iets hoger."}
-                  </p>
-                )}
-              </div>
-            )}
-          </>
-        ) : (
-          <p className="mt-1 text-sm text-ink/55">
-            De vergelijking met andere gebruikers verschijnt zodra de gemeenschapscijfers
-            beschikbaar zijn.
-          </p>
-        )}
-      </div>
-
-      {/* Volledige tabel */}
+      {/* Volledige tabel: per hoofdtool, met subtools achter een inklapmenu */}
       <div className="overflow-hidden rounded-3xl border border-black/5 bg-white shadow-sm">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-black/5 text-left text-xs uppercase tracking-wide text-ink/45">
               <th className="px-5 py-3 font-semibold">Wat</th>
               <th className="px-3 py-3 text-right font-semibold">Aantal</th>
-              <th className="px-3 py-3 text-right font-semibold">Tijd bespaard</th>
-              {comm && comm.gebruikers > 1 && (
-                <th className="px-5 py-3 text-right font-semibold">Gemiddeld</th>
-              )}
+              <th className="px-5 py-3 text-right font-semibold">Tijd bespaard</th>
             </tr>
           </thead>
           <tbody>
-            {DEFS.map((d) => (
-              <tr key={d.sleutel} className="border-b border-black/5 last:border-0">
-                <td className="px-5 py-3 font-medium text-ink">
-                  <span className="mr-1.5">{d.icon}</span>
-                  {d.label}
-                </td>
-                <td className="px-3 py-3 text-right font-bold text-ink">{aantal(d.sleutel)}</td>
-                <td className="px-3 py-3 text-right text-ink/70">
-                  {tijdTekst(minVan(d))}
-                </td>
-                {comm && comm.gebruikers > 1 && (
-                  <td className="px-5 py-3 text-right text-ink/50">{gemiddeld(d.sleutel).toFixed(1)}</td>
-                )}
-              </tr>
-            ))}
+            {HOOFDTOOLS.map((h) => {
+              const subs = DEFS.filter((d) => SUB_NAAR_HOOFD[d.sleutel] === h.id);
+              const n = subs.reduce((s, d) => s + aantal(d.sleutel), 0);
+              const min = subs.reduce((s, d) => s + minVan(d), 0);
+              const uitklapbaar = subs.length > 1;
+              const isOpen = openTools.has(h.id);
+              return (
+                <Fragment key={h.id}>
+                  <tr className="border-b border-black/5">
+                    <td className="px-5 py-3 font-medium text-ink">
+                      {uitklapbaar ? (
+                        <button
+                          type="button"
+                          onClick={() => toggleTool(h.id)}
+                          className="flex items-center gap-2 text-left transition hover:text-brand"
+                        >
+                          <span className={"text-xs text-ink/40 transition " + (isOpen ? "rotate-90" : "")}>▸</span>
+                          <span>{h.icon}</span>
+                          {h.label}
+                        </button>
+                      ) : (
+                        <span className="flex items-center gap-2">
+                          <span className="w-3" />
+                          <span>{h.icon}</span>
+                          {h.label}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-3 text-right font-bold text-ink">{n}</td>
+                    <td className="px-5 py-3 text-right text-ink/70">{tijdTekst(min)}</td>
+                  </tr>
+                  {uitklapbaar &&
+                    isOpen &&
+                    subs.map((d) => (
+                      <tr key={d.sleutel} className="border-b border-black/5 bg-cream/30 text-ink/70">
+                        <td className="py-2.5 pl-12 pr-5">{d.label}</td>
+                        <td className="px-3 py-2.5 text-right">{aantal(d.sleutel)}</td>
+                        <td className="px-5 py-2.5 text-right">{tijdTekst(minVan(d))}</td>
+                      </tr>
+                    ))}
+                </Fragment>
+              );
+            })}
             <tr className="bg-cream/50 font-bold">
               <td className="px-5 py-3 text-ink">Totaal</td>
               <td className="px-3 py-3 text-right text-ink">{totaalActies}</td>
-              <td className="px-3 py-3 text-right text-brand">{tijdTekst(totaalMin)}</td>
-              {comm && comm.gebruikers > 1 && (
-                <td className="px-5 py-3 text-right text-ink/50">{tijdTekst(gemMin)}</td>
-              )}
+              <td className="px-5 py-3 text-right text-brand">{tijdTekst(totaalMin)}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <p className="text-xs text-ink/45">
-        De tellers lopen vanzelf op terwijl je de tools gebruikt en blijven staan. Vergelijkingen
-        tonen alleen gemiddelden van de hele groep — nooit gegevens van een andere gebruiker.
-        Tijdsbesparing is een richtlijn, geen exacte meting.
-      </p>
+      {/* Avinka in cijfers: community-brede statistieken (onderaan — eerst je eigen cijfers) */}
+      <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-sm sm:p-7">
+        <h2 className="flex items-center gap-1.5 text-xl font-bold text-ink">
+          <Logo className="h-[18px] w-auto" />
+          <span>in cijfers</span>
+        </h2>
+        {comm ? (
+          <>
+            <p className="mt-1 text-sm text-ink/60">
+              Zie hoeveel tijd leerkrachten samen besparen met Avinka.
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <CijferCel icon="⏱️" waarde={tijdTekst(communityMin)} label="totaal bespaard" />
+              <CijferCel
+                icon="👥"
+                waarde={`${comm.gebruikers}`}
+                label={comm.gebruikers === 1 ? "leerkracht" : "leerkrachten"}
+              />
+              <CijferCel
+                icon="📈"
+                waarde={comm.actieveWeken >= 5 ? tijdTekst(comm.gemActieveWeek) : "—"}
+                label="gemiddeld per week"
+              />
+              <CijferCel
+                icon="🔥"
+                waarde={
+                  comm.hoogsteStreak > 0
+                    ? `${comm.hoogsteStreak} ${comm.hoogsteStreak === 1 ? "dag" : "dagen"}`
+                    : "—"
+                }
+                label="hoogste streak"
+              />
+            </div>
+          </>
+        ) : (
+          <p className="mt-1 text-sm text-ink/55">
+            De gemeenschapscijfers verschijnen zodra ze beschikbaar zijn.
+          </p>
+        )}
+      </div>
+
+    </div>
+  );
+}
+
+// Drie compacte highlight-kaartjes: Meest gebruikte tool · Productiefste dag · Hoogste streak.
+// Werkt ook netjes bij weinig data. Tools/streak uit de lifetime-tellers; productiefste
+// dag uit per_dag (met de 1-augustus-backfill uitgesloten zodat het een échte dag toont).
+function Highlights({
+  tellers,
+  streak,
+  record,
+  perDag,
+  vandaag,
+}: {
+  tellers: Tellers;
+  streak: number;
+  record: number;
+  perDag: PerDag;
+  vandaag: string;
+}) {
+  // Hoogste streak ooit: telt de lopende streak meteen mee zodra die het opgeslagen
+  // record passeert; na verbreken blijft hij op het record staan tot een nieuwe hoger wordt.
+  const hoogsteStreak = Math.max(streak, record);
+  // Meest gebruikte tool: het soort met de hoogste teller.
+  let beste: (typeof DEFS)[number] | null = null;
+  let besteN = 0;
+  for (const d of DEFS) {
+    const n = tellers[d.sleutel] ?? 0;
+    if (n > besteN) {
+      besteN = n;
+      beste = d;
+    }
+  }
+
+  // Productiefste dag: dag met de meeste bespaarde minuten. De 1-augustus-bucket
+  // (eenmalige backfill van het oude totaal) slaan we over zodat het een échte dag is.
+  const backfillDag = periodeStart("schooljaar", vandaag);
+  let topIso = "";
+  let topMin = 0;
+  for (const [dag, v] of Object.entries(perDag)) {
+    if (dag === backfillDag) continue;
+    const mv = v?.m ?? 0;
+    if (mv > topMin) {
+      topMin = mv;
+      topIso = dag;
+    }
+  }
+  const topDatum = topIso
+    ? new Date(topIso + "T00:00:00").toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" })
+    : null;
+
+  const kaarten = [
+    {
+      icon: beste?.icon ?? "🧰",
+      label: "Meest gebruikt",
+      waarde: beste ? beste.kort : "—",
+      sub: besteN > 0 ? `${besteN} keer gebruikt` : "nog niks gebruikt",
+    },
+    {
+      icon: "🏆",
+      label: "Beste dag",
+      waarde: topMin > 0 ? tijdTekst(topMin) : "—",
+      sub: topDatum ?? "nog geen activiteit",
+    },
+    {
+      icon: "🔥",
+      label: "Hoogste streak",
+      waarde: hoogsteStreak > 0 ? `${hoogsteStreak} ${hoogsteStreak === 1 ? "dag" : "dagen"}` : "—",
+      sub: hoogsteStreak > 0 ? "je langste reeks ooit" : "nog geen reeks",
+    },
+  ];
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-3">
+      {kaarten.map((k) => (
+        <div key={k.label} className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex items-center gap-2 text-lg font-bold text-ink/80">
+            <span className="text-xl" aria-hidden>
+              {k.icon}
+            </span>
+            {k.label}
+          </div>
+          <p className="mt-3 font-serif text-2xl font-semibold leading-tight text-ink">{k.waarde}</p>
+          <p className="mt-1 text-sm text-ink/55">{k.sub}</p>
+        </div>
+      ))}
     </div>
   );
 }
@@ -288,28 +460,15 @@ function StreakVlam({ streak, record }: { streak: number; record: number }) {
   );
 }
 
-function VergBalk({
-  label,
-  minuten,
-  max,
-  kleur,
-}: {
-  label: string;
-  minuten: number;
-  max: number;
-  kleur: string;
-}) {
+// Compacte community-cijfercel: icoon, groot getal, klein label. Past in een rooster naast elkaar.
+function CijferCel({ icon, waarde, label }: { icon: string; waarde: string; label: string }) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="w-20 shrink-0 text-sm font-semibold text-ink/70">{label}</span>
-      <div className="h-4 flex-1 rounded-full bg-cream">
-        <div
-          className="flex h-full items-center justify-end rounded-full px-2 text-[11px] font-bold text-white transition-all"
-          style={{ width: `${Math.max(8, (minuten / max) * 100)}%`, background: kleur }}
-        >
-          {tijdTekst(minuten)}
-        </div>
-      </div>
+    <div className="rounded-2xl bg-brand p-4 text-white">
+      <p className="text-base" aria-hidden>
+        {icon}
+      </p>
+      <p className="mt-1 font-serif text-2xl font-semibold leading-none">{waarde}</p>
+      <p className="mt-1.5 text-sm text-white/80">{label}</p>
     </div>
   );
 }
@@ -331,26 +490,41 @@ function TijdTeller({ minuten }: { minuten: number }) {
     return () => cancelAnimationFrame(raf);
   }, [minuten]);
 
-  const uren = Math.floor(n / 60);
-  const rest = n % 60;
+  const dagen = Math.floor(n / 1440);
+  const uren = Math.floor((n % 1440) / 60);
+  const restMin = n % 60;
+  const klein = "text-2xl font-normal sm:text-3xl";
   return (
     <div className="mt-2 font-serif text-5xl font-semibold leading-none sm:text-6xl">
-      {uren > 0 ? (
+      {dagen > 0 ? (
+        // Vanaf een dag: dagen + uren (minuten weglaten, blijft kort en leesbaar).
         <>
-          {uren}
-          <span className="text-2xl font-normal sm:text-3xl"> uur</span>
-          {rest > 0 && (
+          {dagen}
+          <span className={klein}> d</span>
+          {uren > 0 && (
             <>
               {" "}
-              {rest}
-              <span className="text-2xl font-normal sm:text-3xl"> min</span>
+              {uren}
+              <span className={klein}> u</span>
+            </>
+          )}
+        </>
+      ) : uren > 0 ? (
+        <>
+          {uren}
+          <span className={klein}> uur</span>
+          {restMin > 0 && (
+            <>
+              {" "}
+              {restMin}
+              <span className={klein}> min</span>
             </>
           )}
         </>
       ) : (
         <>
-          {rest}
-          <span className="text-2xl font-normal sm:text-3xl"> min</span>
+          {restMin}
+          <span className={klein}> min</span>
         </>
       )}
     </div>
