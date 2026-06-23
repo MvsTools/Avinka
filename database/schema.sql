@@ -31,7 +31,10 @@ create table if not exists public.instellingen (
   user_id        uuid primary key references auth.users(id) on delete cascade,
   schoolnaam     text default '',
   standaardgroep text default '',
-  toon           text default 'warm',
+  toon           text default 'warm',       -- centrale schrijf-voorkeuren: de tools
+  taalniveau     text default 'standaard',  -- vullen deze straks automatisch voor
+  lengte         text default 'gemiddeld',  -- (overschrijfbaar per tool)
+  aanspreekvorm  text default 'je',         -- 'je' | 'u' (alleen Oudercontact)
   ref_code       text,        -- eigen uitnodigingscode (voor de invite-link)
   verwezen_door  text,        -- de code van wie deze gebruiker uitnodigde
   -- ── Abonnement (Fase 2, Mollie) ──────────────────────────────────────
@@ -48,6 +51,9 @@ create table if not exists public.instellingen (
   updated_at     timestamptz default now()
 );
 -- MIGRATIE voor een bestaande database (één keer draaien in de Supabase SQL Editor):
+--   alter table public.instellingen add column if not exists taalniveau text default 'standaard';
+--   alter table public.instellingen add column if not exists lengte text default 'gemiddeld';
+--   alter table public.instellingen add column if not exists aanspreekvorm text default 'je';
 --   alter table public.instellingen add column if not exists ref_code text;
 --   alter table public.instellingen add column if not exists verwezen_door text;
 --   alter table public.instellingen add column if not exists abon_plan text;

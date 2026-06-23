@@ -13,9 +13,72 @@ const tonen = [
   { waarde: "neutraal", label: "Neutraal" },
   { waarde: "zakelijk", label: "Kort & zakelijk" },
 ];
+const taalniveaus = [
+  { waarde: "standaard", label: "Standaard" },
+  { waarde: "a2", label: "Eenvoudig (A2)" },
+  { waarde: "b1", label: "Toegankelijk (B1)" },
+];
+const lengtes = [
+  { waarde: "kort", label: "Kort" },
+  { waarde: "gemiddeld", label: "Gemiddeld" },
+  { waarde: "uitgebreid", label: "Uitgebreid" },
+];
+const aanspreekvormen = [
+  { waarde: "je", label: "Je / jullie" },
+  { waarde: "u", label: "U" },
+];
+
+// Eén keuzerij met knoppen, zoals de toon-knoppen. waarde/zet werken op het
+// veld in de Voorkeuren-state.
+function KeuzeRij({
+  titel,
+  hint,
+  opties,
+  waarde,
+  zet,
+}: {
+  titel: string;
+  hint?: string;
+  opties: { waarde: string; label: string }[];
+  waarde: string;
+  zet: (w: string) => void;
+}) {
+  return (
+    <div className="mt-5">
+      <span className="block text-sm font-bold text-ink">
+        {titel}
+        {hint && <span className="font-normal text-ink/50"> {hint}</span>}
+      </span>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {opties.map((o) => (
+          <button
+            key={o.waarde}
+            type="button"
+            onClick={() => zet(o.waarde)}
+            className={
+              "rounded-xl border px-4 py-2.5 text-sm font-semibold transition " +
+              (waarde === o.waarde
+                ? "border-brand bg-brand-soft text-brand"
+                : "border-black/10 text-ink/70 hover:border-black/20")
+            }
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function VoorkeurenForm() {
-  const [v, setV] = useState<Voorkeuren>({ schoolnaam: "", standaardgroep: "", toon: "warm" });
+  const [v, setV] = useState<Voorkeuren>({
+    schoolnaam: "",
+    standaardgroep: "",
+    toon: "warm",
+    taalniveau: "standaard",
+    lengte: "gemiddeld",
+    aanspreekvorm: "je",
+  });
   const [geladen, setGeladen] = useState(false);
   const [bezig, setBezig] = useState(false);
   const [opgeslagen, setOpgeslagen] = useState(false);
@@ -50,7 +113,8 @@ export default function VoorkeurenForm() {
     <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-sm sm:p-7">
       <h2 className="text-lg font-bold text-ink">Voorkeuren</h2>
       <p className="mt-1 text-sm text-ink/55">
-        Deze gebruiken de tools straks automatisch, zodat je minder hoeft in te vullen.
+        De tools vullen deze automatisch voor je in, zodat je minder hoeft te kiezen. Je
+        kunt het per tool altijd nog aanpassen.
       </p>
 
       <div className="mt-5">
@@ -79,26 +143,32 @@ export default function VoorkeurenForm() {
         />
       </div>
 
-      <div className="mt-5">
-        <span className="block text-sm font-bold text-ink">Toon van de teksten</span>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {tonen.map((t) => (
-            <button
-              key={t.waarde}
-              type="button"
-              onClick={() => setV({ ...v, toon: t.waarde })}
-              className={
-                "rounded-xl border px-4 py-2.5 text-sm font-semibold transition " +
-                (v.toon === t.waarde
-                  ? "border-brand bg-brand-soft text-brand"
-                  : "border-black/10 text-ink/70 hover:border-black/20")
-              }
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <KeuzeRij
+        titel="Toon van de teksten"
+        opties={tonen}
+        waarde={v.toon}
+        zet={(w) => setV({ ...v, toon: w })}
+      />
+      <KeuzeRij
+        titel="Taalniveau"
+        hint="(hoe makkelijk leesbaar)"
+        opties={taalniveaus}
+        waarde={v.taalniveau}
+        zet={(w) => setV({ ...v, taalniveau: w })}
+      />
+      <KeuzeRij
+        titel="Lengte van de teksten"
+        opties={lengtes}
+        waarde={v.lengte}
+        zet={(w) => setV({ ...v, lengte: w })}
+      />
+      <KeuzeRij
+        titel="Aanspreekvorm"
+        hint="(voor ouderberichten)"
+        opties={aanspreekvormen}
+        waarde={v.aanspreekvorm}
+        zet={(w) => setV({ ...v, aanspreekvorm: w })}
+      />
 
       <div className="mt-6 flex items-center gap-3">
         <button

@@ -17,7 +17,10 @@ import {
 export type Voorkeuren = {
   schoolnaam: string;
   standaardgroep: string;
-  toon: string;
+  toon: string; // warm | neutraal | zakelijk
+  taalniveau: string; // standaard | a2 | b1
+  lengte: string; // kort | gemiddeld | uitgebreid
+  aanspreekvorm: string; // je | u  (alleen Oudercontact)
 };
 export type Leerling = { naam: string; geslacht: "" | "j" | "m" };
 export type Klas = {
@@ -35,13 +38,16 @@ export async function getVoorkeuren(): Promise<Voorkeuren | null> {
   const sb = createClient();
   const { data, error } = await sb
     .from("instellingen")
-    .select("schoolnaam, standaardgroep, toon")
+    .select("schoolnaam, standaardgroep, toon, taalniveau, lengte, aanspreekvorm")
     .maybeSingle();
   if (error || !data) return null;
   return {
     schoolnaam: data.schoolnaam ?? "",
     standaardgroep: data.standaardgroep ?? "",
     toon: data.toon ?? "warm",
+    taalniveau: data.taalniveau ?? "standaard",
+    lengte: data.lengte ?? "gemiddeld",
+    aanspreekvorm: data.aanspreekvorm ?? "je",
   };
 }
 

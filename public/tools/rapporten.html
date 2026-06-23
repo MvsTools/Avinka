@@ -474,6 +474,7 @@
   <script src="/avinka-dialog.js"></script>
   <script src="/avinka-privacy.js"></script>
   <script src="/avinka-masking.js"></script>
+  <script src="/avinka-voorkeuren.js"></script>
 </head>
 <body>
 <div class="app">
@@ -1998,6 +1999,25 @@ async function vulMijnKlas(toevoegFn){
     f.classList.add('filled');
     if(typeof window.syncControls==='function') window.syncControls();
     if(typeof window.checkStartReady==='function') window.checkStartReady();
+  }
+  if(document.readyState!=='loading') start(); else document.addEventListener('DOMContentLoaded', start);
+})();
+</script>
+<script>/* Centrale voorkeuren (toon, lengte, taalniveau) automatisch voorinvullen.
+   Bij het laden de slimme standaard uit het dashboard zetten; de leerkracht kan
+   in de tool zelf nog aanpassen. */
+(function(){
+  function zet(id,val){ var e=document.getElementById(id); if(e&&val){ e.value=val; e.classList.add('filled'); } }
+  function apply(v){
+    v=v||{};
+    zet('f-toon', v.toon);
+    zet('f-lengte', v.lengte);
+    zet('f-taalniveau', v.taalniveau);
+    if(typeof window.syncControls==='function') window.syncControls();
+    if(typeof window.checkStartReady==='function') window.checkStartReady();
+  }
+  function start(){
+    if(window.avinkaVoorkeuren&&window.avinkaVoorkeuren.ready) window.avinkaVoorkeuren.ready.then(apply);
   }
   if(document.readyState!=='loading') start(); else document.addEventListener('DOMContentLoaded', start);
 })();

@@ -447,6 +447,7 @@
   <script src="/avinka-privacy.js"></script>
   <script src="/avinka-datum.js"></script>
   <script src="/avinka-masking.js"></script>
+  <script src="/avinka-voorkeuren.js"></script>
 </head>
 <body>
 
@@ -4836,6 +4837,37 @@ async function vulMijnKlas(toevoegFn){
     };
   }
   if(document.readyState!=='loading') init(); else document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+<script>/* Centrale voorkeuren (toon, lengte, aanspreekvorm, taalniveau) automatisch
+   voorinvullen in álle modules. We sturen de eigen keuzehandlers van de tool aan
+   (klik op de juiste optie / zet de select), zodat elke module-state klopt. De
+   leerkracht kan het per bericht altijd nog aanpassen.
+   De toon/uje/lengte-waarden botsen niet met andere keuzerijen, en alleen de
+   toon/uje/lengte-opties hebben een *KiesOpt-handler — daarop filteren we. */
+(function(){
+  function pick(val){
+    if(!val) return;
+    document.querySelectorAll('.opt[data-v="'+val+'"]').forEach(function(o){
+      var oc=o.getAttribute('onclick')||'';
+      if(oc.indexOf('iesOpt(')>=0 && !o.classList.contains('sel')) o.click();
+    });
+  }
+  function setTaal(val){
+    if(!val) return;
+    document.querySelectorAll('select[id$="taalniveau"]').forEach(function(s){
+      if(s.value===val) return;
+      s.value=val; s.classList.add('filled');
+      s.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  }
+  function apply(v){
+    v=v||{};
+    pick(v.toon); pick(v.lengte); pick(v.aanspreekvorm);
+    setTaal(v.taalniveau);
+  }
+  function start(){ if(window.avinkaVoorkeuren&&window.avinkaVoorkeuren.ready) window.avinkaVoorkeuren.ready.then(apply); }
+  if(document.readyState!=='loading') start(); else document.addEventListener('DOMContentLoaded', start);
 })();
 </script>
 </body>
