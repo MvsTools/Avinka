@@ -445,6 +445,8 @@
   <link rel="stylesheet" href="/avinka-huisstijl.css">
   <script src="/avinka-dialog.js"></script>
   <script src="/avinka-privacy.js"></script>
+  <script src="/avinka-datum.js"></script>
+  <script src="/avinka-masking.js"></script>
 </head>
 <body>
 
@@ -763,7 +765,7 @@
   <div class="scherm" id="scherm-mail">
     <div class="topbar">
       <button class="btn-back" onclick="terugNaarStart()">← Andere keuze</button>
-      <span class="ctx-badge">Oudercontact</span>
+      <span class="ctx-badge">Ouderbericht</span>
     </div>
 
     <div class="info-strip">
@@ -1567,7 +1569,7 @@ const TEGELS = [
     svg: '<path d="M21 11.5a8.4 8.4 0 0 1-11.3 7.8L3 21l1.7-6.7A8.4 8.4 0 1 1 21 11.5z"/><path d="M8.5 11h7M8.5 14h4"/>' },
   { id: 'weekbericht', tint: 't-sun', naam: 'Weekbericht', uitleg: 'Het wekelijkse bericht aan de ouders van je groep.', tijd: '15 min sneller', actief: true,
     svg: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9.5h18M8 3v4M16 3v4M7.5 14h4M7.5 17.5h7"/>' },
-  { id: 'bericht', tint: 't-rose', naam: 'Oudercontact', uitleg: 'Een persoonlijk bericht aan één ouder, of een reactie op een mail.', tijd: '10 min sneller', actief: true,
+  { id: 'bericht', tint: 't-rose', naam: 'Ouderbericht', uitleg: 'Een persoonlijk bericht aan één ouder, of een reactie op een mail.', tijd: '10 min sneller', actief: true,
     svg: '<path d="M20 4H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h3v3l4-3h9a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1z"/><circle cx="9" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="13" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="17" cy="11" r="1" fill="currentColor" stroke="none"/>' },
   { id: 'nieuwsbrief', tint: 't-viol', naam: 'Nieuwsbrief', uitleg: 'De teksten en opbouw voor je school- of klassennieuwsbrief.', tijd: '30 min sneller', actief: true,
     svg: '<path d="M4 5h11v15H5a1 1 0 0 1-1-1z"/><path d="M15 9h4a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1"/><path d="M7 8h5M7 11.5h5M7 15h3"/>' },
@@ -1761,6 +1763,7 @@ function kiesType(id) {
     if (!gesp.datum) { const d = new Date(); gesp.datum = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
     const sel = (vid, v) => { const e = document.getElementById(vid); if (e) { e.value = v || ''; e.classList.toggle('filled', !!v); } };
     sel('gesp-datum', gesp.datum); sel('gesp-groep', gesp.groep); sel('gesp-aantal', gesp.aantal);
+    if (typeof avinkaDatumRefresh === 'function') avinkaDatumRefresh(); // datumknop-label bijwerken
     gespHerstelAanleiding();
     document.querySelectorAll('#gesp-mode-rij .opt').forEach(o => o.classList.toggle('sel', o.dataset.v === gesp.mode));
     document.getElementById('gesp-aantal-wrap').style.display = gesp.mode === 'meer' ? '' : 'none';
@@ -2018,6 +2021,8 @@ function maskText(s) {
   let out = s;
   if (nameMap.length) nameMap.forEach(m => { out = out.replace(m.re, m.code); });
   extraMap.forEach(m => { out = out.replace(m.re, m.code); });
+  // Extra vangnet: dashboard-klasnamen (ook met kleine letter) → codes.
+  if (window.avinkaMask) out = window.avinkaMask.apply(out);
   return out;
 }
 function unmaskText(s) {
@@ -2025,6 +2030,7 @@ function unmaskText(s) {
   let out = s;
   if (nameMapCodes.length) nameMapCodes.forEach(m => { out = out.replace(m.re, m.real); });
   extraMap.forEach(m => { out = out.replace(new RegExp(m.code, 'g'), m.real); });
+  if (window.avinkaMask) out = window.avinkaMask.restore(out);
   return out;
 }
 
@@ -2117,6 +2123,8 @@ function checkGevoelig(el) {
 // een weekbericht aan alle ouders hoort sowieso geen diagnoses te bevatten.
 // ════════════════════════════════════════════════════════════
 async function callClaude(model, system, userContent, maxTokens, tools, knownNames) {
+  // Wacht tot het dashboard-klasnamen-vangnet geladen is vóór we maskeren.
+  if (window.avinkaMask) { try { await window.avinkaMask.ready; } catch (e) {} }
   buildNameMask(knownNames);
   buildExtraMap(userContent);
   const safeUser = maskText(userContent);

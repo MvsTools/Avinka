@@ -31,7 +31,18 @@
       ".avinka-vink-ic{width:30px;height:30px;border-radius:50%;background:#2f9e6e;display:flex;align-items:center;justify-content:center;flex-shrink:0;animation:avinkaVinkPop .35s ease;}" +
       ".avinka-vink-ic svg{width:17px;height:17px;}" +
       "@keyframes avinkaVinkPop{0%{transform:scale(.4)}60%{transform:scale(1.15)}100%{transform:scale(1)}}" +
-      ".avinka-vink-tx{font-size:14px;font-weight:700;color:#221c3a;font-family:'Plus Jakarta Sans',system-ui,sans-serif;}";
+      ".avinka-vink-tx{font-size:14px;font-weight:700;color:#221c3a;font-family:'Plus Jakarta Sans',system-ui,sans-serif;}" +
+      ".avinka-vink.groot{top:24px;bottom:auto;transform:translateX(-50%) translateY(-14px);padding:15px 26px 15px 14px;box-shadow:0 18px 48px rgba(26,22,46,.28);}" +
+      ".avinka-vink.groot.in{transform:translateX(-50%) translateY(0);}" +
+      ".avinka-vink.groot.weg{transform:translateX(-50%) translate(-44vw,-6px) scale(0.12);opacity:0;transition:transform .6s cubic-bezier(.4,0,.2,1),opacity .55s ease .05s;}" +
+      ".avinka-klok{position:fixed;top:12px;left:4vw;z-index:99997;width:30px;height:30px;color:#2f9e6e;opacity:0;pointer-events:none;}" +
+      ".avinka-klok svg{width:100%;height:100%;display:block;filter:drop-shadow(0 5px 12px rgba(26,22,46,.28));}" +
+      ".avinka-klok.in{animation:avinkaKlokPop .85s cubic-bezier(.3,0,.2,1) forwards;}" +
+      "@keyframes avinkaKlokPop{0%{opacity:0;transform:scale(.2) rotate(-200deg)}45%{opacity:1;transform:scale(1.25) rotate(15deg)}70%{transform:scale(1) rotate(0)}100%{opacity:1;transform:scale(1) rotate(0)}}" +
+      ".avinka-klok.weg{opacity:0;transform:scale(.85);transition:opacity .4s ease,transform .4s ease;}" +
+      ".avinka-vink.groot .avinka-vink-ic{width:38px;height:38px;}" +
+      ".avinka-vink.groot .avinka-vink-ic svg{width:21px;height:21px;}" +
+      ".avinka-vink.groot .avinka-vink-tx{font-size:16.5px;}";
     document.head.appendChild(s);
   }
 
@@ -120,6 +131,7 @@
   ];
   // Wisselende teksten met de gewonnen tijd erin (%m% = bv. "18 minuten").
   var WINST_TEKSTEN = [
+    "Afgevinkt! %m% bespaard",
     "Hoppa! %m% bespaard",
     "Mooi, %m% gewonnen",
     "Lekker bezig, %m% bespaard",
@@ -129,37 +141,87 @@
     "Boem, %m% gewonnen",
     "Dat staat. %m% bespaard",
   ];
-  function winstTekst(min) {
-    var label = min + (min === 1 ? " minuut" : " minuten");
-    var sjabloon = WINST_TEKSTEN[Math.floor(Math.random() * WINST_TEKSTEN.length)];
-    return sjabloon.replace("%m%", label);
+  // Leesbare tijd: onder het uur "X minuten", daarboven "1 uur en 7 minuten"
+  // (en "2 uur" als het rond is). Overzichtelijker dan "67 minuten".
+  function tijdLabel(min) {
+    if (min < 60) return min + (min === 1 ? " minuut" : " minuten");
+    var u = Math.floor(min / 60);
+    var m = min % 60;
+    var uur = u + " uur";
+    if (m === 0) return uur;
+    return uur + " en " + m + (m === 1 ? " minuut" : " minuten");
+  }
+  // Telt de minuten soepel op van 0 naar het eindgetal in de melding (verdien-gevoel).
+  function animeerTel(el, doel) {
+    var begin = null, duur = 750;
+    el.textContent = tijdLabel(0);
+    function stap(ts) {
+      if (begin === null) begin = ts;
+      var p = Math.min(1, (ts - begin) / duur);
+      var n = Math.round(doel * (1 - Math.pow(1 - p, 3)));
+      el.textContent = tijdLabel(n);
+      if (p < 1) requestAnimationFrame(stap);
+    }
+    requestAnimationFrame(stap);
+  }
+  // Klein klokje dat oppopt in de hoek waar de winst-melding "in landt": het spint
+  // terug (tijd die je terugkrijgt door de tool) en vervaagt dan.
+  function toonKlok() {
+    try {
+      var k = document.createElement("div");
+      k.className = "avinka-klok";
+      k.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg>';
+      document.body.appendChild(k);
+      requestAnimationFrame(function () { k.classList.add("in"); });
+      setTimeout(function () { k.classList.remove("in"); k.classList.add("weg"); }, 950);
+      setTimeout(function () { if (k.parentNode) k.remove(); }, 1400);
+    } catch (e) { /* stil */ }
   }
   var vinkHuidig = null;
   // customTekst (optioneel) → bv. "Hoppa! 18 minuten bespaard"; anders een
-  // wisselende "afgevinkt"-tekst.
-  function toonAfgevinkt(customTekst) {
+  // wisselende "afgevinkt"-tekst. groot=true → opvallender (bovenaan-midden,
+  // groter, langer in beeld) voor de tijdwinst, zodat je 'm niet mist als een
+  // analyse/tekst klaar is.
+  function toonAfgevinkt(customTekst, groot, minuten) {
     zorgStijl();
     try {
       if (vinkHuidig && vinkHuidig.parentNode) vinkHuidig.remove();
       var t = document.createElement("div");
-      t.className = "avinka-vink";
+      t.className = "avinka-vink" + (groot ? " groot" : "");
       t.innerHTML =
         '<span class="avinka-vink-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>' +
         '<span class="avinka-vink-tx"></span>';
-      t.querySelector(".avinka-vink-tx").textContent =
-        customTekst || VINK_TEKSTEN[Math.floor(Math.random() * VINK_TEKSTEN.length)];
+      var tx = t.querySelector(".avinka-vink-tx");
+      // Winst met een bekend aantal minuten → tekst met een oplopend tellertje;
+      // anders gewoon vaste tekst (custom of een wisselende "afgevinkt"-tekst).
+      var telEl = null;
+      if (groot && typeof minuten === "number" && minuten > 0) {
+        var sjabloon = WINST_TEKSTEN[Math.floor(Math.random() * WINST_TEKSTEN.length)];
+        var delen = sjabloon.split("%m%");
+        tx.appendChild(document.createTextNode(delen[0]));
+        telEl = document.createElement("span");
+        tx.appendChild(telEl);
+        tx.appendChild(document.createTextNode(delen[1] || ""));
+      } else {
+        tx.textContent = customTekst || VINK_TEKSTEN[Math.floor(Math.random() * VINK_TEKSTEN.length)];
+      }
       document.body.appendChild(t);
       vinkHuidig = t;
       requestAnimationFrame(function () {
         t.classList.add("in");
+        if (telEl) animeerTel(telEl, minuten);
       });
       setTimeout(function () {
-        t.classList.remove("in");
+        // De grote winst-melding vliegt naar de hoek en krimpt weg, en daar popt een
+        // klokje op (alsof de tijd wordt "weggespaard"); de kleine toast verdwijnt gewoon.
+        if (groot) { t.classList.add("weg"); toonKlok(); }
+        else t.classList.remove("in");
         setTimeout(function () {
           if (t.parentNode) t.remove();
           if (vinkHuidig === t) vinkHuidig = null;
-        }, 320);
-      }, 2600);
+        }, groot ? 650 : 320);
+      }, groot ? 3000 : 2600);
     } catch (e) {
       /* stil */
     }
@@ -181,14 +243,17 @@
   // rekent daaruit de adaptieve tijdwinst uit (zie src/lib/tijdwinst.ts).
   window.avinkaTel = function (type, signaal) {
     var getoond = false;
-    function toon(tekst) {
+    function toon(min) {
       if (getoond) return;
       getoond = true;
-      toonAfgevinkt(tekst);
+      // Bekende tijdwinst → opvallende grote melding met oplopend tellertje;
+      // anders een klein "afgevinkt"-toastje.
+      if (min > 0) toonAfgevinkt(null, true, min);
+      else toonAfgevinkt();
     }
     // De toast verschijnt zodra de server de gewonnen minuten teruggeeft. Blijft
     // dat antwoord uit (offline/traag), dan na 1,2s gewoon het "afgevinkt"-toastje.
-    var val = setTimeout(function () { toon(); }, 1200);
+    var val = setTimeout(function () { toon(0); }, 1200);
     try {
       fetch("/api/statistiek", {
         method: "POST",
@@ -200,13 +265,12 @@
         .then(function (d) {
           clearTimeout(val);
           var m = d && typeof d.gewonnen === "number" ? d.gewonnen : 0;
-          if (m > 0) toon(winstTekst(m));
-          else toon();
+          toon(m);
         })
-        .catch(function () { clearTimeout(val); toon(); });
+        .catch(function () { clearTimeout(val); toon(0); });
     } catch (e) {
       clearTimeout(val);
-      toon();
+      toon(0);
     }
   };
   window.avinkaBevestig = function (tekst, opts) {

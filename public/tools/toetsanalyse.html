@@ -453,6 +453,7 @@
 </style>
   <link rel="stylesheet" href="/avinka-huisstijl.css">
   <script src="/avinka-dialog.js"></script>
+  <script src="/avinka-masking.js"></script>
 </head><body>
 
 <div class="container landing-container iepui" id="landing">
@@ -2320,16 +2321,19 @@ function buildNameMap(names) {
 // "Sam" niet in "samen" matcht en het zelfstandig naamwoord "roos"/"lot" blijft staan
 // terwijl de naam "Roos"/"Lot" wél wordt afgeschermd.
 function maskText(s) {
-  if (!s || !nameMap.length) return s;
+  if (!s) return s;
   let out = s;
-  nameMap.forEach(m => { out = out.replace(m.re, m.code); });
+  if (nameMap.length) nameMap.forEach(m => { out = out.replace(m.re, m.code); });
+  // Extra vangnet: dashboard-klasnamen (ook met kleine letter) → codes.
+  if (window.avinkaMask) out = window.avinkaMask.apply(out);
   return out;
 }
 // Zet de codes weer terug naar de echte namen (voor verwerking en terugschrijven).
 function unmaskText(s) {
-  if (!s || !nameMapCodes.length) return s;
+  if (!s) return s;
   let out = s;
-  nameMapCodes.forEach(m => { out = out.replace(m.re, m.real); });
+  if (nameMapCodes.length) nameMapCodes.forEach(m => { out = out.replace(m.re, m.real); });
+  if (window.avinkaMask) out = window.avinkaMask.restore(out);
   return out;
 }
 
@@ -2379,7 +2383,32 @@ function openUitleg(kant) {
   if (ov) ov.classList.add('visible');
 }
 
+// ── Kostencap per analyse ──────────────────────────────────────────────────
+// Eén analyse mag hooguit ~50 cent aan AI-kosten maken. We tellen de ECHTE tokens
+// uit elk antwoord mee (data.usage). Komt de grens in zicht, dan vult de AI alleen
+// de belangrijkste velden; de rest wordt automatisch "[ In te vullen door
+// leerkracht ]" (via leegOngevuldeAntwoordcellen). Dit beschermt vooral tegen een
+// heel groot geüpload formulier (eigen template / groepsplan), dat anders veel
+// losse AI-aanroepen vergt.
+const KOSTEN_CAP_USD = 0.50;        // veiligheidsplafond per analyse (≈ €0,46); Anthropic rekent in USD
+const KOSTEN_CLASS_CAP_USD = 0.30;  // deel daarvan dat de formulier-herkenning maximaal mag kosten
+// USD per 1 miljoen tokens (Sonnet 4.6 lijstprijs; spiegelt src/lib/ai-kosten.ts —
+// bij een prijswijziging hier én daar bijwerken).
+const AI_TARIEF = { input: 3, output: 15, cacheWrite: 3.75, cacheRead: 0.3 };
+let runKostenUSD = 0;        // opgebouwde AI-kosten in de huidige analyse-run
+let kostenCapBereikt = false;
+function aiKostenVan(u) {
+  if (!u) return 0;
+  return ((u.input_tokens || 0) * AI_TARIEF.input
+        + (u.output_tokens || 0) * AI_TARIEF.output
+        + (u.cache_creation_input_tokens || 0) * AI_TARIEF.cacheWrite
+        + (u.cache_read_input_tokens || 0) * AI_TARIEF.cacheRead) / 1e6;
+}
+function budgetOp() { return runKostenUSD >= KOSTEN_CAP_USD; }
+
 async function callClaude(model, system, userContent, maxTokens) {
+  // Wacht tot het dashboard-klasnamen-vangnet geladen is vóór we maskeren.
+  if (window.avinkaMask) { try { await window.avinkaMask.ready; } catch (e) {} }
   // AVG: vervang leerlingnamen door anonieme codes vóórdat er iets naar de API gaat.
   // userContent mag een string zijn, of een lijst content-blokken (voor prompt caching);
   // in beide gevallen maskeren we elke tekst vóór verzending.
@@ -2411,6 +2440,8 @@ async function callClaude(model, system, userContent, maxTokens) {
     throw new Error(msg);
   }
   const data = await resp.json();
+  // Echte kosten van deze call optellen bij het loopende totaal van de analyse.
+  runKostenUSD += aiKostenVan(data.usage);
   const rawText = (data.content || []).map(b => b.text || '').join('');
   // Leg vast wat het apparaat letterlijk heeft verlaten (al gemaskeerd) + het ruwe AI-antwoord
   // (met codes), zodat de diagnose aantoonbaar kan maken dat er geen echte namen verstuurd zijn.
@@ -3603,6 +3634,7 @@ async function startAnalyse() {
   analysisResult = {};
   runWarnings = [];
   aiCallLog = [];
+  runKostenUSD = 0; kostenCapBereikt = false;
   naamCorrecties = [];
   bijzData = null;
   document.getElementById('naam-modal').classList.remove('visible');
@@ -3656,6 +3688,11 @@ async function startAnalyse() {
     // Elke sectie die de AI gaat schrijven krijgt een eigen regel, zodat de
     // balkjes precies meelopen met wat er gebeurt (niet vaste generieke stappen).
     const secties = bepaalSecties(tabellen);
+    // Belangrijkste secties eerst schrijven (kernvakken-groepsanalyse), zodat juist díe
+    // binnen de kostencap worden ingevuld als een groot formulier de grens nadert. Stabiel
+    // sorteren op prioriteit; gelijke prioriteit houdt de oorspronkelijke (formulier)volgorde.
+    secties.forEach((s, i) => { s._idx = i; });
+    secties.sort((a, b) => (sectiePrioriteit(a.tabel) - sectiePrioriteit(b.tabel)) || (a._idx - b._idx));
     const labels = ['Toetsgegevens inlezen', 'Template herkennen', ...secties.map(s => s.label), 'Document afronden'];
     setupProgress(labels);
     let stap = 0;
@@ -3675,6 +3712,11 @@ async function startAnalyse() {
       setProg(stap,'active'); setSub(sectie.subtekst);
       await schrijfSectie(sectie.tabel);
       setProg(stap,'done'); stap++;
+    }
+
+    // Is de kostengrens geraakt, leg dan vriendelijk uit waarom een deel niet automatisch is ingevuld.
+    if (kostenCapBereikt) {
+      runWarnings.push('Dit is een groot formulier. Om de kosten beheersbaar te houden heeft de AI de belangrijkste velden ingevuld; de overige velden staan op "[ In te vullen door leerkracht ]" zodat je ze zelf kunt aanvullen.');
     }
 
     // Veiligheidsvangnet: cellen die we niet vulden krijgen een neutrale placeholder,
@@ -3713,6 +3755,17 @@ async function startAnalyse() {
 
 // Bepaal welke secties er geschreven worden, met een passend label per stuk.
 // Hierdoor lopen de voortgangsbalkjes exact mee met het echte werk.
+// Prioriteit voor de kostencap: lager getal = belangrijker, dus eerst schrijven en daarmee
+// als eerste binnen het budget. De groepsanalyse van de kernvakken (rekenen, taalverzorging,
+// lezen) is het waardevolst; individuele leerlinganalyse is duurder en minder kritisch.
+function sectiePrioriteit(t) {
+  const kern = ['rekenen', 'taalverzorging', 'lezen'];
+  if (t.isLeerlingtabel) return 3;                                  // individuele leerlinganalyse
+  if (t.vakKey && kern.includes(t.vakKey)) return 0;                // kernvak-groepsanalyse
+  if (t.vakKey) return 1;                                           // overige vak-groepsanalyse
+  return 2;                                                         // overige secties
+}
+
 function bepaalSecties(tabellen) {
   const secties = [];
   tabellen.forEach(t => {
@@ -3877,7 +3930,13 @@ Antwoord UITSLUITEND als JSON: alleen voor de te labelen cel-ids een object met 
   const responsDelen = [];
   let batchFouten = 0;
 
+  let klassAfgekapt = false;
   for (let i = 0; i < batches.length; i += CONCURRENT) {
+    // Kostencap voor de herkenning: bij een heel groot formulier stoppen we met labelen zodra
+    // het classificatie-deel van het budget op is. Nog niet beoordeelde cellen blijven "info"
+    // (worden dus met rust gelaten, niets verzonnen). De rest van het budget blijft over voor
+    // het schrijven van de belangrijkste secties.
+    if (runKostenUSD >= KOSTEN_CLASS_CAP_USD) { klassAfgekapt = true; break; }
     const groep = batches.slice(i, i + CONCURRENT);
     const uitkomsten = await Promise.all(groep.map(async (batch) => {
       const ids = batch.map(c => c.cellId);
@@ -3901,6 +3960,11 @@ Antwoord UITSLUITEND als JSON: alleen voor de te labelen cel-ids een object met 
       if (u.json && typeof u.json === 'object') Object.assign(gecombineerd, u.json);
       else batchFouten++;
     });
+  }
+
+  if (klassAfgekapt) {
+    kostenCapBereikt = true;
+    runWarnings.push('Dit formulier is erg groot. Een deel is niet automatisch herkend om de kosten beheersbaar te houden; die velden zijn met rust gelaten. Je kunt ze zelf invullen.');
   }
 
   // De teruggekregen rollen toepassen op de cellen.
@@ -4180,6 +4244,11 @@ async function schrijfSectie(t) {
     const dataCells = t.cells.filter(c => c.finalType === 'INVULLEN');
     if (dataCells.length === 0) return;
 
+    // Kostencap: is de grens bereikt, dan deze sectie NIET meer door de AI laten schrijven.
+    // De datacellen blijven leeg en krijgen straks automatisch "[ In te vullen door leerkracht ]"
+    // via leegOngevuldeAntwoordcellen — de belangrijkste secties zijn dankzij de prioriteit al gedaan.
+    if (budgetOp()) { kostenCapBereikt = true; return; }
+
     // Bouw platte lijst van vragen (met deelvragen uitgesplitst). Gebruik schone vragen.
     const items = [];
     dataCells.forEach(c => {
@@ -4324,6 +4393,9 @@ function parseGenummerdeAntwoorden(raw) {
 // LEERLINGNIVEAU-TABEL: aparte behandeling
 // ════════════════════════════════════════════════════════════
 async function schrijfLeerlingtabel(t) {
+  // Kostencap: grens bereikt → deze (relatief dure) individuele analyse overslaan; de cellen
+  // krijgen straks automatisch de leerkracht-placeholder via leegOngevuldeAntwoordcellen.
+  if (budgetOp()) { kostenCapBereikt = true; return; }
   // Vak-focus bepalen. Een tabel met vak-rijen (Rekenen/Taal/Lezen als labels in de eerste
   // kolom) is vak-overstijgend; een tabel met één vak in vakKey focust op dat ene vak.
   const heeftVakRijen = t.cells.some(c => {
@@ -8045,6 +8117,7 @@ async function citoStartFormulier() {
   if (!citoData) { citoShowError('Lees eerst de toetsgegevens in.'); return; }
   if (!citoFormulieren.length) { citoShowError('Upload eerst minstens één Cito-groepsplan (.docx).'); return; }
   citoFormWarnings = [];
+  runKostenUSD = 0; kostenCapBereikt = false;
   const btn = document.getElementById('cito-btn-go'); if (btn) btn.disabled = true;
   const loading = document.getElementById('cito-form-loading'); if (loading) loading.classList.add('visible');
   const sub = document.getElementById('cito-form-loading-sub');
@@ -8052,6 +8125,8 @@ async function citoStartFormulier() {
   try {
     for (let i=0;i<citoFormulieren.length;i++) {
       const f = citoFormulieren[i];
+      // Kostencap: grens bereikt → stop met verdere groepsplannen (de reeds ingevulde blijven staan).
+      if (budgetOp()) { citoFormWarnings.push('De kostengrens van deze analyse is bereikt; de overige groepsplannen zijn niet automatisch ingevuld. Vul die zelf in of doe ze in een aparte ronde.'); break; }
       if (sub) sub.textContent = `Formulier ${i+1}/${citoFormulieren.length}: ${f.vak?f.vak.label:f.naam}…`;
       if (!f.vak) { citoFormWarnings.push(`${f.naam}: vak niet herkend, overgeslagen.`); continue; }
       const blob = await citoVerwerkFormulier(f);

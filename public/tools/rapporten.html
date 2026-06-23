@@ -473,6 +473,7 @@
   <link rel="stylesheet" href="/avinka-huisstijl.css">
   <script src="/avinka-dialog.js"></script>
   <script src="/avinka-privacy.js"></script>
+  <script src="/avinka-masking.js"></script>
 </head>
 <body>
 <div class="app">
@@ -1333,6 +1334,8 @@ function maskText(s) {
   let out = s;
   if (nameMap.length) nameMap.forEach(m => { out = out.replace(m.re, m.code); });
   extraMap.forEach(m => { out = out.replace(m.re, m.code); });
+  // Extra vangnet: dashboard-klasnamen (ook met kleine letter) → codes.
+  if (window.avinkaMask) out = window.avinkaMask.apply(out);
   return out;
 }
 function unmaskText(s) {
@@ -1340,6 +1343,7 @@ function unmaskText(s) {
   let out = s;
   if (nameMapCodes.length) nameMapCodes.forEach(m => { out = out.replace(m.re, m.real); });
   extraMap.forEach(m => { out = out.replace(new RegExp(m.code, 'g'), m.real); });
+  if (window.avinkaMask) out = window.avinkaMask.restore(out);
   return out;
 }
 
@@ -1429,6 +1433,8 @@ function checkGevoelig(el) {
 // AI-AANROEP (gelijk aan Toetsanalyse: mask vóór verzenden, unmask erna)
 // ════════════════════════════════════════════════════════════
 async function callClaude(model, system, userContent, maxTokens) {
+  // Wacht tot het dashboard-klasnamen-vangnet geladen is vóór we maskeren.
+  if (window.avinkaMask) { try { await window.avinkaMask.ready; } catch (e) {} }
   const veiligUser = ontdoeGevoelig(userContent);
   buildExtraMap(veiligUser);
   const safeUser = maskText(veiligUser);
