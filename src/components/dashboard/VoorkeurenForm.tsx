@@ -110,11 +110,11 @@ export default function VoorkeurenForm() {
   if (!geladen) return null;
 
   return (
+    <>
     <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-sm sm:p-7">
-      <h2 className="text-lg font-bold text-ink">Voorkeuren</h2>
+      <h2 className="text-lg font-bold text-ink">Schoolgegevens</h2>
       <p className="mt-1 text-sm text-ink/55">
-        De tools vullen deze automatisch voor je in, zodat je minder hoeft te kiezen. Je
-        kunt het per tool altijd nog aanpassen.
+        Deze gebruiken de tools in je brieven en berichten.
       </p>
 
       <div className="mt-5">
@@ -142,6 +142,14 @@ export default function VoorkeurenForm() {
           className="mt-1.5 w-full max-w-xs rounded-xl border border-black/10 bg-cream px-4 py-3 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
         />
       </div>
+    </div>
+
+    <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-sm sm:p-7">
+      <h2 className="text-lg font-bold text-ink">Voorkeuren</h2>
+      <p className="mt-1 text-sm text-ink/55">
+        De tools vullen deze automatisch voor je in, zodat je minder hoeft te kiezen. Je
+        kunt het per tool altijd nog aanpassen.
+      </p>
 
       <KeuzeRij
         titel="Toon van de teksten"
@@ -169,8 +177,9 @@ export default function VoorkeurenForm() {
         waarde={v.aanspreekvorm}
         zet={(w) => setV({ ...v, aanspreekvorm: w })}
       />
+    </div>
 
-      <div className="mt-6 flex items-center gap-3">
+    <div className="flex items-center gap-3">
         <button
           onClick={bewaar}
           disabled={bezig}
@@ -182,6 +191,6 @@ export default function VoorkeurenForm() {
           <span className="text-sm font-semibold text-emerald-600">✓ Opgeslagen</span>
         )}
       </div>
-    </div>
+    </>
   );
 }
