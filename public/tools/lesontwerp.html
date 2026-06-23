@@ -4,22 +4,20 @@
   Ontworpen en gemaakt door Michael van Spanje. © 2026 Michael van Spanje.
 
   STATUS: TESTFASE. Staat (bewust) nog NIET geregistreerd in het platform — alleen
-  bereikbaar via /tools/lesontwerp.html. Zodra hij helemaal klaar is, integreren:
-    1. src/lib/tijdwinst.ts        → CFG-entry 'lesontwerp' (label/kort/icon/kleur).
+  bereikbaar via /tools/lesontwerp.html. Te doen zodra hij helemaal klaar is:
+    1. src/lib/tijdwinst.ts        → CFG-entry 'lesontwerp'.
     2. src/components/dashboard/StatistiekenView.tsx → HOOFDTOOLS + SUB_NAAR_HOOFD.
     3. src/lib/tools.ts            → tegel op het dashboard (slug 'lesontwerp').
     4. src/app/page.tsx           → tegel op de startpagina.
-    5. src/lib/abonnement.ts      → pakket-indeling (magToolGebruiken op de slug).
+    5. src/lib/abonnement.ts      → pakket-indeling.
   Zie memory tool-integratie-checklist.
 
-  Filosofie (zoals alle Avinka-tools): de CODE regelt de structuur en didactiek
-  (EDI-fasen, timing, lestype, differentiatie), de AI schrijft alleen de inhoud.
-  Zo krijg je elke keer een volledig, klaar-voor-de-klas lesontwerp.
+  Filosofie: de CODE regelt de structuur/didactiek (EDI-fasen, timing, lestype,
+  differentiatie), de AI schrijft de inhoud. Zo elke keer een volledige les.
 -->
 <html lang="nl">
 <head>
   <script>
-  /* Platform: de login regelt de toegang. Dummy-sleutel; de echte staat op de server. */
   try { localStorage.setItem("avinka_apikey", "sk-ant-proxy"); } catch (e) {}
   </script>
   <meta charset="UTF-8" />
@@ -27,15 +25,13 @@
   <meta name="author" content="Michael van Spanje" />
   <title>Lesontwerp — Complete lessen uit één leerdoel</title>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-
-  <script src="/avinka-dialog.js"></script>
-  <script src="/avinka-masking.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --ink: #221c3a; --cream: #fbf6ee; --warm: #e9e1d2;
-      --accent: #2f9e6e; --accent2: #25855a; --muted: #6b6880; --card: #ffffff;
+      --accent: #2f9e6e; --accent2: #25855a; --violet: #25855a; --muted: #6b6880; --card: #ffffff;
       --brand-soft: #e7f4ed;
       --line: rgba(34,28,58,0.07); --line-strong: rgba(34,28,58,0.13);
       --shadow-sm: 0 1px 2px rgba(34,28,58,0.06), 0 2px 6px rgba(34,28,58,0.05);
@@ -47,17 +43,38 @@
         radial-gradient(circle at 92% 0%, rgba(47,158,110,0.10) 0%, transparent 40%),
         radial-gradient(rgba(47,158,110,0.05) 1.3px, transparent 1.3px);
       background-size: auto, auto, 24px 24px; pointer-events: none; z-index: 0; }
-    .container { max-width: 820px; margin: 0 auto; padding: 36px 24px 90px; position: relative; z-index: 1; }
 
-    .merk { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 15px; color: var(--ink); }
-    .merk .vink { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 7px; background: var(--accent); color: #fff; }
+    /* ── Schil: gecentreerde kolom + topbalk (gelijk aan de andere tools) ── */
+    .app { position: relative; z-index: 1; max-width: 820px; margin: 0 auto; padding: 22px 26px 30px; }
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 22px; }
+    .terug-menu { font-size: 13px; font-weight: 600; color: var(--muted); text-decoration: none; }
+    .terug-menu:hover { color: var(--ink); }
+    .top-logo { display: inline-flex; align-items: center; gap: 9px; font-family: 'Fraunces', serif; font-weight: 700; font-size: 17px; color: var(--ink); }
+    .top-logo .mk { width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(135deg, var(--violet), var(--accent)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; box-shadow: 0 5px 13px rgba(47,158,110,0.3); }
 
-    .hero { margin-top: 26px; }
-    .hero h1 { font-family: 'Fraunces', serif; font-size: 34px; font-weight: 600; line-height: 1.1; }
-    .hero p { color: var(--muted); margin-top: 8px; font-size: 16px; max-width: 60ch; }
+    /* ── Hero ── */
+    .hero { display: grid; grid-template-columns: 1fr 250px; gap: 30px; align-items: center; margin: 6px 0 30px; }
+    @media (max-width: 720px) { .hero { grid-template-columns: 1fr; } .heroart { display: none; } }
+    .hero h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(29px, 4.6vw, 39px); letter-spacing: -1px; line-height: 1.08; }
+    .hero h1 .sw { position: relative; white-space: nowrap; font-style: italic; color: var(--accent); }
+    .hero h1 .sw svg { position: absolute; left: 0; bottom: -7px; width: 100%; height: 11px; color: var(--violet); }
+    .hero .lead { font-size: 15px; color: var(--muted); line-height: 1.55; margin-top: 14px; max-width: 400px; }
+    .heroart { position: relative; width: 250px; align-self: center; display: flex; flex-direction: column; align-items: center; }
+    .mockwin { width: 230px; background: #fff; border-radius: 18px; box-shadow: 0 22px 46px rgba(34,28,58,0.16); border: 1px solid rgba(34,28,58,0.06); overflow: hidden; transform: rotate(1.2deg); }
+    .mockbar { display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: #f7f5f0; border-bottom: 1px solid rgba(34,28,58,0.06); }
+    .mockbar i { width: 9px; height: 9px; border-radius: 50%; }
+    .mocktab { margin-left: 6px; font-size: 9.5px; font-weight: 700; color: var(--muted); background: #fff; border: 1px solid rgba(34,28,58,0.08); border-radius: 6px; padding: 3px 8px; }
+    .mockbody { padding: 13px 14px; }
+    .mtop { font-size: 11px; font-weight: 700; color: var(--ink); margin-bottom: 10px; }
+    .mrow { display: flex; align-items: center; gap: 8px; margin: 7px 0; }
+    .mfase { width: 18px; height: 18px; border-radius: 6px; background: var(--brand-soft); color: var(--accent2); font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .mbar { height: 8px; border-radius: 5px; background: linear-gradient(90deg, var(--accent), #8fd9b9); }
+    .fbadge { margin-top: 14px; display: inline-flex; align-items: center; gap: 7px; background: var(--card); border: 1px solid var(--line-strong); border-radius: 999px; padding: 7px 13px; font-size: 12px; font-weight: 600; color: var(--ink); box-shadow: var(--shadow-sm); transform: rotate(-1deg); }
 
+    /* ── Kaarten + titelcel ── */
     .card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 24px; box-shadow: var(--shadow-sm); margin-top: 22px; }
-    .card-titel { font-weight: 700; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+    .card-label { font-size: 12.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.9px; margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
+    .card-label .ic { width: 30px; height: 30px; border-radius: 9px; background: var(--brand-soft); color: var(--accent2); display: flex; align-items: center; justify-content: center; font-size: 15px; }
 
     label.veld-l { display: block; font-weight: 700; font-size: 14px; margin-bottom: 8px; }
     .hint { font-weight: 400; color: var(--muted); font-size: 13px; }
@@ -94,15 +111,14 @@
     .btn { margin-top: 24px; border: none; border-radius: 15px; background: var(--accent); color: #fff; font: inherit; font-size: 16px; font-weight: 700; padding: 14px 26px; cursor: pointer; transition: .15s; box-shadow: 0 8px 20px rgba(47,158,110,.28); }
     .btn:hover { background: var(--accent2); }
     .btn:disabled { opacity: .55; cursor: default; box-shadow: none; }
+    .err { color: #be123c; font-size: 14px; margin-top: 12px; }
 
-    .err { color: #e11d48; font-size: 14px; margin-top: 12px; }
-
-    .laden { display: none; text-align: center; padding: 36px 0; color: var(--muted); }
+    .laden { display: none; text-align: center; padding: 40px 0; color: var(--muted); }
     .laden.aan { display: block; }
     .spin { width: 34px; height: 34px; border: 3px solid var(--brand-soft); border-top-color: var(--accent); border-radius: 50%; margin: 0 auto 14px; animation: dr 0.8s linear infinite; }
     @keyframes dr { to { transform: rotate(360deg); } }
 
-    /* Resultaat */
+    /* ── Resultaat ── */
     #uitvoer { display: none; }
     .les { line-height: 1.62; font-size: 15.5px; }
     .les h3 { font-family: 'Fraunces', serif; font-size: 21px; font-weight: 600; margin: 22px 0 8px; color: var(--ink); }
@@ -113,130 +129,161 @@
     .les li { position: relative; padding-left: 22px; margin: 5px 0; }
     .les li::before { content: '✓'; position: absolute; left: 0; top: 0; color: var(--accent); font-weight: 800; }
     .les strong { font-weight: 700; }
-    .les .fase { background: var(--cream); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 0 12px 12px 0; padding: 12px 16px; margin: 10px 0; }
     .les .tijd { display: inline-block; font-size: 12px; font-weight: 700; color: var(--accent2); background: var(--brand-soft); border-radius: 999px; padding: 2px 9px; margin-left: 6px; vertical-align: middle; }
 
-    .acties { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
-    .btn-soft { border: 1.5px solid var(--line-strong); background: var(--card); color: var(--ink); border-radius: 12px; padding: 10px 16px; font: inherit; font-weight: 600; font-size: 14px; cursor: pointer; transition: .15s; }
+    .acties { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+    .btn-green { border: none; border-radius: 13px; background: var(--accent); color: #fff; font: inherit; font-weight: 700; font-size: 14.5px; padding: 12px 20px; cursor: pointer; transition: .15s; box-shadow: 0 6px 16px rgba(47,158,110,.25); }
+    .btn-green:hover { background: var(--accent2); }
+    .btn-soft { border: 1.5px solid var(--line-strong); background: var(--card); color: var(--ink); border-radius: 13px; padding: 12px 18px; font: inherit; font-weight: 600; font-size: 14px; cursor: pointer; transition: .15s; }
     .btn-soft:hover { border-color: var(--accent); color: var(--accent2); }
+
+    footer.app-foot { margin-top: 36px; text-align: center; padding: 22px 0 30px; border-top: 1px solid rgba(34,28,58,0.07); font-size: 12.5px; color: var(--muted); line-height: 1.7; }
   </style>
+
+  <link rel="stylesheet" href="/avinka-huisstijl.css" />
+  <script src="/avinka-dialog.js"></script>
+  <script src="/avinka-masking.js"></script>
 </head>
 <body>
-  <div class="container">
-    <div class="merk"><span class="vink">✓</span> Avinka · Lesontwerp</div>
-
-    <div class="hero">
-      <h1>Van leerdoel naar complete les</h1>
-      <p>Geef je leerdoel door, kies de sfeer van de les, en Lesontwerp bedenkt een
-        volledig uitgewerkte les, klaar voor morgen. Elke keer fris en afwisselend.</p>
+  <div class="app">
+    <div class="top">
+      <a href="/dashboard" class="terug-menu">← Terug naar menu</a>
+      <a href="/dashboard" aria-label="Avinka" style="display:inline-flex;flex-shrink:0;"><img src="/Avinka_wordmerk.png" alt="Avinka" style="height:18px;width:auto;display:block;opacity:.82;" /></a>
+      <span class="top-logo"><span class="mk">📚</span>Lesontwerp</span>
     </div>
 
-    <!-- INVOER -->
-    <div class="card" id="invoer-kaart">
-      <div class="card-titel">Wat ga je geven?</div>
-
-      <label class="veld-l" for="doel">Leerdoel of onderwerp <span class="hint">· de rest verzint Lesontwerp</span></label>
-      <textarea id="doel" placeholder="Bijv. 'De leerlingen kunnen breuken vergelijken' of gewoon 'klokkijken hele en halve uren'"></textarea>
-
-      <div class="rij">
+    <main>
+      <!-- HERO -->
+      <div class="hero">
         <div>
-          <label class="veld-l" for="vak">Vak</label>
-          <select id="vak">
-            <option value="">Kies…</option>
-            <option>Rekenen</option>
-            <option>Taal / spelling</option>
-            <option>Begrijpend lezen</option>
-            <option>(Voortgezet) technisch lezen</option>
-            <option>Schrijven / stellen</option>
-            <option>Wereldoriëntatie</option>
-            <option>Aardrijkskunde</option>
-            <option>Geschiedenis</option>
-            <option>Natuur &amp; techniek</option>
-            <option>Burgerschap</option>
-            <option>Sociaal-emotioneel</option>
-            <option>Creatief / handvaardigheid</option>
-            <option>Engels</option>
-            <option>Anders</option>
-          </select>
+          <h1>Van leerdoel naar een <span class="sw">complete les<svg viewBox="0 0 200 12" fill="none" aria-hidden="true"><path d="M3 8C46 3 154 3 197 6" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg></span></h1>
+          <p class="lead">Geef je leerdoel door, kies de sfeer van de les, en Lesontwerp bedenkt een volledig uitgewerkte les: klaar voor morgen, elke keer fris en afwisselend.</p>
         </div>
-        <div>
-          <label class="veld-l" for="groep">Groep</label>
-          <select id="groep">
-            <option value="1/2">Groep 1/2</option>
-            <option>Groep 3</option>
-            <option>Groep 4</option>
-            <option selected>Groep 5</option>
-            <option>Groep 6</option>
-            <option>Groep 7</option>
-            <option>Groep 8</option>
-          </select>
-        </div>
-        <div>
-          <label class="veld-l" for="duur">Lesduur</label>
-          <select id="duur">
-            <option>15 min</option>
-            <option>30 min</option>
-            <option selected>45 min</option>
-            <option>60 min</option>
-            <option>90 min</option>
-          </select>
+        <div class="heroart">
+          <div class="mockwin">
+            <div class="mockbar"><i style="background:#fb7185"></i><i style="background:#fbbf24"></i><i style="background:#34d399"></i><span class="mocktab">Groep 5 · 45 min</span></div>
+            <div class="mockbody">
+              <div class="mtop">Ik kan breuken vergelijken</div>
+              <div class="mrow"><span class="mfase">1</span><span class="mbar" style="width:70%"></span></div>
+              <div class="mrow"><span class="mfase">2</span><span class="mbar" style="width:92%"></span></div>
+              <div class="mrow"><span class="mfase">3</span><span class="mbar" style="width:58%"></span></div>
+              <div class="mrow"><span class="mfase">✓</span><span class="mbar" style="width:80%"></span></div>
+            </div>
+          </div>
+          <span class="fbadge">⏱️ <b>In één minuut</b> een complete les</span>
         </div>
       </div>
 
-      <div style="margin-top:16px">
-        <label class="veld-l" for="context">Aanvullingen <span class="hint">· optioneel: methode, thema, materiaal dat je hebt…</span></label>
-        <input type="text" id="context" placeholder="Bijv. 'sluit aan bij thema herfst' of 'we werken met Pluspunt'" />
+      <!-- INVOER -->
+      <div class="card" id="invoer-kaart">
+        <div class="card-label"><span class="ic">✎</span> Wat ga je geven?</div>
+
+        <label class="veld-l" for="doel">Leerdoel of onderwerp <span class="hint">· de rest verzint Lesontwerp</span></label>
+        <textarea id="doel" placeholder="Bijv. 'De leerlingen kunnen breuken vergelijken' of gewoon 'klokkijken hele en halve uren'"></textarea>
+
+        <div class="rij">
+          <div>
+            <label class="veld-l" for="vak">Vak</label>
+            <select id="vak">
+              <option value="">Kies…</option>
+              <option>Rekenen</option>
+              <option>Taal / spelling</option>
+              <option>Begrijpend lezen</option>
+              <option>(Voortgezet) technisch lezen</option>
+              <option>Schrijven / stellen</option>
+              <option>Wereldoriëntatie</option>
+              <option>Aardrijkskunde</option>
+              <option>Geschiedenis</option>
+              <option>Natuur &amp; techniek</option>
+              <option>Burgerschap</option>
+              <option>Sociaal-emotioneel</option>
+              <option>Creatief / handvaardigheid</option>
+              <option>Engels</option>
+              <option>Anders</option>
+            </select>
+          </div>
+          <div>
+            <label class="veld-l" for="groep">Groep</label>
+            <select id="groep">
+              <option value="1/2">Groep 1/2</option>
+              <option>Groep 3</option>
+              <option>Groep 4</option>
+              <option selected>Groep 5</option>
+              <option>Groep 6</option>
+              <option>Groep 7</option>
+              <option>Groep 8</option>
+            </select>
+          </div>
+          <div>
+            <label class="veld-l" for="duur">Lesduur</label>
+            <select id="duur">
+              <option>15 min</option>
+              <option>30 min</option>
+              <option selected>45 min</option>
+              <option>60 min</option>
+              <option>90 min</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-top:16px">
+          <label class="veld-l" for="context">Aanvullingen <span class="hint">· optioneel: methode, thema, materiaal dat je hebt…</span></label>
+          <input type="text" id="context" placeholder="Bijv. 'sluit aan bij thema herfst' of 'we werken met Pluspunt'" />
+        </div>
+
+        <label class="keuze-l">Wat voor soort les?</label>
+        <div class="kaarten" id="lestype">
+          <div class="kaart aan" data-v="klas"><span class="em">🪑</span><div class="kt">In de klas</div><div class="kb">activerend &amp; afwisselend</div></div>
+          <div class="kaart" data-v="bewegend"><span class="em">🤸</span><div class="kt">Bewegend</div><div class="kb">al bewegend leren</div></div>
+          <div class="kaart" data-v="buiten"><span class="em">☀️</span><div class="kt">Buiten</div><div class="kb">plein of buurt</div></div>
+          <div class="kaart" data-v="cooperatief"><span class="em">👥</span><div class="kt">Samen</div><div class="kb">coöperatief leren</div></div>
+        </div>
+
+        <label class="keuze-l">Hoe uitgebreid?</label>
+        <div class="seg" id="vorm">
+          <div class="opt aan" data-v="edi">Volledige lesvoorbereiding (EDI)</div>
+          <div class="opt" data-v="kort">Korte lesbeschrijving</div>
+        </div>
+
+        <label class="switch">
+          <input type="checkbox" id="diff" />
+          <span class="track"></span>
+          <span class="sl">Differentiëren naar 3 niveaus<small>maan (extra steun) · ster (basis) · zon (uitdaging)</small></span>
+        </label>
+
+        <button class="btn" id="btn-maak" onclick="maak()">✨ Maak mijn les</button>
+        <div class="err" id="err"></div>
       </div>
 
-      <!-- LESTYPE -->
-      <label class="keuze-l">Wat voor soort les?</label>
-      <div class="kaarten" id="lestype">
-        <div class="kaart aan" data-v="klas"><span class="em">🪑</span><div class="kt">In de klas</div><div class="kb">activerend &amp; afwisselend</div></div>
-        <div class="kaart" data-v="bewegend"><span class="em">🤸</span><div class="kt">Bewegend</div><div class="kb">al bewegend leren</div></div>
-        <div class="kaart" data-v="buiten"><span class="em">☀️</span><div class="kt">Buiten</div><div class="kb">plein of buurt</div></div>
-        <div class="kaart" data-v="cooperatief"><span class="em">👥</span><div class="kt">Samen</div><div class="kb">coöperatief leren</div></div>
+      <!-- LADEN -->
+      <div class="laden" id="laden">
+        <div class="spin"></div>
+        <div id="laad-tekst">Je les wordt uitgedacht…</div>
       </div>
 
-      <!-- UITVOERVORM -->
-      <label class="keuze-l">Hoe uitgebreid?</label>
-      <div class="seg" id="vorm">
-        <div class="opt aan" data-v="edi">Volledige lesvoorbereiding (EDI)</div>
-        <div class="opt" data-v="kort">Korte lesbeschrijving</div>
+      <!-- RESULTAAT -->
+      <div class="card" id="uitvoer">
+        <div class="card-label"><span class="ic">📋</span> <span id="uitvoer-titel">Je les</span></div>
+        <div class="les" id="les"></div>
+        <div class="acties">
+          <button class="btn-green" onclick="downloadLes()">⬇ Download als Word</button>
+          <button class="btn-soft" onclick="kopieer()">📋 Kopiëren</button>
+          <button class="btn-soft" onclick="maak(true)">🔄 Andere versie</button>
+          <button class="btn-soft" onclick="terug()">← Pas iets aan</button>
+        </div>
       </div>
 
-      <!-- DIFFERENTIATIE -->
-      <label class="switch">
-        <input type="checkbox" id="diff" />
-        <span class="track"></span>
-        <span class="sl">Differentiëren naar 3 niveaus<small>maan (extra steun) · ster (basis) · zon (uitdaging)</small></span>
-      </label>
-
-      <button class="btn" id="btn-maak" onclick="maak()">✨ Maak mijn les</button>
-      <div class="err" id="err"></div>
-    </div>
-
-    <!-- LADEN -->
-    <div class="laden" id="laden">
-      <div class="spin"></div>
-      <div id="laad-tekst">Je les wordt uitgedacht…</div>
-    </div>
-
-    <!-- RESULTAAT -->
-    <div class="card" id="uitvoer">
-      <div class="les" id="les"></div>
-      <div class="acties">
-        <button class="btn-soft" onclick="kopieer()">📋 Kopieer les</button>
-        <button class="btn-soft" onclick="maak(true)">🔄 Andere versie</button>
-        <button class="btn-soft" onclick="terug()">← Pas iets aan</button>
-      </div>
-    </div>
+      <footer class="app-foot">
+        Lesontwerp · gemaakt door Michael van Spanje · © 2026<br />
+        De code regelt de opbouw, jij houdt de regie. Lees de les altijd na vóór je 'm geeft.
+      </footer>
+    </main>
   </div>
 
   <script>
-    const MODEL = 'claude-opus-4-8';   // server overschrijft met de pakket-tier
+    const MODEL = 'claude-opus-4-8';
     const SOORT = 'lesontwerp';
 
-    // ── Keuze-besturing ──────────────────────────────────────────────────────
     let lestype = 'klas', vorm = 'edi';
     document.querySelectorAll('#lestype .kaart').forEach(k => k.onclick = () => {
       document.querySelectorAll('#lestype .kaart').forEach(x => x.classList.remove('aan'));
@@ -247,28 +294,24 @@
       o.classList.add('aan'); vorm = o.dataset.v;
     });
 
-    // ── Didactische bouwstenen (de CODE regelt de structuur) ─────────────────
+    // ── Didactische regie per lestype (de CODE regelt de structuur) ──────────
     const LESTYPE_REGIE = {
       klas: 'SOORT LES: een les in het klaslokaal. Kies activerende, afwisselende werkvormen (denk-deel-uit, wisbordjes/mini-whiteboards, korte doe-opdrachten, coöperatieve duo\'s). Voorkom dat leerlingen lang passief luisteren.',
       bewegend: 'SOORT LES: BEWEGEND LEREN. De leerlingen bereiken het lesdoel terwijl ze fysiek bewegen (staan, springen, lopen, hinkelen, gebaren) — bewegen is GEEN losse energizer maar verweven met de leerstof. Het werkt het sterkst voor automatiseren, herhalen en inoefenen. Geef CONCRETE beweegwerkvormen die echt bij dit leerdoel passen (in de geest van waslijn-dictee, tafeljoggen, hinkelbaan, sommen-en-uitkomsten matchen, getalkaarten, "level up"), met benodigdheden, ruimte-opstelling en hoe je het veilig en ordelijk houdt.',
-      buiten: 'SOORT LES: BUITENLES op het schoolplein of in de directe buurt. Geef werkvormen die buiten tot hun recht komen (stoepkrijt, kaarten zoeken/rennen, estafette, meten/tekenen op het plein, natuur en zintuigen). Noem benodigdheden (klembordjes, krijt, kaartjes), een duidelijk verzamelsignaal (fluit/lied), afspraken vóór je naar buiten gaat, en benut zo mogelijk het weer. Houd het organisatorisch haalbaar voor één leerkracht.',
-      cooperatief: 'SOORT LES: COÖPERATIEF LEREN. De leerlingen leren mét en ván elkaar in duo\'s of groepjes via heldere structuren (denken-delen-uitwisselen, genummerde-hoofden-samen, tweetalcoach, placemat, binnen-buitenkring). Zorg voor positieve wederzijdse afhankelijkheid (ze hebben elkaar nodig) én individuele aanspreekbaarheid (iedereen draagt bij).'
+      buiten: 'SOORT LES: BUITENLES op het schoolplein of in de directe buurt. Geef werkvormen die buiten tot hun recht komen (stoepkrijt, kaarten zoeken/rennen, estafette, meten/tekenen op het plein, natuur en zintuigen). Noem benodigdheden (klembordjes, krijt, kaartjes), een duidelijk verzamelsignaal (fluit/lied), afspraken vooraf, en benut zo mogelijk het weer. Houd het organisatorisch haalbaar voor één leerkracht.',
+      cooperatief: 'SOORT LES: COÖPERATIEF LEREN. De leerlingen leren mét en ván elkaar in duo\'s of groepjes via heldere structuren (denken-delen-uitwisselen, genummerde-hoofden-samen, tweetalcoach, placemat, binnen-buitenkring). Zorg voor positieve wederzijdse afhankelijkheid (ze hebben elkaar nodig) én individuele aanspreekbaarheid.'
     };
 
     function ediFormat(diff) {
       return [
         'Lever de les in EXACT deze opbouw, met Markdown-koppen. Verdeel de minuten over de fasen zodat ze samen op de gekozen lesduur uitkomen; zet de tijd tussen haakjes achter elke fasekop.',
-        '',
-        '## Lesdoel',
+        '', '## Lesdoel',
         'Eén zin in de IK-vorm en kindtaal ("Ik kan …"), plus in één zin waarom dit voor de leerlingen belangrijk/handig is.',
-        '',
-        '## Succescriteria',
+        '', '## Succescriteria',
         '2 tot 4 concrete, observeerbare punten ("Het lukt mij als ik …").',
-        '',
-        '## Benodigdheden',
+        '', '## Benodigdheden',
         'Bondige opsomming van wat de leerkracht klaarlegt.',
-        '',
-        '## Lesopbouw',
+        '', '## Lesopbouw',
         '### 1. Terugblik & voorkennis activeren (… min)',
         '### 2. Instructie — IK (… min)',
         'De leerkracht doet het hardop denkend voor (modeling). Geef een concreet voorbeeld van wat de leerkracht zegt/laat zien.',
@@ -285,8 +328,7 @@
         '',
         'Schrijf bij elke fase concreet wat de leerkracht doet/zegt én wat de leerlingen doen. Geen vaagheid, direct bruikbaar.',
         diff ? differentiatieBlok() : '',
-        '',
-        '## Tips voor de leerkracht',
+        '', '## Tips voor de leerkracht',
         '1 tot 3 korte, praktische tips (klassenmanagement, valkuilen, een leuk extraatje).'
       ].join('\n');
     }
@@ -294,34 +336,25 @@
     function kortFormat(diff) {
       return [
         'Lever een korte, krachtige lesbeschrijving in EXACT deze opbouw met Markdown-koppen. Concreet en direct bruikbaar, geen vaagheid.',
-        '',
-        '## Lesdoel',
+        '', '## Lesdoel',
         'Eén zin in de IK-vorm ("Ik kan …").',
-        '',
-        '## De les in het kort',
+        '', '## De les in het kort',
         'Drie blokjes met een tijdsindicatie die samen op de lesduur uitkomen:',
         '**Start (… min):** korte introductie + voorkennis activeren.',
         '**Kern (… min):** de hoofdwerkvorm (passend bij SOORT LES), concreet uitgewerkt.',
         '**Afsluiting (… min):** terug naar het doel + kort controleren of het gelukt is.',
-        '',
-        '## Benodigdheden',
+        '', '## Benodigdheden',
         'Bondige opsomming.',
         diff ? differentiatieBlok() : ''
       ].join('\n');
     }
 
     function differentiatieBlok() {
-      return [
-        '',
-        '## Differentiatie naar 3 niveaus',
+      return ['', '## Differentiatie naar 3 niveaus',
         'Zelfde lesdoel, andere route. Geef per niveau concreet wat je aanpast:',
-        '### 🌙 Maan: extra ondersteuning',
-        '### ⭐ Ster: basis',
-        '### ☀️ Zon: uitdaging'
-      ].join('\n');
+        '### 🌙 Maan: extra ondersteuning', '### ⭐ Ster: basis', '### ☀️ Zon: uitdaging'].join('\n');
     }
 
-    // Wisselende invalshoeken, zodat "Andere versie" echt afwisselend wordt.
     const INVALSHOEKEN = [
       'Kies een verrassende, speelse insteek die je niet als eerste zou bedenken.',
       'Maak het zo concreet en tastbaar mogelijk met materiaal uit de klas.',
@@ -334,8 +367,7 @@
     function bouwSysteem() {
       return [
         'Je bent een ervaren pedagoog en didacticus in het Nederlandse basisonderwijs en een expert in lesontwerp. Je bedenkt complete, kant-en-klare lessen waar een leerkracht zó mee de klas in kan.',
-        '',
-        'Vaste regels:',
+        '', 'Vaste regels:',
         '- Schrijf in helder, warm Nederlands, gericht aan de leerkracht.',
         '- Wees CONCREET en direct bruikbaar: echte voorbeeldvragen, echte werkvormen met materiaal, opstelling en timing. Nooit algemeenheden als "bespreek het onderwerp".',
         '- Stem alles af op de opgegeven groep (leeftijd, niveau, aandachtsspanne) en op de lesduur.',
@@ -347,23 +379,20 @@
     }
 
     function bouwOpdracht(inv, variatie) {
-      const regels = [];
-      regels.push('Ontwerp een les met de volgende gegevens:');
-      regels.push('- Leerdoel/onderwerp: ' + inv.doel);
-      if (inv.vak) regels.push('- Vak: ' + inv.vak);
-      regels.push('- Groep: ' + inv.groep);
-      regels.push('- Lesduur: ' + inv.duur);
-      if (inv.context) regels.push('- Aanvullingen van de leerkracht: ' + inv.context);
-      regels.push('');
-      regels.push(LESTYPE_REGIE[inv.lestype]);
-      regels.push('');
-      if (variatie) regels.push('VARIATIE: ' + variatie + ' Maak een duidelijk ándere uitwerking dan een standaard eerste versie.');
-      regels.push('');
-      regels.push(inv.vorm === 'edi' ? ediFormat(inv.diff) : kortFormat(inv.diff));
-      return regels.join('\n');
+      const r = [];
+      r.push('Ontwerp een les met de volgende gegevens:');
+      r.push('- Leerdoel/onderwerp: ' + inv.doel);
+      if (inv.vak) r.push('- Vak: ' + inv.vak);
+      r.push('- Groep: ' + inv.groep);
+      r.push('- Lesduur: ' + inv.duur);
+      if (inv.context) r.push('- Aanvullingen van de leerkracht: ' + inv.context);
+      r.push(''); r.push(LESTYPE_REGIE[inv.lestype]); r.push('');
+      if (variatie) r.push('VARIATIE: ' + variatie + ' Maak een duidelijk ándere uitwerking dan een standaard eerste versie.');
+      r.push('');
+      r.push(inv.vorm === 'edi' ? ediFormat(inv.diff) : kortFormat(inv.diff));
+      return r.join('\n');
     }
 
-    // ── AI-aanroep ───────────────────────────────────────────────────────────
     async function callClaude(system, user, maxTokens) {
       if (window.avinkaMask) { try { await window.avinkaMask.ready; } catch (e) {} }
       const safeUser = window.avinkaMask ? window.avinkaMask.apply(user) : user;
@@ -374,12 +403,7 @@
       };
       const resp = await fetch('/api/claude', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': 'sk-ant-proxy',
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
+        headers: { 'Content-Type': 'application/json', 'x-api-key': 'sk-ant-proxy', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
         body: JSON.stringify(body)
       });
       if (!resp.ok) {
@@ -395,8 +419,7 @@
       return ruw.trim();
     }
 
-    // ── Hoofdactie ───────────────────────────────────────────────────────────
-    let variatieTeller = 0;
+    let laatsteTekst = '', laatsteMeta = {}, variatieTeller = 0;
     async function maak(andereVersie) {
       const fout = document.getElementById('err');
       fout.textContent = '';
@@ -409,10 +432,8 @@
         groep: document.getElementById('groep').value,
         duur: document.getElementById('duur').value,
         context: document.getElementById('context').value.trim(),
-        lestype, vorm,
-        diff: document.getElementById('diff').checked
+        lestype, vorm, diff: document.getElementById('diff').checked
       };
-
       let variatie = '';
       if (andereVersie) { variatie = INVALSHOEKEN[variatieTeller % INVALSHOEKEN.length]; variatieTeller++; }
 
@@ -425,13 +446,12 @@
 
       try {
         const tekst = await callClaude(bouwSysteem(), bouwOpdracht(inv, variatie), inv.vorm === 'edi' ? 2400 : 1400);
+        laatsteTekst = tekst; laatsteMeta = inv;
         document.getElementById('les').innerHTML = renderMd(tekst);
+        document.getElementById('uitvoer-titel').textContent = inv.lestype === 'buiten' ? 'Je buitenles' : inv.lestype === 'bewegend' ? 'Je bewegende les' : 'Je les';
         document.getElementById('uitvoer').style.display = '';
         document.getElementById('uitvoer').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        laatsteTekst = tekst;
-        if (typeof avinkaTel === 'function') {
-          avinkaTel(SOORT, { woorden: tekst.split(/\s+/).filter(Boolean).length });
-        }
+        if (typeof avinkaTel === 'function') avinkaTel(SOORT, { woorden: tekst.split(/\s+/).filter(Boolean).length });
       } catch (e) {
         fout.textContent = e.message || 'Er ging iets mis.';
       } finally {
@@ -446,7 +466,6 @@
       document.getElementById('invoer-kaart').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    let laatsteTekst = '';
     function kopieer() {
       const plat = laatsteTekst.replace(/\*\*(.+?)\*\*/g, '$1').replace(/^#{1,4}\s*/gm, '');
       navigator.clipboard.writeText(plat).then(() => {
@@ -454,28 +473,72 @@
       });
     }
 
-    // ── Mini-Markdown → nette HTML (koppen, lijsten, vet, fase-blokjes) ───────
+    // ── Mini-Markdown → nette HTML ───────────────────────────────────────────
     function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
     function inline(s) { return esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>'); }
-    function tijdMarkup(s) {
-      // "(10 min)" of "(… min)" achter een kop → mooi pilletje
-      return s.replace(/\s*\((\s*[\d–-]+\s*min[^)]*)\)\s*$/i, ' <span class="tijd">$1</span>');
-    }
+    function tijdMarkup(s) { return s.replace(/\s*\((\s*[\d–-]+\s*min[^)]*)\)\s*$/i, ' <span class="tijd">$1</span>'); }
     function renderMd(md) {
-      const regels = md.split('\n');
-      let html = '', lijst = false;
-      const sluitLijst = () => { if (lijst) { html += '</ul>'; lijst = false; } };
-      for (let r of regels) {
+      const regels = md.split('\n'); let html = '', lijst = false;
+      const sluit = () => { if (lijst) { html += '</ul>'; lijst = false; } };
+      for (const r of regels) {
         const t = r.trim();
-        if (!t) { sluitLijst(); continue; }
-        if (t.startsWith('#### ') || t.startsWith('### ')) { sluitLijst(); html += '<h4>' + tijdMarkup(inline(t.replace(/^#+\s*/, ''))) + '</h4>'; continue; }
-        if (t.startsWith('## ') || t.startsWith('# ')) { sluitLijst(); html += '<h3>' + inline(t.replace(/^#+\s*/, '')) + '</h3>'; continue; }
+        if (!t) { sluit(); continue; }
+        if (t.startsWith('#### ') || t.startsWith('### ')) { sluit(); html += '<h4>' + tijdMarkup(inline(t.replace(/^#+\s*/, ''))) + '</h4>'; continue; }
+        if (t.startsWith('## ') || t.startsWith('# ')) { sluit(); html += '<h3>' + inline(t.replace(/^#+\s*/, '')) + '</h3>'; continue; }
         if (/^[-*]\s+/.test(t)) { if (!lijst) { html += '<ul>'; lijst = true; } html += '<li>' + inline(t.replace(/^[-*]\s+/, '')) + '</li>'; continue; }
-        sluitLijst();
-        html += '<p>' + inline(t) + '</p>';
+        sluit(); html += '<p>' + inline(t) + '</p>';
       }
-      sluitLijst();
-      return html;
+      sluit(); return html;
+    }
+
+    // ── Word-download (docx vanaf nul, met JSZip) ────────────────────────────
+    function docxEsc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    function docxP(text, style) {
+      const pPr = style ? '<w:pPr><w:pStyle w:val="' + style + '"/></w:pPr>' : '';
+      return '<w:p>' + pPr + '<w:r><w:t xml:space="preserve">' + docxEsc(text) + '</w:t></w:r></w:p>';
+    }
+    function lesNaarBody(md, meta) {
+      let body = docxP('Lesontwerp · ' + meta.groep + (meta.vak ? ' · ' + meta.vak : ''), 'Titel');
+      for (const r of md.split('\n')) {
+        const t = r.trim();
+        if (!t) continue;
+        const schoon = t.replace(/\*\*/g, '');
+        if (/^#{3,4}\s/.test(t)) body += docxP(schoon.replace(/^#+\s*/, ''), 'Kop2');
+        else if (/^#{1,2}\s/.test(t)) body += docxP(schoon.replace(/^#+\s*/, ''), 'Kop');
+        else if (/^[-*]\s+/.test(t)) body += docxP('•  ' + schoon.replace(/^[-*]\s+/, ''), null);
+        else body += docxP(schoon, null);
+      }
+      return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + body +
+        '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1417" w:right="1417" w:bottom="1417" w:left="1417" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr>' +
+        '</w:body></w:document>';
+    }
+    const DOCX_CT = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>';
+    const DOCX_RELS = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
+    const DOCX_DRELS = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+    const DOCX_STYLES = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="22"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="140" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>' +
+      '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>' +
+      '<w:style w:type="paragraph" w:styleId="Titel"><w:name w:val="Title"/><w:pPr><w:spacing w:after="280"/></w:pPr><w:rPr><w:b/><w:sz w:val="40"/><w:color w:val="221C3A"/></w:rPr></w:style>' +
+      '<w:style w:type="paragraph" w:styleId="Kop"><w:name w:val="Heading 1"/><w:pPr><w:spacing w:before="260" w:after="80"/></w:pPr><w:rPr><w:b/><w:sz w:val="30"/><w:color w:val="2F9E6E"/></w:rPr></w:style>' +
+      '<w:style w:type="paragraph" w:styleId="Kop2"><w:name w:val="Heading 2"/><w:pPr><w:spacing w:before="160" w:after="40"/></w:pPr><w:rPr><w:b/><w:sz w:val="24"/><w:color w:val="25855A"/></w:rPr></w:style>' +
+      '</w:styles>';
+    async function downloadLes() {
+      if (!laatsteTekst) return;
+      const zip = new JSZip();
+      zip.file('[Content_Types].xml', DOCX_CT);
+      zip.folder('_rels').file('.rels', DOCX_RELS);
+      const w = zip.folder('word');
+      w.file('document.xml', lesNaarBody(laatsteTekst, laatsteMeta));
+      w.file('styles.xml', DOCX_STYLES);
+      w.folder('_rels').file('document.xml.rels', DOCX_DRELS);
+      const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'lesontwerp_' + (laatsteMeta.groep || '').replace(/[^\w]/g, '-') + '_' + new Date().toISOString().slice(0, 10) + '.docx';
+      a.click();
+      URL.revokeObjectURL(url);
+      if (typeof avinkaAlert === 'function') avinkaAlert("Les gedownload als Word-document.");
     }
   </script>
 </body>
