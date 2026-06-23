@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 // leerkracht-dashboard, zodat het vertrouwd voelt.
 const items = [
   { href: "/admin", label: "Overzicht" },
+  { href: "/admin/bouwlijst", label: "Te bouwen" },
   { href: "/admin/conversie", label: "Conversie" },
   { href: "/admin/feedback", label: "Feedback" },
   { href: "/admin/financien", label: "Financiën" },
