@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { isAdminServer } from "@/lib/admin";
 import AdminNav from "@/components/admin/AdminNav";
 import Logo from "@/components/Logo";
-// Modules: Overzicht · Te bouwen · Conversie · Feedback · Financiën · Verbruik · Tools
+// Modules: Overzicht · Te bouwen · Conversie · Feedback · Financiën · Verbruik · Tijdwinst · Tools
 
 // Admin-schil. Dubbele afscherming naast de middleware: wie geen admin is,
 // gaat terug naar het eigen dashboard.

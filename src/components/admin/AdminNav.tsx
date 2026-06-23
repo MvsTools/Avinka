@@ -12,6 +12,7 @@ const items = [
   { href: "/admin/feedback", label: "Feedback" },
   { href: "/admin/financien", label: "Financiën" },
   { href: "/admin/verbruik", label: "Verbruik" },
+  { href: "/admin/tijdwinst", label: "Tijdwinst" },
   { href: "/admin/tools", label: "Tools" },
 ];
 

@@ -484,6 +484,62 @@ begin
 end; $$;
 grant execute on function public.wijs_admin_verbruik_tijd(int) to authenticated;
 
+-- Admin-TIJDWINST: uitgebreidere versie van het community-blok in "Mijn
+-- statistieken". Aggregeert de statistiek-tabel over álle gebruikers: totaal
+-- bespaarde minuten + acties, een uitsplitsing per soort, een dagreeks over de
+-- laatste N dagen (voor de trendgrafiek) en het gemiddelde per actieve week.
+-- Alleen totalen/aantallen, nooit persoonsgegevens. Alleen admin.
+create or replace function public.wijs_admin_tijdwinst(dagen int default 30)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare r jsonb;
+begin
+  if not public.wijs_is_admin() then return null; end if;
+  with mv as (
+    select key, sum(value::numeric) as m
+    from public.statistiek, jsonb_each_text(minuten) group by key
+  ), kv as (
+    select key, sum(value::numeric) as n
+    from public.statistiek, jsonb_each_text(tellers) group by key
+  ), soort as (
+    select coalesce(mv.key, kv.key) as soort,
+           coalesce(mv.m, 0) as minuten,
+           coalesce(kv.n, 0) as acties
+    from mv full outer join kv on mv.key = kv.key
+  ), bf as (
+    -- De eenmalige 1-augustus-backfill (lump van het oude totaal) sluiten we uit
+    -- bij de dag-/week-reeksen, anders blaast die de trend/het gemiddelde op.
+    select (case when extract(month from timezone('Europe/Amsterdam', now())) >= 8
+                 then make_date(extract(year from timezone('Europe/Amsterdam', now()))::int, 8, 1)
+                 else make_date(extract(year from timezone('Europe/Amsterdam', now()))::int - 1, 8, 1) end) as d
+  ), dag as (
+    select (d.key)::date as dag,
+           sum((d.value->>'m')::numeric) as minuten,
+           sum((d.value->>'n')::numeric) as acties
+    from public.statistiek s, jsonb_each(s.per_dag) d, bf
+    where (d.key)::date >= (timezone('Europe/Amsterdam', now())::date - (dagen - 1))
+      and (d.key)::date <> bf.d
+    group by 1
+  ), wk as (
+    select s.user_id, date_trunc('week', (d.key)::date) as wkstart,
+           sum((d.value->>'m')::numeric) as m
+    from public.statistiek s, jsonb_each(s.per_dag) d, bf
+    where (d.key)::date <> bf.d
+    group by s.user_id, date_trunc('week', (d.key)::date)
+  )
+  select jsonb_build_object(
+    'totaal_minuten', coalesce((select sum(minuten) from soort), 0),
+    'totaal_acties', coalesce((select sum(acties) from soort), 0),
+    'gebruikers', (select count(*)::int from public.statistiek),
+    'gebruikers_actief', (select count(*)::int from public.statistiek where tellers <> '{}'::jsonb),
+    'per_soort', coalesce((select jsonb_agg(jsonb_build_object('soort', soort, 'minuten', minuten, 'acties', acties) order by minuten desc) from soort), '[]'::jsonb),
+    'per_dag', coalesce((select jsonb_agg(jsonb_build_object('dag', dag, 'minuten', minuten, 'acties', acties) order by dag) from dag), '[]'::jsonb),
+    'gem_actieve_week', coalesce((select round(avg(m))::int from wk where m > 0), 0),
+    'actieve_weken', coalesce((select count(*)::int from wk where m > 0), 0)
+  ) into r;
+  return r;
+end; $$;
+grant execute on function public.wijs_admin_tijdwinst(int) to authenticated;
+
 -- Maandelijkse momentopname van de abonnement-aantallen (voor de omzetgrafiek).
 -- We bewaren AANTALLEN per pakket; de MRR rekent de app uit met de prijzen uit
 -- de code (één bron van waarheid). De grafiek bouwt zich op vanaf de eerste snapshot.

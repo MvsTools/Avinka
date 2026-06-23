@@ -483,6 +483,27 @@ export async function getAdminVerbruikTijd(dagen = 30): Promise<VerbruikDag[]> {
   return data as VerbruikDag[];
 }
 
+// Tijdwinst-aggregaat over alle gebruikers (uitgebreidere versie van het
+// community-blok). Alleen admin; null als je geen admin bent.
+export type TijdwinstSoort = { soort: string; minuten: number; acties: number };
+export type TijdwinstDag = { dag: string; minuten: number; acties: number };
+export type AdminTijdwinst = {
+  totaal_minuten: number;
+  totaal_acties: number;
+  gebruikers: number;
+  gebruikers_actief: number;
+  per_soort: TijdwinstSoort[];
+  per_dag: TijdwinstDag[];
+  gem_actieve_week: number;
+  actieve_weken: number;
+};
+export async function getAdminTijdwinst(dagen = 30): Promise<AdminTijdwinst | null> {
+  const sb = createClient();
+  const { data, error } = await sb.rpc("wijs_admin_tijdwinst", { dagen });
+  if (error || !data) return null;
+  return data as AdminTijdwinst;
+}
+
 // Maandelijkse momentopnames van de abonnement-aantallen (voor de omzetgrafiek).
 export type AbonSnapshot = {
   maand: string;
