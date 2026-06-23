@@ -57,8 +57,8 @@ export default async function DashboardStart() {
                 href={slot ? "/dashboard/abonnement" : tool.pad ?? `/dashboard/tools/${tool.slug}`}
                 className={
                   slot
-                    ? "group relative flex items-start gap-5 rounded-3xl border border-black/5 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-                    : "group flex items-start gap-5 rounded-3xl border border-black/5 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md " +
+                    ? "group relative flex items-stretch gap-5 rounded-3xl border border-black/5 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                    : "group flex items-stretch gap-5 rounded-3xl border border-black/5 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md " +
                       tool.rand
                 }
               >
@@ -73,14 +73,14 @@ export default async function DashboardStart() {
                 )}
                 <span
                   className={
-                    "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl text-white shadow-sm " +
+                    "flex h-14 w-14 shrink-0 self-start items-center justify-center rounded-2xl text-2xl text-white shadow-sm " +
                     tool.badge +
                     (slot ? " opacity-40 grayscale" : "")
                   }
                 >
                   {tool.emoji}
                 </span>
-                <div className="min-w-0">
+                <div className="flex min-w-0 flex-col">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className={"text-xl font-bold " + (slot ? "text-ink/50" : "text-ink")}>
                       {tool.naam}
@@ -94,7 +94,7 @@ export default async function DashboardStart() {
                   <p className={"mt-1 leading-7 " + (slot ? "text-ink/45" : "text-ink/70")}>
                     {tool.tekst}
                   </p>
-                  <span className="mt-2 inline-block text-sm font-bold text-brand">
+                  <span className="mt-auto inline-block pt-3 text-sm font-bold text-brand">
                     {slot ? "Bekijk abonnementen →" : "Openen →"}
                   </span>
                 </div>
