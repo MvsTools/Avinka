@@ -17,7 +17,7 @@ const BEDRIJF = "[bedrijfsnaam]";
 const ADRES = "[adres]";
 const KVK = "[KvK-nummer]";
 const CONTACT_EMAIL = "[privacy-e-mailadres]";
-const BIJGEWERKT = "20 juni 2026";
+const BIJGEWERKT = "23 juni 2026";
 
 export const metadata: Metadata = {
   title: "Privacyverklaring — Avinka",
@@ -161,6 +161,11 @@ export default function PrivacyPage() {
           (LL-01, LL-02 …). Dat gebeurt lokaal, op jouw apparaat. De AI ziet dus alleen
           codes en getallen, nooit echte namen. Pas in jóuw eigen document worden de namen
           weer teruggezet.
+        </p>
+        <p>
+          De voornamen die je in je klas hebt gezet, worden bovendien in alle
+          gevallen gemaskeerd, in welke tool en waar je ze ook invult, en ook als je
+          ze per ongeluk met een kleine letter typt.
         </p>
         <p>
           Daarnaast geldt: de code rekent, de AI schrijft. Alle scores, niveaus en
