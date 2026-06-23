@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import { tools } from "@/lib/tools";
-import { BETALINGEN_LIVE, magToolGebruiken, magBestandenGebruiken } from "@/lib/abonnement";
+import { BETALINGEN_LIVE, magToolGebruiken } from "@/lib/abonnement";
 import { getAbonnementServer } from "@/lib/abonnement-server";
 import OnboardingCard from "@/components/dashboard/OnboardingCard";
 import StreakBadge from "@/components/dashboard/StreakBadge";
@@ -25,7 +25,6 @@ export default async function DashboardStart() {
   // niet live zijn, is alles open (de vlag regelt dat in magToolGebruiken).
   const ab = BETALINGEN_LIVE ? await getAbonnementServer() : null;
   const vergrendeld = (slug: string) => (ab ? !magToolGebruiken(ab, slug) : false);
-  const bestandenVergrendeld = ab ? !magBestandenGebruiken(ab) : false;
 
   return (
     <div className="flex flex-col gap-8">
@@ -102,42 +101,6 @@ export default async function DashboardStart() {
             );
           })}
         </div>
-      </section>
-
-      {/* Snelle ingangen naar de twee handigste plekken. */}
-      <section className="grid gap-5 sm:grid-cols-2">
-        <Link
-          href="/dashboard/mijn-klas"
-          className="rounded-3xl border border-black/5 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-        >
-          <span className="text-2xl">👩‍🏫</span>
-          <h3 className="mt-2 text-lg font-bold text-ink">Mijn klas</h3>
-          <p className="mt-1 text-sm leading-6 text-ink/65">
-            Zet je klassenlijst klaar. Blijft veilig op je eigen apparaat staan.
-          </p>
-        </Link>
-        <Link
-          href={bestandenVergrendeld ? "/dashboard/abonnement" : "/dashboard/mijn-teksten"}
-          className={
-            "rounded-3xl border border-black/5 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md " +
-            (bestandenVergrendeld ? "opacity-70" : "")
-          }
-        >
-          <span className="text-2xl">🗂️</span>
-          <h3 className="mt-2 flex items-center gap-2 text-lg font-bold text-ink">
-            Bestanden
-            {bestandenVergrendeld && (
-              <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-bold text-brand">
-                Compleet
-              </span>
-            )}
-          </h3>
-          <p className="mt-1 text-sm leading-6 text-ink/65">
-            {bestandenVergrendeld
-              ? "Bewaar en orden je teksten en plattegronden. Beschikbaar met Compleet."
-              : "Mappen met je bewaarde teksten en plattegronden, netjes geordend."}
-          </p>
-        </Link>
       </section>
 
       <p className="rounded-2xl bg-brand-soft px-5 py-4 text-sm font-medium text-ink/70">
