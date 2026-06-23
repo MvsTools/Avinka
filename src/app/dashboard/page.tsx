@@ -40,7 +40,10 @@ export default async function DashboardStart() {
               : "Kies een tool om mee te beginnen. Je tijd na schooltijd is van jou."}
           </p>
         </div>
-        <StreakBadge />
+        <div className="flex flex-wrap items-center gap-3">
+          <TakenOverzicht />
+          <StreakBadge />
+        </div>
       </div>
 
       <OnboardingCard />
@@ -103,9 +106,6 @@ export default async function DashboardStart() {
           })}
         </div>
       </section>
-
-      {/* Read-only spiegel van je takenlijst: zien kan hier, aanpassen op /dashboard/taken. */}
-      <TakenOverzicht />
 
       <p className="rounded-2xl bg-brand-soft px-5 py-4 text-sm font-medium text-ink/70">
         💡 <strong>Tip:</strong> de namen van je leerlingen blijven altijd op je eigen
