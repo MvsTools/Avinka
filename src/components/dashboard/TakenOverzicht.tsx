@@ -50,19 +50,24 @@ export default function TakenOverzicht() {
       <button
         type="button"
         onClick={() => setUit((o) => !o)}
-        className="flex items-center gap-2 rounded-2xl border border-black/5 bg-white px-4 py-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+        className="flex items-center gap-3 rounded-2xl border border-black/5 bg-white px-4 py-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
         aria-expanded={uit}
         title="Je open taken"
       >
-        <span className="text-lg" aria-hidden>
+        <span className="flex h-12 w-11 shrink-0 items-center justify-center text-[28px]" aria-hidden>
           📋
         </span>
-        <span className="text-sm font-bold text-ink">
-          {open.length} {open.length === 1 ? "taak" : "taken"}
-        </span>
+        <div className="min-w-0 pr-1 text-left">
+          <p className="font-bold leading-tight text-ink">
+            {open.length} {open.length === 1 ? "taak" : "taken"} open
+          </p>
+          <p className="mt-0.5 text-xs text-ink/55">
+            {open.length === 0 ? "Alles afgevinkt" : "Klik om af te vinken"}
+          </p>
+        </div>
         <svg
           viewBox="0 0 24 24"
-          className={"h-4 w-4 text-ink/40 transition-transform " + (uit ? "rotate-180" : "")}
+          className={"h-4 w-4 shrink-0 text-ink/40 transition-transform " + (uit ? "rotate-180" : "")}
           fill="none"
           stroke="currentColor"
           strokeWidth="2.2"
