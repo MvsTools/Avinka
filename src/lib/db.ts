@@ -293,6 +293,16 @@ export async function getMinuten(): Promise<Tellers> {
   return (data.minuten as Tellers) ?? {};
 }
 
+// Bespaarde tijd + acties per dag, voor de periode-filters (vandaag/week/maand/
+// schooljaar) op de statistiekenpagina. Map: 'YYYY-MM-DD' → { m: minuten, n: acties }.
+export type PerDag = Record<string, { m: number; n: number }>;
+export async function getPerDag(): Promise<PerDag> {
+  const sb = createClient();
+  const { data, error } = await sb.from("statistiek").select("per_dag").maybeSingle();
+  if (error || !data) return {};
+  return (data.per_dag as PerDag) ?? {};
+}
+
 // Huidige streak (opeenvolgende werkdagen actief) + je persoonlijke record.
 // streak is 0 als de reeks inmiddels verbroken is (zie streakLeeftNog).
 export type StreakInfo = { streak: number; record: number };
@@ -313,6 +323,9 @@ export type CommunityStats = {
   gebruikers: number;
   som: Record<string, number>; // aantallen per soort, over alle gebruikers
   somMinuten: Record<string, number>; // bespaarde minuten per soort, over alle gebruikers
+  gemActieveWeek: number; // gemiddelde bespaarde minuten per gebruiker per actieve week
+  actieveWeken: number; // aantal (gebruiker × week)-meetpunten met activiteit (voor de drempel)
+  hoogsteStreak: number; // langste streak ooit binnen de community
 };
 export async function getCommunityStats(): Promise<CommunityStats | null> {
   const sb = createClient();
@@ -322,11 +335,17 @@ export async function getCommunityStats(): Promise<CommunityStats | null> {
     gebruikers?: number;
     som?: Record<string, number>;
     som_minuten?: Record<string, number>;
+    gem_actieve_week?: number;
+    actieve_weken?: number;
+    hoogste_streak?: number;
   };
   return {
     gebruikers: d.gebruikers ?? 0,
     som: d.som ?? {},
     somMinuten: d.som_minuten ?? {},
+    gemActieveWeek: d.gem_actieve_week ?? 0,
+    actieveWeken: d.actieve_weken ?? 0,
+    hoogsteStreak: d.hoogste_streak ?? 0,
   };
 }
 
@@ -718,5 +737,93 @@ export async function wisAfgevinkteTaken(): Promise<boolean> {
   } = await sb.auth.getUser();
   if (!user) return false;
   const { error } = await sb.from("taken").delete().eq("user_id", user.id).eq("gedaan", true);
+  return !error;
+}
+
+// ── BOUW-TAKEN (admin: "nog te bouwen voor de website") ───────────────────
+// Aparte backlog in de admin-module, los van de persoonlijke takenlijst hierboven.
+// Alleen admins (RLS via wijs_is_admin); gaat nooit naar AI.
+export type Prioriteit = "hoog" | "normaal" | "laag";
+export type BouwCategorie = "algemeen" | "tools" | "klein";
+export type BouwTaak = {
+  id: string;
+  tekst: string;
+  gedaan: boolean;
+  prioriteit: Prioriteit;
+  categorie: BouwCategorie;
+  created_at: string;
+  gedaan_op: string | null;
+};
+
+const BOUWTAAK_COLS = "id, tekst, gedaan, prioriteit, categorie, created_at, gedaan_op";
+
+export async function getBouwTaken(): Promise<BouwTaak[]> {
+  const sb = createClient();
+  const { data, error } = await sb
+    .from("bouw_taken")
+    .select(BOUWTAAK_COLS)
+    .order("created_at", { ascending: false });
+  if (error || !data) return [];
+  return data as BouwTaak[];
+}
+
+export async function addBouwTaak(
+  tekst: string,
+  categorie: BouwCategorie = "algemeen",
+): Promise<BouwTaak | null> {
+  const sb = createClient();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return null;
+  const t = tekst.trim();
+  if (!t) return null;
+  const { data, error } = await sb
+    .from("bouw_taken")
+    .insert({ user_id: user.id, tekst: t.slice(0, 500), categorie })
+    .select(BOUWTAAK_COLS)
+    .single();
+  if (error || !data) return null;
+  return data as BouwTaak;
+}
+
+export async function setBouwTaakGedaan(id: string, gedaan: boolean): Promise<boolean> {
+  const sb = createClient();
+  const { error } = await sb
+    .from("bouw_taken")
+    .update({ gedaan, gedaan_op: gedaan ? new Date().toISOString() : null })
+    .eq("id", id);
+  return !error;
+}
+
+export async function updateBouwTaakTekst(id: string, tekst: string): Promise<boolean> {
+  const sb = createClient();
+  const t = tekst.trim();
+  if (!t) return false;
+  const { error } = await sb.from("bouw_taken").update({ tekst: t.slice(0, 500) }).eq("id", id);
+  return !error;
+}
+
+export async function setBouwTaakPrioriteit(id: string, prioriteit: Prioriteit): Promise<boolean> {
+  const sb = createClient();
+  const { error } = await sb.from("bouw_taken").update({ prioriteit }).eq("id", id);
+  return !error;
+}
+
+export async function deleteBouwTaak(id: string): Promise<boolean> {
+  const sb = createClient();
+  const { error } = await sb.from("bouw_taken").delete().eq("id", id);
+  return !error;
+}
+
+export async function wisAfgevinkteBouwTaken(categorie?: BouwCategorie): Promise<boolean> {
+  const sb = createClient();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return false;
+  let q = sb.from("bouw_taken").delete().eq("user_id", user.id).eq("gedaan", true);
+  if (categorie) q = q.eq("categorie", categorie);
+  const { error } = await q;
   return !error;
 }

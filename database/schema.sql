@@ -202,6 +202,7 @@ create table if not exists public.statistiek (
   user_id        uuid primary key default auth.uid() references auth.users(id) on delete cascade,
   tellers        jsonb not null default '{}'::jsonb,
   minuten        jsonb not null default '{}'::jsonb,  -- bespaarde minuten per soort (adaptief opgeteld)
+  per_dag        jsonb not null default '{}'::jsonb,  -- per dag: { 'YYYY-MM-DD': { m: minuten, n: acties } } voor periode-filters
   streak         int not null default 0,    -- opeenvolgende werkdagen actief
   streak_max     int not null default 0,    -- langste streak ooit (voor het "record")
   laatste_actief date,                       -- laatste werkdag waarop iets gedaan is
@@ -212,6 +213,18 @@ create table if not exists public.statistiek (
 --   alter table public.statistiek add column if not exists streak_max int not null default 0;
 --   alter table public.statistiek add column if not exists laatste_actief date;
 --   alter table public.statistiek add column if not exists minuten jsonb not null default '{}'::jsonb;
+--   alter table public.statistiek add column if not exists per_dag jsonb not null default '{}'::jsonb;
+-- EENMALIGE backfill van per_dag: zet het bestaande lifetime-totaal op 1 augustus (begin van
+-- het huidige schooljaar), zodat het meetelt in "Dit schooljaar" maar Vandaag/Deze week/Deze
+-- maand schoon op echte nieuwe data blijven.
+--   update public.statistiek s set per_dag = jsonb_build_object(
+--     to_char(case when extract(month from timezone('Europe/Amsterdam', now())) >= 8
+--                  then make_date(extract(year from timezone('Europe/Amsterdam', now()))::int, 8, 1)
+--                  else make_date(extract(year from timezone('Europe/Amsterdam', now()))::int - 1, 8, 1) end, 'YYYY-MM-DD'),
+--     jsonb_build_object(
+--       'm', (select coalesce(sum(value::numeric),0) from jsonb_each_text(s.minuten)),
+--       'n', (select coalesce(sum(value::numeric),0) from jsonb_each_text(s.tellers))))
+--   where (s.per_dag is null or s.per_dag = '{}'::jsonb) and s.tellers <> '{}'::jsonb;
 -- BACKFILL bestaande tijdwinst (aantal × oude vaste minuten), zodat huidige totalen blijven:
 --   update public.statistiek s set minuten = (
 --     select coalesce(jsonb_object_agg(t.key, (t.value)::numeric * v.vast), '{}'::jsonb)
@@ -247,11 +260,30 @@ as $$
     select key, sum((value)::numeric) as totaal
     from public.statistiek s, jsonb_each_text(s.minuten)
     group by key
+  ), wk as (
+    -- Bespaarde minuten per gebruiker per (maandag-)week, uit per_dag. De
+    -- 1-augustus-backfill (eenmalige lump van het oude totaal) sluiten we uit,
+    -- anders telt die als één enorme "weekpiek" en blaast 'ie het gemiddelde op.
+    select s.user_id, date_trunc('week', (d.key)::date) as wkstart,
+           sum((d.value->>'m')::numeric) as m
+    from public.statistiek s, jsonb_each(s.per_dag) d
+    where (d.key)::date <> (case
+             when extract(month from timezone('Europe/Amsterdam', now())) >= 8
+               then make_date(extract(year from timezone('Europe/Amsterdam', now()))::int, 8, 1)
+               else make_date(extract(year from timezone('Europe/Amsterdam', now()))::int - 1, 8, 1)
+           end)
+    group by s.user_id, date_trunc('week', (d.key)::date)
   )
   select jsonb_build_object(
     'gebruikers', (select count(*)::int from public.statistiek),
     'som', coalesce((select jsonb_object_agg(key, totaal) from kv), '{}'::jsonb),
-    'som_minuten', coalesce((select jsonb_object_agg(key, totaal) from mv), '{}'::jsonb)
+    'som_minuten', coalesce((select jsonb_object_agg(key, totaal) from mv), '{}'::jsonb),
+    -- Langste streak ooit binnen de community.
+    'hoogste_streak', coalesce((select max(streak_max)::int from public.statistiek), 0),
+    -- Gemiddelde bespaarde minuten per actieve week (alleen weken mét activiteit),
+    -- plus het aantal meetpunten zodat de app pas toont vanaf genoeg data.
+    'gem_actieve_week', coalesce((select round(avg(m))::int from wk where m > 0), 0),
+    'actieve_weken', coalesce((select count(*)::int from wk where m > 0), 0)
   );
 $$;
 grant execute on function public.wijs_community_stats() to authenticated;
@@ -661,5 +693,28 @@ create policy "eigen taken" on public.taken
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 grant select, insert, update, delete on public.taken to authenticated;
 create index if not exists idx_taken_user on public.taken(user_id);
+
+-- ── 14) BOUW-TAKEN — admin-backlog ("nog te bouwen voor de website") ──────
+-- Aparte to-do-lijst in de admin-module, los van de persoonlijke takenlijst.
+-- Alleen admins (RLS via wijs_is_admin); gaat nooit naar AI.
+create table if not exists public.bouw_taken (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  tekst      text not null,
+  gedaan     boolean not null default false,
+  prioriteit text not null default 'normaal' check (prioriteit in ('hoog','normaal','laag')),
+  categorie  text not null default 'algemeen' check (categorie in ('algemeen','tools','klein')),
+  created_at timestamptz not null default now(),
+  gedaan_op  timestamptz
+);
+-- Als de tabel al bestond zonder categorie-kolom:
+alter table public.bouw_taken add column if not exists categorie text not null default 'algemeen';
+alter table public.bouw_taken enable row level security;
+drop policy if exists "eigen bouw_taken" on public.bouw_taken;
+create policy "eigen bouw_taken" on public.bouw_taken
+  for all using (auth.uid() = user_id and public.wijs_is_admin())
+  with check (auth.uid() = user_id and public.wijs_is_admin());
+grant select, insert, update, delete on public.bouw_taken to authenticated;
+create index if not exists idx_bouw_taken_user on public.bouw_taken(user_id, created_at desc);
 
 -- Klaar. Je tabellen staan klaar en zijn per gebruiker afgeschermd.
