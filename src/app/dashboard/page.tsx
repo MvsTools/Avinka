@@ -45,8 +45,10 @@ export default async function DashboardStart() {
 
       <OnboardingCard />
 
+      {/* Tools als hoofdmoot links, takenlijst als smalle kolom rechts die in beeld blijft. */}
+      <div className="grid gap-6 lg:grid-cols-3 lg:items-start">
       {/* De vier tools als grote tegels — dit is het hart van het dashboard. */}
-      <section id="tools" className="scroll-mt-24">
+      <section id="tools" className="scroll-mt-24 lg:col-span-2">
         <h2 className="text-xl font-bold text-ink">Jouw tools</h2>
         <div className="mt-4 grid gap-5 sm:grid-cols-2">
           {tools.map((tool) => {
@@ -104,8 +106,11 @@ export default async function DashboardStart() {
         </div>
       </section>
 
-      {/* Read-only spiegel van je takenlijst: zien kan hier, aanpassen op /dashboard/taken. */}
-      <TakenOverzicht />
+      {/* Read-only spiegel van je takenlijst: rechts naast de tools, blijft in beeld. */}
+      <div className="lg:sticky lg:top-6">
+        <TakenOverzicht />
+      </div>
+      </div>
 
       <p className="rounded-2xl bg-brand-soft px-5 py-4 text-sm font-medium text-ink/70">
         💡 <strong>Tip:</strong> de namen van je leerlingen blijven altijd op je eigen
