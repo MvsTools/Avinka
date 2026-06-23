@@ -46,7 +46,7 @@ type Cfg = {
 
 const CFG: Record<string, Cfg> = {
   rapport: {
-    basis: 4, perWoord: 0.09, max: 30, vast: 10,
+    basis: 2.5, perWoord: 0.08, max: 30, vast: 10,
     label: "Rapporten geschreven", kort: "Rapporten", icon: "📝", kleur: "#7c3aed",
   },
   analyse: {
@@ -54,27 +54,27 @@ const CFG: Record<string, Cfg> = {
     label: "Toetsanalyses gedaan", kort: "Analyses", icon: "📊", kleur: "#2f9e6e",
   },
   gesprek: {
-    basis: 6, perWoord: 0.08, max: 45, vast: 20,
+    basis: 3, perWoord: 0.06, max: 45, vast: 20,
     label: "Oudergesprekken uitgewerkt", kort: "Gesprekken", icon: "🗣️", kleur: "#0ea5e9",
   },
   weekbericht: {
-    basis: 3, perWoord: 0.07, max: 35, vast: 15,
+    basis: 2, perWoord: 0.06, max: 35, vast: 15,
     label: "Weekberichten", kort: "Weekbericht", icon: "🗓️", kleur: "#f59e0b",
   },
   nieuwsbrief: {
-    basis: 4, perWoord: 0.07, max: 60, vast: 30,
+    basis: 2.5, perWoord: 0.06, max: 60, vast: 30,
     label: "Nieuwsbrieven", kort: "Nieuwsbrief", icon: "📰", kleur: "#db2777",
   },
   bericht: {
-    basis: 2, perWoord: 0.06, max: 20, vast: 10,
-    label: "Oudercontact-berichten", kort: "Oudercontact", icon: "💬", kleur: "#059669",
+    basis: 1, perWoord: 0.04, max: 20, vast: 10,
+    label: "Ouderberichten", kort: "Ouderbericht", icon: "💬", kleur: "#059669",
   },
   brief: {
-    basis: 3, perWoord: 0.07, max: 40, vast: 15,
+    basis: 2, perWoord: 0.06, max: 40, vast: 15,
     label: "Informatiebrieven", kort: "Brieven", icon: "📄", kleur: "#0891b2",
   },
   uitnodiging: {
-    basis: 3, perWoord: 0.07, max: 30, vast: 20,
+    basis: 2, perWoord: 0.06, max: 30, vast: 20,
     label: "Uitnodigingen", kort: "Uitnodiging", icon: "✉️", kleur: "#e11d48",
   },
   plattegrond: {

@@ -390,7 +390,7 @@ const VERWIJZINGEN: Verwijzing[] = [
     woorden: ["oudergesprek", "tienminutengesprek", "voortgangsgesprek", "rapportgesprek", "kindgesprek", "gesprekken", "ouder gesprek"] },
   { naam: "Informatiebrief", emoji: "📄", href: "/tools/oudercontact.html?m=informatiebrief",
     woorden: ["ouderbrief", "informatiebrief", "brief aan ouders"] },
-  { naam: "Oudercontact", emoji: "💬", href: "/tools/oudercontact.html?m=bericht",
+  { naam: "Ouderbericht", emoji: "💬", href: "/tools/oudercontact.html?m=bericht",
     woorden: ["oudercontact", "ouders mailen", "mail naar ouders", "oudermail", "ouderbericht", "mededeling"] },
   { naam: "Toetsanalyse", emoji: "📊", href: "/tools/toetsanalyse.html",
     woorden: ["toetsanalyse", "toetsresultaat", "toetsresultaten", "methodetoets", "toetsen", "toets", "cito", "iep", "lvs", "scores"] },
