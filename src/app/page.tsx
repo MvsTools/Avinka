@@ -60,7 +60,7 @@ const tools = [
     naam: "Oudercontact",
     emoji: "✉️",
     tekst:
-      "Oudergesprekken, weekberichten en ouderberichten die zo de deur uit kunnen. Nooit meer staren naar een leeg scherm.",
+      "Oudergesprekken, weekberichten en ouderberichten, in een paar minuten klaar. Nooit meer staren naar een leeg scherm.",
     badge: "bg-rose-500",
     tint: "bg-rose-50",
     rand: "hover:border-rose-300",
