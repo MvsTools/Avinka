@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<!--
+  STARTER-TEMPLATE voor een nieuwe Avinka-tool.
+  Kopieer dit bestand naar public/tools/<naam>.html en bouw 'm uit.
+
+  ── Zo integreer je 'm volledig in het platform ──────────────────────────────
+  In de tool (dit bestand):
+    1. De gedeelde scripts hieronder in <head> laten staan (dialog/privacy/
+       masking/voorkeuren/datum). Verwijder wat je niet gebruikt.
+    2. AI ALTIJD via POST /api/claude (callClaude hieronder) — nooit rechtstreeks
+       Anthropic. Dat regelt de modeltier per pakket + kostenlogging server-side.
+    3. Namen maskeren: await window.avinkaMask.ready, dan apply()/restore().
+    4. Bij elke AFGERONDE actie: window.avinkaTel('<soort>', { woorden|items|
+       leerlingen }). Dat regelt statistiek + tijdwinst-toast + streak + per_dag.
+
+  Daarbuiten registreren (anders telt/verschijnt de tool nergens):
+    5. src/lib/tijdwinst.ts  → CFG-entry voor '<soort>' (anders 0 min winst).
+    6. src/components/dashboard/StatistiekenView.tsx → HOOFDTOOLS + SUB_NAAR_HOOFD.
+    7. src/lib/tools.ts       → tegel op het dashboard (slug = '<naam>').
+    8. src/app/page.tsx       → tegel op de publieke startpagina.
+    9. src/lib/abonnement.ts  → magToolGebruiken draait op de slug (pakket-indeling).
+  Volledige uitleg: memory tool-integratie-checklist.
+
+  © 2026 Michael van Spanje. Alle rechten voorbehouden.
+-->
+<html lang="nl">
+<head>
+  <script>
+  /* Platform: de login regelt de toegang. Dummy-sleutel zodat de tool doorloopt;
+     de ECHTE sleutel staat veilig op de server (/api/claude). */
+  try { localStorage.setItem("avinka_apikey", "sk-ant-proxy"); } catch (e) {}
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="author" content="Michael van Spanje" />
+  <title>Nieuwe tool — Avinka</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Gedeelde platform-scripts (verwijder wat je niet gebruikt) -->
+  <script src="/avinka-dialog.js"></script>
+  <script src="/avinka-privacy.js"></script>
+  <script src="/avinka-masking.js"></script>
+  <script src="/avinka-voorkeuren.js"></script>
+  <script src="/avinka-datum.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink: #221c3a; --cream: #fbf6ee; --warm: #e9e1d2;
+      --accent: #2f9e6e; --accent2: #25855a; --muted: #6b6880; --card: #ffffff;
+      --brand-soft: #e7f4ed;
+      --line: rgba(34,28,58,0.07); --line-strong: rgba(34,28,58,0.13);
+      --shadow-sm: 0 1px 2px rgba(34,28,58,0.06), 0 2px 6px rgba(34,28,58,0.05);
+      --shadow-md: 0 12px 32px rgba(34,28,58,0.12);
+    }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+    body::before { content: ''; position: fixed; inset: 0; background-image:
+        radial-gradient(circle at 10% 4%, rgba(47,158,110,0.10) 0%, transparent 42%),
+        radial-gradient(circle at 92% 0%, rgba(47,158,110,0.10) 0%, transparent 40%),
+        radial-gradient(rgba(47,158,110,0.05) 1.3px, transparent 1.3px);
+      background-size: auto, auto, 24px 24px; pointer-events: none; z-index: 0; }
+    .container { max-width: 760px; margin: 0 auto; padding: 40px 24px 80px; position: relative; z-index: 1; }
+    h1 { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 600; }
+    .sub { color: var(--muted); margin-top: 6px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 24px; box-shadow: var(--shadow-sm); margin-top: 24px; }
+    label { display: block; font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+    textarea, input[type="text"] { width: 100%; border: 1.5px solid var(--line-strong); background: var(--cream); border-radius: 12px; padding: 12px 14px; font: inherit; color: var(--ink); resize: vertical; }
+    textarea:focus, input:focus { outline: none; border-color: var(--accent); }
+    .btn { margin-top: 16px; border: none; border-radius: 14px; background: var(--accent); color: #fff; font: inherit; font-weight: 700; padding: 12px 22px; cursor: pointer; transition: .15s; }
+    .btn:hover { background: var(--accent2); }
+    .btn:disabled { opacity: .55; cursor: default; }
+    .result { white-space: pre-wrap; line-height: 1.6; }
+    .err { color: #e11d48; font-size: 14px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Nieuwe tool ✓</h1>
+    <p class="sub">Van leerkracht voor leerkrachten.</p>
+
+    <div class="card">
+      <label for="onderwerp">Waar gaat het over?</label>
+      <textarea id="onderwerp" rows="4" placeholder="Geef een paar steekwoorden…"></textarea>
+      <!-- Voorbeeld van een datumveld: avinka-datum.js maakt er automatisch de
+           agenda-kiezer van. -->
+      <!-- <input type="date" id="datum" /> -->
+      <button class="btn" id="btn-genereer" onclick="genereer()">✎ Maak het</button>
+      <div class="err" id="err"></div>
+    </div>
+
+    <div class="card" id="resultaat-kaart" style="display:none">
+      <label>Resultaat</label>
+      <div class="result" id="resultaat"></div>
+    </div>
+  </div>
+
+  <script>
+    // ── Vaste instellingen ──────────────────────────────────────────────────
+    const MODEL = 'claude-opus-4-8';   // server overschrijft dit met de pakket-tier
+    const SOORT = 'nieuwetool';        // ← gebruik dezelfde sleutel in tijdwinst.ts (CFG)
+
+    // ── Maskering: namen → codes vóór verzenden, terug erna ──────────────────
+    // De gedeelde laag (avinka-masking.js) is het vangnet over je hele klas.
+    // Wil je per-tool ook een eigen LL-map (zoals Rapporten/Toetsanalyse), bouw
+    // die er dan omheen; voor de meeste tools volstaat de gedeelde laag.
+    function maskText(s) { return window.avinkaMask ? window.avinkaMask.apply(s) : s; }
+    function unmaskText(s) { return window.avinkaMask ? window.avinkaMask.restore(s) : s; }
+
+    // ── AI-aanroep (mask vóór verzenden, unmask erna) ────────────────────────
+    async function callClaude(system, userContent, maxTokens) {
+      if (window.avinkaMask) { try { await window.avinkaMask.ready; } catch (e) {} }
+      const safeUser = maskText(userContent);
+      const safeSystem = system ? maskText(system) : system;
+      const body = { model: MODEL, max_tokens: maxTokens || 1500, messages: [{ role: 'user', content: safeUser }] };
+      if (safeSystem) body.system = [{ type: 'text', text: safeSystem, cache_control: { type: 'ephemeral' } }];
+      const resp = await fetch('/api/claude', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'sk-ant-proxy',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify(body)
+      });
+      if (!resp.ok) {
+        let msg = 'Er ging iets mis (' + resp.status + ').';
+        try { const e = await resp.json(); msg = e.error?.message || msg; } catch (_) {}
+        if (resp.status === 429) msg = 'Het is even druk. Probeer het zo opnieuw.';
+        if (resp.status === 529) msg = 'Claude is tijdelijk overbelast. Probeer het zo opnieuw.';
+        throw new Error(msg);
+      }
+      const data = await resp.json();
+      const ruw = (data.content || []).map(b => b.text || '').join('');
+      return unmaskText(ruw).trim();
+    }
+
+    // ── Het hoofdactie ──────────────────────────────────────────────────────
+    async function genereer() {
+      const knop = document.getElementById('btn-genereer');
+      const fout = document.getElementById('err');
+      fout.textContent = '';
+      const invoer = document.getElementById('onderwerp').value.trim();
+      if (!invoer) { fout.textContent = 'Vul eerst iets in.'; return; }
+
+      knop.disabled = true;
+      knop.textContent = 'Even afvinken…';
+      try {
+        const system = 'Je bent een behulpzame assistent voor een leerkracht in het basisonderwijs. Schrijf in natuurlijk Nederlands.';
+        const tekst = await callClaude(system, invoer, 1200);
+
+        document.getElementById('resultaat').textContent = tekst;
+        document.getElementById('resultaat-kaart').style.display = '';
+
+        // Tijdwinst + statistiek + streak in één keer. Geef een omvang-signaal mee
+        // (woorden/items/leerlingen) zodat de winst adaptief wordt berekend.
+        if (typeof avinkaTel === 'function') {
+          avinkaTel(SOORT, { woorden: tekst.split(/\s+/).filter(Boolean).length });
+        }
+      } catch (e) {
+        fout.textContent = e.message || 'Er ging iets mis.';
+      } finally {
+        knop.disabled = false;
+        knop.textContent = '✎ Maak het';
+      }
+    }
+
+    // ── Centrale voorkeuren automatisch voorvullen (optioneel) ───────────────
+    // Heeft je tool keuzevelden voor toon/taalniveau/lengte/aanspreekvorm, vul ze
+    // dan voor met de instelling uit het dashboard:
+    // window.avinkaVoorkeuren?.ready.then(v => { /* zet je velden op v.toon enz. */ });
+
+    // ── Privacy-pop-up (optioneel, bij gevoelige inhoud) ─────────────────────
+    // window.avinkaPrivacy?.gate({ key:'<naam>', intro:'…', wel:[…], niet:[…] });
+  </script>
+</body>
+</html>
