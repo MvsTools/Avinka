@@ -449,7 +449,7 @@
         laatsteTekst = tekst; laatsteMeta = inv;
         document.getElementById('les').innerHTML = renderMd(tekst);
         document.getElementById('uitvoer-titel').textContent = inv.lestype === 'buiten' ? 'Je buitenles' : inv.lestype === 'bewegend' ? 'Je bewegende les' : 'Je les';
-        document.getElementById('uitvoer').style.display = '';
+        document.getElementById('uitvoer').style.display = 'block';
         document.getElementById('uitvoer').scrollIntoView({ behavior: 'smooth', block: 'start' });
         if (typeof avinkaTel === 'function') avinkaTel(SOORT, { woorden: tekst.split(/\s+/).filter(Boolean).length });
       } catch (e) {
