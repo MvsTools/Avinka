@@ -4,10 +4,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getTaken, type Taak } from "@/lib/db";
 
-// Read-only overzichtje van je open taken op het startscherm. Je kunt hier niets
-// aanpassen of afvinken — de hele kaart is een link naar de volledige takenlijst,
-// waar dat wél kan. Bewust een spiegel van je to-do, zodat je 'm dagelijks ziet.
-const MAX = 5;
+// Slank takenlijst-strookje op het startscherm: hoeveel staat er open + de
+// dringendste taak. Bewust licht, zodat de tools de hoofdmoot blijven. Je kunt
+// hier niets aanpassen; de hele strip linkt naar de volledige takenlijst.
 
 // Zelfde dringendheid-label + kleur als in de takenlijst (TakenView).
 function deadlineInfo(d: string): { label: string; klasse: string } {
@@ -36,9 +35,9 @@ export default function TakenOverzicht() {
     getTaken().then(setTaken);
   }, []);
 
-  // Skeleton met dezelfde hoogte-orde, zodat het grid niet verspringt.
+  // Skeleton met dezelfde hoogte, zodat de pagina niet verspringt.
   if (!taken) {
-    return <div className="h-44 animate-pulse rounded-3xl border border-black/5 bg-white/60" />;
+    return <div className="h-[52px] animate-pulse rounded-2xl border border-black/5 bg-white/60" />;
   }
 
   const open = taken
@@ -49,53 +48,48 @@ export default function TakenOverzicht() {
       if (b.deadline) return 1;
       return 0;
     });
-  const tonen = open.slice(0, MAX);
-  const meer = open.length - tonen.length;
+  const top = open[0];
+  const topDl = top?.deadline ? deadlineInfo(top.deadline) : null;
 
   return (
     <Link
       href="/dashboard/taken"
-      className="group flex flex-col rounded-3xl border border-black/5 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
       title="Naar je takenlijst"
+      className="group flex items-center gap-3 rounded-2xl border border-black/5 bg-white px-5 py-3.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
     >
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="flex items-center gap-2 text-lg font-bold text-ink">
-          <span className="text-xl">📋</span> Je takenlijst
-        </h3>
-        {open.length > 0 && (
-          <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-bold text-brand">
-            {open.length} te doen
-          </span>
-        )}
-      </div>
+      <span className="text-lg" aria-hidden>
+        📋
+      </span>
 
       {open.length === 0 ? (
-        <p className="mt-3 text-sm leading-6 text-ink/55">
-          Niets meer op je lijst. Lekker bezig — geniet van je vrije tijd.
-        </p>
+        <span className="text-sm text-ink/60">Je takenlijst is leeg. Iets toevoegen?</span>
       ) : (
-        <ul className="mt-3 flex flex-col gap-2">
-          {tonen.map((t) => {
-            const dl = t.deadline ? deadlineInfo(t.deadline) : null;
-            return (
-              <li key={t.id} className="flex items-center gap-2.5">
-                <span className="h-4 w-4 shrink-0 rounded-full border-2 border-black/15" aria-hidden />
-                <span className="min-w-0 flex-1 truncate text-sm text-ink/80">{t.tekst}</span>
-                {dl && (
-                  <span
-                    className={"shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold " + dl.klasse}
-                  >
-                    {dl.label}
-                  </span>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+        <>
+          <span className="shrink-0 text-sm font-bold text-ink">
+            {open.length} {open.length === 1 ? "taak" : "taken"} open
+          </span>
+          {top && (
+            <>
+              <span className="shrink-0 text-ink/25" aria-hidden>
+                ·
+              </span>
+              <span className="min-w-0 truncate text-sm text-ink/65">{top.tekst}</span>
+              {topDl && (
+                <span
+                  className={
+                    "shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold " + topDl.klasse
+                  }
+                >
+                  {topDl.label}
+                </span>
+              )}
+            </>
+          )}
+        </>
       )}
 
-      <span className="mt-auto inline-block pt-3 text-sm font-bold text-brand">
-        {meer > 0 ? `Nog ${meer} meer — naar je takenlijst →` : "Naar je takenlijst →"}
+      <span className="ml-auto shrink-0 text-base font-bold text-brand transition group-hover:translate-x-0.5">
+        →
       </span>
     </Link>
   );
