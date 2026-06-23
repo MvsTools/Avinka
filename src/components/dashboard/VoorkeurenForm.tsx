@@ -119,7 +119,7 @@ export default function VoorkeurenForm() {
 
       <div className="mt-5">
         <label htmlFor="schoolnaam" className="block text-sm font-bold text-ink">
-          Naam van je school <span className="font-normal text-ink/50">(voor in brieven)</span>
+          Naam van je school
         </label>
         <input
           id="schoolnaam"
@@ -132,7 +132,7 @@ export default function VoorkeurenForm() {
 
       <div className="mt-5">
         <label htmlFor="v-groep" className="block text-sm font-bold text-ink">
-          Standaardgroep <span className="font-normal text-ink/50">(optioneel)</span>
+          Standaardgroep
         </label>
         <input
           id="v-groep"
@@ -159,7 +159,6 @@ export default function VoorkeurenForm() {
       />
       <KeuzeRij
         titel="Taalniveau"
-        hint="(hoe makkelijk leesbaar)"
         opties={taalniveaus}
         waarde={v.taalniveau}
         zet={(w) => setV({ ...v, taalniveau: w })}
