@@ -504,7 +504,7 @@
       <input type="number" id="f-aantal" value="">
       <input type="text" id="f-moment" value="">
       <input type="text" id="f-lengte" value="">
-      <input type="text" id="f-richt" value="">
+      <input type="text" id="f-richt" value="tegen">
       <input type="text" id="f-toon" value="warm">
       <input type="text" id="f-afsluiting" value="vooruit">
       <input type="text" id="f-taalniveau" value="standaard">
@@ -877,14 +877,15 @@ function checkStartReady() {
 }
 async function resetAlles() {
   if (!(await avinkaBevestig('Alle ingevulde gegevens en gemaakte rapportteksten worden gewist.', { titel: 'Alles leegmaken?', bevestig: 'Leegmaken', gevaar: true }))) return;
-  state.groep = ''; state.aantal = ''; state.moment = ''; state.lengte = ''; state.richt = '';
+  state.groep = ''; state.aantal = ''; state.moment = ''; state.lengte = ''; state.richt = 'tegen';
   state.toon = 'warm'; state.afsluiting = 'vooruit'; state.taalniveau = 'standaard';
   state.leerlingen = []; state.huidigeId = null; state.goedgekeurd = [];
   naamLijst = [];
   nameMap = []; nameMapCodes = [];
-  ['f-groep', 'f-aantal', 'f-moment', 'f-lengte', 'f-richt'].forEach(id => { const e = document.getElementById(id); if (e) { e.value = ''; e.classList.remove('filled'); } });
+  ['f-groep', 'f-aantal', 'f-moment', 'f-lengte'].forEach(id => { const e = document.getElementById(id); if (e) { e.value = ''; e.classList.remove('filled'); } });
   const setSel = (id, v) => { const e = document.getElementById(id); if (e) { e.value = v; e.classList.add('filled'); } };
-  setSel('f-toon', 'warm'); setSel('f-afsluiting', 'vooruit'); setSel('f-taalniveau', 'standaard');
+  setSel('f-toon', 'warm'); setSel('f-afsluiting', 'vooruit'); setSel('f-taalniveau', 'standaard'); setSel('f-richt', 'tegen');
+  if (typeof window.syncControls === 'function') window.syncControls();
   checkStartReady();
   toonScherm('scherm-start', 1);
 }
