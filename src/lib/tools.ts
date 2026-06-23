@@ -39,7 +39,7 @@ export const tools: Tool[] = [
     slug: "oudercontact",
     naam: "Oudercontact",
     emoji: "✉️",
-    tekst: "Weekberichten, nieuwsbrieven en ouderbrieven die zo de deur uit kunnen.",
+    tekst: "Oudergesprekken, weekberichten en ouderberichten die zo de deur uit kunnen.",
     badge: "bg-rose-500",
     tint: "bg-rose-50",
     rand: "hover:border-rose-300",
