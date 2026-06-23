@@ -50,12 +50,13 @@ export default function TakenOverzicht() {
     });
   const top = open[0];
   const topDl = top?.deadline ? deadlineInfo(top.deadline) : null;
+  const namen = open.map((t) => t.tekst).join(" · ");
 
   return (
     <Link
       href="/dashboard/taken"
       title="Naar je takenlijst"
-      className="group flex items-center gap-3 rounded-2xl border border-black/5 bg-white px-5 py-3.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      className="group flex items-center gap-3 rounded-2xl border border-black/5 bg-white px-5 py-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
     >
       <span className="text-lg" aria-hidden>
         📋
@@ -64,28 +65,23 @@ export default function TakenOverzicht() {
       {open.length === 0 ? (
         <span className="text-sm text-ink/60">Je takenlijst is leeg. Iets toevoegen?</span>
       ) : (
-        <>
-          <span className="shrink-0 text-sm font-bold text-ink">
-            {open.length} {open.length === 1 ? "taak" : "taken"} open
-          </span>
-          {top && (
-            <>
-              <span className="shrink-0 text-ink/25" aria-hidden>
-                ·
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-ink">
+              {open.length} {open.length === 1 ? "taak" : "taken"} open
+            </span>
+            {topDl && (
+              <span
+                className={
+                  "rounded-full border px-2 py-0.5 text-xs font-semibold " + topDl.klasse
+                }
+              >
+                {topDl.label}
               </span>
-              <span className="min-w-0 truncate text-sm text-ink/65">{top.tekst}</span>
-              {topDl && (
-                <span
-                  className={
-                    "shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold " + topDl.klasse
-                  }
-                >
-                  {topDl.label}
-                </span>
-              )}
-            </>
-          )}
-        </>
+            )}
+          </div>
+          <p className="mt-0.5 truncate text-xs text-ink/55">{namen}</p>
+        </div>
       )}
 
       <span className="ml-auto shrink-0 text-base font-bold text-brand transition group-hover:translate-x-0.5">
