@@ -5,6 +5,7 @@ import { BETALINGEN_LIVE, magToolGebruiken } from "@/lib/abonnement";
 import { getAbonnementServer } from "@/lib/abonnement-server";
 import OnboardingCard from "@/components/dashboard/OnboardingCard";
 import StreakBadge from "@/components/dashboard/StreakBadge";
+import TakenOverzicht from "@/components/dashboard/TakenOverzicht";
 import { amsterdamDatum } from "@/lib/streak";
 
 export default async function DashboardStart() {
@@ -102,6 +103,9 @@ export default async function DashboardStart() {
           })}
         </div>
       </section>
+
+      {/* Read-only spiegel van je takenlijst: zien kan hier, aanpassen op /dashboard/taken. */}
+      <TakenOverzicht />
 
       <p className="rounded-2xl bg-brand-soft px-5 py-4 text-sm font-medium text-ink/70">
         💡 <strong>Tip:</strong> de namen van je leerlingen blijven altijd op je eigen
