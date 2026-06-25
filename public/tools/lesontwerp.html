@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  Lesontwerp — AI bedenkt complete, kant-en-klare lessen uit één leerdoel.
+  Lesontwerp — AI bedenkt complete, kant-en-klare lessen uit één lesdoel.
   Ontworpen en gemaakt door Michael van Spanje. © 2026 Michael van Spanje.
 
   STATUS: TESTFASE. Staat (bewust) nog NIET geregistreerd in het platform — alleen
@@ -23,7 +23,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="author" content="Michael van Spanje" />
-  <title>Lesontwerp · Complete lessen uit één leerdoel</title>
+  <title>Lesontwerp · Complete lessen uit één lesdoel</title>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
@@ -82,6 +82,7 @@
     .card-label .ic { width: 44px; height: 44px; border-radius: 14px; background: var(--brand-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
 
     label.veld-l { display: block; font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+    .veld-tip { font-size: 12.5px; color: var(--muted); margin: 6px 0 8px; line-height: 1.5; }
     .hint { font-weight: 400; color: var(--muted); font-size: 13px; }
     /* Veld/dropdown-systeem — gelijk aan de andere tools (rapporten = blauwdruk) */
     .field-label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
@@ -121,7 +122,7 @@
     .diff-kol { border-right: 1px solid var(--line-strong); }
     .diff-kol:last-child { border-right: 0; }
     @media (max-width: 620px) { .diff-kol { border-right: 0; border-bottom: 1px solid var(--line-strong); } .diff-kol:last-child { border-bottom: 0; } }
-    .dk-kop { background: var(--brand-soft); color: var(--accent2); font-weight: 700; font-size: 12.5px; padding: 8px 12px; border-bottom: 1px solid var(--line-strong); }
+    .dk-kop { background: var(--accent); color: #fff; font-weight: 700; font-size: 12.5px; padding: 8px 12px; border-bottom: 1px solid var(--line-strong); }
     .dk-in { padding: 10px 12px; font-size: 14px; }
     .dk-in p { margin: 0 0 6px; } .dk-in p:last-child { margin-bottom: 0; }
     .dk-in ul { margin: 0; padding-left: 18px; } .dk-in li { margin: 2px 0; }
@@ -151,11 +152,8 @@
 
     .scherp { margin-top: 16px; padding: 16px 18px; border: 1.5px solid var(--accent); border-radius: 14px; background: var(--brand-soft); }
     .scherp-kop { font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px; color: var(--ink); margin-bottom: 4px; }
-    .scherp-uitleg { font-size: 13px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
-    .scherp-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-    .scherp-chip { border: 1.5px solid var(--accent); background: #fff; color: var(--accent2); border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; transition: .15s; }
-    .scherp-chip:hover { background: var(--accent); color: #fff; }
-    .scherp-chip.laden-chip { opacity: .6; cursor: default; border-style: dashed; }
+    .scherp-uitleg { font-size: 13px; color: var(--muted); line-height: 1.55; }
+    .scherp-uitleg em { font-style: italic; color: var(--ink); }
     .scherp-eigen { margin-top: 12px; background: none; border: none; color: var(--muted); font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 4px 0; text-decoration: underline; }
     .scherp-eigen:hover { color: var(--ink); }
     .laden { display: none; text-align: center; color: var(--muted); background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 40px 24px; box-shadow: var(--shadow-sm); margin-top: 16px; }
@@ -240,8 +238,8 @@
       <!-- HERO -->
       <div class="hero">
         <div>
-          <h1>Van leerdoel naar een <span class="sw">complete les<svg viewBox="0 0 200 12" fill="none" aria-hidden="true"><path d="M3 8C46 3 154 3 197 6" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg></span></h1>
-          <p class="lead">Geef een leerdoel op en kies het type les. Lesontwerp werkt er een volledige, didactisch onderbouwde les omheen die je meteen kunt gebruiken.</p>
+          <h1>Van lesdoel naar een <span class="sw">complete les<svg viewBox="0 0 200 12" fill="none" aria-hidden="true"><path d="M3 8C46 3 154 3 197 6" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg></span></h1>
+          <p class="lead">Geef een lesdoel op en kies het type les. Lesontwerp werkt er een volledige, didactisch onderbouwde les omheen die je meteen kunt gebruiken.</p>
         </div>
         <div class="heroart">
           <div class="mockwin">
@@ -322,8 +320,9 @@
       <div class="card" id="invoer-kaart">
         <div class="card-label"><span class="ic">✎</span> Je les</div>
 
-        <label class="veld-l" for="doel" id="doel-label">Leerdoel of onderwerp</label>
-        <textarea id="doel" class="field-input" placeholder="Bijv. 'De leerlingen kunnen breuken vergelijken' of gewoon 'klokkijken hele en halve uren'" oninput="this.classList.toggle('filled', !!this.value.trim())"></textarea>
+        <label class="veld-l" for="doel" id="doel-label">Lesdoel of onderwerp</label>
+        <div class="veld-tip" id="doel-tip">Beschrijf het lesdoel zo concreet mogelijk en geef een voorbeeld mee. Hoe scherper de omschrijving, hoe beter de les.</div>
+        <textarea id="doel" class="field-input" placeholder="Bijv. 'De leerlingen kunnen breuken met dezelfde noemer vergelijken, zoals 2/5 en 4/5' " oninput="this.classList.toggle('filled', !!this.value.trim())"></textarea>
 
         <div id="lestype-wrap">
           <label class="keuze-l">Wat voor soort les?</label>
@@ -343,11 +342,10 @@
         <button class="btn-primary" id="btn-maak" onclick="maak()">✨ Maak mijn les</button>
         <div class="err" id="err"></div>
 
-        <!-- Even scherpstellen: verschijnt alleen bij een te breed leerdoel -->
+        <!-- Even scherpstellen: verschijnt alleen bij een te breed lesdoel -->
         <div class="scherp" id="scherp" style="display:none">
           <div class="scherp-kop">Even scherpstellen 🎯</div>
-          <div class="scherp-uitleg">Dit doel is nog wat breed. Kies een scherper lesdoel, dan wordt de les een stuk raker:</div>
-          <div class="scherp-chips" id="scherp-chips"></div>
+          <div class="scherp-uitleg" id="scherp-tip"></div>
           <button class="scherp-eigen" id="scherp-eigen" onclick="maakMetEigenDoel()">Toch mijn eigen doel gebruiken →</button>
         </div>
       </div>
@@ -383,8 +381,7 @@
       </div>
 
       <footer class="app-foot">
-        Lesontwerp · gemaakt door Michael van Spanje · © 2026<br />
-        De code regelt de opbouw, jij houdt de regie. Lees de les altijd na voordat je hem geeft.
+        Lesontwerp · gemaakt door Michael van Spanje · © 2026
       </footer>
     </main>
   </div>
@@ -485,17 +482,21 @@
       const dl = document.getElementById('doel-label'), dt = document.getElementById('doel');
       if (dl) dl.innerHTML = crea
         ? 'Onderwerp of thema <span class="hint">· laat leeg en Lesontwerp kiest zelf een idee</span>'
-        : 'Leerdoel of onderwerp';
+        : 'Lesdoel of onderwerp';
       if (dt) dt.placeholder = crea
         ? "Bijv. 'herfst', 'de ruimte' of 'Sinterklaas', of laat het leeg"
-        : "Bijv. 'De leerlingen kunnen breuken vergelijken' of gewoon 'klokkijken hele en halve uren'";
+        : "Bijv. 'De leerlingen kunnen breuken met dezelfde noemer vergelijken, zoals 2/5 en 4/5'";
+      const tip = document.getElementById('doel-tip');
+      if (tip) tip.textContent = crea
+        ? 'Beschrijf je onderwerp gerust wat uitgebreider, of laat het leeg, dan kiest Lesontwerp zelf een passend idee.'
+        : 'Beschrijf het lesdoel zo concreet mogelijk en geef een voorbeeld mee. Hoe scherper de omschrijving, hoe beter de les.';
     }
     vakGewijzigd();
 
     // ── Didactische regie per lestype (de CODE regelt de structuur) ──────────
     const LESTYPE_REGIE = {
       klas: 'SOORT LES: een les in het klaslokaal. Kies activerende, afwisselende werkvormen (denk-deel-uit, wisbordjes/mini-whiteboards, korte doe-opdrachten, coöperatieve duo\'s). Voorkom dat leerlingen lang passief luisteren.',
-      bewegend: 'SOORT LES: BEWEGEND LEREN. De leerlingen bereiken het lesdoel terwijl ze fysiek bewegen (staan, springen, lopen, hinkelen, gebaren); bewegen is GEEN losse energizer maar verweven met de leerstof. Het werkt het sterkst voor automatiseren, herhalen en inoefenen. Geef CONCRETE beweegwerkvormen die echt bij dit leerdoel passen (in de geest van waslijn-dictee, tafeljoggen, hinkelbaan, sommen-en-uitkomsten matchen, getalkaarten, "level up"), met benodigdheden, ruimte-opstelling en hoe je het veilig en ordelijk houdt.',
+      bewegend: 'SOORT LES: BEWEGEND LEREN. De leerlingen bereiken het lesdoel terwijl ze fysiek bewegen (staan, springen, lopen, hinkelen, gebaren); bewegen is GEEN losse energizer maar verweven met de leerstof. Het werkt het sterkst voor automatiseren, herhalen en inoefenen. Geef CONCRETE beweegwerkvormen die echt bij dit lesdoel passen (in de geest van waslijn-dictee, tafeljoggen, hinkelbaan, sommen-en-uitkomsten matchen, getalkaarten, "level up"), met benodigdheden, ruimte-opstelling en hoe je het veilig en ordelijk houdt.',
       buiten: 'SOORT LES: BUITENLES op het schoolplein of in de directe buurt. Geef werkvormen die buiten tot hun recht komen (stoepkrijt, kaarten zoeken/rennen, estafette, meten/tekenen op het plein, natuur en zintuigen). Noem benodigdheden (klembordjes, krijt, kaartjes), een duidelijk verzamelsignaal (fluit/lied), afspraken vooraf, en benut zo mogelijk het weer. Houd het organisatorisch haalbaar voor één leerkracht.',
       cooperatief: 'SOORT LES: COÖPERATIEF LEREN. De leerlingen leren mét en ván elkaar in duo\'s of groepjes via heldere structuren (denken-delen-uitwisselen, genummerde-hoofden-samen, tweetalcoach, placemat, binnen-buitenkring). Zorg voor positieve wederzijdse afhankelijkheid (ze hebben elkaar nodig) én individuele aanspreekbaarheid.'
     };
@@ -583,6 +584,7 @@
         '**Exitcheck:** één korte opdracht of vraag die élke leerling maakt en die direct laat zien of het lesdoel is behaald (een exit-ticket dat 1-op-1 het lesdoel meet). Benoem concreet wat je terugziet als het gelukt is.',
         '', '## Tips voor de leerkracht',
         '1 tot 3 korte, praktische tips (klassenmanagement, valkuilen, een leuk extraatje).',
+        bouwstenenBlok(),
         differentiatieBlok()
       ].join('\n');
     }
@@ -613,6 +615,7 @@
         '**Exitcheck:** één korte vraag of opdracht die élke leerling doet en die laat zien of het lesdoel is behaald (een exit-ticket dat 1-op-1 het lesdoel meet). Benoem wat je terugziet als het gelukt is.',
         '', '## Tips voor de leerkracht',
         '1 tot 3 korte, praktische tips (boeiend vertellen, bronnen gebruiken, valkuilen, een leuk extraatje).',
+        bouwstenenBlok(),
         differentiatieBlok()
       ].join('\n');
     }
@@ -630,6 +633,7 @@
         '**Afsluiting (' + t[2] + ' min):** terug naar het doel plus een korte exitcheck: één vraag of opdracht die élke leerling doet en die laat zien of het lesdoel is behaald.',
         '', '## Benodigdheden',
         'Bondige opsomming.',
+        bouwstenenBlok(),
         differentiatieBlok()
       ].join('\n');
     }
@@ -649,6 +653,13 @@
       ].join('\n');
     }
 
+    // Eigen blok net boven differentiatie: de vereiste voorkennis als terugvallijn.
+    function bouwstenenBlok() {
+      return ['', '## Bouwstenen voor dit lesdoel',
+        'Begin met één korte zin die benoemt waar dit lesdoel in de leerlijn ligt (de fase of het leerjaar, op basis van de LEERLIJN-CONTEXT hierboven) en dat de bouwstenen hieronder de stappen zijn die daar net vóór komen en die een leerling dus eerst moet beheersen.',
+        'Geef daarna een korte bulletlijst (2 à 4) met die bouwstenen: eenvoudiger deelvaardigheden uit een eerdere fase van de leerlijn die nodig zijn om dit lesdoel te halen. Zo zie je waar een leerling vastloopt: lukt het ook met verlengde instructie aan de instructietafel niet, dan kun je terug naar de bouwsteen die nog niet beheerst wordt en die eerst apart oefenen. Houd het concreet en kort; begin elke bullet met "- ".'].join('\n');
+    }
+
     function differentiatieBlok() {
       return ['', '## Differentiatie',
         'Zelfde lesdoel, andere route. Geef drie korte kolommen en begin direct met de drie kopjes hieronder, zonder inleidende zin. Houd elke kolom concreet en kort.',
@@ -656,7 +667,6 @@
         'De kernopdracht die de meeste leerlingen (basisniveau) zelfstandig doen, precies op het lesdoel.',
         '### Verlengde instructie',
         'Voor leerlingen die meer steun nodig hebben: zij oefenen HETZELFDE lesdoel langer en vaker, samen met de leerkracht aan de instructietafel tijdens de zelfstandige verwerking (nog eens voordoen, samen stap voor stap, extra herhaling). Het is dus niet per se een makkelijker doel, maar meer begeleide inoefening van ditzelfde doel.',
-        'Voeg daarna kort een bulletlijst toe met de kop "Lukt het nog niet? Check deze bouwstenen:" en 2 à 4 eenvoudiger deelvaardigheden (uit een eerdere leerlijn) die een leerling moet beheersen om dit lesdoel te kunnen halen. Zo ziet de leerkracht waar een leerling vastloopt en wat hij dan apart met die leerling kan oefenen. Houd dit subtiel en kort.',
         '### Verrijkende opdrachten',
         'Een echte uitdaging voor wie het lesdoel al beheerst: een moeilijkere variant, een transfer- of denkopdracht die verder gaat dan het lesdoel. Geen "meer van hetzelfde".'].join('\n');
     }
@@ -693,7 +703,7 @@
     function bouwOpdracht(inv, variatie) {
       const r = [];
       r.push('Ontwerp een les met de volgende gegevens:');
-      if (inv.doel) r.push('- ' + (isCreatief(inv.vak) ? 'Onderwerp/thema' : 'Leerdoel/onderwerp') + ': ' + inv.doel);
+      if (inv.doel) r.push('- ' + (isCreatief(inv.vak) ? 'Onderwerp/thema' : 'Lesdoel/onderwerp') + ': ' + inv.doel);
       else if (isCreatief(inv.vak)) r.push('- Onderwerp: vrij gelaten. Kies zelf een passend, gevarieerd idee uit de ideeënbank hieronder.');
       if (inv.vak) r.push('- Vak: ' + inv.vak);
       r.push('- Groep: ' + inv.groep);
@@ -703,7 +713,7 @@
       const leerlijn = (window.avinkaLeerlijnen && window.avinkaLeerlijnen.voor) ? window.avinkaLeerlijnen.voor(inv.vak, inv.groep) : '';
       if (leerlijn) {
         r.push('');
-        r.push('LEERLIJN-CONTEXT (' + inv.groep + ', op basis van de SLO-leerlijnen/referentieniveaus voor dit vak). Kalibreer het niveau, de moeilijkheid en de complexiteit hier exact op; gebruik alléén wat bij dit specifieke leerdoel hoort en blijf bij dit leerjaar:');
+        r.push('LEERLIJN-CONTEXT (' + inv.groep + ', op basis van de SLO-leerlijnen/referentieniveaus voor dit vak). Kalibreer het niveau, de moeilijkheid en de complexiteit hier exact op; gebruik alléén wat bij dit specifieke lesdoel hoort en blijf bij dit leerjaar:');
         r.push(leerlijn);
       }
       // Spellingmethode (bv. Staal, Taal actief, Spelling in Beeld) uit de vrije
@@ -736,7 +746,7 @@
         const max = window.avinkaLeerlijnen && window.avinkaLeerlijnen.werkvormen;
         const werkvBlokken = max ? lts.map(lt => window.avinkaLeerlijnen.werkvormen(lt, inv.groep, lts.length > 1 ? 8 : 12)).filter(Boolean) : [];
         if (werkvBlokken.length) {
-          r.push('WERKVORM-BASE bij ' + (werkvBlokken.length > 1 ? 'deze lestypes' : 'dit lestype') + '. Kies één of twee werkvormen die echt bij dít leerdoel passen en bouw de les eromheen (de werkvorm is de drager, het leerdoel de inhoud). Het zijn sjablonen: vul ze met de concrete leerstof van deze les en stem de moeilijkheid af op de groep:');
+          r.push('WERKVORM-BASE bij ' + (werkvBlokken.length > 1 ? 'deze lestypes' : 'dit lestype') + '. Kies één of twee werkvormen die echt bij dít lesdoel passen en bouw de les eromheen (de werkvorm is de drager, het lesdoel de inhoud). Het zijn sjablonen: vul ze met de concrete leerstof van deze les en stem de moeilijkheid af op de groep:');
           r.push(werkvBlokken.join('\n\n'));
           r.push('');
         }
@@ -810,50 +820,27 @@
     let laatsteTekst = '', laatsteMeta = {}, variatieTeller = 0, verfijnBasis = '', verfijnWensen = [];
     let scherpForce = false; // 'true' = leerkracht gaat door met eigen (brede) doel
 
-    // ── Scherpstellen bij een te breed leerdoel (essentie blijft: doel → les) ──
+    // ── Scherpstellen bij een te breed lesdoel (essentie blijft: doel → les) ──
     // Telt de 'betekenisvolle' woorden in het doel; 1 of minder = te breed.
-    function doelTeVaag(doel) {
-      const stop = new Set(['de', 'het', 'een', 'en', 'met', 'van', 'op', 'in', 'te', 'voor', 'naar', 'over', 'tot', 'bij', 'om', 'je', 'ik', 'we', 'aan']);
-      const woorden = String(doel || '').toLowerCase().replace(/[^a-zà-ÿ0-9\s]/g, ' ').split(/\s+/).filter(w => w && !stop.has(w));
+    // Negeert stopwoorden, de groep-aanduiding, losse getallen én de vaknaam zelf
+    // (dus "rekenen groep 7" telt als 0 betekenisvolle woorden → te vaag).
+    function doelTeVaag(doel, vak) {
+      const stop = new Set(['de', 'het', 'een', 'en', 'met', 'van', 'op', 'in', 'te', 'voor', 'naar', 'over', 'tot', 'bij', 'om', 'je', 'ik', 'we', 'aan', 'groep', 'gr', 'klas']);
+      // Woorden uit de vaknaam ook negeren (rekenen, taal, spelling, lezen…).
+      String(vak || '').toLowerCase().replace(/[^a-zà-ÿ\s]/g, ' ').split(/\s+/).forEach(w => { if (w.length >= 3) stop.add(w); });
+      const woorden = String(doel || '').toLowerCase().replace(/[^a-zà-ÿ0-9\s]/g, ' ').split(/\s+/)
+        .filter(w => w && !stop.has(w) && !/^\d+$/.test(w)); // losse getallen (groepsnummer) eruit
       return woorden.length <= 1;
     }
     function verbergScherp() { document.getElementById('scherp').style.display = 'none'; }
-    async function haalScherpSuggesties(doel, vak, groep) {
-      const leerlijn = (window.avinkaLeerlijnen && window.avinkaLeerlijnen.voor) ? window.avinkaLeerlijnen.voor(vak, groep) : '';
-      const sys = 'Je bent een ervaren leerkracht in het Nederlandse basisonderwijs. Je geeft concrete, scherp afgebakende lesdoelen die precies bij het leerjaar passen.';
-      const usr = [
-        'Een leerkracht wil een les maken voor ' + vak + ', ' + groep + ', maar gaf een nog te breed onderwerp: "' + doel + '".',
-        'Geef 4 concrete, afgebakende lesdoelen die hier goed bij passen en op het niveau van ' + groep + ' liggen.',
-        leerlijn ? ('Niveau (leerlijn ' + groep + '): ' + leerlijn) : '',
-        'Elk lesdoel kort en bruikbaar (maximaal ongeveer 8 woorden), als losse regel. Geen nummering, geen opmaaktekens, geen inleiding.'
-      ].filter(Boolean).join('\n');
-      const txt = await callClaude(sys, usr, 300);
-      return txt.split('\n').map(r => r.replace(/^[\s\-*•\d.)]+/, '').trim()).filter(Boolean).slice(0, 4);
-    }
-    async function toonScherpstel(doel, vak, groep) {
-      const panel = document.getElementById('scherp'), chips = document.getElementById('scherp-chips');
+    // Geen kant-en-klare opties: gewoon een tip, de leerkracht scherpt zelf aan.
+    function toonScherpstel(doel, vak, groep) {
+      const panel = document.getElementById('scherp');
+      document.getElementById('scherp-tip').innerHTML =
+        'Je lesdoel <strong>"' + esc(doel) + '"</strong> is nog wat breed. Eén afgebakende vaardigheid levert een veel scherpere les op, bijvoorbeeld <em>"breuken vergelijken met dezelfde noemer"</em> of <em>"kommagetallen optellen tot 3 decimalen"</em>. Pas je lesdoel hierboven aan en klik opnieuw op "Maak mijn les".';
       panel.style.display = 'block';
-      chips.innerHTML = '<span class="scherp-chip laden-chip">Suggesties laden…</span>';
       panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      try {
-        const sugg = await haalScherpSuggesties(doel, vak, groep);
-        if (!sugg.length) { verbergScherp(); scherpForce = true; maak(); return; }
-        chips.innerHTML = '';
-        sugg.forEach(s => {
-          const b = document.createElement('button');
-          b.className = 'scherp-chip'; b.textContent = s;
-          b.onclick = () => kiesScherpDoel(s);
-          chips.appendChild(b);
-        });
-      } catch (e) {
-        // Niet blokkeren bij een fout: ga gewoon door met het eigen doel.
-        verbergScherp(); scherpForce = true; maak();
-      }
-    }
-    function kiesScherpDoel(tekst) {
-      const inp = document.getElementById('doel');
-      inp.value = tekst; inp.classList.add('filled');
-      verbergScherp(); scherpForce = true; maak();
+      const inp = document.getElementById('doel'); if (inp) inp.focus();
     }
     function maakMetEigenDoel() { verbergScherp(); scherpForce = true; maak(); }
     // ── Meelopende laad-stappen ─────────────────────────────────────────────
@@ -940,10 +927,10 @@
       if (!gekozenVak) { fout.textContent = 'Kies eerst een vakgebied.'; return; }
       const doel = document.getElementById('doel').value.trim();
       const creaVak = isCreatief(gekozenVak);
-      if (!doel && !creaVak) { fout.textContent = 'Vul eerst een leerdoel of onderwerp in.'; return; }
+      if (!doel && !creaVak) { fout.textContent = 'Vul eerst een lesdoel of onderwerp in.'; return; }
 
-      // Te breed leerdoel? Eerst even scherpstellen (niet bij creatief of 'andere versie').
-      if (!andereVersie && !creaVak && !scherpForce && doelTeVaag(doel)) {
+      // Te breed lesdoel? Eerst even scherpstellen (niet bij creatief of 'andere versie').
+      if (!andereVersie && !creaVak && !scherpForce && doelTeVaag(doel, gekozenVak)) {
         toonScherpstel(doel, gekozenVak, document.getElementById('groep').value);
         return;
       }
@@ -1251,7 +1238,7 @@
           var titel = t.replace(/^#+\s*/, ''); fase = null;
           if (/^lesopbouw/i.test(titel)) cur = { type: 'lesopbouw', title: titel, fasen: [] };
           else {
-            var ty = /lesdoel/i.test(titel) ? 'lesdoel' : /lesidee/i.test(titel) ? 'lesidee' : /succescrit/i.test(titel) ? 'succescriteria' : /benodig/i.test(titel) ? 'benodigdheden' : /^tip/i.test(titel) ? 'tips' : /aanpak|zo pak/i.test(titel) ? 'aanpak' : /different/i.test(titel) ? 'differentiatie' : 'overig';
+            var ty = /lesdoel/i.test(titel) ? 'lesdoel' : /lesidee/i.test(titel) ? 'lesidee' : /succescrit/i.test(titel) ? 'succescriteria' : /benodig/i.test(titel) ? 'benodigdheden' : /^tip/i.test(titel) ? 'tips' : /aanpak|zo pak/i.test(titel) ? 'aanpak' : /bouwsteen/i.test(titel) ? 'bouwstenen' : /different/i.test(titel) ? 'differentiatie' : 'overig';
             cur = { type: ty, title: titel, content: [] };
           }
           secs.push(cur); return;
@@ -1315,7 +1302,7 @@
       var metaT = dTable([mcell('Groep', groep) + mcell('Vak', meta.vak) + mcell('Lesduur', meta.duur) + mcell('Lestype', lestypeNaam)], { grid: [2268, 2268, 2268, 2268], bc: 'FFFFFF' });
 
       var body = banner + metaT;
-      var sectIcon = { lesdoel: '🎯', lesidee: '🎨', aanpak: '🪜', succescriteria: '✅', benodigdheden: '🧰', tips: '💡', differentiatie: '🔀', overig: '▸' };
+      var sectIcon = { lesdoel: '🎯', lesidee: '🎨', aanpak: '🪜', succescriteria: '✅', benodigdheden: '🧰', tips: '💡', bouwstenen: '🧩', differentiatie: '🔀', overig: '▸' };
 
       secs.forEach(function (sec) {
         if (sec.type === 'lesopbouw') {
