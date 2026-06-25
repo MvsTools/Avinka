@@ -432,6 +432,7 @@
       naam: "Staal",
       triggers: /\bstaal\b|schraven|zo leer je kinderen lezen en spellen/i,
       uitleg: "Staal (Malmberg) werkt met vaste, genummerde categorieën met herkenbare namen; de naam én de regel worden door alle jaargroepen heen op dezelfde manier gebruikt. De leerling bepaalt eerst de categorie en past dan de bijbehorende regel toe.",
+      jaaropbouw: true,
       // Genummerd 1-34 (officiële Malmberg-regelkaarten). De categorieën bouwen
       // per leerjaar op; `cap` (zie staalCap) bepaalt welke een groep op dit
       // punt in het schooljaar al gehad heeft.
@@ -485,6 +486,29 @@
       naam: "Taal actief",
       triggers: /taal\s*-?\s*actief/i,
       uitleg: "Taal actief (Malmberg) deelt woorden in luisterwoorden (schrijf zoals je hoort), regelwoorden (pas een regel toe) en weetwoorden (uit het hoofd). De categorieën hebben eigen namen zoals plant-woord, kasteel-woord en cijfer-woord.",
+      // Eigen categorienamen + regels, voor herkenning als de leerkracht zo'n naam
+      // noemt (zelfde rol als Staal-cats, maar zonder jaar-cap).
+      cats: [
+        { naam: "plant-woord", regel: "luisterwoord: je schrijft het woord zoals je het hoort" },
+        { naam: "strik-woord", regel: "luisterwoord: je schrijft het woord zoals je het hoort" },
+        { naam: "worst-woord", regel: "luisterwoord: je schrijft het woord zoals je het hoort" },
+        { naam: "wolk-woord", regel: "luisterwoord: soms hoor je hier een /u/, maar je schrijft geen u (wolk, melk)" },
+        { naam: "berg-woord", regel: "luisterwoord: soms hoor je hier een /u/, maar je schrijft geen u (berg, worm)" },
+        { naam: "liter-woord", regel: "weetwoord: je hoort /ie/, je schrijft i" },
+        { naam: "cijfer-woord", regel: "weetwoord: je hoort /s/, je schrijft c" },
+        { naam: "insect-woord", regel: "weetwoord: je hoort /k/, je schrijft k" },
+        { naam: "krab-woord", regel: "weetwoord: je hoort /p/, je schrijft b" },
+        { naam: "thee-woord", regel: "weetwoord: je hoort /t/, je schrijft th" },
+        { naam: "garage-woord", regel: "weetwoord: je hoort /zju/, je schrijft ge" },
+        { naam: "isch-woord", regel: "weetwoord: je hoort /ies/, je schrijft isch(e)" },
+        { naam: "tie-woord", regel: "weetwoord: je hoort /tsie/ of /sie/, je schrijft tie" },
+        { naam: "kasteel-woord", regel: "regelwoord (klankgroep): een medeklinker of tweetekenklank aan het eind van de klankgroep, schrijf zoals je hoort" },
+        { naam: "jager-woord", regel: "regelwoord (klankgroep): een lange klank aan het eind van de klankgroep, schrijf met 1 letter" },
+        { naam: "bakker-woord", regel: "regelwoord (klankgroep): een korte klank aan het eind van de klankgroep, schrijf de volgende medeklinker dubbel" },
+        { naam: "keuken-woord", regel: "regelwoord (klankgroep): een tweetekenklank aan het eind van de klankgroep, schrijf zoals je hoort" },
+        { naam: "duiven-woord", regel: "regelwoord: een woord dat op /f/ eindigt wordt bij verlengen v (duif → duiven)" },
+        { naam: "huizen-woord", regel: "regelwoord: een woord dat op /s/ eindigt wordt bij verlengen z (huis → huizen)" }
+      ],
       categorieen: [
         "Luisterwoorden: plant-/strik-/worst-woord (schrijf zoals je hoort), wolk-/berg-woord, v-f en s-z-woord, sch-/schr-woord, ng-/nk-woord, eer-oor-eur-woord, aai-ooi-oei-woord, eeuw-ieuw-uw-woord",
         "Weetwoorden: cht-/ch-woord (nacht/lach), ei-ij, au-ou, liter-woord (/ie/→i), cijfer-woord (/s/→c) en insect-woord, krab-woord (/p/→b), thee-woord (/t/→th), leenwoorden (team/chauffeur/taxi/baby), voor- en achtervoegsels (-ig, -lijk, -heid), garage-woord (/zju/→ge), isch(e)-woord, tie-woord, -iaal/-ieel/-ueel",
@@ -503,11 +527,22 @@
       ]
     }
   };
+  // Herkenbare, uniek-Staal categorienamen (de mascotte-namen). Noemt een
+  // leerkracht "colawoord" of "centwoord", dan bedoelt die de Staal-categorie,
+  // ook zonder het woord "Staal" erbij. (Generieke termen als voorvoegsel of
+  // verkleinwoord staan er bewust NIET bij; die zijn niet uniek voor Staal.)
+  var STAAL_NAMEN = /\b(hak|zing|lucht|plank|langermaak|kilo|cent|cola|politie|tropisch|taxi|chef|thee|caf[ée]|cadeau|route|garage|lolly|trema|militair|trottoir)[\s-]?woord(en)?\b/i;
+  // Uniek-Taal-actief categorienamen (Staal noemt cent het centwoord, Taal actief
+  // het cijfer-woord). Gedeelde namen als thee-/garage-woord vallen al onder Staal
+  // hierboven; de regel is daar hetzelfde, dus dat geeft niet.
+  var TA_NAMEN = /\b(plant|strik|worst|wolk|berg|kasteel|jager|bakker|keuken|liter|cijfer|insect|krab|duiven|huizen)[\s-]?woord(en)?\b/i;
   function spellingMethodeKey(context) {
     var txt = String(context || "");
     for (var k in SPELLING_METHODES) {
       if (SPELLING_METHODES.hasOwnProperty(k) && SPELLING_METHODES[k].triggers.test(txt)) return k;
     }
+    if (STAAL_NAMEN.test(txt)) return "staal"; // Staal-jargon zonder de naam "Staal"
+    if (TA_NAMEN.test(txt)) return "taalactief"; // Taal-actief-jargon zonder de naam
     return null;
   }
 
@@ -559,11 +594,12 @@
       var greep = sample(blok.lijst, n || 12);
       return blok.kern + "\nEen greep uit de werkvorm-base (kies er één of twee die echt bij dít leerdoel en deze groep passen en werk ze concreet uit met het leerdoel erin; varieer en stem het niveau af op de bouw): " + greep.map(function (x) { return "• " + x; }).join("  ");
     },
-    // Spellingmethode uit de vrije aanvullingen halen (bv. "we werken met Staal")
-    // en de bijbehorende categorie-indeling + namen/regels teruggeven, of ''.
-    // groep + maand sturen bij Staal de opbouw: alleen de categorieën die de
-    // groep op dit punt in het schooljaar al gehad heeft. maand = 1-12 (default
-    // de huidige maand). vorige groepen tellen volledig mee.
+    // Spellingmethode uit de tekst halen (lesdoel + aanvullingen, bv. "het
+    // colawoord van de methode Staal") en de categorie-indeling + namen/regels
+    // teruggeven, of ''. Noemt de tekst een specifieke categorie, dan komt die
+    // regel altijd mee (ook boven de jaar-cap). groep + maand sturen bij Staal de
+    // opbouw: alleen de categorieën die de groep op dit punt in het schooljaar al
+    // gehad heeft. maand = 1-12 (default de huidige maand).
     spellingMethode: function (context, groep, maand) {
       var key = spellingMethodeKey(context);
       if (!key) return "";
@@ -571,10 +607,23 @@
       var kop = "SPELLINGMETHODE: de school werkt met " + m.naam + ". " + m.uitleg +
         " Gebruik in deze les de categorie-indeling, de categorienamen én de regelformuleringen van " + m.naam +
         " (precies zoals de methode ze noemt), niet die van een andere methode. Behandel bij voorkeur één hoofdcategorie per les en verwijs waar dat helpt naar eerder geleerde categorieën." +
+        " Leg in de les de spellingregel van de behandelde categorie EXPLICIET uit in kindtaal en gebruik meerdere passende voorbeeldwoorden uit die categorie. Noem de naam van de methode (" + m.naam + ") niet in de tekst die voor de leerlingen bedoeld is; die is alleen voor jou als kader." +
         " BELANGRIJK: gebruik de methode alléén om aan te sluiten op de categorienamen, regels en het niveau. Maak GÉÉN kopie van een gewone methodeles. De les moet een eigen, goed uitgedachte en aantrekkelijke les blijven met een sterke didactische opbouw, een pakkende context en actieve werkvormen, die méér biedt dan een standaard methodeles (anders kan de leerkracht net zo goed de methode zelf pakken).";
 
-      // Staal: pas de jaaropbouw toe (cap op categorienummer).
-      if (m.cats) {
+      // Noemt de leerkracht een specifieke categorie van deze methode (bv.
+      // "colawoord", "kasteelwoord")? Geef die regel dan altijd mee. Vergelijk
+      // genormaliseerd zodat "cola-woord", "cola woord" en "colawoord" allemaal matchen.
+      var norm = function (s) { return String(s).toLowerCase().replace(/[^a-zà-ÿ]/g, ""); };
+      var normTxt = norm(context);
+      var doelCat = null;
+      if (m.cats) { for (var i = 0; i < m.cats.length; i++) { if (normTxt.indexOf(norm(m.cats[i].naam)) !== -1) { doelCat = m.cats[i]; break; } } }
+      var doelRegel = doelCat
+        ? ("\nDeze les gaat specifiek over de categorie \"" + doelCat.naam + "\"" + (doelCat.regel ? ": " + doelCat.regel : "") +
+          ". Behandel deze categorie als hoofdonderwerp: leg de regel expliciet uit en gebruik meerdere voorbeeldwoorden die in deze categorie passen.")
+        : "";
+
+      // Staal: jaaropbouw (cap op categorienummer).
+      if (m.jaaropbouw) {
         if (maand == null) { try { maand = new Date().getMonth() + 1; } catch (e) { maand = 6; } }
         var g = (String(groep || "").match(/[3-8]/) || [])[0];
         var cap = staalCap(groep, maand);
@@ -582,7 +631,8 @@
         var extras = g ? m.extra.filter(function (e) { return e.vanaf <= +g; }) : m.extra;
         var uit = kop +
           " LET OP de opbouw: deze klas (groep " + (g || "?") + ") heeft op dit moment in het schooljaar de categorieën t/m nummer " + cap +
-          " gehad. Gebruik ALLEEN deze (en eerder geleerde) categorieën en introduceer geen latere; tenzij de leerkracht in het leerdoel of de aanvullingen zelf een latere categorie noemt." +
+          " gehad. Gebruik ALLEEN deze (en eerder geleerde) categorieën en introduceer geen latere; tenzij de leerkracht in het lesdoel of de aanvullingen zelf een latere categorie noemt." +
+          doelRegel +
           "\nBeschikbare categorieën van " + m.naam + ":\n" +
           beschikbaar.map(function (c) { return "• " + c.n + ". " + c.naam + (c.regel ? ": " + c.regel : ""); }).join("\n");
         if (extras.length) {
@@ -592,8 +642,10 @@
         return uit;
       }
 
-      // Overige methodes: de algemene categorielijst (kies wat bij de groep past).
-      return kop + " Kies de categorie(ën) die past bij het leerdoel en het niveau van de groep.\nCategorieën van " + m.naam + ":\n" +
+      // Overige methodes (geen jaar-cap): algemene categorielijst + evt. de
+      // herkende categorie met haar regel.
+      return kop + " Kies de categorie(ën) die past bij het lesdoel en het niveau van de groep." + doelRegel +
+        "\nCategorieën van " + m.naam + ":\n" +
         m.categorieen.map(function (c) { return "• " + c; }).join("\n");
     },
     verwerkingen: function (vak, groep, n) {

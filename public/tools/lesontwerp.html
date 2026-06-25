@@ -666,7 +666,7 @@
         '### Basis',
         'De kernopdracht die de meeste leerlingen (basisniveau) zelfstandig doen, precies op het lesdoel.',
         '### Verlengde instructie',
-        'Voor leerlingen die meer steun nodig hebben: zij oefenen HETZELFDE lesdoel langer en vaker, samen met de leerkracht aan de instructietafel tijdens de zelfstandige verwerking (nog eens voordoen, samen stap voor stap, extra herhaling). Het is dus niet per se een makkelijker doel, maar meer begeleide inoefening van ditzelfde doel.',
+        'Voor leerlingen die meer steun nodig hebben: zij oefenen HETZELFDE lesdoel langer en vaker, samen met de leerkracht in een klein groepje tijdens de zelfstandige verwerking (nog eens voordoen, samen stap voor stap, extra herhaling). Doe dit op de plek waar de les zich afspeelt (bij een buitenles dus ook buiten, niet aan een instructietafel binnen). Het is niet per se een makkelijker doel, maar meer begeleide inoefening van ditzelfde doel.',
         '### Verrijkende opdrachten',
         'Een echte uitdaging voor wie het lesdoel al beheerst: een moeilijkere variant, een transfer- of denkopdracht die verder gaat dan het lesdoel. Geen "meer van hetzelfde".'].join('\n');
     }
@@ -693,6 +693,8 @@
         '- Houd het lesdoel van begin tot eind centraal; werk doelgericht (backward design).',
         '- Zorg voor afwisseling en betrokkenheid; laat leerlingen zo min mogelijk passief luisteren.',
         '- Verzin geen feitelijke onjuistheden. Bij reken-/taalinhoud: geef correcte voorbeelden en antwoorden.',
+        '- Controleer elke opdracht op denkfoutjes: de activiteit moet de leerling de doelvaardigheid ÉCHT laten uitvoeren, en het antwoord mag niet al in de opgave of het materiaal weggegeven worden. Loop je eigen opdrachten kritisch na en haal zulke logische fouten eruit. (Voorbeeld van wat NIET moet: oefen je het kiezen tussen k en c, dan moet je het woord niet kant-en-klaar geschreven laten zien, want dan staat het antwoord er al; bied het dan gesproken aan, of met een open plek zoals "_unnen".)',
+        '- Gebruik als voorbeeldwoorden en in contexten alleen ALLEDAAGSE, bekende woorden die kinderen van de opgegeven groep echt kennen en zelf gebruiken. Vermijd zeldzame, ouderwetse, vaktechnische of moeilijke woorden (dus géén woorden als "cravat" of "etui-maker"). Kies bij spelling voorbeeldwoorden die zowel in de categorie passen ALS tot de woordenschat van dit leerjaar horen; bij twijfel kies je het gewonere woord.',
         '- Verzin NOOIT specifieke bronnen, links of titels (dus geen verzonnen YouTube- of Schooltv-links, boektitels of websites; die bestaan vaak niet of zijn verouderd). Noem het SOORT bron dat past (een atlas, een tijdbalk, een prentenboek, een bronkaart) en geef voor een filmpje een zoekhint in plaats van een link, bijvoorbeeld: zoek een kort filmpje over de Romeinen, bijvoorbeeld op Schooltv.',
         '- HOUD HET REALISTISCH EN HAALBAAR: een leerkracht die deze les \'s ochtends openslaat moet \'m diezelfde dag binnen de lesduur kunnen voorbereiden én geven. Gebruik alleen materiaal dat standaard op een basisschool aanwezig is (wisbordjes, schrift, bord, eventueel een kopieerblad). Vraag geen speciale of grote aantallen spullen (dus niet "26 klembordjes" of materiaal dat je moet aanschaffen/lamineren).',
         '- Gebruik uitsluitend de gevraagde Markdown-koppen; geen inleidende of afsluitende praatjes eromheen.',
@@ -719,7 +721,8 @@
       // Spellingmethode (bv. Staal, Taal actief, Spelling in Beeld) uit de vrije
       // aanvullingen: dan de categorienamen/regels van díe methode gebruiken.
       if (/spelling|taal/i.test(inv.vak || '')) {
-        const spm = (window.avinkaLeerlijnen && window.avinkaLeerlijnen.spellingMethode) ? window.avinkaLeerlijnen.spellingMethode(inv.context, inv.groep) : '';
+        const spmTekst = ((inv.doel || '') + ' ' + (inv.context || '')).trim();
+        const spm = (window.avinkaLeerlijnen && window.avinkaLeerlijnen.spellingMethode) ? window.avinkaLeerlijnen.spellingMethode(spmTekst, inv.groep) : '';
         if (spm) { r.push(''); r.push(spm); }
       }
       // Ideeënbank (bijv. creatief): een palet waaruit de AI kiest/varieert.
@@ -738,6 +741,12 @@
         r.push('');
         lts.forEach(lt => { if (LESTYPE_REGIE[lt]) r.push(LESTYPE_REGIE[lt]); });
         r.push('');
+        const nietKlas = lts.filter(lt => lt !== 'klas');
+        if (nietKlas.length) {
+          r.push('De gekozen lessoort bepaalt waar en hoe de HELE les verloopt, niet één losse fase. Bij een buitenles vindt het grootste deel van de les buiten plaats (zeker de begeleide inoefening en de zelfstandige verwerking), bij bewegend leren zit de beweging door de hele les heen, en bij coöperatief leren werken de leerlingen het grootste deel samen. Maak er dus geen gewone binnenles van met één los buiten-, beweeg- of samenwerkmomentje. Alleen een korte klassikale introductie of afronding mag eventueel anders.');
+          r.push('Ga ervan uit dat de les ECHT in die setting plaatsvindt: de leerkracht heeft er bewust voor gekozen. Maak GEEN voorbehoud over het weer of de omstandigheden (dus niet "als het droog is" of "indien mogelijk buiten"). Laat ook de begeleiding en de verlengde instructie in diezelfde setting gebeuren: bij een buitenles trek je een klein groepje apart BUITEN, niet aan een instructietafel binnen.');
+          r.push('');
+        }
         if (lts.length > 1) {
           r.push('LET OP: hierboven staan MEERDERE lestypes die je in ÉÉN samenhangende les moet combineren (bijvoorbeeld een coöperatieve werkvorm buiten, of bewegend leren in de klas). Maak dus geen losse, aparte lessen.');
           r.push('');
