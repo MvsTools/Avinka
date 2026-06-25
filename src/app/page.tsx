@@ -7,7 +7,8 @@ import { signout } from "@/app/auth/actions";
 import Prijzen from "@/components/Prijzen";
 import Footer from "@/components/Footer";
 import Logo from "@/components/Logo";
-import { PROEF_DAGEN } from "@/lib/abonnement";
+import { PROEF_DAGEN, heeftBetaaldAbonnement } from "@/lib/abonnement";
+import { getAbonnementServer } from "@/lib/abonnement-server";
 
 /* ──────────────────────────────────────────────────────────────────────────
    ALLE TEKSTEN STAAN HIERBOVEN, OP ÉÉN PLEK.
@@ -263,6 +264,11 @@ export default async function Home({
     redirect("/dashboard");
   }
 
+  // Een ingelogde bezoeker die de startpagina tóch bekijkt: alleen wie al een
+  // betaald abonnement heeft, hoeft de prijzen niet meer te zien. Proef- en
+  // verlopen accounts wél (zij kunnen nog een plan kiezen).
+  const toonPrijzen = user ? !heeftBetaaldAbonnement(await getAbonnementServer()) : true;
+
   // Toont automatisch de foto zodra die in public/ staat; anders een MvS-monogram.
   const fotoBestand = ["michael.jpg", "michael.jpeg", "michael.png", "michael.webp"].find(
     (f) => existsSync(path.join(process.cwd(), "public", f)),
@@ -277,12 +283,14 @@ export default async function Home({
             <Logo vol className="h-10 w-auto" priority />
           </div>
           <nav className="flex items-center gap-2 sm:gap-3">
-            <a
-              href="#prijzen"
-              className="hidden rounded-lg px-3 py-2 text-base font-semibold text-ink/70 hover:text-ink sm:inline"
-            >
-              Prijzen
-            </a>
+            {toonPrijzen && (
+              <a
+                href="#prijzen"
+                className="hidden rounded-lg px-3 py-2 text-base font-semibold text-ink/70 hover:text-ink sm:inline"
+              >
+                Prijzen
+              </a>
+            )}
             {user ? (
               <>
                 <Link

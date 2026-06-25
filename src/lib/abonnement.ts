@@ -179,6 +179,13 @@ export function proefLoopt(ab: Abonnement, nu: Date = new Date()): boolean {
   return ab.status === "proef" && proefDagenResterend(ab, nu) > 0;
 }
 
+// Heeft deze gebruiker een gekozen, betaald abonnement? Een proefaccount (nog
+// geen plan gekozen) of een verlopen account hoort hier NIET bij — die mogen de
+// prijzen nog zien. Gebruikt o.a. om de "Prijzen"-knop te verbergen.
+export function heeftBetaaldAbonnement(ab: Abonnement): boolean {
+  return ab.plan != null && (ab.status === "actief" || ab.status === "opgezegd");
+}
+
 // Mag deze gebruiker de tools überhaupt gebruiken?
 // Zolang betalingen niet live zijn: iedereen ja (testfase).
 export function heeftToegang(ab: Abonnement, nu: Date = new Date()): boolean {
