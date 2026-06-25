@@ -19,6 +19,7 @@ const STANDAARD = {
   taalniveau: "standaard",
   lengte: "gemiddeld",
   aanspreekvorm: "je",
+  standaardgroep: "",
 };
 
 export async function GET() {
@@ -32,7 +33,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("instellingen")
-    .select("toon, taalniveau, lengte, aanspreekvorm")
+    .select("toon, taalniveau, lengte, aanspreekvorm, standaardgroep")
     .maybeSingle();
   if (error || !data) {
     return NextResponse.json(STANDAARD);
@@ -43,5 +44,6 @@ export async function GET() {
     taalniveau: data.taalniveau ?? STANDAARD.taalniveau,
     lengte: data.lengte ?? STANDAARD.lengte,
     aanspreekvorm: data.aanspreekvorm ?? STANDAARD.aanspreekvorm,
+    standaardgroep: data.standaardgroep ?? STANDAARD.standaardgroep,
   });
 }

@@ -36,8 +36,8 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --ink: #1a1a2e; --cream: #f5f0e8; --warm: #e8ddd0;
-    --accent: #2f9e6e; --accent2: #25855a; --muted: #8a8070; --card: #ffffff;
+    --ink: #221c3a; --cream: #fbf6ee; --warm: #e9e1d2;
+    --accent: #2f9e6e; --accent2: #25855a; --muted: #6b6880; --card: #ffffff;
     /* Avinka-vormtaal (gelijk aan Toetsanalyse/Rapporten) — huisstijl.css zet --ink/--cream/--accent etc. al naar het platform-palet */
     --violet: #25855a; --violet-soft: #e7f4ed; --brand-soft: #e7f4ed;
     --emerald: #059669; --emerald-soft: #e7f6ef;
@@ -82,7 +82,7 @@
   .apikey-status { font-size: 11px; color: var(--ink); font-weight: 500; flex-basis: 100%; display: none; }
   .apikey-status.visible { display: block; }
 
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 22px 22px 24px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 20px 22px 22px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
   .card-label { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; color: var(--ink); letter-spacing: -0.3px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .avg-badge { display: inline-flex; align-items: center; gap: 5px; background: var(--brand-soft); color: var(--accent); font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; font-size: 11.5px; letter-spacing: 0.2px; padding: 4px 11px; border: 1px solid transparent; border-radius: 999px; cursor: pointer; user-select: none; position: relative; }
   .avg-badge:hover { border-color: var(--accent); }
@@ -148,11 +148,12 @@
   .fields-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
   @media (max-width: 620px) { .fields-3, .fields-2 { grid-template-columns: 1fr; } }
   .field-wrap { display: flex; flex-direction: column; gap: 5px; }
-  .field-label { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; }
-  .field-select, .field-input { width: 100%; border: 1.5px solid var(--warm); background: var(--cream); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; color: var(--ink); padding: 9px 12px; border-radius: 9px; outline: none; transition: border-color 0.2s; appearance: none; -webkit-appearance: none; }
-  .field-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a8070' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; cursor: pointer; }
-  .field-select:focus, .field-input:focus { border-color: var(--accent2); }
-  .field-select.filled, .field-input.filled { border-color: var(--accent2); background: rgba(47,158,110,0.04); }
+  .field-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; }
+  .field-select, .field-input { width: 100%; border: 1px solid var(--line-strong); background: var(--cream); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; color: var(--ink); padding: 11px 13px; border-radius: 12px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; appearance: none; -webkit-appearance: none; }
+  .field-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6880' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 13px center; padding-right: 34px; cursor: pointer; }
+  .field-select:focus, .field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,158,110,0.15); }
+  .field-select.filled, .field-input.filled { border-color: var(--accent); background: var(--brand-soft); }
+  textarea.field-input { resize: vertical; min-height: 82px; line-height: 1.6; border-radius: 14px; padding: 13px 15px; }
   .field-hint { font-size: 11px; color: var(--muted); line-height: 1.4; }
 
   .opt-rij { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -190,12 +191,12 @@
   .kopje-tekst:focus { border-color: var(--accent2); }
   .gevoelig-note { margin-top: 7px; font-size: 12px; line-height: 1.45; color: #8a4b2f; background: rgba(190,18,60,0.08); border-left: 3px solid var(--accent); padding: 7px 10px; border-radius: 6px; display: none; }
   .gevoelig-note.visible { display: block; }
-  .privacy-tip { margin-top: 10px; border: 1.5px solid var(--warm); background: var(--cream); border-radius: 10px; overflow: hidden; }
-  .privacy-tip > summary { cursor: pointer; list-style: none; padding: 9px 12px; font-size: 13px; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 7px; user-select: none; }
+  .privacy-tip { margin-top: 10px; border: 1px solid var(--line-strong); background: var(--cream); border-radius: 14px; overflow: hidden; }
+  .privacy-tip > summary { cursor: pointer; list-style: none; padding: 11px 14px; font-size: 13px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 8px; user-select: none; }
   .privacy-tip > summary::-webkit-details-marker { display: none; }
   .privacy-tip > summary::after { content: '›'; margin-left: auto; transition: transform .2s; opacity: .55; font-size: 17px; line-height: 1; }
   .privacy-tip[open] > summary::after { transform: rotate(90deg); }
-  .privacy-tip-body { padding: 0 12px 12px; font-size: 13px; line-height: 1.5; color: var(--ink); }
+  .privacy-tip-body { padding: 0 14px 14px; font-size: 13px; line-height: 1.55; color: var(--ink); }
   .privacy-tip-body p { margin: 0 0 10px; }
   .privacy-vb { border-radius: 8px; padding: 9px 11px; margin-bottom: 8px; }
   .privacy-vb-tekst { font-style: italic; margin-bottom: 5px; }
@@ -443,17 +444,21 @@
   .land-note-ic { flex-shrink: 0; font-size: 13px; opacity: .7; }
 </style>
   <link rel="stylesheet" href="/avinka-huisstijl.css">
+  <link rel="stylesheet" href="/avinka-dropdown.css">
+  <link rel="stylesheet" href="/avinka-groep.css">
   <script src="/avinka-dialog.js"></script>
   <script src="/avinka-privacy.js"></script>
   <script src="/avinka-datum.js"></script>
   <script src="/avinka-masking.js"></script>
   <script src="/avinka-voorkeuren.js"></script>
+  <script src="/avinka-dropdown.js"></script>
+  <script src="/avinka-groep.js"></script>
 </head>
 <body>
 
 <div class="container op-landing">
   <div class="terug-balk">
-    <a href="/dashboard" class="terug-menu">← Terug naar menu</a>
+    <a href="/dashboard" class="terug-menu">← Terug naar dashboard</a>
     <a href="/dashboard" aria-label="Avinka" style="display:inline-flex;flex-shrink:0;"><img src="/Avinka_wordmerk.png" alt="Avinka" style="height:18px;width:auto;display:block;opacity:.82;"></a>
     <span class="merk"><span class="merk-mark">✉</span><span class="merk-text">Oudercontact</span></span>
   </div>
@@ -533,7 +538,16 @@
       <div class="fields-2">
         <div class="field-wrap">
           <label class="field-label">Groep <span style="text-transform:none; letter-spacing:0; font-weight:400; opacity:.7;">— optioneel</span></label>
-          <input type="text" class="field-input" id="f-groep" placeholder="bijv. Groep 5 of De Dolfijnen" oninput="this.classList.toggle('filled', !!this.value)">
+          <select class="field-select avinka-groep" id="f-groep" aria-label="Groep" onchange="this.classList.toggle('filled', !!this.value)">
+            <option value="">—</option>
+            <option value="Groep 1/2">Groep 1/2</option>
+            <option value="Groep 3">Groep 3</option>
+            <option value="Groep 4">Groep 4</option>
+            <option value="Groep 5">Groep 5</option>
+            <option value="Groep 6">Groep 6</option>
+            <option value="Groep 7">Groep 7</option>
+            <option value="Groep 8">Groep 8</option>
+          </select>
         </div>
         <div class="field-wrap">
           <label class="field-label">Taalniveau</label>
@@ -1349,11 +1363,11 @@
         </div>
         <div class="field-wrap" style="margin-bottom:0;">
           <label class="field-label">Groep</label>
-          <select class="field-select" id="gesp-groep" onchange="gesp.groep=this.value; this.classList.toggle('filled', !!this.value); gespStartCheck()">
+          <select class="field-select avinka-groep" id="gesp-groep" aria-label="Groep" onchange="gesp.groep=this.value; this.classList.toggle('filled', !!this.value); gespStartCheck()">
             <option value="">Kies…</option>
-            <option>1</option><option>2</option><option>3</option><option>4</option>
-            <option>5</option><option>6</option><option>7</option><option>8</option>
-            <option value="1/2">1/2 (combinatie)</option>
+            <option value="1">Groep 1</option><option value="2">Groep 2</option><option value="3">Groep 3</option><option value="4">Groep 4</option>
+            <option value="5">Groep 5</option><option value="6">Groep 6</option><option value="7">Groep 7</option><option value="8">Groep 8</option>
+            <option value="1/2">Groep 1/2 (combinatie)</option>
           </select>
         </div>
       </div>
@@ -1783,7 +1797,7 @@ function kiesOpt(groep, el) {
   el.classList.add('sel');
   week[groep] = el.dataset.v;
 }
-document.getElementById('f-groep').addEventListener('input', e => { week.groep = e.target.value; });
+document.getElementById('f-groep').addEventListener('change', e => { week.groep = e.target.value; });
 document.getElementById('f-taalniveau').addEventListener('change', e => { week.taalniveau = e.target.value; });
 
 function renderSuggesties() {

@@ -22,6 +22,7 @@
     taalniveau: "standaard",
     lengte: "gemiddeld",
     aanspreekvorm: "je",
+    standaardgroep: "",
   };
   var data = Object.assign({}, STANDAARD);
 

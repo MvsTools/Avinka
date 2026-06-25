@@ -80,8 +80,10 @@
   .apikey-status { font-size: 11px; color: var(--ink); font-weight: 500; flex-basis: 100%; display: none; }
   .apikey-status.visible { display: block; }
 
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 26px; margin-bottom: 18px; box-shadow: var(--shadow-sm); }
-  .card-label { font-size: 12.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.9px; margin-bottom: 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 20px 22px 22px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
+  .card-label { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; color: var(--ink); letter-spacing: -0.3px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+  .card-label .kaart-ic { flex-shrink: 0; width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: var(--brand-soft); color: var(--accent); }
+  .card-label .kaart-ic svg { width: 22px; height: 22px; }
   .avg-badge { display: inline-flex; align-items: center; gap: 5px; background: var(--violet-soft); color: var(--violet); font-weight: 600; font-size: 11.5px; letter-spacing: 0.2px; padding: 4px 11px; border: 1px solid transparent; border-radius: 999px; cursor: pointer; user-select: none; position: relative; text-transform: none; }
   .avg-badge:hover { border-color: var(--violet); }
   .avg-badge .privacy-pop { position: absolute; top: 30px; left: 0; width: 250px; max-width: 72vw; background: var(--card); border: 1px solid var(--line-strong); border-radius: 14px; box-shadow: var(--shadow-md); padding: 13px 15px; z-index: 20; opacity: 0; transform: translateY(-6px); pointer-events: none; transition: opacity 0.22s ease, transform 0.22s ease; text-align: left; color: var(--ink); font-weight: 400; letter-spacing: 0; font-size: 12px; line-height: 1.5; text-transform: none; }
@@ -306,11 +308,14 @@
   .grouplabel::after { content: ''; flex: 1; height: 1px; background: var(--line-strong); }
 
   /* open keuzeregel */
-  .setrow { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 15px 2px; border-bottom: 1px solid var(--line); }
-  .setrow-l { font-size: 15.5px; font-weight: 600; color: var(--ink); min-width: 0; }
+  .setrow { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 2px; border-bottom: 1px solid var(--line); }
+  .setrow-l { font-size: 14px; font-weight: 600; color: var(--ink); min-width: 0; }
   .setrow-l .req { color: var(--violet); margin-left: 1px; }
   .setrow-l small { display: block; font-size: 12.5px; font-weight: 500; color: var(--muted); margin-top: 2px; }
   .setrow-foot { font-size: 12.5px; color: var(--muted); line-height: 1.5; margin: 10px 2px 0; }
+  /* settings staan in witte kaarten: eerste rij strak onder de kaart-kop, laatste zonder lijn */
+  .card .setrow:last-child { border-bottom: none; }
+  .card > .setrow:first-of-type { padding-top: 4px; }
 
   /* stepper (aantal) */
   .stepper { display: inline-flex; align-items: center; gap: 4px; background: #fff; border: 1px solid var(--line-strong); border-radius: 999px; padding: 4px; }
@@ -336,8 +341,8 @@
 
   /* lengte als staafjes-grafiek */
   .bars { display: flex; gap: 9px; margin: 4px 0 2px; }
-  .bar { flex: 1; border: 1.5px solid var(--line-strong); background: #fff; border-radius: 14px; padding: 12px; cursor: pointer; text-align: center; transition: .15s; }
-  .bar .bg { height: 46px; display: flex; align-items: flex-end; justify-content: center; gap: 4px; margin-bottom: 9px; }
+  .bar { flex: 1; border: 1.5px solid var(--line-strong); background: #fff; border-radius: 14px; padding: 10px; cursor: pointer; text-align: center; transition: .15s; }
+  .bar .bg { height: 30px; display: flex; align-items: flex-end; justify-content: center; gap: 4px; margin-bottom: 7px; }
   .bar .bg i { width: 7px; border-radius: 3px; background: var(--line-strong); display: block; }
   .bar.on { border-color: var(--accent); background: var(--violet-soft); }
   .bar.on .bg i { background: var(--accent); }
@@ -346,7 +351,7 @@
 
   /* eigen uitklapmenu (i.p.v. wit OS-menu met ander lettertype) */
   .dd { position: relative; display: inline-block; }
-  .dd-btn { display: inline-flex; align-items: center; gap: 9px; border: 1px solid transparent; background: transparent; font-family: inherit; font-size: 15.5px; font-weight: 700; color: var(--ink); cursor: pointer; padding: 8px 13px; border-radius: 999px; transition: .15s; max-width: min(60vw, 330px); }
+  .dd-btn { display: inline-flex; align-items: center; gap: 9px; border: 1px solid transparent; background: transparent; font-family: inherit; font-size: 14px; font-weight: 600; color: var(--ink); cursor: pointer; padding: 7px 12px; border-radius: 999px; transition: .15s; max-width: min(60vw, 330px); }
   .dd-btn .dd-lb { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .dd-btn:hover, .dd.open .dd-btn { background: #fff; border-color: rgba(47,158,110,0.35); }
   .dd-cv { width: 7px; height: 7px; flex-shrink: 0; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg) translateY(-1px); transition: transform .18s; }
@@ -388,7 +393,6 @@
 
   /* vervolgschermen: topbalk + open inhoud (geen doosjes) */
   .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-  .scherm .card { background: transparent; border: none; box-shadow: none; padding: 0; border-radius: 0; }
 
   /* Schermkoppen (scherm 2-4): zelfde speelse Fraunces-kop + amber swoosh als de hero */
   .kop { margin: 2px 0 22px; }
@@ -479,7 +483,7 @@
 <body>
 <div class="app">
   <div class="top">
-    <a href="/dashboard" class="terug-menu">← Terug naar menu</a>
+    <a href="/dashboard" class="terug-menu">← Terug naar dashboard</a>
     <a href="/dashboard" aria-label="Avinka" style="display:inline-flex;flex-shrink:0;"><img src="/Avinka_wordmerk.png" alt="Avinka" style="height:18px;width:auto;display:block;opacity:.82;"></a>
     <span class="top-logo"><span class="mk">✎</span>Rapporten</span>
   </div>
@@ -540,7 +544,8 @@
       <div class="step" data-step="4"><span class="step-num">4</span><span class="lbl">Klaar</span></div>
     </div>
 
-    <div class="grouplabel">De basis</div>
+    <div class="card">
+      <div class="card-label"><span class="kaart-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span><span>De basis</span></div>
     <div class="setrow">
       <label class="setrow-l">Groep <span class="req">*</span></label>
       <div class="dd" id="dd-groep">
@@ -570,7 +575,10 @@
       <div class="pick" data-v="eindrapport"><span class="pic" style="background:#e7f6ef"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><span class="pt">Eindrapport</span><br><span class="ps">einde schooljaar</span></span></div>
     </div>
 
-    <div class="grouplabel">Hoe het klinkt</div>
+    </div>
+
+    <div class="card">
+      <div class="card-label"><span class="kaart-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-11.3 7.8L3 21l1.7-6.7A8.4 8.4 0 1 1 21 11.5z"/><path d="M8.5 11h7M8.5 14h4"/></svg></span><span>Hoe het klinkt</span></div>
     <div class="setrow" style="border:none;padding-bottom:8px"><label class="setrow-l">Toon<small>de sfeer van de tekst</small></label></div>
     <div class="tones" id="tone-cards">
       <div class="tone on" data-v="warm"><div class="tn">Warm</div><div class="td">hartelijk</div></div>
@@ -581,9 +589,9 @@
     </div>
     <div class="setrow" style="border:none;padding-bottom:8px"><label class="setrow-l">Lengte <span class="req">*</span><small>hoeveel zinnen per kind</small></label></div>
     <div class="bars" id="lengte-bars">
-      <div class="bar" data-v="kort"><div class="bg"><i style="height:16px"></i><i style="height:24px"></i></div><div class="bt">Kort</div><div class="bs">3–4 zinnen</div></div>
-      <div class="bar" data-v="gemiddeld"><div class="bg"><i style="height:16px"></i><i style="height:26px"></i><i style="height:36px"></i></div><div class="bt">Gemiddeld</div><div class="bs">5–7 zinnen</div></div>
-      <div class="bar" data-v="uitgebreid"><div class="bg"><i style="height:16px"></i><i style="height:26px"></i><i style="height:36px"></i><i style="height:46px"></i></div><div class="bt">Uitgebreid</div><div class="bs">8–11 zinnen</div></div>
+      <div class="bar" data-v="kort"><div class="bg"><i style="height:12px"></i><i style="height:16px"></i></div><div class="bt">Kort</div><div class="bs">3–4 zinnen</div></div>
+      <div class="bar" data-v="gemiddeld"><div class="bg"><i style="height:12px"></i><i style="height:18px"></i><i style="height:24px"></i></div><div class="bt">Gemiddeld</div><div class="bs">5–7 zinnen</div></div>
+      <div class="bar" data-v="uitgebreid"><div class="bg"><i style="height:12px"></i><i style="height:18px"></i><i style="height:24px"></i><i style="height:30px"></i></div><div class="bt">Uitgebreid</div><div class="bs">8–11 zinnen</div></div>
     </div>
     <div class="setrow">
       <label class="setrow-l">Perspectief<small>vanuit wie je schrijft</small></label>
@@ -600,11 +608,12 @@
       </div>
     </div>
     <div class="setrow">
-      <label class="setrow-l">Taalniveau<small>moeilijkheid van de tekst</small></label>
+      <label class="setrow-l">Taalniveau</label>
       <div class="dd" data-field="f-taalniveau">
         <button class="dd-btn" type="button"><span class="dd-lb">Standaard</span><span class="dd-cv"></span></button>
         <div class="dd-pop"><div class="dd-opt sel" data-v="standaard">Standaard</div><div class="dd-opt" data-v="b1">Eenvoudig (B1)</div><div class="dd-opt" data-v="a2">Heel eenvoudig (A2)</div></div>
       </div>
+    </div>
     </div>
 
     <div class="preview">

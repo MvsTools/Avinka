@@ -1,0 +1,5 @@
+/* Avinka — Groep.
+   De groep-keuze is een gewone huisstijl-dropdown (zie avinka-dropdown.css);
+   avinka-groep.js doet alleen de auto-invul vanuit het dashboard. Geen eigen
+   stijl meer nodig. Bestand bewust behouden zodat tools het kunnen blijven
+   includen zonder 404. */

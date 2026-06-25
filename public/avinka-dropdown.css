@@ -1,0 +1,43 @@
+/* Avinka — gedeelde huisstijl-dropdown (zie avinka-dropdown.js).
+   Het OPEN lijstje is hier gewone HTML in de huisstijl, i.p.v. het OS-menu van
+   een native <select>. De dichte knop erft de .field-select-look van de tool. */
+
+.avdd { position: relative; }
+
+/* de echte <select> verbergen maar in de DOM/formulier houden */
+.avdd > select.field-select {
+  position: absolute; opacity: 0; pointer-events: none;
+  width: 1px; height: 1px; margin: 0; padding: 0; border: 0; overflow: hidden;
+}
+
+/* de dichte knop: .field-select-look + eigen chevron (geen OS-pijl) */
+.avdd-btn {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  width: 100%; text-align: left; cursor: pointer;
+  background-image: none; padding-right: 13px;
+}
+.avdd-lb { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.avdd-cv {
+  width: 7px; height: 7px; flex-shrink: 0;
+  border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg) translateY(-2px); transition: transform .18s;
+}
+.avdd.open .avdd-cv { transform: rotate(-135deg) translateY(0); }
+.avdd.open .avdd-btn { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,158,110,0.15); }
+
+/* het open lijstje */
+.avdd-pop {
+  position: absolute; left: 0; right: 0; top: calc(100% + 6px);
+  background: #fff; border: 1px solid var(--line-strong); border-radius: 14px;
+  box-shadow: 0 16px 38px rgba(34,28,58,0.17); padding: 6px; z-index: 60;
+  opacity: 0; visibility: hidden; transform: translateY(-6px); transition: .16s;
+  max-height: 280px; overflow-y: auto;
+}
+.avdd.open .avdd-pop { opacity: 1; visibility: visible; transform: translateY(0); }
+.avdd-opt {
+  font-family: inherit; font-size: 14px; font-weight: 600; color: var(--ink);
+  padding: 10px 12px; border-radius: 10px; cursor: pointer; white-space: nowrap;
+}
+.avdd-opt:hover { background: var(--brand-soft); }
+.avdd-opt.sel { color: var(--accent); background: var(--brand-soft); }
+.avdd-opt.avdd-dis { opacity: .5; cursor: default; }
