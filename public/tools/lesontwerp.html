@@ -23,7 +23,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="author" content="Michael van Spanje" />
-  <title>Lesontwerp — Complete lessen uit één leerdoel</title>
+  <title>Lesontwerp · Complete lessen uit één leerdoel</title>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
@@ -45,44 +45,53 @@
       background-size: auto, auto, 24px 24px; pointer-events: none; z-index: 0; }
 
     /* ── Schil: gecentreerde kolom + topbalk (gelijk aan de andere tools) ── */
-    .app { position: relative; z-index: 1; max-width: 820px; margin: 0 auto; padding: 22px 26px 30px; }
-    .top { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 22px; }
-    .terug-menu { font-size: 13px; font-weight: 600; color: var(--muted); text-decoration: none; }
-    .terug-menu:hover { color: var(--ink); }
-    .top-logo { display: inline-flex; align-items: center; gap: 9px; font-family: 'Fraunces', serif; font-weight: 700; font-size: 17px; color: var(--ink); }
-    .top-logo .mk { width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(135deg, var(--violet), var(--accent)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; box-shadow: 0 5px 13px rgba(47,158,110,0.3); }
+    .app { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 22px 24px 30px; }
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+    .terug-menu { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600; color: var(--muted); text-decoration: none; padding: 9px 16px; border: 1.5px solid var(--line-strong); border-radius: 999px; background: var(--card); box-shadow: var(--shadow-sm); transition: all .18s ease; }
+    .terug-menu:hover { color: var(--accent); border-color: var(--accent); transform: translateX(-2px); }
+    .top-logo { display: inline-flex; align-items: center; gap: 9px; font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.5px; color: var(--ink); }
+    .top-logo .mk { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, var(--accent), var(--violet)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px; box-shadow: 0 10px 24px rgba(47,158,110,0.14); }
 
     /* ── Hero ── */
-    .hero { display: grid; grid-template-columns: 1fr 250px; gap: 30px; align-items: center; margin: 6px 0 30px; }
+    .hero { display: grid; grid-template-columns: 1fr 250px; gap: 30px; align-items: center; margin: 4px 0 30px; }
     @media (max-width: 720px) { .hero { grid-template-columns: 1fr; } .heroart { display: none; } }
-    .hero h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(29px, 4.6vw, 39px); letter-spacing: -1px; line-height: 1.08; }
+    .hero h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(30px, 4.6vw, 40px); letter-spacing: -1px; line-height: 1.08; }
     .hero h1 .sw { position: relative; white-space: nowrap; font-style: italic; color: var(--accent); }
     .hero h1 .sw svg { position: absolute; left: 0; bottom: -7px; width: 100%; height: 11px; color: var(--violet); }
-    .hero .lead { font-size: 15px; color: var(--muted); line-height: 1.55; margin-top: 14px; max-width: 400px; }
-    .heroart { position: relative; width: 250px; align-self: center; display: flex; flex-direction: column; align-items: center; }
-    .mockwin { width: 230px; background: #fff; border-radius: 18px; box-shadow: 0 22px 46px rgba(34,28,58,0.16); border: 1px solid rgba(34,28,58,0.06); overflow: hidden; transform: rotate(1.2deg); }
+    .hero .lead { font-size: 15px; color: var(--muted); line-height: 1.55; margin-top: 16px; max-width: 400px; }
+    .heroart { position: relative; width: 250px; align-self: center; display: flex; align-items: center; justify-content: center; padding: 10px 0; }
+    .mockwin { position: relative; width: 228px; background: #fff; border-radius: 18px; box-shadow: 0 22px 46px rgba(34,28,58,0.16); border: 1px solid rgba(34,28,58,0.06); overflow: hidden; transform: rotate(1.2deg); }
     .mockbar { display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: #f7f5f0; border-bottom: 1px solid rgba(34,28,58,0.06); }
     .mockbar i { width: 9px; height: 9px; border-radius: 50%; }
     .mocktab { margin-left: 6px; font-size: 9.5px; font-weight: 700; color: var(--muted); background: #fff; border: 1px solid rgba(34,28,58,0.08); border-radius: 6px; padding: 3px 8px; }
-    .mockbody { padding: 13px 14px; }
-    .mtop { font-size: 11px; font-weight: 700; color: var(--ink); margin-bottom: 10px; }
-    .mrow { display: flex; align-items: center; gap: 8px; margin: 7px 0; }
-    .mfase { width: 18px; height: 18px; border-radius: 6px; background: var(--brand-soft); color: var(--accent2); font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .mockbody { padding: 14px; }
+    .mtop { display: flex; align-items: center; gap: 9px; margin-bottom: 11px; }
+    .mic { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 5px 12px rgba(47,158,110,0.32); }
+    .mic svg { width: 16px; height: 16px; }
+    .mtitle { font-family: 'Fraunces', serif; font-weight: 600; font-size: 14px; color: var(--ink); line-height: 1.2; }
+    .mrow { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+    .mfase { font-size: 9px; font-weight: 800; letter-spacing: .4px; color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 5px; padding: 4px 0; flex-shrink: 0; width: 36px; text-align: center; }
     .mbar { height: 8px; border-radius: 5px; background: linear-gradient(90deg, var(--accent), #8fd9b9); }
-    .fbadge { margin-top: 14px; display: inline-flex; align-items: center; gap: 7px; background: var(--card); border: 1px solid var(--line-strong); border-radius: 999px; padding: 7px 13px; font-size: 12px; font-weight: 600; color: var(--ink); box-shadow: var(--shadow-sm); transform: rotate(-1deg); }
+    .mklaar { margin-top: 4px; display: inline-flex; align-items: center; gap: 6px; background: var(--brand-soft); color: var(--accent2); font-size: 10.5px; font-weight: 700; border-radius: 8px; padding: 5px 11px; }
+    .fbadge { position: absolute; background: #fff; border-radius: 12px; padding: 9px 13px; font-size: 11px; font-weight: 700; color: var(--ink); box-shadow: 0 8px 18px rgba(34,28,58,0.14); border: 1px solid rgba(34,28,58,0.05); top: 2px; left: -14px; transform: rotate(-5deg); white-space: normal; max-width: 156px; line-height: 1.3; }
+    .fbadge b { color: var(--accent); font-weight: 800; }
 
     /* ── Kaarten + titelcel ── */
-    .card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 24px; box-shadow: var(--shadow-sm); margin-top: 22px; }
-    .card-label { font-size: 12.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.9px; margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
-    .card-label .ic { width: 30px; height: 30px; border-radius: 9px; background: var(--brand-soft); color: var(--accent2); display: flex; align-items: center; justify-content: center; font-size: 15px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 20px 22px 22px; box-shadow: var(--shadow-sm); margin-top: 16px; }
+    .card-label { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; color: var(--ink); letter-spacing: -0.3px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+    .card-label .ic { width: 44px; height: 44px; border-radius: 14px; background: var(--brand-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
 
     label.veld-l { display: block; font-weight: 700; font-size: 14px; margin-bottom: 8px; }
     .hint { font-weight: 400; color: var(--muted); font-size: 13px; }
-    textarea, input[type="text"], select { width: 100%; border: 1.5px solid var(--line-strong); background: var(--cream); border-radius: 12px; padding: 12px 14px; font: inherit; font-size: 15px; color: var(--ink); }
-    textarea { resize: vertical; min-height: 84px; }
-    textarea:focus, input:focus, select:focus { outline: none; border-color: var(--accent); }
-    .rij { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 16px; }
-    @media (max-width: 620px) { .rij { grid-template-columns: 1fr 1fr; } }
+    /* Veld/dropdown-systeem — gelijk aan de andere tools (rapporten = blauwdruk) */
+    .field-label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+    .field-select, .field-input { width: 100%; border: 1px solid var(--line-strong); background: var(--cream); font: inherit; font-size: 14px; color: var(--ink); padding: 11px 13px; border-radius: 12px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; appearance: none; -webkit-appearance: none; }
+    .field-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6880' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 13px center; padding-right: 34px; cursor: pointer; }
+    .field-select:focus, .field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,158,110,0.15); }
+    .field-select.filled, .field-input.filled { border-color: var(--accent); background: var(--brand-soft); }
+    textarea.field-input { resize: vertical; min-height: 84px; line-height: 1.6; border-radius: 14px; padding: 13px 15px; }
+    .rij { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 16px; }
+    @media (max-width: 620px) { .rij { grid-template-columns: 1fr; } }
 
     .keuze-l { display: block; font-weight: 700; font-size: 14px; margin: 20px 0 10px; }
     .kaarten { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
@@ -93,6 +102,33 @@
     .kaart .em { font-size: 24px; display: block; }
     .kaart .kt { font-weight: 700; font-size: 13.5px; margin-top: 5px; }
     .kaart .kb { font-size: 11.5px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
+    .kaart[style*="none"] { display: none !important; }
+
+    /* Vak-keuze: prominente knoppen-grid bovenaan; stuurt de rest van het menu. */
+    .vak-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 4px; }
+    @media (max-width: 740px) { .vak-grid { grid-template-columns: repeat(4, 1fr); } }
+    @media (max-width: 560px) { .vak-grid { grid-template-columns: repeat(3, 1fr); } }
+    .vakkaart { border: 1.5px solid var(--line-strong); background: var(--cream); border-radius: 12px; padding: 8px 6px; text-align: center; cursor: pointer; transition: .15s; font-weight: 600; font-size: 12px; line-height: 1.2; }
+    .vakkaart:hover { border-color: var(--accent); }
+    .vakkaart.aan { border-color: var(--accent); background: var(--brand-soft); color: var(--accent2); box-shadow: inset 0 0 0 1px var(--accent); }
+    .vakkaart .ve { font-size: 18px; display: block; margin-bottom: 3px; }
+    .rij.tweekol { grid-template-columns: 1fr 1fr; }
+
+    /* Differentiatie als 3-koloms tabel onderaan de les. */
+    .diff-wrap { margin: 16px 0; }
+    .diff-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; border: 1px solid var(--line-strong); border-radius: 12px; overflow: hidden; }
+    @media (max-width: 620px) { .diff-grid { grid-template-columns: 1fr; } }
+    .diff-kol { border-right: 1px solid var(--line-strong); }
+    .diff-kol:last-child { border-right: 0; }
+    @media (max-width: 620px) { .diff-kol { border-right: 0; border-bottom: 1px solid var(--line-strong); } .diff-kol:last-child { border-bottom: 0; } }
+    .dk-kop { background: var(--brand-soft); color: var(--accent2); font-weight: 700; font-size: 12.5px; padding: 8px 12px; border-bottom: 1px solid var(--line-strong); }
+    .dk-in { padding: 10px 12px; font-size: 14px; }
+    .dk-in p { margin: 0 0 6px; } .dk-in p:last-child { margin-bottom: 0; }
+    .dk-in ul { margin: 0; padding-left: 18px; } .dk-in li { margin: 2px 0; }
+
+    /* Verfijn-vakje onder het resultaat: kleine aanpassing zonder nieuwe les. */
+    .verfijn { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line-strong); }
+    .verfijn-acties { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 
     .seg { display: inline-flex; gap: 6px; flex-wrap: wrap; }
     .seg .opt { border: 1.5px solid var(--line-strong); background: var(--cream); border-radius: 11px; padding: 10px 16px; font-weight: 600; font-size: 14px; cursor: pointer; transition: .15s; }
@@ -108,19 +144,39 @@
     .switch .sl { font-weight: 700; font-size: 14px; }
     .switch .sl small { display: block; font-weight: 400; color: var(--muted); font-size: 12.5px; }
 
-    .btn { margin-top: 24px; border: none; border-radius: 15px; background: var(--accent); color: #fff; font: inherit; font-size: 16px; font-weight: 700; padding: 14px 26px; cursor: pointer; transition: .15s; box-shadow: 0 8px 20px rgba(47,158,110,.28); }
-    .btn:hover { background: var(--accent2); }
-    .btn:disabled { opacity: .55; cursor: default; box-shadow: none; }
+    .btn-primary { width: 100%; margin-top: 24px; border: none; border-radius: 16px; background: var(--accent); color: #fff; font: inherit; font-size: 16px; font-weight: 700; padding: 17px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 10px; letter-spacing: -0.2px; box-shadow: 0 10px 24px rgba(47,158,110,0.28); }
+    .btn-primary:hover:not(:disabled) { background: var(--accent2); transform: translateY(-2px); box-shadow: 0 14px 30px rgba(47,158,110,0.34); }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
     .err { color: #be123c; font-size: 14px; margin-top: 12px; }
 
-    .laden { display: none; text-align: center; padding: 40px 0; color: var(--muted); }
+    .scherp { margin-top: 16px; padding: 16px 18px; border: 1.5px solid var(--accent); border-radius: 14px; background: var(--brand-soft); }
+    .scherp-kop { font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px; color: var(--ink); margin-bottom: 4px; }
+    .scherp-uitleg { font-size: 13px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
+    .scherp-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .scherp-chip { border: 1.5px solid var(--accent); background: #fff; color: var(--accent2); border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; transition: .15s; }
+    .scherp-chip:hover { background: var(--accent); color: #fff; }
+    .scherp-chip.laden-chip { opacity: .6; cursor: default; border-style: dashed; }
+    .scherp-eigen { margin-top: 12px; background: none; border: none; color: var(--muted); font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 4px 0; text-decoration: underline; }
+    .scherp-eigen:hover { color: var(--ink); }
+    .laden { display: none; text-align: center; color: var(--muted); background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 40px 24px; box-shadow: var(--shadow-sm); margin-top: 16px; }
     .laden.aan { display: block; }
     .spin { width: 34px; height: 34px; border: 3px solid var(--brand-soft); border-top-color: var(--accent); border-radius: 50%; margin: 0 auto 14px; animation: dr 0.8s linear infinite; }
     @keyframes dr { to { transform: rotate(360deg); } }
+    .laad-stappen { margin: 20px auto 0; max-width: 330px; display: flex; flex-direction: column; gap: 6px; text-align: left; }
+    .laad-stap { font-size: 13px; display: flex; align-items: center; gap: 10px; color: var(--muted); opacity: .4; transition: all .35s ease; padding: 3px 0; }
+    .laad-stap.actief { opacity: 1; color: var(--accent); font-weight: 600; }
+    .laad-stap.klaar { opacity: .75; color: var(--ink); }
+    .laad-stip { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; transition: all .35s; position: relative; }
+    .laad-stap.actief .laad-stip { width: 9px; height: 9px; }
+    .laad-stap.klaar .laad-stip { background: var(--accent); }
 
     /* ── Resultaat ── */
     #uitvoer { display: none; }
     .les { line-height: 1.62; font-size: 15.5px; }
+    .les.ingeklapt { max-height: 200px; overflow: hidden; position: relative; }
+    .les.ingeklapt::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 80px; background: linear-gradient(to bottom, transparent, var(--card)); pointer-events: none; }
+    .les-toggle { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; border: 1px solid var(--line-strong); background: var(--card); color: var(--accent); border-radius: 14px; padding: 10px 18px; font: inherit; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+    .les-toggle:hover { border-color: var(--accent); background: var(--brand-soft); }
     .les h3 { font-family: 'Fraunces', serif; font-size: 21px; font-weight: 600; margin: 22px 0 8px; color: var(--ink); }
     .les h3:first-child { margin-top: 0; }
     .les h4 { font-size: 15px; font-weight: 800; margin: 16px 0 5px; color: var(--accent2); }
@@ -129,25 +185,53 @@
     .les li { position: relative; padding-left: 22px; margin: 5px 0; }
     .les li::before { content: '✓'; position: absolute; left: 0; top: 0; color: var(--accent); font-weight: 800; }
     .les strong { font-weight: 700; }
-    .les .tijd { display: inline-block; font-size: 12px; font-weight: 700; color: var(--accent2); background: var(--brand-soft); border-radius: 999px; padding: 2px 9px; margin-left: 6px; vertical-align: middle; }
+    .les .tijd { display: inline-block; font-size: 12px; font-weight: 700; color: var(--accent2); background: var(--brand-soft); border-radius: 999px; padding: 2px 9px; margin-left: 6px; vertical-align: middle; flex-shrink: 0; }
+
+    /* Document-opmaak van de gegenereerde les */
+    .les-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .lm-pill { display: inline-flex; align-items: center; background: var(--brand-soft); color: var(--accent2); font-size: 12.5px; font-weight: 700; border-radius: 999px; padding: 5px 13px; }
+    .blok { border: 1px solid var(--line-strong); background: var(--cream); border-radius: 14px; padding: 13px 16px; margin: 12px 0; }
+    .blok-kop { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--ink); margin-bottom: 7px; }
+    .blok-in > :first-child { margin-top: 0; }
+    .blok-in > :last-child { margin-bottom: 0; }
+    .blok-lesdoel { background: var(--brand-soft); border-color: rgba(47,158,110,0.30); }
+    .blok-lesdoel .blok-kop { color: var(--accent2); }
+    .fasen-kop { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; color: var(--ink); margin: 22px 0 10px; }
+    .fase { border: 1px solid var(--line-strong); background: #fff; border-radius: 14px; margin: 10px 0; overflow: hidden; box-shadow: var(--shadow-sm); }
+    .fase-kop { display: flex; align-items: center; gap: 10px; background: var(--cream); border-bottom: 1px solid var(--line); padding: 10px 15px; }
+    .fase-nr { flex-shrink: 0; width: 25px; height: 25px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+    .fase-titel { flex: 1; font-weight: 700; font-size: 15px; color: var(--ink); min-width: 0; }
+    .fase-in { padding: 12px 15px; }
+    .fase-in > :first-child { margin-top: 0; }
+    .fase-in > :last-child { margin-bottom: 0; }
+    .cvb { display: flex; gap: 9px; align-items: flex-start; background: var(--brand-soft); border-left: 3px solid var(--accent); border-radius: 8px; padding: 9px 12px; margin: 11px 0; font-size: 14.5px; line-height: 1.5; }
+    .cvb-ic { flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+    .cvb strong { color: var(--accent2); }
+    .subblok { margin: 9px 0; }
+    .subblok-l { display: inline-block; font-weight: 800; color: var(--accent2); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 5px; }
 
     .acties { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
-    .btn-green { border: none; border-radius: 13px; background: var(--accent); color: #fff; font: inherit; font-weight: 700; font-size: 14.5px; padding: 12px 20px; cursor: pointer; transition: .15s; box-shadow: 0 6px 16px rgba(47,158,110,.25); }
-    .btn-green:hover { background: var(--accent2); }
-    .btn-soft { border: 1.5px solid var(--line-strong); background: var(--card); color: var(--ink); border-radius: 13px; padding: 12px 18px; font: inherit; font-weight: 600; font-size: 14px; cursor: pointer; transition: .15s; }
-    .btn-soft:hover { border-color: var(--accent); color: var(--accent2); }
+    .btn-green { border: none; border-radius: 14px; background: var(--accent); color: #fff; font: inherit; font-weight: 700; font-size: 14.5px; padding: 12px 20px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 6px 16px rgba(47,158,110,.25); }
+    .btn-green:hover { background: var(--accent2); transform: translateY(-1px); }
+    .btn-soft { border: 1px solid var(--line-strong); background: var(--card); color: var(--muted); border-radius: 14px; padding: 12px 18px; font: inherit; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+    .btn-soft:hover { border-color: var(--accent); color: var(--accent); }
 
     footer.app-foot { margin-top: 36px; text-align: center; padding: 22px 0 30px; border-top: 1px solid rgba(34,28,58,0.07); font-size: 12.5px; color: var(--muted); line-height: 1.7; }
   </style>
 
   <link rel="stylesheet" href="/avinka-huisstijl.css" />
+  <link rel="stylesheet" href="/avinka-dropdown.css" />
+  <link rel="stylesheet" href="/avinka-groep.css" />
   <script src="/avinka-dialog.js"></script>
   <script src="/avinka-masking.js"></script>
+  <script src="/avinka-dropdown.js"></script>
+  <script src="/avinka-groep.js"></script>
+  <script src="/avinka-leerlijnen.js"></script>
 </head>
 <body>
   <div class="app">
     <div class="top">
-      <a href="/dashboard" class="terug-menu">← Terug naar menu</a>
+      <a href="/dashboard" class="terug-menu">← Terug naar dashboard</a>
       <a href="/dashboard" aria-label="Avinka" style="display:inline-flex;flex-shrink:0;"><img src="/Avinka_wordmerk.png" alt="Avinka" style="height:18px;width:auto;display:block;opacity:.82;" /></a>
       <span class="top-logo"><span class="mk">📚</span>Lesontwerp</span>
     </div>
@@ -157,54 +241,61 @@
       <div class="hero">
         <div>
           <h1>Van leerdoel naar een <span class="sw">complete les<svg viewBox="0 0 200 12" fill="none" aria-hidden="true"><path d="M3 8C46 3 154 3 197 6" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg></span></h1>
-          <p class="lead">Geef je leerdoel door, kies de sfeer van de les, en Lesontwerp bedenkt een volledig uitgewerkte les: klaar voor morgen, elke keer fris en afwisselend.</p>
+          <p class="lead">Geef een leerdoel op en kies het type les. Lesontwerp werkt er een volledige, didactisch onderbouwde les omheen die je meteen kunt gebruiken.</p>
         </div>
         <div class="heroart">
           <div class="mockwin">
             <div class="mockbar"><i style="background:#fb7185"></i><i style="background:#fbbf24"></i><i style="background:#34d399"></i><span class="mocktab">Groep 5 · 45 min</span></div>
             <div class="mockbody">
-              <div class="mtop">Ik kan breuken vergelijken</div>
-              <div class="mrow"><span class="mfase">1</span><span class="mbar" style="width:70%"></span></div>
-              <div class="mrow"><span class="mfase">2</span><span class="mbar" style="width:92%"></span></div>
-              <div class="mrow"><span class="mfase">3</span><span class="mbar" style="width:58%"></span></div>
-              <div class="mrow"><span class="mfase">✓</span><span class="mbar" style="width:80%"></span></div>
+              <div class="mtop">
+                <span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4a2 2 0 0 1 2-2h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/><path d="M14 2v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/></svg></span>
+                <span class="mtitle">Ik kan breuken vergelijken</span>
+              </div>
+              <div class="mrow"><span class="mfase">IK</span><span class="mbar" style="width:58%"></span></div>
+              <div class="mrow"><span class="mfase">WIJ</span><span class="mbar" style="width:80%"></span></div>
+              <div class="mrow"><span class="mfase">JIJ</span><span class="mbar" style="width:66%"></span></div>
+              <span class="mklaar">✓ Direct te gebruiken</span>
             </div>
           </div>
           <span class="fbadge">⏱️ <b>In één minuut</b> een complete les</span>
         </div>
       </div>
 
-      <!-- INVOER -->
-      <div class="card" id="invoer-kaart">
-        <div class="card-label"><span class="ic">✎</span> Wat ga je geven?</div>
+      <!-- INVOER · KADER 0: het vak (stuurt de rest van het menu) -->
+      <div class="card" id="vak-kaart">
+        <div class="card-label"><span class="ic">🎒</span> Welk vak geef je?</div>
+        <div class="vak-grid" id="vak-grid">
+          <div class="vakkaart" data-v="Rekenen"><span class="ve">🔢</span>Rekenen</div>
+          <div class="vakkaart" data-v="Taal / spelling"><span class="ve">✏️</span>Taal / spelling</div>
+          <div class="vakkaart" data-v="Begrijpend lezen"><span class="ve">📖</span>Begrijpend lezen</div>
+          <div class="vakkaart" data-v="(Voortgezet) technisch lezen"><span class="ve">📚</span>Technisch lezen</div>
+          <div class="vakkaart" data-v="Engels"><span class="ve"><svg viewBox="0 0 60 30" width="28" height="14" style="vertical-align:middle;border-radius:2px" aria-label="Engels"><clipPath id="ukclip"><path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/></clipPath><rect width="60" height="30" fill="#012169"/><path d="M0,0 60,30 M60,0 0,30" stroke="#fff" stroke-width="6"/><path d="M0,0 60,30 M60,0 0,30" clip-path="url(#ukclip)" stroke="#C8102E" stroke-width="4"/><path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/><path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6"/></svg></span>Engels</div>
+          <div class="vakkaart" data-v="Wereldoriëntatie"><span class="ve">🌍</span>Wereldoriëntatie</div>
+          <div class="vakkaart" data-v="Aardrijkskunde"><span class="ve">🗺️</span>Aardrijkskunde</div>
+          <div class="vakkaart" data-v="Geschiedenis"><span class="ve">🏛️</span>Geschiedenis</div>
+          <div class="vakkaart" data-v="Natuur &amp; techniek"><span class="ve">🔬</span>Natuur &amp; techniek</div>
+          <div class="vakkaart" data-v="Creatief / handvaardigheid"><span class="ve">🎨</span>Creatief</div>
+        </div>
+        <input type="hidden" id="vak" value="" />
+      </div>
 
-        <label class="veld-l" for="doel">Leerdoel of onderwerp <span class="hint">· de rest verzint Lesontwerp</span></label>
-        <textarea id="doel" placeholder="Bijv. 'De leerlingen kunnen breuken vergelijken' of gewoon 'klokkijken hele en halve uren'"></textarea>
+      <!-- INVOER · KADER 1: de basis -->
+      <div class="card" id="basis-kaart">
+        <div class="card-label"><span class="ic">📋</span> De basis</div>
 
-        <div class="rij">
-          <div>
-            <label class="veld-l" for="vak">Vak</label>
-            <select id="vak">
-              <option value="">Kies…</option>
-              <option>Rekenen</option>
-              <option>Taal / spelling</option>
-              <option>Begrijpend lezen</option>
-              <option>(Voortgezet) technisch lezen</option>
-              <option>Schrijven / stellen</option>
-              <option>Wereldoriëntatie</option>
-              <option>Aardrijkskunde</option>
-              <option>Geschiedenis</option>
-              <option>Natuur &amp; techniek</option>
-              <option>Burgerschap</option>
-              <option>Sociaal-emotioneel</option>
-              <option>Creatief / handvaardigheid</option>
-              <option>Engels</option>
-              <option>Anders</option>
-            </select>
+        <div id="vorm-wrap">
+          <label class="keuze-l" style="margin-top:0">Hoe uitgebreid wil je de les?</label>
+          <div class="seg" id="vorm">
+            <div class="opt aan" data-v="edi" id="opt-edi">Volledige lesvoorbereiding (EDI)</div>
+            <div class="opt" data-v="kort">Korte lesbeschrijving</div>
           </div>
+        </div>
+        <div id="idee-note" class="hint" style="display:none; margin-top:0">Voor creatief maakt Lesontwerp een kant-en-klaar <b>lesidee met benodigdheden</b>.</div>
+
+        <div class="rij tweekol">
           <div>
-            <label class="veld-l" for="groep">Groep</label>
-            <select id="groep">
+            <label class="field-label" for="groep">Groep</label>
+            <select id="groep" class="field-select avinka-groep" onchange="this.classList.toggle('filled', !!this.value)">
               <option value="1/2">Groep 1/2</option>
               <option>Groep 3</option>
               <option>Groep 4</option>
@@ -215,8 +306,8 @@
             </select>
           </div>
           <div>
-            <label class="veld-l" for="duur">Lesduur</label>
-            <select id="duur">
+            <label class="field-label" for="duur">Lesduur</label>
+            <select id="duur" class="field-select filled" onchange="this.classList.toggle('filled', !!this.value)">
               <option>15 min</option>
               <option>30 min</option>
               <option selected>45 min</option>
@@ -225,57 +316,75 @@
             </select>
           </div>
         </div>
+      </div>
 
-        <div style="margin-top:16px">
+      <!-- INVOER · KADER 2: de les -->
+      <div class="card" id="invoer-kaart">
+        <div class="card-label"><span class="ic">✎</span> Je les</div>
+
+        <label class="veld-l" for="doel" id="doel-label">Leerdoel of onderwerp</label>
+        <textarea id="doel" class="field-input" placeholder="Bijv. 'De leerlingen kunnen breuken vergelijken' of gewoon 'klokkijken hele en halve uren'" oninput="this.classList.toggle('filled', !!this.value.trim())"></textarea>
+
+        <div id="lestype-wrap">
+          <label class="keuze-l">Wat voor soort les?</label>
+          <div class="kaarten" id="lestype">
+            <div class="kaart aan" data-v="klas"><span class="em">🪑</span><div class="kt">In de klas</div><div class="kb">activerend &amp; afwisselend</div></div>
+            <div class="kaart" data-v="bewegend"><span class="em">🤸</span><div class="kt">Bewegend</div><div class="kb">al bewegend leren</div></div>
+            <div class="kaart" data-v="buiten"><span class="em">☀️</span><div class="kt">Buiten</div><div class="kb">plein of buurt</div></div>
+            <div class="kaart" data-v="cooperatief"><span class="em">👥</span><div class="kt">Samen</div><div class="kb">coöperatief leren</div></div>
+          </div>
+        </div>
+
+        <div style="margin-top:20px">
           <label class="veld-l" for="context">Aanvullingen <span class="hint">· optioneel: methode, thema, materiaal dat je hebt…</span></label>
-          <input type="text" id="context" placeholder="Bijv. 'sluit aan bij thema herfst' of 'we werken met Pluspunt'" />
+          <input type="text" id="context" class="field-input" placeholder="Bijv. 'sluit aan bij thema herfst' of 'we werken met Pluspunt'" oninput="this.classList.toggle('filled', !!this.value.trim())" />
         </div>
 
-        <label class="keuze-l">Wat voor soort les?</label>
-        <div class="kaarten" id="lestype">
-          <div class="kaart aan" data-v="klas"><span class="em">🪑</span><div class="kt">In de klas</div><div class="kb">activerend &amp; afwisselend</div></div>
-          <div class="kaart" data-v="bewegend"><span class="em">🤸</span><div class="kt">Bewegend</div><div class="kb">al bewegend leren</div></div>
-          <div class="kaart" data-v="buiten"><span class="em">☀️</span><div class="kt">Buiten</div><div class="kb">plein of buurt</div></div>
-          <div class="kaart" data-v="cooperatief"><span class="em">👥</span><div class="kt">Samen</div><div class="kb">coöperatief leren</div></div>
-        </div>
-
-        <label class="keuze-l">Hoe uitgebreid?</label>
-        <div class="seg" id="vorm">
-          <div class="opt aan" data-v="edi">Volledige lesvoorbereiding (EDI)</div>
-          <div class="opt" data-v="kort">Korte lesbeschrijving</div>
-        </div>
-
-        <label class="switch">
-          <input type="checkbox" id="diff" />
-          <span class="track"></span>
-          <span class="sl">Differentiëren naar 3 niveaus<small>maan (extra steun) · ster (basis) · zon (uitdaging)</small></span>
-        </label>
-
-        <button class="btn" id="btn-maak" onclick="maak()">✨ Maak mijn les</button>
+        <button class="btn-primary" id="btn-maak" onclick="maak()">✨ Maak mijn les</button>
         <div class="err" id="err"></div>
+
+        <!-- Even scherpstellen: verschijnt alleen bij een te breed leerdoel -->
+        <div class="scherp" id="scherp" style="display:none">
+          <div class="scherp-kop">Even scherpstellen 🎯</div>
+          <div class="scherp-uitleg">Dit doel is nog wat breed. Kies een scherper lesdoel, dan wordt de les een stuk raker:</div>
+          <div class="scherp-chips" id="scherp-chips"></div>
+          <button class="scherp-eigen" id="scherp-eigen" onclick="maakMetEigenDoel()">Toch mijn eigen doel gebruiken →</button>
+        </div>
       </div>
 
       <!-- LADEN -->
       <div class="laden" id="laden">
         <div class="spin"></div>
         <div id="laad-tekst">Je les wordt uitgedacht…</div>
+        <div class="laad-stappen" id="laad-stappen"></div>
       </div>
 
       <!-- RESULTAAT -->
       <div class="card" id="uitvoer">
         <div class="card-label"><span class="ic">📋</span> <span id="uitvoer-titel">Je les</span></div>
         <div class="les" id="les"></div>
+        <button class="les-toggle" id="les-toggle" onclick="toggleLes()" style="display:none">Toon volledige les</button>
         <div class="acties">
           <button class="btn-green" onclick="downloadLes()">⬇ Download als Word</button>
           <button class="btn-soft" onclick="kopieer()">📋 Kopiëren</button>
           <button class="btn-soft" onclick="maak(true)">🔄 Andere versie</button>
-          <button class="btn-soft" onclick="terug()">← Pas iets aan</button>
+          <button class="btn-soft" onclick="toonVerfijn()">✏️ Pas iets aan</button>
+        </div>
+
+        <div class="verfijn" id="verfijn" style="display:none">
+          <label class="veld-l" for="verfijn-tekst">Wat wil je aanpassen? <span class="hint">· de rest van de les blijft precies zo</span></label>
+          <textarea id="verfijn-tekst" class="field-input" placeholder="Bijv. 'maak de verwerking iets uitdagender' of 'voeg na de instructie een korte energizer toe'"></textarea>
+          <div class="verfijn-acties">
+            <button class="btn-green" id="btn-verfijn" onclick="verfijn()">✨ Pas aan</button>
+            <button class="btn-soft" onclick="terug()">← Naar de invoer</button>
+          </div>
+          <div class="err" id="verfijn-err"></div>
         </div>
       </div>
 
       <footer class="app-foot">
         Lesontwerp · gemaakt door Michael van Spanje · © 2026<br />
-        De code regelt de opbouw, jij houdt de regie. Lees de les altijd na vóór je 'm geeft.
+        De code regelt de opbouw, jij houdt de regie. Lees de les altijd na voordat je hem geeft.
       </footer>
     </main>
   </div>
@@ -284,75 +393,272 @@
     const MODEL = 'claude-sonnet-4-6';
     const SOORT = 'lesontwerp';
 
-    let lestype = 'klas', vorm = 'edi';
+    let vorm = 'edi';
+    const LESTYPE_VOLGORDE = ['klas', 'bewegend', 'buiten', 'cooperatief'];
+    // De geselecteerde lestypes (meervoudig), in vaste volgorde, alleen zichtbare.
+    function geselecteerdeLestypes() {
+      return LESTYPE_VOLGORDE.filter(v => {
+        const k = document.querySelector('#lestype .kaart[data-v="' + v + '"]');
+        return k && k.classList.contains('aan') && k.style.display !== 'none';
+      });
+    }
+    // Lestype is meervoudig te kiezen. Enige uitsluiting: 'in de klas' en 'buiten'
+    // kunnen niet samen — kies je de één, dan gaat de ander automatisch uit.
     document.querySelectorAll('#lestype .kaart').forEach(k => k.onclick = () => {
-      document.querySelectorAll('#lestype .kaart').forEach(x => x.classList.remove('aan'));
-      k.classList.add('aan'); lestype = k.dataset.v;
+      const v = k.dataset.v;
+      const aan = k.classList.toggle('aan');
+      if (aan && (v === 'klas' || v === 'buiten')) {
+        const ander = v === 'klas' ? 'buiten' : 'klas';
+        const o = document.querySelector('#lestype .kaart[data-v="' + ander + '"]');
+        if (o) o.classList.remove('aan');
+      }
+      // Er moet altijd minstens één lestype geselecteerd blijven.
+      if (!geselecteerdeLestypes().length) k.classList.add('aan');
+    });
+    // Vak is een prominente knoppen-grid bovenaan; zet de waarde en laat het
+    // instellingenmenu zich aanpassen (welke lestypes/vorm passen bij dit vak).
+    document.querySelectorAll('#vak-grid .vakkaart').forEach(k => k.onclick = () => {
+      document.querySelectorAll('#vak-grid .vakkaart').forEach(x => x.classList.remove('aan'));
+      k.classList.add('aan');
+      document.getElementById('vak').value = k.dataset.v;
+      vakGewijzigd();
     });
     document.querySelectorAll('#vorm .opt').forEach(o => o.onclick = () => {
       document.querySelectorAll('#vorm .opt').forEach(x => x.classList.remove('aan'));
       o.classList.add('aan'); vorm = o.dataset.v;
     });
 
+    // Groep is een gewone huisstijl-dropdown (avinka-dropdown.js) en wordt
+    // automatisch vanuit het dashboard ingevuld (avinka-groep.js).
+
+    function isCreatief(vak) { return /creatief|handvaardig/i.test(vak || ''); }
+
+    // Welke lestypes (in de klas / bewegend / buiten / samen) passen bij een vak.
+    // Lege lijst = lestype-blok verdwijnt (creatief = kant-en-klaar lesidee).
+    // Niet vermeld = alle vier (standaard).
+    function vakLestypes(vak) {
+      const v = (vak || '').toLowerCase();
+      if (/creatief|handvaardig/.test(v)) return [];                          // lesidee, geen werkvorm-keuze
+      if (/begrijpend/.test(v)) return ['klas', 'cooperatief'];               // zit-lees-denk-activiteit
+      if (/technisch/.test(v)) return ['klas', 'cooperatief'];                // vloeiend/decoderend lezen
+      return ['klas', 'bewegend', 'buiten', 'cooperatief'];                   // standaard: alles
+    }
+
+    // Zaakvakken zijn kennis-/inzichtvakken: daar past geen EDI-instructiecyclus
+    // (ik-wij-jullie-jij), maar een kennisles (nieuwsgierig maken → verhaal → verwerking).
+    function isZaakvak(vak) {
+      return /aardrijk|geschied|natuur|techniek|wereld|ori[eë]nt/i.test(vak || '');
+    }
+
+    // Het instellingenmenu past zich aan op het gekozen vak.
+    function vakGewijzigd() {
+      const vak = document.getElementById('vak').value;
+      const crea = isCreatief(vak);
+
+      // Vorm-keuze (EDI/kort) vervalt bij creatief: dat wordt een lesidee.
+      const wrap = document.getElementById('vorm-wrap');
+      const note = document.getElementById('idee-note');
+      if (wrap) wrap.style.display = crea ? 'none' : '';
+      if (note) note.style.display = crea ? 'block' : 'none';
+      // Bij zaakvakken heet de volledige les geen EDI (het wordt een kennisles).
+      const optEdi = document.getElementById('opt-edi');
+      if (optEdi) optEdi.textContent = isZaakvak(vak) ? 'Volledige lesvoorbereiding' : 'Volledige lesvoorbereiding (EDI)';
+
+      // Lestype-kaarten: toon alleen wat bij dit vak past; verberg het hele blok
+      // als er geen passen (creatief). Verborgen kaarten kunnen niet geselecteerd
+      // blijven; zorg dat er altijd minstens één passende kaart aanstaat.
+      const toegestaan = vakLestypes(vak);
+      const lt = document.getElementById('lestype-wrap');
+      if (lt) lt.style.display = toegestaan.length ? '' : 'none';
+      const kaarten = Array.from(document.querySelectorAll('#lestype .kaart'));
+      kaarten.forEach(k => {
+        const ok = toegestaan.indexOf(k.dataset.v) !== -1;
+        k.style.display = ok ? '' : 'none';
+        if (!ok) k.classList.remove('aan');
+      });
+      if (toegestaan.length && !geselecteerdeLestypes().length) {
+        const eerste = kaarten.find(k => toegestaan.indexOf(k.dataset.v) !== -1);
+        if (eerste) eerste.classList.add('aan');
+      }
+
+      // Bij creatief volstaat een onderwerp/thema (mag zelfs leeg).
+      const dl = document.getElementById('doel-label'), dt = document.getElementById('doel');
+      if (dl) dl.innerHTML = crea
+        ? 'Onderwerp of thema <span class="hint">· laat leeg en Lesontwerp kiest zelf een idee</span>'
+        : 'Leerdoel of onderwerp';
+      if (dt) dt.placeholder = crea
+        ? "Bijv. 'herfst', 'de ruimte' of 'Sinterklaas', of laat het leeg"
+        : "Bijv. 'De leerlingen kunnen breuken vergelijken' of gewoon 'klokkijken hele en halve uren'";
+    }
+    vakGewijzigd();
+
     // ── Didactische regie per lestype (de CODE regelt de structuur) ──────────
     const LESTYPE_REGIE = {
       klas: 'SOORT LES: een les in het klaslokaal. Kies activerende, afwisselende werkvormen (denk-deel-uit, wisbordjes/mini-whiteboards, korte doe-opdrachten, coöperatieve duo\'s). Voorkom dat leerlingen lang passief luisteren.',
-      bewegend: 'SOORT LES: BEWEGEND LEREN. De leerlingen bereiken het lesdoel terwijl ze fysiek bewegen (staan, springen, lopen, hinkelen, gebaren) — bewegen is GEEN losse energizer maar verweven met de leerstof. Het werkt het sterkst voor automatiseren, herhalen en inoefenen. Geef CONCRETE beweegwerkvormen die echt bij dit leerdoel passen (in de geest van waslijn-dictee, tafeljoggen, hinkelbaan, sommen-en-uitkomsten matchen, getalkaarten, "level up"), met benodigdheden, ruimte-opstelling en hoe je het veilig en ordelijk houdt.',
+      bewegend: 'SOORT LES: BEWEGEND LEREN. De leerlingen bereiken het lesdoel terwijl ze fysiek bewegen (staan, springen, lopen, hinkelen, gebaren); bewegen is GEEN losse energizer maar verweven met de leerstof. Het werkt het sterkst voor automatiseren, herhalen en inoefenen. Geef CONCRETE beweegwerkvormen die echt bij dit leerdoel passen (in de geest van waslijn-dictee, tafeljoggen, hinkelbaan, sommen-en-uitkomsten matchen, getalkaarten, "level up"), met benodigdheden, ruimte-opstelling en hoe je het veilig en ordelijk houdt.',
       buiten: 'SOORT LES: BUITENLES op het schoolplein of in de directe buurt. Geef werkvormen die buiten tot hun recht komen (stoepkrijt, kaarten zoeken/rennen, estafette, meten/tekenen op het plein, natuur en zintuigen). Noem benodigdheden (klembordjes, krijt, kaartjes), een duidelijk verzamelsignaal (fluit/lied), afspraken vooraf, en benut zo mogelijk het weer. Houd het organisatorisch haalbaar voor één leerkracht.',
       cooperatief: 'SOORT LES: COÖPERATIEF LEREN. De leerlingen leren mét en ván elkaar in duo\'s of groepjes via heldere structuren (denken-delen-uitwisselen, genummerde-hoofden-samen, tweetalcoach, placemat, binnen-buitenkring). Zorg voor positieve wederzijdse afhankelijkheid (ze hebben elkaar nodig) én individuele aanspreekbaarheid.'
     };
 
-    function ediFormat(diff) {
+    // ── Timing-engine (de CODE verdeelt de minuten, niet de AI) ──────────────
+    // Zo telt de timing altijd exact op tot de lesduur en is de verdeling
+    // didactisch verantwoord (instructie kort, veel tijd voor verwerking).
+    function lesMinuten(duur) { var m = String(duur || '').match(/\d+/); return m ? +m[0] : 45; }
+    // Verdeel 'totaal' minuten over gewichten[] als gehele getallen die exact
+    // optellen tot 'totaal' (grootste-restmethode), elke fase minstens minPer.
+    function verdeelTijd(totaal, gewichten, minPer) {
+      minPer = minPer || 1;
+      var som = gewichten.reduce(function (a, b) { return a + b; }, 0) || 1;
+      var ruw = gewichten.map(function (g) { return totaal * g / som; });
+      var uit = ruw.map(function (x) { return Math.max(minPer, Math.floor(x)); });
+      var rest = totaal - uit.reduce(function (a, b) { return a + b; }, 0);
+      var volgorde = ruw.map(function (x, i) { return { i: i, frac: x - Math.floor(x) }; })
+        .sort(function (a, b) { return b.frac - a.frac; });
+      for (var k = 0; k < volgorde.length && rest > 0; k++) { uit[volgorde[k].i]++; rest--; }
+      for (var j = volgorde.length - 1; j >= 0 && rest < 0; j--) {
+        if (uit[volgorde[j].i] > minPer) { uit[volgorde[j].i]--; rest++; }
+      }
+      return uit;
+    }
+    // EDI: instructie (fase 1-6) blijft kort (max 25 min); de rest naar
+    // zelfstandige verwerking + grote afsluiting. Geeft [f1..f6, verwerking, afsluiting].
+    function ediTijden(duur) {
+      var D = lesMinuten(duur);
+      var afsl = Math.max(3, Math.round(D * 0.1));
+      var instr = Math.min(25, Math.round(D * 0.55));
+      var verw = D - instr - afsl;
+      var minVerw = Math.max(5, Math.round(D * 0.2));
+      if (verw < minVerw) { verw = minVerw; instr = D - verw - afsl; }
+      return verdeelTijd(instr, [0.16, 0.06, 0.28, 0.22, 0.20, 0.08], 1).concat([verw, afsl]);
+    }
+    function kennisTijden(duur) { return verdeelTijd(lesMinuten(duur), [0.15, 0.35, 0.38, 0.12], 2); }
+    function kortTijden(duur) { return verdeelTijd(lesMinuten(duur), [0.25, 0.55, 0.20], 2); }
+
+    // Vak-didactische profielen: per vak het didactische accent dat de les boven
+    // generiek uittilt. Zaakvakken niet (die lopen al via de kennisles-opbouw).
+    function vakDidactiek(vak) {
+      var v = String(vak || '').toLowerCase();
+      if (/reken/.test(v)) return 'VAKDIDACTIEK rekenen: werk van concreet naar abstract (handelend met materiaal of in een context, dan schematisch met een model zoals de getallenlijn of het rekenrek, dan de formele notatie). Laat leerlingen hun strategie hardop verwoorden en met elkaar vergelijken, en koppel de sommen aan een herkenbare context.';
+      if (/spelling|taal/.test(v)) return 'VAKDIDACTIEK spelling/taal: laat leerlingen eerst de categorie of woordsoort herkennen en de regel hardop verwoorden vóór ze schrijven (verklanken of hakken, dan het woordbeeld inprenten). Oefen met veel korte schrijfmomenten (wisbordjes, mini-dictee), niet alleen invuloefeningen.';
+      if (/begrijpend/.test(v)) return 'VAKDIDACTIEK begrijpend lezen: de leerkracht doet de leesstrategie harddenkend voor (modelen) en maakt het denkproces zichtbaar. Benoem de strategie expliciet (voorspellen, vragen stellen, samenvatten, verwijswoorden, moeilijke woorden uit de context afleiden) en kies een tekst dicht bij de leefwereld.';
+      if (/technisch/.test(v)) return 'VAKDIDACTIEK technisch lezen: focus op vlot én nauwkeurig decoderen via herhaald lezen, koor- en duolezen en korte gerichte leesrondes met directe feedback op tempo en nauwkeurigheid.';
+      if (/engels/.test(v)) return 'VAKDIDACTIEK Engels: veel begrijpelijke input en herhaling, betekenis ondersteunen met beeld en gebaar (TPR), vaste zinnen (chunks) aanbieden en leerlingen in een veilige sfeer laten durven spreken; vermijd expliciete grammatica in de onderbouw.';
+      return '';
+    }
+
+    function ediFormat(duur) {
+      var t = ediTijden(duur);
       return [
-        'Lever de les in EXACT deze opbouw, met Markdown-koppen. Verdeel de minuten over de fasen zodat ze samen op de gekozen lesduur uitkomen; zet de tijd tussen haakjes achter elke fasekop.',
+        'Lever de les als een complete EDI-lesvoorbereiding in EXACT deze opbouw, met Markdown-koppen. EDI = expliciete directe instructie met geleidelijke overdracht (ik → wij → jullie → jij) en controle van begrip in de instructiefasen. De tijd per fase is hieronder al ingevuld (de minuten tellen samen op tot de lesduur); NEEM die tijden exact over in de fasekoppen en stem de hoeveelheid inhoud per fase daarop af. Beschrijf per fase KORT EN BONDIG wat er gebeurt; schrijf NIET woord-voor-woord uit wat de leerkracht zegt. Citeer alleen een zin letterlijk (tussen aanhalingstekens) als die echt onmisbaar is. Gebruik geen sterretjes of andere opmaaktekens in de lopende tekst.',
         '', '## Lesdoel',
-        'Eén zin in de IK-vorm en kindtaal ("Ik kan …"), plus in één zin waarom dit voor de leerlingen belangrijk/handig is.',
+        'Eén zin in de IK-vorm en kindtaal ("Ik kan …") die zowel het concept (wat de leerling begrijpt) als de vaardigheid (wat de leerling kan) omvat.',
+        '### Waarom is dit handig?',
+        'Eén korte, aansprekende zin waarom dit voor de leerlingen handig of waardevol is.',
         '', '## Succescriteria',
-        '2 tot 4 concrete, observeerbare punten ("Het lukt mij als ik …").',
+        'Maximaal 3 punten als bulletlijst ("- Het lukt mij als ik …"). Elk punt heel kort: één korte regel zonder bijzinnen.',
         '', '## Benodigdheden',
-        'Bondige opsomming van wat de leerkracht klaarlegt.',
+        'Een bulletlijst, één item per regel (begin elke regel met "- "). Per item kort maar duidelijk wát het is en hoeveel (bv. "- Wisbordjes (1 per leerling)"). Geen volzinnen; alleen materiaal dat standaard op school aanwezig is.',
         '', '## Lesopbouw',
-        '### 1. Terugblik & voorkennis activeren (… min)',
-        '### 2. Instructie — IK (… min)',
-        'De leerkracht doet het hardop denkend voor (modeling). Geef een concreet voorbeeld van wat de leerkracht zegt/laat zien.',
-        '### 3. Begeleide inoefening — WIJ (… min)',
-        'Samen oefenen met directe feedback; geef een concrete opdracht.',
-        '### 4. Samen aan de slag — JULLIE (… min)',
-        'Hier komt de gekozen werkvorm (zie SOORT LES) volledig uitgewerkt: wat doen de leerlingen precies, in welke opstelling, met welk materiaal.',
-        '### 5. Controle van begrip (… min)',
-        'Geef 2 à 3 concrete controlevragen en hoe je álle leerlingen laat antwoorden (wisbordje, beurt willekeurig, duimen). Dit gebeurt vóór het zelfstandig werken.',
-        '### 6. Lesafsluiting (… min)',
-        'Kort terug naar het lesdoel en de succescriteria.',
-        '### 7. Zelfstandige verwerking (… min)',
-        'Wat de leerlingen daarna zelfstandig doen.',
-        '',
-        'Schrijf bij elke fase concreet wat de leerkracht doet/zegt én wat de leerlingen doen. Geen vaagheid, direct bruikbaar.',
-        diff ? differentiatieBlok() : '',
+        '### 1. Voorkennis activeren (' + t[0] + ' min)',
+        'Een korte activiteit die een EENVOUDIGER deelvaardigheid ophaalt die de leerlingen straks nodig hebben om het lesdoel te halen, NIET het lesdoel zelf. Kies iets dat net een stapje makkelijker is en dat de hele klas al zou moeten kunnen, zodat er geen instructie nodig is (puur ophalen en opwarmen). Bijvoorbeeld: bij het lesdoel "cijferend vermenigvuldigen, zoals 459 x 32" flits je in tweetallen keersommen als 6 x 7; bij "ongelijknamige breuken ordenen en vergelijken" haal je eerst het ordenen van gelijknamige breuken op. Beschrijf de concrete activiteit en hoe álle leerlingen actief meedoen. De leerlingen werken hier dus nog niet aan het lesdoel zelf en je geeft hier geen instructie.',
+        '### 2. Lesdoel benoemen (' + t[1] + ' min)',
+        'Beschrijf kort hoe je het lesdoel hardop met de klas deelt (met het concept én de vaardigheid erin) zodat de leerlingen weten wat ze gaan leren en kunnen.',
+        '### 3. Instructie (ik) (' + t[2] + ' min)',
+        'Beschrijf kort hoe de leerkracht het concept en de vaardigheid uitlegt en voordoet, in twee delen:',
+        '**Concept:** beschrijf hoe je het begrip uitlegt (het kernidee plus een passend voorbeeld).',
+        '**Vaardigheid:** beschrijf hoe je de aanpak stap voor stap voordoet en het bordwerk opbouwt. Citeer alleen een letterlijke zin als die onmisbaar is.',
+        '**Controle van begrip:** een vraag die je jezelf tijdens deze fase stelt om te peilen of de leerlingen het concept en de eerste stap snappen voordat je verdergaat.',
+        '### 4. Begeleide inoefening (wij) (' + t[3] + ' min)',
+        'Beschrijf kort hoe je samen met de klas een paar voorbeelden uitwerkt, met directe feedback.',
+        '**Controle van begrip:** waar let je op om te bepalen of de klas klaar is om in tweetallen verder te oefenen?',
+        '### 5. Begeleide inoefening (jullie) (' + t[4] + ' min)',
+        'Beschrijf de gekozen werkvorm (zie SOORT LES): wat doen de leerlingen samen, in welke opstelling, met welk materiaal.',
+        '**Controle van begrip:** waar let je op terwijl je rondloopt om te bepalen of de leerlingen klaar zijn voor zelfstandig werk?',
+        '### 6. Kleine lesafsluiting (jij) (' + t[5] + ' min)',
+        'Beschrijf kort hoe je elke leerling individueel checkt op concept én vaardigheid (bv. een exitvraag op een wisbordje). Wie het beheerst gaat zelfstandig verder; wie nog niet, schuift aan voor verlengde instructie.',
+        '### 7. Zelfstandige verwerking (' + t[6] + ' min)',
+        'Beschrijf kort wat de leerlingen zelfstandig doen, aansluitend op het lesdoel. Benoem kort de verlengde instructie (voor wie moeite heeft) én een verrijking/uitdaging (voor wie snel klaar is).',
+        '### 8. Grote lesafsluiting (' + t[7] + ' min)',
+        'Kort terug naar het lesdoel en de succescriteria, plus 1 à 2 reflectievragen over het proces en de werk- en leerhouding.',
+        '**Exitcheck:** één korte opdracht of vraag die élke leerling maakt en die direct laat zien of het lesdoel is behaald (een exit-ticket dat 1-op-1 het lesdoel meet). Benoem concreet wat je terugziet als het gelukt is.',
         '', '## Tips voor de leerkracht',
-        '1 tot 3 korte, praktische tips (klassenmanagement, valkuilen, een leuk extraatje).'
+        '1 tot 3 korte, praktische tips (klassenmanagement, valkuilen, een leuk extraatje).',
+        differentiatieBlok()
       ].join('\n');
     }
 
-    function kortFormat(diff) {
+    // Voor zaakvakken: een kennisles (geen EDI-instructiecyclus, maar
+    // nieuwsgierig maken → het verhaal/informatie → verwerking → afsluiting).
+    function kennisFormat(duur) {
+      var t = kennisTijden(duur);
       return [
-        'Lever een korte, krachtige lesbeschrijving in EXACT deze opbouw met Markdown-koppen. Concreet en direct bruikbaar, geen vaagheid.',
+        'Lever de les als een complete lesvoorbereiding voor een ZAAKVAK (kennisles) in EXACT deze opbouw, met Markdown-koppen. Dit is GEEN EDI-vaardigheidsles met ik-wij-jullie-jij; het draait om nieuwsgierig maken, een boeiende informatieve uitleg en een actieve verwerking. De tijd per fase is hieronder al ingevuld (de minuten tellen samen op tot de lesduur); NEEM die tijden exact over in de fasekoppen en stem de hoeveelheid inhoud daarop af. Beschrijf per fase kort en bondig wat er gebeurt; schrijf niet woord-voor-woord uit wat de leerkracht zegt. Gebruik geen opmaaktekens in de lopende tekst.',
+        '', '## Lesdoel',
+        'Eén zin in de IK-vorm en kindtaal ("Ik kan ...") die past bij een kennisles (bijvoorbeeld iets kunnen benoemen, uitleggen, vergelijken of plaatsen op een kaart of tijdbalk).',
+        '### Waarom is dit handig?',
+        'Eén korte, aansprekende zin waarom dit voor de leerlingen interessant of relevant is.',
+        '', '## Succescriteria',
+        'Maximaal 3 punten als bulletlijst ("- Het lukt mij als ik ..."). Elk punt heel kort: één korte regel.',
+        '', '## Benodigdheden',
+        'Een bulletlijst, één item per regel (begin met "- "). Kort en duidelijk; alleen materiaal dat standaard op school is (denk aan kaart of atlas, tijdbalk, prentenboek, een filmpje, bronkaartjes).',
+        '', '## Lesopbouw',
+        '### 1. Nieuwsgierig maken (' + t[0] + ' min)',
+        'Een prikkelende start die voorkennis activeert en nieuwsgierigheid wekt: een verrassende vraag, een beeld, een voorwerp, een stelling of een kort filmpje.',
+        '### 2. Het verhaal: uitleg en informatie (' + t[1] + ' min)',
+        'De informatieve kern. Vertel of toon de inhoud als een helder, boeiend verhaal. Benoem de kernbegrippen, gebruik passende bronnen (kaart, tijdbalk, beeld, tekst) en houd het levendig met voorbeelden uit de leefwereld van de kinderen. Verwerk hier één of twee korte tussenvragen om de aandacht en het begrip te peilen.',
+        '### 3. Verwerking (' + t[2] + ' min)',
+        'Een actieve, aansprekende opdracht waarin de leerlingen de informatie zélf gebruiken (ordenen, vergelijken, onderzoeken, op de kaart of tijdbalk plaatsen, maken of presenteren), passend bij de gekozen werkvorm (zie SOORT LES). Concreet uitgewerkt.',
+        '### 4. Afsluiting (' + t[3] + ' min)',
+        'Kort terug naar het lesdoel en de succescriteria, met een korte check of de kern is blijven hangen.',
+        '**Exitcheck:** één korte vraag of opdracht die élke leerling doet en die laat zien of het lesdoel is behaald (een exit-ticket dat 1-op-1 het lesdoel meet). Benoem wat je terugziet als het gelukt is.',
+        '', '## Tips voor de leerkracht',
+        '1 tot 3 korte, praktische tips (boeiend vertellen, bronnen gebruiken, valkuilen, een leuk extraatje).',
+        differentiatieBlok()
+      ].join('\n');
+    }
+
+    function kortFormat(duur) {
+      var t = kortTijden(duur);
+      return [
+        'Lever een korte, krachtige lesbeschrijving in EXACT deze opbouw met Markdown-koppen. Concreet en direct bruikbaar, geen vaagheid. De tijden hieronder zijn al ingevuld en tellen op tot de lesduur; neem ze exact over.',
         '', '## Lesdoel',
         'Eén zin in de IK-vorm ("Ik kan …").',
         '', '## De les in het kort',
-        'Drie blokjes met een tijdsindicatie die samen op de lesduur uitkomen:',
-        '**Start (… min):** korte introductie + voorkennis activeren.',
-        '**Kern (… min):** de hoofdwerkvorm (passend bij SOORT LES), concreet uitgewerkt.',
-        '**Afsluiting (… min):** terug naar het doel + kort controleren of het gelukt is.',
+        'Drie blokjes:',
+        '**Start (' + t[0] + ' min):** korte introductie en een eenvoudiger deelvaardigheid ophalen die je voor het lesdoel nodig hebt (een stapje makkelijker, hele klas kan het al, geen instructie), nog niet het lesdoel zelf.',
+        '**Kern (' + t[1] + ' min):** de hoofdwerkvorm (passend bij SOORT LES), concreet uitgewerkt.',
+        '**Afsluiting (' + t[2] + ' min):** terug naar het doel plus een korte exitcheck: één vraag of opdracht die élke leerling doet en die laat zien of het lesdoel is behaald.',
         '', '## Benodigdheden',
         'Bondige opsomming.',
-        diff ? differentiatieBlok() : ''
+        differentiatieBlok()
+      ].join('\n');
+    }
+
+    // Voor creatief: geen volledige les, maar een kant-en-klaar lesidee + benodigdheden.
+    function ideeFormat() {
+      return [
+        'Lever GEEN volledige lesvoorbereiding, maar een kort, inspirerend LESIDEE met benodigdheden. Concreet en direct bruikbaar, geen vaagheid, alleen materiaal dat standaard op school is. Gebruik EXACT deze opbouw met Markdown-koppen.',
+        '', '## Lesidee',
+        'Een pakkende openingszin van wat de leerlingen gaan maken, plus 2 à 3 zinnen die het idee en het eindresultaat beschrijven (wat, hoe het eruitziet, waarom leuk).',
+        '', '## Zo pak je het aan',
+        'Vier tot zes korte stappen (van start naar maken naar afronden), elk één regel, concreet en in de juiste volgorde.',
+        '', '## Benodigdheden',
+        'Een bulletlijst, één item per regel (begin met "- "), kort en duidelijk wát het is.',
+        '', '## Tip',
+        'Eén korte, praktische tip (klassenmanagement, opruimen of een variatie).'
       ].join('\n');
     }
 
     function differentiatieBlok() {
-      return ['', '## Differentiatie naar 3 niveaus',
-        'Zelfde lesdoel, andere route. Geef per niveau concreet wat je aanpast:',
-        '### 🌙 Maan: extra ondersteuning', '### ⭐ Ster: basis', '### ☀️ Zon: uitdaging'].join('\n');
+      return ['', '## Differentiatie',
+        'Zelfde lesdoel, andere route. Geef drie korte kolommen en begin direct met de drie kopjes hieronder, zonder inleidende zin. Houd elke kolom concreet en kort.',
+        '### Basis',
+        'De kernopdracht die de meeste leerlingen (basisniveau) zelfstandig doen, precies op het lesdoel.',
+        '### Verlengde instructie',
+        'Voor leerlingen die meer steun nodig hebben: zij oefenen HETZELFDE lesdoel langer en vaker, samen met de leerkracht aan de instructietafel tijdens de zelfstandige verwerking (nog eens voordoen, samen stap voor stap, extra herhaling). Het is dus niet per se een makkelijker doel, maar meer begeleide inoefening van ditzelfde doel.',
+        'Voeg daarna kort een bulletlijst toe met de kop "Lukt het nog niet? Check deze bouwstenen:" en 2 à 4 eenvoudiger deelvaardigheden (uit een eerdere leerlijn) die een leerling moet beheersen om dit lesdoel te kunnen halen. Zo ziet de leerkracht waar een leerling vastloopt en wat hij dan apart met die leerling kan oefenen. Houd dit subtiel en kort.',
+        '### Verrijkende opdrachten',
+        'Een echte uitdaging voor wie het lesdoel al beheerst: een moeilijkere variant, een transfer- of denkopdracht die verder gaat dan het lesdoel. Geen "meer van hetzelfde".'].join('\n');
     }
 
     const INVALSHOEKEN = [
@@ -369,38 +675,88 @@
         'Je bent een ervaren pedagoog en didacticus in het Nederlandse basisonderwijs en een expert in lesontwerp. Je bedenkt complete, kant-en-klare lessen waar een leerkracht zó mee de klas in kan.',
         '', 'Vaste regels:',
         '- Schrijf in helder, warm Nederlands, gericht aan de leerkracht.',
+        '- Schrijf taalkundig correct Nederlands. Let nauwkeurig op de juiste lidwoorden (de/het) en op werkwoordspelling; kies bij twijfel het correcte lidwoord (bijvoorbeeld "het struikelblok", niet "de struikelblok"). Sommige leerlingen pikken het lidwoord uit jouw tekst op, dus het moet kloppen.',
+        '- Gebruik GEEN liggende streepjes (— of –) als leesteken in lopende tekst; dat oogt onnatuurlijk en AI-achtig. Schrijf gewone zinnen met komma\'s, punten, dubbele punten of haakjes. Een koppelteken in een samenstelling (zoals "reken-wiskunde") of een tijdsbereik ("10-15 min") mag wel.',
         '- Wees CONCREET en direct bruikbaar: echte voorbeeldvragen, echte werkvormen met materiaal, opstelling en timing. Nooit algemeenheden als "bespreek het onderwerp".',
         '- Stem alles af op de opgegeven groep (leeftijd, niveau, aandachtsspanne) en op de lesduur.',
+        '- KALIBREER de inhoud op het leerjaar volgens de Nederlandse leerlijnen/referentieniveaus (SLO). Pas getalbereik, abstractieniveau, woordenschat, contexten en complexiteit aan de opgegeven groep aan, zodat exact dezelfde opdracht in een lagere groep eenvoudiger en concreter is dan in een hogere. Ankers: optellen/aftrekken tot 100 (groep 4), tot 1000 (groep 5), tot 10.000+ (groep 6); rijgen/splitsen vóór kolomsgewijs rekenen; tafels automatiseren (groep 4-5); breuken eerst visueel met modellen (groep 5-6), daarna vergelijken/ordenen en bewerken abstracter (groep 7-8); spelling- en leesniveau oplopend per leerjaar. Benoem waar passend kort welk leerlijn-/referentieniveau erbij hoort.',
         '- Houd het lesdoel van begin tot eind centraal; werk doelgericht (backward design).',
         '- Zorg voor afwisseling en betrokkenheid; laat leerlingen zo min mogelijk passief luisteren.',
         '- Verzin geen feitelijke onjuistheden. Bij reken-/taalinhoud: geef correcte voorbeelden en antwoorden.',
-        '- Gebruik uitsluitend de gevraagde Markdown-koppen; geen inleidende of afsluitende praatjes eromheen.'
+        '- Verzin NOOIT specifieke bronnen, links of titels (dus geen verzonnen YouTube- of Schooltv-links, boektitels of websites; die bestaan vaak niet of zijn verouderd). Noem het SOORT bron dat past (een atlas, een tijdbalk, een prentenboek, een bronkaart) en geef voor een filmpje een zoekhint in plaats van een link, bijvoorbeeld: zoek een kort filmpje over de Romeinen, bijvoorbeeld op Schooltv.',
+        '- HOUD HET REALISTISCH EN HAALBAAR: een leerkracht die deze les \'s ochtends openslaat moet \'m diezelfde dag binnen de lesduur kunnen voorbereiden én geven. Gebruik alleen materiaal dat standaard op een basisschool aanwezig is (wisbordjes, schrift, bord, eventueel een kopieerblad). Vraag geen speciale of grote aantallen spullen (dus niet "26 klembordjes" of materiaal dat je moet aanschaffen/lamineren).',
+        '- Gebruik uitsluitend de gevraagde Markdown-koppen; geen inleidende of afsluitende praatjes eromheen.',
+        '- Gebruik GEEN scheidingslijnen (regels met "---", "***" of "___") tussen de onderdelen; de koppen verzorgen de structuur al.'
       ].join('\n');
     }
 
     function bouwOpdracht(inv, variatie) {
       const r = [];
       r.push('Ontwerp een les met de volgende gegevens:');
-      r.push('- Leerdoel/onderwerp: ' + inv.doel);
+      if (inv.doel) r.push('- ' + (isCreatief(inv.vak) ? 'Onderwerp/thema' : 'Leerdoel/onderwerp') + ': ' + inv.doel);
+      else if (isCreatief(inv.vak)) r.push('- Onderwerp: vrij gelaten. Kies zelf een passend, gevarieerd idee uit de ideeënbank hieronder.');
       if (inv.vak) r.push('- Vak: ' + inv.vak);
       r.push('- Groep: ' + inv.groep);
       r.push('- Lesduur: ' + inv.duur);
       if (inv.context) r.push('- Aanvullingen van de leerkracht: ' + inv.context);
-      r.push(''); r.push(LESTYPE_REGIE[inv.lestype]); r.push('');
+      // Leerlijn-context (SLO) voor dit vak + leerjaar: stuurt het niveau scherp.
+      const leerlijn = (window.avinkaLeerlijnen && window.avinkaLeerlijnen.voor) ? window.avinkaLeerlijnen.voor(inv.vak, inv.groep) : '';
+      if (leerlijn) {
+        r.push('');
+        r.push('LEERLIJN-CONTEXT (' + inv.groep + ', op basis van de SLO-leerlijnen/referentieniveaus voor dit vak). Kalibreer het niveau, de moeilijkheid en de complexiteit hier exact op; gebruik alléén wat bij dit specifieke leerdoel hoort en blijf bij dit leerjaar:');
+        r.push(leerlijn);
+      }
+      // Spellingmethode (bv. Staal, Taal actief, Spelling in Beeld) uit de vrije
+      // aanvullingen: dan de categorienamen/regels van díe methode gebruiken.
+      if (/spelling|taal/i.test(inv.vak || '')) {
+        const spm = (window.avinkaLeerlijnen && window.avinkaLeerlijnen.spellingMethode) ? window.avinkaLeerlijnen.spellingMethode(inv.context, inv.groep) : '';
+        if (spm) { r.push(''); r.push(spm); }
+      }
+      // Ideeënbank (bijv. creatief): een palet waaruit de AI kiest/varieert.
+      const ideeen = (window.avinkaLeerlijnen && window.avinkaLeerlijnen.ideeen) ? window.avinkaLeerlijnen.ideeen(inv.vak, inv.groep) : '';
+      if (ideeen) {
+        r.push('');
+        r.push('IDEEËNBANK voor dit vak en deze bouw. Kies hieruit één passend idee (of combineer/varieer) en werk dat volledig en didactisch uit. Heeft de leerkracht hierboven een eigen onderwerp/thema opgegeven? Werk dán dat thema uit en gebruik deze lijst alleen als inspiratie voor de techniek en aanpak:');
+        r.push(ideeen);
+      }
+      // Werkvorm-regie alleen bij 'echte' lessen; bij creatief (lesidee) niet.
+      if (!isCreatief(inv.vak)) {
+        // Vak-didactisch accent (tilt de les boven generiek uit).
+        const vd = vakDidactiek(inv.vak);
+        if (vd) { r.push(''); r.push(vd); }
+        const lts = (inv.lestypes && inv.lestypes.length) ? inv.lestypes : ['klas'];
+        r.push('');
+        lts.forEach(lt => { if (LESTYPE_REGIE[lt]) r.push(LESTYPE_REGIE[lt]); });
+        r.push('');
+        if (lts.length > 1) {
+          r.push('LET OP: hierboven staan MEERDERE lestypes die je in ÉÉN samenhangende les moet combineren (bijvoorbeeld een coöperatieve werkvorm buiten, of bewegend leren in de klas). Maak dus geen losse, aparte lessen.');
+          r.push('');
+        }
+        // Werkvorm-base per gekozen lestype (klas heeft geen aparte base).
+        const max = window.avinkaLeerlijnen && window.avinkaLeerlijnen.werkvormen;
+        const werkvBlokken = max ? lts.map(lt => window.avinkaLeerlijnen.werkvormen(lt, inv.groep, lts.length > 1 ? 8 : 12)).filter(Boolean) : [];
+        if (werkvBlokken.length) {
+          r.push('WERKVORM-BASE bij ' + (werkvBlokken.length > 1 ? 'deze lestypes' : 'dit lestype') + '. Kies één of twee werkvormen die echt bij dít leerdoel passen en bouw de les eromheen (de werkvorm is de drager, het leerdoel de inhoud). Het zijn sjablonen: vul ze met de concrete leerstof van deze les en stem de moeilijkheid af op de groep:');
+          r.push(werkvBlokken.join('\n\n'));
+          r.push('');
+        }
+        // Zaakvakken: een verwerkingsbank voor de verwerkingsfase (incl. creatieve maakvormen).
+        if (isZaakvak(inv.vak)) {
+          const verw = (window.avinkaLeerlijnen && window.avinkaLeerlijnen.verwerkingen) ? window.avinkaLeerlijnen.verwerkingen(inv.vak, inv.groep) : '';
+          if (verw) {
+            r.push('VERWERKINGSBANK voor de verwerkingsfase van deze zaakvakles. Kies hieruit één passende verwerking (of combineer/varieer) en werk die concreet uit:');
+            r.push(verw);
+            r.push('');
+          }
+        }
+      }
       if (variatie) r.push('VARIATIE: ' + variatie + ' Maak een duidelijk ándere uitwerking dan een standaard eerste versie.');
       r.push('');
-      r.push(inv.vorm === 'edi' ? ediFormat(inv.diff) : kortFormat(inv.diff));
+      r.push(inv.vorm === 'idee' ? ideeFormat() : inv.vorm === 'kort' ? kortFormat(inv.duur) : (isZaakvak(inv.vak) ? kennisFormat(inv.duur) : ediFormat(inv.duur)));
       return r.join('\n');
     }
 
-    async function callClaude(system, user, maxTokens) {
-      if (window.avinkaMask) { try { await window.avinkaMask.ready; } catch (e) {} }
-      const safeUser = window.avinkaMask ? window.avinkaMask.apply(user) : user;
-      const body = {
-        model: MODEL, max_tokens: maxTokens || 2200,
-        messages: [{ role: 'user', content: safeUser }],
-        system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }]
-      };
+    async function postClaude(body) {
       const resp = await fetch('/api/claude', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': 'sk-ant-proxy', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
@@ -419,12 +775,180 @@
       return ruw.trim();
     }
 
-    let laatsteTekst = '', laatsteMeta = {}, variatieTeller = 0;
+    async function callClaude(system, user, maxTokens) {
+      if (window.avinkaMask) { try { await window.avinkaMask.ready; } catch (e) {} }
+      const safeUser = window.avinkaMask ? window.avinkaMask.apply(user) : user;
+      return postClaude({
+        model: MODEL, max_tokens: maxTokens || 2200,
+        messages: [{ role: 'user', content: safeUser }],
+        system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }]
+      });
+    }
+
+    // Verfijnen werkt vanaf de ONGEWIJZIGDE basis-les (met cache_control, zodat
+    // die bij meerdere aanpassingen goedkoop uit de cache wordt gelezen i.p.v.
+    // opnieuw afgerekend) plus de verzamelde wensen als variabel staartje. Het
+    // systeem-prompt is ook gecached. Zo "onthoudt" hij de hele les.
+    async function verfijnClaude(basis, wensen, meta) {
+      if (window.avinkaMask) { try { await window.avinkaMask.ready; } catch (e) {} }
+      const lesBlok = 'Je hebt eerder deze les voor de leerkracht gemaakt. Lees hem goed; je past hem zo licht aan.\n\n=== BEGIN LES ===\n' + basis + '\n=== EINDE LES ===';
+      const wensBlok = 'De leerkracht wil de les houden zoals hij is, met ALLEEN de volgende aanpassing(en):\n' + wensen.map(function (w) { return '- ' + w; }).join('\n') + '\n\nGeef de VOLLEDIGE les opnieuw terug in EXACT dezelfde opbouw en met dezelfde Markdown-koppen, met alleen deze aanpassing(en) doorgevoerd en al het andere ongewijzigd. Geen inleidende of afsluitende tekst eromheen.';
+      const safeLes = window.avinkaMask ? window.avinkaMask.apply(lesBlok) : lesBlok;
+      const safeWens = window.avinkaMask ? window.avinkaMask.apply(wensBlok) : wensBlok;
+      return postClaude({
+        model: MODEL, max_tokens: meta.vorm === 'edi' ? 3600 : 1400,
+        system: [{ type: 'text', text: bouwSysteem(), cache_control: { type: 'ephemeral' } }],
+        messages: [{
+          role: 'user', content: [
+            { type: 'text', text: safeLes, cache_control: { type: 'ephemeral' } },
+            { type: 'text', text: safeWens }
+          ]
+        }]
+      });
+    }
+
+    let laatsteTekst = '', laatsteMeta = {}, variatieTeller = 0, verfijnBasis = '', verfijnWensen = [];
+    let scherpForce = false; // 'true' = leerkracht gaat door met eigen (brede) doel
+
+    // ── Scherpstellen bij een te breed leerdoel (essentie blijft: doel → les) ──
+    // Telt de 'betekenisvolle' woorden in het doel; 1 of minder = te breed.
+    function doelTeVaag(doel) {
+      const stop = new Set(['de', 'het', 'een', 'en', 'met', 'van', 'op', 'in', 'te', 'voor', 'naar', 'over', 'tot', 'bij', 'om', 'je', 'ik', 'we', 'aan']);
+      const woorden = String(doel || '').toLowerCase().replace(/[^a-zà-ÿ0-9\s]/g, ' ').split(/\s+/).filter(w => w && !stop.has(w));
+      return woorden.length <= 1;
+    }
+    function verbergScherp() { document.getElementById('scherp').style.display = 'none'; }
+    async function haalScherpSuggesties(doel, vak, groep) {
+      const leerlijn = (window.avinkaLeerlijnen && window.avinkaLeerlijnen.voor) ? window.avinkaLeerlijnen.voor(vak, groep) : '';
+      const sys = 'Je bent een ervaren leerkracht in het Nederlandse basisonderwijs. Je geeft concrete, scherp afgebakende lesdoelen die precies bij het leerjaar passen.';
+      const usr = [
+        'Een leerkracht wil een les maken voor ' + vak + ', ' + groep + ', maar gaf een nog te breed onderwerp: "' + doel + '".',
+        'Geef 4 concrete, afgebakende lesdoelen die hier goed bij passen en op het niveau van ' + groep + ' liggen.',
+        leerlijn ? ('Niveau (leerlijn ' + groep + '): ' + leerlijn) : '',
+        'Elk lesdoel kort en bruikbaar (maximaal ongeveer 8 woorden), als losse regel. Geen nummering, geen opmaaktekens, geen inleiding.'
+      ].filter(Boolean).join('\n');
+      const txt = await callClaude(sys, usr, 300);
+      return txt.split('\n').map(r => r.replace(/^[\s\-*•\d.)]+/, '').trim()).filter(Boolean).slice(0, 4);
+    }
+    async function toonScherpstel(doel, vak, groep) {
+      const panel = document.getElementById('scherp'), chips = document.getElementById('scherp-chips');
+      panel.style.display = 'block';
+      chips.innerHTML = '<span class="scherp-chip laden-chip">Suggesties laden…</span>';
+      panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      try {
+        const sugg = await haalScherpSuggesties(doel, vak, groep);
+        if (!sugg.length) { verbergScherp(); scherpForce = true; maak(); return; }
+        chips.innerHTML = '';
+        sugg.forEach(s => {
+          const b = document.createElement('button');
+          b.className = 'scherp-chip'; b.textContent = s;
+          b.onclick = () => kiesScherpDoel(s);
+          chips.appendChild(b);
+        });
+      } catch (e) {
+        // Niet blokkeren bij een fout: ga gewoon door met het eigen doel.
+        verbergScherp(); scherpForce = true; maak();
+      }
+    }
+    function kiesScherpDoel(tekst) {
+      const inp = document.getElementById('doel');
+      inp.value = tekst; inp.classList.add('filled');
+      verbergScherp(); scherpForce = true; maak();
+    }
+    function maakMetEigenDoel() { verbergScherp(); scherpForce = true; maak(); }
+    // ── Meelopende laad-stappen ─────────────────────────────────────────────
+    // Geen echte streaming-voortgang beschikbaar (één AI-call), dus een tempo-
+    // gestuurde lijst die laat zien waar de tool "mee bezig" is. Past zich aan
+    // op de lesvorm zodat de stappen kloppen met wat er gemaakt wordt.
+    let laadTimers = [];
+    // Elke stap = { t: tekst, g: gewicht }. Het gewicht bepaalt hoe lang de stap
+    // relatief blijft staan (hoger = langer). De laatste stap is "opmaken" en
+    // blijft branden tot het antwoord er is (gewicht telt niet mee).
+    function laadStappenVoor(inv) {
+      const nr = inv.groep ? String(inv.groep).replace(/\D/g, '') : '';
+      const groep = nr ? ('groep ' + nr) : 'de groep';
+      if (inv.vorm === 'idee') {
+        return [
+          { t: 'Onderwerp en insteek kiezen', g: 1.0 },
+          { t: 'Passende techniek bij ' + groep + ' zoeken', g: 1.4 },
+          { t: 'Het lesidee uitwerken', g: 1.5 },
+          { t: 'Benodigdheden op een rij zetten', g: 0.8 },
+          { t: 'Alles netjes opmaken', g: 0 },
+        ];
+      }
+      if (isZaakvak(inv.vak)) {
+        return [
+          { t: 'Lesdoel scherpstellen', g: 0.9 },
+          { t: 'Leerlijn van ' + groep + ' erbij pakken', g: 1.6 },
+          { t: 'De kennisles opbouwen', g: 1.2 },
+          { t: 'Nieuwsgierig maken en verwerking bedenken', g: 1.5 },
+          { t: 'Differentiatie toevoegen', g: 1.0 },
+          { t: 'Alles netjes opmaken', g: 0 },
+        ];
+      }
+      if (inv.vorm === 'kort') {
+        return [
+          { t: 'Lesdoel scherpstellen', g: 0.9 },
+          { t: 'Leerlijn van ' + groep + ' erbij pakken', g: 1.6 },
+          { t: 'Start, kern en afsluiting uitwerken', g: 1.5 },
+          { t: 'Differentiatie toevoegen', g: 1.0 },
+          { t: 'Alles netjes opmaken', g: 0 },
+        ];
+      }
+      return [
+        { t: 'Lesdoel en succescriteria scherpstellen', g: 1.0 },
+        { t: 'Leerlijn van ' + groep + ' erbij pakken', g: 1.6 },
+        { t: 'Didactische opbouw kiezen', g: 0.8 },
+        { t: 'Instructie en inoefening uitwerken', g: 1.7 },
+        { t: 'Differentiatie toevoegen', g: 1.1 },
+        { t: 'De lesvoorbereiding opmaken', g: 0 },
+      ];
+    }
+    function startLaadStappen(stappen, totaalMs) {
+      stopLaadStappen();
+      const box = document.getElementById('laad-stappen');
+      box.innerHTML = stappen.map((s, i) => `<div class="laad-stap" id="lstap-${i}"><span class="laad-stip"></span><span>${s.t}</span></div>`).join('');
+      const zetActief = (i) => {
+        for (let j = 0; j < i; j++) { const e = document.getElementById('lstap-' + j); if (e) e.className = 'laad-stap klaar'; }
+        const e = document.getElementById('lstap-' + i); if (e) e.className = 'laad-stap actief';
+      };
+      zetActief(0);
+      // De eerdere stappen vullen samen ~65% van de geschatte tijd; elke stap
+      // krijgt een deel naar verhouding van zijn gewicht (de één duurt dus
+      // langer dan de ander). De laatste stap ("opmaken") blijft branden tot het
+      // antwoord er is. totaalMs verschilt per lesvorm (EDI/kennisles ~60s,
+      // korte les/lesidee ~24s).
+      const totaal = totaalMs || 40000;
+      const vroeg = stappen.slice(0, -1); // alle behalve de laatste
+      const span = totaal * 0.65;
+      const somG = vroeg.reduce((a, s) => a + (s.g || 0), 0) || 1;
+      let t = 0;
+      for (let i = 1; i < stappen.length; i++) {
+        t += span * ((vroeg[i - 1].g || 0) / somG); // starttijd van stap i
+        laadTimers.push(setTimeout(() => zetActief(i), t));
+      }
+    }
+    function stopLaadStappen(klaarmaken) {
+      laadTimers.forEach(clearTimeout); laadTimers = [];
+      if (klaarmaken) document.querySelectorAll('#laad-stappen .laad-stap').forEach(e => e.className = 'laad-stap klaar');
+    }
+
     async function maak(andereVersie) {
       const fout = document.getElementById('err');
       fout.textContent = '';
+      const gekozenVak = document.getElementById('vak').value;
+      if (!gekozenVak) { fout.textContent = 'Kies eerst een vakgebied.'; return; }
       const doel = document.getElementById('doel').value.trim();
-      if (!doel) { fout.textContent = 'Vul eerst een leerdoel of onderwerp in.'; return; }
+      const creaVak = isCreatief(gekozenVak);
+      if (!doel && !creaVak) { fout.textContent = 'Vul eerst een leerdoel of onderwerp in.'; return; }
+
+      // Te breed leerdoel? Eerst even scherpstellen (niet bij creatief of 'andere versie').
+      if (!andereVersie && !creaVak && !scherpForce && doelTeVaag(doel)) {
+        toonScherpstel(doel, gekozenVak, document.getElementById('groep').value);
+        return;
+      }
+      scherpForce = false;
+      verbergScherp();
 
       const inv = {
         doel,
@@ -432,30 +956,51 @@
         groep: document.getElementById('groep').value,
         duur: document.getElementById('duur').value,
         context: document.getElementById('context').value.trim(),
-        lestype, vorm, diff: document.getElementById('diff').checked
+        lestypes: geselecteerdeLestypes(), vorm
       };
+      // Creatief levert een lesidee + benodigdheden, geen volledige (EDI-)les.
+      if (isCreatief(inv.vak)) inv.vorm = 'idee';
       let variatie = '';
       if (andereVersie) { variatie = INVALSHOEKEN[variatieTeller % INVALSHOEKEN.length]; variatieTeller++; }
 
       const knop = document.getElementById('btn-maak');
       knop.disabled = true;
+      document.getElementById('basis-kaart').style.opacity = '.6';
       document.getElementById('invoer-kaart').style.opacity = '.6';
       document.getElementById('laden').classList.add('aan');
       document.getElementById('uitvoer').style.display = 'none';
       document.getElementById('laad-tekst').textContent = andereVersie ? 'Een frisse versie wordt bedacht…' : 'Je les wordt uitgedacht…';
+      startLaadStappen(laadStappenVoor(inv), inv.vorm === 'edi' ? 60000 : 24000);
 
       try {
-        const tekst = await callClaude(bouwSysteem(), bouwOpdracht(inv, variatie), inv.vorm === 'edi' ? 2400 : 1400);
+        const tekst = schoonMd(await callClaude(bouwSysteem(), bouwOpdracht(inv, variatie), inv.vorm === 'edi' ? 3600 : 1400));
         laatsteTekst = tekst; laatsteMeta = inv;
-        document.getElementById('les').innerHTML = renderMd(tekst);
-        document.getElementById('uitvoer-titel').textContent = inv.lestype === 'buiten' ? 'Je buitenles' : inv.lestype === 'bewegend' ? 'Je bewegende les' : 'Je les';
+        verfijnBasis = tekst; verfijnWensen = [];
+        document.getElementById('verfijn').style.display = 'none';
+        document.getElementById('verfijn-tekst').value = '';
+        document.getElementById('les').innerHTML = renderLes(tekst, inv);
+        // Een EDI-lesvoorbereiding is lang: toon 'm eerst ingeklapt met een 'toon volledige les'-knop.
+        const lesEl = document.getElementById('les');
+        const tgl = document.getElementById('les-toggle');
+        if (inv.vorm === 'edi') {
+          lesEl.classList.add('ingeklapt');
+          tgl.textContent = 'Toon volledige les';
+          tgl.style.display = '';
+        } else {
+          lesEl.classList.remove('ingeklapt');
+          tgl.style.display = 'none';
+        }
+        const lts = inv.lestypes || [];
+        document.getElementById('uitvoer-titel').textContent = inv.vorm === 'idee' ? 'Je lesidee' : lts.indexOf('buiten') !== -1 ? 'Je buitenles' : (lts.length === 1 && lts[0] === 'bewegend') ? 'Je bewegende les' : 'Je les';
         document.getElementById('uitvoer').style.display = 'block';
         document.getElementById('uitvoer').scrollIntoView({ behavior: 'smooth', block: 'start' });
         if (typeof avinkaTel === 'function') avinkaTel(SOORT, { woorden: tekst.split(/\s+/).filter(Boolean).length });
       } catch (e) {
         fout.textContent = e.message || 'Er ging iets mis.';
       } finally {
+        stopLaadStappen();
         knop.disabled = false;
+        document.getElementById('basis-kaart').style.opacity = '';
         document.getElementById('invoer-kaart').style.opacity = '';
         document.getElementById('laden').classList.remove('aan');
       }
@@ -463,7 +1008,58 @@
 
     function terug() {
       document.getElementById('uitvoer').style.display = 'none';
-      document.getElementById('invoer-kaart').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('basis-kaart').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function toggleLes() {
+      const lesEl = document.getElementById('les');
+      const tgl = document.getElementById('les-toggle');
+      const ingeklapt = lesEl.classList.toggle('ingeklapt');
+      tgl.textContent = ingeklapt ? 'Toon volledige les' : 'Les inklappen';
+    }
+
+    function toonVerfijn() {
+      const p = document.getElementById('verfijn');
+      const open = p.style.display !== 'block';
+      p.style.display = open ? 'block' : 'none';
+      if (open) { p.scrollIntoView({ behavior: 'smooth', block: 'center' }); const t = document.getElementById('verfijn-tekst'); if (t) t.focus(); }
+    }
+
+    // Past alleen de gevraagde wens(en) toe op de bestaande les (rest blijft).
+    async function verfijn() {
+      const err = document.getElementById('verfijn-err'); err.textContent = '';
+      const wens = document.getElementById('verfijn-tekst').value.trim();
+      if (!wens) { err.textContent = 'Beschrijf eerst kort wat je wilt aanpassen.'; return; }
+      if (!verfijnBasis) return;
+      verfijnWensen.push(wens);
+      const knop = document.getElementById('btn-verfijn'); knop.disabled = true;
+      document.getElementById('uitvoer').style.display = 'none';
+      document.getElementById('laden').classList.add('aan');
+      document.getElementById('laad-tekst').textContent = 'Je aanpassing wordt verwerkt…';
+      startLaadStappen([
+        { t: 'Je wens lezen', g: 0.7 },
+        { t: 'De les aanpassen', g: 1.6 },
+        { t: 'Alles netjes opmaken', g: 0 },
+      ], (laatsteMeta && laatsteMeta.vorm === 'edi') ? 60000 : 24000);
+      try {
+        const tekst = schoonMd(await verfijnClaude(verfijnBasis, verfijnWensen, laatsteMeta));
+        laatsteTekst = tekst;
+        document.getElementById('les').innerHTML = renderLes(tekst, laatsteMeta);
+        const lesEl = document.getElementById('les'), tgl = document.getElementById('les-toggle');
+        if (laatsteMeta.vorm === 'edi') { lesEl.classList.add('ingeklapt'); tgl.textContent = 'Toon volledige les'; tgl.style.display = ''; }
+        else { lesEl.classList.remove('ingeklapt'); tgl.style.display = 'none'; }
+        document.getElementById('verfijn-tekst').value = '';
+        document.getElementById('uitvoer').style.display = 'block';
+        document.getElementById('uitvoer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (e) {
+        verfijnWensen.pop();
+        document.getElementById('uitvoer').style.display = 'block';
+        err.textContent = e.message || 'Er ging iets mis.';
+      } finally {
+        stopLaadStappen();
+        knop.disabled = false;
+        document.getElementById('laden').classList.remove('aan');
+      }
     }
 
     function kopieer() {
@@ -471,6 +1067,13 @@
       navigator.clipboard.writeText(plat).then(() => {
         if (typeof avinkaAlert === 'function') avinkaAlert("Les gekopieerd. Plak het in Word of je methode.");
       });
+    }
+
+    // Verwijder markdown-scheidingslijnen (---, ***, ___) die de AI soms tussen
+    // secties zet. Onze renderer kent ze niet, dus anders blijven ze als losse
+    // streepjes onder de onderdelen staan (ook in kopie + Word).
+    function schoonMd(t) {
+      return (t || '').split('\n').filter(r => !/^\s*([-*_]\s*){3,}$/.test(r)).join('\n');
     }
 
     // ── Mini-Markdown → nette HTML ───────────────────────────────────────────
@@ -483,6 +1086,7 @@
       for (const r of regels) {
         const t = r.trim();
         if (!t) { sluit(); continue; }
+        if (/^([-*_]\s*){3,}$/.test(t)) { sluit(); continue; } // scheidingslijn negeren
         if (t.startsWith('#### ') || t.startsWith('### ')) { sluit(); html += '<h4>' + tijdMarkup(inline(t.replace(/^#+\s*/, ''))) + '</h4>'; continue; }
         if (t.startsWith('## ') || t.startsWith('# ')) { sluit(); html += '<h3>' + inline(t.replace(/^#+\s*/, '')) + '</h3>'; continue; }
         if (/^[-*]\s+/.test(t)) { if (!lijst) { html += '<ul>'; lijst = true; } html += '<li>' + inline(t.replace(/^[-*]\s+/, '')) + '</li>'; continue; }
@@ -491,23 +1095,264 @@
       sluit(); return html;
     }
 
+    // ── Les-renderer: van Markdown naar een echt lesvoorbereidings-document ──
+    //    (infobalk + kaders per onderdeel + fase-kaarten + controle-van-begrip-callouts)
+    const LESTYPE_NAAM = { klas: 'In de klas', bewegend: 'Bewegend leren', buiten: 'Buitenles', cooperatief: 'Coöperatief leren' };
+    function slugify(s) { return s.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+    function renderLes(md, meta) {
+      let html = '';
+
+      // Infobalk bovenaan (uit de gekozen instellingen, niet uit de AI-tekst)
+      const groepTxt = meta.groep ? (/^groep/i.test(meta.groep) ? meta.groep : 'Groep ' + meta.groep) : '';
+      const lestypeNamen = (meta.lestypes || []).map(v => LESTYPE_NAAM[v]).filter(Boolean);
+      const pills = [groepTxt, meta.vak, meta.duur].concat(lestypeNamen).filter(Boolean);
+      if (pills.length) html += '<div class="les-meta">' + pills.map(p => '<span class="lm-pill">' + esc(p) + '</span>').join('') + '</div>';
+
+      let lijst = false, inFase = false, inBlok = false, inLesopbouw = false, faseNr = 0, inDiff = false, diffKol = false;
+      const sluitLijst = () => { if (lijst) { html += '</ul>'; lijst = false; } };
+      const sluitFase = () => { sluitLijst(); if (inFase) { html += '</div></div>'; inFase = false; } };
+      const sluitBlok = () => { sluitLijst(); if (inBlok) { html += '</div></div>'; inBlok = false; } };
+      const sluitDiff = () => { sluitLijst(); if (inDiff) { if (diffKol) { html += '</div></div>'; diffKol = false; } html += '</div></div>'; inDiff = false; } };
+
+      for (const raw of md.split('\n')) {
+        const t = raw.trim();
+        if (!t) { sluitLijst(); continue; }
+
+        // ## hoofdonderdeel
+        if (/^##\s+/.test(t) && !/^###/.test(t)) {
+          const titel = t.replace(/^#+\s*/, '');
+          sluitFase(); sluitBlok(); sluitDiff();
+          if (/^lesopbouw/i.test(titel)) {
+            inLesopbouw = true; faseNr = 0;
+            html += '<div class="fasen-kop">' + inline(titel) + '</div>';
+          } else if (/different/i.test(titel)) {
+            inLesopbouw = false; inDiff = true; diffKol = false;
+            html += '<div class="diff-wrap"><div class="blok-kop">' + inline(titel) + '</div><div class="diff-grid">';
+          } else {
+            inLesopbouw = false; inBlok = true;
+            html += '<div class="blok blok-' + slugify(titel) + '"><div class="blok-kop">' + inline(titel) + '</div><div class="blok-in">';
+          }
+          continue;
+        }
+
+        // ### fase (binnen Lesopbouw), differentiatiekolom, of subkop (elders)
+        if (/^###\s+/.test(t)) {
+          const titel = t.replace(/^#+\s*/, '');
+          if (inDiff) {
+            sluitLijst();
+            if (diffKol) html += '</div></div>';
+            html += '<div class="diff-kol"><div class="dk-kop">' + inline(titel) + '</div><div class="dk-in">';
+            diffKol = true;
+            continue;
+          }
+          if (inLesopbouw) {
+            sluitFase(); faseNr++;
+            let body = titel.replace(/^\d+\.\s*/, ''), tijd = '';
+            const m = body.match(/\(([^)]*\bmin[^)]*)\)\s*$/i);
+            if (m) { tijd = m[1].trim(); body = body.replace(/\([^)]*\)\s*$/, '').trim(); }
+            html += '<div class="fase"><div class="fase-kop"><span class="fase-nr">' + faseNr + '</span><span class="fase-titel">' + inline(body) + '</span>' + (tijd ? '<span class="tijd">' + esc(tijd) + '</span>' : '') + '</div><div class="fase-in">';
+            inFase = true;
+          } else {
+            sluitLijst();
+            html += '<h4>' + tijdMarkup(inline(titel)) + '</h4>';
+          }
+          continue;
+        }
+
+        // Controle van begrip → groene callout
+        if (/^\*\*\s*controle van begrip\s*:?\s*\*\*/i.test(t)) {
+          sluitLijst();
+          const rest = t.replace(/^\*\*\s*controle van begrip\s*:?\s*\*\*\s*/i, '');
+          html += '<div class="cvb"><span class="cvb-ic">✓</span><span><strong>Controle van begrip</strong> ' + inline(rest) + '</span></div>';
+          continue;
+        }
+
+        // **Label:** tekst → gelabeld subblokje (Concept, Vaardigheid, …)
+        const lbl = t.match(/^\*\*\s*(.+?)\s*:\s*\*\*\s*(.*)$/);
+        if (lbl) {
+          sluitLijst();
+          html += '<div class="subblok"><span class="subblok-l">' + esc(lbl[1]) + '</span>' + (lbl[2] ? ' ' + inline(lbl[2]) : '') + '</div>';
+          continue;
+        }
+
+        // lijst
+        if (/^[-*]\s+/.test(t)) {
+          if (!lijst) { html += '<ul>'; lijst = true; }
+          html += '<li>' + inline(t.replace(/^[-*]\s+/, '')) + '</li>';
+          continue;
+        }
+
+        // alinea
+        sluitLijst();
+        html += '<p>' + inline(t) + '</p>';
+      }
+      sluitFase(); sluitBlok(); sluitDiff();
+      return html;
+    }
+
     // ── Word-download (docx vanaf nul, met JSZip) ────────────────────────────
     function docxEsc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-    function docxP(text, style) {
-      const pPr = style ? '<w:pPr><w:pStyle w:val="' + style + '"/></w:pPr>' : '';
-      return '<w:p>' + pPr + '<w:r><w:t xml:space="preserve">' + docxEsc(text) + '</w:t></w:r></w:p>';
+
+    // ── OOXML-helpers: runs, alinea's en tabellen (= de vakjes/kolommen) ──
+    function dRun(text, o) { o = o || {}; var p = '';
+      if (o.b) p += '<w:b/>';
+      if (o.i) p += '<w:i/>';
+      if (o.color) p += '<w:color w:val="' + o.color + '"/>';
+      if (o.sz) p += '<w:sz w:val="' + o.sz + '"/>';
+      p = p ? '<w:rPr>' + p + '</w:rPr>' : '';
+      return '<w:r>' + p + '<w:t xml:space="preserve">' + docxEsc(text) + '</w:t></w:r>';
     }
-    function lesNaarBody(md, meta) {
-      let body = docxP('Lesontwerp · ' + meta.groep + (meta.vak ? ' · ' + meta.vak : ''), 'Titel');
-      for (const r of md.split('\n')) {
-        const t = r.trim();
-        if (!t) continue;
-        const schoon = t.replace(/\*\*/g, '');
-        if (/^#{3,4}\s/.test(t)) body += docxP(schoon.replace(/^#+\s*/, ''), 'Kop2');
-        else if (/^#{1,2}\s/.test(t)) body += docxP(schoon.replace(/^#+\s*/, ''), 'Kop');
-        else if (/^[-*]\s+/.test(t)) body += docxP('•  ' + schoon.replace(/^[-*]\s+/, ''), null);
-        else body += docxP(schoon, null);
+    function dInline(text, base) { base = base || {};
+      var s = String(text == null ? '' : text), out = '', re = /\*\*([^*]+)\*\*|\*([^*]+)\*/g, last = 0, m;
+      while ((m = re.exec(s))) {
+        if (m.index > last) out += dRun(s.slice(last, m.index).replace(/\*/g, ''), base);
+        out += m[1] != null ? dRun(m[1], Object.assign({}, base, { b: true })) : dRun(m[2], Object.assign({}, base, { i: true }));
+        last = re.lastIndex;
       }
+      if (last < s.length) out += dRun(s.slice(last).replace(/\*/g, ''), base);
+      return out;
+    }
+    function dPara(runs, o) { o = o || {}; var pr = '';
+      if (o.keepNext) pr += '<w:keepNext/>';
+      if (o.keepLines) pr += '<w:keepLines/>';
+      if (o.pageBreak) pr += '<w:pageBreakBefore/>';
+      if (o.leftBar) pr += '<w:pBdr><w:left w:val="single" w:sz="18" w:space="6" w:color="' + o.leftBar + '"/></w:pBdr>';
+      if (o.shd) pr += '<w:shd w:val="clear" w:color="auto" w:fill="' + o.shd + '"/>';
+      pr += '<w:spacing w:before="' + (o.before != null ? o.before : 0) + '" w:after="' + (o.after != null ? o.after : 80) + '" w:line="' + (o.line || 264) + '" w:lineRule="auto"/>';
+      if (o.jc) pr += '<w:jc w:val="' + o.jc + '"/>';
+      return '<w:p><w:pPr>' + pr + '</w:pPr>' + (runs || '') + '</w:p>';
+    }
+    function dBorders(val, sz, color) {
+      function e(p) { return '<w:' + p + ' w:val="' + val + '"' + (val !== 'none' ? ' w:sz="' + sz + '" w:space="0" w:color="' + color + '"' : '') + '/>'; }
+      return '<w:tblBorders>' + e('top') + e('left') + e('bottom') + e('right') + e('insideH') + e('insideV') + '</w:tblBorders>';
+    }
+    function dCell(content, o) { o = o || {}; var m = o.margins != null ? o.margins : 120; var pr = '<w:tcW w:w="' + (o.w || 9072) + '" w:type="dxa"/>';
+      if (o.shd) pr += '<w:shd w:val="clear" w:color="auto" w:fill="' + o.shd + '"/>';
+      pr += '<w:tcMar><w:top w:w="' + m + '" w:type="dxa"/><w:left w:w="' + m + '" w:type="dxa"/><w:bottom w:w="' + m + '" w:type="dxa"/><w:right w:w="' + m + '" w:type="dxa"/></w:tcMar>';
+      if (o.valign) pr += '<w:vAlign w:val="' + o.valign + '"/>';
+      return '<w:tc><w:tcPr>' + pr + '</w:tcPr>' + (content || dPara('')) + '</w:tc>';
+    }
+    function dTable(rows, o) { o = o || {};
+      var b = o.noBorders ? dBorders('none', '0', 'auto') : dBorders('single', '6', o.bc || 'E3DCCB');
+      var grid = '<w:tblGrid>' + (o.grid || [9072]).map(function (w) { return '<w:gridCol w:w="' + w + '"/>'; }).join('') + '</w:tblGrid>';
+      return '<w:tbl><w:tblPr><w:tblW w:w="9072" w:type="dxa"/>' + b + '<w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="60" w:type="dxa"/><w:left w:w="120" w:type="dxa"/><w:bottom w:w="60" w:type="dxa"/><w:right w:w="120" w:type="dxa"/></w:tblCellMar></w:tblPr>' + grid +
+        rows.map(function (r) { return '<w:tr>' + r + '</w:tr>'; }).join('') + '</w:tbl><w:p><w:pPr><w:spacing w:before="0" w:after="100"/></w:pPr></w:p>';
+    }
+
+    const LESTYPE_EMOJI = { klas: '📚', bewegend: '🤸', buiten: '☀️', cooperatief: '👥' };
+
+    // Markdown → structuur (secties + fasen + blokken)
+    function parseLes(md) {
+      var secs = [], cur = null, fase = null;
+      function push(b) { if (cur && cur.type === 'lesopbouw') { if (fase) fase.content.push(b); } else if (cur) cur.content.push(b); }
+      md.split('\n').forEach(function (raw) {
+        var t = raw.trim(); if (!t) return;
+        if (/^##\s+/.test(t) && !/^###/.test(t)) {
+          var titel = t.replace(/^#+\s*/, ''); fase = null;
+          if (/^lesopbouw/i.test(titel)) cur = { type: 'lesopbouw', title: titel, fasen: [] };
+          else {
+            var ty = /lesdoel/i.test(titel) ? 'lesdoel' : /lesidee/i.test(titel) ? 'lesidee' : /succescrit/i.test(titel) ? 'succescriteria' : /benodig/i.test(titel) ? 'benodigdheden' : /^tip/i.test(titel) ? 'tips' : /aanpak|zo pak/i.test(titel) ? 'aanpak' : /different/i.test(titel) ? 'differentiatie' : 'overig';
+            cur = { type: ty, title: titel, content: [] };
+          }
+          secs.push(cur); return;
+        }
+        if (/^###\s+/.test(t)) {
+          var titel2 = t.replace(/^#+\s*/, '');
+          if (cur && cur.type === 'lesopbouw') {
+            var bodyT = titel2.replace(/^\d+\.\s*/, ''), tijd = '';
+            var m = bodyT.match(/\(([^)]*\bmin[^)]*)\)\s*$/i);
+            if (m) { tijd = m[1].trim(); bodyT = bodyT.replace(/\([^)]*\)\s*$/, '').trim(); }
+            fase = { nr: cur.fasen.length + 1, title: bodyT, tijd: tijd, content: [] }; cur.fasen.push(fase);
+          } else push({ kind: 'h4', text: titel2 });
+          return;
+        }
+        if (/^\*\*\s*controle van begrip\s*:?\s*\*\*/i.test(t)) { push({ kind: 'cvb', text: t.replace(/^\*\*\s*controle van begrip\s*:?\s*\*\*\s*/i, '') }); return; }
+        var lbl = t.match(/^\*\*\s*(.+?)\s*:\s*\*\*\s*(.*)$/);
+        if (lbl) { push({ kind: 'label', label: lbl[1], text: lbl[2] }); return; }
+        if (/^[-*]\s+/.test(t)) { push({ kind: 'li', text: t.replace(/^[-*]\s+/, '') }); return; }
+        push({ kind: 'p', text: t });
+      });
+      return secs;
+    }
+
+    function dBlocks(blocks, liChar) {
+      liChar = liChar || '✓';
+      var out = '';
+      blocks.forEach(function (b) {
+        if (b.kind === 'li') out += dPara(dRun(liChar + '  ', { color: '2F9E6E', b: true }) + dInline(b.text, { color: '221C3A' }), { after: 30 });
+        else if (b.kind === 'cvb') out += dPara(dRun('✓ Controle van begrip  ', { b: true, color: '25855A' }) + dInline(b.text, { color: '25855A' }), { shd: 'E7F4ED', leftBar: '2F9E6E', before: 140, after: 60 });
+        else if (b.kind === 'label') out += dPara(dRun(b.label + ': ', { b: true, color: '25855A' }) + dInline(b.text, { color: '221C3A' }), { before: 40, after: 40 });
+        else if (b.kind === 'h4') out += dPara(dInline(b.text, { b: true, color: '25855A' }), { before: 80, after: 20 });
+        else out += dPara(dInline(b.text, { color: '221C3A' }), { after: 60 });
+      });
+      return out || dPara('');
+    }
+
+    function lesNaarBody(md, meta) {
+      var secs = parseLes(md);
+      var lestypeNaam = (meta.lestypes || []).map(function (v) { return LESTYPE_NAAM[v]; }).filter(Boolean).join(' + ') || 'Les';
+      var isIdee = meta.vorm === 'idee';
+      var repType = (meta.lestypes || []).filter(function (v) { return v !== 'klas'; })[0] || (meta.lestypes || [])[0];
+      var emoji = isIdee ? '🎨' : (LESTYPE_EMOJI[repType] || '📚');
+      var titelTxt = isIdee ? 'Lesidee' : 'Lesvoorbereiding';
+      var groep = meta.groep ? (/^groep/i.test(meta.groep) ? meta.groep : 'Groep ' + meta.groep) : '—';
+
+      // Groene banner
+      var banner = dTable([dCell(
+        dPara(dRun(emoji + '  ', { sz: 40 }) + dRun(titelTxt, { b: true, color: 'FFFFFF', sz: 44 }), { after: 30 }) +
+        dPara(dRun(lestypeNaam + (meta.vak ? '  ·  ' + meta.vak : ''), { color: 'D6EFE2', sz: 22 }), { after: 0 }),
+        { shd: '2F9E6E', margins: 200 }
+      )], { noBorders: true });
+
+      // Meta-strook (4 kolommen)
+      function mcell(label, val) {
+        return dCell(
+          dPara(dRun(label.toUpperCase(), { b: true, color: '6B6880', sz: 15 }), { after: 20 }) +
+          dPara(dInline(val || '—', { b: true, color: '221C3A', sz: 21 }), { after: 0 }),
+          { w: 2268, shd: 'F4EFE5', valign: 'center', margins: 130 }
+        );
+      }
+      var metaT = dTable([mcell('Groep', groep) + mcell('Vak', meta.vak) + mcell('Lesduur', meta.duur) + mcell('Lestype', lestypeNaam)], { grid: [2268, 2268, 2268, 2268], bc: 'FFFFFF' });
+
+      var body = banner + metaT;
+      var sectIcon = { lesdoel: '🎯', lesidee: '🎨', aanpak: '🪜', succescriteria: '✅', benodigdheden: '🧰', tips: '💡', differentiatie: '🔀', overig: '▸' };
+
+      secs.forEach(function (sec) {
+        if (sec.type === 'lesopbouw') {
+          body += dPara(dRun('📋  ', { sz: 28 }) + dRun(sec.title, { b: true, color: '221C3A', sz: 28 }), { before: 0, after: 40, pageBreak: true, keepNext: true });
+          sec.fasen.forEach(function (f) {
+            var head = '<w:trPr><w:cantSplit/></w:trPr>' + dCell(dPara(
+              dRun('Fase ' + f.nr + '   ', { b: true, color: 'FFFFFF', sz: 19 }) + dRun(f.title, { b: true, color: 'FFFFFF', sz: 23 }) + (f.tijd ? dRun('    ·  ' + f.tijd, { color: 'D6EFE2', sz: 19 }) : ''),
+              { after: 0, keepNext: true }), { shd: '2F9E6E', margins: 140 });
+            var bodyC = dCell(dBlocks(f.content), { shd: 'F4FAF7', margins: 160 });
+            body += dTable([head, bodyC], { noBorders: true });
+          });
+        } else if (sec.type === 'differentiatie') {
+          // Splits de inhoud op de ###-kopjes in kolommen.
+          var cols = [], curCol = null;
+          sec.content.forEach(function (b) {
+            if (b.kind === 'h4') { curCol = { title: b.text, blocks: [] }; cols.push(curCol); }
+            else if (curCol) curCol.blocks.push(b);
+          });
+          body += dPara(dRun('🔀  ', { sz: 24 }) + dRun(sec.title, { b: true, color: '221C3A', sz: 24 }), { before: 80, after: 50, keepNext: true });
+          if (cols.length) {
+            var cw = Math.floor(9072 / cols.length), grid = cols.map(function () { return cw; });
+            var headRow = '<w:trPr><w:cantSplit/></w:trPr>' + cols.map(function (c) { return dCell(dPara(dRun(c.title, { b: true, color: 'FFFFFF', sz: 19 }), { after: 0, keepNext: true }), { w: cw, shd: '2F9E6E', margins: 120, valign: 'center' }); }).join('');
+            var bodyRow = cols.map(function (c) { return dCell(dBlocks(c.blocks, '•'), { w: cw, shd: 'F4FAF7', margins: 140, valign: 'top' }); }).join('');
+            body += dTable([headRow, bodyRow], { grid: grid, bc: 'FFFFFF' });
+          }
+        } else {
+          var bodyShd = sec.type === 'lesdoel' ? 'E7F4ED' : 'FCFAF4';
+          var liChar = (sec.type === 'benodigdheden' || sec.type === 'tips') ? '•' : '✓';
+          // cantSplit + keepNext: titelregel niet verweesd laten onderaan een pagina.
+          var kop = '<w:trPr><w:cantSplit/></w:trPr>' + dCell(dPara(dRun((sectIcon[sec.type] || '▸') + '   ', { sz: 22 }) + dRun(sec.title, { b: true, color: 'FFFFFF', sz: 22 }), { after: 0, keepNext: true }), { shd: '2F9E6E', margins: 130 });
+          var lijf = dCell(dBlocks(sec.content, liChar), { shd: bodyShd, margins: 160 });
+          body += dTable([kop, lijf], { noBorders: true });
+        }
+      });
+
+      body += dPara(dRun('Gemaakt met Avinka · lees de les altijd na voordat je hem geeft.', { i: true, color: '6B6880', sz: 16 }), { before: 200, jc: 'center' });
+
       return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
         '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + body +
         '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1417" w:right="1417" w:bottom="1417" w:left="1417" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr>' +
@@ -516,12 +1361,8 @@
     const DOCX_CT = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>';
     const DOCX_RELS = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
     const DOCX_DRELS = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
-    const DOCX_STYLES = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="22"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="140" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>' +
-      '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>' +
-      '<w:style w:type="paragraph" w:styleId="Titel"><w:name w:val="Title"/><w:pPr><w:spacing w:after="280"/></w:pPr><w:rPr><w:b/><w:sz w:val="40"/><w:color w:val="221C3A"/></w:rPr></w:style>' +
-      '<w:style w:type="paragraph" w:styleId="Kop"><w:name w:val="Heading 1"/><w:pPr><w:spacing w:before="260" w:after="80"/></w:pPr><w:rPr><w:b/><w:sz w:val="30"/><w:color w:val="2F9E6E"/></w:rPr></w:style>' +
-      '<w:style w:type="paragraph" w:styleId="Kop2"><w:name w:val="Heading 2"/><w:pPr><w:spacing w:before="160" w:after="40"/></w:pPr><w:rPr><w:b/><w:sz w:val="24"/><w:color w:val="25855A"/></w:rPr></w:style>' +
-      '</w:styles>';
+    const DOCX_STYLES = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/><w:sz w:val="21"/><w:szCs w:val="21"/><w:color w:val="221C3A"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="80" w:line="264" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>' +
+      '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>';
     async function downloadLes() {
       if (!laatsteTekst) return;
       const zip = new JSZip();
@@ -538,7 +1379,6 @@
       a.download = 'lesontwerp_' + (laatsteMeta.groep || '').replace(/[^\w]/g, '-') + '_' + new Date().toISOString().slice(0, 10) + '.docx';
       a.click();
       URL.revokeObjectURL(url);
-      if (typeof avinkaAlert === 'function') avinkaAlert("Les gedownload als Word-document.");
     }
   </script>
 </body>
