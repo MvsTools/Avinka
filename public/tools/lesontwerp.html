@@ -264,11 +264,11 @@
         <div class="card-label"><span class="ic">🎒</span> Welk vak geef je?</div>
         <div class="vak-grid" id="vak-grid">
           <div class="vakkaart" data-v="Rekenen"><span class="ve">🔢</span>Rekenen</div>
-          <div class="vakkaart" data-v="Taal / spelling"><span class="ve">✏️</span>Taal / spelling</div>
+          <div class="vakkaart" data-v="Spelling"><span class="ve">✏️</span>Spelling</div>
+          <div class="vakkaart" data-v="Taal"><span class="ve">💬</span>Taal</div>
           <div class="vakkaart" data-v="Begrijpend lezen"><span class="ve">📖</span>Begrijpend lezen</div>
           <div class="vakkaart" data-v="(Voortgezet) technisch lezen"><span class="ve">📚</span>Technisch lezen</div>
           <div class="vakkaart" data-v="Engels"><span class="ve"><svg viewBox="0 0 60 30" width="28" height="14" style="vertical-align:middle;border-radius:2px" aria-label="Engels"><clipPath id="ukclip"><path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/></clipPath><rect width="60" height="30" fill="#012169"/><path d="M0,0 60,30 M60,0 0,30" stroke="#fff" stroke-width="6"/><path d="M0,0 60,30 M60,0 0,30" clip-path="url(#ukclip)" stroke="#C8102E" stroke-width="4"/><path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/><path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6"/></svg></span>Engels</div>
-          <div class="vakkaart" data-v="Wereldoriëntatie"><span class="ve">🌍</span>Wereldoriëntatie</div>
           <div class="vakkaart" data-v="Aardrijkskunde"><span class="ve">🗺️</span>Aardrijkskunde</div>
           <div class="vakkaart" data-v="Geschiedenis"><span class="ve">🏛️</span>Geschiedenis</div>
           <div class="vakkaart" data-v="Natuur &amp; techniek"><span class="ve">🔬</span>Natuur &amp; techniek</div>
@@ -294,7 +294,6 @@
           <div>
             <label class="field-label" for="groep">Groep</label>
             <select id="groep" class="field-select avinka-groep" onchange="this.classList.toggle('filled', !!this.value)">
-              <option value="1/2">Groep 1/2</option>
               <option>Groep 3</option>
               <option>Groep 4</option>
               <option selected>Groep 5</option>
@@ -438,7 +437,8 @@
       if (/creatief|handvaardig/.test(v)) return [];                          // lesidee, geen werkvorm-keuze
       if (/begrijpend/.test(v)) return ['klas', 'cooperatief'];               // zit-lees-denk-activiteit
       if (/technisch/.test(v)) return ['klas', 'cooperatief'];                // vloeiend/decoderend lezen
-      return ['klas', 'bewegend', 'buiten', 'cooperatief'];                   // standaard: alles
+      if (/taal/.test(v)) return ['klas', 'cooperatief'];                     // spreken/luisteren/presenteren/woordenschat: interactie
+      return ['klas', 'bewegend', 'buiten', 'cooperatief'];                   // standaard (o.a. spelling: loopdictee bewegend kan)
     }
 
     // Zaakvakken zijn kennis-/inzichtvakken: daar past geen EDI-instructiecyclus
@@ -540,10 +540,12 @@
     function vakDidactiek(vak) {
       var v = String(vak || '').toLowerCase();
       if (/reken/.test(v)) return 'VAKDIDACTIEK rekenen: werk van concreet naar abstract (handelend met materiaal of in een context, dan schematisch met een model zoals de getallenlijn of het rekenrek, dan de formele notatie). Laat leerlingen hun strategie hardop verwoorden en met elkaar vergelijken, en koppel de sommen aan een herkenbare context.';
-      if (/spelling|taal/.test(v)) return 'VAKDIDACTIEK spelling/taal: laat leerlingen eerst de categorie of woordsoort herkennen en de regel hardop verwoorden vóór ze schrijven (verklanken of hakken, dan het woordbeeld inprenten). Oefen met veel korte schrijfmomenten (wisbordjes, mini-dictee), niet alleen invuloefeningen.';
+      if (/spelling/.test(v)) return 'VAKDIDACTIEK spelling: laat leerlingen eerst de categorie of woordsoort herkennen en de regel hardop verwoorden vóór ze schrijven (verklanken of hakken, dan het woordbeeld inprenten). Oefen met veel korte schrijfmomenten (wisbordjes, mini-dictee), niet alleen invuloefeningen. In de ONDERBOUW (groep 3) is spelling nog jong: blijf bij hakken/verklanken en de klank-tekenkoppeling op klank- en letterniveau; verwacht geen gevorderde lettergreep- of woordanalyse, en houd de woorden kort en eenvoudig.';
+      if (/taal/.test(v)) return 'VAKDIDACTIEK taal: kies de aanpak die bij dit taaldoel past. Woordenschat: gebruik de Viertakt (voordoen/uitleggen in een betekenisvolle context, betekenis geven met beeld en voorbeeld, vaak herhalen en koppelen aan bekende woorden via een woordweb, en controleren). Spreken, luisteren en presenteren: zet echte interactie centraal (kringgesprek, tweetallen, presenteren met publiek), met een duidelijk doel en een kijk-/luisterwijzer; laat leerlingen veel zelf aan het woord. Taalbeschouwing/grammatica: ontdek de regel samen aan voorbeeldzinnen en laat leerlingen er hardop over redeneren, niet alleen termen stampen.';
       if (/begrijpend/.test(v)) return 'VAKDIDACTIEK begrijpend lezen: de leerkracht doet de leesstrategie harddenkend voor (modelen) en maakt het denkproces zichtbaar. Benoem de strategie expliciet (voorspellen, vragen stellen, samenvatten, verwijswoorden, moeilijke woorden uit de context afleiden) en kies een tekst dicht bij de leefwereld.';
       if (/technisch/.test(v)) return 'VAKDIDACTIEK technisch lezen: focus op vlot én nauwkeurig decoderen via herhaald lezen, koor- en duolezen en korte gerichte leesrondes met directe feedback op tempo en nauwkeurigheid.';
       if (/engels/.test(v)) return 'VAKDIDACTIEK Engels: veel begrijpelijke input en herhaling, betekenis ondersteunen met beeld en gebaar (TPR), vaste zinnen (chunks) aanbieden en leerlingen in een veilige sfeer laten durven spreken; vermijd expliciete grammatica in de onderbouw.';
+      if (/aardrijk|geschied|natuur|techniek|wereld|ori[eë]nt/.test(v)) return 'VAKDIDACTIEK zaakvak: werk van concreet naar abstract en veranker kernbegrippen met beeld en voorbeelden uit de leefwereld. Laat leerlingen actief met bronnen werken (kaart, tijdbalk, beeld, tekst, voorwerp) en zelf ordenen, vergelijken of verklaren in plaats van alleen luisteren; koppel nieuwe kennis aan wat ze al weten.';
       return '';
     }
 
@@ -552,7 +554,7 @@
       return [
         'Lever de les als een complete EDI-lesvoorbereiding in EXACT deze opbouw, met Markdown-koppen. EDI = expliciete directe instructie met geleidelijke overdracht (ik → wij → jullie → jij) en controle van begrip in de instructiefasen. De tijd per fase is hieronder al ingevuld (de minuten tellen samen op tot de lesduur); NEEM die tijden exact over in de fasekoppen en stem de hoeveelheid inhoud per fase daarop af. Beschrijf per fase KORT EN BONDIG wat er gebeurt; schrijf NIET woord-voor-woord uit wat de leerkracht zegt. Citeer alleen een zin letterlijk (tussen aanhalingstekens) als die echt onmisbaar is. Gebruik geen sterretjes of andere opmaaktekens in de lopende tekst.',
         '', '## Lesdoel',
-        'Eén zin in de IK-vorm en kindtaal ("Ik kan …") die zowel het concept (wat de leerling begrijpt) als de vaardigheid (wat de leerling kan) omvat.',
+        'Eén KORTE zin in de IK-vorm en kindtaal ("Ik kan …") die de kern van de vaardigheid pakt. Een korte contextverwijzing mag (bijvoorbeeld "bij sommen als 217 + 199"), maar neem NIET de volledige strategie, alle stappen of een "omdat ik begrijp dat …" in het lesdoel op; die horen in de instructie en de succescriteria. Voorbeeld: "Ik kan rijgen met te veel bij sommen als 217 + 199" (dus niet de hele aanpak erin).',
         '### Waarom is dit handig?',
         'Eén korte, aansprekende zin waarom dit voor de leerlingen handig of waardevol is.',
         '', '## Succescriteria',
@@ -684,21 +686,26 @@
       return [
         'Je bent een ervaren pedagoog en didacticus in het Nederlandse basisonderwijs en een expert in lesontwerp. Je bedenkt complete, kant-en-klare lessen waar een leerkracht zó mee de klas in kan.',
         '', 'Vaste regels:',
-        '- Schrijf in helder, warm Nederlands, gericht aan de leerkracht.',
+        '- Schrijf in helder, warm Nederlands, gericht aan de leerkracht. Schrijf VOLLEDIG in het Nederlands: gebruik geen Engelse woorden of Engelse werkwoordsvormen die het Nederlands binnensluipen (dus "Observeer", niet "Observe"; "Bekijk"/"Let op", niet "Check"). Gebruik correcte Nederlandse gebiedende wijs.',
         '- Schrijf taalkundig correct Nederlands. Let nauwkeurig op de juiste lidwoorden (de/het) en op werkwoordspelling; kies bij twijfel het correcte lidwoord (bijvoorbeeld "het struikelblok", niet "de struikelblok"). Sommige leerlingen pikken het lidwoord uit jouw tekst op, dus het moet kloppen.',
         '- Gebruik GEEN liggende streepjes (— of –) als leesteken in lopende tekst; dat oogt onnatuurlijk en AI-achtig. Schrijf gewone zinnen met komma\'s, punten, dubbele punten of haakjes. Een koppelteken in een samenstelling (zoals "reken-wiskunde") of een tijdsbereik ("10-15 min") mag wel.',
         '- Wees CONCREET en direct bruikbaar: echte voorbeeldvragen, echte werkvormen met materiaal, opstelling en timing. Nooit algemeenheden als "bespreek het onderwerp".',
+        '- Schrijf voor een ERVAREN leerkracht en ga uit van vakmanschap. Spel algemeen bekende klassenroutines NIET stap voor stap uit (bijvoorbeeld precies hoe je wisbordjes laat gebruiken, hoe je materiaal uitdeelt, of de vanzelfsprekendheid dat je het lesdoel met de klas deelt). Beschrijf alleen wat SPECIFIEK is voor déze les en dit lesdoel; laat weg wat voor elke les hetzelfde is. Liever een paar rake, bondige zinnen dan uitgebreide vanzelfsprekendheden.',
         '- Stem alles af op de opgegeven groep (leeftijd, niveau, aandachtsspanne) en op de lesduur.',
         '- KALIBREER de inhoud op het leerjaar volgens de Nederlandse leerlijnen/referentieniveaus (SLO). Pas getalbereik, abstractieniveau, woordenschat, contexten en complexiteit aan de opgegeven groep aan, zodat exact dezelfde opdracht in een lagere groep eenvoudiger en concreter is dan in een hogere. Ankers: optellen/aftrekken tot 100 (groep 4), tot 1000 (groep 5), tot 10.000+ (groep 6); rijgen/splitsen vóór kolomsgewijs rekenen; tafels automatiseren (groep 4-5); breuken eerst visueel met modellen (groep 5-6), daarna vergelijken/ordenen en bewerken abstracter (groep 7-8); spelling- en leesniveau oplopend per leerjaar. Benoem waar passend kort welk leerlijn-/referentieniveau erbij hoort.',
         '- Houd het lesdoel van begin tot eind centraal; werk doelgericht (backward design).',
+        '- Formuleer het lesdoel BEKNOPT: een korte "Ik kan ..."-zin die de kern van de vaardigheid pakt. Neem de uitgebreide beschrijving, de strategie of de losse stappen van de leerkracht NIET letterlijk over in het lesdoel; die uitwerking hoort in de instructie en de succescriteria. (Beschrijving "rijgen met te veel, zoals 217 + 199 via +200 en dan -1" wordt lesdoel "Ik kan rijgen met te veel bij sommen als 217 + 199".)',
         '- Zorg voor afwisseling en betrokkenheid; laat leerlingen zo min mogelijk passief luisteren.',
         '- Verzin geen feitelijke onjuistheden. Bij reken-/taalinhoud: geef correcte voorbeelden en antwoorden.',
         '- Controleer elke opdracht op denkfoutjes: de activiteit moet de leerling de doelvaardigheid ÉCHT laten uitvoeren, en het antwoord mag niet al in de opgave of het materiaal weggegeven worden. Loop je eigen opdrachten kritisch na en haal zulke logische fouten eruit. (Voorbeeld van wat NIET moet: oefen je het kiezen tussen k en c, dan moet je het woord niet kant-en-klaar geschreven laten zien, want dan staat het antwoord er al; bied het dan gesproken aan, of met een open plek zoals "_unnen".)',
+        '- Zorg dat de OPZET van een activiteit klopt met de gekozen woorden of inhoud. Bouw bijvoorbeeld geen lettergreep-structuur (hoepels of stappen per lettergreep) rond eenlettergrepige woorden zoals "sneeuw" of "leeuw"; kies dan een opzet per klank/letter of een andere passende vorm. Controleer dat aantallen, stappen en structuur écht bij de voorbeelden passen.',
         '- Gebruik als voorbeeldwoorden en in contexten alleen ALLEDAAGSE, bekende woorden die kinderen van de opgegeven groep echt kennen en zelf gebruiken. Vermijd zeldzame, ouderwetse, vaktechnische of moeilijke woorden (dus géén woorden als "cravat" of "etui-maker"). Kies bij spelling voorbeeldwoorden die zowel in de categorie passen ALS tot de woordenschat van dit leerjaar horen; bij twijfel kies je het gewonere woord.',
         '- Verzin NOOIT specifieke bronnen, links of titels (dus geen verzonnen YouTube- of Schooltv-links, boektitels of websites; die bestaan vaak niet of zijn verouderd). Noem het SOORT bron dat past (een atlas, een tijdbalk, een prentenboek, een bronkaart) en geef voor een filmpje een zoekhint in plaats van een link, bijvoorbeeld: zoek een kort filmpje over de Romeinen, bijvoorbeeld op Schooltv.',
         '- HOUD HET REALISTISCH EN HAALBAAR: een leerkracht die deze les \'s ochtends openslaat moet \'m diezelfde dag binnen de lesduur kunnen voorbereiden én geven. Gebruik alleen materiaal dat standaard op een basisschool aanwezig is (wisbordjes, schrift, bord, eventueel een kopieerblad). Vraag geen speciale of grote aantallen spullen (dus niet "26 klembordjes" of materiaal dat je moet aanschaffen/lamineren).',
+        '- Houd werkvormen en oplossingen GEWOON en beproefd, zoals leerkrachten ze in de praktijk echt inzetten. Geen rare, geforceerde of omslachtige ingrepen (dus niet "een wisbordje wissen met een sok"). Bij twijfel kies je de normale, voor de hand liggende aanpak.',
         '- Gebruik uitsluitend de gevraagde Markdown-koppen; geen inleidende of afsluitende praatjes eromheen.',
-        '- Gebruik GEEN scheidingslijnen (regels met "---", "***" of "___") tussen de onderdelen; de koppen verzorgen de structuur al.'
+        '- Gebruik GEEN scheidingslijnen (regels met "---", "***" of "___") tussen de onderdelen; de koppen verzorgen de structuur al.',
+        '- CONTROLEER de hele les voordat je hem teruggeeft. Lees hem kritisch na als een ervaren leerkracht en HERSTEL stil (zonder dit te benoemen) alles wat niet klopt, op deze punten: (1) Niveau: past alle inhoud bij de opgegeven groep én bij HOE die groep leert (niet te makkelijk/moeilijk; in de onderbouw geen gevorderde analyse). (2) Logica: past elke opdracht en de OPZET ervan bij de gekozen woorden/inhoud en bij de juiste lesfase, en geeft het materiaal het antwoord niet weg. (3) Vakinhoud: klopt de spellingregel/categorie en de reken-/taalinhoud precies (verzin niets bij). (4) Taal: volledig correct Nederlands, geen Engelse woorden. (5) Bondig: geen vanzelfsprekendheden of overbodige uitleg. (6) Realisme: gewone, haalbare werkvormen en materialen. Twijfel je of iets klopt, kies dan de eenvoudigere, correcte variant.'
       ].join('\n');
     }
 
@@ -720,7 +727,7 @@
       }
       // Spellingmethode (bv. Staal, Taal actief, Spelling in Beeld) uit de vrije
       // aanvullingen: dan de categorienamen/regels van díe methode gebruiken.
-      if (/spelling|taal/i.test(inv.vak || '')) {
+      if (/spelling/i.test(inv.vak || '')) {
         const spmTekst = ((inv.doel || '') + ' ' + (inv.context || '')).trim();
         const spm = (window.avinkaLeerlijnen && window.avinkaLeerlijnen.spellingMethode) ? window.avinkaLeerlijnen.spellingMethode(spmTekst, inv.groep) : '';
         if (spm) { r.push(''); r.push(spm); }

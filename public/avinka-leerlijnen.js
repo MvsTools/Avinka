@@ -34,14 +34,27 @@
     "8": "Getalbereik t/m ±1 miljard én kommagetallen met 3 decimalen. Optellen, aftrekken, vermenigvuldigen en delen t/m 100.000 (ook met kommagetallen); volgorde van bewerkingen en de rol van haakjes. Verhoudingen: vlot rekenen met breuken (gelijknamige optellen/aftrekken, ongelijknamige vergelijken, breuk als operator, in context delen door een breuk); verhoudingsproblemen en schaal; rekenen met procenten (1%-regel, korting, oorspronkelijke prijs, winst/verlies); relaties tussen verhoudingen, breuken, procenten en kommagetallen uit het hoofd. Meten: het systeem van lengte-, oppervlakte-, inhouds- en gewichtsmaten doorzien, oppervlakte/inhoud van kubus en balk, schaal en vergroting, tijdsysteem inclusief tijdzones. Verbanden: gegevens aflezen, interpreteren en vergelijken, trends herkennen en conclusies trekken."
   };
 
-  // ── Nederlands ── (SLO-leerstoflijnen taal/lezen, referentieniveaus 1F/2F)
-  var TAAL_SPELLING = {
+  // ── Spelling ── (SLO-leerstoflijnen spelling/werkwoordspelling, ref. 1F/2F)
+  var SPELLING = {
     "3": "Spelling: klankzuivere woorden (mkm: maan, vis, kat) schrijven zoals je ze hoort; eerste regels (plakletters bij melk/worm, woorden op -nk, sch-). Klank-tekenkoppeling staat centraal. Taal: zinsbesef en woordenschat uitbreiden.",
     "4": "Spelling: langere woorden met lastige klanken (eu, ng, aai/ooi/oei, de 'plaagletter' bij eer/oor/eur), meervoud en verkleinwoorden. Grammatica: het begrip 'werkwoord' (doe-woord) leren herkennen. Taal: woordenschat en eenvoudige zinsbouw.",
     "5": "Spelling: open en gesloten lettergrepen (verdubbelen/verlengen: bomen–bommen), hoofdletters, weetwoorden (ei/ij, au/ou); start (voorbereidende) werkwoordspelling: werkwoorden in een tekst herkennen. Grammatica: woordsoorten benoemen (begin).",
     "6": "Spelling: per les één categorie, gelijkvormigheid (hond–honden) en analogie (hij vindt). Werkwoordspelling tegenwoordige tijd (stam, stam+t: 'hij wordt'). Grammatica: persoonsvorm, onderwerp en gezegde herkennen; woordsoorten (zelfstandig naamwoord, werkwoord, lidwoord).",
     "7": "Spelling/werkwoordspelling uitgebreid: tegenwoordige én verleden tijd (zwak: stam+te/de, 't ex-kofschip) en voltooid deelwoord (d/t). Nieuwe categorieën: leenwoorden (Frans/Engels), 's bij bezit, -isch(e), x, trema, koppelteken. Grammatica: bijvoeglijk naamwoord, verder zinsdelen.",
-    "8": "Spelling: herhaling en verdieping; werkwoordspelling in complexere zinnen (+t/+dt tegenwoordige tijd, +te/+de verleden tijd), klankvaste vs. klankveranderende werkwoorden. Extra regels: stoffelijke bijvoeglijke naamwoorden (wollen), tussen-n (pannenkoek), meervouden (perziken). Grammatica: zinsontleding (onderwerp, persoonsvorm, gezegde). Richting referentieniveau 1F/2F."
+    "8": "Spelling: herhaling en verdieping; werkwoordspelling in complexere zinnen (+t/+dt tegenwoordige tijd, +te/+de verleden tijd), klankvaste vs. klankveranderende werkwoorden. Extra regels: stoffelijke bijvoeglijke naamwoorden (wollen), tussen-n (pannenkoek), meervouden (perziken). Richting referentieniveau 1F/2F."
+  };
+
+  // ── Taal ── (mondelinge taalvaardigheid, woordenschat, taalbeschouwing).
+  // Bron: SLO leerstoflijnen mondelinge taalvaardigheid + leerlijn begrippen
+  // taalbeschouwing, woordenschatdidactiek (Viertakt van Verhallen),
+  // referentieniveaus 1F/2F. NB: spelling/werkwoordspelling staat apart (SPELLING).
+  var TAAL = {
+    "3": "Mondelinge taal: actief meedoen aan kringgesprekken (op je beurt praten, luisteren naar een ander), een verhaal navertellen, korte vragen stellen en beantwoorden. Woordenschat: snelle uitbreiding van concrete woorden uit de leefwereld; nieuwe woorden koppelen aan bekende (woordweb, plaatjes) volgens de Viertakt (voordoen/uitleggen, inoefenen, controleren). Taalbeschouwing: de begrippen woord en zin; werkwoord (doe-woord) en zelfstandig naamwoord eerst herkennen; enkelvoud/meervoud.",
+    "4": "Mondelinge taal: iets vertellen voor de groep (nieuws, een verhaal), gericht luisteren en de hoofdlijn navertellen, in tweetallen overleggen. Woordenschat: woorden buiten de directe leefwereld leren, betekenis uit context/plaatjes afleiden, woorden ordenen in categorieën (woordcluster/woordkast). Taalbeschouwing: werkwoord en zelfstandig naamwoord benoemen, lidwoord, verkleinwoord, enkelvoud/meervoud.",
+    "5": "Mondelinge taal: een gesprek met een doel voeren en op elkaar reageren, een korte spreekbeurt of presentatie met een hulpmiddel, gericht luisteren en vragen stellen. Woordenschat: woordbetekenissen verdiepen, betekenisrelaties leggen (synoniem, tegenstelling, woordfamilie) en figuurlijk taalgebruik gaan herkennen; strategieën om de betekenis van onbekende woorden af te leiden. Taalbeschouwing: woordsoorten benoemen (zelfstandig naamwoord, werkwoord, lidwoord, bijvoeglijk naamwoord) en het onderwerp en de persoonsvorm in een zin herkennen (start redekundig ontleden).",
+    "6": "Mondelinge taal: overleggen en discussiëren in een groepje, een spreekbeurt/presentatie met opbouw (inleiding-kern-slot) en hulpmiddel houden, luisteren naar een informatieve tekst en die samenvatten. Woordenschat: abstractere woorden en schooltaalwoorden, voortbouwend op bekende woorden; minder frequente woorden, uitdrukkingen en gezegden, figuurlijk taalgebruik. Taalbeschouwing: meer woordsoorten (voornaamwoord, voorzetsel, voegwoord, telwoord), onderwerp/persoonsvorm/gezegde, werkwoordstijden benoemen.",
+    "7": "Mondelinge taal: een discussie voeren met argumenten, een presentatie of kort betoog voor publiek houden, kritisch luisteren en hoofd- van bijzaken onderscheiden, je mening onderbouwen. Woordenschat: school- en vaktaalwoorden, woordvorming (afleiding en samenstelling), nuanceverschillen tussen woorden, figuurlijk taalgebruik. Taalbeschouwing: zinsdelen lijdend voorwerp en meewerkend voorwerp, hoofdzin/bijzin, woordsoorten verdiepen (vervoeging, afleiding).",
+    "8": "Mondelinge taal: een goed opgebouwde presentatie of betoog houden, gesprekstechnieken gebruiken en een standpunt verdedigen, gericht en kritisch luisteren, rekening houdend met doel en publiek (richting referentieniveau 1F, streef 2F). Woordenschat: brede school- en vaktaalwoordenschat (richting ±15.000 woorden receptief), abstracte begrippen, figuurlijk taalgebruik en nuance, zelfstandig woordleerstrategieën. Taalbeschouwing: taalkundig ontleden (alle woordsoorten, vervoeging, afleiding) en redekundig ontleden (onderwerp, persoonsvorm, gezegde, lijdend en meewerkend voorwerp); reflecteren op taalgebruik."
   };
   var TECHNISCH_LEZEN = {
     "3": "Aanvankelijk technisch lezen: klankbewustzijn en het ontsleutelen van klankzuivere woorden (km/mk/mkm) zonder spellend lezen; korte teksten. Richtniveau ± AVI Start → M3 → E3.",
@@ -115,7 +128,8 @@
 
   var DATA = {
     rekenen: REKENEN,
-    "taal-spelling": TAAL_SPELLING,
+    spelling: SPELLING,
+    taal: TAAL,
     "technisch-lezen": TECHNISCH_LEZEN,
     "begrijpend-lezen": BEGRIJPEND_LEZEN,
     schrijven: SCHRIJVEN,
@@ -132,7 +146,8 @@
     if (/begrijpend/.test(v)) return "begrijpend-lezen";
     if (/technisch/.test(v)) return "technisch-lezen";
     if (/schrijven|stellen/.test(v)) return "schrijven";
-    if (/spelling|taal/.test(v)) return "taal-spelling";
+    if (/spelling/.test(v)) return "spelling";
+    if (/taal/.test(v)) return "taal";
     if (/engels/.test(v)) return "engels";
     if (/aardrijk/.test(v)) return "aardrijkskunde";
     if (/geschied/.test(v)) return "geschiedenis";
@@ -527,22 +542,33 @@
       ]
     }
   };
-  // Herkenbare, uniek-Staal categorienamen (de mascotte-namen). Noemt een
-  // leerkracht "colawoord" of "centwoord", dan bedoelt die de Staal-categorie,
-  // ook zonder het woord "Staal" erbij. (Generieke termen als voorvoegsel of
-  // verkleinwoord staan er bewust NIET bij; die zijn niet uniek voor Staal.)
-  var STAAL_NAMEN = /\b(hak|zing|lucht|plank|langermaak|kilo|cent|cola|politie|tropisch|taxi|chef|thee|caf[ée]|cadeau|route|garage|lolly|trema|militair|trottoir)[\s-]?woord(en)?\b/i;
-  // Uniek-Taal-actief categorienamen (Staal noemt cent het centwoord, Taal actief
-  // het cijfer-woord). Gedeelde namen als thee-/garage-woord vallen al onder Staal
-  // hierboven; de regel is daar hetzelfde, dus dat geeft niet.
-  var TA_NAMEN = /\b(plant|strik|worst|wolk|berg|kasteel|jager|bakker|keuken|liter|cijfer|insect|krab|duiven|huizen)[\s-]?woord(en)?\b/i;
+  // Categorienaam → alleen letters, zodat "cola-woord", "cola woord" en
+  // "colawoorden" allemaal matchen op "colawoord".
+  function normNaam(s) { return String(s).toLowerCase().replace(/[^a-zà-ÿ]/g, ""); }
+  // Generieke spellingtermen die NIET uniek naar één methode wijzen (en dus geen
+  // methode-detectie mogen forceren).
+  var GENERIEKE_CAT = /^(voorvoegsel|achtervoegsel|verkleinwoord|samenstelling|klankgroepenwoord|komma|tussen-e|koppelteken|latijns|trema-meervoud)/;
+  // Komt een herkenbare categorienaam van deze methode in de tekst voor?
+  // (Mascotte-namen zoals colawoord én beschrijvende zoals eeuw-ieuw-woord;
+  // generieke termen tellen niet mee.)
+  function catNaamHit(m, normTxt) {
+    if (!m.cats) return false;
+    for (var i = 0; i < m.cats.length; i++) {
+      if (GENERIEKE_CAT.test(m.cats[i].naam.toLowerCase())) continue;
+      var nn = normNaam(m.cats[i].naam);
+      if (nn.length >= 6 && normTxt.indexOf(nn) !== -1) return true;
+    }
+    return false;
+  }
   function spellingMethodeKey(context) {
-    var txt = String(context || "");
+    var txt = String(context || ""), normTxt = normNaam(txt);
     for (var k in SPELLING_METHODES) {
       if (SPELLING_METHODES.hasOwnProperty(k) && SPELLING_METHODES[k].triggers.test(txt)) return k;
     }
-    if (STAAL_NAMEN.test(txt)) return "staal"; // Staal-jargon zonder de naam "Staal"
-    if (TA_NAMEN.test(txt)) return "taalactief"; // Taal-actief-jargon zonder de naam
+    // Categorienaam zonder methodenaam: Staal eerst (gedeelde namen → Staal,
+    // zelfde regel), dan Taal actief. Spelling in Beeld heeft geen namen (codes).
+    if (catNaamHit(SPELLING_METHODES.staal, normTxt)) return "staal";
+    if (catNaamHit(SPELLING_METHODES.taalactief, normTxt)) return "taalactief";
     return null;
   }
 
@@ -606,17 +632,15 @@
       var m = SPELLING_METHODES[key];
       var kop = "SPELLINGMETHODE: de school werkt met " + m.naam + ". " + m.uitleg +
         " Gebruik in deze les de categorie-indeling, de categorienamen én de regelformuleringen van " + m.naam +
-        " (precies zoals de methode ze noemt), niet die van een andere methode. Behandel bij voorkeur één hoofdcategorie per les en verwijs waar dat helpt naar eerder geleerde categorieën." +
+        " (precies zoals de methode ze noemt), niet die van een andere methode. Neem elke regel EXACT over zoals die hieronder staat en verzin er zelf GEEN extra deel bij: als de regel alleen \"ik denk aan de u\" is, schrijf dan precies dat, niet \"ik hoor /w/, ik denk aan de u\". Niet elke categorie volgt het patroon \"ik hoor ..., maar ik schrijf ...\". Behandel bij voorkeur één hoofdcategorie per les en verwijs waar dat helpt naar eerder geleerde categorieën." +
         " Leg in de les de spellingregel van de behandelde categorie EXPLICIET uit in kindtaal en gebruik meerdere passende voorbeeldwoorden uit die categorie. Noem de naam van de methode (" + m.naam + ") niet in de tekst die voor de leerlingen bedoeld is; die is alleen voor jou als kader." +
         " BELANGRIJK: gebruik de methode alléén om aan te sluiten op de categorienamen, regels en het niveau. Maak GÉÉN kopie van een gewone methodeles. De les moet een eigen, goed uitgedachte en aantrekkelijke les blijven met een sterke didactische opbouw, een pakkende context en actieve werkvormen, die méér biedt dan een standaard methodeles (anders kan de leerkracht net zo goed de methode zelf pakken).";
 
       // Noemt de leerkracht een specifieke categorie van deze methode (bv.
-      // "colawoord", "kasteelwoord")? Geef die regel dan altijd mee. Vergelijk
-      // genormaliseerd zodat "cola-woord", "cola woord" en "colawoord" allemaal matchen.
-      var norm = function (s) { return String(s).toLowerCase().replace(/[^a-zà-ÿ]/g, ""); };
-      var normTxt = norm(context);
+      // "colawoord", "eeuw-ieuw-woord")? Geef die regel dan altijd mee.
+      var normTxt = normNaam(context);
       var doelCat = null;
-      if (m.cats) { for (var i = 0; i < m.cats.length; i++) { if (normTxt.indexOf(norm(m.cats[i].naam)) !== -1) { doelCat = m.cats[i]; break; } } }
+      if (m.cats) { for (var i = 0; i < m.cats.length; i++) { if (normTxt.indexOf(normNaam(m.cats[i].naam)) !== -1) { doelCat = m.cats[i]; break; } } }
       var doelRegel = doelCat
         ? ("\nDeze les gaat specifiek over de categorie \"" + doelCat.naam + "\"" + (doelCat.regel ? ": " + doelCat.regel : "") +
           ". Behandel deze categorie als hoofdonderwerp: leg de regel expliciet uit en gebruik meerdere voorbeeldwoorden die in deze categorie passen.")
