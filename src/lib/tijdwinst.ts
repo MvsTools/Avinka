@@ -81,6 +81,10 @@ const CFG: Record<string, Cfg> = {
     basis: 6, perLeerling: 0.4, max: 25, vast: 15,
     label: "Plattegronden gemaakt", kort: "Plattegrond", icon: "🗺️", kleur: "#6366f1",
   },
+  lesontwerp: {
+    basis: 5, perWoord: 0.05, max: 45, vast: 20,
+    label: "Lessen ontworpen", kort: "Lesontwerp", icon: "📓", kleur: "#0d9488",
+  },
 };
 
 // Volgorde + weergavegegevens voor de schermen (Statistieken, Admin).
