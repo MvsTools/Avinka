@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { getTaken, setTaakGedaan, type Taak } from "@/lib/db";
+import { addTaak, getTaken, setTaakGedaan, type Taak } from "@/lib/db";
 
 // Compact takenlijst-knopje in de header, naast de streak. Ingeklapt zie je
 // alleen hoeveel er openstaat; klik opent een klein paneeltje met je open taken.
-// Daarin kun je alléén afvinken — toevoegen, deadlines en bewerken doe je in de
-// takenlijst zelf (link onderaan). Bewust klein, zodat de tools de held blijven.
+// Daarin kun je afvinken en snel een taak toevoegen; deadlines, wekelijks en
+// bewerken doe je in de takenlijst zelf (link onderaan). Bewust klein, zodat de
+// tools de held blijven.
 export default function TakenOverzicht() {
   const [taken, setTaken] = useState<Taak[] | null>(null);
   const [uit, setUit] = useState(false);
+  const [invoer, setInvoer] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -43,6 +45,15 @@ export default function TakenOverzicht() {
   function vinkAf(id: string) {
     setTaken((ts) => (ts ?? []).map((t) => (t.id === id ? { ...t, gedaan: true } : t)));
     setTaakGedaan(id, true);
+  }
+
+  async function voegToe(e: React.FormEvent) {
+    e.preventDefault();
+    const t = invoer.trim();
+    if (!t) return;
+    setInvoer("");
+    const nieuw = await addTaak(t);
+    if (nieuw) setTaken((ts) => [nieuw, ...(ts ?? [])]);
   }
 
   return (
@@ -99,6 +110,23 @@ export default function TakenOverzicht() {
               ))}
             </ul>
           )}
+          <form onSubmit={voegToe} className="mt-1 flex items-center gap-2 border-t border-black/5 px-2 pt-2">
+            <input
+              value={invoer}
+              onChange={(e) => setInvoer(e.target.value)}
+              placeholder="Snel een taak toevoegen…"
+              className="min-w-0 flex-1 rounded-xl bg-cream px-3 py-2 text-sm text-ink outline-none transition placeholder:text-ink/45 focus:ring-2 focus:ring-brand/20"
+            />
+            <button
+              type="submit"
+              disabled={!invoer.trim()}
+              className="shrink-0 rounded-xl bg-brand px-3 py-2 text-sm font-bold text-white transition hover:bg-brand-dark disabled:opacity-50"
+              aria-label="Taak toevoegen"
+            >
+              +
+            </button>
+          </form>
+
           <Link
             href="/dashboard/taken"
             className="mt-1 inline-block px-2 py-1 text-xs font-semibold text-brand hover:underline"
