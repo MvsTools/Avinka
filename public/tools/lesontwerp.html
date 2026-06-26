@@ -3,13 +3,13 @@
   Lesontwerp — AI bedenkt complete, kant-en-klare lessen uit één lesdoel.
   Ontworpen en gemaakt door Michael van Spanje. © 2026 Michael van Spanje.
 
-  STATUS: TESTFASE. Staat (bewust) nog NIET geregistreerd in het platform — alleen
-  bereikbaar via /tools/lesontwerp.html. Te doen zodra hij helemaal klaar is:
+  STATUS: LIVE in het platform (volledig geregistreerd, geen beta-stempel — wordt
+  nog wel verder verfijnd). Aanhechtpunten die zijn ingevuld:
     1. src/lib/tijdwinst.ts        → CFG-entry 'lesontwerp'.
     2. src/components/dashboard/StatistiekenView.tsx → HOOFDTOOLS + SUB_NAAR_HOOFD.
     3. src/lib/tools.ts            → tegel op het dashboard (slug 'lesontwerp').
     4. src/app/page.tsx           → tegel op de startpagina.
-    5. src/lib/abonnement.ts      → pakket-indeling.
+    5. src/lib/abonnement.ts      → gating loopt op de slug (Compleet/Pro = alle tools).
   Zie memory tool-integratie-checklist.
 
   Filosofie: de CODE regelt de structuur/didactiek (EDI-fasen, timing, lestype,

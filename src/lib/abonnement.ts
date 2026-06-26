@@ -56,7 +56,7 @@ export const PLANNEN: Plan[] = [
     toegang: "alle",
     voordelen: [
       "Alles van Start",
-      "Alle vier de tools, onbeperkt",
+      "Alle tools, onbeperkt",
       "Meerdere groepen beheren",
       "Alles bewaren en ordenen in Bestanden",
       "Een sterk AI-model voor betere teksten",

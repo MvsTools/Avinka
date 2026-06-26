@@ -28,6 +28,7 @@ const HOOFDTOOLS: { id: string; label: string; icon: string }[] = [
   { id: "rapporten", label: "Rapporten", icon: "📝" },
   { id: "oudercontact", label: "Oudercontact", icon: "💬" },
   { id: "plattegrond", label: "Plattegrond", icon: "🪑" },
+  { id: "lesontwerp", label: "Lesontwerp", icon: "📓" },
 ];
 const SUB_NAAR_HOOFD: Record<string, string> = {
   analyse: "toetsanalyse",
@@ -39,6 +40,7 @@ const SUB_NAAR_HOOFD: Record<string, string> = {
   brief: "oudercontact",
   uitnodiging: "oudercontact",
   plattegrond: "plattegrond",
+  lesontwerp: "lesontwerp",
 };
 
 // Periodekiezer voor de grote teller: hoeveel tijd bespaarde je per X.

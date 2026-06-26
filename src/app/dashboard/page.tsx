@@ -48,7 +48,7 @@ export default async function DashboardStart() {
 
       <OnboardingCard />
 
-      {/* De vier tools als grote tegels — dit is het hart van het dashboard. */}
+      {/* De tools als grote tegels — dit is het hart van het dashboard. */}
       <section id="tools" className="scroll-mt-24">
         <h2 className="text-xl font-bold text-ink">Jouw tools</h2>
         <div className="mt-4 grid gap-5 sm:grid-cols-2">

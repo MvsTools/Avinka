@@ -1,4 +1,4 @@
-// De vier Avinka-tools, op één plek. Wordt gebruikt op de Start-pagina en elders.
+// De Avinka-tools, op één plek. Wordt gebruikt op de Start-pagina en elders.
 // De kleur-klassen staan voluit (niet samengesteld), zodat Tailwind ze meepakt.
 export type Tool = {
   slug: string;
@@ -55,6 +55,16 @@ export const tools: Tool[] = [
     tint: "bg-amber-50",
     rand: "hover:border-amber-300",
     pad: "/tools/plattegrond.html",
+  },
+  {
+    slug: "lesontwerp",
+    naam: "Lesontwerp",
+    emoji: "📓",
+    tekst: "Geef een lesdoel op en krijg een complete, uitgewerkte les terug. Met opbouw, bouwstenen en praktische tips.",
+    badge: "bg-teal-500",
+    tint: "bg-teal-50",
+    rand: "hover:border-teal-300",
+    pad: "/tools/lesontwerp.html",
   },
 ];
 

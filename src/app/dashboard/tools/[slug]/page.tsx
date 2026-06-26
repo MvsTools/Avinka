@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { toolBySlug } from "@/lib/tools";
 
-// Tijdelijke pagina per tool. De vier tools verhuizen hierna één voor één
+// Tijdelijke pagina per tool. De tools verhuizen hierna één voor één
 // vanuit de testversie naar het dashboard; tot die tijd staat hier een nette uitleg.
 export default async function ToolPage({
   params,

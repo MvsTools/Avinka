@@ -75,6 +75,15 @@ const tools = [
     tint: "bg-amber-50",
     rand: "hover:border-amber-300",
   },
+  {
+    naam: "Lesontwerp",
+    emoji: "📓",
+    tekst:
+      "Lever een lesdoel aan en krijg een complete, kant-en-klare les terug: met opbouw, bouwstenen en praktische tips. Klaar om voor de klas te gebruiken.",
+    badge: "bg-teal-500",
+    tint: "bg-teal-50",
+    rand: "hover:border-teal-300",
+  },
 ];
 
 const geruststellingen = [
@@ -479,6 +488,20 @@ export default async function Home({
                 </div>
               </div>
             ))}
+
+            {/* Tease naar de volgende tool op de roadmap (werkbladen) */}
+            <div className="flex items-start gap-5 rounded-3xl border-2 border-dashed border-black/10 bg-white/60 p-7">
+              <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-brand-soft px-1 text-center text-[9px] font-bold uppercase leading-tight tracking-tight text-brand">
+                Binnenkort
+              </span>
+              <div>
+                <h3 className="text-2xl font-bold text-ink">Werkbladen</h3>
+                <p className="mt-2 leading-7 text-ink/70">
+                  Maak in een paar klikken een passend werkblad bij je les. De
+                  volgende tool die eraan komt.
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
