@@ -3,9 +3,11 @@
 
    Bovenop de maskering die elke tool zélf al doet, legt dit bestand één
    gedeelde, platform-brede laag: het haalt de voornamen van de leerkracht
-   (uit het dashboard, over al z'n klassen heen) en vervangt die in elke tekst
-   vóór verzending naar de AI door codes (KN-001, KN-002, …). Ná het antwoord
-   worden de codes lokaal weer teruggezet naar de echte naam.
+   (uit het dashboard, over al z'n klassen heen) PLUS de schoolnaam (uit de
+   instellingen) en vervangt die in elke tekst vóór verzending naar de AI door
+   codes (KN-001, KN-002, …). Ná het antwoord worden de codes lokaal weer
+   teruggezet naar de echte naam/schoolnaam. Zo gaat de schoolnaam nooit mee
+   naar de AI, of hij nu in een geüpload bestand staat of ergens is getypt.
 
    Waarom een aparte laag?
    - Vangnet voor namen die de tool zelf miste, bijv. een naam die per ongeluk
@@ -83,10 +85,16 @@
   // werk — de tool blijft dus gewoon werken.
   var ready = fetch("/api/masking-namen", { headers: { accept: "application/json" } })
     .then(function (r) {
-      return r.ok ? r.json() : { namen: [] };
+      return r.ok ? r.json() : { namen: [], school: "" };
     })
     .then(function (j) {
-      namen = (j && j.namen) || [];
+      var lijst = (j && j.namen) || [];
+      // De schoolnaam wordt net als de namen gemaskeerd (hele woorden,
+      // hoofdletter-ongevoelig). Langste-eerst-sortering in bouw() zorgt dat de
+      // hele schoolnaam vóór een losse naam erin wordt vervangen.
+      var school = (j && j.school) || "";
+      if (school) lijst = lijst.concat([school]);
+      namen = lijst;
       bouw(namen);
     })
     .catch(function () {
