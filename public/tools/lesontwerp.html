@@ -26,6 +26,7 @@
   <title>Lesontwerp · Complete lessen uit één lesdoel</title>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="/avinka-lesdocx.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -222,6 +223,7 @@
   <link rel="stylesheet" href="/avinka-groep.css" />
   <script src="/avinka-dialog.js"></script>
   <script src="/avinka-masking.js"></script>
+  <script src="/avinka-bestanden.js"></script>
   <script src="/avinka-dropdown.js"></script>
   <script src="/avinka-groep.js"></script>
   <script src="/avinka-leerlijnen.js"></script>
@@ -229,7 +231,7 @@
 <body>
   <div class="app">
     <div class="top">
-      <a href="/dashboard" class="terug-menu">← Terug naar dashboard</a>
+      <a href="/dashboard" class="terug-menu" id="terug-link">← Terug naar dashboard</a>
       <a href="/dashboard" aria-label="Avinka" style="display:inline-flex;flex-shrink:0;"><img src="/Avinka_wordmerk.png" alt="Avinka" style="height:18px;width:auto;display:block;opacity:.82;" /></a>
       <span class="top-logo"><span class="mk">📚</span>Lesontwerp</span>
     </div>
@@ -363,7 +365,7 @@
         <button class="les-toggle" id="les-toggle" onclick="toggleLes()" style="display:none">Toon volledige les</button>
         <div class="acties">
           <button class="btn-green" onclick="downloadLes()">⬇ Download als Word</button>
-          <button class="btn-soft" onclick="kopieer()">📋 Kopiëren</button>
+          <button class="btn-soft" onclick="slaLesOp(this)">💾 Opslaan in Bestanden</button>
           <button class="btn-soft" onclick="maak(true)">🔄 Andere versie</button>
           <button class="btn-soft" onclick="toonVerfijn()">✏️ Pas iets aan</button>
         </div>
@@ -496,7 +498,7 @@
     // ── Didactische regie per lestype (de CODE regelt de structuur) ──────────
     const LESTYPE_REGIE = {
       klas: 'SOORT LES: een les in het klaslokaal. Kies activerende, afwisselende werkvormen (denk-deel-uit, wisbordjes/mini-whiteboards, korte doe-opdrachten, coöperatieve duo\'s). Voorkom dat leerlingen lang passief luisteren.',
-      bewegend: 'SOORT LES: BEWEGEND LEREN. De leerlingen bereiken het lesdoel terwijl ze fysiek bewegen (staan, springen, lopen, hinkelen, gebaren); bewegen is GEEN losse energizer maar verweven met de leerstof. Het werkt het sterkst voor automatiseren, herhalen en inoefenen. Geef CONCRETE beweegwerkvormen die echt bij dit lesdoel passen (in de geest van waslijn-dictee, tafeljoggen, hinkelbaan, sommen-en-uitkomsten matchen, getalkaarten, "level up"), met benodigdheden, ruimte-opstelling en hoe je het veilig en ordelijk houdt.',
+      bewegend: 'SOORT LES: BEWEGEND LEREN in het klaslokaal. Bouw één of meer ECHTE beweegactiviteiten in, op de plekken waar bewegen het leren versterkt (voorkennis activeren, automatiseren, inoefenen). Werkt het sterkst voor herhalen en automatiseren. CRUCIAAL: "bewegend" betekent dat de leerlingen ook DAADWERKELIJK bewegen — lopen, springen, hinkelen, naar een plek/hoek in het lokaal gaan, iets halen of ruilen, met het hele lichaam iets aangeven — en NIET dat ze alleen naast hun stoel staan terwijl ze dezelfde taak op hun wisbordje doen die ze net zo goed zittend konden doen. Dat laatste is geen bewegen. Niet de hele les hoeft te bewegen: de instructie en een deel van de verwerking mogen gewoon zitten; kies bewust waar beweging echt iets toevoegt. KLASSE-REALISME (heel belangrijk): bij een volle klas (~25 leerlingen) is elke leerling TEGELIJK actief. Vermijd werkvormen waarbij de hele groep met één set materiaal om de beurt moet (bijvoorbeeld één grote memory-set voor 13 tweetallen) — dat duurt veel te lang. Zorg dat iedereen genoeg te doen heeft binnen de tijd. Geef per beweegwerkvorm de opstelling, de benodigdheden (haalbaar voor de hele groep) en hoe je het veilig en ordelijk houdt.',
       buiten: 'SOORT LES: BUITENLES op het schoolplein of in de directe buurt. Geef werkvormen die buiten tot hun recht komen (stoepkrijt, kaarten zoeken/rennen, estafette, meten/tekenen op het plein, natuur en zintuigen). Noem benodigdheden (klembordjes, krijt, kaartjes), een duidelijk verzamelsignaal (fluit/lied), afspraken vooraf, en benut zo mogelijk het weer. Houd het organisatorisch haalbaar voor één leerkracht.',
       cooperatief: 'SOORT LES: COÖPERATIEF LEREN. De leerlingen leren mét en ván elkaar in duo\'s of groepjes via heldere structuren (denken-delen-uitwisselen, genummerde-hoofden-samen, tweetalcoach, placemat, binnen-buitenkring). Zorg voor positieve wederzijdse afhankelijkheid (ze hebben elkaar nodig) én individuele aanspreekbaarheid.'
     };
@@ -748,9 +750,9 @@
         r.push('');
         lts.forEach(lt => { if (LESTYPE_REGIE[lt]) r.push(LESTYPE_REGIE[lt]); });
         r.push('');
-        const nietKlas = lts.filter(lt => lt !== 'klas');
-        if (nietKlas.length) {
-          r.push('De gekozen lessoort bepaalt waar en hoe de HELE les verloopt, niet één losse fase. Bij een buitenles vindt het grootste deel van de les buiten plaats (zeker de begeleide inoefening en de zelfstandige verwerking), bij bewegend leren zit de beweging door de hele les heen, en bij coöperatief leren werken de leerlingen het grootste deel samen. Maak er dus geen gewone binnenles van met één los buiten-, beweeg- of samenwerkmomentje. Alleen een korte klassikale introductie of afronding mag eventueel anders.');
+        const heleLes = lts.filter(lt => lt === 'buiten' || lt === 'cooperatief');
+        if (heleLes.length) {
+          r.push('De gekozen lessoort bepaalt waar en hoe de HELE les verloopt, niet één losse fase. Bij een buitenles vindt het grootste deel van de les buiten plaats (zeker de begeleide inoefening en de zelfstandige verwerking), en bij coöperatief leren werken de leerlingen het grootste deel samen. Maak er dus geen gewone binnenles van met één los buiten- of samenwerkmomentje. Alleen een korte klassikale introductie of afronding mag eventueel anders.');
           r.push('Ga ervan uit dat de les ECHT in die setting plaatsvindt: de leerkracht heeft er bewust voor gekozen. Maak GEEN voorbehoud over het weer of de omstandigheden (dus niet "als het droog is" of "indien mogelijk buiten"). Laat ook de begeleiding en de verlengde instructie in diezelfde setting gebeuren: bij een buitenles trek je een klein groepje apart BUITEN, niet aan een instructietafel binnen.');
           r.push('');
         }
@@ -1072,6 +1074,176 @@
       });
     }
 
+    // De les opslaan in Bestanden via de gedeelde kiezer-dialoog. We bewaren de
+    // structuur (tekst + meta), zodat het Word-document later opnieuw te maken is.
+    // Slimme standaarden: voorgestelde map "Lesontwerpen → <vak>", en naam +
+    // omschrijving afgeleid uit het lesdoel — zonder extra AI-call.
+    // Onthoudt de naam/omschrijving als de les uit Bestanden is geopend, zodat
+    // opnieuw opslaan JOUW naam aanhoudt i.p.v. een nieuw bedachte.
+    let geladenBestandNaam = '', geladenBestandOms = '', geladenBestandId = '';
+
+    async function slaLesOp(btn) {
+      if (!laatsteTekst) return;
+      if (!window.avinkaBestanden) { if (typeof avinkaAlert === 'function') avinkaAlert("Opslaan is even niet beschikbaar. Ververs de pagina en probeer opnieuw."); return; }
+
+      const vak = (laatsteMeta.vak || 'Overig').trim();
+      let naam, omschrijving;
+
+      if (geladenBestandNaam) {
+        // Heropend uit Bestanden → jouw eigen naam/omschrijving aanhouden.
+        naam = geladenBestandNaam;
+        omschrijving = geladenBestandOms;
+      } else {
+        // Verse les → korte titel + omschrijving uit de les laten halen.
+        const oudeLabel = btn ? btn.textContent : '';
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Even een naam bedenken…'; }
+        const gen = await genNaamOms(vak);
+        if (btn) { btn.disabled = false; btn.textContent = oudeLabel || '💾 Opslaan in Bestanden'; }
+        naam = gen.naam;
+        omschrijving = gen.omschrijving;
+      }
+
+      const res = await window.avinkaBestanden.opslaan({
+        type: 'les',
+        tool: 'lesontwerp',
+        naam: naam,
+        omschrijving: omschrijving,
+        inhoud: laatsteTekst,
+        data: { tekst: laatsteTekst, meta: laatsteMeta },
+        suggestiePad: ['Lesontwerpen', vak],
+        bestandId: geladenBestandId || undefined,
+      });
+
+      if (!res || !res.ok) {
+        if (res && res.reason === 'geen_toegang' && typeof avinkaAlert === 'function') {
+          avinkaAlert("Opslaan in Bestanden hoort bij Compleet en Pro. Upgrade om je lessen te bewaren.");
+        }
+        return; // geannuleerd of fout: stil
+      }
+      // Onthoud waar/hoe het is opgeslagen, zodat opnieuw opslaan deze les betreft.
+      if (res.id) geladenBestandId = res.id;
+      geladenBestandNaam = res.naam || naam;
+      geladenBestandOms = (res.oms != null ? res.oms : omschrijving) || '';
+      if (typeof avinkaAlert === 'function') avinkaAlert("Opgeslagen in Bestanden.");
+    }
+
+    // Korte naam ("<vak> - <onderwerp>") + omschrijving, uit de les zelf gehaald.
+    // Eén kleine AI-call, alleen bij het opslaan van een verse les. Valt netjes
+    // terug op het lesdoel als de call niet lukt.
+    async function genNaamOms(vak) {
+      const doel = (laatsteMeta.doel || '').trim();
+      const kaalDoel = doel.replace(/^(de\s+leerlingen?|leerlingen|kinderen|ik)\s+(kunnen|kan)\s+/i, '').replace(/[.\s]+$/, '');
+      const fbOnderwerp = kaalDoel
+        ? (kaalDoel.length > 42 ? kaalDoel.slice(0, 40).replace(/\s+\S*$/, '') + '…' : kaalDoel)
+        : (laatsteMeta.vorm === 'idee' ? 'Lesidee' : 'Les');
+      const fbNaam = vak + ' - ' + (fbOnderwerp.charAt(0).toUpperCase() + fbOnderwerp.slice(1));
+      const fallback = { naam: fbNaam, omschrijving: doel || fbOnderwerp };
+      try {
+        const prompt = 'Hieronder staat een les voor het vak ' + vak + '. Bedenk een korte naam en een omschrijving voor in een bestandenmap.\n\n=== LES ===\n' + laatsteTekst.slice(0, 1800) + '\n=== EINDE ===\n\nGeef UITSLUITEND geldige JSON terug, niets eromheen:\n{"onderwerp":"2 tot 4 woorden die het onderwerp of de leerlijn benoemen, ZONDER het vak ervoor (bijvoorbeeld: Introductie breuken, of Rijgen op de getallenlijn)","omschrijving":"1 a 2 korte zinnen die concreet zeggen wat de leerlingen in deze les doen en leren"}';
+        const raw = await callClaude('Je bent een beknopte assistent. Antwoord uitsluitend met geldige JSON.', prompt, 220);
+        const m = raw.replace(/```json|```/g, '').match(/\{[\s\S]*\}/);
+        if (!m) return fallback;
+        const j = JSON.parse(m[0]);
+        const onderwerp = (j.onderwerp || '').trim();
+        const oms = (j.omschrijving || '').trim();
+        if (!onderwerp) return fallback;
+        return { naam: vak + ' - ' + onderwerp, omschrijving: oms || fallback.omschrijving };
+      } catch (e) { return fallback; }
+    }
+
+    // Een select terugzetten op een waarde (incl. change-event voor de huisstijl-dropdown).
+    function herstelSelect(id, val) {
+      if (!val) return;
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.value = val;
+      el.classList.toggle('filled', !!el.value);
+      try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
+    }
+
+    // "Terug naar bewerken": opent deze tool met ?bestand=<id> en zet een eerder
+    // opgeslagen les volledig terug — de invoervelden én de les zelf — zodat de
+    // leerkracht 'm kan aanpassen, een andere versie maken of opnieuw downloaden.
+    async function laadOpgeslagenLes() {
+      let id = null;
+      try { id = new URLSearchParams(location.search).get('bestand'); } catch (e) {}
+      if (!id) return;
+
+      let data = null, bestandNaam = '';
+      try {
+        const r = await fetch('/api/bestanden?id=' + encodeURIComponent(id), { headers: { accept: 'application/json' } });
+        if (!r.ok) return;
+        const rij = await r.json();
+        data = rij && rij.data;
+        bestandNaam = (rij && rij.naam) || '';
+      } catch (e) { return; }
+      if (!data || !data.tekst) return;
+      const meta = data.meta || {};
+      // Jouw eigen naam/omschrijving + id onthouden voor een volgende keer opslaan.
+      geladenBestandNaam = bestandNaam;
+      geladenBestandOms = (data.omschrijving || '') + '';
+      geladenBestandId = id;
+
+      // Geopend vanuit Bestanden → de "terug"-knop wijst terug naar Bestanden,
+      // en wel naar het mapje waar je net keek (meegegeven via ?map=…).
+      var terugLink = document.getElementById('terug-link');
+      if (terugLink) {
+        var vanMap = '';
+        try { vanMap = new URLSearchParams(location.search).get('map') || ''; } catch (e) {}
+        terugLink.href = '/dashboard/mijn-teksten' + (vanMap ? '?map=' + encodeURIComponent(vanMap) : '');
+        terugLink.textContent = '← Terug naar bestanden';
+      }
+
+      // Invoervelden terugzetten (best effort; de les hieronder is het belangrijkst).
+      try {
+        if (meta.vak) {
+          const kaart = Array.from(document.querySelectorAll('#vak-grid .vakkaart')).find(k => k.dataset.v === meta.vak);
+          if (kaart) kaart.click(); else document.getElementById('vak').value = meta.vak; // .click() laat de UI zich aanpassen (lestype/vorm)
+        }
+        if (meta.vorm === 'edi' || meta.vorm === 'kort') {
+          const opt = document.querySelector('#vorm .opt[data-v="' + meta.vorm + '"]');
+          if (opt) opt.click();
+        }
+        if (Array.isArray(meta.lestypes)) {
+          document.querySelectorAll('#lestype .kaart').forEach(k => k.classList.toggle('aan', meta.lestypes.indexOf(k.dataset.v) !== -1));
+        }
+        const doelEl = document.getElementById('doel');
+        if (doelEl) { doelEl.value = meta.doel || ''; doelEl.classList.toggle('filled', !!(meta.doel || '').trim()); }
+        const ctxEl = document.getElementById('context');
+        if (ctxEl) { ctxEl.value = meta.context || ''; ctxEl.classList.toggle('filled', !!(meta.context || '').trim()); }
+        herstelSelect('groep', meta.groep);
+        herstelSelect('duur', meta.duur);
+      } catch (e) {}
+
+      // De les zelf terugzetten zodat downloaden/verfijnen/andere-versie werken.
+      laatsteTekst = data.tekst;
+      laatsteMeta = meta;
+      verfijnBasis = data.tekst;
+      verfijnWensen = [];
+      document.getElementById('les').innerHTML = renderLes(data.tekst, meta);
+      const lesEl = document.getElementById('les');
+      const tgl = document.getElementById('les-toggle');
+      if (meta.vorm === 'edi') { lesEl.classList.add('ingeklapt'); tgl.textContent = 'Toon volledige les'; tgl.style.display = ''; }
+      else { lesEl.classList.remove('ingeklapt'); tgl.style.display = 'none'; }
+      const lts = meta.lestypes || [];
+      document.getElementById('uitvoer-titel').textContent = meta.vorm === 'idee' ? 'Je lesidee' : lts.indexOf('buiten') !== -1 ? 'Je buitenles' : (lts.length === 1 && lts[0] === 'bewegend') ? 'Je bewegende les' : 'Je les';
+      document.getElementById('uitvoer').style.display = 'block';
+      document.getElementById('uitvoer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      // Vanuit Bestanden met "&download=1" gekomen → meteen het Word-document maken
+      // en het tabblad daarna sluiten (het is via window.open geopend).
+      try {
+        if (new URLSearchParams(location.search).get('download') === '1' && typeof downloadLes === 'function') {
+          setTimeout(async function () {
+            try { await downloadLes(); } catch (e) {}
+            setTimeout(function () { try { window.close(); } catch (e) {} }, 700);
+          }, 350);
+        }
+      } catch (e) {}
+    }
+    // Na het laden van de pagina (en de andere scripts) een eventuele opgeslagen les inladen.
+    window.addEventListener('load', laadOpgeslagenLes);
+
     // Verwijder markdown-scheidingslijnen (---, ***, ___) die de AI soms tussen
     // secties zet. Onze renderer kent ze niet, dus anders blijven ze als losse
     // streepjes onder de onderdelen staan (ook in kopie + Word).
@@ -1193,195 +1365,10 @@
       return html;
     }
 
-    // ── Word-download (docx vanaf nul, met JSZip) ────────────────────────────
-    function docxEsc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-
-    // ── OOXML-helpers: runs, alinea's en tabellen (= de vakjes/kolommen) ──
-    function dRun(text, o) { o = o || {}; var p = '';
-      if (o.b) p += '<w:b/>';
-      if (o.i) p += '<w:i/>';
-      if (o.color) p += '<w:color w:val="' + o.color + '"/>';
-      if (o.sz) p += '<w:sz w:val="' + o.sz + '"/>';
-      p = p ? '<w:rPr>' + p + '</w:rPr>' : '';
-      return '<w:r>' + p + '<w:t xml:space="preserve">' + docxEsc(text) + '</w:t></w:r>';
-    }
-    function dInline(text, base) { base = base || {};
-      var s = String(text == null ? '' : text), out = '', re = /\*\*([^*]+)\*\*|\*([^*]+)\*/g, last = 0, m;
-      while ((m = re.exec(s))) {
-        if (m.index > last) out += dRun(s.slice(last, m.index).replace(/\*/g, ''), base);
-        out += m[1] != null ? dRun(m[1], Object.assign({}, base, { b: true })) : dRun(m[2], Object.assign({}, base, { i: true }));
-        last = re.lastIndex;
-      }
-      if (last < s.length) out += dRun(s.slice(last).replace(/\*/g, ''), base);
-      return out;
-    }
-    function dPara(runs, o) { o = o || {}; var pr = '';
-      if (o.keepNext) pr += '<w:keepNext/>';
-      if (o.keepLines) pr += '<w:keepLines/>';
-      if (o.pageBreak) pr += '<w:pageBreakBefore/>';
-      if (o.leftBar) pr += '<w:pBdr><w:left w:val="single" w:sz="18" w:space="6" w:color="' + o.leftBar + '"/></w:pBdr>';
-      if (o.shd) pr += '<w:shd w:val="clear" w:color="auto" w:fill="' + o.shd + '"/>';
-      pr += '<w:spacing w:before="' + (o.before != null ? o.before : 0) + '" w:after="' + (o.after != null ? o.after : 80) + '" w:line="' + (o.line || 264) + '" w:lineRule="auto"/>';
-      if (o.jc) pr += '<w:jc w:val="' + o.jc + '"/>';
-      return '<w:p><w:pPr>' + pr + '</w:pPr>' + (runs || '') + '</w:p>';
-    }
-    function dBorders(val, sz, color) {
-      function e(p) { return '<w:' + p + ' w:val="' + val + '"' + (val !== 'none' ? ' w:sz="' + sz + '" w:space="0" w:color="' + color + '"' : '') + '/>'; }
-      return '<w:tblBorders>' + e('top') + e('left') + e('bottom') + e('right') + e('insideH') + e('insideV') + '</w:tblBorders>';
-    }
-    function dCell(content, o) { o = o || {}; var m = o.margins != null ? o.margins : 120; var pr = '<w:tcW w:w="' + (o.w || 9072) + '" w:type="dxa"/>';
-      if (o.shd) pr += '<w:shd w:val="clear" w:color="auto" w:fill="' + o.shd + '"/>';
-      pr += '<w:tcMar><w:top w:w="' + m + '" w:type="dxa"/><w:left w:w="' + m + '" w:type="dxa"/><w:bottom w:w="' + m + '" w:type="dxa"/><w:right w:w="' + m + '" w:type="dxa"/></w:tcMar>';
-      if (o.valign) pr += '<w:vAlign w:val="' + o.valign + '"/>';
-      return '<w:tc><w:tcPr>' + pr + '</w:tcPr>' + (content || dPara('')) + '</w:tc>';
-    }
-    function dTable(rows, o) { o = o || {};
-      var b = o.noBorders ? dBorders('none', '0', 'auto') : dBorders('single', '6', o.bc || 'E3DCCB');
-      var grid = '<w:tblGrid>' + (o.grid || [9072]).map(function (w) { return '<w:gridCol w:w="' + w + '"/>'; }).join('') + '</w:tblGrid>';
-      return '<w:tbl><w:tblPr><w:tblW w:w="9072" w:type="dxa"/>' + b + '<w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="60" w:type="dxa"/><w:left w:w="120" w:type="dxa"/><w:bottom w:w="60" w:type="dxa"/><w:right w:w="120" w:type="dxa"/></w:tblCellMar></w:tblPr>' + grid +
-        rows.map(function (r) { return '<w:tr>' + r + '</w:tr>'; }).join('') + '</w:tbl><w:p><w:pPr><w:spacing w:before="0" w:after="100"/></w:pPr></w:p>';
-    }
-
-    const LESTYPE_EMOJI = { klas: '📚', bewegend: '🤸', buiten: '☀️', cooperatief: '👥' };
-
-    // Markdown → structuur (secties + fasen + blokken)
-    function parseLes(md) {
-      var secs = [], cur = null, fase = null;
-      function push(b) { if (cur && cur.type === 'lesopbouw') { if (fase) fase.content.push(b); } else if (cur) cur.content.push(b); }
-      md.split('\n').forEach(function (raw) {
-        var t = raw.trim(); if (!t) return;
-        if (/^##\s+/.test(t) && !/^###/.test(t)) {
-          var titel = t.replace(/^#+\s*/, ''); fase = null;
-          if (/^lesopbouw/i.test(titel)) cur = { type: 'lesopbouw', title: titel, fasen: [] };
-          else {
-            var ty = /lesdoel/i.test(titel) ? 'lesdoel' : /lesidee/i.test(titel) ? 'lesidee' : /succescrit/i.test(titel) ? 'succescriteria' : /benodig/i.test(titel) ? 'benodigdheden' : /^tip/i.test(titel) ? 'tips' : /aanpak|zo pak/i.test(titel) ? 'aanpak' : /bouwsteen/i.test(titel) ? 'bouwstenen' : /different/i.test(titel) ? 'differentiatie' : 'overig';
-            cur = { type: ty, title: titel, content: [] };
-          }
-          secs.push(cur); return;
-        }
-        if (/^###\s+/.test(t)) {
-          var titel2 = t.replace(/^#+\s*/, '');
-          if (cur && cur.type === 'lesopbouw') {
-            var bodyT = titel2.replace(/^\d+\.\s*/, ''), tijd = '';
-            var m = bodyT.match(/\(([^)]*\bmin[^)]*)\)\s*$/i);
-            if (m) { tijd = m[1].trim(); bodyT = bodyT.replace(/\([^)]*\)\s*$/, '').trim(); }
-            fase = { nr: cur.fasen.length + 1, title: bodyT, tijd: tijd, content: [] }; cur.fasen.push(fase);
-          } else push({ kind: 'h4', text: titel2 });
-          return;
-        }
-        if (/^\*\*\s*controle van begrip\s*:?\s*\*\*/i.test(t)) { push({ kind: 'cvb', text: t.replace(/^\*\*\s*controle van begrip\s*:?\s*\*\*\s*/i, '') }); return; }
-        var lbl = t.match(/^\*\*\s*(.+?)\s*:\s*\*\*\s*(.*)$/);
-        if (lbl) { push({ kind: 'label', label: lbl[1], text: lbl[2] }); return; }
-        if (/^[-*]\s+/.test(t)) { push({ kind: 'li', text: t.replace(/^[-*]\s+/, '') }); return; }
-        push({ kind: 'p', text: t });
-      });
-      return secs;
-    }
-
-    function dBlocks(blocks, liChar) {
-      liChar = liChar || '✓';
-      var out = '';
-      blocks.forEach(function (b) {
-        if (b.kind === 'li') out += dPara(dRun(liChar + '  ', { color: '2F9E6E', b: true }) + dInline(b.text, { color: '221C3A' }), { after: 30 });
-        else if (b.kind === 'cvb') out += dPara(dRun('✓ Controle van begrip  ', { b: true, color: '25855A' }) + dInline(b.text, { color: '25855A' }), { shd: 'E7F4ED', leftBar: '2F9E6E', before: 140, after: 60 });
-        else if (b.kind === 'label') out += dPara(dRun(b.label + ': ', { b: true, color: '25855A' }) + dInline(b.text, { color: '221C3A' }), { before: 40, after: 40 });
-        else if (b.kind === 'h4') out += dPara(dInline(b.text, { b: true, color: '25855A' }), { before: 80, after: 20 });
-        else out += dPara(dInline(b.text, { color: '221C3A' }), { after: 60 });
-      });
-      return out || dPara('');
-    }
-
-    function lesNaarBody(md, meta) {
-      var secs = parseLes(md);
-      var lestypeNaam = (meta.lestypes || []).map(function (v) { return LESTYPE_NAAM[v]; }).filter(Boolean).join(' + ') || 'Les';
-      var isIdee = meta.vorm === 'idee';
-      var repType = (meta.lestypes || []).filter(function (v) { return v !== 'klas'; })[0] || (meta.lestypes || [])[0];
-      var emoji = isIdee ? '🎨' : (LESTYPE_EMOJI[repType] || '📚');
-      var titelTxt = isIdee ? 'Lesidee' : 'Lesvoorbereiding';
-      var groep = meta.groep ? (/^groep/i.test(meta.groep) ? meta.groep : 'Groep ' + meta.groep) : '—';
-
-      // Groene banner
-      var banner = dTable([dCell(
-        dPara(dRun(emoji + '  ', { sz: 40 }) + dRun(titelTxt, { b: true, color: 'FFFFFF', sz: 44 }), { after: 30 }) +
-        dPara(dRun(lestypeNaam + (meta.vak ? '  ·  ' + meta.vak : ''), { color: 'D6EFE2', sz: 22 }), { after: 0 }),
-        { shd: '2F9E6E', margins: 200 }
-      )], { noBorders: true });
-
-      // Meta-strook (4 kolommen)
-      function mcell(label, val) {
-        return dCell(
-          dPara(dRun(label.toUpperCase(), { b: true, color: '6B6880', sz: 15 }), { after: 20 }) +
-          dPara(dInline(val || '—', { b: true, color: '221C3A', sz: 21 }), { after: 0 }),
-          { w: 2268, shd: 'F4EFE5', valign: 'center', margins: 130 }
-        );
-      }
-      var metaT = dTable([mcell('Groep', groep) + mcell('Vak', meta.vak) + mcell('Lesduur', meta.duur) + mcell('Lestype', lestypeNaam)], { grid: [2268, 2268, 2268, 2268], bc: 'FFFFFF' });
-
-      var body = banner + metaT;
-      var sectIcon = { lesdoel: '🎯', lesidee: '🎨', aanpak: '🪜', succescriteria: '✅', benodigdheden: '🧰', tips: '💡', bouwstenen: '🧩', differentiatie: '🔀', overig: '▸' };
-
-      secs.forEach(function (sec) {
-        if (sec.type === 'lesopbouw') {
-          body += dPara(dRun('📋  ', { sz: 28 }) + dRun(sec.title, { b: true, color: '221C3A', sz: 28 }), { before: 0, after: 40, pageBreak: true, keepNext: true });
-          sec.fasen.forEach(function (f) {
-            var head = '<w:trPr><w:cantSplit/></w:trPr>' + dCell(dPara(
-              dRun('Fase ' + f.nr + '   ', { b: true, color: 'FFFFFF', sz: 19 }) + dRun(f.title, { b: true, color: 'FFFFFF', sz: 23 }) + (f.tijd ? dRun('    ·  ' + f.tijd, { color: 'D6EFE2', sz: 19 }) : ''),
-              { after: 0, keepNext: true }), { shd: '2F9E6E', margins: 140 });
-            var bodyC = dCell(dBlocks(f.content), { shd: 'F4FAF7', margins: 160 });
-            body += dTable([head, bodyC], { noBorders: true });
-          });
-        } else if (sec.type === 'differentiatie') {
-          // Splits de inhoud op de ###-kopjes in kolommen.
-          var cols = [], curCol = null;
-          sec.content.forEach(function (b) {
-            if (b.kind === 'h4') { curCol = { title: b.text, blocks: [] }; cols.push(curCol); }
-            else if (curCol) curCol.blocks.push(b);
-          });
-          body += dPara(dRun('🔀  ', { sz: 24 }) + dRun(sec.title, { b: true, color: '221C3A', sz: 24 }), { before: 80, after: 50, keepNext: true });
-          if (cols.length) {
-            var cw = Math.floor(9072 / cols.length), grid = cols.map(function () { return cw; });
-            var headRow = '<w:trPr><w:cantSplit/></w:trPr>' + cols.map(function (c) { return dCell(dPara(dRun(c.title, { b: true, color: 'FFFFFF', sz: 19 }), { after: 0, keepNext: true }), { w: cw, shd: '2F9E6E', margins: 120, valign: 'center' }); }).join('');
-            var bodyRow = cols.map(function (c) { return dCell(dBlocks(c.blocks, '•'), { w: cw, shd: 'F4FAF7', margins: 140, valign: 'top' }); }).join('');
-            body += dTable([headRow, bodyRow], { grid: grid, bc: 'FFFFFF' });
-          }
-        } else {
-          var bodyShd = sec.type === 'lesdoel' ? 'E7F4ED' : 'FCFAF4';
-          var liChar = (sec.type === 'benodigdheden' || sec.type === 'tips') ? '•' : '✓';
-          // cantSplit + keepNext: titelregel niet verweesd laten onderaan een pagina.
-          var kop = '<w:trPr><w:cantSplit/></w:trPr>' + dCell(dPara(dRun((sectIcon[sec.type] || '▸') + '   ', { sz: 22 }) + dRun(sec.title, { b: true, color: 'FFFFFF', sz: 22 }), { after: 0, keepNext: true }), { shd: '2F9E6E', margins: 130 });
-          var lijf = dCell(dBlocks(sec.content, liChar), { shd: bodyShd, margins: 160 });
-          body += dTable([kop, lijf], { noBorders: true });
-        }
-      });
-
-      body += dPara(dRun('Gemaakt met Avinka · lees de les altijd na voordat je hem geeft.', { i: true, color: '6B6880', sz: 16 }), { before: 200, jc: 'center' });
-
-      return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-        '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + body +
-        '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1417" w:right="1417" w:bottom="1417" w:left="1417" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr>' +
-        '</w:body></w:document>';
-    }
-    const DOCX_CT = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>';
-    const DOCX_RELS = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
-    const DOCX_DRELS = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
-    const DOCX_STYLES = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/><w:sz w:val="21"/><w:szCs w:val="21"/><w:color w:val="221C3A"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="80" w:line="264" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>' +
-      '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>';
+    // Word-download: hergebruikt de gedeelde generator (avinka-lesdocx.js).
     async function downloadLes() {
-      if (!laatsteTekst) return;
-      const zip = new JSZip();
-      zip.file('[Content_Types].xml', DOCX_CT);
-      zip.folder('_rels').file('.rels', DOCX_RELS);
-      const w = zip.folder('word');
-      w.file('document.xml', lesNaarBody(laatsteTekst, laatsteMeta));
-      w.file('styles.xml', DOCX_STYLES);
-      w.folder('_rels').file('document.xml.rels', DOCX_DRELS);
-      const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'lesontwerp_' + (laatsteMeta.groep || '').replace(/[^\w]/g, '-') + '_' + new Date().toISOString().slice(0, 10) + '.docx';
-      a.click();
-      URL.revokeObjectURL(url);
+      if (!laatsteTekst || !window.avinkaLesDocx) return;
+      await window.avinkaLesDocx.download(laatsteTekst, laatsteMeta);
     }
   </script>
 </body>
