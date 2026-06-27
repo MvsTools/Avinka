@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Script from "next/script";
 import {
   getBestanden,
   addMap,
@@ -15,10 +16,20 @@ const ICON: Record<string, string> = {
   map: "📁",
   tekst: "📄",
   plattegrond: "🗺️",
+  les: "📚",
 };
 
 function typeOrder(t: string): number {
   return t === "map" ? 0 : t === "plattegrond" ? 1 : 2;
+}
+
+// De korte omschrijving die bij een opgeslagen les hoort (zit in data.omschrijving).
+function lesOmschrijving(data: unknown): string {
+  if (data && typeof data === "object" && "omschrijving" in data) {
+    const o = (data as { omschrijving?: unknown }).omschrijving;
+    return typeof o === "string" ? o : "";
+  }
+  return "";
 }
 
 type ModalState =
@@ -43,6 +54,13 @@ export default function BestandenManager() {
   }
 
   useEffect(() => {
+    // Geopend met ?map=… (terugkomend vanuit een les) → meteen die map openen.
+    try {
+      const m = new URLSearchParams(window.location.search).get("map");
+      if (m) setMapId(m);
+    } catch {
+      /* geen window/param → wortel */
+    }
     (async () => {
       await herlaad();
       setGeladen(true);
@@ -135,8 +153,42 @@ export default function BestandenManager() {
 
   if (!geladen) return null;
 
+  // Een opgeslagen les direct als Word downloaden — via de gedeelde generator
+  // (avinka-lesdocx.js), zonder dat er een tabblad opent. Lukt dat (nog) niet,
+  // dan vallen we terug op de tool die zelf downloadt en sluit.
+  async function downloadLesBestand(b: Bestand) {
+    const w = window as unknown as {
+      avinkaLesDocx?: {
+        download: (tekst: string, meta: unknown, naam?: string) => Promise<void>;
+      };
+    };
+    try {
+      const r = await fetch(`/api/bestanden?id=${b.id}`, {
+        headers: { accept: "application/json" },
+      });
+      if (r.ok) {
+        const rij = await r.json();
+        const data = rij?.data as { tekst?: string; meta?: unknown } | null;
+        if (data?.tekst && w.avinkaLesDocx) {
+          const naam =
+            (b.naam || "lesontwerp").replace(/[\\/:*?"<>|]+/g, "-") + ".docx";
+          await w.avinkaLesDocx.download(data.tekst, data.meta ?? {}, naam);
+          return;
+        }
+      }
+    } catch {
+      /* val terug op de tool-route hieronder */
+    }
+    window.open(`/tools/lesontwerp.html?bestand=${b.id}&download=1`);
+  }
+
   return (
     <div className="flex flex-col gap-6">
+      <Script
+        src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
+        strategy="lazyOnload"
+      />
+      <Script src="/avinka-lesdocx.js" strategy="lazyOnload" />
       {/* Broodkruimels + acties */}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
         <nav className="flex flex-wrap items-center gap-1 text-sm font-semibold">
@@ -240,6 +292,8 @@ export default function BestandenManager() {
                 onClick={() => {
                   if (b.type === "map") setMapId(b.id);
                   else if (b.type === "tekst") setBekijk(b);
+                  else if (b.type === "les")
+                    window.location.href = `/tools/lesontwerp.html?bestand=${b.id}${mapId ? `&map=${mapId}` : ""}`;
                   else window.open(`/tools/plattegrond.html?bestand=${b.id}`, "_blank");
                 }}
                 className="flex min-w-0 flex-1 items-center gap-3 text-left"
@@ -247,10 +301,13 @@ export default function BestandenManager() {
                 <span className="text-2xl">{ICON[b.type] ?? "📄"}</span>
                 <span className="min-w-0">
                   <span className="block truncate font-bold text-ink">{b.naam}</span>
-                  <span className="block text-xs text-ink/45">
+                  <span className="block truncate text-xs text-ink/45">
                     {b.type === "map"
                       ? `${bestanden.filter((x) => x.parent_id === b.id).length} items`
-                      : `${b.type === "plattegrond" ? "Plattegrond" : "Tekst"} · ${nlDatum(b.updated_at)}`}
+                      : b.type === "les"
+                        ? lesOmschrijving(b.data) ||
+                          `Lesontwerp · ${nlDatum(b.updated_at)}`
+                        : `${b.type === "plattegrond" ? "Plattegrond" : "Tekst"} · ${nlDatum(b.updated_at)}`}
                   </span>
                 </span>
               </button>
@@ -265,6 +322,15 @@ export default function BestandenManager() {
                   >
                     🖨
                   </a>
+                )}
+                {b.type === "les" && (
+                  <button
+                    onClick={() => downloadLesBestand(b)}
+                    title="Downloaden als Word"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/45 transition hover:bg-cream hover:text-brand"
+                  >
+                    ⬇
+                  </button>
                 )}
                 <button
                   onClick={() => hernoem(b)}

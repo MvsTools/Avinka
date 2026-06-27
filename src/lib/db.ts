@@ -210,7 +210,7 @@ export async function deleteTekst(id: string): Promise<void> {
 }
 
 // ── BESTANDEN (mappen + bestanden in één boom) ────────────────────────────
-export type BestandType = "map" | "tekst" | "plattegrond";
+export type BestandType = "map" | "tekst" | "plattegrond" | "les";
 export type Bestand = {
   id: string;
   parent_id: string | null;
