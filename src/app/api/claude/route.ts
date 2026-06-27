@@ -7,6 +7,7 @@ import {
   mapAbonnementRow,
   modelVoor,
 } from "@/lib/abonnement";
+import { aanbiederVoor } from "@/lib/ai-providers";
 
 // De beveiligde AI-route van het platform. Vervangt de oude Netlify-proxy:
 // - controleert dat de gebruiker is INGELOGD (vervangt het wachtwoordscherm);
@@ -54,54 +55,62 @@ export async function POST(request: NextRequest) {
     if (model) (body as Record<string, unknown>).model = model;
   }
 
-  // 3) De geheime sleutel (alleen op de server bekend).
-  const key = process.env.ANTHROPIC_API_KEY;
+  // 2c) Welke AI-aanbieder hoort bij deze gebruiker? Vandaag krijgt iedereen
+  //     Claude (de kolom `ai_provider` bestaat misschien nog niet, of staat
+  //     leeg). Lukt de lookup niet, dan valt aanbiederVoor() terug op de
+  //     standaard (Claude) — zo verandert er nu niets aan de werking.
+  let aiProvider: string | null = null;
+  try {
+    const { data: provRow } = await supabase
+      .from("instellingen")
+      .select("ai_provider")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    aiProvider = (provRow as { ai_provider?: string | null } | null)?.ai_provider ?? null;
+  } catch {
+    /* kolom bestaat (nog) niet of leesfout → standaard-aanbieder (Claude) */
+  }
+  const aanbieder = aanbiederVoor(aiProvider);
+
+  // 3) De geheime sleutel van de gekozen aanbieder (alleen op de server bekend).
+  const key = process.env[aanbieder.envSleutel];
   if (!key) {
     return NextResponse.json({ error: "server_misconfigured" }, { status: 500 });
   }
 
-  // 4) Doorsturen naar Anthropic.
+  // 4) Doorsturen naar de aanbieder. Voor Claude is dit exact als voorheen:
+  //    body ongewijzigd, dezelfde headers.
+  const verzoek = aanbieder.bouwVerzoek(body, key);
   let upstream: Response;
   try {
-    upstream = await fetch("https://api.anthropic.com/v1/messages", {
+    upstream = await fetch(verzoek.url, {
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": key,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify(body),
+      headers: verzoek.headers,
+      body: verzoek.body,
     });
   } catch {
     return NextResponse.json({ error: "upstream_unreachable" }, { status: 502 });
   }
 
-  // 5) Het antwoord van Anthropic ongewijzigd teruggeven.
-  const text = await upstream.text();
+  // 5) Het ruwe antwoord ophalen en naar het tool-formaat vertalen. Voor
+  //    Claude is dat ongewijzigd; een andere aanbieder zet zijn antwoord om.
+  const ruw = await upstream.text();
+  const text = aanbieder.vertaalAntwoord(ruw);
 
   // 5b) Gebruiksmetadata loggen (alleen tokens/model/tool — nooit de inhoud).
   //     Mag de respons nooit vertragen of breken: in een try/catch.
   if (upstream.ok) {
     try {
-      const parsed = JSON.parse(text) as {
-        model?: string;
-        usage?: {
-          input_tokens?: number;
-          output_tokens?: number;
-          cache_creation_input_tokens?: number;
-          cache_read_input_tokens?: number;
-        };
-      };
-      const u = parsed?.usage;
-      if (u) {
+      const v = aanbieder.leesVerbruik(ruw);
+      if (v) {
         await supabase.from("ai_verbruik").insert({
           user_id: user.id,
           tool: toolUitReferer(request.headers.get("referer")),
-          model: parsed?.model ?? null,
-          input_tokens: u.input_tokens ?? 0,
-          output_tokens: u.output_tokens ?? 0,
-          cache_creation_tokens: u.cache_creation_input_tokens ?? 0,
-          cache_read_tokens: u.cache_read_input_tokens ?? 0,
+          model: v.model,
+          input_tokens: v.input_tokens,
+          output_tokens: v.output_tokens,
+          cache_creation_tokens: v.cache_creation_tokens,
+          cache_read_tokens: v.cache_read_tokens,
         });
       }
     } catch {
