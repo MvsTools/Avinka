@@ -368,13 +368,13 @@
         '- {"type":"waarnietwaar","opdracht":"...","stellingen":[{"stelling":"...","goed":true}]} — goed = true (waar) of false (niet waar).',
         '- {"type":"sommen","opdracht":"...","spec":{"bewerking":"+|-|×|÷|mix","min":1,"max":100,"aantal":10,"kolommen":2}} — LET OP: schrijf de sommen NIET zelf; geef alleen de spec, het systeem maakt de sommen én de juiste antwoorden. Kies min/max/bewerking passend bij groep en leerlijn.',
         '- {"type":"getallenlijn","opdracht":"...","spec":{"start":0,"eind":100,"stap":10,"gevraagd":[30,70]}} — het systeem tekent de lijn; gevraagd = welke getallen ingevuld moeten worden.',
-        '- {"type":"woordzoeker","opdracht":"...","woorden":["WOORD","WOORD"]} — geef 6 tot 10 woorden (passend bij het onderwerp/de spellingcategorie); het systeem bouwt het raster.',
+        '- {"type":"woordzoeker","opdracht":"...","woorden":["WOORD","WOORD"]} — geef 8 tot 16 woorden (passend bij het onderwerp/de spellingcategorie); het systeem bouwt het raster.',
         '- {"type":"rekenmuurtje","opdracht":"...","spec":{"rijen":3,"max":12}} — rekenmuurtje (elke steen = som van de twee eronder); het systeem maakt het muurtje én de antwoorden. rijen 3 of 4.',
         '- {"type":"getalhuis","opdracht":"...","spec":{"getal":10,"aantal":6}} — splitsen van een getal; het systeem maakt de splitsingen + antwoorden. Voor de onderbouw.',
         '- {"type":"klok","opdracht":"...","spec":{"aantal":6,"soort":"half","cijfers":false}} — klokkijken; soort = heel/half/kwartier/vijf. Zet "cijfers":true voor een wijzerplaat MET de cijfers 1 t/m 12 erop (makkelijker, onderbouw). Het systeem tekent de klokken; de leerling schrijft de tijd.',
         '- {"type":"geld","opdracht":"...","spec":{"aantal":6,"max":20,"kommagetallen":true}} — rekenen met geld; het systeem maakt de geldsommen + antwoorden.',
         '- {"type":"doolhof","opdracht":"...","spec":{"grootte":11}} — een doolhof van A naar B; het systeem tekent het (leuk als afsluiter).',
-        '- {"type":"kruiswoord","opdracht":"...","woorden":[{"woord":"...","omschrijving":"..."}]} — geef 5 tot 10 woorden met een korte omschrijving; het systeem legt de kruiswoordpuzzel.',
+        '- {"type":"kruiswoord","opdracht":"...","woorden":[{"woord":"...","omschrijving":"..."}]} — geef 8 tot 16 woorden met een korte omschrijving; het systeem legt de kruiswoordpuzzel.',
         '- {"type":"reeks","opdracht":"...","spec":{"aantal":4}} — getallenreeksen aanvullen; het systeem maakt ze + de antwoorden.',
         '- {"type":"vergelijken","opdracht":"...","spec":{"aantal":8,"max":20}} — < , > of = invullen; het systeem maakt de paren + antwoorden.',
         '- {"type":"tafelkaart","opdracht":"...","spec":{"tafel":7,"tm":10}} — een tafel oefenen; het systeem maakt de sommen + antwoorden.',
@@ -422,9 +422,9 @@
     // ── Opdracht-prompt: onderwerp + leerlijn + ideeën ───────────────────────
     function bouwOpdracht(inv) {
       const lengteOms = {
-        kort: 'KORT — weinig items per opdracht: meerkeuze ~3 vragen, waar/niet-waar ~3 stellingen, koppelen ~3 paren, invul ~4 zinnen, open ~2 vragen, categoriseren ~6 woorden; bij spec-blokken "aantal" ~6; woordzoeker ~6 woorden.',
-        middel: 'MIDDEL — een normale hoeveelheid: meerkeuze 4-5 vragen, waar/niet-waar 5-6 stellingen, koppelen 4-5 paren, invul 6-8 zinnen, open 3-4 vragen, categoriseren ~8 woorden; bij spec-blokken "aantal" ~10; woordzoeker ~8 woorden.',
-        groot: 'GROOT — flink gevulde opdrachten: meerkeuze ~6 vragen, waar/niet-waar 7-8 stellingen, koppelen 6 paren, invul 9-12 zinnen, open ~5 vragen, categoriseren ~12 woorden; bij spec-blokken "aantal" 14-16; woordzoeker ~10 woorden.'
+        kort: 'KORT — weinig items per opdracht: meerkeuze ~3 vragen, waar/niet-waar ~3 stellingen, koppelen ~3 paren, invul ~4 zinnen, open ~2 vragen, categoriseren ~6 woorden; bij spec-blokken "aantal" ~6; woordzoeker ~8 woorden; kruiswoord ~8 woorden.',
+        middel: 'MIDDEL — een normale hoeveelheid: meerkeuze 4-5 vragen, waar/niet-waar 5-6 stellingen, koppelen 4-5 paren, invul 6-8 zinnen, open 3-4 vragen, categoriseren ~8 woorden; bij spec-blokken "aantal" ~10; woordzoeker ~12 woorden; kruiswoord ~12 woorden.',
+        groot: 'GROOT — flink gevulde opdrachten: meerkeuze ~6 vragen, waar/niet-waar 7-8 stellingen, koppelen 6 paren, invul 9-12 zinnen, open ~5 vragen, categoriseren ~12 woorden; bij spec-blokken "aantal" 14-16; woordzoeker ~16 woorden; kruiswoord ~16 woorden.'
       };
       var lengte = inv.lengte;
       const lijnen = [];
