@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<!-- TIJDELIJKE preview-catalogus om alle opdrachttypes te bekijken + genummerd
+     feedback te geven. Verwijderen voor release. -->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Werkbladen — catalogus van opdrachttypes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Fredoka:wght@500;600&family=Baloo+2:wght@600;700&display=swap" rel="stylesheet" />
+  <script src="/avinka-werkblad.js"></script>
+  <style>
+    :root { --accent: #2f9e6e; --ink: #221c3a; }
+    * { box-sizing: border-box; }
+    body { background: #f1eee8; margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; color: var(--ink); padding: 0 0 80px; }
+    .top { position: sticky; top: 0; z-index: 10; background: #fff; border-bottom: 1px solid rgba(0,0,0,.08); box-shadow: 0 2px 10px rgba(0,0,0,.05); }
+    .top-in { max-width: 820px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+    .top h1 { font-family: 'Fraunces', serif; font-size: 19px; margin: 0; }
+    .top p { margin: 2px 0 0; font-size: 12.5px; color: #666; }
+    .toggle { border: none; background: var(--accent); color: #fff; font: inherit; font-weight: 700; font-size: 13.5px; padding: 10px 18px; border-radius: 999px; cursor: pointer; }
+    .toggle.aan { background: #b45309; }
+    .top-acties { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .tabs { display: inline-flex; background: #eee9e0; border-radius: 999px; padding: 3px; }
+    .tab { border: none; background: transparent; font: inherit; font-weight: 700; font-size: 13.5px; color: #6b6880; padding: 8px 16px; border-radius: 999px; cursor: pointer; }
+    .tab.aan { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+    .leeg-melding { max-width: 820px; margin: 30px auto; text-align: center; color: #888; font-size: 14px; }
+    .wrap { max-width: 820px; margin: 0 auto; padding: 22px 20px; }
+    .cat { margin: 30px 0 12px; display: flex; align-items: center; gap: 12px; }
+    .cat-ic { width: 40px; height: 40px; border-radius: 12px; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 21px; }
+    .cat h2 { font-family: 'Fraunces', serif; font-size: 23px; margin: 0; }
+    .cat span { color: #777; font-size: 13px; }
+    .tegel { background: #fff; border: 1px solid rgba(0,0,0,.08); border-radius: 16px; margin: 14px 0; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+    .tegel-kop { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #faf8f4; border-bottom: 1px solid rgba(0,0,0,.06); }
+    .num { flex-shrink: 0; min-width: 34px; height: 34px; padding: 0 8px; border-radius: 10px; background: var(--ink); color: #fff; font-weight: 800; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+    .tegel-kop b { font-size: 16px; }
+    .tegel-kop .key { margin-left: auto; font-size: 11.5px; color: #999; font-family: monospace; }
+    .tegel-body { padding: 6px 6px; }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <div class="top-in">
+      <div>
+        <h1>Catalogus — alle opdrachttypes 📄</h1>
+        <p>Elk type heeft een vast <b>nummer</b>. Geef feedback met dat nummer, bijv. "type 14 mag groter".</p>
+      </div>
+      <div class="top-acties">
+        <div class="tabs">
+          <button class="tab" id="tab-niet" onclick="kiesTab('niet')">Niet getest</button>
+          <button class="tab" id="tab-getest" onclick="kiesTab('getest')">Getest ✓</button>
+        </div>
+        <div class="tabs" title="Lengte per opdracht (aantal items)">
+          <button class="tab" id="len-kort" onclick="kiesLen('kort')">Kort</button>
+          <button class="tab" id="len-middel" onclick="kiesLen('middel')">Middel</button>
+          <button class="tab" id="len-groot" onclick="kiesLen('groot')">Lang</button>
+        </div>
+        <button class="toggle" id="tg" onclick="wissel()">🔑 Toon antwoorden</button>
+      </div>
+    </div>
+  </div>
+  <div class="wrap" id="wrap"></div>
+
+  <script>
+    // [nummer, key, naam, [voorbeeldblokken]] — per vakgebied.
+    var CATS = [
+      ["Algemeen", "🧩", "vakoverstijgend — opmaak & vraagvormen", [
+        [1, "tekst", "Uitleg / leestekst", [{ type: "tekst", kop: "Lees eerst", tekst: "Een korte uitleg of leestekst bovenaan het werkblad. Hier kan ook een verhaal staan om vragen over te stellen." }]],
+        [2, "meerkeuze", "Meerkeuze", [{ type: "meerkeuze", opdracht: "Kruis het goede antwoord aan.", vragen: [
+          { vraag: "Hoeveel poten heeft een spin?", opties: ["6", "8", "10"], goed: 1 },
+          { vraag: "Wat is 5 + 7?", opties: ["11", "12", "13"], goed: 1 },
+          { vraag: "Welke kleur krijg je van blauw en geel?", opties: ["groen", "paars", "oranje"], goed: 0 },
+          { vraag: "Hoeveel dagen heeft een week?", opties: ["5", "6", "7"], goed: 2 },
+          { vraag: "Wat is de hoofdstad van Nederland?", opties: ["Rotterdam", "Amsterdam", "Den Haag"], goed: 1 },
+          { vraag: "Welk dier legt eieren?", opties: ["hond", "kip", "koe"], goed: 1 },
+          { vraag: "Hoeveel is 3 × 4?", opties: ["7", "12", "9"], goed: 1 },
+          { vraag: "Welke maand komt na maart?", opties: ["februari", "april", "mei"], goed: 1 }] }]],
+        [3, "invul", "Gatentekst (invullen)", [{ type: "invul", opdracht: "Vul het juiste woord in.", items: [
+          { voor: "De", antwoord: "zon", na: "schijnt fel." }, { voor: "Ik eet een", antwoord: "appel", na: "." },
+          { voor: "De", antwoord: "hond", na: "blaft hard." }, { voor: "Wij gaan naar", antwoord: "school", na: "." },
+          { voor: "De", antwoord: "vogel", na: "vliegt hoog." }, { voor: "Het is heel", antwoord: "koud", na: "buiten." },
+          { voor: "Ik drink een glas", antwoord: "melk", na: "." }, { voor: "De", antwoord: "maan", na: "schijnt 's nachts." },
+          { voor: "Mijn fiets heeft twee", antwoord: "wielen", na: "." }, { voor: "De", antwoord: "bloem", na: "ruikt lekker." }] }]],
+        [4, "open", "Open vragen", [{ type: "open", opdracht: "Beantwoord de vragen.", vragen: [
+          { vraag: "Wat is jouw lievelingsdier en waarom?", antwoord: "Eigen antwoord.", regels: 2 },
+          { vraag: "Wat doe je het liefst in je vakantie?", antwoord: "Eigen antwoord.", regels: 2 },
+          { vraag: "Hoeveel poten heeft een insect?", antwoord: "6", regels: 1 },
+          { vraag: "Beschrijf je beste vriend of vriendin.", antwoord: "Eigen antwoord.", regels: 2 },
+          { vraag: "Noem drie kleuren.", antwoord: "Eigen antwoord.", regels: 1 }] }]],
+        [5, "koppelen", "Koppelen (lijnen trekken)", [{ type: "koppelen", opdracht: "Trek een lijn tussen wat bij elkaar hoort.",
+          links: ["hond", "kat", "koe", "paard", "schaap", "kip"], rechts: ["kalf", "puppy", "lam", "kitten", "kuiken", "veulen"],
+          paren: [[0, 1], [1, 3], [2, 0], [3, 5], [4, 2], [5, 4]] }]],
+        [6, "categoriseren", "Sorteren in vakken", [{ type: "categoriseren", opdracht: "Zet elk woord in het juiste vak.", categorieen: [
+          { naam: "Fruit", items: ["appel", "banaan", "peer", "kers", "druif", "aardbei"] },
+          { naam: "Groente", items: ["wortel", "sla", "prei", "ui", "boon", "spinazie"] }] }]],
+        [7, "waarnietwaar", "Waar / niet waar", [{ type: "waarnietwaar", opdracht: "Waar of niet waar?", stellingen: [
+          { stelling: "Een vis kan vliegen.", goed: false }, { stelling: "De zon is een ster.", goed: true },
+          { stelling: "Een week heeft 7 dagen.", goed: true }, { stelling: "Koeien geven melk.", goed: true },
+          { stelling: "IJs is warm.", goed: false }, { stelling: "De maan is een planeet.", goed: false },
+          { stelling: "Spinnen hebben 8 poten.", goed: true }, { stelling: "Vissen ademen met longen.", goed: false }] }]],
+        [8, "teken", "Tekenvak", [{ type: "teken", opdracht: "Teken je favoriete plek.", hoogte: 90 }]],
+        [9, "reflectie", "Reflectie (smileys)", [{ type: "reflectie", vraag: "Hoe ging het werkblad?" }]]
+      ]],
+      ["Rekenen", "🔢", "getallen, bewerkingen, verhoudingen, meten, verbanden", [
+        [10, "sommen", "Kale sommen", [{ type: "sommen", opdracht: "Reken uit.", spec: { bewerking: "mix", min: 2, max: 20, aantal: 8, kolommen: 2 } }]],
+        [11, "cijferplus", "Cijferen + (optellen)", [{ type: "cijferplus", spec: { aantal: 4, max: 1000 } }]],
+        [12, "cijfermin", "Cijferen − (aftrekken)", [{ type: "cijfermin", spec: { aantal: 4, max: 1000 } }]],
+        [13, "cijferkeer", "Cijferen × (vermenigvuldigen)", [{ type: "cijferkeer", spec: { aantal: 4 } }]],
+        [12, "ontbrekend", "Ontbrekend getal", [{ type: "ontbrekend", spec: { bewerking: "+", aantal: 6, max: 20 } }]],
+        [13, "getallenlijn", "Getallenlijn", [{ type: "getallenlijn", opdracht: "Welke getallen horen bij de pijlen?", spec: { start: 0, eind: 100, stap: 10, lijnen: 2 } }]],
+        [14, "rekenmuurtje", "Rekenmuurtje", [{ type: "rekenmuurtje", spec: { rijen: 4, max: 9 } }]],
+        [15, "getalhuis", "Splitshuis (splitsen)", [{ type: "getalhuis", spec: { getallen: [10, 9, 7] } }]],
+        [16, "vergelijken", "Vergelijken (< > =)", [{ type: "vergelijken", spec: { aantal: 6, max: 30 } }]],
+        [17, "tafelkaart", "Tafelkaart", [{ type: "tafelkaart", opdracht: "Eén tafel (van 7):", spec: { tafel: 7 } }, { type: "tafelkaart", opdracht: "Tafels door elkaar:", spec: { tafels: [2, 3, 4, 5, 10] } }]],
+        [18, "maalrooster", "Maaltafel-rooster", [{ type: "maalrooster", spec: { kolommen: 4, rijen: 4 } }]],
+        [19, "reeks", "Reeksen / patronen", [{ type: "reeks", spec: { max: 500 } }]],
+        [20, "buurgetallen", "Buurgetallen (meer / minder)", [{ type: "buurgetallen", opdracht: "Vast (telkens 4 erbij en eraf):", spec: { stap: 4, max: 100 } }, { type: "buurgetallen", opdracht: "Wisselend (let op het getal):", spec: { wissel: true, max: 1000 } }]],
+        [21, "ordenen", "Getallen ordenen", [{ type: "ordenen", spec: { aantal: 3, perRij: 5, max: 100 } }]],
+        [22, "plaatswaarde", "Plaatswaarde", [{ type: "plaatswaarde", spec: { aantal: 4, max: 1000 } }]],
+        [23, "getalwoord", "Getal ↔ in woorden", [{ type: "getalwoord", spec: { max: 1000000000, richting: "mix" } }]],
+        [24, "afronden", "Afronden", [{ type: "afronden", opdracht: "Vast (op honderdtal):", spec: { naar: 100 } }, { type: "afronden", opdracht: "Wisselend niveau:", spec: { wissel: true, naartjes: [10, 100, 1000] } }]],
+        [25, "romeins", "Romeinse cijfers", [{ type: "romeins", spec: { aantal: 6, max: 39 } }]],
+        [26, "automatiseer", "Automatiseer-sprint", [{ type: "automatiseer", spec: { bewerking: "mix", max: 10, aantal: 16 } }]],
+        [27, "breuken", "Breuken (kleuren / aflezen)", [{ type: "breuken", spec: { aantal: 3, soort: "kleur" } }, { type: "breuken", spec: { aantal: 3, soort: "lees" } }]],
+        [28, "kleuropsom", "Kleur-op-som (rekenkleurplaat)", [{ type: "kleuropsom", spec: { bewerking: "alle" } }]],
+        [29, "klok", "Klok (hoe laat is het?)", [{ type: "klok", spec: { soort: "kwartier", cijfers: "mix" } }]],
+        [30, "geld", "Geld (samen betalen / wisselgeld)", [{ type: "geld", spec: { max: 20, bewerking: "mix" } }]],
+        [31, "staafdiagram", "Staafdiagram aflezen", [{ type: "staafdiagram", titel: "Gelezen boeken deze week", eenheid: "boeken", categorie: "dag", groep: 6, data: [{ label: "ma", naam: "maandag", waarde: 12 }, { label: "di", naam: "dinsdag", waarde: 18 }, { label: "wo", naam: "woensdag", waarde: 6 }, { label: "do", naam: "donderdag", waarde: 15 }, { label: "vr", naam: "vrijdag", waarde: 9 }] }]]
+      ]],
+      ["Taal & spelling", "💬", "woorden, zinnen, spelling", [
+        [32, "woordzoeker", "Woordzoeker", [{ type: "woordzoeker", opdracht: "Zoek de woorden.", woorden: ["MAAN", "RAKET", "STER", "PLANEET", "KOMEET", "ZON", "AARDE", "MARS", "BAAN", "RUIMTE"] }]],
+        [33, "kruiswoord", "Kruiswoordpuzzel", [{ type: "kruiswoord", opdracht: "Los op.", woorden: [{ woord: "maan", omschrijving: "rond aan de hemel" }, { woord: "aarde", omschrijving: "onze planeet" }, { woord: "ster", omschrijving: "fonkelt 's nachts" }, { woord: "raket", omschrijving: "vliegt de ruimte in" }, { woord: "komeet", omschrijving: "met een staart" }, { woord: "zon", omschrijving: "geeft licht overdag" }, { woord: "mars", omschrijving: "de rode planeet" }, { woord: "baan", omschrijving: "rondje om de aarde" }, { woord: "ruimte", omschrijving: "daar zweven de planeten" }] }]],
+        [34, "anagram", "Woord husselen (anagram)", [{ type: "anagram", opdracht: "Maak het goede woord.", woorden: [{ woord: "tafel" }, { woord: "boek" }, { woord: "stoel" }, { woord: "bloem" }, { woord: "fiets" }, { woord: "vogel" }, { woord: "water" }] }]],
+        [35, "zinbouwen", "Zin bouwen (woordvolgorde)", [{ type: "zinbouwen", opdracht: "Zet in de goede volgorde.", zinnen: [{ zin: "de hond rent hard weg" }, { zin: "wij gaan morgen zwemmen" }, { zin: "de zon schijnt fel vandaag" }, { zin: "ik lees een spannend boek" }] }]],
+        [36, "lettergrepen", "Lettergrepen verdelen", [{ type: "lettergrepen", opdracht: "Verdeel in lettergrepen.", woorden: [{ woord: "konijn", delen: ["ko", "nijn"] }, { woord: "olifant", delen: ["o", "li", "fant"] }, { woord: "tomaat", delen: ["to", "maat"] }, { woord: "vakantie", delen: ["va", "kan", "tie"] }, { woord: "kabouter", delen: ["ka", "bou", "ter"] }, { woord: "banaan", delen: ["ba", "naan"] }, { woord: "krokodil", delen: ["kro", "ko", "dil"] }] }]],
+        [37, "rijmwoorden", "Rijmwoorden", [{ type: "rijmwoorden", opdracht: "Schrijf een rijmwoord.", woorden: [{ woord: "maan", rijm: ["baan", "laan"] }, { woord: "huis", rijm: ["muis"] }, { woord: "boom", rijm: ["zoom", "droom"] }, { woord: "vis", rijm: ["wis", "mis"] }, { woord: "boek", rijm: ["doek", "hoek"] }, { woord: "hand", rijm: ["band", "strand"] }, { woord: "deur", rijm: ["kleur", "geur"] }] }]],
+        [38, "synant", "Synoniemen / antoniemen", [{ type: "synant", soort: "antoniem", opdracht: "Koppel de tegenstellingen.", paren: [["groot", "klein"], ["warm", "koud"], ["snel", "langzaam"], ["hoog", "laag"], ["dik", "dun"], ["licht", "donker"]] }]],
+        [39, "lidwoord", "Lidwoord (de / het)", [{ type: "lidwoord", opdracht: "de of het?", woorden: [{ woord: "tafel", lidwoord: "de" }, { woord: "huis", lidwoord: "het" }, { woord: "boom", lidwoord: "de" }, { woord: "stoel", lidwoord: "de" }, { woord: "raam", lidwoord: "het" }, { woord: "deur", lidwoord: "de" }, { woord: "kind", lidwoord: "het" }, { woord: "bloem", lidwoord: "de" }] }]],
+        [40, "zoekdefout", "Zoek de fout", [{ type: "zoekdefout", opdracht: "Zoek de fout en schrijf de zin goed.", zinnen: [{ zin: "ik loopt naar school", correct: "ik loop naar school" }, { zin: "de katten slaapt rustig", correct: "de katten slapen rustig" }, { zin: "hij heb een nieuwe fiets", correct: "hij heeft een nieuwe fiets" }, { zin: "wij is heel blij", correct: "wij zijn heel blij" }, { zin: "de vogel vliegen weg", correct: "de vogel vliegt weg" }, { zin: "ik vint het leuk", correct: "ik vind het leuk" }] }]]
+      ]],
+      ["Puzzels & speels", "🎲", "denkpuzzels en leuke afsluiters", [
+        [41, "sudoku", "Sudoku (4×4 en 6×6)", [{ type: "sudoku", spec: { grootte: 4 } }, { type: "sudoku", spec: { grootte: 6 } }]],
+        [42, "geheimschrift", "Geheimschrift kraken", [{ type: "geheimschrift", opdracht: "Kraak de code.", woorden: ["MAAN", "RAKET", "STER"] }]],
+        [43, "doolhof", "Doolhof", [{ type: "doolhof", spec: { grootte: 10 } }]],
+        [44, "verbinddepunten", "Verbind de punten", [{ type: "verbinddepunten", spec: { vorm: "ster" } }]],
+        [45, "bingo", "Bingokaart", [{ type: "bingo", spec: { soort: "getallen", grootte: 4 } }]]
+      ]]
+    ];
+
+    var antw = false, tab = "niet", lengte = "middel";
+    // Aantal items per type per lengte [kort, middel, lang] — per module logisch
+    // gekozen op basis van hoeveel verticale ruimte één item kost (een werkblad
+    // blijft max ~2 kantjes). Breuken/klok zijn PER blok (die tegels tonen 2 blokken).
+    var IDX = { kort: 0, middel: 1, groot: 2 };
+    var ITEMS = {
+      // Rekenen — compacte/meerkoloms types mogen veel, brede/hoge types minder
+      sommen: [8, 16, 24], automatiseer: [16, 28, 40],
+      cijferplus: [4, 6, 8], cijfermin: [4, 6, 8], cijferkeer: [4, 6, 8],
+      ontbrekend: [5, 10, 15], getallenlijn: [1, 2, 3], rekenmuurtje: [1, 2, 3], getalhuis: [1, 2, 3],
+      vergelijken: [6, 10, 14], reeks: [3, 5, 7], buurgetallen: [4, 8, 10],
+      ordenen: [4, 6, 8], plaatswaarde: [4, 6, 8], getalwoord: [4, 6, 8],
+      afronden: [6, 8, 10], romeins: [6, 8, 10], geld: [5, 8, 12], tafelkaart: [10, 15, 20], maalrooster: [1, 2, 3],
+      breuken: [2, 3, 4], klok: [3, 6, 9],
+      // Algemeen & taal
+      meerkeuze: [3, 5, 8], invul: [4, 7, 10], open: [2, 4, 5], waarnietwaar: [4, 6, 8],
+      koppelen: [3, 5, 6], categoriseren: [6, 8, 12],
+      woordzoeker: [5, 7, 10], kruiswoord: [5, 7, 9], anagram: [3, 5, 7],
+      zinbouwen: [2, 3, 4], lettergrepen: [3, 5, 7], rijmwoorden: [3, 5, 7],
+      synant: [3, 4, 6], lidwoord: [4, 6, 8], zoekdefout: [2, 4, 6]
+    };
+    function aantalVoor(type) { var a = ITEMS[type]; return a ? a[IDX[lengte]] : null; }
+    function resizeArr(a, n) { a = a || []; return a.slice(0, n); } // afsnijden, geen duplicaten
+    // Pas het aantal items in een voorbeeldblok aan op de gekozen lengte (alleen
+    // schaalbare types; sudoku/doolhof/kleurplaat e.d. blijven zoals ze zijn).
+    function pasLengte(blok) {
+      var b = JSON.parse(JSON.stringify(blok)), N = aantalVoor(b.type);
+      function spec(k, v) { b.spec = b.spec || {}; b.spec[k] = v; }
+      switch (b.type) {
+        case "getallenlijn": spec("lijnen", N); break;
+        case "kleuropsom": spec("grootte", { kort: 8, middel: 10, groot: 12 }[lengte]); break; // 8×8 / 10×10 / 12×12
+        case "staafdiagram": spec("vragen", { kort: 4, middel: 6, groot: 8 }[lengte]); break;
+        case "rekenmuurtje": spec("aantal", N); break; // 1/2/3 muurtjes naast elkaar
+        case "tafelkaart": spec("aantal", N); break; // 1 tafel: max 10; gemengd: 10/15/20
+        case "maalrooster": spec("aantal", N); break; // 1/2/3 roosters naast elkaar
+        // spec.aantal-types (code genereert de items)
+        case "sommen": case "automatiseer": case "cijferplus": case "cijfermin": case "cijferkeer":
+        case "cijferend": case "ontbrekend": case "getalhuis": case "vergelijken": case "reeks":
+        case "buurgetallen": case "ordenen": case "plaatswaarde": case "getalwoord": case "afronden":
+        case "romeins": case "geld": case "breuken": case "klok":
+          if (N != null) spec("aantal", N); break;
+        // array-types (AI levert de items; hier afsnijden op het voorbeeld)
+        case "meerkeuze": case "open": b.vragen = resizeArr(b.vragen, N); break;
+        case "invul": b.items = resizeArr(b.items, N); break;
+        case "waarnietwaar": b.stellingen = resizeArr(b.stellingen, N); break;
+        case "woordzoeker": case "kruiswoord": case "anagram": case "lettergrepen":
+        case "rijmwoorden": case "lidwoord": b.woorden = resizeArr(b.woorden, N); break;
+        case "zinbouwen": case "zoekdefout": b.zinnen = resizeArr(b.zinnen, N); break;
+        case "synant": b.paren = resizeArr(b.paren, N); break;
+        case "categoriseren":
+          var per = Math.ceil((N || 8) / ((b.categorieen || []).length || 1));
+          b.categorieen = (b.categorieen || []).map(function (c) { return { naam: c.naam, items: (c.items || []).slice(0, per) }; }); break;
+        case "koppelen":
+          var pairs = (b.paren || []).slice(0, N), nl = [], nrr = [], np = [];
+          pairs.forEach(function (p, i) { nl.push(b.links[p[0]]); nrr.push(b.rechts[p[1]]); np.push([i, i]); });
+          b.links = nl; b.rechts = nrr; b.paren = np; break;
+      }
+      return b;
+    }
+    // Goedgekeurde (geteste) types. Verplaats hier nummers naartoe zodra ze klaar zijn.
+    var GETEST = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33];
+    function isGetest(n) { return GETEST.indexOf(n) !== -1; }
+    function telTab(g) { var n = 0, num = 0; CATS.forEach(function (c) { c[3].forEach(function () { num++; if (isGetest(num) === g) n++; }); }); return n; }
+    // Cache het gegenereerde (genormaliseerde) blok per type+index+lengte, zodat
+    // het vraag- en antwoordblad EXACT dezelfde sommen tonen (geen hergeneratie bij toggle).
+    var blokCache = {};
+    function gecached(num, idx, blok) {
+      var key = num + "|" + idx + "|" + lengte;
+      if (!blokCache[key]) { var b = pasLengte(blok); window.avinkaWerkblad.normaliseer({ blokken: [b] }); blokCache[key] = b; }
+      return blokCache[key];
+    }
+    function bouw() {
+      var W = window.avinkaWerkblad, html = "", getoond = 0, nummer = 0;
+      CATS.forEach(function (cat) {
+        var rows = "";
+        cat[3].forEach(function (t) {
+          nummer++;
+          if (isGetest(nummer) !== (tab === "getest")) return;
+          getoond++;
+          var num = nummer;
+          rows += '<div class="tegel"><div class="tegel-kop"><span class="num">' + num + '</span><b>' + t[2] + '</b><span class="key">' + t[1] + '</span></div><div class="tegel-body">';
+          t[3].forEach(function (blok, bi) { rows += W.blok(gecached(num, bi, blok), { antwoorden: antw }); });
+          rows += "</div></div>";
+        });
+        if (rows) html += '<div class="cat"><span class="cat-ic">' + cat[1] + '</span><div><h2>' + cat[0] + '</h2><span>' + cat[2] + '</span></div></div>' + rows;
+      });
+      if (!getoond) html = '<div class="leeg-melding">Nog niets in dit tabblad.</div>';
+      document.getElementById("wrap").innerHTML = html;
+    }
+    function kiesTab(t) {
+      tab = t;
+      document.getElementById("tab-niet").classList.toggle("aan", t === "niet");
+      document.getElementById("tab-getest").classList.toggle("aan", t === "getest");
+      bouw();
+    }
+    function wissel() {
+      antw = !antw;
+      var b = document.getElementById("tg");
+      b.textContent = antw ? "🔑 Verberg antwoorden" : "🔑 Toon antwoorden";
+      b.classList.toggle("aan", antw);
+      bouw();
+    }
+    function kiesLen(l) {
+      lengte = l;
+      ["kort", "middel", "groot"].forEach(function (x) { document.getElementById("len-" + x).classList.toggle("aan", x === l); });
+      bouw();
+    }
+    document.getElementById("tab-niet").textContent = "Niet getest (" + telTab(false) + ")";
+    document.getElementById("tab-getest").textContent = "Getest ✓ (" + telTab(true) + ")";
+    document.getElementById("len-middel").classList.add("aan");
+    kiesTab("niet");
+  </script>
+</body>
+</html>

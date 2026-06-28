@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<!--
+  Werkbladen — AI maakt mooie, kant-en-klare werkbladen uit één onderwerp.
+  Ontworpen en gemaakt door Michael van Spanje. © 2026 Michael van Spanje.
+
+  STATUS: in opbouw (nog niet geregistreerd in het dashboard/landing). Direct te
+  testen op /tools/werkbladen.html.
+
+  Filosofie (gelijk aan Lesontwerp): de CODE regelt de vormgeving + structuur
+  (thema's, opdrachtblokken, sommen, woordzoeker), de AI levert de inhoud als
+  GESTRUCTUREERDE JSON. De renderer zit in /avinka-werkblad.js.
+-->
+<html lang="nl">
+<head>
+  <script>
+  try { localStorage.setItem("avinka_apikey", "sk-ant-proxy"); } catch (e) {}
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="author" content="Michael van Spanje" />
+  <title>Werkbladen · Mooie werkbladen uit één onderwerp</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fredoka:wght@400;500;600;700&family=Baloo+2:wght@500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink: #221c3a; --cream: #fbf6ee; --warm: #e9e1d2;
+      --accent: #2f9e6e; --accent2: #25855a; --violet: #25855a; --muted: #6b6880; --card: #ffffff;
+      --brand-soft: #e7f4ed;
+      --line: rgba(34,28,58,0.07); --line-strong: rgba(34,28,58,0.13);
+      --shadow-sm: 0 1px 2px rgba(34,28,58,0.06), 0 2px 6px rgba(34,28,58,0.05);
+      --shadow-md: 0 14px 36px rgba(34,28,58,0.13);
+    }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+    body::before { content: ''; position: fixed; inset: 0; background-image:
+        radial-gradient(circle at 10% 4%, rgba(47,158,110,0.10) 0%, transparent 42%),
+        radial-gradient(circle at 92% 0%, rgba(47,158,110,0.10) 0%, transparent 40%),
+        radial-gradient(rgba(47,158,110,0.05) 1.3px, transparent 1.3px);
+      background-size: auto, auto, 24px 24px; pointer-events: none; z-index: 0; }
+
+    /* ── Schil ── */
+    .app { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 22px 24px 30px; }
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+    .terug-menu { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600; color: var(--muted); text-decoration: none; padding: 9px 16px; border: 1.5px solid var(--line-strong); border-radius: 999px; background: var(--card); box-shadow: var(--shadow-sm); transition: all .18s ease; }
+    .terug-menu:hover { color: var(--accent); border-color: var(--accent); transform: translateX(-2px); }
+    .top-logo { display: inline-flex; align-items: center; gap: 9px; font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.5px; color: var(--ink); }
+    .top-logo .mk { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, var(--accent), var(--violet)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px; box-shadow: 0 10px 24px rgba(47,158,110,0.14); }
+
+    /* ── Hero ── */
+    .hero { display: grid; grid-template-columns: 1fr 250px; gap: 30px; align-items: center; margin: 4px 0 30px; }
+    @media (max-width: 720px) { .hero { grid-template-columns: 1fr; } .heroart { display: none; } }
+    .hero h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(30px, 4.6vw, 40px); letter-spacing: -1px; line-height: 1.08; }
+    .hero h1 .sw { position: relative; white-space: nowrap; font-style: italic; color: var(--accent); }
+    .hero h1 .sw svg { position: absolute; left: 0; bottom: -7px; width: 100%; height: 11px; color: var(--violet); }
+    .hero .lead { font-size: 15px; color: var(--muted); line-height: 1.55; margin-top: 16px; max-width: 400px; }
+    .heroart { position: relative; width: 250px; align-self: center; display: flex; align-items: center; justify-content: center; padding: 10px 0; }
+    .mockwin { position: relative; width: 228px; background: #fff; border-radius: 18px; box-shadow: 0 22px 46px rgba(34,28,58,0.16); border: 1px solid rgba(34,28,58,0.06); overflow: hidden; transform: rotate(1.2deg); }
+    .mockbar { display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: #f7f5f0; border-bottom: 1px solid rgba(34,28,58,0.06); }
+    .mockbar i { width: 9px; height: 9px; border-radius: 50%; }
+    .mocktab { margin-left: 6px; font-size: 9.5px; font-weight: 700; color: var(--muted); background: #fff; border: 1px solid rgba(34,28,58,0.08); border-radius: 6px; padding: 3px 8px; }
+    .mockbody { padding: 14px; }
+    .mtop { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; }
+    .mic { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 5px 12px rgba(47,158,110,0.32); }
+    .mic svg { width: 16px; height: 16px; }
+    .mtitle { font-family: 'Fraunces', serif; font-weight: 600; font-size: 13px; color: var(--ink); line-height: 1.2; }
+    .mrow { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+    .mnr { flex-shrink: 0; width: 18px; height: 18px; border-radius: 6px; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+    .mbar { height: 8px; border-radius: 5px; background: var(--brand-soft); }
+    .mbar.s { background: linear-gradient(90deg, var(--accent), #8fd9b9); }
+    .mklaar { margin-top: 4px; display: inline-flex; align-items: center; gap: 6px; background: var(--brand-soft); color: var(--accent2); font-size: 10.5px; font-weight: 700; border-radius: 8px; padding: 5px 11px; }
+    .fbadge { position: absolute; background: #fff; border-radius: 12px; padding: 9px 13px; font-size: 11px; font-weight: 700; color: var(--ink); box-shadow: 0 8px 18px rgba(34,28,58,0.14); border: 1px solid rgba(34,28,58,0.05); top: 2px; left: -14px; transform: rotate(-5deg); white-space: normal; max-width: 156px; line-height: 1.3; }
+    .fbadge b { color: var(--accent); font-weight: 800; }
+
+    /* ── Kaarten ── */
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 20px 22px 22px; box-shadow: var(--shadow-sm); margin-top: 16px; }
+    .card-label { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; color: var(--ink); letter-spacing: -0.3px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+    .card-label .ic { width: 44px; height: 44px; border-radius: 14px; background: var(--brand-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+
+    label.veld-l { display: block; font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+    .veld-tip { font-size: 12.5px; color: var(--muted); margin: 6px 0 8px; line-height: 1.5; }
+    .hint { font-weight: 400; color: var(--muted); font-size: 13px; }
+    .field-label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+    .field-select, .field-input { width: 100%; border: 1px solid var(--line-strong); background: var(--cream); font: inherit; font-size: 14px; color: var(--ink); padding: 11px 13px; border-radius: 12px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; appearance: none; -webkit-appearance: none; }
+    .field-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6880' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 13px center; padding-right: 34px; cursor: pointer; }
+    .field-select:focus, .field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,158,110,0.15); }
+    .field-select.filled, .field-input.filled { border-color: var(--accent); background: var(--brand-soft); }
+    textarea.field-input { resize: vertical; min-height: 84px; line-height: 1.6; border-radius: 14px; padding: 13px 15px; }
+    .rij { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 16px; }
+    @media (max-width: 620px) { .rij { grid-template-columns: 1fr; } }
+
+    /* Vak-keuze */
+    .vak-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 4px; }
+    @media (max-width: 740px) { .vak-grid { grid-template-columns: repeat(4, 1fr); } }
+    @media (max-width: 560px) { .vak-grid { grid-template-columns: repeat(3, 1fr); } }
+    .vakkaart { border: 1.5px solid var(--line-strong); background: var(--cream); border-radius: 12px; padding: 8px 6px; text-align: center; cursor: pointer; transition: .15s; font-weight: 600; font-size: 12px; line-height: 1.2; }
+    .vakkaart:hover { border-color: var(--accent); }
+    .vakkaart.aan { border-color: var(--accent); background: var(--brand-soft); color: var(--accent2); box-shadow: inset 0 0 0 1px var(--accent); }
+    .vakkaart .ve { font-size: 18px; display: block; margin-bottom: 3px; }
+
+    .btn-primary { width: 100%; margin-top: 24px; border: none; border-radius: 16px; background: var(--accent); color: #fff; font: inherit; font-size: 16px; font-weight: 700; padding: 17px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 10px; letter-spacing: -0.2px; box-shadow: 0 10px 24px rgba(47,158,110,0.28); }
+    .btn-primary:hover:not(:disabled) { background: var(--accent2); transform: translateY(-2px); box-shadow: 0 14px 30px rgba(47,158,110,0.34); }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+    .err { color: #be123c; font-size: 14px; margin-top: 12px; }
+
+    /* Laden */
+    .laden { display: none; text-align: center; color: var(--muted); background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 40px 24px; box-shadow: var(--shadow-sm); margin-top: 16px; }
+    .laden.aan { display: block; }
+    .spin { width: 34px; height: 34px; border: 3px solid var(--brand-soft); border-top-color: var(--accent); border-radius: 50%; margin: 0 auto 14px; animation: dr 0.8s linear infinite; }
+    @keyframes dr { to { transform: rotate(360deg); } }
+    .laad-stappen { margin: 20px auto 0; max-width: 330px; display: flex; flex-direction: column; gap: 6px; text-align: left; }
+    .laad-stap { font-size: 13px; display: flex; align-items: center; gap: 10px; color: var(--muted); opacity: .4; transition: all .35s ease; padding: 3px 0; }
+    .laad-stap.actief { opacity: 1; color: var(--accent); font-weight: 600; }
+    .laad-stap.klaar { opacity: .75; color: var(--ink); }
+    .laad-stip { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; transition: all .35s; }
+    .laad-stap.actief .laad-stip { width: 9px; height: 9px; }
+
+    /* Resultaat */
+    #uitvoer { display: none; }
+    .res-kop { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom: 16px; }
+    .res-titel { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; color: var(--ink); display:flex; align-items:center; gap:12px; }
+    .res-titel .ic { width: 44px; height: 44px; border-radius: 14px; background: var(--brand-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .thema-kies { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:var(--muted); }
+    .thema-kies select { border:1px solid var(--line-strong); border-radius:10px; padding:7px 10px; font:inherit; font-size:13px; background:#fff; }
+    .acties { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+    .btn-green { border: none; border-radius: 14px; background: var(--accent); color: #fff; font: inherit; font-weight: 700; font-size: 14.5px; padding: 12px 20px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 6px 16px rgba(47,158,110,.25); }
+    .btn-green:hover { background: var(--accent2); transform: translateY(-1px); }
+    .btn-soft { border: 1px solid var(--line-strong); background: var(--card); color: var(--muted); border-radius: 14px; padding: 12px 18px; font: inherit; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+    .btn-soft:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-soft.aan { border-color: var(--accent); color: var(--accent); background: var(--brand-soft); }
+
+    .verfijn { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line-strong); }
+    .verfijn-acties { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+    footer.app-foot { margin-top: 36px; text-align: center; padding: 22px 0 30px; border-top: 1px solid rgba(34,28,58,0.07); font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+  </style>
+
+  <link rel="stylesheet" href="/avinka-huisstijl.css" />
+  <link rel="stylesheet" href="/avinka-dropdown.css" />
+  <link rel="stylesheet" href="/avinka-groep.css" />
+  <script src="/avinka-dialog.js"></script>
+  <script src="/avinka-masking.js"></script>
+  <script src="/avinka-bestanden.js"></script>
+  <script src="/avinka-dropdown.js"></script>
+  <script src="/avinka-groep.js"></script>
+  <script src="/avinka-leerlijnen.js"></script>
+  <script src="/avinka-werkblad.js"></script>
+</head>
+<body>
+  <div class="app">
+    <div class="top">
+      <a href="/dashboard" class="terug-menu" id="terug-link">← Terug naar dashboard</a>
+      <a href="/dashboard" aria-label="Avinka" style="display:inline-flex;flex-shrink:0;"><img src="/Avinka_wordmerk.png" alt="Avinka" style="height:18px;width:auto;display:block;opacity:.82;" /></a>
+      <span class="top-logo"><span class="mk">📄</span>Werkbladen</span>
+    </div>
+
+    <main>
+      <!-- HERO -->
+      <div class="hero">
+        <div>
+          <h1>Van onderwerp naar een <span class="sw">werkblad<svg viewBox="0 0 200 12" fill="none" aria-hidden="true"><path d="M3 8C46 3 154 3 197 6" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg></span></h1>
+          <p class="lead">Geef het onderwerp of leerdoel op en kies het niveau. Je krijgt een verzorgd, direct printbaar werkblad met afwisselende, doordachte opdrachten in een vormgeving die aanspreekt.</p>
+        </div>
+        <div class="heroart">
+          <div class="mockwin">
+            <div class="mockbar"><i style="background:#fb7185"></i><i style="background:#fbbf24"></i><i style="background:#34d399"></i><span class="mocktab">Groep 5 · Rekenen</span></div>
+            <div class="mockbody">
+              <div class="mtop">
+                <span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4a2 2 0 0 1 2-2h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/><path d="M14 2v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/></svg></span>
+                <span class="mtitle">Optellen tot 100</span>
+              </div>
+              <div class="mrow"><span class="mnr">1</span><span class="mbar s" style="width:70%"></span></div>
+              <div class="mrow"><span class="mnr">2</span><span class="mbar s" style="width:90%"></span></div>
+              <div class="mrow"><span class="mnr">3</span><span class="mbar s" style="width:60%"></span></div>
+              <span class="mklaar">✓ Direct te printen</span>
+            </div>
+          </div>
+          <span class="fbadge">⏱️ <b>In één minuut</b> een werkblad</span>
+        </div>
+      </div>
+
+      <!-- INVOER · vak -->
+      <div class="card" id="vak-kaart">
+        <div class="card-label"><span class="ic">🎒</span> Voor welk vak?</div>
+        <div class="vak-grid" id="vak-grid">
+          <div class="vakkaart" data-v="Rekenen"><span class="ve">🔢</span>Rekenen</div>
+          <div class="vakkaart" data-v="Spelling"><span class="ve">✏️</span>Spelling</div>
+          <div class="vakkaart" data-v="Taal"><span class="ve">💬</span>Taal</div>
+          <div class="vakkaart" data-v="Begrijpend lezen"><span class="ve">📖</span>Begrijpend lezen</div>
+          <div class="vakkaart" data-v="Engels"><span class="ve">🇬🇧</span>Engels</div>
+          <div class="vakkaart" data-v="Aardrijkskunde"><span class="ve">🗺️</span>Aardrijkskunde</div>
+          <div class="vakkaart" data-v="Geschiedenis"><span class="ve">🏛️</span>Geschiedenis</div>
+          <div class="vakkaart" data-v="Natuur &amp; techniek"><span class="ve">🔬</span>Natuur &amp; techniek</div>
+          <div class="vakkaart" data-v="Thema / overig"><span class="ve">🌟</span>Thema</div>
+        </div>
+        <input type="hidden" id="vak" value="" />
+      </div>
+
+      <!-- INVOER · de basis -->
+      <div class="card" id="basis-kaart">
+        <div class="card-label"><span class="ic">📋</span> Het werkblad</div>
+
+        <label class="veld-l" for="onderwerp" id="onderwerp-label">Waar gaat het werkblad over?</label>
+        <div class="veld-tip" id="onderwerp-tip">Beschrijf het onderwerp of leerdoel concreet. Bijvoorbeeld het type sommen, de spellingcategorie of het thema. Hoe scherper, hoe beter het werkblad.</div>
+        <textarea id="onderwerp" class="field-input" placeholder="Bijv. 'optellen en aftrekken tot 100 met overschrijding' of 'woorden met -eeuw, -ieuw en -uw'" oninput="this.classList.toggle('filled', !!this.value.trim())"></textarea>
+
+        <div class="rij">
+          <div>
+            <label class="field-label" for="groep">Groep</label>
+            <select id="groep" class="field-select avinka-groep" onchange="this.classList.toggle('filled', !!this.value)">
+              <option>Groep 3</option>
+              <option>Groep 4</option>
+              <option selected>Groep 5</option>
+              <option>Groep 6</option>
+              <option>Groep 7</option>
+              <option>Groep 8</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="aantal">Aantal opdrachten</label>
+            <select id="aantal" class="field-select filled" onchange="this.classList.toggle('filled', !!this.value)">
+              <option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="lengte">Lengte per opdracht</label>
+            <select id="lengte" class="field-select filled" onchange="this.classList.toggle('filled', !!this.value)">
+              <option value="kort">Kort</option>
+              <option value="middel" selected>Middel</option>
+              <option value="groot">Groot</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="rij" style="grid-template-columns:1fr 1fr;">
+          <div>
+            <label class="field-label" for="moeilijkheid">Niveau</label>
+            <select id="moeilijkheid" class="field-select filled" onchange="this.classList.toggle('filled', !!this.value)">
+              <option value="op niveau" selected>Op niveau</option>
+              <option value="makkelijker">Iets makkelijker</option>
+              <option value="uitdagender">Iets uitdagender</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="context">Aanvullingen <span class="hint" style="text-transform:none;letter-spacing:0">· optioneel</span></label>
+            <input type="text" id="context" class="field-input" placeholder="Bijv. 'methode Staal' of 'herfst'" oninput="this.classList.toggle('filled', !!this.value.trim())" />
+          </div>
+        </div>
+
+        <button class="btn-primary" id="btn-maak" onclick="maak()">✨ Maak mijn werkblad</button>
+        <div class="err" id="err"></div>
+      </div>
+
+      <!-- LADEN -->
+      <div class="laden" id="laden">
+        <div class="spin"></div>
+        <div id="laad-tekst">Je werkblad wordt ontworpen…</div>
+        <div class="laad-stappen" id="laad-stappen"></div>
+      </div>
+
+      <!-- RESULTAAT -->
+      <div class="card" id="uitvoer">
+        <div class="res-kop wb-noprint">
+          <div class="res-titel"><span class="ic">📄</span> <span id="uitvoer-titel">Je werkblad</span></div>
+        </div>
+
+        <div id="wb-print"></div>
+
+        <div class="acties wb-noprint">
+          <button class="btn-green" onclick="printWerkblad()">🖨️ Print / Download als PDF</button>
+          <button class="btn-soft" id="btn-antwoord" onclick="toggleAntwoorden()">🔑 Toon antwoordblad</button>
+          <button class="btn-soft" onclick="slaOp(this)">💾 Opslaan in Bestanden</button>
+          <button class="btn-soft" onclick="maak(true)">🔄 Andere versie</button>
+          <button class="btn-soft" onclick="toonVerfijn()">✏️ Pas iets aan</button>
+        </div>
+
+        <div class="verfijn wb-noprint" id="verfijn" style="display:none">
+          <label class="veld-l" for="verfijn-tekst">Wat wil je aanpassen? <span class="hint">· de rest blijft zo</span></label>
+          <textarea id="verfijn-tekst" class="field-input" placeholder="Bijv. 'maak opdracht 2 makkelijker' of 'voeg een woordzoeker toe'"></textarea>
+          <div class="verfijn-acties">
+            <button class="btn-green" id="btn-verfijn" onclick="verfijn()">✨ Pas aan</button>
+            <button class="btn-soft" onclick="terug()">← Naar de invoer</button>
+          </div>
+          <div class="err" id="verfijn-err"></div>
+        </div>
+      </div>
+
+      <footer class="app-foot">
+        Werkbladen · gemaakt door Michael van Spanje · © 2026
+        <br>
+        <!-- TIJDELIJK: testknop naar de preview van alle opdrachttypes. Verwijderen voor release. -->
+        <a href="/werkblad-preview.html" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;font-size:12px;font-weight:700;color:var(--accent);border:1px dashed var(--accent);border-radius:999px;padding:6px 14px;text-decoration:none;">🔍 Preview alle opdrachttypes (test)</a>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    const MODEL = 'claude-sonnet-4-6';
+    const SOORT = 'werkbladen';
+
+    let laatsteWb = null;     // het huidige werkblad-object (genormaliseerd)
+    let laatsteMeta = {};     // invoer-meta voor opslaan/heropenen
+    let toonAntw = false;     // antwoordblad zichtbaar?
+    let verfijnWensen = [];
+
+    // ── Vak-keuze ────────────────────────────────────────────────────────────
+    document.querySelectorAll('#vak-grid .vakkaart').forEach(k => k.onclick = () => {
+      document.querySelectorAll('#vak-grid .vakkaart').forEach(x => x.classList.remove('aan'));
+      k.classList.add('aan');
+      document.getElementById('vak').value = k.dataset.v;
+    });
+
+    // ── AI-aanroep (mask vóór verzenden, unmask erna) ────────────────────────
+    async function postClaude(body) {
+      const resp = await fetch('/api/claude', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'sk-ant-proxy',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify(body)
+      });
+      if (!resp.ok) {
+        let msg = 'Er ging iets mis (' + resp.status + ').';
+        try { const e = await resp.json(); msg = e.error?.message || msg; } catch (_) {}
+        if (resp.status === 429) msg = 'Het is even druk. Probeer het zo opnieuw.';
+        if (resp.status === 529) msg = 'Claude is tijdelijk overbelast. Probeer het zo opnieuw.';
+        throw new Error(msg);
+      }
+      const data = await resp.json();
+      let ruw = (data.content || []).map(b => b.text || '').join('');
+      if (window.avinkaMask) ruw = window.avinkaMask.restore(ruw);
+      return ruw.trim();
+    }
+    async function callClaude(system, user, maxTokens) {
+      if (window.avinkaMask) { try { await window.avinkaMask.ready; } catch (e) {} }
+      const safeUser = window.avinkaMask ? window.avinkaMask.apply(user) : user;
+      const safeSystem = window.avinkaMask ? window.avinkaMask.apply(system) : system;
+      return postClaude({
+        model: MODEL, max_tokens: maxTokens || 3500,
+        messages: [{ role: 'user', content: safeUser }],
+        system: [{ type: 'text', text: safeSystem, cache_control: { type: 'ephemeral' } }]
+      });
+    }
+
+    // ── Systeem-prompt: het JSON-contract + de regels ────────────────────────
+    function bouwSysteem() {
+      return [
+        'Je bent een ervaren leerkracht en ontwerper van werkbladen voor het Nederlandse basisonderwijs. Je maakt werkbladen die er gelikt en uitnodigend uitzien en didactisch sterk zijn, ver boven een snel werkblad uit een chatbot.',
+        '',
+        'BELANGRIJK: je antwoordt UITSLUITEND met geldige JSON (UTF-8), zonder tekst eromheen en zonder ```-codeblokken. De JSON beschrijft één werkblad. De VORMGEVING regelt het systeem zelf; jij levert alleen de inhoud, gestructureerd in blokken.',
+        '',
+        'STRUCTUUR:',
+        '{',
+        '  "titel": "korte, pakkende titel voor bovenaan het werkblad",',
+        '  "ondertitel": "optioneel: heel korte ondertitel",',
+        '  "blokken": [ ... 3 tot 7 opdracht-blokken ... ]',
+        '}',
+        '',
+        'BLOK-TYPES (kies gevarieerd, passend bij vak en onderwerp; elk blok heeft een "type" en meestal een "opdracht"-instructie in kindtaal):',
+        '- {"type":"tekst","kop":"optioneel","tekst":"uitleg of een leestekst (alinea\'s gescheiden met lege regel)"} — uitleg of leestekst.',
+        '- {"type":"meerkeuze","opdracht":"...","vragen":[{"vraag":"...","opties":["a","b","c"],"goed":0}]} — goed = index van het juiste antwoord. De leerling kruist het goede antwoord aan; formuleer de opdracht zo (bijvoorbeeld "Kruis het goede antwoord aan").',
+        '- {"type":"invul","opdracht":"...","items":[{"voor":"tekst voor het gat","antwoord":"het in te vullen woord","na":"tekst na het gat"}]} — gatentekst.',
+        '- {"type":"open","opdracht":"...","vragen":[{"vraag":"...","antwoord":"het verwachte antwoord","regels":2}]} — open vragen (regels = aantal schrijfregels). GEBRUIK DIT OOK voor verhaaltjessommen (zet het antwoord erbij). Bij een vraag met een feitelijk juist antwoord geef je dat antwoord (bijv. "Hoeveel poten heeft een spin?" → antwoord "8"); gebruik "Eigen antwoord" alleen als het echt een mening of persoonlijke vraag is.',
+        '- {"type":"koppelen","opdracht":"...","links":["..."],"rechts":["..."],"paren":[[0,0],[1,1]]} — paren = welke links-index bij welke rechts-index hoort. Geef 4 tot 6 paren (het eerste paar wordt automatisch als voorbeeld voorgedaan).',
+        '- {"type":"categoriseren","opdracht":"...","categorieen":[{"naam":"...","items":["woord","woord"]}]} — sorteren in vakken; het systeem maakt zelf de woordbank.',
+        '- {"type":"waarnietwaar","opdracht":"...","stellingen":[{"stelling":"...","goed":true}]} — goed = true (waar) of false (niet waar).',
+        '- {"type":"sommen","opdracht":"...","spec":{"bewerking":"+|-|×|÷|mix","min":1,"max":100,"aantal":10,"kolommen":2}} — LET OP: schrijf de sommen NIET zelf; geef alleen de spec, het systeem maakt de sommen én de juiste antwoorden. Kies min/max/bewerking passend bij groep en leerlijn.',
+        '- {"type":"getallenlijn","opdracht":"...","spec":{"start":0,"eind":100,"stap":10,"gevraagd":[30,70]}} — het systeem tekent de lijn; gevraagd = welke getallen ingevuld moeten worden.',
+        '- {"type":"woordzoeker","opdracht":"...","woorden":["WOORD","WOORD"]} — geef 6 tot 10 woorden (passend bij het onderwerp/de spellingcategorie); het systeem bouwt het raster.',
+        '- {"type":"rekenmuurtje","opdracht":"...","spec":{"rijen":3,"max":12}} — rekenmuurtje (elke steen = som van de twee eronder); het systeem maakt het muurtje én de antwoorden. rijen 3 of 4.',
+        '- {"type":"getalhuis","opdracht":"...","spec":{"getal":10,"aantal":6}} — splitsen van een getal; het systeem maakt de splitsingen + antwoorden. Voor de onderbouw.',
+        '- {"type":"klok","opdracht":"...","spec":{"aantal":6,"soort":"half","cijfers":false}} — klokkijken; soort = heel/half/kwartier/vijf. Zet "cijfers":true voor een wijzerplaat MET de cijfers 1 t/m 12 erop (makkelijker, onderbouw). Het systeem tekent de klokken; de leerling schrijft de tijd.',
+        '- {"type":"geld","opdracht":"...","spec":{"aantal":6,"max":20,"kommagetallen":true}} — rekenen met geld; het systeem maakt de geldsommen + antwoorden.',
+        '- {"type":"doolhof","opdracht":"...","spec":{"grootte":11}} — een doolhof van A naar B; het systeem tekent het (leuk als afsluiter).',
+        '- {"type":"kruiswoord","opdracht":"...","woorden":[{"woord":"...","omschrijving":"..."}]} — geef 5 tot 10 woorden met een korte omschrijving; het systeem legt de kruiswoordpuzzel.',
+        '- {"type":"reeks","opdracht":"...","spec":{"aantal":4}} — getallenreeksen aanvullen; het systeem maakt ze + de antwoorden.',
+        '- {"type":"vergelijken","opdracht":"...","spec":{"aantal":8,"max":20}} — < , > of = invullen; het systeem maakt de paren + antwoorden.',
+        '- {"type":"tafelkaart","opdracht":"...","spec":{"tafel":7,"tm":10}} — een tafel oefenen; het systeem maakt de sommen + antwoorden.',
+        '- {"type":"breuken","opdracht":"...","spec":{"aantal":4,"soort":"kleur"}} — breuken kleuren (soort:"kleur") of aflezen (soort:"lees"); het systeem tekent ze.',
+        '- {"type":"kleuropsom","opdracht":"..."} — rekenkleurplaat met een verborgen plaatje; het systeem maakt de sommen + de kleurcode.',
+        '- {"type":"staafdiagram","opdracht":"...","titel":"Hoeveel kinderen hebben welk huisdier?","eenheid":"aantal kinderen","data":[{"label":"hond","waarde":7},{"label":"kat","waarde":5}]} — geef een PAKKENDE titel (een echt vraagje/verhaaltje) + 5 tot 7 verschillende categorieën met waarden; het systeem tekent de grafiek en maakt de vragen + antwoorden.',
+        '- {"type":"sudoku","opdracht":"...","spec":{"grootte":4}} — sudoku (grootte 4 of 6); het systeem maakt een geldige puzzel + oplossing. Grootte 4 voor jongere groepen.',
+        '- {"type":"geheimschrift","opdracht":"...","woorden":["WOORD","WOORD"]} — decodeer-puzzel; het systeem maakt de geheime symbolen.',
+        '- {"type":"anagram","opdracht":"...","woorden":[{"woord":"..."}]} — letters husselen tot een woord; het systeem hutselt ze.',
+        '- {"type":"zinbouwen","opdracht":"...","zinnen":[{"zin":"de hond rent hard"}]} — woordvolgorde; geef correcte zinnen, het systeem hutselt de woorden.',
+        '- {"type":"lettergrepen","opdracht":"...","woorden":[{"woord":"konijn","delen":["ko","nijn"]}]} — verdelen in lettergrepen; geef ZELF de juiste verdeling (delen).',
+        '- {"type":"rijmwoorden","opdracht":"...","woorden":[{"woord":"maan","rijm":["baan","laan"]}]} — een rijmwoord schrijven; geef enkele voorbeeldrijmen mee.',
+        '- {"type":"synant","opdracht":"...","soort":"synoniem","paren":[["groot","reusachtig"]]} — synoniemen (soort:"synoniem") of antoniemen (soort:"antoniem") koppelen.',
+        '- {"type":"lidwoord","opdracht":"...","woorden":[{"woord":"tafel","lidwoord":"de"}]} — de/het kiezen; geef het juiste lidwoord mee.',
+        '- {"type":"zoekdefout","opdracht":"...","zinnen":[{"zin":"ik loopt naar huis","correct":"ik loop naar huis"}]} — fout zoeken en verbeteren; geef de zin met precies één fout én de correcte zin.',
+        '- {"type":"verbinddepunten","opdracht":"...","spec":{"vorm":"ster"}} — verbind de punten (vorm: ster/huis/boot/vis); leuke afsluiter.',
+        '- {"type":"bingo","opdracht":"...","spec":{"soort":"getallen","grootte":4}} — bingokaart (soort getallen of woorden, dan ook "woorden":[...]).',
+        '- {"type":"cijferplus","opdracht":"...","spec":{"aantal":8,"max":1000}} — cijferend OPTELLEN onder elkaar (met onthoud-hokjes). Aantal naar lengte: kort 4, middel 6, lang 8. Kalibreer "max" op de groep: onderbouw ~100, middenbouw ~1000, bovenbouw tot 10000.',
+        '- {"type":"cijfermin","opdracht":"...","spec":{"aantal":8,"max":1000}} — cijferend AFTREKKEN onder elkaar. Aantal naar lengte: kort 4, middel 6, lang 8. "max" op de groep (bovenbouw tot 10000).',
+        '- {"type":"cijferkeer","opdracht":"...","spec":{"aantal":8,"maxA":99}} — cijferend VERMENIGVULDIGEN met tussenstappen. Aantal naar lengte: kort 4, middel 6, lang 8. Standaard 2-cijferig × 2-cijferig; voor de bovenbouw mag "maxA" hoger (bijv. 999) voor 3-cijferig × 2-cijferig.',
+        '- {"type":"ontbrekend","opdracht":"...","spec":{"bewerking":"+","aantal":6,"max":20}} — som met een ontbrekend getal (a + □ = c); het systeem maakt ze + antwoorden.',
+        '- {"type":"buurgetallen","opdracht":"...","spec":{"aantal":6,"max":100,"stap":1}} — x minder / x meer (stap 1, 10 of 100); het systeem maakt ze + antwoorden.',
+        '- {"type":"ordenen","opdracht":"...","spec":{"aantal":4,"perRij":5,"max":100,"aflopend":false}} — getallen ordenen; het systeem maakt ze + antwoorden.',
+        '- {"type":"plaatswaarde","opdracht":"...","spec":{"aantal":5,"max":1000}} — plaatswaarde (welk cijfer op de tientallen enz.); het systeem maakt ze + antwoorden.',
+        '- {"type":"getalwoord","opdracht":"...","spec":{"aantal":5,"max":1000,"richting":"mix"}} — getal in cijfers ↔ in woorden; het systeem maakt ze + antwoorden.',
+        '- {"type":"afronden","opdracht":"...","spec":{"aantal":6,"naar":10,"max":120}} — afronden op 10/100/1000; het systeem maakt ze + antwoorden.',
+        '- {"type":"maalrooster","opdracht":"...","spec":{"links":[2,3,4],"boven":[5,6,7]}} — maaltafel-rooster (laat links/boven weg voor willekeurig); het systeem vult de antwoorden.',
+        '- {"type":"romeins","opdracht":"...","spec":{"aantal":6,"max":50,"richting":"mix"}} — Romeinse cijfers omzetten; het systeem maakt ze + antwoorden.',
+        '- {"type":"automatiseer","opdracht":"...","spec":{"bewerking":"mix","max":10,"aantal":20}} — automatiseer-sprint (veel kale sommen op tijd); het systeem maakt ze + antwoorden.',
+        '- {"type":"teken","opdracht":"...","hoogte":120} — een kader om iets te tekenen.',
+        '- {"type":"reflectie","vraag":"..."} — afsluitende reflectie met smileys.',
+        '',
+        'REGELS:',
+        '1. Schrijf in correct, natuurlijk Nederlands met juiste lidwoorden; gebruik GEEN liggende streepjes (— of –) in lopende tekst.',
+        '2. Kalibreer alles strak op het leerjaar (zie de LEERLIJN-CONTEXT): getalbereik, woordlengte, zinslengte en complexiteit. De woorden en voorbeelden moeten ECHT bij deze groep passen (een groep 7 krijgt groep 7-woorden, geen onderbouwwoorden als "dief" of "vlieg"), met hooguit een enkele moeilijkere uitschieter.',
+        '3. Gebruik UITSLUITEND bestaande, correct gespelde Nederlandse woorden, met aansprekende, alledaagse voorbeelden uit de leefwereld van het kind. Verzin NOOIT woorden (geen onzinwoorden zoals "bief", "spiel" of "priemal"); twijfel je of een woord bestaat, kies dan een ander, zeker bestaand woord. Geen zeldzame of ouderwetse woorden.',
+        '4. PASSEND BIJ HET DOEL gaat vóór afwisseling. Kies alleen opdrachttypes die ECHT bij het leerdoel passen, en voeg NOOIT half-passende types toe alleen om het gevraagde aantal te halen. Past er maar één hoofd-type bij (bijvoorbeeld "cijferend optellen" → cijferplus), gebruik dat dan als basis maar varieer via ANDERE VORMEN die DEZELFDE vaardigheid oefenen, zodat het toch afwisselend wordt: (a) toepassing/context = verhaaltjessommen (open mét antwoord); (b) een andere vraagvorm = ontbrekend getal, vergelijken, of "klopt deze som?" (waar/niet-waar); (c) een puzzel/structuur met dezelfde bewerking = rekenmuurtje, getallenlijn, kleur-op-som, doolhof; (d) automatiseren/tempo = de sprint. Varieer ook de getallen en de moeilijkheid (bijv. oplopend). Voorbeeld voor een spellingcategorie: invuldictee + zin maken met die woorden + woordzoeker met die woorden + zoek-de-fout. Is het doel breder (bijvoorbeeld "optellen", "procenten", "woordenschat"), wissel dan juist WEL af tussen alle passende types voor een gevarieerde, verrassende mix. Begin eventueel met een KORTE uitleg (1 à 3 zinnen) en sluit eventueel af met reflectie.',
+        '5. Geef bij elk blok de juiste antwoorden mee (behalve bij tekst/teken/reflectie/bingo/verbinddepunten en bij de blokken die het systeem zelf uitrekent: sommen, getallenlijn, woordzoeker, rekenmuurtje, getalhuis, klok, geld, doolhof, kruiswoord, reeks, vergelijken, tafelkaart, breuken, kleuropsom, staafdiagram, sudoku, geheimschrift, anagram, zinbouwen, cijferplus, cijfermin, cijferkeer, ontbrekend, buurgetallen, ordenen, plaatswaarde, getalwoord, afronden, maalrooster, romeins, automatiseer). Bij lettergrepen/rijmwoorden/synant/lidwoord/zoekdefout geef je de inhoud + de juiste antwoorden zelf mee.',
+        '6. Voor rekenen: gebruik het "sommen"-blok met een spec; verzin nooit zelf sommen of antwoorden. Voor verhaaltjessommen gebruik je "open" mét antwoord.',
+        '7. Houd opdracht-instructies kort en in kindtaal ("Reken uit.", "Zoek de woorden.").',
+        '8. Het hele werkblad past op MAXIMAAL twee kantjes (voor- en achterkant van één A4); maak het nooit langer. Het aantal opdrachten en de lengte per opdracht staan in de opdracht hieronder; houd je daaraan. Liever een paar goed gevulde opdrachten dan veel halflege.'
+      ].join('\n');
+    }
+
+    // ── Opdracht-prompt: onderwerp + leerlijn + ideeën ───────────────────────
+    function bouwOpdracht(inv) {
+      const lengteOms = {
+        kort: 'KORT — weinig items per opdracht: meerkeuze ~3 vragen, waar/niet-waar ~3 stellingen, koppelen ~3 paren, invul ~4 zinnen, open ~2 vragen, categoriseren ~6 woorden; bij spec-blokken "aantal" ~6; woordzoeker ~6 woorden.',
+        middel: 'MIDDEL — een normale hoeveelheid: meerkeuze 4-5 vragen, waar/niet-waar 5-6 stellingen, koppelen 4-5 paren, invul 6-8 zinnen, open 3-4 vragen, categoriseren ~8 woorden; bij spec-blokken "aantal" ~10; woordzoeker ~8 woorden.',
+        groot: 'GROOT — flink gevulde opdrachten: meerkeuze ~6 vragen, waar/niet-waar 7-8 stellingen, koppelen 6 paren, invul 9-12 zinnen, open ~5 vragen, categoriseren ~12 woorden; bij spec-blokken "aantal" 14-16; woordzoeker ~10 woorden.'
+      };
+      var lengte = inv.lengte;
+      const lijnen = [];
+      lijnen.push('Maak een werkblad voor het vak ' + inv.vak + ', ' + inv.groep + '.');
+      lijnen.push('Onderwerp / leerdoel: ' + (inv.onderwerp || '(kies zelf een passend, leuk onderwerp bij dit vak en deze groep)') + '.');
+      lijnen.push('Maak PRECIES ' + inv.aantal + ' opdracht' + (inv.aantal === 1 ? '' : 'en') + ' (een korte uitleg vooraf of een reflectie achteraf tellen daar niet in mee en zijn optioneel).');
+      lijnen.push('Lengte per opdracht: ' + (lengteOms[lengte] || lengteOms.middel));
+      lijnen.push('PAGINALIMIET: het hele werkblad past op MAXIMAAL twee kantjes (voor- en achterkant van één A4); maak het nooit langer. Veel opdrachten staan in meerdere kolommen naast elkaar en worden dus NIET lang, ook niet met veel items: die mogen gerust vol (kale sommen, cijferen +/−/×, tafelkaart, vergelijken, ontbrekend getal, ordenen, afronden, buurgetallen, getal-in-woorden, romeins, geld, meerkeuze, invul, lidwoord, lettergrepen, rijmwoorden, anagram). Echt ruimte-vretende opdrachten (open vragen met schrijfregels, leestekst, koppelen, sorteren in vakken, staafdiagram, woordzoeker, kruiswoord, sudoku, doolhof, getallenlijn, tekenen) nemen veel verticale ruimte: beperk daarvan het aantal items zodat alles op twee kantjes blijft passen. Volg de gekozen lengte als richtlijn, maar verklein de ruimte-vretende opdrachten als het geheel anders te lang wordt.');
+      if (inv.moeilijkheid && inv.moeilijkheid !== 'op niveau') {
+        lijnen.push('Niveau: maak het ' + inv.moeilijkheid + ' dan normaal voor deze groep (blijf wel binnen het leerjaar).');
+      }
+      if (inv.context) lijnen.push('Aanvullingen van de leerkracht: ' + inv.context + '.');
+
+      // Leerlijn-context (kalibratie op het leerjaar) — zelfde bron als Lesontwerp.
+      try {
+        if (window.avinkaLeerlijnen) {
+          const ll = window.avinkaLeerlijnen.voor(inv.vak, inv.groep);
+          if (ll) lijnen.push('\nLEERLIJN-CONTEXT (kalibreer het niveau hierop):\n' + ll);
+          // Spellingmethode herkennen uit onderwerp + aanvullingen.
+          if (/spelling/i.test(inv.vak) && window.avinkaLeerlijnen.spellingMethode) {
+            const sm = window.avinkaLeerlijnen.spellingMethode((inv.onderwerp || '') + ' ' + (inv.context || ''), inv.groep);
+            if (sm) lijnen.push('\nSPELLINGMETHODE:\n' + sm);
+          }
+          // Gecureerde woordenbank: laat de AI ALLEEN correcte, in-categorie woorden gebruiken.
+          if (/spelling/i.test(inv.vak) && window.avinkaLeerlijnen.spellingWoorden) {
+            const wbk = window.avinkaLeerlijnen.spellingWoorden((inv.onderwerp || '') + ' ' + (inv.context || ''), inv.groep);
+            if (wbk) lijnen.push('\n' + wbk);
+          }
+        }
+      } catch (e) {}
+
+      // Spelling is schriftelijk: het antwoord mag niet visueel verklapt worden.
+      if (/spelling/i.test(inv.vak)) {
+        lijnen.push('\nDIT IS EEN SCHRIFTELIJK SPELLINGWERKBLAD. Houd hier rekening mee:');
+        lijnen.push('- Verklap het antwoord NIET visueel. Gebruik dus GEEN meerkeuze waarbij de juiste schrijfwijze van het woord gewoon tussen de opties staat (bijvoorbeeld "crisis of criesis"); op papier geef je dan het antwoord weg. Zo\'n vraag werkt alleen mondeling. Laat de leerling de spelling ZELF schrijven.');
+        lijnen.push('- Gebruik bij voorkeur invul-opdrachten waarbij juist de moeilijke letter(s) ontbreken (bijvoorbeeld voor "crisis": voor="cr", antwoord="i", na="sis"), woorden laten afmaken, of een mini-dictee-achtige opdracht.');
+        lijnen.push('- Vraag de spellingregel NIET terug, tenzij er expliciet een opdracht is als "schrijf de regel op".');
+        lijnen.push('- Alle oefenwoorden zijn bestaande Nederlandse woorden op het niveau van ' + inv.groep + '.');
+      }
+
+      lijnen.push('\nGeef nu UITSLUITEND de JSON van het werkblad terug.');
+      return lijnen.join('\n');
+    }
+
+    // ── JSON robuust uit het antwoord halen ──────────────────────────────────
+    function parseWb(ruw) {
+      let t = (ruw || '').replace(/```json|```/g, '').trim();
+      const m = t.match(/\{[\s\S]*\}/);
+      if (!m) throw new Error('Het werkblad kon niet worden gelezen. Probeer het opnieuw.');
+      let obj;
+      try { obj = JSON.parse(m[0]); }
+      catch (e) {
+        // laatste redmiddel: losse trailing komma's opruimen
+        try { obj = JSON.parse(m[0].replace(/,\s*([}\]])/g, '$1')); }
+        catch (e2) { throw new Error('Het werkblad kon niet worden gelezen. Probeer het opnieuw.'); }
+      }
+      if (!obj || !Array.isArray(obj.blokken)) throw new Error('Het werkblad was niet compleet. Probeer het opnieuw.');
+      return obj;
+    }
+
+    // ── Thema bepalen ────────────────────────────────────────────────────────
+    function bepaalThema(keuze, onderwerp, groep, vak) {
+      if (keuze === 'verras') {
+        const ks = window.avinkaWerkblad.themaKeys();
+        return ks[Math.floor(Math.random() * ks.length)];
+      }
+      if (keuze && keuze !== 'auto' && window.avinkaWerkblad.THEMAS[keuze]) return keuze;
+      return window.avinkaWerkblad.kiesThema(onderwerp, groep, vak);
+    }
+
+    // ── Het werkblad maken ───────────────────────────────────────────────────
+    let laadTimer = null;
+    function startLaden() {
+      const stappen = ['Onderwerp en niveau bekijken', 'Opdrachten bedenken', 'Sommen en puzzels uitrekenen', 'Het thema vormgeven', 'Laatste check'];
+      const box = document.getElementById('laad-stappen');
+      box.innerHTML = stappen.map((s, i) => '<div class="laad-stap" data-i="' + i + '"><span class="laad-stip"></span>' + s + '</div>').join('');
+      let i = 0;
+      const zet = () => {
+        box.querySelectorAll('.laad-stap').forEach((el, j) => {
+          el.classList.toggle('actief', j === i);
+          el.classList.toggle('klaar', j < i);
+        });
+      };
+      zet();
+      laadTimer = setInterval(() => { if (i < stappen.length - 1) { i++; zet(); } }, 2600);
+    }
+    function stopLaden() { if (laadTimer) { clearInterval(laadTimer); laadTimer = null; } }
+
+    async function maak(andereVersie) {
+      const knop = document.getElementById('btn-maak');
+      const err = document.getElementById('err');
+      err.textContent = '';
+      const vak = document.getElementById('vak').value;
+      if (!vak) { err.textContent = 'Kies eerst een vak.'; document.getElementById('vak-kaart').scrollIntoView({ behavior: 'smooth' }); return; }
+      const onderwerp = document.getElementById('onderwerp').value.trim();
+      if (!onderwerp && !/thema|overig/i.test(vak)) { err.textContent = 'Beschrijf kort waar het werkblad over gaat.'; document.getElementById('onderwerp').focus(); return; }
+
+      const inv = {
+        vak: vak,
+        onderwerp: onderwerp,
+        groep: document.getElementById('groep').value,
+        aantal: parseInt(document.getElementById('aantal').value, 10) || 4,
+        lengte: document.getElementById('lengte').value,
+        moeilijkheid: document.getElementById('moeilijkheid').value,
+        themaKeuze: 'auto',
+        context: document.getElementById('context').value.trim()
+      };
+
+      knop.disabled = true;
+      document.getElementById('uitvoer').style.display = 'none';
+      document.getElementById('laden').classList.add('aan');
+      document.getElementById('laden').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      startLaden();
+      try {
+        let user = bouwOpdracht(inv);
+        if (andereVersie) user += '\n\nMaak een DUIDELIJK ANDERE versie dan eerder: andere opdrachten en andere bloktypes, zelfde onderwerp en niveau.';
+        const ruw = await callClaude(bouwSysteem(), user, 3800);
+        const wb = parseWb(ruw);
+
+        wb.vak = inv.vak; wb.groep = inv.groep;
+        wb.thema = bepaalThema(inv.themaKeuze, inv.onderwerp, inv.groep, inv.vak);
+        window.avinkaWerkblad.normaliseer(wb);
+
+        laatsteWb = wb;
+        laatsteMeta = inv;
+        toonAntw = false;
+        verfijnWensen = [];
+        // reset uit een eventueel geladen bestand
+        geladenBestandId = ''; geladenBestandNaam = ''; geladenBestandOms = '';
+        toonResultaat();
+
+        if (typeof avinkaTel === 'function') {
+          const aantalOpdr = (wb.blokken || []).filter(b => b && b.type && b.type !== 'tekst' && b.type !== 'reflectie').length;
+          avinkaTel(SOORT, { items: aantalOpdr || 1 });
+        }
+      } catch (e) {
+        document.getElementById('err').textContent = e.message || 'Er ging iets mis.';
+      } finally {
+        stopLaden();
+        knop.disabled = false;
+        document.getElementById('laden').classList.remove('aan');
+      }
+    }
+
+    // ── Resultaat tonen ──────────────────────────────────────────────────────
+    function toonResultaat() {
+      const wb = laatsteWb;
+      document.getElementById('wb-print').innerHTML = window.avinkaWerkblad.render(wb, { antwoorden: toonAntw });
+      document.getElementById('btn-antwoord').textContent = toonAntw ? '🔑 Verberg antwoordblad' : '🔑 Toon antwoordblad';
+      document.getElementById('btn-antwoord').classList.toggle('aan', toonAntw);
+      const u = document.getElementById('uitvoer');
+      u.style.display = 'block';
+      u.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function toggleAntwoorden() {
+      if (!laatsteWb) return;
+      toonAntw = !toonAntw;
+      toonResultaat();
+    }
+    function printWerkblad() { window.print(); }
+
+    function toonVerfijn() {
+      const v = document.getElementById('verfijn');
+      v.style.display = v.style.display === 'none' ? 'block' : 'none';
+      if (v.style.display === 'block') document.getElementById('verfijn-tekst').focus();
+    }
+    function terug() {
+      document.getElementById('verfijn').style.display = 'none';
+      document.getElementById('vak-kaart').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function verfijn() {
+      const wens = document.getElementById('verfijn-tekst').value.trim();
+      const err = document.getElementById('verfijn-err');
+      err.textContent = '';
+      if (!wens) { err.textContent = 'Typ wat je wilt aanpassen.'; return; }
+      if (!laatsteWb) return;
+      const knop = document.getElementById('btn-verfijn');
+      knop.disabled = true; knop.textContent = '✨ Bezig…';
+      try {
+        verfijnWensen.push(wens);
+        const huidig = JSON.stringify({ titel: laatsteWb.titel, ondertitel: laatsteWb.ondertitel, blokken: laatsteWb.blokken.map(scrubBlok) });
+        const user = 'Hieronder staat een bestaand werkblad als JSON. Pas ALLEEN het volgende aan en laat de rest precies zoals het is:\n' +
+          verfijnWensen.map((w, i) => (i + 1) + '. ' + w).join('\n') +
+          '\n\nHOUD dezelfde JSON-structuur en regels aan. Geef het volledige, aangepaste werkblad terug als UITSLUITEND geldige JSON.\n\n=== HUIDIG WERKBLAD ===\n' + huidig;
+        const ruw = await callClaude(bouwSysteem(), user, 3800);
+        const wb = parseWb(ruw);
+        wb.vak = laatsteWb.vak; wb.groep = laatsteWb.groep; wb.thema = laatsteWb.thema;
+        window.avinkaWerkblad.normaliseer(wb);
+        laatsteWb = wb;
+        document.getElementById('verfijn-tekst').value = '';
+        document.getElementById('verfijn').style.display = 'none';
+        toonResultaat();
+      } catch (e) {
+        verfijnWensen.pop();
+        err.textContent = e.message || 'Er ging iets mis.';
+      } finally {
+        knop.disabled = false; knop.textContent = '✨ Pas aan';
+      }
+    }
+    // Verwijder de door de code gegenereerde velden vóór we het werkblad terug naar de AI sturen.
+    function scrubBlok(b) {
+      const c = Object.assign({}, b);
+      delete c._lijn; delete c._wz;
+      if (c.type === 'sommen') delete c.items; // de spec is genoeg; code maakt de sommen opnieuw
+      return c;
+    }
+
+    // ── Opslaan in Bestanden ─────────────────────────────────────────────────
+    let geladenBestandId = '', geladenBestandNaam = '', geladenBestandOms = '';
+
+    async function slaOp(btn) {
+      if (!laatsteWb) return;
+      if (!window.avinkaBestanden) { if (typeof avinkaAlert === 'function') avinkaAlert('Opslaan is even niet beschikbaar. Ververs de pagina.'); return; }
+      const vak = (laatsteMeta.vak || laatsteWb.vak || 'Overig').trim();
+      let naam = geladenBestandNaam, oms = geladenBestandOms;
+      if (!naam) {
+        naam = vak + ' - ' + (laatsteWb.titel || 'Werkblad');
+        oms = laatsteWb.ondertitel || (laatsteMeta.onderwerp || '');
+      }
+      const res = await window.avinkaBestanden.opslaan({
+        type: 'werkblad',
+        tool: 'werkbladen',
+        naam: naam,
+        omschrijving: oms,
+        inhoud: window.avinkaWerkblad.platteTekst(laatsteWb),
+        data: { wb: laatsteWb, meta: laatsteMeta },
+        suggestiePad: ['Werkbladen', vak],
+        bestandId: geladenBestandId || undefined
+      });
+      if (!res || !res.ok) {
+        if (res && res.reason === 'geen_toegang' && typeof avinkaAlert === 'function') {
+          avinkaAlert('Opslaan in Bestanden hoort bij Compleet en Pro. Upgrade om je werkbladen te bewaren.');
+        }
+        return;
+      }
+      if (res.id) geladenBestandId = res.id;
+      geladenBestandNaam = res.naam || naam;
+      geladenBestandOms = (res.oms != null ? res.oms : oms) || '';
+      if (typeof avinkaAlert === 'function') avinkaAlert('Opgeslagen in Bestanden.');
+    }
+
+    function herstelSelect(id, val) {
+      if (!val) return;
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.value = val; el.classList.toggle('filled', !!el.value);
+      try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
+    }
+
+    // ── Heropenen vanuit Bestanden (?bestand=<id>) ───────────────────────────
+    async function laadOpgeslagen() {
+      let id = null;
+      try { id = new URLSearchParams(location.search).get('bestand'); } catch (e) {}
+      if (!id) return seedVanuitLes(); // geen bestand → kijk of we vanuit een les komen
+      let data = null, naam = '';
+      try {
+        const r = await fetch('/api/bestanden?id=' + encodeURIComponent(id), { headers: { accept: 'application/json' } });
+        if (!r.ok) return;
+        const rij = await r.json();
+        data = rij && rij.data; naam = (rij && rij.naam) || '';
+      } catch (e) { return; }
+      if (!data || !data.wb) return;
+      geladenBestandId = id; geladenBestandNaam = naam; geladenBestandOms = (data.omschrijving || '') + '';
+      laatsteWb = data.wb; laatsteMeta = data.meta || {}; toonAntw = false; verfijnWensen = [];
+
+      // velden terugzetten (best effort)
+      try {
+        const m = laatsteMeta;
+        if (m.vak) { const k = Array.from(document.querySelectorAll('#vak-grid .vakkaart')).find(x => x.dataset.v === m.vak); if (k) k.click(); }
+        const ow = document.getElementById('onderwerp'); if (ow) { ow.value = m.onderwerp || ''; ow.classList.toggle('filled', !!(m.onderwerp || '')); }
+        const cx = document.getElementById('context'); if (cx) { cx.value = m.context || ''; cx.classList.toggle('filled', !!(m.context || '')); }
+        herstelSelect('groep', m.groep); herstelSelect('aantal', m.aantal != null ? String(m.aantal) : ''); herstelSelect('lengte', m.lengte); herstelSelect('moeilijkheid', m.moeilijkheid);
+      } catch (e) {}
+
+      // terug-knop wijst terug naar Bestanden
+      const terugLink = document.getElementById('terug-link');
+      if (terugLink) {
+        let vanMap = ''; try { vanMap = new URLSearchParams(location.search).get('map') || ''; } catch (e) {}
+        terugLink.href = '/dashboard/mijn-teksten' + (vanMap ? '?map=' + encodeURIComponent(vanMap) : '');
+        terugLink.textContent = '← Terug naar bestanden';
+      }
+      window.avinkaWerkblad.normaliseer(laatsteWb);
+      toonResultaat();
+    }
+
+    // Vanuit Lesontwerp ("Maak hier een werkblad bij"): voorvullen uit sessionStorage.
+    function seedVanuitLes() {
+      let seed = null;
+      try {
+        if (new URLSearchParams(location.search).get('van') === 'lesontwerp') {
+          seed = JSON.parse(sessionStorage.getItem('avinka_werkblad_seed') || 'null');
+        }
+      } catch (e) {}
+      if (!seed) return;
+      try {
+        if (seed.vak) { const k = Array.from(document.querySelectorAll('#vak-grid .vakkaart')).find(x => x.dataset.v === seed.vak); if (k) k.click(); }
+        const ow = document.getElementById('onderwerp');
+        if (ow) { ow.value = seed.onderwerp || seed.doel || ''; ow.classList.toggle('filled', !!ow.value); }
+        const cx = document.getElementById('context');
+        if (cx && seed.context) { cx.value = seed.context; cx.classList.toggle('filled', true); }
+        herstelSelect('groep', seed.groep);
+      } catch (e) {}
+    }
+
+    // Aantal opdrachten en lengte zijn vrij te kiezen; de AI zorgt dat het geheel
+    // op twee kantjes past (breedte-vullende opdrachten mogen vol, ruimte-vretende
+    // worden beperkt). Zie de PAGINALIMIET-regel in bouwOpdracht.
+
+    window.addEventListener('load', laadOpgeslagen);
+  </script>
+</body>
+</html>

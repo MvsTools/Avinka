@@ -594,6 +594,96 @@
     return Math.min(eind, begin + Math.ceil((eind - begin) * maandFractie(maand)));
   }
 
+  // ── Woordenbank per spellingcategorie ──────────────────────────────────────
+  // De AI maakt te vaak spelfouten (krisis) of kiest woorden buiten de categorie
+  // (ritme/april als "kilowoord", terwijl je daar gewoon de i hoort). Daarom
+  // levert de CODE de woorden aan: gecureerd, correct gespeld en gegarandeerd in
+  // de juiste categorie. De tools laten de AI UITSLUITEND deze woorden gebruiken.
+  // `test` herkent de categorie uit het onderwerp/de aanvullingen (Staal-naam,
+  // Taal actief-naam of een fonetische omschrijving). Volgorde = prioriteit.
+  // Uitbreidbaar: voeg een categorie of woorden toe (alles met de hand geverifieerd).
+  var SPELLING_WOORDEN = [
+    { naam: "kilowoord (je hoort /ie/, je schrijft i)",
+      test: /kilo\s*-?woord|liter\s*-?woord|hoor.{0,8}ie.{0,18}schrijf.{0,8}\bi\b|\bi\b[^a-z]{0,8}(klinkt als|als)[^a-z]{0,4}ie/,
+      woorden: ["kilo", "liter", "prima", "titel", "crisis", "figuur", "minus", "via", "diploma", "positief", "negatief", "januari", "februari"] },
+    { naam: "centwoord (je hoort /s/, je schrijft c)",
+      test: /cent\s*-?woord|cijfer\s*-?woord|\bc\b[^a-z]{0,8}als[^a-z]{0,4}s\b|hoor.{0,8}\/?s\/?.{0,18}schrijf.{0,8}\bc\b/,
+      woorden: ["cent", "citroen", "cirkel", "centrum", "cijfer", "december", "procent", "cement", "centimeter", "ceintuur"] },
+    { naam: "colawoord (je hoort /k/, je schrijft c)",
+      test: /cola\s*-?woord|insect\s*-?woord|\bc\b[^a-z]{0,8}als[^a-z]{0,4}k\b|hoor.{0,8}\/?k\/?.{0,18}schrijf.{0,8}\bc\b/,
+      woorden: ["cola", "club", "computer", "cactus", "contact", "concert", "camera", "cacao", "container", "copiloot"] },
+    { naam: "politiewoord / tie-woord (je hoort /(t)sie/, je schrijft tie)",
+      test: /politie\s*-?woord|tie\s*-?woord|woorden? (op|met)\s*-?tie\b|tsie/,
+      woorden: ["politie", "vakantie", "traktatie", "informatie", "portie", "conditie", "natie", "optie", "emotie", "sensatie", "organisatie"] },
+    { naam: "tropisch-woord / isch-woord (je hoort /ies/, je schrijft isch)",
+      test: /tropisch\s*-?woord|isch\s*-?woord|woorden? (op|met)\s*-?isch\b/,
+      woorden: ["tropisch", "logisch", "magisch", "fantastisch", "praktisch", "automatisch", "komisch", "typisch", "elektrisch", "historisch"] },
+    { naam: "taxiwoord / x-woord (je hoort /ks/, je schrijft x)",
+      test: /taxi\s*-?woord|\bx\s*-?woord|woorden? met (de )?\bx\b/,
+      woorden: ["taxi", "examen", "extra", "exact", "maximaal", "expert", "export", "saxofoon", "exemplaar", "exotisch"] },
+    { naam: "chefwoord (je hoort /sj/, je schrijft ch)",
+      test: /chef\s*-?woord|\bch\b[^a-z]{0,8}als[^a-z]{0,4}sj|hoor.{0,8}sj.{0,18}schrijf.{0,8}\bch\b/,
+      woorden: ["chef", "machine", "chocolade", "douche", "parachute", "chic", "brochure", "charmant", "chauffeur", "champignon"] },
+    { naam: "theewoord / th-woord (je hoort /t/, je schrijft th)",
+      test: /thee\s*-?woord|\bth\s*-?woord|woorden? met th\b/,
+      woorden: ["thee", "thema", "theater", "thermometer", "bibliotheek", "apotheek", "theorie", "thuis", "methode"] },
+    { naam: "garagewoord (je hoort /zj/, je schrijft g)",
+      test: /garage\s*-?woord|\bg\b[^a-z]{0,8}als[^a-z]{0,4}zj|hoor.{0,8}zj.{0,18}schrijf.{0,8}\bg\b/,
+      woorden: ["garage", "etage", "bagage", "horloge", "massage", "etalage", "passagier", "reportage", "collage"] },
+    { naam: "cadeauwoord (je hoort /oo/, je schrijft eau)",
+      test: /cadeau\s*-?woord|woorden? met eau\b|\beau\b/,
+      woorden: ["cadeau", "bureau", "plateau", "niveau"] },
+    { naam: "caféwoord (met een streepje op de é)",
+      test: /caf[eé]\s*-?woord|streepje op de e|accent.{0,8}\bé?e\b/,
+      woorden: ["café", "privé", "coupé", "logé", "cliché", "attaché"] },
+    { naam: "eer-oor-eur-woord (ee, oo of eu)",
+      test: /eer\s*-?oor\s*-?eur|eer.{0,2}oor.{0,2}eur|woorden? met (eer|oor|eur)\b/,
+      woorden: ["beer", "peer", "meer", "deur", "kleur", "geur", "oor", "door", "voor", "spoor", "keer", "leer"] },
+    { naam: "aai-ooi-oei-woord (je hoort /j/, je schrijft i)",
+      test: /aai\s*-?ooi\s*-?oei|aai.{0,2}ooi.{0,2}oei|woorden? met (aai|ooi|oei)\b/,
+      woorden: ["haai", "kraai", "draai", "mooi", "kooi", "gooi", "groei", "bloei", "boei", "fraai"] },
+    { naam: "eeuw-ieuw-woord (denk aan de u)",
+      test: /eeuw\s*-?ieuw|eeuw.{0,2}ieuw|woorden? met (eeuw|ieuw)\b/,
+      woorden: ["leeuw", "sneeuw", "eeuw", "meeuw", "nieuw", "kieuw", "spreeuw", "geeuw"] },
+    { naam: "uw-rijtje (je hoort /uu/, je schrijft u)",
+      test: /uw\s*-?(rijtje|woord)|woorden? met uw\b/,
+      woorden: ["uw", "duw", "ruw", "schuw", "sluw", "schaduw", "zenuw", "zwaluw"] },
+    { naam: "ei-ij (weetwoord: korte ei of lange ij)",
+      test: /\bei\s*-?\/?\s*ij\b|ei en ij|ij en ei|woorden? met ei\b|woorden? met ij\b/,
+      woorden: ["trein", "klein", "plein", "reis", "geit", "eind", "ijs", "fijn", "pijn", "wijn", "tijd", "rijk", "kijk", "zwijn"] },
+    { naam: "au-ou (weetwoord)",
+      test: /\bau\s*-?\/?\s*ou\b|au en ou|ou en au|woorden? met au\b|woorden? met ou\b/,
+      woorden: ["blauw", "gauw", "nauw", "dauw", "saus", "pauw", "auto", "kabouter", "koud", "goud", "hout", "zout", "fout", "vrouw", "schouder"] },
+    { naam: "luchtwoord / cht-woord (korte klank + cht)",
+      test: /lucht\s*-?woord|\bcht\s*-?woord|woorden? met cht\b/,
+      woorden: ["licht", "nacht", "lucht", "recht", "zacht", "vlucht", "gracht", "kracht", "wacht", "dicht"] },
+    { naam: "zingwoord / nk-woord (ng en nk)",
+      test: /zing\s*-?woord|\bng\s*-?nk\b|woorden? met (ng|nk)\b/,
+      woorden: ["ding", "koning", "slang", "ring", "jong", "bank", "dank", "plank", "drinken", "bedankt"] },
+    { naam: "langermaakwoord (je hoort /t/ aan het eind, je maakt langer: d of t)",
+      test: /langer\s*-?maak|verlengwoord|hoor.{0,6}\bt\b.{0,16}schrijf.{0,6}\bd\b|eindigt op (een )?d\b/,
+      woorden: ["hand", "hond", "bord", "paard", "woord", "mand", "wind", "hemd", "eend", "rand"] },
+    { naam: "duivenwoord (woord op /f/ wordt v bij verlengen)",
+      test: /duiven\s*-?woord|\bf\b[^a-z]{0,6}(wordt|naar)[^a-z]{0,4}v\b|woord.{0,8}eindigt op (een )?f\b/,
+      woorden: ["duif", "brief", "doof", "lief", "golf", "wolf", "druif", "schroef"] },
+    { naam: "huizenwoord (woord op /s/ wordt z bij verlengen)",
+      test: /huizen\s*-?woord|\bs\b[^a-z]{0,6}(wordt|naar)[^a-z]{0,4}z\b|woord.{0,8}eindigt op (een )?s\b/,
+      woorden: ["huis", "neus", "roos", "muis", "kaas", "gans", "vaas", "glas", "prijs"] },
+    { naam: "verkleinwoord (grondwoord + je/tje/etje/...)",
+      test: /verkleinwoord|verkleining/,
+      woorden: ["boom", "bloem", "man", "bal", "stoel", "koning", "raam", "huis", "kar", "tafel"] },
+    { naam: "klankgroepenwoord (open/gesloten lettergreep: verdubbelen of verlengen)",
+      test: /klankgroep|open.{0,4}gesloten|verdubbel|kasteel\s*-?woord|jager\s*-?woord|bakker\s*-?woord/,
+      woorden: ["boom", "bom", "raam", "ram", "pot", "pen", "kar", "bal", "vis", "man", "zon", "kip"] }
+  ];
+  function vindSpellingCat(context) {
+    var t = String(context || "").toLowerCase();
+    for (var i = 0; i < SPELLING_WOORDEN.length; i++) {
+      if (SPELLING_WOORDEN[i].test.test(t)) return SPELLING_WOORDEN[i];
+    }
+    return null;
+  }
+
   window.avinkaLeerlijnen = {
     voor: function (vak, groep) {
       var vk = vakKey(vak), g = groepNr(groep);
@@ -671,6 +761,15 @@
       return kop + " Kies de categorie(ën) die past bij het lesdoel en het niveau van de groep." + doelRegel +
         "\nCategorieën van " + m.naam + ":\n" +
         m.categorieen.map(function (c) { return "• " + c; }).join("\n");
+    },
+    // Gecureerde woordenbank voor de spellingcategorie die in de tekst (onderwerp
+    // + aanvullingen) wordt genoemd. Geeft een kant-en-klare instructie-string met
+    // CORRECT gespelde, in-categorie woorden terug, of '' als er geen categorie
+    // wordt herkend (dan valt de tool terug op de algemene regels).
+    spellingWoorden: function (context, groep) {
+      var cat = vindSpellingCat(context);
+      if (!cat) return "";
+      return "VERPLICHTE WOORDENBANK voor de categorie \"" + cat.naam + "\". Gebruik in de oefeningen UITSLUITEND woorden uit deze lijst: ze zijn correct gespeld en horen gegarandeerd bij deze categorie. Kies er een passende selectie uit (niet per se allemaal) en verzin ZELF GEEN andere categoriewoorden; neem ze exact over zoals ze hier staan. Woorden: " + cat.woorden.join(", ") + ".";
     },
     verwerkingen: function (vak, groep, n) {
       if (!isZaakvakKey(vak)) return "";
