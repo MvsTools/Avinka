@@ -12,7 +12,7 @@ REM ============================================================
 
 set "MAIN=C:\dev\wijs-platform"
 set "ROOT=C:\dev\wijs-werk"
-set "MEMSRC=C:\Users\micha\.claude\projects\C--Users-micha-OneDrive-Desktop-TestWijs\memory"
+set "MEMSRC=C:\Users\micha\.claude\avinka-memory"
 
 set "LETTER=%~1"
 if "%LETTER%"=="" set /p "LETTER=Welke letter voor deze werkplek (a/b/c)? "
