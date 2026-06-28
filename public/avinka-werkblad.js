@@ -142,39 +142,58 @@
   }
 
   // Woordzoeker: plaatst de woorden in een raster (8 richtingen) en vult op.
-  function genWoordzoeker(woorden) {
-    var schoon = arr(woorden).map(alleenLetters).filter(function (w) { return w.length >= 2; });
-    schoon = schoon.filter(function (w, i) { return schoon.indexOf(w) === i; }).slice(0, 12);
-    var maxlen = schoon.reduce(function (m, w) { return Math.max(m, w.length); }, 0);
-    var size = Math.max(11, Math.min(15, maxlen + 1));
+  // Eén poging tot een vol raster van gegeven maat; geeft null als niet alle
+  // woorden geplaatst konden worden (de buitenlus probeert het dan opnieuw).
+  function bouwWoordzoeker(schoon, size) {
     var grid = [];
     for (var r = 0; r < size; r++) { grid.push([]); for (var c = 0; c < size; c++) grid[r].push(null); }
     var richtingen = [[0, 1], [1, 0], [1, 1], [1, -1], [0, -1], [-1, 0], [-1, -1], [-1, 1]];
-    var geplaatst = [];
-    schoon.forEach(function (w, idx) {
-      for (var poging = 0; poging < 220; poging++) {
+    var geplaatst = [], kleur = {};
+    for (var idx = 0; idx < schoon.length; idx++) {
+      var w = schoon[idx], gelukt = false;
+      for (var poging = 0; poging < 300 && !gelukt; poging++) {
         var d = richtingen[randInt(0, richtingen.length - 1)];
         var rr = randInt(0, size - 1), cc = randInt(0, size - 1);
         var er = rr + d[0] * (w.length - 1), ec = cc + d[1] * (w.length - 1);
         if (er < 0 || er >= size || ec < 0 || ec >= size) continue;
         var ok = true;
         for (var k = 0; k < w.length; k++) {
-          var cell = grid[rr + d[0] * k][cc + d[1] * k];
-          if (cell && cell.l !== w[k]) { ok = false; break; }
+          // Geen overlap: een vakje dat al door een ander woord is bezet mag NIET
+          // opnieuw gebruikt worden, ook niet als de letter toevallig gelijk is.
+          if (grid[rr + d[0] * k][cc + d[1] * k]) { ok = false; break; }
         }
         if (!ok) continue;
         for (var k2 = 0; k2 < w.length; k2++) {
           grid[rr + d[0] * k2][cc + d[1] * k2] = { l: w[k2], w: idx };
         }
-        geplaatst.push(w);
-        return;
+        geplaatst.push(w); kleur[w] = idx; gelukt = true;
       }
-    });
+      if (!gelukt) return null; // niet alles past → buitenlus probeert opnieuw / groter
+    }
     var alfa = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     for (var r2 = 0; r2 < size; r2++) for (var c2 = 0; c2 < size; c2++) {
       if (!grid[r2][c2]) grid[r2][c2] = { l: alfa[randInt(0, 25)], w: -1 };
     }
-    return { size: size, grid: grid, woorden: geplaatst };
+    return { size: size, grid: grid, woorden: geplaatst, kleur: kleur };
+  }
+
+  function genWoordzoeker(woorden) {
+    var schoon = arr(woorden).map(alleenLetters).filter(function (w) { return w.length >= 2; });
+    schoon = schoon.filter(function (w, i) { return schoon.indexOf(w) === i; }).slice(0, 16);
+    var maxlen = schoon.reduce(function (m, w) { return Math.max(m, w.length); }, 0);
+    var size = Math.max(11, maxlen + 1);
+    if (schoon.length > 10) size = Math.max(size, 14);
+    if (schoon.length > 13) size = Math.max(size, 16);
+    // Probeer meermaals; lukt het na een paar keer niet, dan een maat groter.
+    // Garandeert dat ALLE woorden in het raster staan (geen stil weglaten).
+    for (var maat = size; maat <= size + 2; maat++) {
+      for (var poging = 0; poging < 12; poging++) {
+        var res = bouwWoordzoeker(schoon, maat);
+        if (res) return res;
+      }
+    }
+    // Uiterste vangnet (zou met bovenstaande marges niet moeten gebeuren).
+    return bouwWoordzoeker(schoon, size + 3) || bouwWoordzoeker(schoon.slice(0, 12), size);
   }
 
   // Rekenmuurtje: onderste rij willekeurig; elke steen = som van de twee eronder.
@@ -301,12 +320,8 @@
   }
 
   // Kruiswoord: legt de woorden kruisend in een rooster (greedy intersecties).
-  function genKruiswoord(woorden) {
-    var lijst = arr(woorden).map(function (w) {
-      return { woord: alleenLetters(w && w.woord != null ? w.woord : w), oms: (w && w.omschrijving) || "" };
-    }).filter(function (w) { return w.woord.length >= 2 && w.woord.length <= 14; });
-    lijst.sort(function (a, b) { return b.woord.length - a.woord.length; });
-    if (lijst.length < 2) return null;
+  // Eén bouw-poging in de gegeven volgorde (eerste woord = anker, horizontaal).
+  function bouwKruiswoord(lijst) {
     var grid = {}, plaats = [];
     function L(x, y) { return grid[x + "," + y]; }
     function zet(w, x, y, dir) { for (var i = 0; i < w.length; i++) grid[(x + (dir === "h" ? i : 0)) + "," + (y + (dir === "v" ? i : 0))] = w[i]; }
@@ -359,7 +374,29 @@
       vragen.push({ nr: nums[p.x + "," + p.y], dir: p.dir, oms: p.oms || p.woord.toLowerCase(), woord: p.woord });
     });
     vragen.sort(function (a, b) { return a.nr - b.nr; });
-    return { grid: grid, minX: minX, minY: minY, maxX: maxX, maxY: maxY, nums: nums, vragen: vragen };
+    return { grid: grid, minX: minX, minY: minY, maxX: maxX, maxY: maxY, nums: nums, vragen: vragen, aantal: plaats.length };
+  }
+
+  function genKruiswoord(woorden) {
+    var lijst = arr(woorden).map(function (w) {
+      return { woord: alleenLetters(w && w.woord != null ? w.woord : w), oms: (w && w.omschrijving) || "" };
+    }).filter(function (w) { return w.woord.length >= 2 && w.woord.length <= 14; });
+    if (lijst.length < 2) return null;
+    var doel = lijst.length, beste = null, besteN = -1;
+    // Greedy plaatsing laat soms een woord vallen dat nergens kruist. We proberen
+    // het daarom vaak opnieuw met geschudde volgorde en houden de poging waarin de
+    // MEESTE woorden geplaatst zijn — stoppen zodra ALLE woorden erin staan.
+    for (var poging = 0; poging < 80; poging++) {
+      // Poging 0 = langste-eerst (geeft meestal de strakste interlock); daarna geschud.
+      var vol = lijst.slice();
+      if (poging === 0) vol.sort(function (a, b) { return b.woord.length - a.woord.length; });
+      else for (var i = vol.length - 1; i > 0; i--) { var jj = randInt(0, i), t = vol[i]; vol[i] = vol[jj]; vol[jj] = t; }
+      var res = bouwKruiswoord(vol);
+      if (!res) continue;
+      if (res.aantal > besteN) { besteN = res.aantal; beste = res; }
+      if (res.aantal === doel) break;
+    }
+    return beste;
   }
 
   function rangeArr(a, b) { var r = []; for (var i = a; i <= b; i++) r.push(i); return r; }
@@ -1176,18 +1213,25 @@
 
   function rWoordzoeker(b, nr, ant) {
     var W = b._wz || genWoordzoeker(b.woorden);
+    var KLEUR = ["#c0392b", "#d35400", "#b9770e", "#7f8c1a", "#1e8449", "#138d75", "#1f8aa5",
+      "#2471a3", "#2c3e9b", "#6c3483", "#9b2d8f", "#b03060", "#8e5a2b", "#34495e", "#196f3d", "#5d4037"];
+    function kleurVan(i) { return KLEUR[((i % KLEUR.length) + KLEUR.length) % KLEUR.length]; }
     var h = opdrachtKop(nr, b.opdracht || "Zoek de woorden en streep ze door.", b.em);
     h += '<div class="wb-wz-wrap"><table class="wb-wz' + (ant ? " wb-wz-ant" : "") + '">';
     W.grid.forEach(function (rij) {
       h += "<tr>";
       rij.forEach(function (cel) {
-        h += '<td class="' + (ant && cel.w >= 0 ? "wb-wz-hit" : "") + '">' + esc(cel.l) + "</td>";
+        var hit = ant && cel.w >= 0;
+        h += '<td class="' + (hit ? "wb-wz-hit" : "") + '"' +
+          (hit ? ' style="background:' + kleurVan(cel.w) + '"' : "") + ">" + esc(cel.l) + "</td>";
       });
       h += "</tr>";
     });
     h += "</table>";
     h += '<div class="wb-wz-woorden">' + W.woorden.map(function (w) {
-      return '<span class="wb-chip">' + esc(w) + "</span>";
+      var k = kleurVan(W.kleur[w] || 0);
+      var st = ant ? ' style="background:' + k + ';border-color:' + k + ';color:#fff"' : "";
+      return '<span class="wb-chip"' + st + ">" + esc(w) + "</span>";
     }).join(" ") + "</div></div>";
     return '<div class="wb-blok">' + h + "</div>";
   }
@@ -2117,7 +2161,7 @@
       ".wb-wz{border-collapse:collapse;margin:0 auto}",
       ".wb-wz td{width:26px;height:26px;text-align:center;font-size:14px;font-weight:700;border:1px solid rgba(34,28,58,.12);font-family:var(--wb-font);text-transform:uppercase}",
       ".wb-wz-hit{background:var(--wb-accent);color:#fff;border-radius:4px}",
-      ".wb-wz-woorden{display:flex;flex-wrap:wrap;gap:5px;justify-content:center}",
+      ".wb-wz-woorden{display:grid;grid-template-columns:repeat(4,auto);gap:7px 16px;justify-content:center;justify-items:center}",
       // Teken
       ".wb-teken{border:2px dashed rgba(34,28,58,.3);border-radius:12px;background:repeating-linear-gradient(45deg,transparent,transparent 12px,rgba(34,28,58,.02) 12px,rgba(34,28,58,.02) 24px)}",
       ".wb-teken-ant{display:flex;align-items:center;justify-content:center;color:var(--wb-accent);font-weight:700;font-size:15px}",
