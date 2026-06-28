@@ -582,7 +582,7 @@
         '### 6. Kleine lesafsluiting (jij) (' + t[5] + ' min)',
         'Beschrijf kort hoe je elke leerling individueel checkt op concept én vaardigheid (bv. een exitvraag op een wisbordje). Wie het beheerst gaat zelfstandig verder; wie nog niet, schuift aan voor verlengde instructie.',
         '### 7. Zelfstandige verwerking (' + t[6] + ' min)',
-        'Beschrijf kort wat de leerlingen zelfstandig doen, aansluitend op het lesdoel. Benoem kort de verlengde instructie (voor wie moeite heeft) én een verrijking/uitdaging (voor wie snel klaar is).',
+        'Beschrijf de zelfstandige verwerking als een heldere OPDRACHT, niet als een uitgeschreven werkblad. Benoem: wat voor soort opgaven of opdracht de leerlingen maken (passend bij het lesdoel en de leerlijn), ongeveer hoeveel en in welke opbouw (van makkelijk naar moeilijk), en met welk materiaal of welke context. Geef hooguit één of twee voorbeeldopgaven ter illustratie; schrijf de hele set opgaven NIET uit. Benoem daarna kort de verlengde instructie (voor wie moeite heeft) én een verrijking/uitdaging (voor wie snel klaar is).',
         '### 8. Grote lesafsluiting (' + t[7] + ' min)',
         'Kort terug naar het lesdoel en de succescriteria, plus 1 à 2 reflectievragen over het proces en de werk- en leerhouding.',
         '**Exitcheck:** één korte opdracht of vraag die élke leerling maakt en die direct laat zien of het lesdoel is behaald (een exit-ticket dat 1-op-1 het lesdoel meet). Benoem concreet wat je terugziet als het gelukt is.',
@@ -613,7 +613,7 @@
         '### 2. Het verhaal: uitleg en informatie (' + t[1] + ' min)',
         'De informatieve kern. Vertel of toon de inhoud als een helder, boeiend verhaal. Benoem de kernbegrippen, gebruik passende bronnen (kaart, tijdbalk, beeld, tekst) en houd het levendig met voorbeelden uit de leefwereld van de kinderen. Verwerk hier één of twee korte tussenvragen om de aandacht en het begrip te peilen.',
         '### 3. Verwerking (' + t[2] + ' min)',
-        'Een actieve, aansprekende opdracht waarin de leerlingen de informatie zélf gebruiken (ordenen, vergelijken, onderzoeken, op de kaart of tijdbalk plaatsen, maken of presenteren), passend bij de gekozen werkvorm (zie SOORT LES). Concreet uitgewerkt.',
+        'Beschrijf de verwerking als een heldere OPDRACHT, niet als een uitgeschreven werkblad: een actieve, aansprekende verwerking waarin de leerlingen de informatie zélf gebruiken (ordenen, vergelijken, onderzoeken, op de kaart of tijdbalk plaatsen, maken of presenteren), passend bij het lesdoel, de leerlijn en de gekozen werkvorm (zie SOORT LES). Benoem wat voor soort opdracht het is, ongeveer hoeveel of hoe lang, en met welk materiaal of welke bron. Geef hooguit één of twee voorbeelden ter illustratie; werk niet de hele set uit.',
         '### 4. Afsluiting (' + t[3] + ' min)',
         'Kort terug naar het lesdoel en de succescriteria, met een korte check of de kern is blijven hangen.',
         '**Exitcheck:** één korte vraag of opdracht die élke leerling doet en die laat zien of het lesdoel is behaald (een exit-ticket dat 1-op-1 het lesdoel meet). Benoem wat je terugziet als het gelukt is.',
@@ -633,7 +633,7 @@
         '', '## De les in het kort',
         'Drie blokjes:',
         '**Start (' + t[0] + ' min):** korte introductie en een eenvoudiger deelvaardigheid ophalen die je voor het lesdoel nodig hebt (een stapje makkelijker, hele klas kan het al, geen instructie), nog niet het lesdoel zelf.',
-        '**Kern (' + t[1] + ' min):** de hoofdwerkvorm (passend bij SOORT LES), concreet uitgewerkt.',
+        '**Kern (' + t[1] + ' min):** de hoofdwerkvorm (passend bij SOORT LES), beschreven als een heldere opdracht: wat voor soort opgaven of activiteit (passend bij het lesdoel en de leerlijn), ongeveer hoeveel en in welke opbouw, en met welk materiaal. Eén of twee voorbeelden mag; schrijf niet de hele set uit.',
         '**Afsluiting (' + t[2] + ' min):** terug naar het doel plus een korte exitcheck: één vraag of opdracht die élke leerling doet en die laat zien of het lesdoel is behaald.',
         '', '## Benodigdheden',
         'Bondige opsomming.',
@@ -1082,6 +1082,52 @@
     // opnieuw opslaan JOUW naam aanhoudt i.p.v. een nieuw bedachte.
     let geladenBestandNaam = '', geladenBestandOms = '', geladenBestandId = '';
 
+    // Pak één Markdown-sectie uit de les: vanaf de kop die op headingRe matcht tot
+    // de volgende kop van gelijk of hoger niveau. Best effort; '' als niet gevonden.
+    function pakSectie(tekst, headingRe) {
+      const lijnen = String(tekst || '').split('\n');
+      let start = -1, niveau = 0;
+      for (let i = 0; i < lijnen.length; i++) {
+        const m = lijnen[i].match(/^(#{2,3})\s*(.*)$/);
+        if (m && headingRe.test(m[2])) { start = i; niveau = m[1].length; break; }
+      }
+      if (start < 0) return '';
+      const out = [];
+      for (let i = start + 1; i < lijnen.length; i++) {
+        const m = lijnen[i].match(/^(#{2,3})\s/);
+        if (m && m[1].length <= niveau) break;
+        out.push(lijnen[i]);
+      }
+      return out.join('\n').trim();
+    }
+
+    // Het "verwerking-briefje" voor de toekomstige werkbladtool: de bestelbon die
+    // zegt WELKE verwerking bij deze les hoort (lesontwerp = regisseur van de
+    // inhoud; de werkbladtool = bouwer met de opdrachtmodules). Wordt meegeslagen
+    // in data.meta.werkblad zodat een knop "→ maak een werkblad van deze les" het
+    // 1-op-1 kan inladen zonder de hele lestekst uit te pluizen. Zie het
+    // koppelings-afsprakenbriefje in het geheugen ([[les-werkblad-koppeling]]).
+    function bouwWerkbladBrief() {
+      const m = laatsteMeta || {};
+      const tekst = laatsteTekst || '';
+      let verwerking = pakSectie(tekst, /verwerking/i);
+      if (!verwerking) { // korte les: "Kern" staat als vetgedrukt blok, geen eigen kop
+        const km = tekst.match(/\*\*\s*Kern[^*\n]*\*\*\s*([^\n]+)/i);
+        if (km) verwerking = km[1].trim();
+      }
+      return {
+        versie: 1,
+        onderwerp: (m.doel || '').trim(),
+        vak: (m.vak || '').trim(),
+        groep: (m.groep || '').trim(),
+        lesduur: (m.duur || '').trim(),
+        vorm: (m.vorm || '').trim(),
+        lestypes: Array.isArray(m.lestypes) ? m.lestypes.slice() : [],
+        verwerking: verwerking,
+        differentiatie: pakSectie(tekst, /^differentiatie/i)
+      };
+    }
+
     async function slaLesOp(btn) {
       if (!laatsteTekst) return;
       if (!window.avinkaBestanden) { if (typeof avinkaAlert === 'function') avinkaAlert("Opslaan is even niet beschikbaar. Ververs de pagina en probeer opnieuw."); return; }
@@ -1109,7 +1155,7 @@
         naam: naam,
         omschrijving: omschrijving,
         inhoud: laatsteTekst,
-        data: { tekst: laatsteTekst, meta: laatsteMeta },
+        data: { tekst: laatsteTekst, meta: Object.assign({}, laatsteMeta, { werkblad: bouwWerkbladBrief() }) },
         suggestiePad: ['Lesontwerpen', vak],
         bestandId: geladenBestandId || undefined,
       });
