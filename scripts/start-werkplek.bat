@@ -24,7 +24,7 @@ if not exist "%WT%" ( echo Werkplek %LETTER% bestaat nog niet. Maak hem eerst me
 
 echo Werkplek %LETTER% starten op poort %PORT% ...
 
-start "wijs-dev-%LETTER% (poort %PORT%)" cmd /k "cd /d %WT% && npx next dev -p %PORT%"
+start "wijs-dev-%LETTER% (poort %PORT%)" cmd /k "cd /d %WT% && set NODE_OPTIONS=--use-system-ca && npx next dev -p %PORT%"
 start "claude-%LETTER%" cmd /k "cd /d %WT% && claude"
 
 endlocal

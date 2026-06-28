@@ -56,6 +56,7 @@ mklink /J "%CLPROJ%\memory" "%MEMSRC%"
 echo.
 echo --- npm install (kan een paar minuten duren) ---
 cd /d "%WT%"
+set NODE_OPTIONS=--use-system-ca
 call npm install
 
 echo.
