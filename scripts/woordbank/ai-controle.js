@@ -78,6 +78,12 @@ async function keur(woorden, instructie, tag) {
   }
   return afgekeurd;
 }
+// Volledige afgekeurd-lijst uit de cache (stabiel, ook na een herbouw waarbij de
+// bank al opgeschoond is): alle oordelen voor `tag` die 'true' zijn.
+function uitCache(tag) {
+  const p = tag + "|";
+  return new Set(Object.keys(cache).filter(k => k.startsWith(p) && cache[k]).map(k => k.slice(p.length)));
+}
 
 (async () => {
   // ── Pass 1: werkwoordenbank — homografen ──────────────────────────────────
@@ -90,8 +96,9 @@ async function keur(woorden, instructie, tag) {
     "(mannen, bomen, dagen, tranen), of (b) al vervoegde vormen (waren en kwamen = verleden tijd " +
     "van zijn/komen; gingen). Een echt heel werkwoord (trouwen, wagen, zagen, koken, plannen) laat " +
     "je STAAN. Geef een JSON array van strings, geen uitleg.", "ww2");
-  fs.writeFileSync(BRON("ww-afgekeurd.txt"), [...ww].sort().join("\n"));
-  console.log(`\nPass 1 (werkwoordenbank): ${ww.size} homografen afgekeurd van ${inf.length}.`);
+  const wwAll = uitCache("ww2");
+  fs.writeFileSync(BRON("ww-afgekeurd.txt"), [...wwAll].sort().join("\n"));
+  console.log(`\nPass 1 (werkwoordenbank): ${wwAll.size} homografen/vervoegingen afgekeurd (uit cache).`);
 
   // ── Pass 2: spellingbank — verkapte werkwoordsvormen in lek-categorieen ────
   const bank = require("./woordenbank.json").categorieen;
@@ -104,8 +111,24 @@ async function keur(woorden, instructie, tag) {
     "(bv. 'loopt', 'gemaakt', 'bleef', 'vond', 'komen', 'werkte'). Is een woord ook een gewoon " +
     "zelfstandig of bijvoeglijk naamwoord (bv. 'hand', 'zacht', 'vriend', 'licht'), laat het dan " +
     "STAAN. Geef een JSON array van strings, geen uitleg.", "spel");
-  fs.writeFileSync(BRON("extra-werkwoordsvormen.txt"), [...vormen].sort().join("\n"));
-  console.log(`Pass 2 (spellingbank): ${vormen.size} verkapte werkwoorden gevonden van ${spelWoorden.length}.`);
+  const vormenAll = uitCache("spel");
+  fs.writeFileSync(BRON("extra-werkwoordsvormen.txt"), [...vormenAll].sort().join("\n"));
+  console.log(`Pass 2 (spellingbank): ${vormenAll.size} verkapte werkwoorden (uit cache).`);
+
+  // ── Pass 3: veiligheidscheck — ongepaste woorden over de HELE bank ─────────
+  const alleWoorden = [...new Set(Object.values(bank).flatMap(c => c.woorden.map(x => x[0])))];
+  const ongepast = await keur(alleWoorden,
+    "Hieronder staan Nederlandse woorden die op een werkblad voor basisschoolkinderen (groep 3-8) " +
+    "kunnen komen. Geef UITSLUITEND de woorden terug die NIET geschikt zijn voor kinderen: " +
+    "scheldwoorden/gevloek (verdomme, klootzak), seksueel, grof/expliciet geweld, drugs, of " +
+    "anderszins ongepast of kwetsend. Gewone woorden (ook 'dood', 'bloed', 'ziek' op zichzelf) " +
+    "laat je STAAN, tenzij echt grof. Geef een JSON array van strings, geen uitleg.", "ongepast");
+  const ongepastAll = uitCache("ongepast");
+  fs.writeFileSync(BRON("ongepast.txt"), [...ongepastAll].sort().join("\n"));
+  console.log(`Pass 3 (veiligheid): ${ongepastAll.size} ongepaste woorden (uit cache).`);
+
+  // (Geen open/gesloten-snoei: die categorie is breed maar correct — agent/foto/
+  //  samen/alles zijn echte klankgroepenwoorden. We laten 'm staan.)
 
   console.log(`\nAI-oproepen: ${oproepen}  ·  kosten deze run: $${kostenTotaal.toFixed(4)} (gecachet → herhalen is gratis)`);
   console.log("Voorbeeld afgekeurde werkwoorden:", [...ww].slice(0, 15).join(", "));

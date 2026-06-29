@@ -9,3 +9,4 @@ _bron/*
 !_bron/ai-cache.json
 !_bron/ww-afgekeurd.txt
 !_bron/extra-werkwoordsvormen.txt
+!_bron/ongepast.txt

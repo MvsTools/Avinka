@@ -32,6 +32,12 @@ let WERKWVORMEN = new Set();
 try { WERKWVORMEN = new Set(fs.readFileSync(BRON("werkwoordsvormen.txt"), "utf8").split(/\r?\n/).filter(Boolean)); } catch (e) {}
 // Extra verkapte werkwoorden die de AI-controle (ai-controle.js) vond.
 try { fs.readFileSync(BRON("extra-werkwoordsvormen.txt"), "utf8").split(/\r?\n/).filter(Boolean).forEach(w => WERKWVORMEN.add(w)); } catch (e) {}
+// Ongepaste woorden (AI-veiligheidscheck) — overal weren.
+let ONGEPAST = new Set();
+try { ONGEPAST = new Set(fs.readFileSync(BRON("ongepast.txt"), "utf8").split(/\r?\n/).filter(Boolean)); } catch (e) {}
+// Woorden die GEEN klankgroepenwoord zijn — alleen uit open_gesloten weren.
+let GEEN_KLANKGROEP = new Set();
+try { GEEN_KLANKGROEP = new Set(fs.readFileSync(BRON("geen-klankgroep.txt"), "utf8").split(/\r?\n/).filter(Boolean)); } catch (e) {}
 
 const KLINKERS = "aeiouyàáâäèéêëìíîïòóôöùúûü";
 function lettergrepen(w) {
@@ -163,6 +169,12 @@ const BLOCK = new Set([
   "kut","lul","kanker","tering","tyfus","sukkel","idioot","debiel","mongool","stom","stomme","scheet",
   "echtscheiding","echtgenoot","echtbreuk","hebzucht","wraakzucht","ontucht","overspel",
   "tiet","tieten","reet","kont","scheten","piemel","tepel","tepels","slet","del","trut","mietje",
+  // gevloek / grof (komt uit de ondertitel-frequentielijst)
+  "verdomme","godverdomme","godver","godverdorie","verdomd","verdomde","verrek","verrekte",
+  "klootzak","klootzakken","kloot","kloten","klote","klere","sodemieter","sodeju","kut","kutten",
+  "neuk","neuken","neukt","neukte","hoer","hoeren","hoertje","pik","pijp","pijpen","kont","reet",
+  "schijt","schijten","stront","kak","kakken","pis","pies","pissen","flikker","flikkers","teef","teven",
+  "klootviool","mongolen","kankeren","optyfen","oprotten","oprot","mafkees","eikel","eikels","sukkels",
 ]);
 
 function kindgeschikt(w) {
@@ -170,7 +182,7 @@ function kindgeschikt(w) {
   if (w.length < 3 || w.length > 12) return false;
   if (!RANG.has(w)) return false;
   if (RANG.get(w) < 60) return false;   // de allerfrequentste = functiewoorden (de, het, hij, zijn) - geen oefenwoord
-  if (BLOCK.has(w)) return false;
+  if (BLOCK.has(w) || ONGEPAST.has(w)) return false;
   if (WERKWVORMEN.has(w)) return false;   // gegenereerde werkwoordsvormen (werkwoorden.js)
   if (isWerkwoordsvorm(w)) return false;
   return true;
@@ -193,6 +205,7 @@ for (const w of kandidaten) {
   const ff = freqFloor(w);
   for (const ing of ings) {
     if (!ing.doel) continue;
+    if (ing.id === "open_gesloten" && GEEN_KLANKGROEP.has(w)) continue; // AI: geen echt klankgroepenwoord
     // achtergrond = zwaarste ANDER ingredient (de doelcategorie zelf telt niet mee)
     const achtergrond = ings.filter(i => i.id !== ing.id).map(i => i.g);
     const vanaf = Math.max(3, ff, achtergrond.length ? Math.max(...achtergrond) : 0);
