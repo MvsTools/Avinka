@@ -383,6 +383,8 @@
 
       <footer class="app-foot">
         Lesontwerp · gemaakt door Michael van Spanje · © 2026
+        <br>
+        <span style="font-size:11.5px;">Avinka is niet gelieerd aan of goedgekeurd door uitgevers van lesmethodes. Een methodenaam die je invult, gebruiken we alleen om de juiste terminologie te treffen.</span>
       </footer>
     </main>
   </div>
@@ -727,12 +729,15 @@
         r.push('LEERLIJN-CONTEXT (' + inv.groep + ', op basis van de SLO-leerlijnen/referentieniveaus voor dit vak). Kalibreer het niveau, de moeilijkheid en de complexiteit hier exact op; gebruik alléén wat bij dit specifieke lesdoel hoort en blijf bij dit leerjaar:');
         r.push(leerlijn);
       }
-      // Spellingmethode (bv. Staal, Taal actief, Spelling in Beeld) uit de vrije
-      // aanvullingen: dan de categorienamen/regels van díe methode gebruiken.
+      // Spellingcategorie uit de vrije aanvullingen herkennen (ook methode-jargon
+      // zoals "colawoord"): koppel aan een eigen, methode-neutrale categorie met
+      // eigen regel + eigen, correcte woorden. Geen methode-systeem reproduceren.
       if (/spelling/i.test(inv.vak || '')) {
         const spmTekst = ((inv.doel || '') + ' ' + (inv.context || '')).trim();
         const spm = (window.avinkaLeerlijnen && window.avinkaLeerlijnen.spellingMethode) ? window.avinkaLeerlijnen.spellingMethode(spmTekst, inv.groep) : '';
         if (spm) { r.push(''); r.push(spm); }
+        const spw = (window.avinkaLeerlijnen && window.avinkaLeerlijnen.spellingWoorden) ? window.avinkaLeerlijnen.spellingWoorden(spmTekst, inv.groep) : '';
+        if (spw) { r.push(''); r.push(spw); }
       }
       // Ideeënbank (bijv. creatief): een palet waaruit de AI kiest/varieert.
       const ideeen = (window.avinkaLeerlijnen && window.avinkaLeerlijnen.ideeen) ? window.avinkaLeerlijnen.ideeen(inv.vak, inv.groep) : '';
