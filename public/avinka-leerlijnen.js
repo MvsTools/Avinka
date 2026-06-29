@@ -13,12 +13,12 @@
              var ll = window.avinkaLeerlijnen.voor(vak, groep);  // '' als onbekend
 
    Verder beschikbaar: .ideeen(vak,groep) · .werkvormen(lestype,groep) ·
-   .verwerkingen(vak,groep) · .spellingMethode(aanvullingen, groep[, maand])
-   (herkent een in de vrije tekst genoemde spellingmethode zoals Staal en geeft
-   de bijbehorende categorieën/regels terug, of ''. Bij Staal wordt op de
-   jaaropbouw gefilterd: alleen de categorieën die de groep op dit punt in het
-   schooljaar al gehad heeft — vorige groepen volledig, het lopende leerjaar
-   naar rato van de maand).
+   .verwerkingen(vak,groep) · .spellingMethode(aanvullingen, groep) ·
+   .spellingWoorden(aanvullingen, groep) (herkent de spellingcategorie die de
+   leerkracht noemt — ook in methode-jargon zoals "colawoord" — en geeft een
+   eigen, methode-neutrale instructie + eigen, correcte woorden terug, of ''.
+   Een methodenaam/categoriesysteem van een uitgever wordt niet gereproduceerd;
+   het niveau per leerjaar loopt via de eigen SLO-spellingleerlijn).
 
    Uitbreiden: voeg vakken toe aan DATA (bijv. 'spelling', 'begrijpend-lezen'). */
 (function () {
@@ -435,164 +435,19 @@
     return n <= 4 ? "3-4" : (n <= 6 ? "5-6" : "7-8");
   }
 
-  // ── Spellingmethodes ──────────────────────────────────────────────────────
-  // Veel scholen werken met een vaste spellingmethode die eigen categorienamen
-  // en regelformuleringen hanteert. Noemt de leerkracht de methode in de
-  // aanvullingen ("we werken met Staal"), dan gebruikt de tool die indeling +
-  // die exacte namen/regels, in plaats van een methode-neutrale aanpak.
-  // Bron: officiële regelkaarten / leerstofoverzichten (Malmberg, Zwijsen) en
-  // de didactiek van José Schraven (basis onder Staal).
-  var SPELLING_METHODES = {
-    staal: {
-      naam: "Staal",
-      triggers: /\bstaal\b|schraven|zo leer je kinderen lezen en spellen/i,
-      uitleg: "Staal (Malmberg) werkt met vaste, genummerde categorieën met herkenbare namen; de naam én de regel worden door alle jaargroepen heen op dezelfde manier gebruikt. De leerling bepaalt eerst de categorie en past dan de bijbehorende regel toe.",
-      jaaropbouw: true,
-      // Genummerd 1-34 (officiële Malmberg-regelkaarten). De categorieën bouwen
-      // per leerjaar op; `cap` (zie staalCap) bepaalt welke een groep op dit
-      // punt in het schooljaar al gehad heeft.
-      cats: [
-        { n: 1, naam: "hakwoord", regel: "ik schrijf het woord zoals ik het hoor (speciaal hakwoord: daar mag geen u tussen)" },
-        { n: 2, naam: "zingwoord", regel: "ng, net als bij ding-dong" },
-        { n: 3, naam: "luchtwoord", regel: "korte klank + cht (de ch van lucht), behalve bij hij ligt/legt/zegt" },
-        { n: 4, naam: "plankwoord", regel: "daar mag geen g tussen" },
-        { n: 5, naam: "eer-oor-eur-woord", regel: "ik schrijf ee, oo of eu (eel-woord: ee)" },
-        { n: 6, naam: "aai-ooi-oei-woord", regel: "ik hoor de /j/, maar ik schrijf de i" },
-        { n: 7, naam: "eeuw-ieuw-woord", regel: "ik denk aan de u" },
-        { n: 8, naam: "langermaakwoord", regel: "ik hoor /t/ aan het eind, dus langer maken (d of t); ook het eind-b-rijtje (b)" },
-        { n: 9, naam: "voorvoegsel", regel: "ik hoor /u/, maar ik schrijf de e (be-, ge-, ver-)" },
-        { n: 10, naam: "klankgroepenwoord", regel: "open/gesloten lettergreep: lange klank één letter, korte klank medeklinker dubbel, tweetekenklank/medeklinker schrijf je zoals je hoort" },
-        { n: 11, naam: "verkleinwoord", regel: "grondwoord + je/tje/etje/aatje/ootje/uutje" },
-        { n: 12, naam: "achtervoegsel", regel: "-ig (ik hoor /ug/, schrijf ig) en -lijk" },
-        { n: 13, naam: "kilowoord", regel: "ik hoor de /ie/, maar ik schrijf de i" },
-        { n: 14, naam: "komma-s-woord", regel: "eerst de komma, dan de s" },
-        { n: 15, naam: "centwoord", regel: "ik hoor de /s/, maar ik schrijf de c" },
-        { n: 16, naam: "komma-s-meervoud", regel: "meervoud + lange klank/y/i aan het eind: 's (behalve bij ee); ook komma-s bij bezit" },
-        { n: 17, naam: "politiewoord", regel: "ik hoor /tsie/, maar ik schrijf tie" },
-        { n: 18, naam: "colawoord", regel: "ik hoor de /k/, maar ik schrijf de c" },
-        { n: 19, naam: "tropisch-woord", regel: "ik hoor /ies/, maar ik schrijf isch" },
-        { n: 20, naam: "taxiwoord", regel: "ik hoor /ks/, maar ik schrijf x" },
-        { n: 21, naam: "chefwoord", regel: "ik hoor /sj/, maar ik schrijf ch" },
-        { n: 22, naam: "theewoord", regel: "ik hoor de /t/, maar ik schrijf th" },
-        { n: 23, naam: "caféwoord", regel: "met een streepje op de é" },
-        { n: 24, naam: "cadeauwoord", regel: "ik hoor /oo/, maar ik schrijf eau" },
-        { n: 25, naam: "routewoord", regel: "ik hoor /oe/, maar ik schrijf ou" },
-        { n: 26, naam: "garagewoord", regel: "ik hoor /zj/, maar ik schrijf g" },
-        { n: 27, naam: "lollywoord", regel: "ik schrijf de Griekse y" },
-        { n: 28, naam: "tremawoord", regel: "puntjes erop" },
-        { n: 29, naam: "militairwoord", regel: "ik schrijf -air" },
-        { n: 30, naam: "koppelteken", regel: "samenstelling met een koppelteken" },
-        { n: 31, naam: "trottoirwoord", regel: "ik schrijf -oir" },
-        { n: 32, naam: "tussen-e", regel: "tussen-e in een samenstelling" },
-        { n: 33, naam: "trema-meervoud", regel: "-ën (bij ie meestal -iën, met trema bij bacteriën, koloniën, oliën, poriën, financiën)" },
-        { n: 34, naam: "latijns voorvoegsel", regel: "" }
-      ],
-      // Losse rijtjes/afspraken (niet genummerd), met de groep waarin ze starten.
-      extra: [
-        { vanaf: 4, naam: "ei-ij", regel: "ei staat op de ei-plaat (korte ei), ij staat er niet op (lange ij); weetwoord" },
-        { vanaf: 4, naam: "au-ou", regel: "au staat op de au-plaat, ou staat er niet op; weetwoord" },
-        { vanaf: 4, naam: "uw-rijtje", regel: "ik hoor /uu/, maar ik schrijf u (uw, duw, ruw, schuw, sluw, schaduw, waarschuw, zenuw, zwaluw)" },
-        { vanaf: 4, naam: "woord met -eren/-enen/-elen", regel: "ik hoor twee keer de /u/, maar ik schrijf de e" },
-        { vanaf: 4, naam: "samenstelling", regel: "plak twee woorden samen; pas op elk deel zijn eigen categorie + regel toe" },
-        { vanaf: 5, naam: "gids-rijtje", regel: "ik denk aan de d (gids, fonds, ginds, loods, reeds, sinds, steeds)" }
-      ]
-    },
-    taalactief: {
-      naam: "Taal actief",
-      triggers: /taal\s*-?\s*actief/i,
-      uitleg: "Taal actief (Malmberg) deelt woorden in luisterwoorden (schrijf zoals je hoort), regelwoorden (pas een regel toe) en weetwoorden (uit het hoofd). De categorieën hebben eigen namen zoals plant-woord, kasteel-woord en cijfer-woord.",
-      // Eigen categorienamen + regels, voor herkenning als de leerkracht zo'n naam
-      // noemt (zelfde rol als Staal-cats, maar zonder jaar-cap).
-      cats: [
-        { naam: "plant-woord", regel: "luisterwoord: je schrijft het woord zoals je het hoort" },
-        { naam: "strik-woord", regel: "luisterwoord: je schrijft het woord zoals je het hoort" },
-        { naam: "worst-woord", regel: "luisterwoord: je schrijft het woord zoals je het hoort" },
-        { naam: "wolk-woord", regel: "luisterwoord: soms hoor je hier een /u/, maar je schrijft geen u (wolk, melk)" },
-        { naam: "berg-woord", regel: "luisterwoord: soms hoor je hier een /u/, maar je schrijft geen u (berg, worm)" },
-        { naam: "liter-woord", regel: "weetwoord: je hoort /ie/, je schrijft i" },
-        { naam: "cijfer-woord", regel: "weetwoord: je hoort /s/, je schrijft c" },
-        { naam: "insect-woord", regel: "weetwoord: je hoort /k/, je schrijft k" },
-        { naam: "krab-woord", regel: "weetwoord: je hoort /p/, je schrijft b" },
-        { naam: "thee-woord", regel: "weetwoord: je hoort /t/, je schrijft th" },
-        { naam: "garage-woord", regel: "weetwoord: je hoort /zju/, je schrijft ge" },
-        { naam: "isch-woord", regel: "weetwoord: je hoort /ies/, je schrijft isch(e)" },
-        { naam: "tie-woord", regel: "weetwoord: je hoort /tsie/ of /sie/, je schrijft tie" },
-        { naam: "kasteel-woord", regel: "regelwoord (klankgroep): een medeklinker of tweetekenklank aan het eind van de klankgroep, schrijf zoals je hoort" },
-        { naam: "jager-woord", regel: "regelwoord (klankgroep): een lange klank aan het eind van de klankgroep, schrijf met 1 letter" },
-        { naam: "bakker-woord", regel: "regelwoord (klankgroep): een korte klank aan het eind van de klankgroep, schrijf de volgende medeklinker dubbel" },
-        { naam: "keuken-woord", regel: "regelwoord (klankgroep): een tweetekenklank aan het eind van de klankgroep, schrijf zoals je hoort" },
-        { naam: "duiven-woord", regel: "regelwoord: een woord dat op /f/ eindigt wordt bij verlengen v (duif → duiven)" },
-        { naam: "huizen-woord", regel: "regelwoord: een woord dat op /s/ eindigt wordt bij verlengen z (huis → huizen)" }
-      ],
-      categorieen: [
-        "Luisterwoorden: plant-/strik-/worst-woord (schrijf zoals je hoort), wolk-/berg-woord, v-f en s-z-woord, sch-/schr-woord, ng-/nk-woord, eer-oor-eur-woord, aai-ooi-oei-woord, eeuw-ieuw-uw-woord",
-        "Weetwoorden: cht-/ch-woord (nacht/lach), ei-ij, au-ou, liter-woord (/ie/→i), cijfer-woord (/s/→c) en insect-woord, krab-woord (/p/→b), thee-woord (/t/→th), leenwoorden (team/chauffeur/taxi/baby), voor- en achtervoegsels (-ig, -lijk, -heid), garage-woord (/zju/→ge), isch(e)-woord, tie-woord, -iaal/-ieel/-ueel",
-        "Regelwoorden: verkleinwoord, -d-woord (langer maken), kasteel-/jager-/bakker-/keuken-woord (klankgroepen: open/gesloten lettergreep), duiven-/huizen-woord (f→v, s→z), vergrotende/overtreffende trap, onbeklemtoonde woorden, apostrof-'s, trema-woorden, stoffelijk bijvoeglijk naamwoord (-en), samenstellingen, hoofdletters"
-      ]
-    },
-    spellinginbeeld: {
-      naam: "Spelling in Beeld",
-      triggers: /spelling\s*in\s*beeld/i,
-      uitleg: "Spelling in Beeld (Zwijsen) ordent woorden in klankwoorden, regelwoorden en weetwoorden plus werkwoordspelling, en legt sterk de nadruk op de bijbehorende strategie (klank-, regel-, woordbeeld- en analogiestrategie). De methode gebruikt categoriecodes (K = klank, R = regel, W = weetwoord, WW = werkwoord).",
-      categorieen: [
-        "Klankwoorden (K): schrijf zoals je hoort, inclusief lastige klankgroepen (ng/nk, cht, eer-oor-eur, aai-ooi-oei, eeuw-ieuw)",
-        "Regelwoorden (R): open/gesloten lettergreep (verdubbelen/verlengen), verkleinwoord, langer maken (d/t, f→v, s→z), hoofdletters, apostrof-'s, trema, koppelteken",
-        "Weetwoorden (W): ei-ij, au-ou, leenwoorden, -isch, x, c (cent/cola), th en andere in te prenten woorden",
-        "Werkwoordspelling (WW): tegenwoordige tijd, verleden tijd en voltooid deelwoord"
-      ]
-    }
-  };
-  // Categorienaam → alleen letters, zodat "cola-woord", "cola woord" en
-  // "colawoorden" allemaal matchen op "colawoord".
-  function normNaam(s) { return String(s).toLowerCase().replace(/[^a-zà-ÿ]/g, ""); }
-  // Generieke spellingtermen die NIET uniek naar één methode wijzen (en dus geen
-  // methode-detectie mogen forceren).
-  var GENERIEKE_CAT = /^(voorvoegsel|achtervoegsel|verkleinwoord|samenstelling|klankgroepenwoord|komma|tussen-e|koppelteken|latijns|trema-meervoud)/;
-  // Komt een herkenbare categorienaam van deze methode in de tekst voor?
-  // (Mascotte-namen zoals colawoord én beschrijvende zoals eeuw-ieuw-woord;
-  // generieke termen tellen niet mee.)
-  function catNaamHit(m, normTxt) {
-    if (!m.cats) return false;
-    for (var i = 0; i < m.cats.length; i++) {
-      if (GENERIEKE_CAT.test(m.cats[i].naam.toLowerCase())) continue;
-      var nn = normNaam(m.cats[i].naam);
-      if (nn.length >= 6 && normTxt.indexOf(nn) !== -1) return true;
-    }
-    return false;
-  }
-  function spellingMethodeKey(context) {
-    var txt = String(context || ""), normTxt = normNaam(txt);
-    for (var k in SPELLING_METHODES) {
-      if (SPELLING_METHODES.hasOwnProperty(k) && SPELLING_METHODES[k].triggers.test(txt)) return k;
-    }
-    // Categorienaam zonder methodenaam: Staal eerst (gedeelde namen → Staal,
-    // zelfde regel), dan Taal actief. Spelling in Beeld heeft geen namen (codes).
-    if (catNaamHit(SPELLING_METHODES.staal, normTxt)) return "staal";
-    if (catNaamHit(SPELLING_METHODES.taalactief, normTxt)) return "taalactief";
-    return null;
-  }
-
-  // Staal bouwt de categorieën per leerjaar op. Cumulatieve eindstand per groep
-  // (geverifieerd aan de Malmberg-regelkaarten groep 4 t/m 8; groep 3 = t/m 7).
-  var STAAL_GROEPMAX = { "3": 7, "4": 12, "5": 19, "6": 28, "7": 34, "8": 34 };
-  // Fractie van het schooljaar dat de NIEUWE categorieën van dit leerjaar al zijn
-  // aangeboden (schatting per maand; aug = jaarstart, jun/jul = afgerond). Bewust
-  // aan de ruime kant: liever een categorie al beschikbaar dan een die de klas
-  // net behandeld heeft nog missen. Samen met Math.ceil komt elke nieuwe
-  // categorie er net iets eerder bij dan strikt naar rato.
-  function maandFractie(maand) {
-    var f = { 8: 0.0, 9: 0.12, 10: 0.25, 11: 0.4, 12: 0.5, 1: 0.6, 2: 0.7, 3: 0.8, 4: 0.88, 5: 0.95, 6: 1.0, 7: 1.0 };
-    return f[maand] != null ? f[maand] : 1.0;
-  }
-  // Hoogste Staal-categorienummer dat een groep op dit punt in het jaar heeft gehad.
-  function staalCap(groep, maand) {
-    var m = String(groep || "").match(/[3-8]/);
-    if (!m) return 34; // onbekende groep: toon alles
-    var g = +m[0];
-    var eind = STAAL_GROEPMAX[g] || 34;
-    var begin = STAAL_GROEPMAX[g - 1] || 0; // eindstand vorige groep = beginstand nu
-    return Math.min(eind, begin + Math.ceil((eind - begin) * maandFractie(maand)));
-  }
+  // ── Spellingmethodes: alleen HERKENNEN, niet reproduceren ─────────────────
+  // Veel scholen werken met een vaste spellingmethode (Staal, Taal actief,
+  // Spelling in Beeld) met eigen categorienamen. Een leerkracht typt die termen
+  // ("maak een werkblad over het colawoord"). De tool HERKENT die term wel — de
+  // woordenbank hieronder matcht via `test` ook methode-jargon — maar koppelt 'm
+  // aan een EIGEN, methode-neutrale categorie met een eigen regel (in eigen
+  // woorden) en eigen, gecureerde woorden. Het categoriesysteem, de namen en de
+  // regelformuleringen van een uitgever worden NIET opgeslagen of gereproduceerd,
+  // en een methodenaam komt nooit in de tekst die de leerling ziet.
+  // (Avinka is niet gelieerd aan of goedgekeurd door de uitgevers; een
+  // methodenaam dient alleen om de juiste terminologie te treffen. Het niveau per
+  // leerjaar loopt via de eigen SLO-spellingleerlijn, niet via een methode-opbouw.)
+  var METHODE_NAAM = /\bstaal\b|taal\s*-?\s*actief|spelling\s*in\s*beeld|schraven|zwijsen|malmberg/i;
 
   // ── Woordenbank per spellingcategorie ──────────────────────────────────────
   // De AI maakt te vaak spelfouten (krisis) of kiest woorden buiten de categorie
@@ -603,76 +458,76 @@
   // Taal actief-naam of een fonetische omschrijving). Volgorde = prioriteit.
   // Uitbreidbaar: voeg een categorie of woorden toe (alles met de hand geverifieerd).
   var SPELLING_WOORDEN = [
-    { naam: "kilowoord (je hoort /ie/, je schrijft i)",
+    { naam: "woorden waarin je /ie/ hoort maar één i schrijft (zoals kilo, liter)",
       test: /kilo\s*-?woord|liter\s*-?woord|hoor.{0,8}ie.{0,18}schrijf.{0,8}\bi\b|\bi\b[^a-z]{0,8}(klinkt als|als)[^a-z]{0,4}ie/,
-      woorden: ["kilo", "liter", "prima", "titel", "crisis", "figuur", "minus", "via", "diploma", "positief", "negatief", "januari", "februari"] },
-    { naam: "centwoord (je hoort /s/, je schrijft c)",
+      woorden: ["kilo", "liter", "prima", "titel", "crisis", "figuur", "minus", "via", "diploma", "januari", "februari"] },
+    { naam: "de c die klinkt als /s/ (zoals cent, citroen)", bank: "c_als_s",
       test: /cent\s*-?woord|cijfer\s*-?woord|\bc\b[^a-z]{0,8}als[^a-z]{0,4}s\b|hoor.{0,8}\/?s\/?.{0,18}schrijf.{0,8}\bc\b/,
       woorden: ["cent", "citroen", "cirkel", "centrum", "cijfer", "december", "procent", "cement", "centimeter", "ceintuur"] },
-    { naam: "colawoord (je hoort /k/, je schrijft c)",
+    { naam: "de c die klinkt als /k/ (zoals cola, cactus)", bank: "c_als_k",
       test: /cola\s*-?woord|insect\s*-?woord|\bc\b[^a-z]{0,8}als[^a-z]{0,4}k\b|hoor.{0,8}\/?k\/?.{0,18}schrijf.{0,8}\bc\b/,
       woorden: ["cola", "club", "computer", "cactus", "contact", "concert", "camera", "cacao", "container", "copiloot"] },
-    { naam: "politiewoord / tie-woord (je hoort /(t)sie/, je schrijft tie)",
+    { naam: "woorden op -tie (je hoort /(t)sie/, je schrijft tie)", bank: "tie",
       test: /politie\s*-?woord|tie\s*-?woord|woorden? (op|met)\s*-?tie\b|tsie/,
       woorden: ["politie", "vakantie", "traktatie", "informatie", "portie", "conditie", "natie", "optie", "emotie", "sensatie", "organisatie"] },
-    { naam: "tropisch-woord / isch-woord (je hoort /ies/, je schrijft isch)",
+    { naam: "woorden op -isch (je hoort /ies/, je schrijft isch)", bank: "isch",
       test: /tropisch\s*-?woord|isch\s*-?woord|woorden? (op|met)\s*-?isch\b/,
       woorden: ["tropisch", "logisch", "magisch", "fantastisch", "praktisch", "automatisch", "komisch", "typisch", "elektrisch", "historisch"] },
-    { naam: "taxiwoord / x-woord (je hoort /ks/, je schrijft x)",
+    { naam: "de x die je als /ks/ hoort (zoals taxi, examen)", bank: "x",
       test: /taxi\s*-?woord|\bx\s*-?woord|woorden? met (de )?\bx\b/,
       woorden: ["taxi", "examen", "extra", "exact", "maximaal", "expert", "export", "saxofoon", "exemplaar", "exotisch"] },
-    { naam: "chefwoord (je hoort /sj/, je schrijft ch)",
+    { naam: "de ch die klinkt als /sj/ (zoals chef, machine)", bank: "ch_sj",
       test: /chef\s*-?woord|\bch\b[^a-z]{0,8}als[^a-z]{0,4}sj|hoor.{0,8}sj.{0,18}schrijf.{0,8}\bch\b/,
       woorden: ["chef", "machine", "chocolade", "douche", "parachute", "chic", "brochure", "charmant", "chauffeur", "champignon"] },
-    { naam: "theewoord / th-woord (je hoort /t/, je schrijft th)",
+    { naam: "de th die je als /t/ hoort (zoals thee, thema)", bank: "th",
       test: /thee\s*-?woord|\bth\s*-?woord|woorden? met th\b/,
       woorden: ["thee", "thema", "theater", "thermometer", "bibliotheek", "apotheek", "theorie", "thuis", "methode"] },
-    { naam: "garagewoord (je hoort /zj/, je schrijft g)",
+    { naam: "de g die klinkt als /zj/ (zoals garage, etage)",
       test: /garage\s*-?woord|\bg\b[^a-z]{0,8}als[^a-z]{0,4}zj|hoor.{0,8}zj.{0,18}schrijf.{0,8}\bg\b/,
       woorden: ["garage", "etage", "bagage", "horloge", "massage", "etalage", "passagier", "reportage", "collage"] },
-    { naam: "cadeauwoord (je hoort /oo/, je schrijft eau)",
+    { naam: "woorden met -eau (je hoort /oo/, je schrijft eau)", bank: "eau",
       test: /cadeau\s*-?woord|woorden? met eau\b|\beau\b/,
       woorden: ["cadeau", "bureau", "plateau", "niveau"] },
-    { naam: "caféwoord (met een streepje op de é)",
+    { naam: "woorden met een accentstreepje op de é (zoals café, privé)", bank: "accent_e",
       test: /caf[eé]\s*-?woord|streepje op de e|accent.{0,8}\bé?e\b/,
       woorden: ["café", "privé", "coupé", "logé", "cliché", "attaché"] },
-    { naam: "eer-oor-eur-woord (ee, oo of eu)",
+    { naam: "woorden met eer, oor of eur", bank: "eer_oor_eur",
       test: /eer\s*-?oor\s*-?eur|eer.{0,2}oor.{0,2}eur|woorden? met (eer|oor|eur)\b/,
       woorden: ["beer", "peer", "meer", "deur", "kleur", "geur", "oor", "door", "voor", "spoor", "keer", "leer"] },
-    { naam: "aai-ooi-oei-woord (je hoort /j/, je schrijft i)",
+    { naam: "woorden met aai, ooi of oei (je hoort /j/, je schrijft i)", bank: "aai_ooi_oei",
       test: /aai\s*-?ooi\s*-?oei|aai.{0,2}ooi.{0,2}oei|woorden? met (aai|ooi|oei)\b/,
       woorden: ["haai", "kraai", "draai", "mooi", "kooi", "gooi", "groei", "bloei", "boei", "fraai"] },
-    { naam: "eeuw-ieuw-woord (denk aan de u)",
+    { naam: "woorden met eeuw of ieuw", bank: "eeuw_ieuw",
       test: /eeuw\s*-?ieuw|eeuw.{0,2}ieuw|woorden? met (eeuw|ieuw)\b/,
       woorden: ["leeuw", "sneeuw", "eeuw", "meeuw", "nieuw", "kieuw", "spreeuw", "geeuw"] },
-    { naam: "uw-rijtje (je hoort /uu/, je schrijft u)",
+    { naam: "woorden met uw (je hoort /uu/, je schrijft u)",
       test: /uw\s*-?(rijtje|woord)|woorden? met uw\b/,
       woorden: ["uw", "duw", "ruw", "schuw", "sluw", "schaduw", "zenuw", "zwaluw"] },
-    { naam: "ei-ij (weetwoord: korte ei of lange ij)",
+    { naam: "woorden met ei of ij (weetwoorden)", bank: "ei_ij",
       test: /\bei\s*-?\/?\s*ij\b|ei en ij|ij en ei|woorden? met ei\b|woorden? met ij\b/,
       woorden: ["trein", "klein", "plein", "reis", "geit", "eind", "ijs", "fijn", "pijn", "wijn", "tijd", "rijk", "kijk", "zwijn"] },
-    { naam: "au-ou (weetwoord)",
+    { naam: "woorden met au of ou (weetwoorden)", bank: "au_ou",
       test: /\bau\s*-?\/?\s*ou\b|au en ou|ou en au|woorden? met au\b|woorden? met ou\b/,
       woorden: ["blauw", "gauw", "nauw", "dauw", "saus", "pauw", "auto", "kabouter", "koud", "goud", "hout", "zout", "fout", "vrouw", "schouder"] },
-    { naam: "luchtwoord / cht-woord (korte klank + cht)",
+    { naam: "woorden met cht (korte klank + cht)", bank: "cht",
       test: /lucht\s*-?woord|\bcht\s*-?woord|woorden? met cht\b/,
       woorden: ["licht", "nacht", "lucht", "recht", "zacht", "vlucht", "gracht", "kracht", "wacht", "dicht"] },
-    { naam: "zingwoord / nk-woord (ng en nk)",
+    { naam: "woorden met ng of nk", bank: "ng_nk",
       test: /zing\s*-?woord|\bng\s*-?nk\b|woorden? met (ng|nk)\b/,
       woorden: ["ding", "koning", "slang", "ring", "jong", "bank", "dank", "plank", "drinken", "bedankt"] },
-    { naam: "langermaakwoord (je hoort /t/ aan het eind, je maakt langer: d of t)",
+    { naam: "woorden die op een /t/-klank eindigen maar met d of t (langer maken)", bank: "langermaak_d",
       test: /langer\s*-?maak|verlengwoord|hoor.{0,6}\bt\b.{0,16}schrijf.{0,6}\bd\b|eindigt op (een )?d\b/,
       woorden: ["hand", "hond", "bord", "paard", "woord", "mand", "wind", "hemd", "eend", "rand"] },
-    { naam: "duivenwoord (woord op /f/ wordt v bij verlengen)",
+    { naam: "woorden op /f/ die met v worden verlengd (duif → duiven)", bank: "f_naar_v",
       test: /duiven\s*-?woord|\bf\b[^a-z]{0,6}(wordt|naar)[^a-z]{0,4}v\b|woord.{0,8}eindigt op (een )?f\b/,
       woorden: ["duif", "brief", "doof", "lief", "golf", "wolf", "druif", "schroef"] },
-    { naam: "huizenwoord (woord op /s/ wordt z bij verlengen)",
+    { naam: "woorden op /s/ die met z worden verlengd (huis → huizen)", bank: "s_naar_z",
       test: /huizen\s*-?woord|\bs\b[^a-z]{0,6}(wordt|naar)[^a-z]{0,4}z\b|woord.{0,8}eindigt op (een )?s\b/,
       woorden: ["huis", "neus", "roos", "muis", "kaas", "gans", "vaas", "glas", "prijs"] },
-    { naam: "verkleinwoord (grondwoord + je/tje/etje/...)",
+    { naam: "verkleinwoorden (-je, -tje, -etje …)", bank: "verkleinwoord",
       test: /verkleinwoord|verkleining/,
       woorden: ["boom", "bloem", "man", "bal", "stoel", "koning", "raam", "huis", "kar", "tafel"] },
-    { naam: "klankgroepenwoord (open/gesloten lettergreep: verdubbelen of verlengen)",
+    { naam: "open en gesloten lettergrepen (verdubbelen of verlengen: man → mannen, maan → manen)", bank: "open_gesloten",
       test: /klankgroep|open.{0,4}gesloten|verdubbel|kasteel\s*-?woord|jager\s*-?woord|bakker\s*-?woord/,
       woorden: ["boom", "bom", "raam", "ram", "pot", "pen", "kar", "bal", "vis", "man", "zon", "kip"] }
   ];
@@ -710,57 +565,27 @@
       var greep = sample(blok.lijst, n || 12);
       return blok.kern + "\nEen greep uit de werkvorm-base (kies er één of twee die echt bij dít leerdoel en deze groep passen en werk ze concreet uit met het leerdoel erin; varieer en stem het niveau af op de bouw): " + greep.map(function (x) { return "• " + x; }).join("  ");
     },
-    // Spellingmethode uit de tekst halen (lesdoel + aanvullingen, bv. "het
-    // colawoord van de methode Staal") en de categorie-indeling + namen/regels
-    // teruggeven, of ''. Noemt de tekst een specifieke categorie, dan komt die
-    // regel altijd mee (ook boven de jaar-cap). groep + maand sturen bij Staal de
-    // opbouw: alleen de categorieën die de groep op dit punt in het schooljaar al
-    // gehad heeft. maand = 1-12 (default de huidige maand).
-    spellingMethode: function (context, groep, maand) {
-      var key = spellingMethodeKey(context);
-      if (!key) return "";
-      var m = SPELLING_METHODES[key];
-      var kop = "SPELLINGMETHODE: de school werkt met " + m.naam + ". " + m.uitleg +
-        " Gebruik in deze les de categorie-indeling, de categorienamen én de regelformuleringen van " + m.naam +
-        " (precies zoals de methode ze noemt), niet die van een andere methode. Neem elke regel EXACT over zoals die hieronder staat en verzin er zelf GEEN extra deel bij: als de regel alleen \"ik denk aan de u\" is, schrijf dan precies dat, niet \"ik hoor /w/, ik denk aan de u\". Niet elke categorie volgt het patroon \"ik hoor ..., maar ik schrijf ...\". Behandel bij voorkeur één hoofdcategorie per les en verwijs waar dat helpt naar eerder geleerde categorieën." +
-        " Leg in de les de spellingregel van de behandelde categorie EXPLICIET uit in kindtaal en gebruik meerdere passende voorbeeldwoorden uit die categorie. Noem de naam van de methode (" + m.naam + ") niet in de tekst die voor de leerlingen bedoeld is; die is alleen voor jou als kader." +
-        " BELANGRIJK: gebruik de methode alléén om aan te sluiten op de categorienamen, regels en het niveau. Maak GÉÉN kopie van een gewone methodeles. De les moet een eigen, goed uitgedachte en aantrekkelijke les blijven met een sterke didactische opbouw, een pakkende context en actieve werkvormen, die méér biedt dan een standaard methodeles (anders kan de leerkracht net zo goed de methode zelf pakken).";
-
-      // Noemt de leerkracht een specifieke categorie van deze methode (bv.
-      // "colawoord", "eeuw-ieuw-woord")? Geef die regel dan altijd mee.
-      var normTxt = normNaam(context);
-      var doelCat = null;
-      if (m.cats) { for (var i = 0; i < m.cats.length; i++) { if (normTxt.indexOf(normNaam(m.cats[i].naam)) !== -1) { doelCat = m.cats[i]; break; } } }
-      var doelRegel = doelCat
-        ? ("\nDeze les gaat specifiek over de categorie \"" + doelCat.naam + "\"" + (doelCat.regel ? ": " + doelCat.regel : "") +
-          ". Behandel deze categorie als hoofdonderwerp: leg de regel expliciet uit en gebruik meerdere voorbeeldwoorden die in deze categorie passen.")
-        : "";
-
-      // Staal: jaaropbouw (cap op categorienummer).
-      if (m.jaaropbouw) {
-        if (maand == null) { try { maand = new Date().getMonth() + 1; } catch (e) { maand = 6; } }
-        var g = (String(groep || "").match(/[3-8]/) || [])[0];
-        var cap = staalCap(groep, maand);
-        var beschikbaar = m.cats.filter(function (c) { return c.n <= cap; });
-        var extras = g ? m.extra.filter(function (e) { return e.vanaf <= +g; }) : m.extra;
-        var uit = kop +
-          " LET OP de opbouw: deze klas (groep " + (g || "?") + ") heeft op dit moment in het schooljaar de categorieën t/m nummer " + cap +
-          " gehad. Gebruik ALLEEN deze (en eerder geleerde) categorieën en introduceer geen latere; tenzij de leerkracht in het lesdoel of de aanvullingen zelf een latere categorie noemt." +
-          doelRegel +
-          "\nBeschikbare categorieën van " + m.naam + ":\n" +
-          beschikbaar.map(function (c) { return "• " + c.n + ". " + c.naam + (c.regel ? ": " + c.regel : ""); }).join("\n");
-        if (extras.length) {
-          uit += "\nLosse rijtjes/afspraken die al behandeld zijn:\n" +
-            extras.map(function (e) { return "• " + e.naam + ": " + e.regel; }).join("\n");
-        }
-        return uit;
+    // Herkent de spellingcategorie die de leerkracht noemt — ook in het jargon van
+    // een methode ("het colawoord van Staal", "kasteel-woord") — en geeft een
+    // EIGEN, methode-neutrale instructie terug, of ''. De methode wordt dus wél
+    // begrepen, maar niet gereproduceerd: geen categorie-indeling, namen of
+    // regelformuleringen van een uitgever, en de methodenaam komt niet in de
+    // leerlingtekst. Het niveau loopt via de eigen SLO-spellingleerlijn (`voor`),
+    // niet via een methode-opbouw. De bijbehorende correcte woorden komen uit
+    // `spellingWoorden`.
+    spellingMethode: function (context, groep) {
+      var cat = vindSpellingCat(context);
+      var noemtMethode = METHODE_NAAM.test(String(context || ""));
+      if (!cat && !noemtMethode) return "";
+      var kern = "SPELLINGCATEGORIE (eigen, methode-neutrale aanpak). Een leerkracht gebruikt vaak de termen van de eigen spellingmethode. Herken die term, maar gebruik in de les/het werkblad je EIGEN, neutrale uitleg: neem geen categorienaam, regelformulering of indeling van een methode over, en zet de naam van een methode NIET in de tekst die de leerling ziet. Maak er een eigen, goed opgebouwde en aantrekkelijke les/werkblad van die méér biedt dan een rij oefenwoorden.";
+      if (cat) {
+        return kern +
+          "\nDeze les/dit werkblad gaat over de categorie: " + cat.naam + "." +
+          " Behandel die als hoofdonderwerp: leg de spellingregel in kindtaal en in je eigen woorden uit, en gebruik meerdere passende voorbeeldwoorden uit de woordenbank.";
       }
-
-      // Overige methodes (geen jaar-cap): algemene categorielijst + evt. de
-      // herkende categorie met haar regel.
-      return kop + " Kies de categorie(ën) die past bij het lesdoel en het niveau van de groep." + doelRegel +
-        "\nCategorieën van " + m.naam + ":\n" +
-        m.categorieen.map(function (c) { return "• " + c; }).join("\n");
+      // Alleen een methodenaam genoemd, geen specifieke categorie.
+      return kern +
+        " De leerkracht noemt wel een methode maar geen specifieke categorie: kies een spellingcategorie die past bij het leerjaar (zie de leerlijn-context) en werk die uit.";
     },
     // Gecureerde woordenbank voor de spellingcategorie die in de tekst (onderwerp
     // + aanvullingen) wordt genoemd. Geeft een kant-en-klare instructie-string met
@@ -769,7 +594,17 @@
     spellingWoorden: function (context, groep) {
       var cat = vindSpellingCat(context);
       if (!cat) return "";
-      return "VERPLICHTE WOORDENBANK voor de categorie \"" + cat.naam + "\". Gebruik in de oefeningen UITSLUITEND woorden uit deze lijst: ze zijn correct gespeld en horen gegarandeerd bij deze categorie. Kies er een passende selectie uit (niet per se allemaal) en verzin ZELF GEEN andere categoriewoorden; neem ze exact over zoals ze hier staan. Woorden: " + cat.woorden.join(", ") + ".";
+      var woorden = cat.woorden; // terugval = de met de hand gecureerde lijst
+      // Nieuwe woordenbank (public/avinka-woordenbank.js): groot, per groep, schoon
+      // en kindveilig. Gebruik die als de categorie er in zit en de groep bekend is.
+      var g = (String(groep || "").match(/[3-8]/) || [])[0];
+      if (cat.bank && g && window.avinkaWoordenbank && window.avinkaWoordenbank[cat.bank]) {
+        var pool = window.avinkaWoordenbank[cat.bank]
+          .filter(function (x) { return x[1] <= +g; })
+          .map(function (x) { return x[0]; });
+        if (pool.length >= 8) woorden = sample(pool, Math.min(28, pool.length));
+      }
+      return "VERPLICHTE WOORDENBANK voor de categorie \"" + cat.naam + "\". Gebruik in de oefeningen UITSLUITEND woorden uit deze lijst: ze zijn correct gespeld, kindgeschikt en horen gegarandeerd bij deze categorie. Kies er een passende selectie uit (niet per se allemaal) en verzin ZELF GEEN andere categoriewoorden; neem ze exact over zoals ze hier staan. Woorden: " + woorden.join(", ") + ".";
     },
     verwerkingen: function (vak, groep, n) {
       if (!isZaakvakKey(vak)) return "";

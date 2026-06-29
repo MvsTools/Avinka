@@ -1,0 +1,14 @@
+# Grote open-bronbestanden (lokaal gedownload, niet in git).
+# OpenTaal: https://github.com/OpenTaal/opentaal-wordlist (BSD-3 / CC-BY-3.0)
+# Frequentie: https://github.com/hermitdave/FrequencyWords (CC-BY-SA-4.0)
+# Werkwoorden: https://gist.github.com/Horroon (onregelmatige)
+_bron/*
+
+# ... behalve de AI-oordelen + cache: die WEL meecommitten, zodat de bank
+# reproduceerbaar is en herbouwen geen nieuwe AI-kosten maakt.
+!_bron/ai-cache.json
+!_bron/ww-afgekeurd.txt
+!_bron/extra-werkwoordsvormen.txt
+!_bron/ongepast.txt
+!_bron/engels.txt
+!_bron/scheldwoorden-nl.txt
