@@ -138,9 +138,23 @@ function uitCache(tag) {
   console.log(`Pass 5 (categorie-expliciet): ${uitCache("veilig2").size} ongepast.`);
 
   // ongepast.txt = unie van beide veiligheidspasses.
-  const ongepastAll = new Set([...uitCache("ongepast"), ...uitCache("veilig2")]);
+  // Pass 7: VOLWASSEN/SEKSUEEL onderwerp (geen scheldwoord, maar niet voor kinderen).
+  // Let op: gericht op het ONDERWERP, NIET op moeilijkheid (lastige groep 7/8-woorden
+  // moeten blijven).
+  await keur(alleWoorden,
+    "Beoordeel deze Nederlandse woorden voor een werkblad voor basisschoolkinderen (groep 3-8). " +
+    "Geef UITSLUITEND de woorden terug die over een VOLWASSEN, SEKSUEEL of EROTISCH onderwerp gaan " +
+    "dat niet op een kinderwerkblad hoort: seks en seksualiteit, seksuele orientatie (lesbisch, " +
+    "homoseksueel, biseksueel), erotiek/porno, expliciete lichaams- of relatie-intimiteit, " +
+    "prostitutie. BELANGRIJK: het gaat ALLEEN om het ONDERWERP, NIET om moeilijkheid. Een moeilijk " +
+    "of abstract woord (relatie, democratie, filosofie, puberteit, verliefd) is gewoon goed en " +
+    "blijft STAAN — haal niets weg omdat het lastig of 'te volwassen qua niveau' is. Alleen " +
+    "seksueel/erotisch/orientatie-onderwerp eruit. Geef een JSON array van strings, geen uitleg.", "volwassen");
+  console.log(`Pass 7 (volwassen onderwerp): ${uitCache("volwassen").size} eruit.`);
+
+  const ongepastAll = new Set([...uitCache("ongepast"), ...uitCache("veilig2"), ...uitCache("volwassen")]);
   fs.writeFileSync(BRON("ongepast.txt"), [...ongepastAll].sort().join("\n"));
-  console.log(`Totaal ongepast (beide passes): ${ongepastAll.size}.`);
+  console.log(`Totaal ongepast (alle passes): ${ongepastAll.size}.`);
 
   // ── Pass 6: Engelse namen/woorden uit de LEENWOORD-categorieen ─────────────
   const LEEN = ["c_als_s", "c_als_k", "x", "ch_sj", "th", "accent_e", "eau", "isch", "y_grieks"];

@@ -40,6 +40,7 @@ atoombommen
 autobom
 autopsie
 babe
+babes
 bajes
 bajonetten
 bakkes
@@ -87,6 +88,7 @@ beschieten
 beschonken
 besmeuren
 besnijden
+besnijdenis
 bespotten
 besteelt
 betasten
@@ -269,6 +271,7 @@ gajes
 gangsters
 gassen
 gay
+geaardheid
 gebeft
 gebochelde
 gedatet
@@ -362,6 +365,8 @@ hoerenjong
 hoerenkast
 hoerig
 hoerige
+homo
+homohuwelijk
 hoofdschot
 huurmoord
 illegalen
@@ -380,6 +385,7 @@ inseminatie
 insinueer
 insinueert
 intimideert
+intimiteit
 intimiteiten
 islamitisch
 jachtgeweer
@@ -454,6 +460,8 @@ leeggebloed
 lemmet
 lesbienne
 lesbiennes
+lesbisch
+lesbische
 leverkanker
 lichtkogel
 lichtkogels
@@ -508,6 +516,8 @@ middelvinger
 mijnen
 mijnenveld
 minnaars
+minnares
+minnaressen
 misdaad
 mishandeld
 mishandeling
@@ -929,6 +939,7 @@ voyeur
 vozen
 vreten
 vrijen
+vrijers
 vrijpartij
 vrijt
 vrouwenhater

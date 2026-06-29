@@ -184,6 +184,10 @@ const BLOCK = new Set([
   // gecureerd uit de LDNOOBW NL-scheldwoordenlijst (onschuldige homoniemen als
   // schatje/zaadje/nicht/wippen bewust NIET geweerd):
   "aso","beffen","naaien","ouwehoeren","piesen","pijpen","poepen","rukken","verkloten","verneuken","vingeren","zeiken",
+  // volwassen/seksueel onderwerp (geen scheldwoord, maar niet voor een kinderwerkblad):
+  "lesbisch","homoseksueel","homoseksualiteit","homo","homos","biseksueel","seks","seksueel","seksuele","seksualiteit",
+  "erotisch","erotiek","orgasme","porno","pornografie","condoom","condooms","prostituee","prostitutie","bordeel",
+  "vagina","penis","clitoris","masturberen","vrijen","geslachtsdeel","geslachtsgemeenschap","seksen","viagra",
 ]);
 
 function kindgeschikt(w) {
