@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getVoorkeuren, saveVoorkeuren, type Voorkeuren } from "@/lib/db";
 
 // Voorkeuren staan in je eigen account (Supabase, per user-id afgeschermd).
@@ -177,8 +177,8 @@ export default function VoorkeurenForm() {
     aanspreekvorm: "je",
   });
   const [geladen, setGeladen] = useState(false);
-  const [bezig, setBezig] = useState(false);
-  const [opgeslagen, setOpgeslagen] = useState(false);
+  const [status, setStatus] = useState<"" | "bezig" | "klaar" | "fout">("");
+  const eersteNaLaden = useRef(true);
 
   useEffect(() => {
     (async () => {
@@ -194,20 +194,44 @@ export default function VoorkeurenForm() {
     })();
   }, []);
 
-  async function bewaar() {
-    setBezig(true);
-    const ok = await saveVoorkeuren(v);
-    setBezig(false);
-    if (ok) {
-      setOpgeslagen(true);
-      setTimeout(() => setOpgeslagen(false), 2500);
+  // Automatisch bewaren (kort uitgesteld) bij elke wijziging. De eerste keer net
+  // na het laden slaan we over, anders bewaren we de zojuist geladen gegevens weer.
+  useEffect(() => {
+    if (!geladen) return;
+    if (eersteNaLaden.current) {
+      eersteNaLaden.current = false;
+      return;
     }
-  }
+    const id = setTimeout(async () => {
+      setStatus("bezig");
+      const ok = await saveVoorkeuren(v);
+      setStatus(ok ? "klaar" : "fout");
+      if (ok) setTimeout(() => setStatus(""), 2000);
+    }, 700);
+    return () => clearTimeout(id);
+  }, [v, geladen]);
 
   if (!geladen) return null;
 
   return (
     <>
+    <div className="sticky top-2 z-10 flex justify-end">
+      <span className="rounded-full border border-black/5 bg-white/90 px-3 py-1 text-xs shadow-sm backdrop-blur">
+        {status === "bezig" && <span className="text-ink/50">Bewaren…</span>}
+        {status === "klaar" && (
+          <span className="font-semibold text-emerald-600">✓ Opgeslagen</span>
+        )}
+        {status === "fout" && (
+          <span className="font-semibold text-red-600">
+            Opslaan lukte niet, probeer het zo nog eens
+          </span>
+        )}
+        {status === "" && (
+          <span className="text-ink/40">Wijzigingen bewaren we automatisch</span>
+        )}
+      </span>
+    </div>
+
     <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-sm sm:p-7">
       <h2 className="text-lg font-bold text-ink">Schoolgegevens</h2>
       <p className="mt-1 text-sm text-ink/55">
@@ -280,18 +304,6 @@ export default function VoorkeurenForm() {
       />
     </div>
 
-    <div className="flex items-center gap-3">
-        <button
-          onClick={bewaar}
-          disabled={bezig}
-          className="rounded-2xl bg-brand px-6 py-3 text-base font-bold text-white shadow-lg shadow-brand/25 transition hover:bg-brand-dark disabled:opacity-60"
-        >
-          {bezig ? "Bewaren…" : "Bewaren"}
-        </button>
-        {opgeslagen && (
-          <span className="text-sm font-semibold text-emerald-600">✓ Opgeslagen</span>
-        )}
-      </div>
     </>
   );
 }
