@@ -70,9 +70,106 @@ function KeuzeRij({
   );
 }
 
+type SchoolTreffer = { n: string; p: string; pc: string; b: string; v: string };
+
+// Zoek-en-kies je school uit het DUO-register (/api/scholen). Een gekozen school
+// zet de exacte naam + BRIN + vestigingscode, zodat de maskering altijd klopt en
+// de school later aan de org-laag te koppelen is. Vrij typen mag ook (vangnet):
+// dan wist de keuze het BRIN, want dan is het geen geregistreerde school meer.
+function SchoolKiezer({
+  naam,
+  brin,
+  zet,
+}: {
+  naam: string;
+  brin: string;
+  zet: (naam: string, brin: string, vestiging: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [treffers, setTreffers] = useState<SchoolTreffer[]>([]);
+
+  // Debounced zoeken, alleen terwijl het lijstje open is (geen zoekje bij laden).
+  // De setState's staan in de timeout-callback, niet synchroon in de effect-body.
+  useEffect(() => {
+    if (!open) return;
+    const term = naam.trim();
+    const id = setTimeout(async () => {
+      if (term.length < 2) {
+        setTreffers([]);
+        return;
+      }
+      try {
+        const r = await fetch(`/api/scholen?q=${encodeURIComponent(term)}`);
+        const j = await r.json();
+        setTreffers(Array.isArray(j.scholen) ? j.scholen : []);
+      } catch {
+        setTreffers([]);
+      }
+    }, 200);
+    return () => clearTimeout(id);
+  }, [naam, open]);
+
+  function kies(s: SchoolTreffer) {
+    zet(s.n, s.b, s.v);
+    setOpen(false);
+    setTreffers([]);
+  }
+
+  return (
+    <div className="relative mt-1.5 max-w-md">
+      <input
+        id="schoolnaam"
+        value={naam}
+        autoComplete="off"
+        onChange={(e) => {
+          setOpen(true);
+          zet(e.target.value, "", ""); // vrij typen → geen geregistreerde school
+        }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        placeholder="Zoek je school, bijv. Regenboog Amsterdam"
+        className="w-full rounded-xl border border-black/10 bg-cream px-4 py-3 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+      />
+      {open && treffers.length > 0 && (
+        <ul className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-xl border border-black/10 bg-white py-1 shadow-lg">
+          {treffers.map((s) => (
+            <li key={s.v}>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => kies(s)}
+                className="block w-full px-4 py-2.5 text-left text-sm hover:bg-brand-soft"
+              >
+                <span className="font-semibold text-ink">{s.n}</span>
+                <span className="text-ink/50">
+                  {" · "}
+                  {s.p}
+                  {s.pc ? ` · ${s.pc}` : ""}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {brin ? (
+        <p className="mt-1.5 text-xs font-medium text-emerald-600">
+          ✓ Gekozen uit het schoolregister (BRIN {brin})
+        </p>
+      ) : (
+        <p className="mt-1.5 text-xs text-ink/45">
+          Kies je school uit de lijst, dan klopt de naam precies. Staat hij er niet
+          bij? Typ hem gewoon zelf.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function VoorkeurenForm() {
   const [v, setV] = useState<Voorkeuren>({
     schoolnaam: "",
+    school_brin: "",
+    school_vestiging: "",
     standaardgroep: "",
     toon: "warm",
     taalniveau: "standaard",
@@ -121,12 +218,17 @@ export default function VoorkeurenForm() {
         <label htmlFor="schoolnaam" className="block text-sm font-bold text-ink">
           Naam van je school
         </label>
-        <input
-          id="schoolnaam"
-          value={v.schoolnaam}
-          onChange={(e) => setV({ ...v, schoolnaam: e.target.value })}
-          placeholder="Bijv. De Regenboog"
-          className="mt-1.5 w-full max-w-md rounded-xl border border-black/10 bg-cream px-4 py-3 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+        <SchoolKiezer
+          naam={v.schoolnaam}
+          brin={v.school_brin}
+          zet={(naam, brin, vestiging) =>
+            setV({
+              ...v,
+              schoolnaam: naam,
+              school_brin: brin,
+              school_vestiging: vestiging,
+            })
+          }
         />
       </div>
 
