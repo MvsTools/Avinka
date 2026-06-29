@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { getVoorkeuren, saveVoorkeuren, type Voorkeuren } from "@/lib/db";
 
 // Voorkeuren staan in je eigen account (Supabase, per user-id afgeschermd).
@@ -36,19 +36,24 @@ function KeuzeRij({
   opties,
   waarde,
   zet,
+  extra,
 }: {
   titel: string;
   hint?: string;
   opties: { waarde: string; label: string }[];
   waarde: string;
   zet: (w: string) => void;
+  extra?: ReactNode; // statusbadge naast de titel
 }) {
   return (
     <div className="mt-5">
-      <span className="block text-sm font-bold text-ink">
-        {titel}
-        {hint && <span className="font-normal text-ink/50"> {hint}</span>}
-      </span>
+      <div className="flex min-h-5 items-center justify-between gap-2">
+        <span className="text-sm font-bold text-ink">
+          {titel}
+          {hint && <span className="font-normal text-ink/50"> {hint}</span>}
+        </span>
+        {extra}
+      </div>
       <div className="mt-2 flex flex-wrap gap-2">
         {opties.map((o) => (
           <button
@@ -178,6 +183,7 @@ export default function VoorkeurenForm() {
   });
   const [geladen, setGeladen] = useState(false);
   const [status, setStatus] = useState<"" | "bezig" | "klaar" | "fout">("");
+  const [laatstVeld, setLaatstVeld] = useState(""); // welk onderdeel je net wijzigde
   const eersteNaLaden = useRef(true);
 
   useEffect(() => {
@@ -206,32 +212,41 @@ export default function VoorkeurenForm() {
       setStatus("bezig");
       const ok = await saveVoorkeuren(v);
       setStatus(ok ? "klaar" : "fout");
-      if (ok) setTimeout(() => setStatus(""), 2000);
+      // Geen auto-verbergen: "✓ Opgeslagen" blijft naast het laatst gewijzigde
+      // onderdeel staan tot je iets anders aanpast of de pagina herlaadt.
     }, 700);
     return () => clearTimeout(id);
   }, [v, geladen]);
+
+  // Markeer welk onderdeel je net wijzigde en wis het vorige bewaar-bericht,
+  // zodat het badge meteen naar het nieuwe onderdeel verspringt.
+  function raak(veld: string) {
+    setLaatstVeld(veld);
+    setStatus("");
+  }
+
+  // Inline bewaar-badge dat alleen naast het laatst gewijzigde onderdeel verschijnt.
+  function badge(veld: string) {
+    if (veld !== laatstVeld) return null;
+    if (status === "bezig")
+      return <span className="text-xs text-ink/45">Bewaren…</span>;
+    if (status === "klaar")
+      return (
+        <span className="text-xs font-semibold text-emerald-600">✓ Opgeslagen</span>
+      );
+    if (status === "fout")
+      return (
+        <span className="text-xs font-semibold text-red-600">
+          Opslaan lukte niet
+        </span>
+      );
+    return null;
+  }
 
   if (!geladen) return null;
 
   return (
     <>
-    <div className="sticky top-2 z-10 flex justify-end">
-      <span className="rounded-full border border-black/5 bg-white/90 px-3 py-1 text-xs shadow-sm backdrop-blur">
-        {status === "bezig" && <span className="text-ink/50">Bewaren…</span>}
-        {status === "klaar" && (
-          <span className="font-semibold text-emerald-600">✓ Opgeslagen</span>
-        )}
-        {status === "fout" && (
-          <span className="font-semibold text-red-600">
-            Opslaan lukte niet, probeer het zo nog eens
-          </span>
-        )}
-        {status === "" && (
-          <span className="text-ink/40">Wijzigingen bewaren we automatisch</span>
-        )}
-      </span>
-    </div>
-
     <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-sm sm:p-7">
       <h2 className="text-lg font-bold text-ink">Schoolgegevens</h2>
       <p className="mt-1 text-sm text-ink/55">
@@ -239,31 +254,41 @@ export default function VoorkeurenForm() {
       </p>
 
       <div className="mt-5">
-        <label htmlFor="schoolnaam" className="block text-sm font-bold text-ink">
-          Naam van je school
-        </label>
+        <div className="flex min-h-5 items-center justify-between gap-2">
+          <label htmlFor="schoolnaam" className="text-sm font-bold text-ink">
+            Naam van je school
+          </label>
+          {badge("schoolnaam")}
+        </div>
         <SchoolKiezer
           naam={v.schoolnaam}
           brin={v.school_brin}
-          zet={(naam, brin, vestiging) =>
+          zet={(naam, brin, vestiging) => {
             setV({
               ...v,
               schoolnaam: naam,
               school_brin: brin,
               school_vestiging: vestiging,
-            })
-          }
+            });
+            raak("schoolnaam");
+          }}
         />
       </div>
 
       <div className="mt-5">
-        <label htmlFor="v-groep" className="block text-sm font-bold text-ink">
-          Standaardgroep
-        </label>
+        <div className="flex min-h-5 items-center justify-between gap-2">
+          <label htmlFor="v-groep" className="text-sm font-bold text-ink">
+            Standaardgroep
+          </label>
+          {badge("standaardgroep")}
+        </div>
         <input
           id="v-groep"
           value={v.standaardgroep}
-          onChange={(e) => setV({ ...v, standaardgroep: e.target.value })}
+          onChange={(e) => {
+            setV({ ...v, standaardgroep: e.target.value });
+            raak("standaardgroep");
+          }}
           placeholder="Bijv. Groep 5"
           className="mt-1.5 w-full max-w-xs rounded-xl border border-black/10 bg-cream px-4 py-3 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
         />
@@ -281,26 +306,42 @@ export default function VoorkeurenForm() {
         titel="Toon van de teksten"
         opties={tonen}
         waarde={v.toon}
-        zet={(w) => setV({ ...v, toon: w })}
+        zet={(w) => {
+          setV({ ...v, toon: w });
+          raak("toon");
+        }}
+        extra={badge("toon")}
       />
       <KeuzeRij
         titel="Taalniveau"
         opties={taalniveaus}
         waarde={v.taalniveau}
-        zet={(w) => setV({ ...v, taalniveau: w })}
+        zet={(w) => {
+          setV({ ...v, taalniveau: w });
+          raak("taalniveau");
+        }}
+        extra={badge("taalniveau")}
       />
       <KeuzeRij
         titel="Lengte van de teksten"
         opties={lengtes}
         waarde={v.lengte}
-        zet={(w) => setV({ ...v, lengte: w })}
+        zet={(w) => {
+          setV({ ...v, lengte: w });
+          raak("lengte");
+        }}
+        extra={badge("lengte")}
       />
       <KeuzeRij
         titel="Aanspreekvorm"
         hint="(voor ouderberichten)"
         opties={aanspreekvormen}
         waarde={v.aanspreekvorm}
-        zet={(w) => setV({ ...v, aanspreekvorm: w })}
+        zet={(w) => {
+          setV({ ...v, aanspreekvorm: w });
+          raak("aanspreekvorm");
+        }}
+        extra={badge("aanspreekvorm")}
       />
     </div>
 
