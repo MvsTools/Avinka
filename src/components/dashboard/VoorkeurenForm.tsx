@@ -47,7 +47,7 @@ function KeuzeRij({
 }) {
   return (
     <div className="mt-5">
-      <div className="flex min-h-5 items-center justify-between gap-2">
+      <div className="flex min-h-5 items-center gap-2">
         <span className="text-sm font-bold text-ink">
           {titel}
           {hint && <span className="font-normal text-ink/50"> {hint}</span>}
@@ -225,18 +225,25 @@ export default function VoorkeurenForm() {
     setStatus("");
   }
 
-  // Inline bewaar-badge dat alleen naast het laatst gewijzigde onderdeel verschijnt.
+  // Inline bewaar-pilletje dat alleen direct naast het laatst gewijzigde
+  // onderdeel verschijnt, zodat je meteen ziet bij welk vakje het hoort.
   function badge(veld: string) {
     if (veld !== laatstVeld) return null;
     if (status === "bezig")
-      return <span className="text-xs text-ink/45">Bewaren…</span>;
+      return (
+        <span className="rounded-full bg-black/5 px-2 py-0.5 text-xs font-medium text-ink/50">
+          Bewaren…
+        </span>
+      );
     if (status === "klaar")
       return (
-        <span className="text-xs font-semibold text-emerald-600">✓ Opgeslagen</span>
+        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+          ✓ Opgeslagen
+        </span>
       );
     if (status === "fout")
       return (
-        <span className="text-xs font-semibold text-red-600">
+        <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
           Opslaan lukte niet
         </span>
       );
@@ -254,7 +261,7 @@ export default function VoorkeurenForm() {
       </p>
 
       <div className="mt-5">
-        <div className="flex min-h-5 items-center justify-between gap-2">
+        <div className="flex min-h-5 items-center gap-2">
           <label htmlFor="schoolnaam" className="text-sm font-bold text-ink">
             Naam van je school
           </label>
@@ -276,7 +283,7 @@ export default function VoorkeurenForm() {
       </div>
 
       <div className="mt-5">
-        <div className="flex min-h-5 items-center justify-between gap-2">
+        <div className="flex min-h-5 items-center gap-2">
           <label htmlFor="v-groep" className="text-sm font-bold text-ink">
             Standaardgroep
           </label>
