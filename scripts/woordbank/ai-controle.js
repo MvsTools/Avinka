@@ -142,6 +142,20 @@ function uitCache(tag) {
   fs.writeFileSync(BRON("ongepast.txt"), [...ongepastAll].sort().join("\n"));
   console.log(`Totaal ongepast (beide passes): ${ongepastAll.size}.`);
 
+  // ── Pass 6: Engelse namen/woorden uit de LEENWOORD-categorieen ─────────────
+  const LEEN = ["c_als_s", "c_als_k", "x", "ch_sj", "th", "accent_e", "eau", "isch", "y_grieks"];
+  const leenWoorden = [...new Set(LEEN.flatMap(id => (bank[id] ? bank[id].woorden.map(x => x[0]) : [])))];
+  await keur(leenWoorden,
+    "Hieronder staan woorden uit leenwoord-spellingcategorieen voor een NEDERLANDS spellingwerkblad " +
+    "(basisschool). Geef UITSLUITEND de woorden terug die ONGESCHIKT zijn omdat het (a) een Engelse/" +
+    "buitenlandse naam is (clark, nick, baxter, rex) of (b) een Engels woord dat geen gewoon " +
+    "Nederlands woord is (black, truck, cross, jock, fox, relax, cool). Gewone, in het Nederlands " +
+    "gangbare (leen)woorden (computer, club, contact, camera, taxi, examen, garage, cafe, thee, " +
+    "politie) laat je STAAN. Geef een JSON array van strings, geen uitleg.", "engels");
+  const engels = uitCache("engels");
+  fs.writeFileSync(BRON("engels.txt"), [...engels].sort().join("\n"));
+  console.log(`Pass 6 (leenwoorden): ${engels.size} Engelse namen/woorden van ${leenWoorden.length}.`);
+
   // (Geen open/gesloten-snoei: die categorie is breed maar correct — agent/foto/
   //  samen/alles zijn echte klankgroepenwoorden. We laten 'm staan.)
 

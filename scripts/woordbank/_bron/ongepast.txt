@@ -202,6 +202,8 @@ doping
 drankgebruik
 drankkast
 dreigen
+drogeerde
+drogeert
 drogeren
 drollen
 dronkaard
@@ -267,8 +269,10 @@ gajes
 gangsters
 gassen
 gay
+gebeft
 gebochelde
 gedatet
+gedeald
 gedode
 gedonder
 geflipte
@@ -276,6 +280,7 @@ gehijg
 geil
 geile
 geilen
+geilt
 gekkie
 gekkin
 gekloot
@@ -302,9 +307,12 @@ geschifte
 gesel
 geselen
 geslagen
+gesnoven
+gespoten
 gespuis
 getto
 gevloek
+gevreeën
 geweerschot
 geweervuur
 gewelddadig
@@ -314,6 +322,7 @@ gewetenloos
 gewetenloze
 gezeik
 gezever
+gezogen
 gezopen
 gezwets
 geëxecuteerd
@@ -486,6 +495,8 @@ massamoord
 massamoorden
 masturbatie
 masturbeer
+masturbeerde
+masturbeert
 masturberen
 maîtresse
 menstruatie
@@ -526,7 +537,9 @@ moordzaken
 moordzuchtig
 musketten
 naai
+naaide
 naaien
+naait
 naaktheid
 nachtclub
 napalm
@@ -606,6 +619,8 @@ pijnigen
 pijpbeurt
 pijpbeurten
 pijpen
+pijpt
+pijpte
 pikkie
 pilletje
 pilletjes
@@ -746,11 +761,13 @@ smokkel
 snij
 snijwonden
 snollen
+snoof
 snuifje
 snuiven
 spastisch
 spastische
 spermabank
+spoten
 springstof
 spugen
 spuiten
@@ -824,12 +841,18 @@ verdikke
 verdikkeme
 verdikkie
 verdoem
+verdoemd
+verdoemde
+verdoemden
 verdoemen
 verdoemenis
 verdom
 verdomme
 verdommen
 verdommenis
+verdoofd
+verdoofde
+verdooft
 verdorie
 verdorven
 verdoven
@@ -839,10 +862,12 @@ verdrinking
 verduiveld
 verga
 vergassen
+vergast
 vergiftigen
 vergiftiging
 vergokken
 vergrijpen
+verkloot
 verkloten
 verknipt
 verknipte
@@ -850,8 +875,10 @@ verkrachten
 verkrachter
 verkrachters
 verkrachting
+verkrachtten
 verleidelijk
 verleiden
+verleidt
 verminken
 verminking
 verminkingen
@@ -866,6 +893,7 @@ vernederend
 vernedering
 verneuk
 verneuken
+verneukt
 verniel
 vernielen
 verpulveren
@@ -876,6 +904,9 @@ verslavingen
 verstikking
 vervloek
 vervloeken
+vervloekt
+vervloekte
+vervloekten
 verwijfd
 verwijfde
 verwonden
@@ -899,6 +930,7 @@ vozen
 vreten
 vrijen
 vrijpartij
+vrijt
 vrouwenhater
 vunzig
 vunzige
@@ -939,6 +971,7 @@ zeik
 zeiken
 zeikerd
 zeiknat
+zeikt
 zelfdoding
 zelfmoord
 zelfmoorden

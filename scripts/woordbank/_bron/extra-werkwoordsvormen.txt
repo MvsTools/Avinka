@@ -201,6 +201,7 @@ bedank
 bedek
 bedenk
 bedonderd
+bedot
 bedraad
 bedreef
 bedwelmd
@@ -247,8 +248,11 @@ berokkenen
 beroof
 beschaafd
 beschadig
+beschadigd
+beschadigt
 bescherm
 bescheuren
+beschiet
 beschik
 beschilderde
 beschimmelde
@@ -261,6 +265,8 @@ beschrijf
 beschrijft
 beschrijven
 beschuldig
+besmeurd
+besmeurde
 bespeur
 bespioneer
 bespringen
@@ -272,6 +278,7 @@ bestempeld
 bestond
 bestreed
 bestudeer
+betast
 beticht
 betoverd
 betrad
@@ -280,9 +287,11 @@ betuttelen
 bevallen
 bevalt
 bevangen
+bevecht
 bevond
 bevorderd
 bevries
+bevuild
 bewaarheid
 bewapend
 beweer
@@ -350,6 +359,8 @@ bloos
 blootleggen
 blootstellen
 blowen
+bombardeerde
+bombardeert
 borrelen
 bovenkomen
 brabbelen
@@ -363,6 +374,8 @@ bungeejumpen
 bungelen
 callen
 chanteer
+chanteerde
+chanteert
 chillen
 cirkelen
 cirkelt
@@ -510,6 +523,8 @@ dring
 dringender
 dringends
 drink
+drogeerde
+drogeert
 dromend
 druppelen
 druppelt
@@ -562,8 +577,11 @@ functioneer
 gamen
 garandeer
 geavanceerd
+gebeft
 geblokkeerde
+gedeald
 gedenk
+gedood
 geef
 geert
 gefaxt
@@ -586,6 +604,7 @@ gerecycled
 gerelateerde
 gescheten
 geschiede
+geschoten
 gesigneerde
 gesimuleerde
 gestresseerd
@@ -626,6 +645,7 @@ grommend
 grootbrengen
 hadden
 hallucineer
+hallucineert
 handhaaf
 hang
 hangend
@@ -849,6 +869,7 @@ koppelt
 krabbelde
 krabbelen
 krabbelt
+krenkt
 kronkelen
 kronkelende
 kronkelt
@@ -899,6 +920,8 @@ marcheer
 markeer
 masseer
 masturbeer
+masturbeerde
+masturbeert
 mediteer
 meebreng
 meebrengen
@@ -1056,11 +1079,14 @@ ontaard
 ontcijferd
 ontcijferen
 ontdeed
+onteerd
+onteert
 ontgoocheld
 ontgrendeld
 ontgroeid
 onthef
 onthield
+onthoofd
 ontketend
 ontkleed
 ontkoppel
@@ -1260,6 +1286,7 @@ pauzeer
 peddelen
 peins
 peppen
+pestten
 piercen
 pingen
 pissen
@@ -1361,10 +1388,12 @@ schampte
 scharrelen
 scheer
 schei
+scheldt
 schend
 schenk
 schepte
 schiep
+schiet
 schietend
 schietgrage
 schijten
@@ -1373,6 +1402,7 @@ schilderen
 schildert
 schitteren
 schittert
+schold
 schommelen
 schommelt
 schoonhouden
@@ -1412,6 +1442,7 @@ smokkelt
 smoor
 snijd
 snikkend
+snoof
 snotteren
 snuffelde
 snuffelen
@@ -1426,6 +1457,7 @@ spendeer
 spetteren
 spoorde
 spoort
+spoten
 sprankelende
 spreid
 sprekend
@@ -1443,9 +1475,11 @@ stilstond
 stilzetten
 stilzitten
 stinkende
+stinkt
 stolen
 stompzinnige
 stond
+stonk
 stoor
 stopzetten
 stotterde
@@ -1633,8 +1667,10 @@ verbleef
 verbood
 verbrijzeld
 verdenk
+verdoemd
 verdoezeld
 verdoof
+verdoofd
 verdreef
 verdrijf
 verdringen
@@ -1653,6 +1689,7 @@ verfrissend
 vergaderd
 vergaf
 vergeef
+vergiftigd
 verging
 vergrendeld
 verhandeld
@@ -1669,10 +1706,12 @@ verijdeld
 verkies
 verkoold
 verkoos
+verkrachtten
 verkwikkend
 verlammende
 verlang
 verleerd
+verleid
 verleng
 verlies
 verloochend
@@ -1680,8 +1719,11 @@ verluid
 vermeed
 vermeerderen
 verminderd
+verminkt
+vermoordt
 vermorzeld
 vernederd
+vernield
 veroordeel
 veroordelend
 veroorzaak
@@ -1739,6 +1781,7 @@ verwisselde
 verwisselen
 verwisselt
 verwittig
+verwond
 verwonderd
 verwrongen
 verzadigd

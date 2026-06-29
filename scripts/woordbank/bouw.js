@@ -35,6 +35,8 @@ try { fs.readFileSync(BRON("extra-werkwoordsvormen.txt"), "utf8").split(/\r?\n/)
 // Ongepaste woorden (AI-veiligheidscheck) — overal weren.
 let ONGEPAST = new Set();
 try { ONGEPAST = new Set(fs.readFileSync(BRON("ongepast.txt"), "utf8").split(/\r?\n/).filter(Boolean)); } catch (e) {}
+// Engelse namen/woorden uit de leenwoord-categorieen (AI) — overal weren.
+try { fs.readFileSync(BRON("engels.txt"), "utf8").split(/\r?\n/).filter(Boolean).forEach(w => ONGEPAST.add(w)); } catch (e) {}
 // Woorden die GEEN klankgroepenwoord zijn — alleen uit open_gesloten weren.
 let GEEN_KLANKGROEP = new Set();
 try { GEEN_KLANKGROEP = new Set(fs.readFileSync(BRON("geen-klankgroep.txt"), "utf8").split(/\r?\n/).filter(Boolean)); } catch (e) {}
@@ -231,6 +233,14 @@ const uit = {
   categorieen: banken,
 };
 fs.writeFileSync(path.join(__dirname, "woordenbank.json"), JSON.stringify(uit));
+
+// Slank publiek script voor de tools (alleen id -> [[woord, vanaf], ...]).
+const slim = {};
+for (const id in banken) slim[id] = banken[id].woorden;
+fs.writeFileSync(path.join(__dirname, "..", "..", "public", "avinka-woordenbank.js"),
+  "/* Auto-gegenereerd door scripts/woordbank/bouw.js — NIET handmatig bewerken.\n" +
+  "   Bron: OpenTaal (BSD-3/CC-BY-3.0) + hermitdave nl_50k (CC-BY-SA-4.0). Geen methode-materiaal. */\n" +
+  "window.avinkaWoordenbank=" + JSON.stringify(slim) + ";\n");
 
 // ── Runrapport ────────────────────────────────────────────────────────────────
 console.log("WOORDENBANK gebouwd:", DATUM);
