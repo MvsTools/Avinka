@@ -16,6 +16,11 @@ import {
 
 export type Voorkeuren = {
   schoolnaam: string;
+  // Canonieke schoolkeuze uit het DUO-register (zie /api/scholen). Leeg als de
+  // leerkracht zelf typt of de kolommen nog niet bestaan; legt het BRIN vast
+  // voor de latere org-laag (schoolkoppeling).
+  school_brin: string;
+  school_vestiging: string;
   standaardgroep: string;
   toon: string; // warm | neutraal | zakelijk
   taalniveau: string; // standaard | a2 | b1
@@ -41,14 +46,27 @@ export async function getVoorkeuren(): Promise<Voorkeuren | null> {
     .select("schoolnaam, standaardgroep, toon, taalniveau, lengte, aanspreekvorm")
     .maybeSingle();
   if (error || !data) return null;
-  return {
+  const v: Voorkeuren = {
     schoolnaam: data.schoolnaam ?? "",
+    school_brin: "",
+    school_vestiging: "",
     standaardgroep: data.standaardgroep ?? "",
     toon: data.toon ?? "warm",
     taalniveau: data.taalniveau ?? "standaard",
     lengte: data.lengte ?? "gemiddeld",
     aanspreekvorm: data.aanspreekvorm ?? "je",
   };
+  // Best-effort: de BRIN-kolommen bestaan mogelijk nog niet (migratie niet
+  // gedraaid). Een aparte select faalt dan stilletjes en we houden gewoon "".
+  const { data: bd } = await sb
+    .from("instellingen")
+    .select("school_brin, school_vestiging")
+    .maybeSingle();
+  if (bd) {
+    v.school_brin = (bd as { school_brin?: string }).school_brin ?? "";
+    v.school_vestiging = (bd as { school_vestiging?: string }).school_vestiging ?? "";
+  }
+  return v;
 }
 
 export async function saveVoorkeuren(v: Voorkeuren): Promise<boolean> {
@@ -60,7 +78,16 @@ export async function saveVoorkeuren(v: Voorkeuren): Promise<boolean> {
   const { error } = await sb
     .from("instellingen")
     .upsert({ user_id: user.id, ...v }, { onConflict: "user_id" });
-  return !error;
+  if (!error) return true;
+  // Mogelijk bestaan de BRIN-kolommen nog niet → opnieuw zonder die velden,
+  // zodat het opslaan van de overige voorkeuren nooit stilletjes mislukt.
+  const { school_brin, school_vestiging, ...kern } = v;
+  void school_brin;
+  void school_vestiging;
+  const { error: e2 } = await sb
+    .from("instellingen")
+    .upsert({ user_id: user.id, ...kern }, { onConflict: "user_id" });
+  return !e2;
 }
 
 // ── ABONNEMENT ────────────────────────────────────────────────────────────
