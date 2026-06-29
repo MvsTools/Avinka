@@ -38,6 +38,10 @@ try { ONGEPAST = new Set(fs.readFileSync(BRON("ongepast.txt"), "utf8").split(/\r
 // Woorden die GEEN klankgroepenwoord zijn — alleen uit open_gesloten weren.
 let GEEN_KLANKGROEP = new Set();
 try { GEEN_KLANKGROEP = new Set(fs.readFileSync(BRON("geen-klankgroep.txt"), "utf8").split(/\r?\n/).filter(Boolean)); } catch (e) {}
+// Toegestaan-lijst: woorden die de AI-check te streng weghaalde maar wél mogen
+// (bv. wippen = op de wip). Overrulet de AI-ongepast-lijst, NOOIT de harde blocklist.
+let TOEGESTAAN = new Set();
+try { TOEGESTAAN = new Set(fs.readFileSync(path.join(__dirname, "toegestaan.txt"), "utf8").split(/\r?\n/).map(s => s.trim()).filter(w => w && !w.startsWith("#"))); } catch (e) {}
 
 const KLINKERS = "aeiouyàáâäèéêëìíîïòóôöùúûü";
 function lettergrepen(w) {
@@ -175,6 +179,9 @@ const BLOCK = new Set([
   "neuk","neuken","neukt","neukte","hoer","hoeren","hoertje","pik","pijp","pijpen","kont","reet",
   "schijt","schijten","stront","kak","kakken","pis","pies","pissen","flikker","flikkers","teef","teven",
   "klootviool","mongolen","kankeren","optyfen","oprotten","oprot","mafkees","eikel","eikels","sukkels",
+  // gecureerd uit de LDNOOBW NL-scheldwoordenlijst (onschuldige homoniemen als
+  // schatje/zaadje/nicht/wippen bewust NIET geweerd):
+  "aso","beffen","naaien","ouwehoeren","piesen","pijpen","poepen","rukken","verkloten","verneuken","vingeren","zeiken",
 ]);
 
 function kindgeschikt(w) {
@@ -182,7 +189,8 @@ function kindgeschikt(w) {
   if (w.length < 3 || w.length > 12) return false;
   if (!RANG.has(w)) return false;
   if (RANG.get(w) < 60) return false;   // de allerfrequentste = functiewoorden (de, het, hij, zijn) - geen oefenwoord
-  if (BLOCK.has(w) || ONGEPAST.has(w)) return false;
+  if (BLOCK.has(w)) return false;                          // harde blocklist: nooit terug
+  if (ONGEPAST.has(w) && !TOEGESTAAN.has(w)) return false;  // AI-ongepast, tenzij toegestaan
   if (WERKWVORMEN.has(w)) return false;   // gegenereerde werkwoordsvormen (werkwoorden.js)
   if (isWerkwoordsvorm(w)) return false;
   return true;

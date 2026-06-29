@@ -1,0 +1,5 @@
+# Toegestaan-lijst: woorden die de AI-veiligheidscheck te streng weghaalde,
+# maar die wél gewoon mogen op een kinderwerkblad (onschuldige hoofdbetekenis).
+# Eén woord per regel. Dit overrulet de AI-ongepast-lijst, maar NOOIT de harde
+# blocklist in bouw.js (echte scheldwoorden blijven altijd weg).
+wippen

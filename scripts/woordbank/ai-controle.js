@@ -116,16 +116,31 @@ function uitCache(tag) {
   console.log(`Pass 2 (spellingbank): ${vormenAll.size} verkapte werkwoorden (uit cache).`);
 
   // ── Pass 3: veiligheidscheck — ongepaste woorden over de HELE bank ─────────
-  const alleWoorden = [...new Set(Object.values(bank).flatMap(c => c.woorden.map(x => x[0])))];
-  const ongepast = await keur(alleWoorden,
+  // Inclusief de werkwoord-infinitieven (pijpen/beffen e.d. zijn werkwoorden!).
+  const alleWoorden = [...new Set([...Object.values(bank).flatMap(c => c.woorden.map(x => x[0])), ...inf])];
+  await keur(alleWoorden,
     "Hieronder staan Nederlandse woorden die op een werkblad voor basisschoolkinderen (groep 3-8) " +
     "kunnen komen. Geef UITSLUITEND de woorden terug die NIET geschikt zijn voor kinderen: " +
     "scheldwoorden/gevloek (verdomme, klootzak), seksueel, grof/expliciet geweld, drugs, of " +
     "anderszins ongepast of kwetsend. Gewone woorden (ook 'dood', 'bloed', 'ziek' op zichzelf) " +
     "laat je STAAN, tenzij echt grof. Geef een JSON array van strings, geen uitleg.", "ongepast");
-  const ongepastAll = uitCache("ongepast");
+  console.log(`Pass 3 (brede check): ${uitCache("ongepast").size} ongepast.`);
+
+  // Pass 5: tweede, categorie-expliciete veiligheidscheck (vangt wat pass 3 mist).
+  await keur(alleWoorden,
+    "Beoordeel deze Nederlandse woorden voor een basisschoolwerkblad (groep 3-8). Geef UITSLUITEND " +
+    "de woorden terug die in minstens EEN van deze categorieen vallen: (1) scheldwoord/gevloek, " +
+    "(2) seksueel/erotisch, (3) expliciet of grof geweld of wapens, (4) drugs of drank-misbruik, " +
+    "(5) kwetsende scheldnaam voor een groep mensen, (6) grof woord voor lichaamsdeel of " +
+    "uitwerpselen, (7) zelfmoord/zelfbeschadiging. LET OP homoniemen: een woord met ook een gewone " +
+    "betekenis (schatje, zaadje, nicht=familie, wippen=op de wip) laat je STAAN. Gewone woorden " +
+    "(dood, bloed, ziek, oorlog, leger) blijven ook staan tenzij echt grof/expliciet. JSON array.", "veilig2");
+  console.log(`Pass 5 (categorie-expliciet): ${uitCache("veilig2").size} ongepast.`);
+
+  // ongepast.txt = unie van beide veiligheidspasses.
+  const ongepastAll = new Set([...uitCache("ongepast"), ...uitCache("veilig2")]);
   fs.writeFileSync(BRON("ongepast.txt"), [...ongepastAll].sort().join("\n"));
-  console.log(`Pass 3 (veiligheid): ${ongepastAll.size} ongepaste woorden (uit cache).`);
+  console.log(`Totaal ongepast (beide passes): ${ongepastAll.size}.`);
 
   // (Geen open/gesloten-snoei: die categorie is breed maar correct — agent/foto/
   //  samen/alles zijn echte klankgroepenwoorden. We laten 'm staan.)
