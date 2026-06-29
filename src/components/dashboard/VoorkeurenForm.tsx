@@ -127,7 +127,7 @@ function SchoolKiezer({
         }}
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        placeholder="Zoek je school, bijv. Regenboog Amsterdam"
+        placeholder="Zoek op naam, plaats of BRIN, bijv. Regenboog Amsterdam"
         className="w-full rounded-xl border border-black/10 bg-cream px-4 py-3 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
       />
       {open && treffers.length > 0 && (

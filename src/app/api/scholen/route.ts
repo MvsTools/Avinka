@@ -19,7 +19,9 @@ function norm(s: string): string {
 }
 
 // Eén keer voorgerekend bij het laden van de module (niet per request).
-const INDEX = SCHOLEN.map((s) => norm(`${s.n} ${s.p} ${s.pc}`));
+// BRIN + vestigingscode staan ook in de zoekstring, zodat je een school ook
+// op zijn BRIN (bv. "13WU") of vestigingscode ("13WU00") kunt vinden.
+const INDEX = SCHOLEN.map((s) => norm(`${s.n} ${s.p} ${s.pc} ${s.b} ${s.v}`));
 const NAAM_NORM = SCHOLEN.map((s) => norm(s.n));
 
 export async function GET(request: Request) {
@@ -28,6 +30,7 @@ export async function GET(request: Request) {
 
   const tokens = q.split(" ").filter(Boolean);
   const eerste = tokens[0];
+  const qcompact = tokens.join(""); // "13 wu" en "13wu" → zelfde BRIN-match
   const treffers: { i: number; score: number }[] = [];
 
   for (let i = 0; i < SCHOLEN.length; i++) {
@@ -41,9 +44,13 @@ export async function GET(request: Request) {
     }
     if (!past) continue;
 
-    // Naamtreffers wegen zwaarder dan plaats/postcode; vroeger = relevanter.
+    // Een exact getypt BRIN of vestigingscode wint altijd; daarna wegen
+    // naamtreffers zwaarder dan plaats/postcode, en vroeger = relevanter.
     const naam = NAAM_NORM[i];
     let score = 0;
+    const sb = SCHOLEN[i].b.toLowerCase();
+    const sv = SCHOLEN[i].v.toLowerCase();
+    if (qcompact === sb || qcompact === sv) score += 500;
     if (naam.startsWith(eerste)) score += 100;
     else if (naam.includes(eerste)) score += 40;
     const pos = naam.indexOf(eerste);
