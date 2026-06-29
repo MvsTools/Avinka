@@ -99,7 +99,10 @@ function niveau(v) {
 }
 
 const BLOCK = /^(neuken|kotsen|zuipen|moorden|kanker|schijten|pissen|zieken)/;
-const lijst = [...werkwoorden.values()].filter(v => v.inf.length <= 13 && !BLOCK.test(v.inf) && v.vtEnk && v.vd);
+// Door de AI-controle (ai-controle.js) afgekeurde homografen/vervoegingen.
+let AFGEKEURD = new Set();
+try { AFGEKEURD = new Set(fs.readFileSync(BRON("ww-afgekeurd.txt"), "utf8").split(/\r?\n/).filter(Boolean)); } catch (e) {}
+const lijst = [...werkwoorden.values()].filter(v => v.inf.length <= 13 && !BLOCK.test(v.inf) && v.vtEnk && v.vd && !AFGEKEURD.has(v.inf));
 for (const v of lijst) v.vanaf = niveau(v);
 lijst.sort((a, b) => a.vanaf - b.vanaf || (RANG.get(a.inf) || 9e9) - (RANG.get(b.inf) || 9e9) || a.inf.localeCompare(b.inf));
 

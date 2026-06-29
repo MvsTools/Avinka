@@ -30,6 +30,8 @@ fs.readFileSync(BRON("nl_frequentie_50k.txt"), "utf8").split(/\r?\n/).filter(Boo
 // Werkwoordsvormen (gemaakt door werkwoorden.js) om uit de spellingbank te strepen.
 let WERKWVORMEN = new Set();
 try { WERKWVORMEN = new Set(fs.readFileSync(BRON("werkwoordsvormen.txt"), "utf8").split(/\r?\n/).filter(Boolean)); } catch (e) {}
+// Extra verkapte werkwoorden die de AI-controle (ai-controle.js) vond.
+try { fs.readFileSync(BRON("extra-werkwoordsvormen.txt"), "utf8").split(/\r?\n/).filter(Boolean).forEach(w => WERKWVORMEN.add(w)); } catch (e) {}
 
 const KLINKERS = "aeiouyàáâäèéêëìíîïòóôöùúûü";
 function lettergrepen(w) {
