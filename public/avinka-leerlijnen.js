@@ -460,7 +460,7 @@
   var SPELLING_WOORDEN = [
     { naam: "woorden waarin je /ie/ hoort maar één i schrijft (zoals kilo, liter)",
       test: /kilo\s*-?woord|liter\s*-?woord|hoor.{0,8}ie.{0,18}schrijf.{0,8}\bi\b|\bi\b[^a-z]{0,8}(klinkt als|als)[^a-z]{0,4}ie/,
-      woorden: ["kilo", "liter", "prima", "titel", "crisis", "figuur", "minus", "via", "diploma", "positief", "negatief", "januari", "februari"] },
+      woorden: ["kilo", "liter", "prima", "titel", "crisis", "figuur", "minus", "via", "diploma", "januari", "februari"] },
     { naam: "de c die klinkt als /s/ (zoals cent, citroen)",
       test: /cent\s*-?woord|cijfer\s*-?woord|\bc\b[^a-z]{0,8}als[^a-z]{0,4}s\b|hoor.{0,8}\/?s\/?.{0,18}schrijf.{0,8}\bc\b/,
       woorden: ["cent", "citroen", "cirkel", "centrum", "cijfer", "december", "procent", "cement", "centimeter", "ceintuur"] },
