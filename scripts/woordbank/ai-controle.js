@@ -195,8 +195,23 @@ function uitCache(tag) {
     "JSON array van strings, geen uitleg.", "drugs");
   console.log(`Pass 10 (drugs/drank-misbruik): ${uitCache("drugs").size} eruit.`);
 
+  // Pass 12: ERNSTIG/VERONTRUSTEND MEDISCH — klinisch-zware onderwerpen die niet
+  // "grof" zijn en de andere passes daarom missen (kanker-uitzaaiing, hiv, abortus,
+  // castratie). Smal: alleen het ZWARE onderwerp, NIET moeilijkheid; gewone
+  // gezondheidswoorden (ziek, dokter, ziekenhuis, koorts, operatie) blijven staan.
+  await keur(alleWoorden,
+    "Beoordeel deze Nederlandse woorden voor een werkblad voor basisschoolkinderen (groep 3-8). " +
+    "Geef UITSLUITEND de woorden terug die over een ERNSTIG, VERONTRUSTEND of VOLWASSEN-MEDISCH " +
+    "onderwerp gaan dat niet op een kinderwerkblad hoort: ernstige/dodelijke ziekte met volwassen " +
+    "lading (kanker, tumor, uitzaaiing, hiv, aids, geslachtsziekte/soa), abortus, miskraam, " +
+    "euthanasie, castratie, lijkschouwing/autopsie/sectie, amputatie. BELANGRIJK: het gaat ALLEEN " +
+    "om het ZWARE/VERONTRUSTENDE onderwerp, NIET om moeilijkheid. Gewone gezondheidswoorden (ziek, " +
+    "ziekte, dokter, ziekenhuis, koorts, griep, verkouden, pijn, wond, gewond, operatie, medicijn, " +
+    "prik, verband, bril, allergie) blijven gewoon STAAN. Geef een JSON array van strings, geen uitleg.", "medisch");
+  console.log(`Pass 12 (ernstig medisch): ${uitCache("medisch").size} eruit.`);
+
   const ongepastAll = new Set([...uitCache("ongepast"), ...uitCache("veilig2"), ...uitCache("volwassen"),
-    ...uitCache("discriminatie"), ...uitCache("wreedheid"), ...uitCache("drugs")]);
+    ...uitCache("discriminatie"), ...uitCache("wreedheid"), ...uitCache("drugs"), ...uitCache("medisch")]);
   fs.writeFileSync(BRON("ongepast.txt"), [...ongepastAll].sort().join("\n"));
   console.log(`Totaal ongepast (alle passes): ${ongepastAll.size}.`);
 

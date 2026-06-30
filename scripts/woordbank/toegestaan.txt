@@ -11,3 +11,11 @@ juli
 augustus
 braille
 chinees
+# gewone woorden die de medisch-pass te streng weghaalde
+chirurg
+chirurgen
+chirurgie
+geraamte
+celstraf
+agressie
+stolling
