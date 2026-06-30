@@ -3,3 +3,5 @@
 # Eén woord per regel. Dit overrulet de AI-ongepast-lijst, maar NOOIT de harde
 # blocklist in bouw.js (echte scheldwoorden blijven altijd weg).
 wippen
+dranken
+illegale

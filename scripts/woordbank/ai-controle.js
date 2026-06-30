@@ -170,7 +170,33 @@ function uitCache(tag) {
     "array van strings, geen uitleg.", "discriminatie");
   console.log(`Pass 8 (discriminatie/scheldnamen): ${uitCache("discriminatie").size} eruit.`);
 
-  const ongepastAll = new Set([...uitCache("ongepast"), ...uitCache("veilig2"), ...uitCache("volwassen"), ...uitCache("discriminatie")]);
+  // Pass 9: WREEDHEID — alleen expliciete/verontrustende gruwel, NIET generiek geweld.
+  // Oorlog/leger/soldaat/wapen/gevecht/dood/bloed blijven staan (geschiedenis groep 7/8).
+  await keur(alleWoorden,
+    "Beoordeel deze Nederlandse woorden voor een werkblad voor basisschoolkinderen (groep 3-8). " +
+    "Geef UITSLUITEND de woorden terug die over EXPLICIETE of VERONTRUSTENDE WREEDHEID gaan die " +
+    "niet op een kinderwerkblad hoort: martelen/marteling, verkrachten/verkrachting, onthoofden/" +
+    "onthoofding, verminking, bloedbad, slachting van mensen, genocide, terreuraanslag, executie, " +
+    "gruwelijke folter. BELANGRIJK: het gaat ALLEEN om expliciete, gruwelijke wreedheid, NIET om " +
+    "gewoon 'geweld' en NIET om moeilijkheid. Alledaagse of geschiedenis-/nieuws-woorden over oorlog, " +
+    "leger, soldaat, wapen, gevecht, ruzie, dood, bloed, ziek, ongeluk (groep 7/8) blijven gewoon " +
+    "STAAN. Alleen het gruwelijke/expliciete eruit. Geef een JSON array van strings, geen uitleg.", "wreedheid");
+  console.log(`Pass 9 (wreedheid): ${uitCache("wreedheid").size} eruit.`);
+
+  // Pass 10: DRUGS / DRANK-MISBRUIK — incl. drug-straattaal; gewone woorden blijven.
+  await keur(alleWoorden,
+    "Beoordeel deze Nederlandse woorden voor een werkblad voor basisschoolkinderen (groep 3-8). " +
+    "Geef UITSLUITEND de woorden terug die over DRUGS of DRUGSGEBRUIK gaan, of over expliciet " +
+    "DRANK- of DRUGSMISBRUIK: illegale drugs en drug-straattaal (wiet, hasj, joint, blowen, coke, " +
+    "cocaine, heroine, speed, xtc, junkie, dealen), en woorden over dronkenschap of verslaving " +
+    "(bezopen, lazarus, verslaafd, junk). BELANGRIJK: alleen het DRUGS-/MISBRUIK-onderwerp, NIET de " +
+    "moeilijkheid. Gewone, alledaagse woorden (bier, wijn, glas, fles, proost, sigaret, medicijn, " +
+    "pil als medicijn, apotheek) blijven STAAN tenzij ze duidelijk over misbruik gaan. Geef een " +
+    "JSON array van strings, geen uitleg.", "drugs");
+  console.log(`Pass 10 (drugs/drank-misbruik): ${uitCache("drugs").size} eruit.`);
+
+  const ongepastAll = new Set([...uitCache("ongepast"), ...uitCache("veilig2"), ...uitCache("volwassen"),
+    ...uitCache("discriminatie"), ...uitCache("wreedheid"), ...uitCache("drugs")]);
   fs.writeFileSync(BRON("ongepast.txt"), [...ongepastAll].sort().join("\n"));
   console.log(`Totaal ongepast (alle passes): ${ongepastAll.size}.`);
 
