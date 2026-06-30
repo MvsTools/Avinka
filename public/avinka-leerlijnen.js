@@ -594,20 +594,29 @@
     spellingWoorden: function (context, groep) {
       var cat = vindSpellingCat(context);
       if (!cat) return "";
-      var woorden = cat.woorden; // terugval = de met de hand gecureerde lijst
-      // Nieuwe woordenbank (public/avinka-woordenbank.js): groot, per groep, schoon
-      // en kindveilig. Gebruik die als de categorie er in zit en de groep bekend is.
       var g = (String(groep || "").match(/[3-8]/) || [])[0];
+      var regels = "Gebruik in de oefeningen UITSLUITEND woorden uit deze lijst: ze zijn correct gespeld, kindgeschikt en horen gegarandeerd bij deze categorie. Verzin ZELF GEEN andere categoriewoorden; neem ze exact over zoals ze hier staan.";
+      // Nieuwe woordenbank (public/avinka-woordenbank.js): groot, per groep, schoon
+      // en kindveilig, met per woord een vorm-vlag (x[2]==='v' = vervoeging/verbuiging).
+      // We splitsen basisvormen en vervoegingen, zodat de AI VOORAL de basisvorm pakt
+      // (netst voor de meeste opdrachtmodules) en vervoegingen alleen spaarzaam inzet.
       if (cat.bank && g && window.avinkaWoordenbank && window.avinkaWoordenbank[cat.bank]) {
-        // Grondvormen EN vervoegingen samen in de pool: de AI kiest zelf wat past bij
-        // de opdracht (vervoegingen zijn voor een spellingbank niet fout). De vorm-vlag
-        // x[2]==='v' blijft als metadata beschikbaar, maar filtert hier niets weg.
-        var pool = window.avinkaWoordenbank[cat.bank]
-          .filter(function (x) { return x[1] <= +g; })
-          .map(function (x) { return x[0]; });
-        if (pool.length >= 8) woorden = sample(pool, Math.min(28, pool.length));
+        var lijst = window.avinkaWoordenbank[cat.bank].filter(function (x) { return x[1] <= +g; });
+        var grond = lijst.filter(function (x) { return x[2] !== "v"; }).map(function (x) { return x[0]; });
+        var verv = lijst.filter(function (x) { return x[2] === "v"; }).map(function (x) { return x[0]; });
+        if (grond.length >= 8) {
+          var out = "VERPLICHTE WOORDENBANK voor de categorie \"" + cat.naam + "\". " + regels +
+            " Kies VOORAL uit de basisvormen — die zijn voor de meeste opdrachten het netst. Basisvormen: " +
+            sample(grond, Math.min(26, grond.length)).join(", ") + ".";
+          if (verv.length) {
+            out += " Vervoegingen (spaarzaam gebruiken, alleen waar het echt helpt — bijvoorbeeld om woorden in een voorbeeldzin natuurlijk af te wisselen of waar de basisvorm krom zou klinken; niet als standaard-oefenwoord): " +
+              sample(verv, Math.min(8, verv.length)).join(", ") + ".";
+          }
+          return out;
+        }
       }
-      return "VERPLICHTE WOORDENBANK voor de categorie \"" + cat.naam + "\". Gebruik in de oefeningen UITSLUITEND woorden uit deze lijst: ze zijn correct gespeld, kindgeschikt en horen gegarandeerd bij deze categorie. Kies er een passende selectie uit (niet per se allemaal) en verzin ZELF GEEN andere categoriewoorden; neem ze exact over zoals ze hier staan. Woorden: " + woorden.join(", ") + ".";
+      // Terugval: de met de hand gecureerde lijst (categorie zonder bank of te weinig woorden).
+      return "VERPLICHTE WOORDENBANK voor de categorie \"" + cat.naam + "\". " + regels + " Woorden: " + cat.woorden.join(", ") + ".";
     },
     verwerkingen: function (vak, groep, n) {
       if (!isZaakvakKey(vak)) return "";
