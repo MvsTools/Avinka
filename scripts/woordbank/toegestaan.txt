@@ -5,3 +5,9 @@
 wippen
 dranken
 illegale
+# maanden + gewone woorden die de eigennamen-pass te streng weghaalde
+juni
+juli
+augustus
+braille
+chinees

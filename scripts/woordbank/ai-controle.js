@@ -214,6 +214,22 @@ function uitCache(tag) {
   fs.writeFileSync(BRON("engels.txt"), [...engels].sort().join("\n"));
   console.log(`Pass 6 (leenwoorden): ${engels.size} Engelse namen/woorden van ${leenWoorden.length}.`);
 
+  // ── Pass 11: EIGENNAMEN (kwaliteit, geen veiligheid) — voor-/plaatsnamen als
+  // kleine letter eruit (kees, jan, amsterdam). Homoniemen die OOK een gewoon
+  // woord zijn (roos, bas, ton, lot, wil) blijven staan. Eigen eigennamen.txt.
+  await keur(alleWoorden,
+    "Beoordeel deze Nederlandse woorden voor een SPELLING-werkblad (groep 3-8). Geef UITSLUITEND de " +
+    "woorden terug die UITSLUITEND een EIGENNAAM zijn: een voornaam (kees, jan, sanne, mohammed), een " +
+    "achternaam, of een plaats-/land-/riviernaam (amsterdam, frankrijk, parijs, rijn) — woorden die " +
+    "eigenlijk alleen met een HOOFDLETTER horen en geen gewone woordbetekenis hebben. HEEL BELANGRIJK: " +
+    "laat een woord STAAN als het OOK een gewoon Nederlands woord is met een kleine letter (roos=bloem, " +
+    "bas=lage stem, ton=vat/1000kg, lot=noodlot, wil=willen, max=hoogstens, kim=horizon, mis, gum, " +
+    "guppy, dirk=dolk). Twijfel je of het ook een gewoon woord is? Laat het dan STAAN. Geef een JSON " +
+    "array van strings, geen uitleg.", "eigennaam");
+  const eigennamen = uitCache("eigennaam");
+  fs.writeFileSync(BRON("eigennamen.txt"), [...eigennamen].sort().join("\n"));
+  console.log(`Pass 11 (eigennamen): ${eigennamen.size} voor-/plaatsnamen eruit.`);
+
   // (Geen open/gesloten-snoei: die categorie is breed maar correct — agent/foto/
   //  samen/alles zijn echte klankgroepenwoorden. We laten 'm staan.)
 
