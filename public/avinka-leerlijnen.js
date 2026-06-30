@@ -599,10 +599,11 @@
       // en kindveilig. Gebruik die als de categorie er in zit en de groep bekend is.
       var g = (String(groep || "").match(/[3-8]/) || [])[0];
       if (cat.bank && g && window.avinkaWoordenbank && window.avinkaWoordenbank[cat.bank]) {
-        // Standaard alleen GRONDVORMEN (x[2]==='v' = vervoeging/verbuiging; die zijn
-        // voor een apart "vervoegingen oefenen"-tabblad). Geeft schone spellinglijsten.
+        // Grondvormen EN vervoegingen samen in de pool: de AI kiest zelf wat past bij
+        // de opdracht (vervoegingen zijn voor een spellingbank niet fout). De vorm-vlag
+        // x[2]==='v' blijft als metadata beschikbaar, maar filtert hier niets weg.
         var pool = window.avinkaWoordenbank[cat.bank]
-          .filter(function (x) { return x[1] <= +g && x[2] !== "v"; })
+          .filter(function (x) { return x[1] <= +g; })
           .map(function (x) { return x[0]; });
         if (pool.length >= 8) woorden = sample(pool, Math.min(28, pool.length));
       }
