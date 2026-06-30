@@ -152,7 +152,25 @@ function uitCache(tag) {
     "seksueel/erotisch/orientatie-onderwerp eruit. Geef een JSON array van strings, geen uitleg.", "volwassen");
   console.log(`Pass 7 (volwassen onderwerp): ${uitCache("volwassen").size} eruit.`);
 
-  const ongepastAll = new Set([...uitCache("ongepast"), ...uitCache("veilig2"), ...uitCache("volwassen")]);
+  // Pass 8: DISCRIMINATIE — kwetsende scheldnamen voor bevolkingsgroepen.
+  // Gericht op de KWETSENDE SCHELDNAAM zelf (etnisch/religieus/herkomst), NIET op
+  // de neutrale benaming. Moslim, jood, christen, allochtoon, buitenlander,
+  // vluchteling, zigeuner-als-volk e.d. zijn gewone woorden (geschiedenis/
+  // maatschappij groep 7/8) en blijven staan.
+  await keur(alleWoorden,
+    "Beoordeel deze Nederlandse woorden voor een werkblad voor basisschoolkinderen (groep 3-8). " +
+    "Geef UITSLUITEND de woorden terug die een KWETSENDE SCHELDNAAM of denigrerende benaming zijn " +
+    "voor een bevolkingsgroep op basis van etniciteit, huidskleur, nationaliteit, religie of " +
+    "afkomst (een raciale/etnische/religieuze slur of racistisch scheldwoord). BELANGRIJK: het gaat " +
+    "ALLEEN om de kwetsende scheldnaam zelf, NIET om het onderwerp en NIET om moeilijkheid. Neutrale, " +
+    "gewone benamingen voor een groep of geloof (moslim, jood, christen, hindoe, allochtoon, " +
+    "buitenlander, vluchteling, asielzoeker, nationaliteit-namen zoals marokkaan/turk/duitser) zijn " +
+    "GEEN scheldwoord en blijven STAAN. Ook gewone woorden over huidskleur of afkomst (bruin, zwart, " +
+    "blank op zichzelf) blijven staan. Alleen de echte kwetsende scheldnaam eruit. Geef een JSON " +
+    "array van strings, geen uitleg.", "discriminatie");
+  console.log(`Pass 8 (discriminatie/scheldnamen): ${uitCache("discriminatie").size} eruit.`);
+
+  const ongepastAll = new Set([...uitCache("ongepast"), ...uitCache("veilig2"), ...uitCache("volwassen"), ...uitCache("discriminatie")]);
   fs.writeFileSync(BRON("ongepast.txt"), [...ongepastAll].sort().join("\n"));
   console.log(`Totaal ongepast (alle passes): ${ongepastAll.size}.`);
 

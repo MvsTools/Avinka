@@ -81,6 +81,7 @@ beledigende
 beledigingen
 bendelid
 bendeoorlog
+beng
 bermbom
 beschadigen
 beschamende
@@ -264,6 +265,7 @@ flirten
 flodders
 fokken
 foltering
+fransoos
 fuck
 fusilleren
 gadverdamme
@@ -352,6 +354,7 @@ hakenkruis
 hallucineer
 hallucineren
 hardcore
+heenga
 helle
 helleveeg
 hellevuur
@@ -545,6 +548,7 @@ moordwapens
 moordzaak
 moordzaken
 moordzuchtig
+moren
 musketten
 naai
 naaide
@@ -820,6 +824,7 @@ teef
 teefje
 teringzooi
 teven
+tink
 tippelen
 tongzoen
 tongzoenen
