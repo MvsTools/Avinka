@@ -245,6 +245,24 @@ function uitCache(tag) {
   fs.writeFileSync(BRON("eigennamen.txt"), [...eigennamen].sort().join("\n"));
   console.log(`Pass 11 (eigennamen): ${eigennamen.size} voor-/plaatsnamen eruit.`);
 
+  // ── Pass 13: VORM-classificatie — verbogen/vervoegde vormen LABELEN (niet weren).
+  // Geen veiligheid: dit merkt alleen of een woord een vervoeging is, zodat de tool
+  // grondvormen en vervoegingen los kan aanbieden ("ander tabblad"). Diminutieven
+  // (huisje) en grondwoorden die toevallig op -e/-en/-er eindigen blijven grondvorm.
+  await keur(alleWoorden,
+    "Hieronder Nederlandse woorden uit een spellingbank. Geef UITSLUITEND de woorden terug die een " +
+    "VERBOGEN of VERVOEGDE vorm zijn i.p.v. het grondwoord: (a) meervoud (bomen, katten, huizen), " +
+    "(b) verbogen bijvoeglijk naamwoord op -e (grote, nieuwe, zonnige), (c) vergrotende of " +
+    "overtreffende trap (groter, grootste, nieuwer, rijkste), (d) een vervoegd werkwoord (loopt, " +
+    "liep, gelopen, verdraagt, ontwijkend). Het GRONDWOORD zelf (boom, kat, huis, groot, nieuw, " +
+    "zonnig) laat je WEG. LET OP: (1) een grondwoord dat toevallig op -e/-en/-er/-s eindigt maar " +
+    "zelf een basiswoord is (tafel, moeder, oven, methode, ruimte, kelder, donder, fiets, reus, " +
+    "bagage) is GEEN vervoeging — laat het weg; (2) verkleinwoorden (huisje, autootje) zijn GEEN " +
+    "vervoeging — laat ze weg. Geef een JSON array van strings, geen uitleg.", "vervoeging");
+  const vervoegingen = uitCache("vervoeging");
+  fs.writeFileSync(BRON("vervoegingen.txt"), [...vervoegingen].sort().join("\n"));
+  console.log(`Pass 13 (vorm): ${vervoegingen.size} vervoegingen gelabeld (niet geweerd).`);
+
   // (Geen open/gesloten-snoei: die categorie is breed maar correct — agent/foto/
   //  samen/alles zijn echte klankgroepenwoorden. We laten 'm staan.)
 

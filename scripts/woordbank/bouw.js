@@ -42,6 +42,10 @@ try { fs.readFileSync(BRON("eigennamen.txt"), "utf8").split(/\r?\n/).filter(Bool
 // Woorden die GEEN klankgroepenwoord zijn — alleen uit open_gesloten weren.
 let GEEN_KLANKGROEP = new Set();
 try { GEEN_KLANKGROEP = new Set(fs.readFileSync(BRON("geen-klankgroep.txt"), "utf8").split(/\r?\n/).filter(Boolean)); } catch (e) {}
+// Vervoegingen/verbuigingen (AI-classificatie) — NIET weren, maar labelen ("v")
+// zodat de tool grondvormen en vervoegingen los kan aanbieden.
+let VERVOEGING = new Set();
+try { VERVOEGING = new Set(fs.readFileSync(BRON("vervoegingen.txt"), "utf8").split(/\r?\n/).filter(Boolean)); } catch (e) {}
 // Toegestaan-lijst: woorden die de AI-check te streng weghaalde maar wél mogen
 // (bv. wippen = op de wip). Overrulet de AI-ongepast-lijst, NOOIT de harde blocklist.
 let TOEGESTAAN = new Set();
@@ -227,7 +231,9 @@ for (const w of kandidaten) {
     // achtergrond = zwaarste ANDER ingredient (de doelcategorie zelf telt niet mee)
     const achtergrond = ings.filter(i => i.id !== ing.id).map(i => i.g);
     const vanaf = Math.max(3, ff, achtergrond.length ? Math.max(...achtergrond) : 0);
-    banken[ing.id].woorden.push([w, vanaf]);
+    // Verkleinwoorden in hun eigen categorie zijn het doel, geen "vervoeging".
+    const isVerv = VERVOEGING.has(w) && ing.id !== "verkleinwoord";
+    banken[ing.id].woorden.push(isVerv ? [w, vanaf, "v"] : [w, vanaf]);
   }
 }
 for (const id in banken) banken[id].woorden.sort((a, b) => a[1] - b[1] || RANG.get(a[0]) - RANG.get(b[0]) || a[0].localeCompare(b[0]));
@@ -263,7 +269,9 @@ for (const d of DOELEN) {
   if (b.woorden.length < 40) onder.push(d.id + " (" + b.woorden.length + ")");
   console.log(d.id.padEnd(34), d.soort.padEnd(14), String(b.woorden.length).padStart(5), " | " + perG.join("  "));
 }
-console.log("\nTOTAAL woorden (som over categorieen, met overlap):", totaal);
+let nVerv = 0, nGrond = 0;
+for (const id in banken) for (const x of banken[id].woorden) (x[2] === "v" ? nVerv++ : nGrond++);
+console.log("\nTOTAAL woorden (som over categorieen, met overlap):", totaal, `(grondvorm ${nGrond} · vervoeging ${nVerv})`);
 console.log("bestand: scripts/woordbank/woordenbank.json (" + Math.round(fs.statSync(path.join(__dirname, "woordenbank.json")).size / 1024) + " kB)");
 if (onder.length) console.log("\nLET OP, dunne categorieen (<40):", onder.join(", "));
 console.log("\nVoorbeelden groep 3 'cht':", banken.cht.woorden.filter(x => x[1] === 3).slice(0, 18).map(x => x[0]).join(", "));
