@@ -190,6 +190,8 @@ const BLOCK = new Set([
   "lesbisch","homoseksueel","homoseksualiteit","homo","homos","biseksueel","seks","seksueel","seksuele","seksualiteit",
   "erotisch","erotiek","orgasme","porno","pornografie","condoom","condooms","prostituee","prostitutie","bordeel",
   "vagina","penis","clitoris","masturberen","vrijen","geslachtsdeel","geslachtsgemeenschap","seksen","viagra",
+  // verontrustend medisch / zwaar volwassen onderwerp (gevonden via steekproef-audit):
+  "uitzaaiing","uitzaaiingen","seropositief","eunuch","exorcist","gijzeling","gijzelen","gynaecologie","pneumothorax",
 ]);
 
 function kindgeschikt(w) {
