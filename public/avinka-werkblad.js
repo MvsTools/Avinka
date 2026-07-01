@@ -2353,9 +2353,9 @@
       ".wb-breuk-rij{display:flex;align-items:center;gap:11px}",
       ".wb-breuk{height:28px;width:auto}",
       ".wb-breuk-v{font-size:15px;font-weight:700;display:inline-flex;align-items:center;gap:5px}",
-      ".wb-frac{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;vertical-align:middle;line-height:1.05;font-weight:inherit}",
-      ".wb-frac-t{padding:0 5px 1px;border-bottom:2px solid currentColor}",
-      ".wb-frac-n{padding:1px 5px 0}",
+      ".wb-frac{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;vertical-align:middle;line-height:1.05;font-weight:inherit;font-size:0.72em}", // kleiner dan de omringende tekst zodat de gestapelde breuk niet groter oogt dan gewone getallen
+      ".wb-frac-t{padding:0 4px 1px;border-bottom:1.5px solid currentColor}",
+      ".wb-frac-n{padding:1px 4px 0}",
       // Kleur-op-som
       ".wb-kleur-legenda{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}",
       ".wb-kleur-chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;background:var(--wb-soft);border-radius:999px;padding:3px 11px}",
