@@ -1000,6 +1000,23 @@
       }
       return { aflopend: aflopend, soort: soort, rijen: rijen };
     }
+    // Breuken ordenen: op WAARDE sorteren (dus vergelijken), tonen als echte breuk.
+    if (soort === "breuken") {
+      var NOEM = [2, 3, 4, 5, 6, 8], vastB = spec.perRij ? Math.min(5, Math.max(3, spec.perRij)) : 0;
+      for (var rb = 0; rb < aantal; rb++) {
+        var perRijB = vastB || randInt(3, 4), zien = {}, fracs = [], guard = 0;
+        while (fracs.length < perRijB && guard < 200) {
+          guard++;
+          var nb = NOEM[randInt(0, NOEM.length - 1)], tb = randInt(1, nb - 1), vb = tb / nb, sleutel = vb.toFixed(4);
+          if (zien[sleutel]) continue; // geen twee gelijke waarden (bijv. 1/2 en 2/4) → eenduidig te ordenen
+          zien[sleutel] = 1; fracs.push({ t: tb, n: nb, val: vb });
+        }
+        var sortedB = fracs.slice().sort(function (a, b) { return aflopend ? b.val - a.val : a.val - b.val; });
+        function frac(f) { return breukHtml(f.t, f.n); }
+        rijen.push({ door: shuffle(fracs).map(frac), antwoord: sortedB.map(frac) });
+      }
+      return { aflopend: aflopend, soort: "breuken", rijen: rijen };
+    }
     // aantal getallen per rij WISSELT (soms minder, soms meer); bovengrens schaalt
     // met het bereik zodat brede getallen niet buiten het werkblad vallen.
     var vast = spec.perRij ? Math.min(8, Math.max(3, spec.perRij)) : 0;
@@ -1950,10 +1967,12 @@
   function rOrdenen(b, nr, ant) {
     var O = b._orden || genOrdenen(b.spec || b);
     var h = opdrachtKop(nr, b.opdracht || ("Zet de getallen van " + (O.aflopend ? "groot naar klein" : "klein naar groot") + " in de hokjes."), b.em);
-    // alle hokjes even breed: kijk naar het grootste getal in de hele opdracht
-    var maxDig = 1;
-    O.rijen.forEach(function (rij) { rij.door.forEach(function (v) { maxDig = Math.max(maxDig, String(v).length); }); });
-    h += '<div class="wb-orden" style="--obw:' + (maxDig + 1.2).toFixed(1) + 'ch">';
+    // alle hokjes even breed: kijk naar het grootste getal in de hele opdracht.
+    // Bij breuken meten we de string-lengte NIET (dat is HTML) → vaste breuk-breedte.
+    var isFrac = O.soort === "breuken", maxDig = 1;
+    if (!isFrac) O.rijen.forEach(function (rij) { rij.door.forEach(function (v) { maxDig = Math.max(maxDig, String(v).length); }); });
+    var obw = isFrac ? "3ch" : ((maxDig + 1.2).toFixed(1) + "ch");
+    h += '<div class="wb-orden' + (isFrac ? " wb-orden-frac" : "") + '" style="--obw:' + obw + '">';
     O.rijen.forEach(function (rij, i) {
       // één grid voor de hele opdracht → kolommen (en dus de doel-hokjes) lijnen
       // gegarandeerd uit, ongeacht het aantal cijfers in het rijnummer.
@@ -2431,6 +2450,8 @@
       ".wb-orden-doel{display:flex;gap:6px}",
       ".wb-vakje.wb-orden-vk{width:max(36px,var(--obw,2.6ch));min-width:max(36px,var(--obw,2.6ch));padding:0 2px}",
       ".wb-chip.wb-orden-chip{width:max(36px,var(--obw,2.6ch));min-width:max(36px,var(--obw,2.6ch));text-align:center;padding:3px 4px;box-sizing:border-box}",
+      ".wb-orden-frac .wb-orden-vk{height:auto;min-height:36px;line-height:1;font-weight:600;padding:3px 4px;display:inline-flex;align-items:center;justify-content:center}",
+      ".wb-orden-frac .wb-orden-chip{height:auto;font-weight:600;padding:4px 6px;display:inline-flex;align-items:center;justify-content:center}",
       // Maaltafel-rooster
       ".wb-maalrij{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:16px 22px}",
       ".wb-maal{border-collapse:collapse}",
