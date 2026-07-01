@@ -1785,7 +1785,7 @@
       // Schrijfregel ALTIJD op een eigen regel eronder (lange letterreeksen zouden een
       // inline lijn anders laten wrappen: bij het ene woord ernaast, bij het andere eronder).
       h += '<div class="wb-anagram-item"><div class="wb-anagram-w"><span class="wb-rij-nr">' + (i + 1) + '.</span> <b class="wb-hussel">' + esc(it.door) + "</b></div>" +
-        (ant ? '<div class="wb-anagram-ant"><span class="wb-ant">' + esc(it.antwoord) + "</span></div>" : '<div class="wb-schrijfregel" style="margin-top:7px"></div>') + "</div>";
+        (ant ? '<div class="wb-anagram-ant"><span class="wb-ant">' + esc(it.antwoord) + "</span></div>" : '<div class="wb-schrijfregel" style="margin-top:24px"></div>') + "</div>";
     });
     h += "</div>";
     return '<div class="wb-blok">' + h + "</div>";
