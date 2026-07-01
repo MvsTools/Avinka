@@ -767,27 +767,15 @@
     function pasPaginaAanNu() {
       try {
         if (toonAntw || !laatsteWb) return; // meten op het vraagblad
-        var rondes = 10, ingekort = 0;
+        var rondes = 10;
         while (rondes-- > 0) {
           var page = document.querySelector('#wb-print .wb-page');
           if (!page || pastPagina(page)) break;
           if (!trimEen(laatsteWb)) break;
-          ingekort++;
           window.avinkaWerkblad.normaliseer(laatsteWb);
           document.getElementById('wb-print').innerHTML = window.avinkaWerkblad.render(laatsteWb, { antwoorden: false });
         }
-        paginaMeetHulp(ingekort); // TIJDELIJK: laat het gemeten getal zien voor kalibratie
       } catch (e) { /* fail-safe: laat het werkblad staan zoals het is */ }
-    }
-    // TIJDELIJK meethulpje (alleen scherm, niet printen). Weghalen na kalibratie.
-    function paginaMeetHulp(ingekort) {
-      try {
-        var page = document.querySelector('#wb-print .wb-page'); if (!page) return;
-        var b = page.offsetWidth || 720, lim = Math.round(b * KANTJE_FACTOR * 2 + 6), h = page.scrollHeight;
-        var d = document.getElementById('fit-debug');
-        if (!d) { d = document.createElement('div'); d.id = 'fit-debug'; d.setAttribute('style', 'margin:10px 0;padding:9px 13px;background:#fff3cd;border:1px solid #e0c060;border-radius:8px;font-family:monospace;font-size:13px;color:#5a4a00'); var wp = document.getElementById('wb-print'); wp.parentNode.insertBefore(d, wp); }
-        d.textContent = 'PAGINA-FIT (tijdelijk): hoogte ' + h + ' px / limiet ' + lim + ' px (breedte ' + b + ') → ' + (h <= lim ? 'PAST' : 'TE LANG') + ' · ingekort: ' + ingekort + ' stap(pen)';
-      } catch (e) { }
     }
 
     // ── Resultaat tonen ──────────────────────────────────────────────────────
