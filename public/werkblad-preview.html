@@ -130,7 +130,7 @@
         [35, "kruiswoord", "Kruiswoordpuzzel", [{ type: "kruiswoord", opdracht: "Los op.", woorden: [{ woord: "maan", omschrijving: "rond aan de hemel" }, { woord: "aarde", omschrijving: "onze planeet" }, { woord: "ster", omschrijving: "fonkelt 's nachts" }, { woord: "raket", omschrijving: "vliegt de ruimte in" }, { woord: "komeet", omschrijving: "met een staart" }, { woord: "zon", omschrijving: "geeft licht overdag" }, { woord: "mars", omschrijving: "de rode planeet" }, { woord: "baan", omschrijving: "rondje om de aarde" }, { woord: "ruimte", omschrijving: "daar zweven de planeten" }, { woord: "planeet", omschrijving: "draait om de zon" }, { woord: "meteoor", omschrijving: "vallende ster" }, { woord: "krater", omschrijving: "kuil op de maan" }, { woord: "satelliet", omschrijving: "draait om een planeet" }, { woord: "telescoop", omschrijving: "kijkbuis naar de sterren" }, { woord: "melkweg", omschrijving: "ons sterrenstelsel" }, { woord: "heelal", omschrijving: "alles in de ruimte samen" }] }]],
         [36, "anagram", "Woord husselen (anagram)", [{ type: "anagram", opdracht: "Maak het goede woord.", woorden: [{ woord: "tafel" }, { woord: "boek" }, { woord: "stoel" }, { woord: "bloem" }, { woord: "fiets" }, { woord: "vogel" }, { woord: "water" }, { woord: "school" }, { woord: "appel" }, { woord: "trein" }] }]],
         [37, "zinbouwen", "Zin bouwen (woordvolgorde)", [{ type: "zinbouwen", opdracht: "Zet in de goede volgorde.", zinnen: [{ zin: "de hond rent hard weg" }, { zin: "wij gaan morgen zwemmen" }, { zin: "de zon schijnt fel vandaag" }, { zin: "ik lees een spannend boek" }] }]],
-        [38, "lettergrepen", "Lettergrepen verdelen", [{ type: "lettergrepen", opdracht: "Verdeel in lettergrepen.", woorden: [{ woord: "konijn", delen: ["ko", "nijn"] }, { woord: "olifant", delen: ["o", "li", "fant"] }, { woord: "tomaat", delen: ["to", "maat"] }, { woord: "vakantie", delen: ["va", "kan", "tie"] }, { woord: "kabouter", delen: ["ka", "bou", "ter"] }, { woord: "banaan", delen: ["ba", "naan"] }, { woord: "krokodil", delen: ["kro", "ko", "dil"] }] }]],
+        [38, "lettergrepen", "Lettergrepen verdelen", [{ type: "lettergrepen", opdracht: "Verdeel in lettergrepen.", woorden: [{ woord: "konijn", delen: ["ko", "nijn"] }, { woord: "olifant", delen: ["o", "li", "fant"] }, { woord: "tomaat", delen: ["to", "maat"] }, { woord: "vakantie", delen: ["va", "kan", "tie"] }, { woord: "kabouter", delen: ["ka", "bou", "ter"] }, { woord: "banaan", delen: ["ba", "naan"] }, { woord: "krokodil", delen: ["kro", "ko", "dil"] }, { woord: "tijger", delen: ["tij", "ger"] }, { woord: "paraplu", delen: ["pa", "ra", "plu"] }, { woord: "muziek", delen: ["mu", "ziek"] }] }]],
         [39, "rijmwoorden", "Rijmwoorden", [{ type: "rijmwoorden", opdracht: "Schrijf een rijmwoord.", woorden: [{ woord: "maan", rijm: ["baan", "laan"] }, { woord: "huis", rijm: ["muis"] }, { woord: "boom", rijm: ["zoom", "droom"] }, { woord: "vis", rijm: ["wis", "mis"] }, { woord: "boek", rijm: ["doek", "hoek"] }, { woord: "hand", rijm: ["band", "strand"] }, { woord: "deur", rijm: ["kleur", "geur"] }] }]],
         [40, "synant", "Synoniemen / antoniemen", [{ type: "synant", soort: "antoniem", opdracht: "Koppel de tegenstellingen.", paren: [["groot", "klein"], ["warm", "koud"], ["snel", "langzaam"], ["hoog", "laag"], ["dik", "dun"], ["licht", "donker"]] }]],
         [41, "lidwoord", "Lidwoord (de / het)", [{ type: "lidwoord", opdracht: "de of het?", woorden: [{ woord: "tafel", lidwoord: "de" }, { woord: "huis", lidwoord: "het" }, { woord: "boom", lidwoord: "de" }, { woord: "stoel", lidwoord: "de" }, { woord: "raam", lidwoord: "het" }, { woord: "deur", lidwoord: "de" }, { woord: "kind", lidwoord: "het" }, { woord: "bloem", lidwoord: "de" }] }]],
@@ -163,7 +163,7 @@
       meerkeuze: [3, 5, 8], invul: [4, 7, 10], open: [2, 4, 5], waarnietwaar: [4, 6, 8],
       koppelen: [3, 5, 6], categoriseren: [6, 8, 12],
       woordzoeker: [8, 12, 16], kruiswoord: [8, 12, 16], anagram: [6, 8, 10],
-      zinbouwen: [2, 3, 4], lettergrepen: [3, 5, 7], rijmwoorden: [3, 5, 7],
+      zinbouwen: [2, 3, 4], lettergrepen: [6, 8, 10], rijmwoorden: [3, 5, 7],
       synant: [3, 4, 6], lidwoord: [4, 6, 8], zoekdefout: [2, 4, 6]
     };
     function aantalVoor(type) { var a = ITEMS[type]; return a ? a[IDX[lengte]] : null; }
@@ -205,7 +205,7 @@
       return b;
     }
     // Goedgekeurde (geteste) types. Verplaats hier nummers naartoe zodra ze klaar zijn.
-    var GETEST = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37];
+    var GETEST = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38];
     function isGetest(n) { return GETEST.indexOf(n) !== -1; }
     function telTab(g) { var n = 0, num = 0; CATS.forEach(function (c) { c[3].forEach(function () { num++; if (isGetest(num) === g) n++; }); }); return n; }
     // Cache het gegenereerde (genormaliseerde) blok per type+index+lengte, zodat
