@@ -1782,8 +1782,10 @@
     var h = opdrachtKop(nr, b.opdracht || "Maak van de letters het goede woord.", b.em);
     h += '<div class="wb-invul-lijst">';
     H.forEach(function (it, i) {
-      h += '<div class="wb-invul-rij"><span class="wb-rij-nr">' + (i + 1) + '.</span><span><b class="wb-hussel">' + esc(it.door) + "</b> &nbsp;→&nbsp; " +
-        (ant ? '<span class="wb-ant">' + esc(it.antwoord) + "</span>" : lijn(120)) + "</span></div>";
+      // Schrijfregel ALTIJD op een eigen regel eronder (lange letterreeksen zouden een
+      // inline lijn anders laten wrappen: bij het ene woord ernaast, bij het andere eronder).
+      h += '<div class="wb-anagram-item"><div class="wb-anagram-w"><span class="wb-rij-nr">' + (i + 1) + '.</span> <b class="wb-hussel">' + esc(it.door) + "</b></div>" +
+        (ant ? '<div class="wb-anagram-ant"><span class="wb-ant">' + esc(it.antwoord) + "</span></div>" : '<div class="wb-schrijfregel" style="margin-top:7px"></div>') + "</div>";
     });
     h += "</div>";
     return '<div class="wb-blok">' + h + "</div>";
@@ -2407,6 +2409,8 @@
       ".wb-geheim-in{width:22px;height:24px;border-bottom:2px solid var(--wb-ink);text-align:center;font-weight:800;color:var(--wb-accent)}",
       // Hussel / zin
       ".wb-hussel{letter-spacing:2px;font-size:16px}",
+      ".wb-anagram-item{break-inside:avoid;-webkit-column-break-inside:avoid;margin:0 0 13px}",
+      ".wb-anagram-ant{margin-top:5px}",
       ".wb-zin-rij{margin:0 0 12px}",
       ".wb-zin-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}",
       // Lidwoord

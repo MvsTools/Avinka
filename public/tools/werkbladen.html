@@ -702,8 +702,9 @@
     }
 
     // ── Pagina-fit: past het op 2 kantjes? Zo niet: LOKAAL inkorten (geen AI-call) ──
-    // Eén A4-kantje is ~1,15× zo hoog als breed (na printmarge); 2 kantjes = 2×.
-    var KANTJE_FACTOR = 1.15;
+    // Eén A4-kantje is ~1,3× zo hoog als breed (na printmarge); 2 kantjes = 2×. Ruim
+    // gekozen: liever het volle werkblad houden dan te vroeg inkorten.
+    var KANTJE_FACTOR = 1.3;
     function pastPagina(page) {
       var b = page.offsetWidth || 720;
       return page.scrollHeight <= b * KANTJE_FACTOR * 2 + 6;
@@ -740,18 +741,15 @@
       var cat = null, cbest = 3;
       blk.forEach(function (b) { if (b.type === 'categoriseren') (b.categorieen || []).forEach(function (c) { if ((c.items || []).length > cbest) { cbest = c.items.length; cat = c; } }); });
       if (cat) { cat.items.pop(); return true; }
-      // 4) laatste redmiddel: minst belangrijke blok eruit (reflectie/teken/leestekst), maar hou >= 2 opdrachten
-      var opdrachten = blk.filter(function (b) { return b.type !== 'tekst' && b.type !== 'reflectie'; });
+      // 4) alleen OPTIONELE blokken weg (reflectie/teken/leestekst) — die tellen niet als
+      //    opdracht. Een echte OPDRACHT halen we NOOIT weg: de leerkracht koos het aantal.
+      //    Past het daarna nog niet, dan accepteren we liever een iets langer werkblad dan
+      //    minder opdrachten dan gevraagd.
       var weg = ['reflectie', 'teken', 'tekst'];
       for (var w = 0; w < weg.length; w++) {
         for (var i = wb.blokken.length - 1; i >= 0; i--) {
           if (wb.blokken[i] && wb.blokken[i].type === weg[w]) { wb.blokken.splice(i, 1); return true; }
         }
-      }
-      // 5) nog te lang: laatste opdracht-blok eruit zolang er >= 2 overblijven
-      if (opdrachten.length > 2) {
-        var idx = wb.blokken.lastIndexOf(opdrachten[opdrachten.length - 1]);
-        if (idx >= 0) { wb.blokken.splice(idx, 1); return true; }
       }
       return false;
     }
