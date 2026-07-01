@@ -458,7 +458,7 @@
   // Taal actief-naam of een fonetische omschrijving). Volgorde = prioriteit.
   // Uitbreidbaar: voeg een categorie of woorden toe (alles met de hand geverifieerd).
   var SPELLING_WOORDEN = [
-    { naam: "woorden waarin je /ie/ hoort maar één i schrijft (zoals kilo, liter)",
+    { naam: "woorden waarin je /ie/ hoort maar één i schrijft (zoals kilo, liter)", bank: "kilo_ie",
       test: /kilo\s*-?woord|liter\s*-?woord|hoor.{0,8}ie.{0,18}schrijf.{0,8}\bi\b|\bi\b[^a-z]{0,8}(klinkt als|als)[^a-z]{0,4}ie/,
       woorden: ["kilo", "liter", "prima", "titel", "crisis", "figuur", "minus", "via", "diploma", "januari", "februari"] },
     { naam: "de c die klinkt als /s/ (zoals cent, citroen)", bank: "c_als_s",
@@ -531,6 +531,17 @@
       test: /klankgroep|open.{0,4}gesloten|verdubbel|kasteel\s*-?woord|jager\s*-?woord|bakker\s*-?woord/,
       woorden: ["boom", "bom", "raam", "ram", "pot", "pen", "kar", "bal", "vis", "man", "zon", "kip"] }
   ];
+  // Kenmerk per categorie: de letter(s) die de REGEL oefent en dus in het invul-gat
+  // moeten vallen (niet een willekeurige middenletter). Keyed op bank-id. Zonder
+  // kenmerk (transformatie-categorieen als open/gesloten, verkleinwoord) → geen
+  // vaste letter om te blanken.
+  var SPELLING_FEAT = {
+    kilo_ie: /i/, c_als_s: /c/, c_als_k: /c/, tie: /ties?$/, isch: /isch$/, x: /x/,
+    th: /th/, ch_sj: /ch/, eau: /eau/, accent_e: /[éèê]/, eer_oor_eur: /eer|oor|eur/,
+    aai_ooi_oei: /aai|ooi|oei/, eeuw_ieuw: /eeuw|ieuw/, ei_ij: /ei|ij/, au_ou: /au|ou/,
+    cht: /cht/, ng_nk: /ng|nk/, sch: /sch/
+  };
+
   // ALLE genoemde categorieen (een leerkracht kan er meerdere tegelijk willen
   // oefenen, bijv. "taxiwoord, colawoord, centwoord, cadeauwoord").
   function vindSpellingCats(context) {
@@ -641,7 +652,7 @@
           woorden = window.avinkaWoordenbank[cat.bank].filter(function (x) { return x[1] <= +g && x[2] !== "v"; }).map(function (x) { return x[0]; });
           if (woorden.length < 8) woorden = cat.woorden.slice();
         } else woorden = cat.woorden.slice();
-        return { naam: cat.naam, key: cat.bank || cat.naam, woorden: woorden };
+        return { naam: cat.naam, key: cat.bank || cat.naam, woorden: woorden, feat: SPELLING_FEAT[cat.bank] || null };
       });
     },
     verwerkingen: function (vak, groep, n) {
