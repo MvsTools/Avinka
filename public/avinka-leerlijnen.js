@@ -628,6 +628,22 @@
         " Gebruik per categorie de bijbehorende woorden (meng ze niet door elkaar binnen één opdracht, tenzij de opdracht juist het onderscheiden van de categorieen oefent):\n" +
         cats.map(function (c) { return "• " + bankVoor(c); }).join("\n");
     },
+    // Gestructureerde bankwoorden per herkende categorie (voor code-controle in de
+    // tool: losse-woord-opdrachten mogen ALLEEN deze woorden bevatten). Geeft
+    // [{naam, key, woorden:[...]}], of [] als er geen categorie wordt herkend.
+    spellingBanken: function (context, groep) {
+      var cats = vindSpellingCats(context);
+      if (!cats.length) return [];
+      var g = (String(groep || "").match(/[3-8]/) || [])[0];
+      return cats.map(function (cat) {
+        var woorden;
+        if (cat.bank && g && window.avinkaWoordenbank && window.avinkaWoordenbank[cat.bank]) {
+          woorden = window.avinkaWoordenbank[cat.bank].filter(function (x) { return x[1] <= +g && x[2] !== "v"; }).map(function (x) { return x[0]; });
+          if (woorden.length < 8) woorden = cat.woorden.slice();
+        } else woorden = cat.woorden.slice();
+        return { naam: cat.naam, key: cat.bank || cat.naam, woorden: woorden };
+      });
+    },
     verwerkingen: function (vak, groep, n) {
       if (!isZaakvakKey(vak)) return "";
       var greep = sample(VERWERKINGEN_ZAAK, n || 12);

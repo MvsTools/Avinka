@@ -587,10 +587,11 @@
 
         wb.vak = inv.vak; wb.groep = inv.groep;
         wb.thema = bepaalThema(inv.themaKeuze, inv.onderwerp, inv.groep, inv.vak);
+        laatsteMeta = inv;
+        dwingSpellingWoordenAf(wb); // foute/dubbelzinnige losse woorden -> bankwoorden (lokaal)
         window.avinkaWerkblad.normaliseer(wb);
 
         laatsteWb = wb;
-        laatsteMeta = inv;
         toonAntw = false;
         verfijnWensen = [];
         // reset uit een eventueel geladen bestand
@@ -609,6 +610,69 @@
         knop.disabled = false;
         document.getElementById('laden').classList.remove('aan');
       }
+    }
+
+    // ── Woordenbank afdwingen bij spelling (losse-woord-opdrachten) ──────────
+    // Bij sorteren/woordzoeker/anagram staat een woord op zichzelf: een fout of
+    // dubbelzinnig woord vervangen we LOKAAL door een goed bankwoord (geen AI-call).
+    // Zinnen (invul/zoek-de-fout) raken we NIET aan: daar zou een swap de context
+    // breken; die laten we aan de prompt over.
+    function dwingSpellingWoordenAf(wb) {
+      try {
+        if (!laatsteMeta || !/spelling/i.test(laatsteMeta.vak || '') || !window.avinkaLeerlijnen.spellingBanken) return;
+        var banken = window.avinkaLeerlijnen.spellingBanken((laatsteMeta.onderwerp || '') + ' ' + (laatsteMeta.context || ''), laatsteMeta.groep);
+        if (!banken || !banken.length) return;
+        function heeft(bank, w) { w = String(w).toLowerCase(); return bank.woorden.some(function (x) { return x.toLowerCase() === w; }); }
+        function sigVan(b) { var m = String(b.naam).match(/\/([a-z]+)\//); if (m) return '/' + m[1] + '/'; return (b.key || '').length ? String(b.key).toLowerCase() : null; }
+        function kiesBank(items) { var best = null, bn = -1; banken.forEach(function (b) { var n = (items || []).filter(function (w) { return heeft(b, w); }).length; if (n > bn) { bn = n; best = b; } }); return best; }
+        function kiesBankVoorKolom(col) {
+          var naam = String(col.naam || '').toLowerCase();
+          var opNaam = banken.filter(function (b) { var s = sigVan(b); return s && naam.indexOf(s.toLowerCase()) !== -1; });
+          if (opNaam.length === 1) return opNaam[0];
+          return kiesBank(col.items) || opNaam[0] || banken[0];
+        }
+        // Dubbelzinnige woorden: die in MEER dan één van de gesorteerde banken zitten
+        // (bijv. "context" in /k/ én /ks/). Bij sorteren zijn die niet eenduidig te
+        // plaatsen, dus die weren we en vervangen we door woorden die uniek zijn.
+        var telPerWoord = {};
+        banken.forEach(function (b) { var g = {}; b.woorden.forEach(function (x) { var lw = x.toLowerCase(); if (!g[lw]) { g[lw] = 1; telPerWoord[lw] = (telPerWoord[lw] || 0) + 1; } }); });
+        function ambigu(w) { return (telPerWoord[String(w).toLowerCase()] || 0) > 1; }
+        // Vervang in een woordenlijst alle ongeldige/dubbele woorden door ongebruikte woorden uit de pool.
+        function herstel(woorden, lees, schrijf, geldig, pool) {
+          var inLijst = {};
+          var stap1 = (woorden || []).map(function (w) {
+            var lw = String(lees(w)).toLowerCase();
+            if (geldig(lw) && !inLijst[lw]) { inLijst[lw] = 1; return w; }
+            return null;
+          });
+          var vrij = pool.filter(function (x) { return !inLijst[x.toLowerCase()]; });
+          return stap1.map(function (w) {
+            if (w !== null) return w;
+            if (!vrij.length) return null;
+            var i = Math.floor(Math.random() * vrij.length), nw = vrij.splice(i, 1)[0];
+            inLijst[nw.toLowerCase()] = 1; return schrijf(nw);
+          }).filter(function (w) { return w !== null; });
+        }
+        var unie = [], gezien = {};
+        banken.forEach(function (b) { b.woorden.forEach(function (x) { if (!gezien[x.toLowerCase()]) { gezien[x.toLowerCase()] = 1; unie.push(x); } }); });
+        function inUnie(w) { return !!gezien[String(w).toLowerCase()]; }
+        (wb.blokken || []).forEach(function (blk) {
+          if (!blk || !blk.type) return;
+          if (blk.type === 'categoriseren') {
+            (blk.categorieen || []).forEach(function (col) {
+              var bank = kiesBankVoorKolom(col);
+              if (!bank) return;
+              var pool = bank.woorden.filter(function (x) { return !ambigu(x); }); // alleen eenduidige woorden
+              col.items = herstel(col.items, function (w) { return w; }, function (w) { return w; },
+                function (lw) { return heeft(bank, lw) && !ambigu(lw); }, pool.length ? pool : bank.woorden);
+            });
+          } else if (blk.type === 'woordzoeker') {
+            blk.woorden = herstel(blk.woorden, function (w) { return w; }, function (w) { return w.toUpperCase(); }, inUnie, unie);
+          } else if (blk.type === 'anagram') {
+            blk.woorden = herstel(blk.woorden, function (w) { return (w && w.woord != null) ? w.woord : w; }, function (w) { return { woord: w }; }, inUnie, unie);
+          }
+        });
+      } catch (e) { /* fail-safe */ }
     }
 
     // ── Pagina-fit: past het op 2 kantjes? Zo niet: LOKAAL inkorten (geen AI-call) ──
