@@ -1675,6 +1675,7 @@
 
   function rRijm(b, nr, ant) {
     var h = opdrachtKop(nr, b.opdracht || "Schrijf bij elk woord een woord dat erop rijmt.", b.em);
+    if (ant) h += '<div class="wb-ant-note">Dit zijn voorbeelden. Andere goede rijmwoorden mogen ook.</div>';
     h += '<div class="wb-invul-lijst">';
     arr(b.woorden).forEach(function (w, i) {
       var woord = (w && w.woord != null ? w.woord : w), rijm = (w && w.rijm) || [];
@@ -2097,6 +2098,7 @@
       ".wb-open-vraag{margin:10px 0 16px}",
       ".wb-schrijfregel{border-bottom:1.5px dotted rgba(34,28,58,.35);height:1px}",
       ".wb-ant-blok{margin-top:5px;background:var(--wb-soft);border-left:3px solid var(--wb-accent);border-radius:8px;padding:7px 11px;font-size:14px;font-weight:600;color:var(--wb-ink)}",
+      ".wb-ant-note{margin:2px 0 10px;font-size:12.5px;font-style:italic;color:rgba(34,28,58,.6)}",
       // Koppelen
       ".wb-kp2{position:relative}",
       ".wb-kp2-rij{position:relative;height:48px}",
