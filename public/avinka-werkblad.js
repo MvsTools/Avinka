@@ -973,7 +973,24 @@
   // Getallen ordenen.
   function genOrdenen(spec) {
     spec = spec || {};
+    var soort = spec.soort || "getallen";
     var aantal = Math.min(8, Math.max(2, spec.aantal || 4)), max = spec.max || 100, aflopend = !!spec.aflopend, rijen = [];
+    // Kommagetallen/procenten: numeriek sorteren, dán als NL-string tonen.
+    if (soort === "kommagetallen" || soort === "procenten") {
+      var vastK = spec.perRij ? Math.min(6, Math.max(3, spec.perRij)) : 0;
+      function disp(v) { return soort === "procenten" ? v + "%" : String(v).replace(".", ","); }
+      for (var rk = 0; rk < aantal; rk++) {
+        var perRijK = vastK || randInt(3, 5), setK = {};
+        while (Object.keys(setK).length < perRijK) {
+          var val = soort === "procenten" ? randInt(1, 20) * 5 : randInt(1, (spec.max || 10) * 10) / 10;
+          setK[val] = 1;
+        }
+        var numsK = Object.keys(setK).map(Number);
+        var sortedK = numsK.slice().sort(function (a, b) { return aflopend ? b - a : a - b; });
+        rijen.push({ door: shuffle(numsK).map(disp), antwoord: sortedK.map(disp) });
+      }
+      return { aflopend: aflopend, soort: soort, rijen: rijen };
+    }
     // aantal getallen per rij WISSELT (soms minder, soms meer); bovengrens schaalt
     // met het bereik zodat brede getallen niet buiten het werkblad vallen.
     var vast = spec.perRij ? Math.min(8, Math.max(3, spec.perRij)) : 0;
