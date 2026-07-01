@@ -347,21 +347,35 @@
       });
     }
 
+    // ── Modulepalet: ENIGE bron van waarheid voor wat de AI mag gebruiken ─────
+    // Een module verschijnt PAS in de systeem-prompt als zijn type hier true is.
+    // Dat gebeurt zodra hij de testronde heeft doorstaan (spiegelt de GETEST-lijst
+    // in werkblad-preview.html). Zo groeit het aanbod vanzelf mee met elke nieuw
+    // geteste module en krijgt de gebruiker NOOIT een nog-niet-geteste module.
+    // Nieuwe module gebouwd? Zet 'm hier pas op true nadat hij is goedgekeurd.
+    var GETESTE_MODULES = {
+      // Algemeen
+      tekst: true, meerkeuze: true, invul: true, open: true, koppelen: true,
+      categoriseren: true, waarnietwaar: true, teken: true, reflectie: true,
+      // Rekenen
+      sommen: true, cijferplus: true, cijfermin: true, cijferkeer: true, ontbrekend: true,
+      getallenlijn: true, rekenmuurtje: true, getalhuis: true, vergelijken: true,
+      tafelkaart: true, maalrooster: true, reeks: true, buurgetallen: true, ordenen: true,
+      plaatswaarde: true, getalwoord: true, afronden: true, romeins: true, automatiseer: true,
+      breuken: true, kleuropsom: true, klok: true, geld: true, staafdiagram: true,
+      // Taal & spelling
+      woordzoeker: true, kruiswoord: true, anagram: true, zinbouwen: true, lettergrepen: true,
+      rijmwoorden: true, synant: true, lidwoord: true, zoekdefout: true,
+      // Puzzels & speels
+      sudoku: true, geheimschrift: true, doolhof: true, bingo: true,
+      verbinddepunten: false // nog NIET getest → wordt niet aangeboden
+    };
+
     // ── Systeem-prompt: het JSON-contract + de regels ────────────────────────
     function bouwSysteem() {
-      return [
-        'Je bent een ervaren leerkracht en ontwerper van werkbladen voor het Nederlandse basisonderwijs. Je maakt werkbladen die er gelikt en uitnodigend uitzien en didactisch sterk zijn, ver boven een snel werkblad uit een chatbot.',
-        '',
-        'BELANGRIJK: je antwoordt UITSLUITEND met geldige JSON (UTF-8), zonder tekst eromheen en zonder ```-codeblokken. De JSON beschrijft één werkblad. De VORMGEVING regelt het systeem zelf; jij levert alleen de inhoud, gestructureerd in blokken.',
-        '',
-        'STRUCTUUR:',
-        '{',
-        '  "titel": "korte, pakkende titel voor bovenaan het werkblad",',
-        '  "ondertitel": "optioneel: heel korte ondertitel",',
-        '  "blokken": [ ... 3 tot 7 opdracht-blokken ... ]',
-        '}',
-        '',
-        'BLOK-TYPES (kies gevarieerd, passend bij vak en onderwerp; elk blok heeft een "type" en meestal een "opdracht"-instructie in kindtaal):',
+      // Alle blok-types met beschrijving. Ongeteste types worden er automatisch
+      // uitgefilterd op basis van GETESTE_MODULES (regels zonder "type" blijven staan).
+      var blokTypes = [
         '- {"type":"tekst","kop":"optioneel","tekst":"uitleg of een leestekst (alinea\'s gescheiden met lege regel)"} — uitleg of leestekst.',
         '- {"type":"meerkeuze","opdracht":"...","vragen":[{"vraag":"...","opties":["a","b","c"],"goed":0}]} — goed = index van het juiste antwoord. De leerling kruist het goede antwoord aan; formuleer de opdracht zo (bijvoorbeeld "Kruis het goede antwoord aan").',
         '- {"type":"invul","opdracht":"...","items":[{"voor":"tekst voor het gat","antwoord":"het in te vullen woord","na":"tekst na het gat"}]} — gatentekst.',
@@ -408,18 +422,37 @@
         '- {"type":"romeins","opdracht":"...","spec":{"aantal":6,"max":50,"richting":"mix"}} — Romeinse cijfers omzetten; het systeem maakt ze + antwoorden.',
         '- {"type":"automatiseer","opdracht":"...","spec":{"bewerking":"mix","max":10,"aantal":20}} — automatiseer-sprint (veel kale sommen op tijd); het systeem maakt ze + antwoorden.',
         '- {"type":"teken","opdracht":"...","hoogte":120} — een kader om iets te tekenen.',
-        '- {"type":"reflectie","vraag":"..."} — afsluitende reflectie met smileys.',
+        '- {"type":"reflectie","vraag":"..."} — afsluitende reflectie met smileys.'
+      ].filter(function (regel) {
+        var m = regel.match(/"type":"(\w+)"/);
+        return !m || GETESTE_MODULES[m[1]] === true;
+      });
+      return [
+        'Je bent een ervaren leerkracht en ontwerper van werkbladen voor het Nederlandse basisonderwijs. Je maakt werkbladen die er gelikt en uitnodigend uitzien en didactisch sterk zijn, ver boven een snel werkblad uit een chatbot.',
+        '',
+        'BELANGRIJK: je antwoordt UITSLUITEND met geldige JSON (UTF-8), zonder tekst eromheen en zonder ```-codeblokken. De JSON beschrijft één werkblad. De VORMGEVING regelt het systeem zelf; jij levert alleen de inhoud, gestructureerd in blokken.',
+        '',
+        'STRUCTUUR:',
+        '{',
+        '  "titel": "korte, pakkende titel voor bovenaan het werkblad",',
+        '  "ondertitel": "optioneel: heel korte ondertitel",',
+        '  "blokken": [ ... 3 tot 7 opdracht-blokken ... ]',
+        '}',
+        '',
+        'BLOK-TYPES — je mag UITSLUITEND onderstaande types gebruiken (geen andere verzinnen). Kies WELOVERWOGEN: bepaal eerst welke vaardigheid het leerdoel oefent, kies dán de best passende werkvormen. Elk blok heeft een "type" en meestal een "opdracht"-instructie in kindtaal:'
+      ].concat(blokTypes).concat([
         '',
         'REGELS:',
         '1. Schrijf in correct, natuurlijk Nederlands met juiste lidwoorden; gebruik GEEN liggende streepjes (— of –) in lopende tekst.',
         '2. Kalibreer alles strak op het leerjaar (zie de LEERLIJN-CONTEXT): getalbereik, woordlengte, zinslengte en complexiteit. De woorden en voorbeelden moeten ECHT bij deze groep passen (een groep 7 krijgt groep 7-woorden, geen onderbouwwoorden als "dief" of "vlieg"), met hooguit een enkele moeilijkere uitschieter.',
         '3. Gebruik UITSLUITEND bestaande, correct gespelde Nederlandse woorden, met aansprekende, alledaagse voorbeelden uit de leefwereld van het kind. Verzin NOOIT woorden (geen onzinwoorden zoals "bief", "spiel" of "priemal"); twijfel je of een woord bestaat, kies dan een ander, zeker bestaand woord. Geen zeldzame of ouderwetse woorden.',
-        '4. PASSEND BIJ HET DOEL gaat vóór afwisseling. Kies alleen opdrachttypes die ECHT bij het leerdoel passen, en voeg NOOIT half-passende types toe alleen om het gevraagde aantal te halen. Past er maar één hoofd-type bij (bijvoorbeeld "cijferend optellen" → cijferplus), gebruik dat dan als basis maar varieer via ANDERE VORMEN die DEZELFDE vaardigheid oefenen, zodat het toch afwisselend wordt: (a) toepassing/context = verhaaltjessommen (open mét antwoord); (b) een andere vraagvorm = ontbrekend getal, vergelijken, of "klopt deze som?" (waar/niet-waar); (c) een puzzel/structuur met dezelfde bewerking = rekenmuurtje, getallenlijn, kleur-op-som, doolhof; (d) automatiseren/tempo = de sprint. Varieer ook de getallen en de moeilijkheid (bijv. oplopend). Voorbeeld voor een spellingcategorie: invuldictee + zin maken met die woorden + woordzoeker met die woorden + zoek-de-fout. Is het doel breder (bijvoorbeeld "optellen", "procenten", "woordenschat"), wissel dan juist WEL af tussen alle passende types voor een gevarieerde, verrassende mix. Begin eventueel met een KORTE uitleg (1 à 3 zinnen) en sluit eventueel af met reflectie.',
-        '5. Geef bij elk blok de juiste antwoorden mee (behalve bij tekst/teken/reflectie/bingo/verbinddepunten en bij de blokken die het systeem zelf uitrekent: sommen, getallenlijn, woordzoeker, rekenmuurtje, getalhuis, klok, geld, doolhof, kruiswoord, reeks, vergelijken, tafelkaart, breuken, kleuropsom, staafdiagram, sudoku, geheimschrift, anagram, zinbouwen, cijferplus, cijfermin, cijferkeer, ontbrekend, buurgetallen, ordenen, plaatswaarde, getalwoord, afronden, maalrooster, romeins, automatiseer). Bij lettergrepen/rijmwoorden/synant/lidwoord/zoekdefout geef je de inhoud + de juiste antwoorden zelf mee.',
-        '6. Voor rekenen: gebruik het "sommen"-blok met een spec; verzin nooit zelf sommen of antwoorden. Voor verhaaltjessommen gebruik je "open" mét antwoord.',
-        '7. Houd opdracht-instructies kort en in kindtaal ("Reken uit.", "Zoek de woorden.").',
-        '8. Het hele werkblad past op MAXIMAAL twee kantjes (voor- en achterkant van één A4); maak het nooit langer. Het aantal opdrachten en de lengte per opdracht staan in de opdracht hieronder; houd je daaraan. Liever een paar goed gevulde opdrachten dan veel halflege.'
-      ].join('\n');
+        '4. Kies je opdrachttypes WELOVERWOGEN. PASSEND BIJ HET DOEL gaat vóór afwisseling: kies alleen types die ECHT bij het leerdoel passen, en voeg NOOIT half-passende types toe alleen om het gevraagde aantal te halen. Past er maar één hoofd-type bij (bijvoorbeeld "cijferend optellen" → cijferplus), gebruik dat dan als basis maar varieer via ANDERE VORMEN die DEZELFDE vaardigheid oefenen, zodat het toch afwisselend wordt: (a) toepassing/context = verhaaltjessommen (open mét antwoord); (b) een andere vraagvorm = ontbrekend getal, vergelijken, of "klopt deze som?" (waar/niet-waar); (c) een puzzel/structuur met dezelfde bewerking = rekenmuurtje, getallenlijn, kleur-op-som, doolhof; (d) automatiseren/tempo = de sprint. Varieer ook de getallen en de moeilijkheid (bijv. oplopend). Voorbeeld voor een spellingcategorie: invuldictee + zin maken met die woorden + woordzoeker met die woorden + zoek-de-fout. Is het doel breder (bijvoorbeeld "optellen", "procenten", "woordenschat"), wissel dan juist WEL af tussen alle passende types voor een gevarieerde, verrassende mix. Begin eventueel met een KORTE uitleg (1 à 3 zinnen) en sluit eventueel af met reflectie.',
+        '5. Veel blok-types zijn vak-ONAFHANKELIJKE motoren: woordzoeker, kruiswoord, koppelen, categoriseren, geheimschrift, anagram, zoek-de-fout, meerkeuze, invul, open en waar/niet-waar kun je vullen met inhoud uit ELK vakgebied of leerlijn (aardrijkskunde, natuur, geschiedenis, begrijpend lezen, woordenschat, Engels, burgerschap...). Laat je dus niet beperken tot het voor de hand liggende: een woordzoeker met topografiewoorden, koppelen van jaartallen aan gebeurtenissen, of categoriseren van dieren in diersoorten kan juist verrassend goed bij het doel passen. Kies steeds de vorm die het leerdoel het best oefent, ongeacht bij welk vak de vorm "hoort".',
+        '6. Geef bij elk blok de juiste antwoorden mee (behalve bij tekst/teken/reflectie/bingo en bij de blokken die het systeem zelf uitrekent: sommen, getallenlijn, woordzoeker, rekenmuurtje, getalhuis, klok, geld, doolhof, kruiswoord, reeks, vergelijken, tafelkaart, breuken, kleuropsom, staafdiagram, sudoku, geheimschrift, anagram, zinbouwen, cijferplus, cijfermin, cijferkeer, ontbrekend, buurgetallen, ordenen, plaatswaarde, getalwoord, afronden, maalrooster, romeins, automatiseer). Bij lettergrepen/rijmwoorden/synant/lidwoord/zoekdefout geef je de inhoud + de juiste antwoorden zelf mee.',
+        '7. Voor rekenen: gebruik het "sommen"-blok met een spec; verzin nooit zelf sommen of antwoorden. Voor verhaaltjessommen gebruik je "open" mét antwoord.',
+        '8. Houd opdracht-instructies kort en in kindtaal ("Reken uit.", "Zoek de woorden.").',
+        '9. Het hele werkblad past op MAXIMAAL twee kantjes (voor- en achterkant van één A4); maak het nooit langer. Het aantal opdrachten en de lengte per opdracht staan in de opdracht hieronder; houd je daaraan. Liever een paar goed gevulde opdrachten dan veel halflege.'
+      ]).join('\n');
     }
 
     // ── Opdracht-prompt: onderwerp + leerlijn + ideeën ───────────────────────
