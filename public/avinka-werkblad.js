@@ -715,8 +715,9 @@
   // Sudoku (4x4 of 6x6) — patroon + permutaties, dan gaten.
   function genSudoku(spec) {
     spec = spec || {};
-    var n = String(spec.grootte || "").indexOf("6") !== -1 || spec.grootte === 6 ? 6 : 4;
-    var br = 2, bc = n === 6 ? 3 : 2; // vak = br rijen × bc kolommen
+    var g = String(spec.grootte || "");
+    var n = (spec.grootte === 9 || g.indexOf("9") !== -1) ? 9 : (spec.grootte === 6 || g.indexOf("6") !== -1) ? 6 : 4;
+    var br = n === 9 ? 3 : 2, bc = n === 4 ? 2 : 3; // vak = br rijen × bc kolommen (4×4→2×2, 6×6→2×3, 9×9→3×3)
     function pat(r, c) { return (bc * (r % br) + Math.floor(r / br) + c) % n; }
     function perm(bandCount, bandSize) { var out = []; shuffle(rangeArr(0, bandCount - 1)).forEach(function (band) { shuffle(rangeArr(0, bandSize - 1)).forEach(function (i) { out.push(band * bandSize + i); }); }); return out; }
     var rows = perm(n / br, br), cols = perm(n / bc, bc), nums = shuffle(rangeArr(1, n));
@@ -765,12 +766,24 @@
     ster: [[50, 6], [60, 38], [94, 38], [66, 58], [77, 92], [50, 72], [23, 92], [34, 58], [6, 38], [40, 38]],
     huis: [[18, 52], [18, 92], [82, 92], [82, 52], [94, 52], [50, 14], [6, 52]],
     boot: [[8, 66], [92, 66], [78, 90], [22, 90]],
-    vis: [[8, 50], [38, 30], [70, 36], [92, 18], [88, 50], [92, 82], [70, 64], [38, 70]]
+    vis: [[8, 50], [38, 30], [70, 36], [92, 18], [88, 50], [92, 82], [70, 64], [38, 70]],
+    hart: [[50, 88], [30, 68], [16, 50], [16, 36], [26, 24], [40, 26], [50, 38], [60, 26], [74, 24], [84, 36], [84, 50], [70, 68]],
+    boom: [[44, 90], [44, 70], [26, 70], [50, 22], [74, 70], [56, 70], [56, 90]],
+    vlieger: [[50, 8], [80, 42], [50, 92], [20, 42]],
+    diamant: [[28, 22], [72, 22], [92, 44], [50, 92], [8, 44]],
+    ijsje: [[50, 94], [34, 54], [30, 42], [38, 30], [50, 26], [62, 30], [70, 42], [66, 54]],
+    raket: [[50, 8], [62, 30], [62, 64], [74, 84], [58, 76], [50, 88], [42, 76], [26, 84], [38, 64], [38, 30]],
+    auto: [[10, 72], [10, 60], [26, 60], [38, 44], [64, 44], [76, 60], [90, 60], [90, 72]],
+    ballon: [[50, 84], [38, 70], [26, 58], [22, 42], [30, 26], [44, 18], [56, 18], [70, 26], [78, 42], [74, 58], [62, 70]],
+    kroon: [[14, 78], [20, 34], [38, 58], [50, 28], [62, 58], [80, 34], [86, 78]],
+    pijl: [[8, 42], [54, 42], [54, 26], [92, 50], [54, 74], [54, 58], [8, 58]]
   };
   function genStippen(spec) {
     spec = spec || {};
     var keys = Object.keys(STIP_VORMEN), naam = spec.vorm && STIP_VORMEN[spec.vorm] ? spec.vorm : keys[randInt(0, keys.length - 1)];
-    return { naam: naam, punten: STIP_VORMEN[naam] };
+    var punten = STIP_VORMEN[naam];
+    if (randInt(0, 1)) punten = punten.map(function (p) { return [100 - p[0], p[1]]; }); // willekeurig horizontaal spiegelen = extra variatie
+    return { naam: naam, punten: punten };
   }
 
   // Bingokaart: rooster met getallen of woorden.

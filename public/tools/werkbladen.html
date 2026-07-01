@@ -384,7 +384,7 @@
         '- {"type":"breuken","opdracht":"...","spec":{"aantal":4,"soort":"kleur"}} — breuken kleuren (soort:"kleur") of aflezen (soort:"lees"); het systeem tekent ze.',
         '- {"type":"kleuropsom","opdracht":"..."} — rekenkleurplaat met een verborgen plaatje; het systeem maakt de sommen + de kleurcode.',
         '- {"type":"staafdiagram","opdracht":"...","titel":"Hoeveel kinderen hebben welk huisdier?","eenheid":"aantal kinderen","data":[{"label":"hond","waarde":7},{"label":"kat","waarde":5}]} — geef een PAKKENDE titel (een echt vraagje/verhaaltje) + 5 tot 7 verschillende categorieën met waarden; het systeem tekent de grafiek en maakt de vragen + antwoorden.',
-        '- {"type":"sudoku","opdracht":"...","spec":{"grootte":4}} — sudoku (grootte 4 of 6); het systeem maakt een geldige puzzel + oplossing. Grootte 4 voor jongere groepen.',
+        '- {"type":"sudoku","opdracht":"...","spec":{"grootte":4}} — sudoku (grootte 4, 6 of 9); het systeem maakt een geldige puzzel + oplossing. Meer werk = grotere grootte: 4×4 jongste/kort, 6×6 midden, 9×9 (echte sudoku) voor de bovenbouw/lang.',
         '- {"type":"geheimschrift","opdracht":"...","woorden":["WOORD","WOORD"]} — decodeer-puzzel; het systeem maakt de geheime symbolen.',
         '- {"type":"anagram","opdracht":"...","woorden":[{"woord":"..."}]} — letters husselen tot een woord; het systeem hutselt ze.',
         '- {"type":"zinbouwen","opdracht":"...","zinnen":[{"zin":"de hond rent hard"}]} — woordvolgorde; geef correcte zinnen, het systeem hutselt de woorden.',
@@ -393,7 +393,7 @@
         '- {"type":"synant","opdracht":"...","soort":"synoniem","paren":[["groot","reusachtig"]]} — synoniemen (soort:"synoniem") of antoniemen (soort:"antoniem") koppelen.',
         '- {"type":"lidwoord","opdracht":"...","woorden":[{"woord":"tafel","lidwoord":"de"}]} — de/het kiezen; geef het juiste lidwoord mee.',
         '- {"type":"zoekdefout","opdracht":"...","zinnen":[{"zin":"ik loopt naar huis","correct":"ik loop naar huis"}]} — fout zoeken en verbeteren; geef de zin met precies één fout én de correcte zin.',
-        '- {"type":"verbinddepunten","opdracht":"...","spec":{"vorm":"ster"}} — verbind de punten (vorm: ster/huis/boot/vis); leuke afsluiter.',
+        '- {"type":"verbinddepunten","opdracht":"...","spec":{"vorm":"ster"}} — verbind de punten (vorm: ster/huis/boot/vis/hart/boom/vlieger/diamant/ijsje/raket/auto/ballon/kroon/pijl; laat "vorm" wég voor een willekeurige vorm, of kies er een die bij het thema past); leuke afsluiter.',
         '- {"type":"bingo","opdracht":"...","spec":{"soort":"getallen","grootte":4}} — bingokaart (soort getallen of woorden, dan ook "woorden":[...]).',
         '- {"type":"cijferplus","opdracht":"...","spec":{"aantal":8,"max":1000}} — cijferend OPTELLEN onder elkaar (met onthoud-hokjes). Aantal naar lengte: kort 4, middel 6, lang 8. Kalibreer "max" op de groep: onderbouw ~100, middenbouw ~1000, bovenbouw tot 10000.',
         '- {"type":"cijfermin","opdracht":"...","spec":{"aantal":8,"max":1000}} — cijferend AFTREKKEN onder elkaar. Aantal naar lengte: kort 4, middel 6, lang 8. "max" op de groep (bovenbouw tot 10000).',
@@ -425,9 +425,9 @@
     // ── Opdracht-prompt: onderwerp + leerlijn + ideeën ───────────────────────
     function bouwOpdracht(inv) {
       const lengteOms = {
-        kort: 'KORT — weinig items per opdracht: meerkeuze ~3 vragen, waar/niet-waar ~3 stellingen, koppelen ~3 paren, invul ~4 zinnen, open ~2 vragen, categoriseren ~6 woorden; bij spec-blokken "aantal" ~6; woordzoeker ~8 woorden; kruiswoord ~8 woorden; anagram ~6 woorden; lettergrepen ~6 woorden; rijmwoorden ~6 woorden; synant (synoniemen/antoniemen) ~4 paren.',
-        middel: 'MIDDEL — een normale hoeveelheid: meerkeuze 4-5 vragen, waar/niet-waar 5-6 stellingen, koppelen 4-5 paren, invul 6-8 zinnen, open 3-4 vragen, categoriseren ~8 woorden; bij spec-blokken "aantal" ~10; woordzoeker ~12 woorden; kruiswoord ~12 woorden; anagram ~8 woorden; lettergrepen ~8 woorden; rijmwoorden ~8 woorden; synant (synoniemen/antoniemen) ~6 paren.',
-        groot: 'GROOT — flink gevulde opdrachten: meerkeuze ~6 vragen, waar/niet-waar 7-8 stellingen, koppelen 6 paren, invul 9-12 zinnen, open ~5 vragen, categoriseren ~12 woorden; bij spec-blokken "aantal" 14-16; woordzoeker ~16 woorden; kruiswoord ~16 woorden; anagram ~10 woorden; lettergrepen ~10 woorden; rijmwoorden ~10 woorden; synant (synoniemen/antoniemen) ~8 paren.'
+        kort: 'KORT — weinig items per opdracht: meerkeuze ~3 vragen, waar/niet-waar ~3 stellingen, koppelen ~3 paren, invul ~4 zinnen, open ~2 vragen, categoriseren ~6 woorden; bij spec-blokken "aantal" ~6; woordzoeker ~8 woorden; kruiswoord ~8 woorden; anagram ~6 woorden; lettergrepen ~6 woorden; rijmwoorden ~6 woorden; synant (synoniemen/antoniemen) ~4 paren; sudoku 4×4.',
+        middel: 'MIDDEL — een normale hoeveelheid: meerkeuze 4-5 vragen, waar/niet-waar 5-6 stellingen, koppelen 4-5 paren, invul 6-8 zinnen, open 3-4 vragen, categoriseren ~8 woorden; bij spec-blokken "aantal" ~10; woordzoeker ~12 woorden; kruiswoord ~12 woorden; anagram ~8 woorden; lettergrepen ~8 woorden; rijmwoorden ~8 woorden; synant (synoniemen/antoniemen) ~6 paren; sudoku 6×6.',
+        groot: 'GROOT — flink gevulde opdrachten: meerkeuze ~6 vragen, waar/niet-waar 7-8 stellingen, koppelen 6 paren, invul 9-12 zinnen, open ~5 vragen, categoriseren ~12 woorden; bij spec-blokken "aantal" 14-16; woordzoeker ~16 woorden; kruiswoord ~16 woorden; anagram ~10 woorden; lettergrepen ~10 woorden; rijmwoorden ~10 woorden; synant (synoniemen/antoniemen) ~8 paren; sudoku 9×9.'
       };
       var lengte = inv.lengte;
       const lijnen = [];
