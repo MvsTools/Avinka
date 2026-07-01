@@ -457,6 +457,7 @@
   <script src="/avinka-dialog.js"></script>
   <script src="/avinka-masking.js"></script>
   <script src="/avinka-dropdown.js"></script>
+  <script src="/avinka-verlaten.js"></script>
 </head><body>
 
 <div class="container landing-container iepui" id="landing">
@@ -649,6 +650,30 @@
         <span class="chip" onclick="iepPick('ctx-meetmoment',this,'B8')">B8</span>
         <span class="chip" onclick="iepPick('ctx-meetmoment',this,'Doorstroomtoets')">Doorstroomtoets</span>
       </div>
+    </div>
+
+    <style id="persp-stijl">
+      .persp-seg{display:inline-flex;gap:6px;flex-wrap:wrap;background:var(--warm,#f4f0e9);border-radius:12px;padding:4px;}
+      .persp-opt{font:inherit;font-size:13.5px;font-weight:600;border:none;background:transparent;color:var(--muted,#6b6357);padding:8px 14px;border-radius:9px;cursor:pointer;transition:background .15s,color .15s,box-shadow .15s;}
+      .persp-opt.on{background:#fff;color:var(--ink,#1a1a2e);box-shadow:0 2px 8px rgba(26,22,46,.10);}
+      .persp-hint{font-size:12.5px;color:var(--muted,#6b6357);margin-top:7px;line-height:1.5;}
+    </style>
+    <div class="vr">
+      <label class="vr-label">Voor wie schrijf je deze analyse?</label>
+      <div class="persp-seg" role="group" aria-label="Schrijfperspectief">
+        <button type="button" class="persp-opt on" data-perspectief="zelf" onclick="zetPerspectief('zelf')">Voor mezelf</button>
+        <button type="button" class="persp-opt" data-perspectief="overdracht" onclick="zetPerspectief('overdracht')">Voor de volgende leerkracht</button>
+      </div>
+      <div class="persp-hint">De analyse wordt vanuit jezelf geschreven (ik-vorm), voor je eigen gebruik.</div>
+    </div>
+
+    <div class="vr">
+      <label class="vr-label">Uitstroomindicatie</label>
+      <label style="display:inline-flex;align-items:flex-start;gap:9px;cursor:pointer;font-size:14px;line-height:1.45;color:var(--ink);max-width:640px;">
+        <input type="checkbox" id="ctx-vo" onchange="voAanzetten=this.checked" style="width:17px;height:17px;margin-top:2px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">
+        <span>Voeg onderin een VO-uitstroomindicatie per leerling toe (alleen bij E6, M7, E7, B8 en Doorstroomtoets). Puur op de huidige data en streng bedoeld: een indicatie, geen advies.</span>
+      </label>
+      <div class="persp-hint">Standaard uit. Zet 'm aan als je het lijstje bij deze analyse wilt.</div>
     </div>
 
     <div class="vr">
@@ -880,6 +905,15 @@
       </div>
 
       <div class="vr">
+        <label class="vr-label">Voor wie schrijf je deze analyse?</label>
+        <div class="persp-seg" role="group" aria-label="Schrijfperspectief">
+          <button type="button" class="persp-opt on" data-perspectief="zelf" onclick="zetPerspectief('zelf')">Voor mezelf</button>
+          <button type="button" class="persp-opt" data-perspectief="overdracht" onclick="zetPerspectief('overdracht')">Voor de volgende leerkracht</button>
+        </div>
+        <div class="persp-hint">De analyse wordt vanuit jezelf geschreven (ik-vorm), voor je eigen gebruik.</div>
+      </div>
+
+      <div class="vr">
         <label class="vr-label">Aantal leerlingen</label>
         <input type="number" class="iep-native" id="cito-ctx-aantal" min="1" max="40" aria-label="Aantal leerlingen">
         <div class="stepper">
@@ -999,8 +1033,56 @@ let ctxStreef1S = null;      // optioneel: streefpercentage op 1S (streefniveau)
 let elrVakken = [];          // analyseerbare vakKeys die in deze export zitten (voor de kiezer)
 let elrDisplay = {};         // ruwe naam -> weergavenaam, voor de eigen-leerroute-kiezer
 let ctxReferentieVariant = null; // onderbouw: de toetsvariant die bij het meetmoment hoort (bijv. M5 -> '5a')
+
+// ── Schrijfperspectief ───────────────────────────────────────────────────────
+// Bij middentoetsen (M) schrijft de tool vanuit 'ik': meestal voert de leerkracht
+// het zelf uit. Na de eindtoets (E) is de analyse juist een OVERDRACHT voor de
+// leerkracht die de groep ná de zomer krijgt; dan is 'ik' niet meer passend en
+// schrijven we neutraal-beschrijvend. 'zelf' = ik-vorm (huidige stijl).
+let ctxPerspectief = 'zelf';        // 'zelf' | 'overdracht'
+let perspectiefHandmatig = false;   // zodra de leerkracht zelf kiest: niet meer auto-wisselen
+function isEindMeetmoment(mm) { return /^E[3-9]$/i.test((mm || '').trim()); }
+function bepaalPerspectiefStandaard(mm) {
+  if (perspectiefHandmatig) return;
+  ctxPerspectief = isEindMeetmoment(mm) ? 'overdracht' : 'zelf';
+  synchroniseerPerspectiefUI();
+}
+function zetPerspectief(v) {
+  ctxPerspectief = (v === 'overdracht') ? 'overdracht' : 'zelf';
+  perspectiefHandmatig = true;
+  synchroniseerPerspectiefUI();
+}
+function synchroniseerPerspectiefUI() {
+  document.querySelectorAll('.persp-opt').forEach(function (el) {
+    el.classList.toggle('on', el.getAttribute('data-perspectief') === ctxPerspectief);
+  });
+  var hint = ctxPerspectief === 'overdracht'
+    ? 'De analyse wordt neutraal geschreven, als overdracht voor de leerkracht die de groep na de zomer krijgt.'
+    : 'De analyse wordt vanuit jezelf geschreven (ik-vorm), voor je eigen gebruik.';
+  document.querySelectorAll('.persp-hint').forEach(function (el) { el.textContent = hint; });
+}
+// Dit blok komt in overdracht-modus vooraan ELKE prose-systeemprompt (via callClaude),
+// zodat álle paden (schoolformulier, eigen template, cito) in één keer neutraal schrijven.
+// In 'zelf'-modus is het leeg -> gedrag exact gelijk aan voorheen.
+function perspectiefBlok() {
+  if (ctxPerspectief !== 'overdracht') return '';
+  return `━━━ SCHRIJFPERSPECTIEF: OVERDRACHT (LEES DIT EERST — GAAT VÓÓR ALLE ANDERE STIJLINSTRUCTIES) ━━━
+Wanneer je analysetekst schrijft, doe je dat als OVERDRACHT voor de leerkracht die deze groep ná de zomer overneemt. De schrijver voert het zelf niet uit.
+Schrijf daarom NIET in de ik-vorm. Overal waar verderop "ik-vorm", "Ik ga...", "Ik zie...", "vanuit jezelf" of een voorbeeld als "Ik ga ... want ..." staat, negeer je die vorm en gebruik je in plaats daarvan de NEUTRALE, BESCHRIJVENDE overdrachtsvorm:
+- Observaties beschrijvend en zonder "ik": "In deze groep valt op dat...", "De groep scoort...", "Opvallend is dat...".
+- Acties, interventies, afspraken en streefdoelen als AANBEVELING voor de nieuwe leerkracht, niet als eigen voornemen: "Een aandachtspunt voor komend jaar is...", "Een mogelijke aanpak is ... want ...", "Aan te raden is om...". Dus NIET "Ik ga ..." en NIET als opdracht ("Zet op...").
+- De opmaak en structuur blijven exact gelijk aan wat de opdracht vraagt; alleen de schrijfstem verandert.
+- Blijf verder feitelijk, concreet en haalbaar; dezelfde inhoud, alleen de schrijfstem verandert.
+
+`;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 let runWarnings = [];
 let aiCallLog = [];          // [{model, system, user, response}] — exact wat naar de AI ging (gemaskeerd)
+// Voor de verlaat-waarschuwing: er is onbewaard werk zodra er een analyse is gedraaid.
+// (Zelf-ingevoerde scores/tekst worden door avinka-verlaten.js zelf al herkend.)
+window.avinkaHeeftOnbewaardWerk = function () { return aiCallLog.length > 0; };
 let naamCorrecties = [];     // [{volledig, weergave, gekozen}] — onzekere namen die de gebruiker bevestigt
 let bijzData = null;         // resultaat van de bijzonderheden-interpretatie: {uitsluiting:[{weergave,vakken,reden}], context:[{weergave,reden}]} — voedt de prompt
 let bijzKeuzeResolve = null; // resolver voor de blokkerende keuze-pop-up bij dubbele voornamen
@@ -1081,6 +1163,108 @@ function hoogsteVoor(meetmoment, vakKey) {
   const variant = MEETMOMENT_NAAR_VARIANT[meetmoment];
   if (variant && IEP_ONDERBOUW[variant]) return IEP_ONDERBOUW[variant].plafond;
   return null;
+}
+
+// ── Onderbouw vs. bovenbouw: geldt 1F al voor dit vak op dit meetmoment? ──
+// M3 t/m E5: alle vakken nog de onderbouw-niveautoets, dus GEEN 1F. M6: lezen en
+// taalverzorging werken al met de 1F-ontwikkellijn, maar rekenen nog met toets 6a
+// (dus daar nog geen 1F). E6 en later: alle vakken met 1F/1S. Sluit aan op
+// IEP_ONDERBOUW / IEP_BOVENBOUW en de M6-uitzondering in MEETMOMENT_NAAR_VARIANT.
+function vakGebruikt1F(meetmoment, vakKey) {
+  const mm = (meetmoment || '').trim();
+  if (/^[EM][345]$/.test(mm)) return false;      // M3,E3,M4,E4,M5,E5
+  if (mm === 'M6') return vakKey !== 'rekenen';    // M6: rekenen nog 6a, lezen/taal al 1F
+  return true;                                      // E6, M7, E7, B8, Doorstroomtoets
+}
+// Kader voor de hele analyse (voor de globale schoolformulier-prompts).
+function analyseKader(meetmoment) {
+  const mm = (meetmoment || '').trim();
+  if (/^[EM][345]$/.test(mm)) return 'onderbouw';
+  if (mm === 'M6') return 'gemengd';
+  return 'bovenbouw';
+}
+// De 4 bandkopjes per vak. Dezelfde bakken (hoogste/drempel/onder1f/opweg), maar in de
+// onderbouw andere kopjes, omdat 1F daar nog niet speelt: "op weg naar <periode>" en "lager".
+function bandLabels(meetmoment, vakKey) {
+  if (vakGebruikt1F(meetmoment, vakKey)) return {
+    kader: '1f',
+    hoogste: 'Hoogste ontwikkelscore', drempel: 'Drempelwaarde',
+    onder1f: '1F, onder drempelwaarde', opweg: 'Op weg naar 1F / lager',
+    onder1fLang: '1F behaald maar onder de drempelwaarde', opwegLang: 'Op weg naar 1F of lager'
+  };
+  const p = meetmoment || 'deze periode';
+  return {
+    kader: 'onderbouw',
+    hoogste: 'Hoogste ontwikkelscore', drempel: 'Drempelwaarde',
+    onder1f: 'Op weg naar ' + p, opweg: 'Op een lagere toets',
+    onder1fLang: 'Op weg naar ' + p + ' (onder de drempel, op de toets van deze periode)',
+    opwegLang: 'Op een lagere toets getoetst'
+  };
+}
+// Voor teruggetoetste leerlingen (in de band "op een lagere toets"): welk niveau hebben ze?
+// Toont het NIVEAULABEL (bijv. "5a" of "op weg naar 5a"), niet alleen de toets, zodat
+// duidelijk is of het kind het niveau al heeft of er nog naartoe werkt.
+function bandNiveauSuffix(l) {
+  return (l && l.teruggetoetst && l.niveau) ? ' — ' + l.niveau : '';
+}
+
+// ── VO-uitstroomindicatie (IEP) — PUUR op huidige data, geen groeiverwachting ──
+// De IEP-ontwikkelscore is absoluut (groep 3→8): 60 = 1F, 80 = 2F/1S. We wegen de vakken
+// met de officiële IEP-weging en zetten de gewogen score om naar een brede richting via een
+// (school)standaard-tabel. Alleen 60 en 80 zijn officieel verankerd; de grenzen daarboven
+// zijn een strak startpunt. Het blijft een INDICATIE — de leerkracht/schoolstandaard beslist.
+const IEP_VO_MEETMOMENTEN = ['E6', 'M7', 'E7', 'B8', 'Doorstroomtoets'];
+const VO_WEGING = { rekenen: 0.45, lezen: 0.30, taalverzorging: 0.25 };
+let voAanzetten = false; // uitstroomindicatie: standaard UIT; de leerkracht zet 'm aan met het vinkje
+// De IEP-toets heeft per meetmoment een PLAFOND (max haalbare ontwikkelscore). Vóór groep 8
+// ligt dat onder de 80 (2F/1S), dus met vaste absolute grenzen zou niemand de hoogste banden
+// kunnen halen. Daarom: de 1F-ondergrens (60) blijft absoluut, maar de banden daarboven
+// schalen we naar het haalbare plafond van dít meetmoment. Zo betekent "aan de top van wat
+// nu meetbaar is" ook echt de hoogste richting — puur op huidige data, zonder groeiprojectie.
+// havo/vwo is bewust de hoogste band: havo en vwo zijn met een LVS-toets niet te scheiden.
+function voRichting(gewScore, gewPlafond) {
+  if (gewScore < 60) return 'pro / vmbo-bb';                 // onder 1F (absoluut)
+  const q = Math.min(1, (gewScore - 60) / Math.max(1, gewPlafond - 60)); // positie binnen [1F, plafond]
+  if (q < 0.25) return 'vmbo-bb / kb';
+  if (q < 0.50) return 'vmbo-kb / gl-tl';
+  if (q < 0.75) return 'vmbo-gl-tl / havo';
+  return 'havo / vwo';
+}
+// Bouwt per leerling de indicatie. Alle drie de kernvakken nodig; ontbreekt er één (of is
+// die buiten beschouwing), dan is er GEEN advies mogelijk voor die leerling.
+function berekenVOIndicatie() {
+  const mm = (ctxMeetmoment || '').trim();
+  if (!iepData || IEP_VO_MEETMOMENTEN.indexOf(mm) === -1) return null;
+  const VAKKEN = ['rekenen', 'taalverzorging', 'lezen'];
+  const nm = l => l.weergaveNaam || l.naam;
+  // Gewogen plafond van dit meetmoment (max haalbare ontwikkelscore, zelfde weging).
+  const H = vk => hoogsteVoor(mm, vk);
+  const gewPlafond = (H('rekenen') != null && H('lezen') != null && H('taalverzorging') != null)
+    ? H('rekenen') * VO_WEGING.rekenen + H('lezen') * VO_WEGING.lezen + H('taalverzorging') * VO_WEGING.taalverzorging
+    : 100;
+  const scores = {};       // naam -> { rekenen, taalverzorging, lezen } (hoogste geldige ontwikkelscore)
+  const namenSet = new Set();
+  VAKKEN.forEach(vk => {
+    const v = iepData.vakken && iepData.vakken[vk];
+    if (!v) return;
+    v.alleLeerlingen.forEach(l => {
+      const naam = nm(l); namenSet.add(naam);
+      if (l.excluded || toetsNietGemaakt(l) || isGeenResultaat(l) || typeof l.score !== 'number') return;
+      if (!scores[naam]) scores[naam] = {};
+      if (scores[naam][vk] == null || l.score > scores[naam][vk]) scores[naam][vk] = l.score; // hoogste ontwikkelscore per vak
+    });
+  });
+  const advies = [], geenAdvies = [];
+  Array.from(namenSet).forEach(naam => {
+    const s = scores[naam] || {};
+    const mist = VAKKEN.filter(vk => (iepData.vakken && iepData.vakken[vk]) ? s[vk] == null : true);
+    if (mist.length) { geenAdvies.push({ naam, mist }); return; }
+    const gewogen = Math.round(s.rekenen * VO_WEGING.rekenen + s.lezen * VO_WEGING.lezen + s.taalverzorging * VO_WEGING.taalverzorging);
+    advies.push({ naam, rekenen: s.rekenen, lezen: s.lezen, taalverzorging: s.taalverzorging, gewogen, richting: voRichting(gewogen, gewPlafond) });
+  });
+  advies.sort((a, b) => b.gewogen - a.gewogen || a.naam.localeCompare(b.naam));
+  geenAdvies.sort((a, b) => a.naam.localeCompare(b.naam));
+  return { advies, geenAdvies };
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1625,6 +1809,10 @@ function verdeelScorecellen(leerlingen, vakKey, meetmoment, groep) {
   const cellen = { hoogste:[], drempel:[], onder1f:[], opweg:[], lagereToets:[], geenResultaat:[] };
   const drempel = drempelVoor(meetmoment, vakKey);
   const plafond = hoogsteVoor(meetmoment, vakKey);
+  // Onderbouw (nog geen 1F): leerlingen die de toets van deze periode maakten maar onder de
+  // drempel scoren, vallen samen in "op weg naar <periode>" (band onder1f). Wie op een lagere
+  // toets is getoetst, is "lager" (band opweg). In de bovenbouw blijft de 1F-splitsing gelden.
+  const onderbouwVak = !vakGebruikt1F(meetmoment, vakKey);
   if (drempel == null) runWarnings.push(`Drempelwaarde voor ${meetmoment} ${vakKey} niet ingesteld — verdeling op niveau-label.`);
   // Hoogste-score-cel: leerlingen die de hoogst haalbare ontwikkelscore van de toets bereiken.
   // Geen plafond bekend -> terugval op de hoogste score binnen de groep.
@@ -1644,6 +1832,7 @@ function verdeelScorecellen(leerlingen, vakKey, meetmoment, groep) {
     if (typeof l.score !== 'number') { cellen.opweg.push(l); return; }
     if (plafondGrens != null && l.score >= plafondGrens) cellen.hoogste.push(l);
     else if (drempel != null && l.score >= drempel) cellen.drempel.push(l);
+    else if (onderbouwVak) cellen.onder1f.push(l);                    // onderbouw: onder de drempel op de toets van deze periode = "op weg naar <periode>"
     else if (drempel != null && rank >= 90) cellen.onder1f.push(l);   // 1F behaald maar onder de drempelwaarde (bovenbouw)
     else if (drempel == null && rank >= 90) cellen.drempel.push(l);   // geen drempel bekend: terugval op niveau-label
     else cellen.opweg.push(l);
@@ -2245,6 +2434,7 @@ function handleContextField(el) {
   ctxGroep = document.getElementById('ctx-groep').value;
   ctxMeetmoment = document.getElementById('ctx-meetmoment').value;
   ctxReferentieVariant = MEETMOMENT_NAAR_VARIANT[ctxMeetmoment] || null;
+  bepaalPerspectiefStandaard(ctxMeetmoment); // E-toets -> standaard 'overdracht', tenzij handmatig gekozen
   ctxAantal = document.getElementById('ctx-aantal').value;
   const sd = parseInt(document.getElementById('ctx-streefdoel').value, 10);
   ctxStreefdoel = (sd >= 1 && sd <= 100) ? sd : null;
@@ -2418,7 +2608,14 @@ async function callClaude(model, system, userContent, maxTokens) {
       ? userContent.map(b => (b && b.type === 'text' && typeof b.text === 'string')
           ? { ...b, text: maskText(b.text) } : b)
       : userContent;
-  const safeSystem = typeof system === 'string' ? maskText(system) : system;
+  // Schrijfperspectief: in overdracht-modus zetten we een neutraal-schrijven-blok vooraan
+  // ELKE systeemprompt (of maken het de systeemprompt als er geen was), zodat alle paden
+  // universeel neutraal schrijven. In 'zelf'-modus is perspectiefBlok() leeg -> geen wijziging.
+  const persp = perspectiefBlok();
+  const systemMetPersp = persp
+    ? ((typeof system === 'string' && system) ? persp + system : persp)
+    : system;
+  const safeSystem = typeof systemMetPersp === 'string' ? maskText(systemMetPersp) : systemMetPersp;
   const body = { model, max_tokens: maxTokens || 3000, messages: [{ role:'user', content: safeUser }] };
   if (safeSystem) body.system = safeSystem;
   const resp = await fetch('/api/claude', {
@@ -2654,6 +2851,10 @@ function berekenNiveauPercentages(blokken, vakKey, meetmoment, groep) {
   const groepsnummer = parseInt((groep||'').replace(/\D/g,'')) || 7;
   let drempel = drempelVoor(meetmoment, vakKey);
 
+  // Onderbouw (nog geen 1F): onder de drempel op de toets van deze periode telt als de
+  // middenband ("op weg naar <periode>"); alleen een lagere toets is "lager". Zo blijven
+  // deze percentages consistent met verdeelScorecellen.
+  const onderbouwVak = !vakGebruikt1F(meetmoment, vakKey);
   let opNiveau = 0, onderDrempel1F = 0, onder = 0;
   alle.forEach(l => {
     const rank = niveauRank(l.niveau);
@@ -2661,6 +2862,7 @@ function berekenNiveauPercentages(blokken, vakKey, meetmoment, groep) {
     if (!l.ref) { onder++; return; }
     if (drempel != null && typeof l.score === 'number') {
       if (l.score >= drempel) opNiveau++;
+      else if (onderbouwVak) onderDrempel1F++;
       else if (rank >= 90) onderDrempel1F++;
       else onder++;
     } else {
@@ -2688,25 +2890,30 @@ function bouwDataSamenvatting(vakKey) {
   const np = berekenNiveauPercentages(v.blokken, vakKey, ctxMeetmoment, ctxGroep);
   const totaal = np ? np.totaal : v.aantalLeerlingen;
 
+  const bl = bandLabels(ctxMeetmoment, vakKey); // kopjes onderbouw vs. 1F
   let s = `VOORBEREKENDE DATA voor ${VAK_LABELS[vakKey]} — ${ctxGroep}, ${ctxMeetmoment}:\n\n`;
 
   // Toelichting op leerlingen met een lagere toets (tellen WEL mee, maar zijn duiding waard)
   if (sv.cellen.lagereToets && sv.cellen.lagereToets.length) {
     s += `LET OP — lagere toets:\n`;
-    s += `${sv.cellen.lagereToets.map(naam).join(', ')} maakten een toets op een lager niveau dan ${ctxMeetmoment}. Zij tellen gewoon mee in de groep en staan in "op weg naar 1F / lager" (zij liggen achter op de groep). Noem ze niet automatisch "eigen leerroute" — dat is alleen zo als de leerkracht dat heeft aangegeven. Een kind dat de toets niet haalt kan ook teruggetoetst worden.\n\n`;
+    s += `${sv.cellen.lagereToets.map(l => `${l.weergaveNaam || l.naam} (niveau ${l.niveau})`).join(', ')} maakten een toets op een lager niveau dan ${ctxMeetmoment}. Zij tellen gewoon mee in de groep en staan in "${bl.opweg}" (zij liggen achter op de groep). Noem bij deze leerlingen hun niveau erbij (bijv. "op weg naar 5a" of "5a"), zodat duidelijk is of het kind dat niveau al heeft of er nog naartoe werkt. Noem ze niet automatisch "eigen leerroute" — dat is alleen zo als de leerkracht dat heeft aangegeven. Een kind dat de toets niet haalt kan ook teruggetoetst worden.\n\n`;
   }
-  s += `SCOREVERDELING (exact berekend, neem letterlijk over):\n`;
-  s += `• Hoogste ontwikkelscore: ${sv.cellen.hoogste.map(naam).join(', ') || '(geen)'}\n`;
-  s += `• Drempelwaarde${sv.drempel?' (≥'+sv.drempel+')':''}: ${sv.cellen.drempel.map(naam).join(', ') || '(geen)'}\n`;
-  s += `• 1F maar onder drempelwaarde: ${sv.cellen.onder1f.map(naam).join(', ') || '(geen)'}\n`;
-  s += `• Op weg naar 1F / lager: ${sv.cellen.opweg.map(naam).join(', ') || '(geen)'}\n\n`;
+  s += `SCOREVERDELING (exact berekend, neem letterlijk over; gebruik deze bandnamen exact, verzin er geen "1F" bij als die er niet staat):\n`;
+  s += `• ${bl.hoogste}: ${sv.cellen.hoogste.map(naam).join(', ') || '(geen)'}\n`;
+  s += `• ${bl.drempel}${sv.drempel?' (≥'+sv.drempel+')':''}: ${sv.cellen.drempel.map(naam).join(', ') || '(geen)'}\n`;
+  s += `• ${bl.onder1fLang}: ${sv.cellen.onder1f.map(naam).join(', ') || '(geen)'}\n`;
+  s += `• ${bl.opwegLang}: ${sv.cellen.opweg.map(naam).join(', ') || '(geen)'}\n\n`;
 
   // Niveau-telling — cruciaal correct verwoord
   if (np) {
     s += `NIVEAUVERDELING:\n`;
     s += `• ${np.opNiveau}% (${np.opNiveauN} leerlingen) haalt de drempelwaarde of hoger — DIT ZIJN DE LEERLINGEN OP NIVEAU, inclusief de hoogste scoorders.\n`;
-    s += `• ${np.onderDrempel1F}% (${np.onderDrempel1FN}) heeft wel 1F maar haalt de drempelwaarde net niet.\n`;
-    s += `• ${np.onder}% (${np.onderN}) zit op weg naar 1F of lager${np.lagereToetsN?` (incl. ${np.lagereToetsN} op een lagere toets)`:''}.\n`;
+    s += bl.kader === '1f'
+      ? `• ${np.onderDrempel1F}% (${np.onderDrempel1FN}) heeft wel 1F maar haalt de drempelwaarde net niet.\n`
+      : `• ${np.onderDrempel1F}% (${np.onderDrempel1FN}) zit op weg naar ${ctxMeetmoment}: onder de drempel, op de toets van deze periode.\n`;
+    s += bl.kader === '1f'
+      ? `• ${np.onder}% (${np.onderN}) zit op weg naar 1F of lager${np.lagereToetsN?` (incl. ${np.lagereToetsN} op een lagere toets)`:''}.\n`
+      : `• ${np.onder}% (${np.onderN}) zit lager (op een lagere toets getoetst)${np.lagereToetsN?` (${np.lagereToetsN} op een lagere toets)`:''}.\n`;
     s += `Gebruik deze percentages exact. De hoogste scoorders zitten IN de "op niveau"-groep, tel ze niet apart als achterstand.\n\n`;
   }
 
@@ -3037,7 +3244,12 @@ function etplCategoriseer() {
   actieveVakken.forEach(vk => {
     const v = iepData.vakken[vk];
     const c = v.scoreverdeling.cellen;
-    const lijst = cell => cell.filter(l => !l.excluded).map(l => ({ naam: nm(l), score: l.score }));
+    // teruggetoetst = op een lagere toets dan het meetmoment; dan is het toetsniveau (variant)
+    // de zinvolle aanduiding, want de ontwikkelscore ligt op een andere schaal.
+    const lijst = cell => cell.filter(l => !l.excluded).map(l => ({
+      naam: nm(l), score: l.score, variant: l.variant, niveau: l.niveau,
+      teruggetoetst: !isReferentieToets(l.variant)
+    }));
     const n = v.aantalLeerlingen || v.alleLeerlingen.filter(l => !l.excluded).length;
 
     // Focusdomeinen (zwak op groepsniveau): <70%, betrouwbaar, op genoeg leerlingen.
@@ -3063,8 +3275,27 @@ function etplCategoriseer() {
     Object.values(domLeerlingen).forEach(arr => arr.forEach(x => verklaard.add(x)));
     const breedZwak = [...c.onder1f, ...c.opweg].filter(l => !l.excluded).map(l => nm(l)).filter(x => !verklaard.has(x));
 
+    // Leerlingen op een eigen leerlijn (door de leerkracht uitgesloten voor DIT vak).
+    // Ze tellen niet mee in de groep, maar hun eigen toetsdata is er wel; die
+    // beschrijven we los. Per leerling de meest informatieve toets bewaren (met score,
+    // liefst de referentietoets); leerlingen die de toets niet maakten slaan we over.
+    const eigenLeerlijn = [];
+    v.alleLeerlingen.filter(l => l.excluded && !toetsNietGemaakt(l)).forEach(l => {
+      const naam = nm(l);
+      const kandidaat = { naam, variant: l.variant, niveau: l.niveau, score: l.score,
+        domeinScores: l.domeinScores || {}, contextKaal: l.contextKaal || null,
+        dle: l.dle, geenResultaat: isGeenResultaat(l) };
+      const bestaand = eigenLeerlijn.find(e => e.naam === naam);
+      if (!bestaand) { eigenLeerlijn.push(kandidaat); return; }
+      const beter = (typeof kandidaat.score === 'number' && typeof bestaand.score !== 'number')
+        || (isReferentieToets(kandidaat.variant) && !isReferentieToets(bestaand.variant));
+      if (beter) Object.assign(bestaand, kandidaat);
+    });
+
     res.perVak[vk] = {
       label: VAK_LABELS[vk],
+      vakKey: vk,
+      bandLabels: bandLabels(ctxMeetmoment, vk), // kopjes per vak (onderbouw vs. 1F)
       n,
       drempel: v.scoreverdeling.drempel,
       banden: { hoogste: lijst(c.hoogste), drempel: lijst(c.drempel), onder1f: lijst(c.onder1f), opweg: lijst(c.opweg) },
@@ -3072,7 +3303,8 @@ function etplCategoriseer() {
       domeinen: v.domeinAnalyse.map(d => ({ domein: d.domein, pct: d.gemiddelde, betrouwbaar: d.betrouwbaar })),
       focusDomeinen: focus.map(d => ({ domein: d.domein, pct: d.gemiddelde, leerlingen: domLeerlingen[d.domein] || [] })),
       contextKaal: ckVal,
-      breedZwak
+      breedZwak,
+      eigenLeerlijn
     };
   });
 
@@ -3164,16 +3396,17 @@ function etplPreviewHTML(cats) {
   const esc = escapeHtml;
   const rij = (label, namen) => namen && namen.length
     ? `<div style="margin:3px 0;"><strong>${esc(label)}:</strong> ${namen.map(esc).join(', ')}</div>` : '';
-  const bandRij = (label, arr) => `<div style="margin:2px 0;"><strong>${esc(label)}</strong> (${arr.length}): ${arr.length ? arr.map(x => esc(x.naam) + ' (' + x.score + ')').join(', ') : '—'}</div>`;
+  const bandRij = (label, arr) => `<div style="margin:2px 0;"><strong>${esc(label)}</strong> (${arr.length}): ${arr.length ? arr.map(x => esc(x.naam) + ' (' + x.score + ')' + esc(bandNiveauSuffix(x))).join(', ') : '—'}</div>`;
   let h = '<div style="text-align:left;font-size:13px;line-height:1.5;color:var(--ink);">';
   h += `<p style="margin-bottom:10px;color:var(--muted);">Controle-overzicht van de herkende clusters (komt straks netjes in het document). Vakken: ${cats.meta.vakken.map(esc).join(', ')}.</p>`;
 
   Object.values(cats.perVak).forEach(p => {
     h += `<div style="border-top:1px solid var(--warm);padding-top:8px;margin-top:8px;"><div style="font-weight:600;color: var(--ink);margin-bottom:4px;">${esc(p.label)} · ${p.n} leerlingen · drempel ${p.drempel ?? '?'}</div>`;
-    h += bandRij('Hoogste', p.banden.hoogste);
-    h += bandRij('Drempelwaarde', p.banden.drempel);
-    h += bandRij('1F / onder ontwikkellijn', p.banden.onder1f);
-    h += bandRij('Op weg naar 1F / lager', p.banden.opweg);
+    const bl = p.bandLabels || bandLabels(ctxMeetmoment, p.vakKey);
+    h += bandRij(bl.hoogste, p.banden.hoogste);
+    h += bandRij(bl.drempel, p.banden.drempel);
+    h += bandRij(bl.onder1f, p.banden.onder1f);
+    h += bandRij(bl.opweg, p.banden.opweg);
     const dz = p.focusDomeinen.length ? p.focusDomeinen.map(d => `${esc(d.domein)} ${d.pct}%`).join(', ') : '— (geen betrouwbaar zwak domein)';
     h += `<div style="margin:3px 0;"><strong>Zwakste (betrouwbare) domeinen:</strong> ${dz}</div>`;
     if (p.teruggetoetst.length) h += rij('Teruggetoetst', p.teruggetoetst.map(t => t.naam));
@@ -3226,24 +3459,36 @@ Leerlingen staan als anonieme codes (LL-01, ...). Gebruik die codes exact zoals 
 
 Schrijf 3 tot 4 zinnen in gewone spreektaal, vanuit jezelf als leerkracht ("Ik zie..."). Beschrijf wat opvalt in de verdeling: hoe groot het deel onder of boven de drempelwaarde is, of de norm in zicht is, en noem hooguit een herkenbaar groepje of een paar opvallende leerlingen (bij hun code). Wees eerlijk over achterstand, maar benoem ook wat goed gaat. Als een leerling op dit vak zwak scoort én volgens de meegegeven achtergrond op meer vakken zwak is, mag je dat kort benoemen.
 
-Belangrijk: "op weg naar 1F" betekent achterstand, niet "bijna goed". Een leerling die lager scoort dan de groep maar de drempelwaarde wél haalt, zit op niveau. Gebruik GEEN gedachtestreepje (— of –); schrijf met gewone komma's, punten of "want". Geen AI-taal, geen wollige inleiding, begin direct en herhaal de vraag niet. Open niet met het exacte aantal leerlingen; gebruik de percentages.`;
+Belangrijk: een band als "op weg naar 1F", "op weg naar <periode>" of "lager" betekent ACHTERSTAND, niet "bijna goed". Een leerling die lager scoort dan de groep maar de drempelwaarde wél haalt, zit op niveau. Gebruik de bandnamen exact zoals ze in de verdeling hieronder staan; verzin er geen "1F" bij als dat er niet staat. Gebruik GEEN gedachtestreepje (— of –); schrijf met gewone komma's, punten of "want". Geen AI-taal, geen wollige inleiding, begin direct en herhaal de vraag niet. Open niet met het exacte aantal leerlingen; gebruik de percentages.`;
 }
 
 function etplDuidingPrompt(vk, p, cats) {
-  const fmt = arr => arr.length ? arr.map(l => `${l.naam} (${l.score})`).join(', ') : 'geen';
+  const fmt = arr => arr.length ? arr.map(l => `${l.naam} (${l.score})${bandNiveauSuffix(l)}`).join(', ') : 'geen';
   const opboven = p.banden.hoogste.length + p.banden.drempel.length;
   let s = `GROEP: ${ctxGroep} · MEETMOMENT: ${ctxMeetmoment} · VAK: ${p.label} · drempelwaarde: ${p.drempel != null ? p.drempel : 'onbekend'}\n`;
+  const bl = p.bandLabels || bandLabels(ctxMeetmoment, vk);
   s += `AANTAL MEEGETELD: ${p.n}\n\nVERDELING (ontwikkelscore per leerling):\n`;
-  s += `- Hoogste ontwikkelscore: ${fmt(p.banden.hoogste)}\n`;
-  s += `- Drempelwaarde gehaald: ${fmt(p.banden.drempel)}\n`;
-  s += `- 1F behaald maar onder de drempelwaarde: ${fmt(p.banden.onder1f)}\n`;
-  s += `- Op weg naar 1F of lager: ${fmt(p.banden.opweg)}\n`;
-  if (p.n) s += `\nPERCENTAGES: ${Math.round(opboven / p.n * 100)}% op of boven de drempel, ${Math.round(p.banden.onder1f.length / p.n * 100)}% met 1F onder de drempel, ${Math.round(p.banden.opweg.length / p.n * 100)}% op weg naar 1F of lager.\n`;
-  if (ctxStreefdoel && p.n) {
-    const opF = Math.round((opboven + p.banden.onder1f.length) / p.n * 100);
-    s += `\nSTREEFDOEL VAN DE SCHOOL: minimaal ${ctxStreefdoel}% van de leerlingen op of boven 1F. Bij dit vak is ${opF}% op of boven 1F. Je mag hooguit één keer kort benoemen of dit vak het streefdoel haalt; verzin verder geen cijfers.\n`;
+  s += `- ${bl.hoogste}: ${fmt(p.banden.hoogste)}\n`;
+  s += `- ${bl.drempel} gehaald: ${fmt(p.banden.drempel)}\n`;
+  s += `- ${bl.onder1fLang}: ${fmt(p.banden.onder1f)}\n`;
+  s += `- ${bl.opwegLang}: ${fmt(p.banden.opweg)}\n`;
+  if (p.n) {
+    const midPct = Math.round(p.banden.onder1f.length / p.n * 100);
+    const laagPct = Math.round(p.banden.opweg.length / p.n * 100);
+    s += bl.kader === '1f'
+      ? `\nPERCENTAGES: ${Math.round(opboven / p.n * 100)}% op of boven de drempel, ${midPct}% met 1F onder de drempel, ${laagPct}% op weg naar 1F of lager.\n`
+      : `\nPERCENTAGES: ${Math.round(opboven / p.n * 100)}% op of boven de drempel, ${midPct}% op weg naar ${ctxMeetmoment} (onder de drempel), ${laagPct}% op een lager niveau.\n`;
   }
-  if (ctxStreef1S && p.n) {
+  if (ctxStreefdoel && p.n) {
+    if (bl.kader === '1f') {
+      const opF = Math.round((opboven + p.banden.onder1f.length) / p.n * 100);
+      s += `\nSTREEFDOEL VAN DE SCHOOL: minimaal ${ctxStreefdoel}% van de leerlingen op of boven 1F. Bij dit vak is ${opF}% op of boven 1F. Je mag hooguit één keer kort benoemen of dit vak het streefdoel haalt; verzin verder geen cijfers.\n`;
+    } else {
+      const opD = Math.round(opboven / p.n * 100);
+      s += `\nSTREEFDOEL VAN DE SCHOOL: minimaal ${ctxStreefdoel}% van de leerlingen op of boven de drempelwaarde. Bij dit vak is ${opD}% op of boven de drempel. Je mag hooguit één keer kort benoemen of dit vak het streefdoel haalt; verzin verder geen cijfers.\n`;
+    }
+  }
+  if (ctxStreef1S && p.n && bl.kader === '1f') {
     const op1S = Math.round(p.banden.hoogste.length / p.n * 100);
     s += `\nSTREEFDOEL 1S (streefniveau): minimaal ${ctxStreef1S}% van de leerlingen op 1S. Bij dit vak haalt ${op1S}% het 1S-niveau (de hoogste ontwikkelscore). Je mag hooguit één keer kort benoemen of dit vak dat 1S-streefdoel haalt; verzin verder geen cijfers.\n`;
   }
@@ -3262,6 +3507,29 @@ function etplDuidingPrompt(vk, p, cats) {
   return s;
 }
 
+// ── AI-duiding bij "Welke onderdelen en categorieën vallen op?" (per vak) ──
+function etplDomeinSysteem() {
+  return `Je bent een ervaren leerkracht in het basisonderwijs die de toetsresultaten van de eigen groep beschrijft. Je schrijft een korte duiding over de ONDERDELEN (domeinen/categorieën) binnen ÉÉN vakgebied: welke onderdelen vallen op, waar valt de groep uit en wat gaat juist goed. Je rekent zelf niets uit en verzint geen getallen, domeinen of namen.
+
+De onderdelen krijg je voorgekauwd met een gemiddeld percentage. Gebruik de onderdeelnamen en percentages exact zoals gegeven; verzin er geen bij.
+
+Schrijf 2 tot 4 zinnen in gewone spreektaal, vanuit jezelf als leerkracht ("Ik zie..."). Benoem welke onderdelen het zwakst zijn (met hun percentage) en of ze aandacht vragen, en noem ook een onderdeel dat juist goed gaat als dat opvalt. Liggen de onderdelen dicht bij elkaar of rust een onderdeel op te weinig vragen, zeg dat dan eerlijk. Verwijs NIET naar een vaste grens zoals "70%" of "de 70%-grens"; dat is een interne maatstaf om zwakke onderdelen te markeren, geen officieel cijfer, en het verwart de lezer. Een onderdeel dat niet als zwak is gemarkeerd is niet automatisch "goed": noem gewoon de feiten. Gebruik GEEN gedachtestreepje (— of –); schrijf met gewone komma's, punten of "want". Geen AI-taal, geen wollige inleiding, begin direct en herhaal de vraag niet.`;
+}
+function etplDomeinPrompt(vk, p) {
+  let s = `GROEP: ${ctxGroep} · MEETMOMENT: ${ctxMeetmoment} · VAK: ${p.label}\n\n`;
+  const doms = (p.domeinen || []).filter(d => d.betrouwbaar !== 'onbetrouwbaar');
+  s += `ONDERDELEN / CATEGORIEËN (gemiddeld % goed per onderdeel, laag naar hoog):\n`;
+  if (doms.length) doms.forEach(d => { s += `- ${d.domein}: ${d.pct}%${d.betrouwbaar === 'voorzichtig' ? ' (op weinig vragen gemeten, voorzichtig)' : ''}\n`; });
+  else s += `(geen betrouwbaar te duiden onderdelen: de domeinen rusten op te weinig vragen per leerling)\n`;
+  if (p.focusDomeinen && p.focusDomeinen.length) s += `\nALS ZWAK GEMARKEERD (vragen aandacht): ${p.focusDomeinen.map(d => `${d.domein} ${d.pct}%`).join(', ')}.\n`;
+  if (p.contextKaal) {
+    if (p.contextKaal.contextDip && p.contextKaal.contextDip.length) s += `Een groepje struikelt vooral op contextsommen (niet op de kale sommen).\n`;
+    if (p.contextKaal.kaalDip && p.contextKaal.kaalDip.length) s += `Een groepje struikelt vooral op de kale rekenvaardigheid (niet op de contextsommen).\n`;
+  }
+  s += `\nSchrijf nu de korte duiding over de onderdelen van ${p.label}.`;
+  return s;
+}
+
 function etplTipsSysteem() {
   return `Je bent een ervaren leerkracht in het basisonderwijs. Je schrijft korte, concrete, klasgerichte tips: hoe je een zwak domein of een instructiegroepje praktisch zou kunnen aanpakken. Eén tip per item, 1 à 2 zinnen, als suggestie ("Je zou kunnen...", "Pak ... aan met ...") en haalbaar in de klas (denk aan EDI, korte dagelijkse oefenmomenten, een instructiegroep, gericht oefenen, differentiatie). GEEN schoolbrede afspraken, GEEN overleg met IB/RT, geen management- of zorgtaal, GEEN gedachtestreepje. Verzin geen cijfers of namen.
 
@@ -3275,18 +3543,90 @@ function etplTipsPrompt(klassikaalItems, groepItems) {
   return `Schrijf een korte, praktische tip voor elk van deze ${n} items:\n\n${regels.join('\n')}\n\nGeef de tips terug als JSON met de itemnummers als sleutels.`;
 }
 
-// Genereer alle AI-teksten voor het document. Retourneert {duiding:{vk:tekst}, klassikaal:[...], groepjes:[...]}.
+// ── Leerlingen op eigen leerlijn: per uitgesloten leerling de eigen toetsdata beschrijven ──
+// Sorteert de domeinscores van één leerling in sterk (>=80%) en zwak (<65%).
+function etplELDomeinen(domeinScores) {
+  const arr = Object.entries(domeinScores || {})
+    .filter(([, f]) => typeof f === 'number')
+    .map(([d, f]) => ({ domein: d, pct: Math.round(f * 100) }));
+  return {
+    zwak: arr.filter(x => x.pct < 65).sort((a, b) => a.pct - b.pct),
+    sterk: arr.filter(x => x.pct >= 80).sort((a, b) => b.pct - a.pct)
+  };
+}
+// Feitelijke terugval-tekst als de AI overslaat (budget op) of faalt: puur uit de data.
+function etplELFeiten(el) {
+  if (el.geenResultaat) return 'Maakte ' + (el.variant || 'de toets') + ', maar behaalde geen resultaat; de toets was te moeilijk en de leerling moet op een lager niveau teruggetoetst worden.';
+  const dom = etplELDomeinen(el.domeinScores);
+  const delen = ['Maakte ' + (el.variant || 'de toets') + (el.niveau ? ' (niveau ' + el.niveau + ')' : '') + (typeof el.score === 'number' ? ', ontwikkelscore ' + el.score : '') + '.'];
+  if (dom.sterk.length) delen.push('Gaat goed op ' + dom.sterk.slice(0, 2).map(d => d.domein).join(' en ') + '.');
+  if (dom.zwak.length) delen.push('Valt uit op ' + dom.zwak.slice(0, 2).map(d => d.domein).join(' en ') + '.');
+  return delen.join(' ');
+}
+function etplEigenLeerlijnSysteem() {
+  return `Je bent een ervaren leerkracht in het basisonderwijs. Een paar leerlingen volgen voor dit vak een eigen leerlijn en tellen niet mee in de groepsanalyse. Je beschrijft per leerling kort en concreet de eigen toetsresultaten: welke toets is gemaakt, waar het goed gaat en waar de leerling uitvalt.
+
+Leerlingen staan als anonieme codes (LL-01, ...). Gebruik die codes NIET in je antwoord en begin niet met een naam of code; beschrijf direct.
+
+Per leerling 1 à 2 zinnen, in gewone spreektaal vanuit jezelf als leerkracht ("Maakte...", "Gaat sterk op..., valt uit op..."). Gebruik uitsluitend de gegeven cijfers; verzin geen getallen, domeinen of namen. Benoem eerlijk waar de leerling uitvalt en ook wat juist goed gaat. Geen gedachtestreepje (— of –), geen wollige inleiding.
+
+Antwoord UITSLUITEND met geldige JSON, zonder tekst eromheen: {"beschrijvingen": {"1": "...", "2": "..."}} met voor elke leerling precies één beschrijving op het gegeven nummer.`;
+}
+function etplEigenLeerlijnPrompt(p) {
+  let s = `GROEP: ${ctxGroep} · MEETMOMENT: ${ctxMeetmoment} · VAK: ${p.label}\n`;
+  s += `Deze leerlingen volgen voor ${p.label.toLowerCase()} een eigen leerlijn en staan buiten de groepsanalyse. Beschrijf per leerling de eigen resultaten.\n\n`;
+  p.eigenLeerlijn.forEach((el, i) => {
+    s += `Leerling ${i + 1} (${el.naam}):\n`;
+    s += `- Gemaakte toets: ${el.variant || 'onbekend'}${el.niveau ? ', niveau ' + el.niveau : ''}\n`;
+    if (el.geenResultaat) {
+      s += `- Geen resultaat: de toets was te moeilijk; de leerling moet op een lager niveau teruggetoetst worden.\n`;
+    } else {
+      if (typeof el.score === 'number') s += `- Ontwikkelscore: ${el.score}\n`;
+      const dom = etplELDomeinen(el.domeinScores);
+      if (dom.sterk.length) s += `- Gaat goed: ${dom.sterk.slice(0, 3).map(d => `${d.domein} (${d.pct}%)`).join(', ')}\n`;
+      if (dom.zwak.length) s += `- Valt uit: ${dom.zwak.slice(0, 3).map(d => `${d.domein} (${d.pct}%)`).join(', ')}\n`;
+      if (el.contextKaal) {
+        if (el.contextKaal.context != null) s += `- Contextsommen: ${Math.round(el.contextKaal.context * 100)}%\n`;
+        if (el.contextKaal.kaal != null) s += `- Kale sommen: ${Math.round(el.contextKaal.kaal * 100)}%\n`;
+      }
+    }
+    s += '\n';
+  });
+  s += `Schrijf nu per leerling de beschrijving. Geef JSON terug met de leerlingnummers (${p.eigenLeerlijn.map((_, i) => i + 1).join(', ')}) als sleutels.`;
+  return s;
+}
+
+// Genereer alle AI-teksten voor het document. Retourneert {duiding:{vk:tekst}, klassikaal:[...], groepjes:[...], eigenLeerlijn:{vk:[...]}}.
 async function etplSchrijfTeksten(cats) {
   etplHerbouwNameMap();
-  const teksten = { duiding: {}, klassikaal: [], groepjes: [] };
+  const teksten = { duiding: {}, domein: {}, klassikaal: [], groepjes: [], eigenLeerlijn: {} };
 
-  // 1) Duiding per vak (clusters meegewogen)
+  // 1) Duiding per vak (clusters meegewogen) + duiding over de onderdelen/categorieën
   for (const vk of Object.keys(cats.perVak)) {
     const p = cats.perVak[vk];
     try {
       const raw = await callClaude('claude-sonnet-4-6', etplDuidingSysteem(), etplDuidingPrompt(vk, p, cats), 600);
       teksten.duiding[vk] = schoonStijl((raw || '').trim());
     } catch (e) { teksten.duiding[vk] = ''; }
+    if (budgetOp()) continue; // kostencap: onderdeel-duiding overslaan, valt terug op de feitenregel
+    try {
+      const raw = await callClaude('claude-sonnet-4-6', etplDomeinSysteem(), etplDomeinPrompt(vk, p), 500);
+      teksten.domein[vk] = schoonStijl((raw || '').trim());
+    } catch (e) { teksten.domein[vk] = ''; }
+  }
+
+  // 1b) Leerlingen op eigen leerlijn: per vak één AI-aanroep die per uitgesloten
+  // leerling de eigen resultaten verwoordt. Budget-bewust: is de kostencap bereikt,
+  // dan slaan we de AI over en valt het document terug op de feitelijke data-tekst.
+  for (const vk of Object.keys(cats.perVak)) {
+    const p = cats.perVak[vk];
+    if (!p.eigenLeerlijn || !p.eigenLeerlijn.length) continue;
+    if (budgetOp()) break;
+    try {
+      const raw = await callClaude('claude-sonnet-4-6', etplEigenLeerlijnSysteem(), etplEigenLeerlijnPrompt(p), 700);
+      const bs = (extractJSON(raw) || {}).beschrijvingen || {};
+      teksten.eigenLeerlijn[vk] = p.eigenLeerlijn.map((_, i) => schoonStijl((bs[i + 1] || bs[String(i + 1)] || '').trim()));
+    } catch (e) { teksten.eigenLeerlijn[vk] = []; }
   }
 
   // 2) Items voor de tips verzamelen (zelfde bron als het document)
@@ -3335,6 +3675,7 @@ async function etplBouwDocxBlob(cats, teksten) {
   const ctx = { groep: ctxGroep, meetmoment: ctxMeetmoment, aantal: ctxAantal };
   const nietMeegenomen = (iepData.vakInfo || []).filter(v => !v.analyseerbaar).map(v => v.naam);
   const info = { nietMeegenomen, uitgesloten: iepData.uitgesloten || [] };
+  const voData = berekenVOIndicatie(); // null als het meetmoment niet in aanmerking komt
 
   const INK = '1A1A2E', ACCENT = 'C8553D', TEAL = '3F6F63', MUTED = '6B6357';
   const HEADFILL = 'EDE7DD', BANDFILL = 'F4F0E9', LIGHT = 'FAF7F2';
@@ -3375,10 +3716,11 @@ async function etplBouwDocxBlob(cats, teksten) {
   }
   function bandTabel(p) {
     const w = Math.floor(CW / 4);
-    const koppen = ['Hoogste ontwikkelscore', 'Drempelwaarde', '1F / onder ontwikkellijn', 'Op weg naar 1F / lager'];
+    const bl = p.bandLabels || bandLabels(ctx.meetmoment, p.vakKey);
+    const koppen = [bl.hoogste, bl.drempel, bl.onder1f, bl.opweg];
     const headRow = `<w:tr>${koppen.map(b => cell(P(R(b, { bold: true, size: 18 })), w, HEADFILL)).join('')}</w:tr>`;
     const data = [p.banden.hoogste, p.banden.drempel, p.banden.onder1f, p.banden.opweg].map(arr => {
-      const paras = arr.length ? arr.map(l => P(R(l.naam + ' ', { size: 18 }) + R('(' + l.score + ')', { size: 16, color: MUTED }), { after: 0 })).join('') : P(R('—', { size: 18, color: MUTED }));
+      const paras = arr.length ? arr.map(l => P(R(l.naam + ' ', { size: 18 }) + R('(' + l.score + ')' + bandNiveauSuffix(l), { size: 16, color: MUTED }), { after: 0 })).join('') : P(R('—', { size: 18, color: MUTED }));
       return cell(paras, w, BANDFILL);
     });
     const grid = [w, w, w, w].map(x => `<w:gridCol w:w="${x}"/>`).join('');
@@ -3406,7 +3748,15 @@ async function etplBouwDocxBlob(cats, teksten) {
     K.push(body(R('Verdeling per vak op meetmoment ' + (ctx.meetmoment || '') + ', afgezet tegen de IEP-drempelwaarde van dit meetmoment.')));
     const toonAch = cats.dl != null;
     const ws = toonAch ? [2150, 1500, 1500, 1500, 1050, 1326] : [2400, 1700, 1700, 1700, 1526];
-    const hd = ['Vakgebied', 'Op/boven drempel', '1F, onder drempel', 'Op weg naar 1F / lager', 'n'];
+    // Kopjes van de gedeelde tabel: als alle vakken hetzelfde kader hebben, hun eigen kopjes;
+    // bij een gemengd meetmoment (M6: rekenen onderbouw, lezen/taal 1F) neutrale kopjes,
+    // want de precieze indeling staat per vak in hoofdstuk 3.
+    const kaders = new Set(Object.values(cats.perVak).map(p => (p.bandLabels || {}).kader));
+    let midKop, laagKop;
+    if (kaders.size === 1 && kaders.has('onderbouw')) { midKop = 'Op weg naar ' + (ctx.meetmoment || 'periode'); laagKop = 'Lager'; }
+    else if (kaders.size === 1 && kaders.has('1f')) { midKop = '1F, onder drempel'; laagKop = 'Op weg naar 1F / lager'; }
+    else { midKop = 'Net onder drempel'; laagKop = 'Verder onder / lager'; }
+    const hd = ['Vakgebied', 'Op/boven drempel', midKop, laagKop, 'Aantal lln'];
     if (toonAch) hd.push('Gem. achterstand (mnd)');
     const rows = [hd.map((h, i) => ({ p: P(R(h, { bold: true, size: 17 })), w: ws[i], fill: HEADFILL }))];
     Object.values(cats.perVak).forEach(p => {
@@ -3427,8 +3777,9 @@ async function etplBouwDocxBlob(cats, teksten) {
       rows.push(row);
     });
     K.push(table(ws, rows));
+    if (kaders.size > 1) K.push(noteLine('Dit meetmoment is gemengd: rekenen werkt nog met de niveautoets (op weg naar ' + (ctx.meetmoment || 'periode') + ' / lager), lezen en taalverzorging al met 1F. De precieze indeling per vak staat in hoofdstuk 3.'));
     if (toonAch) K.push(noteLine('Achterstand = verwachte didactische leeftijd bij ' + ctx.meetmoment + ' (DL ' + cats.dl + ' maanden) minus de gemiddelde DLE uit de export. Positief = gemiddelde achterstand in maanden; negatief = voorsprong.'));
-    if (ctxStreefdoel) K.push(noteLine('Streefdoel van de school: minimaal ' + ctxStreefdoel + '% van de leerlingen op of boven 1F.'));
+    if (ctxStreefdoel) K.push(noteLine('Streefdoel van de school: minimaal ' + ctxStreefdoel + '% van de leerlingen op of boven ' + (analyseKader(ctx.meetmoment) === 'onderbouw' ? 'de drempelwaarde' : '1F') + '.'));
     if (ctxStreef1S) K.push(noteLine('Streefdoel 1S: minimaal ' + ctxStreef1S + '% van de leerlingen op het 1S-streefniveau.'));
 
     K.push(H1('3.  Per vakgebied — groeps- en leerlingniveau', true));
@@ -3440,9 +3791,11 @@ async function etplBouwDocxBlob(cats, teksten) {
       const duid = (teksten.duiding && teksten.duiding[vk]) ? teksten.duiding[vk] : '';
       K.push(duid ? body(R(duid, { size: 21 })) : placeholder('(duiding kon niet worden gegenereerd — controleer de API-sleutel)'));
       K.push(QL('Welke onderdelen en categorieën vallen op?'));
+      const domTekst = (teksten.domein && teksten.domein[vk]) ? teksten.domein[vk] : '';
+      if (domTekst) K.push(body(R(domTekst, { size: 21 })));
       if (p.focusDomeinen.length) {
-        K.push(body(R('Zwakst scorende, betrouwbare domeinen: ', { size: 21 }) + R(p.focusDomeinen.map(d => d.domein + ' (' + d.pct + '%)').join(', '), { size: 21, bold: true }) + R('.', { size: 21 })));
-      } else {
+        K.push(body(R('Zwakst scorende, betrouwbare onderdelen: ', { size: 20, color: MUTED }) + R(p.focusDomeinen.map(d => d.domein + ' (' + d.pct + '%)').join(', '), { size: 20, color: MUTED }) + R('.', { size: 20, color: MUTED })));
+      } else if (!domTekst) {
         K.push(body(R('Geen betrouwbaar zwak domein: de domeinen liggen dicht bij elkaar of rusten op te weinig vragen.', { size: 21, color: MUTED })));
       }
       K.push(QL('Leerlingniveau binnen ' + p.label.toLowerCase()));
@@ -3459,6 +3812,16 @@ async function etplBouwDocxBlob(cats, teksten) {
       }
       profiel('Breed zwak zonder één scherp domein', p.breedZwak, 'Brede ondersteuning werkt hier beter dan een los domeingroepje.');
       if (!anyLn) K.push(body(R('Geen bijzonderheden op leerlingniveau buiten de verdeling hierboven.', { size: 20, color: MUTED })));
+      // Leerlingen op een eigen leerlijn: los beschreven, tellen niet mee in de verdeling hierboven.
+      if (p.eigenLeerlijn && p.eigenLeerlijn.length) {
+        K.push(QL('Leerlingen op eigen leerlijn'));
+        K.push(body(R('Deze leerlingen zijn buiten de groepsanalyse gehouden; hun eigen toetsresultaten staan hier los en tellen niet mee in de percentages hierboven.', { size: 20, color: MUTED })));
+        const elTekst = (teksten.eigenLeerlijn && teksten.eigenLeerlijn[vk]) || [];
+        p.eigenLeerlijn.forEach((el, i) => {
+          const tekst = (elTekst[i] || '').trim() || etplELFeiten(el);
+          K.push(bullet(R(el.naam + ': ', { bold: true, size: 20 }) + R(tekst, { size: 20 })));
+        });
+      }
       K.push(noteLine('Domeinsignalen zijn indicatief: sommige (sub)domeinen rusten op weinig vragen per leerling.'));
     });
 
@@ -3525,7 +3888,32 @@ async function etplBouwDocxBlob(cats, teksten) {
       { p: P(R(g.tip || '', { size: 16, color: MUTED })), w: gw[3] }]); });
     K.push(table(gw, grows));
 
-    K.push(H1('6.  Verantwoording databasis', true));
+    // Uitstroomindicatie (alleen E6/M7/E7/B8/Doorstroomtoets) — puur op de huidige data.
+    let hfd = 6;
+    if (voAanzetten && voData && (voData.advies.length || voData.geenAdvies.length)) {
+      K.push(H1(hfd + '.  Uitstroomindicatie op basis van de huidige data', true));
+      K.push(P(R('Indicatie, geen advies. ', { bold: true, size: 19, color: ACCENT }) + R('Puur op de huidige toetsscores, zonder groeiverwachting. De gewogen ontwikkelscore telt rekenen voor 45%, lezen voor 30% en taalverzorging voor 25% (per vak de hoogste ontwikkelscore). Onder ontwikkelscore 60 (1F) valt de richting op pro/vmbo-bb; daarboven is de richting geschaald naar het haalbare plafond van dit meetmoment (de toets kan vóór groep 8 nog geen 2F/1S meten). "Havo/vwo" is de hoogste band: die twee zijn met een LVS-toets niet te scheiden. De schoolstandaard en de leerkracht bepalen het echte, definitieve advies.', { size: 19, color: MUTED }), { after: 120 }));
+      if (voData.advies.length) {
+        const vw = [2400, 1150, 1150, 1250, 1150, 1926];
+        const vhd = ['Leerling', 'Rekenen', 'Lezen', 'Taalverz.', 'Gewogen', 'Indicatie'];
+        const vrows = [vhd.map((h, i) => ({ p: P(R(h, { bold: true, size: 17 })), w: vw[i], fill: HEADFILL }))];
+        voData.advies.forEach(a => vrows.push([
+          { p: P(R(a.naam, { size: 18, color: TEAL })), w: vw[0], fill: LIGHT },
+          { p: P(R(String(a.rekenen), { size: 18 })), w: vw[1] },
+          { p: P(R(String(a.lezen), { size: 18 })), w: vw[2] },
+          { p: P(R(String(a.taalverzorging), { size: 18 })), w: vw[3] },
+          { p: P(R(String(a.gewogen), { bold: true, size: 18 })), w: vw[4] },
+          { p: P(R(a.richting, { size: 18 })), w: vw[5] }
+        ]));
+        K.push(table(vw, vrows));
+      }
+      if (voData.geenAdvies.length) {
+        K.push(noteLine('Geen indicatie mogelijk (een kernvak ontbreekt of is buiten beschouwing gelaten): ' + voData.geenAdvies.map(g => g.naam + ' (' + g.mist.map(vk => VAK_LABELS[vk] || vk).join(', ') + ')').join('; ') + '.'));
+      }
+      hfd++;
+    }
+
+    K.push(H1(hfd + '.  Verantwoording databasis', true));
     K.push(bullet(R('Meegenomen: ', { bold: true, size: 20 }) + R(cats.meta.vakken.join(', ') + '.', { size: 20 })));
     K.push(bullet(R('Niet meegenomen: ', { bold: true, size: 20 }) + R((info.nietMeegenomen.length ? info.nietMeegenomen.join(', ') + ' — geen resultaten in de export.' : 'geen.'), { size: 20 })));
     K.push(bullet(R('Buiten beschouwing (door de leerkracht): ', { bold: true, size: 20 }) + R((info.uitgesloten.length ? info.uitgesloten.map(u => u.naam + ' (' + (u.vakKeys.length >= elrVakken.length ? 'alle vakken' : u.vakKeys.map(v => VAK_LABELS[v] || v).join(', ')) + ')').join('; ') + '.' : 'geen leerlingen uitgesloten.'), { size: 20 })));
@@ -4050,15 +4438,21 @@ ${ctxBijzonderheden()}
 
 LET OP: leerlingen worden om privacyredenen weergegeven als anonieme codes (bijv. LL-01). Gebruik die codes exact zoals ze gegeven zijn; verzin er geen namen bij en verander de codes niet.
 
-━━━ SCHRIJF ALTIJD VANUIT JEZELF, DE LEERKRACHT ━━━
+${ctxPerspectief === 'overdracht' ? '' : `━━━ SCHRIJF ALTIJD VANUIT JEZELF, DE LEERKRACHT ━━━
 Je bent de leerkracht zelf. Schrijf de HELE analyse in de ik-vorm, in ELK veld en bij ELK type formulier, ongeacht hoe de vraag geformuleerd is ("Ik zie...", "Opvallend vind ik...", "Ik ga...").
-Bij elk veld dat vraagt wat je gaat DOEN (een aanpak, interventie, afspraak, actie, vervolgstap, plan, of hoe je iets aanpakt, hoe dit formulier het ook noemt): schrijf je voorstellen in de ik-vorm met een reden, "Ik ga ... want ..." (of "Ik wil ...", "Ik zet ... in omdat ..."). Zo leest de leerkracht het als zijn eigen concept en kan hij regels laten staan of schrappen. NOOIT als opdracht ("Zet op ...", "Plan ...", "Geef ...") en NOOIT afstandelijk ("Je zou ... kunnen", "Het is aan te raden ...").
+Bij elk veld dat vraagt wat je gaat DOEN (een aanpak, interventie, afspraak, actie, vervolgstap, plan, of hoe je iets aanpakt, hoe dit formulier het ook noemt): schrijf je voorstellen in de ik-vorm met een reden, "Ik ga ... want ..." (of "Ik wil ...", "Ik zet ... in omdat ..."). Zo leest de leerkracht het als zijn eigen concept en kan hij regels laten staan of schrappen. NOOIT als opdracht ("Zet op ...", "Plan ...", "Geef ...") en NOOIT afstandelijk ("Je zou ... kunnen", "Het is aan te raden ...").`}
 
 ━━━ ABSOLUUT CRUCIAAL: NIVEAU-INTERPRETATIE ━━━
-"Op weg naar 1F" bij ${ctxMeetmoment} betekent ACHTERSTAND, niet "bijna goed". 1F hoort al bij E6 behaald te zijn.
+${analyseKader(ctxMeetmoment) === 'onderbouw'
+? `In dit leerjaar (${ctxMeetmoment}) werkt IEP nog met de niveautoets, NIET met 1F. Gebruik dus GEEN "1F" of "op weg naar 1F". De verdeling is: hoogste ontwikkelscore, drempelwaarde (op niveau), "op weg naar ${ctxMeetmoment}" (onder de drempel maar op de toets van deze periode) en "lager" (op een lagere toets getoetst). Zowel "op weg naar ${ctxMeetmoment}" als "lager" betekent ACHTERSTAND, niet "bijna goed". Een leerling die lager scoort dan de groep maar de drempelwaarde wél haalt, zit op niveau.
+Als 30% of meer van de groep onder de drempelwaarde zit: schrijf NOOIT dat "de meeste leerlingen op niveau zitten"; wees dan eerlijk over de achterstand.`
+: analyseKader(ctxMeetmoment) === 'gemengd'
+? `Let op het leerjaar (${ctxMeetmoment}): voor LEZEN en TAALVERZORGING werkt IEP al met de ontwikkellijn 1F, maar voor REKENEN nog met de niveautoets (6a), dus daar geldt GEEN 1F. Gebruik bij rekenen de banden "op weg naar ${ctxMeetmoment}" en "lager"; bij lezen en taalverzorging de 1F-banden ("1F onder de drempel", "op weg naar 1F"). Een band als "op weg naar 1F", "op weg naar ${ctxMeetmoment}" of "lager" betekent ACHTERSTAND, niet "bijna goed". De drempelwaarde is NIET hetzelfde als 1F. Gebruik per vak de bandnamen exact zoals in de voorberekende data.
+Als 30% of meer van de groep onder de drempelwaarde zit: schrijf NOOIT dat "de meeste leerlingen op niveau zitten"; wees dan eerlijk over de achterstand.`
+: `"Op weg naar 1F" bij ${ctxMeetmoment} betekent ACHTERSTAND, niet "bijna goed". 1F hoort al bij E6 behaald te zijn.
 Leerlingen "op weg naar 1F" lopen dus achter en verdienen evenveel aandacht als leerlingen onder de ontwikkellijn.
 De drempelwaarde is NIET hetzelfde als 1F: bij M7/E7 ligt de drempel hoger. Een leerling met label "1F" maar onder de drempelwaarde heeft de drempel dus NIET gehaald.
-Als 30% of meer van de groep onder de drempelwaarde of op weg naar 1F zit: schrijf NOOIT dat "de meeste leerlingen op niveau zitten". Wees dan eerlijk over de achterstand.
+Als 30% of meer van de groep onder de drempelwaarde of op weg naar 1F zit: schrijf NOOIT dat "de meeste leerlingen op niveau zitten". Wees dan eerlijk over de achterstand.`}
 
 ━━━ GROEPSNIVEAU IS BREED, NIET OVER ENKELINGEN ━━━
 Een groepsanalyse (observaties, interventies, afspraken op groepsniveau) gaat over de GROEP als geheel of over een duidelijke subgroep, nooit over één of twee individuele leerlingen. Wijken maar enkele leerlingen af, benoem die dan niet in de groepssecties; daar is het hoofdstuk "inzoomen op leerlingniveau" voor. Scoort de groep sterk en valt er op groepsniveau weinig te verbeteren, maak de groepsanalyse dan juist breed en richt de interventies en afspraken op het VASTHOUDEN en uitbouwen van dat niveau (de werkende aanpak voortzetten, verdieping en uitdaging voor de hele groep). Alleen wanneer een hele groep of een herkenbaar groepje opvalt, krijgt dat groepsaandacht.
@@ -4269,7 +4663,7 @@ async function schrijfSectie(t) {
     const heeftStreefdoelVraag = items.some(it =>
       /streefdoel/i.test(it.question) && !/behaald|gehaald|bereikt/i.test(it.question));
     const streefdoelRegel = heeftStreefdoelVraag
-      ? `\n\n• "Streefdoelen voor periode 2 / volgende meetmoment": meetbare DOELEN voor het volgende meetmoment, NIET de aanpakken. Een streefdoel is een TOEKOMSTIG doel en moet dus HOGER (of bij achterstand: LAGER) liggen dan de huidige stand, anders is het geen doel. Zet bij voorkeur doelen op het percentage dat de drempelwaarde haalt (hoger dan nu) en op het aandeel "op weg naar 1F of lager" (lager dan nu). Een domeindoel mag, maar kies dan een realistische STIJGING boven het huidige percentage (richting de 70-80%), NOOIT hetzelfde getal als nu. Het is hier expliciet toegestaan een passend hoger streefgetal te kiezen: dat is geen verzonnen meetresultaat maar een doel (schrijf het als "naar minimaal X% (nu Y%)" met X hoger dan Y). Verbind een doel NOOIT aan een domein dat hierboven als "ruis" is gemarkeerd. Gebruik "BULLET: " per doel.`
+      ? `\n\n• "Streefdoelen voor periode 2 / volgende meetmoment": meetbare DOELEN voor het volgende meetmoment, NIET de aanpakken. Een streefdoel is een TOEKOMSTIG doel en moet dus HOGER (of bij achterstand: LAGER) liggen dan de huidige stand, anders is het geen doel. Zet bij voorkeur doelen op het percentage dat de drempelwaarde haalt (hoger dan nu) en op het aandeel onder de drempel (${analyseKader(ctxMeetmoment) === 'bovenbouw' ? '"op weg naar 1F of lager"' : `"op weg naar ${ctxMeetmoment}" en "lager"`}) (lager dan nu). Een domeindoel mag, maar kies dan een realistische STIJGING boven het huidige percentage (richting de 70-80%), NOOIT hetzelfde getal als nu. Het is hier expliciet toegestaan een passend hoger streefgetal te kiezen: dat is geen verzonnen meetresultaat maar een doel (schrijf het als "naar minimaal X% (nu Y%)" met X hoger dan Y). Verbind een doel NOOIT aan een domein dat hierboven als "ruis" is gemarkeerd. Gebruik "BULLET: " per doel.`
       : '';
 
     const userPrompt = `${dataSamenvatting}
@@ -4372,6 +4766,7 @@ function schoonStijl(tekst) {
   s = s.replace(/,\s*\./g, '.');           // ", ." -> "."
   s = s.replace(/\*\*/g, '');              // losse markdown-bold (**...**) weghalen
   s = s.replace(/^\s*#{1,6}\s+/gm, '');    // losse markdown-kopjes (### ) weghalen
+  s = s.replace(/^\s*(?:[-*•]\s*)?BULLET:\s*/gim, ''); // stray "BULLET:"-markering uit lopende tekst weghalen
   return s.trim();
 }
 
@@ -4489,7 +4884,7 @@ Regels per veldtype:
 - "Aanvullende analyse nodig": noem welke leerlingen een diepere analyse verdienen en waarom (grote kloof tussen vakken, opvallend profiel, achterblijven ondanks inzet).
 - Max 4 zinnen of 3 bullets per antwoord, ik-vorm, geen vraag herhalen. Houd elke BULLET kort en bondig zoals een leerkracht het zelf opschrijft: in principe één zin met de actie en een korte reden, zonder uitweidingen over materialen of voorbeelden ("ik denk aan...", "ik koppel dit aan... zodat...") die de essentie niet veranderen.
 - Schrijf NIET over aantallen vragen of "betrouwbaarheid" van domeinen — dat hoort niet in een leerlinganalyse. Cluster gewoon op de aangeleverde zwakke domeinen en op de laagst scorende leerlingen.
-- "Op weg naar 1F" bij ${ctxMeetmoment} = achterstand.
+- ${analyseKader(ctxMeetmoment) === 'onderbouw' ? `"Op weg naar ${ctxMeetmoment}" en "lager" bij ${ctxMeetmoment} = achterstand (geen 1F in dit leerjaar).` : `"Op weg naar 1F" bij ${ctxMeetmoment} = achterstand.`}
 
 ${dataItems.map((it,i)=>`[${i}] ${it.question}`).join('\n\n')}
 
@@ -4805,7 +5200,9 @@ async function downloadWord() {
     }
     function writeAnswerLines(tc, answer) {
       answer.split('\n').filter(l=>l.trim()).forEach(line => {
-        if (line.startsWith('BULLET:')) tc.appendChild(makePara(line.replace('BULLET:','').trim(), false, true, true));
+        // Tolereer een voorafgaande spatie, opsommingsteken of markdown-bold vóór "BULLET:".
+        const m = line.trim().match(/^(?:[-*•]\s*)?(?:\*\*)?BULLET:\s*(.*)$/i);
+        if (m) tc.appendChild(makePara(m[1].replace(/\*\*/g,'').trim(), false, true, true));
         else tc.appendChild(makePara(line, false, false, false));
       });
     }
@@ -6615,6 +7012,7 @@ function citoLeesGegevens(){
 // (groei-oordeel, landelijke groei, achterstand en 1F/1S hangen ervan af).
 function citoMeetmomentGewijzigd(sel){
   const mm = sel.value;
+  bepaalPerspectiefStandaard(mm); // E-toets -> standaard 'overdracht', tenzij handmatig gekozen
   if (!mm || !citoLaatsteParse) return;
   const _trend = citoData && citoData.trend;
   citoData = citoBuildData(citoLaatsteParse.parsed, citoLaatsteParse.details, mm);
