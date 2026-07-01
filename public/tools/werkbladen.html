@@ -711,9 +711,10 @@
     }
 
     // ── Pagina-fit: past het op 2 kantjes? Zo niet: LOKAAL inkorten (geen AI-call) ──
-    // Eén A4-kantje is ~1,3× zo hoog als breed (na printmarge); 2 kantjes = 2×. Ruim
-    // gekozen: liever het volle werkblad houden dan te vroeg inkorten.
-    var KANTJE_FACTOR = 1.3;
+    // Eén A4-kantje is ~1,2× zo hoog als breed (na printmarge); 2 kantjes = 2×. De guard
+    // schrapt nooit een OPDRACHT (alleen items inkorten + optionele reflectie/uitleg weg),
+    // dus dit bepaalt vooral of de reflectie-wees op pagina 3 wordt weggehaald.
+    var KANTJE_FACTOR = 1.2;
     function pastPagina(page) {
       var b = page.offsetWidth || 720;
       return page.scrollHeight <= b * KANTJE_FACTOR * 2 + 6;
