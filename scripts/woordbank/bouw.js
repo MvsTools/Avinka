@@ -196,13 +196,22 @@ const BLOCK = new Set([
   "vagina","penis","clitoris","masturberen","vrijen","geslachtsdeel","geslachtsgemeenschap","seksen","viagra",
   // verontrustend medisch / zwaar volwassen onderwerp (gevonden via steekproef-audit):
   "uitzaaiing","uitzaaiingen","seropositief","eunuch","exorcist","gijzeling","gijzelen","gynaecologie","pneumothorax",
+  // te zeldzaam / niet-passend / ongemakkelijk voor een kinderwerkblad (handmatig na
+  // review van gegenereerde spellingwerkbladen, 1-7-2026): celstraf/celgenoot (gevangenis),
+  // celibaat/celibatair (seksueel-getint), en losse rare/onbekende woorden.
+  "cel","celstraf","celgenoot","cellen","celibaat","celibatair","celibataire","narcisme","narcist","narcistisch",
+  "dolce","specifieks","exorcisme","eunuchen","bordeelhouder","maffia","maffiabaas",
 ]);
+// Frequentieplafond: woorden die zeldzamer zijn dan deze rang laten we NIET toe
+// (verjonging — houd het bij woorden die kinderen echt kennen). Tunebaar.
+const MAX_RANG = 24000;
 
 function kindgeschikt(w) {
   if (!/^[a-zà-ÿ]+$/.test(w)) return false;
   if (w.length < 3 || w.length > 12) return false;
   if (!RANG.has(w)) return false;
   if (RANG.get(w) < 60) return false;   // de allerfrequentste = functiewoorden (de, het, hij, zijn) - geen oefenwoord
+  if (RANG.get(w) >= MAX_RANG) return false; // te zeldzaam voor een kinderwerkblad (verjonging)
   if (BLOCK.has(w)) return false;                          // harde blocklist: nooit terug
   if (ONGEPAST.has(w) && !TOEGESTAAN.has(w)) return false;  // AI-ongepast, tenzij toegestaan
   if (WERKWVORMEN.has(w)) return false;   // gegenereerde werkwoordsvormen (werkwoorden.js)
