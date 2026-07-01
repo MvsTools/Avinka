@@ -453,6 +453,7 @@
   <script src="/avinka-voorkeuren.js"></script>
   <script src="/avinka-dropdown.js"></script>
   <script src="/avinka-groep.js"></script>
+  <script src="/avinka-verlaten.js"></script>
 </head>
 <body>
 
@@ -1577,6 +1578,9 @@ const MODEL = 'claude-sonnet-4-6';
 //   const WEB_TOOL = [{ type: 'web_search_20250305', name: 'web_search', max_uses: 1 }];
 let nameMap = [], nameMapCodes = [];   // (niet actief gevuld in deze module; maskText werkt ook leeg)
 const aiCallLog = [];
+// Voor de verlaat-waarschuwing: er is onbewaard werk zodra er iets is gegenereerd.
+// (Zelf-getypte, nog niet gegenereerde tekst wordt door avinka-verlaten.js zelf herkend.)
+window.avinkaHeeftOnbewaardWerk = function () { return aiCallLog.length > 0; };
 
 const SVG_ATTR = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"';
 const TEGELS = [
@@ -3519,7 +3523,10 @@ function gespParse(ruw) {
 function gespBouwUserContent() {
   const k = gespHuidige() || {};
   let u = 'De leerkracht maakt een verslag van een gevoerd oudergesprek over één leerling, voor het leerlingvolgsysteem.\n\n';
-  if (k.naam && k.naam.trim()) u += 'Voornaam van de leerling: ' + k.naam.trim() + '\n';
+  if (k.naam && k.naam.trim()) {
+    u += 'Voornaam van de leerling: ' + k.naam.trim() + '\n';
+    u += gespVoornaamwoordRegel(k.naam) + '\n';
+  }
   if (gesp.datum) u += 'Datum van het gesprek: ' + gespFormatDatum(gesp.datum) + '\n';
   if (gesp.aanleiding && gesp.aanleiding.trim()) u += 'Aanleiding: ' + gesp.aanleiding.trim() + '\n';
   const aanw = gespAanwezigTekst(k);
@@ -3546,6 +3553,7 @@ async function gespGenereer() {
   document.getElementById('gesp-result-box').classList.remove('visible');
   gespBezig('Je verslag en afspraken worden gemaakt…');
   try {
+    try { await gespKlasGeslachtGeladen; } catch (e) { /* geslacht optioneel */ }
     const ruw = await callClaude(MODEL, gespBouwSysteemprompt(), gespBouwUserContent(), 1500, null, gespBekendeNamen());
     const parsed = gespParse(ruw);
     k.verslag = parsed.verslag;
@@ -3608,6 +3616,7 @@ async function gespHerschrijf(aanwijzing, minimaal) {
       u += 'Pas het verslag hierop aan. Behoud de feiten; verander alleen wat nodig is. Verzin niets nieuws. ';
     }
     u += 'Behoud alle besproken punten; laat niets weg. Geef het VOLLEDIGE verslag terug tussen <verslag> en </verslag>. De afspraken hoef je niet opnieuw te geven; een leeg <afspraken></afspraken> is prima.';
+    if (k.naam && k.naam.trim()) u += '\n\n' + gespVoornaamwoordRegel(k.naam);
     const ruw = await callClaude(MODEL, gespBouwSysteemprompt(), u, 1500, null, gespBekendeNamen());
     k.verslag = gespParse(ruw).verslag;
     gespSetResultaat(k.verslag);
@@ -4810,10 +4819,39 @@ async function vulMijnKlas(toevoegFn){
     if(r.status === 401){ avinkaAlert('Log eerst in om je klas te gebruiken.'); return; }
     if(!r.ok){ avinkaAlert('Kon je klas niet ophalen. Probeer het zo opnieuw.'); return; }
     const data = await r.json();
+    gespVulKlasGeslacht(data);
     const namen = (data && data.leerlingen) || [];
     if(!namen.length){ avinkaAlert('Je hebt nog geen klas ingevuld.\n\nGa naar je dashboard, naar "Mijn klas", om je klassenlijst klaar te zetten.'); return; }
     toevoegFn(namen.join('\n'));
   }catch(e){ avinkaAlert('Er ging iets mis bij het ophalen van je klas.'); }
+}
+
+// Geslacht van de klas onthouden (naam → 'jongen'/'meisje'), zodat de tool het
+// juiste voornaamwoord kan kiezen — óók als de leerkracht de namen zelf typt in
+// plaats van "Mijn klas invullen" te gebruiken. De DB bewaart geslacht als 'j'/'m'.
+window.avinkaKlasGeslacht = window.avinkaKlasGeslacht || {};
+function gespVulKlasGeslacht(data){
+  ((data && data.leerlingenData) || []).forEach(function(l){
+    if(l && l.naam) window.avinkaKlasGeslacht[String(l.naam).trim().toLowerCase()] =
+      l.geslacht==='j'?'jongen':(l.geslacht==='m'?'meisje':'');
+  });
+}
+// Eén keer stil ophalen bij het laden, zodat zelf-getypte namen meteen herkend worden.
+var gespKlasGeslachtGeladen = (async function(){
+  try{
+    const r = await fetch('/api/klas', { headers: { accept: 'application/json' } });
+    if(r.ok) gespVulKlasGeslacht(await r.json());
+  }catch(e){ /* geslacht is optioneel; stil laten mislukken */ }
+})();
+function gespGeslachtVoor(naam){
+  return (naam && window.avinkaKlasGeslacht[String(naam).trim().toLowerCase()]) || '';
+}
+// Voornaamwoord-instructie voor de prompt op basis van het (bekende) geslacht.
+function gespVoornaamwoordRegel(naam){
+  const g = gespGeslachtVoor(naam);
+  if (g === 'jongen') return 'Deze leerling is een jongen: gebruik waar het natuurlijk loopt hij/hem/zijn, afgewisseld met de voornaam. Verzin nooit zelf een geslacht.';
+  if (g === 'meisje') return 'Deze leerling is een meisje: gebruik waar het natuurlijk loopt zij/haar, afgewisseld met de voornaam. Verzin nooit zelf een geslacht.';
+  return 'Het geslacht van deze leerling is niet bekend: gebruik GEEN hij/zij/hem/haar/zijn. Duid de leerling aan met de voornaam of met "de leerling", en herschrijf zinnen zo dat een voornaamwoord niet nodig is.';
 }
 </script>
 <script>/* Privacy-pop-up voor de Oudergesprekken-module (gevoeligste tekst) */
