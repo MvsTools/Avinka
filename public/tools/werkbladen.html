@@ -204,7 +204,7 @@
         <div class="veld-tip" id="onderwerp-tip">Beschrijf het onderwerp of leerdoel concreet. Bijvoorbeeld het type sommen, de spellingcategorie of het thema. Hoe scherper, hoe beter het werkblad.</div>
         <textarea id="onderwerp" class="field-input" placeholder="Bijv. 'optellen en aftrekken tot 100 met overschrijding' of 'woorden met -eeuw, -ieuw en -uw'" oninput="this.classList.toggle('filled', !!this.value.trim())"></textarea>
 
-        <div class="rij">
+        <div class="rij" style="grid-template-columns:1fr 1fr;">
           <div>
             <label class="field-label" for="groep">Groep</label>
             <select id="groep" class="field-select avinka-groep" onchange="this.classList.toggle('filled', !!this.value)">
@@ -220,14 +220,6 @@
             <label class="field-label" for="aantal">Aantal opdrachten</label>
             <select id="aantal" class="field-select filled" onchange="this.classList.toggle('filled', !!this.value)">
               <option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option>
-            </select>
-          </div>
-          <div>
-            <label class="field-label" for="lengte">Lengte per opdracht</label>
-            <select id="lengte" class="field-select filled" onchange="this.classList.toggle('filled', !!this.value)">
-              <option value="kort">Kort</option>
-              <option value="middel" selected>Middel</option>
-              <option value="groot">Groot</option>
             </select>
           </div>
         </div>
@@ -475,6 +467,13 @@
       lijnen.push('Onderwerp / leerdoel: ' + (inv.onderwerp || '(kies zelf een passend, leuk onderwerp bij dit vak en deze groep)') + '.');
       lijnen.push('Maak PRECIES ' + inv.aantal + ' ECHTE OEFENOPDRACHT' + (inv.aantal === 1 ? '' : 'EN') + ' waarin de leerling iets DOET (invullen, sorteren, puzzelen, een zin schrijven enzovoort). Een uitleg-/regelblok vooraf (type "tekst") en een reflectie achteraf (type "reflectie") tellen HIER NIET IN MEE en zijn optioneel: als je die toevoegt, komen ze BOVENOP de ' + inv.aantal + ' opdracht' + (inv.aantal === 1 ? '' : 'en') + '. Dus een reflectie is NOOIT een van de ' + inv.aantal + ' opdrachten.');
       lijnen.push('Lengte per opdracht: ' + (lengteOms[lengte] || lengteOms.middel));
+      // Puzzelgrootte per generatie laten wisselen, anders zien we sommige maten nooit.
+      var puzzelMaten = [
+        'KLEIN (woordzoeker ~8 woorden, kruiswoord ~8 woorden, sudoku 4×4)',
+        'MIDDELGROOT (woordzoeker ~12 woorden, kruiswoord ~12 woorden, sudoku 6×6)',
+        'GROOT (woordzoeker ~16 woorden, kruiswoord ~16 woorden, sudoku 9×9)'
+      ];
+      lijnen.push('PUZZELGROOTTE: gebruik je een puzzel (woordzoeker, kruiswoord, sudoku, doolhof), maak er DEZE keer een ' + kiesN(puzzelMaten, 1)[0] + ' versie van. Varieer de puzzelgrootte per werkblad; kies niet altijd dezelfde maat.');
       lijnen.push('PAGINALIMIET: het hele werkblad past op MAXIMAAL twee kantjes (voor- en achterkant van één A4); maak het nooit langer. Veel opdrachten staan in meerdere kolommen naast elkaar en worden dus NIET lang, ook niet met veel items: die mogen gerust vol (kale sommen, cijferen +/−/×, tafelkaart, vergelijken, ontbrekend getal, ordenen, afronden, buurgetallen, getal-in-woorden, romeins, geld, meerkeuze, invul, lidwoord, lettergrepen, rijmwoorden, anagram). Echt ruimte-vretende opdrachten (open vragen met schrijfregels, leestekst, koppelen, sorteren in vakken, staafdiagram, woordzoeker, kruiswoord, sudoku, doolhof, getallenlijn, tekenen) nemen veel verticale ruimte: beperk daarvan het aantal items zodat alles op twee kantjes blijft passen. Volg de gekozen lengte als richtlijn, maar verklein de ruimte-vretende opdrachten als het geheel anders te lang wordt.');
       if (inv.moeilijkheid && inv.moeilijkheid !== 'op niveau') {
         lijnen.push('Niveau: maak het ' + inv.moeilijkheid + ' dan normaal voor deze groep (blijf wel binnen het leerjaar).');
@@ -577,12 +576,16 @@
       const onderwerp = document.getElementById('onderwerp').value.trim();
       if (!onderwerp && !/thema|overig/i.test(vak)) { err.textContent = 'Beschrijf kort waar het werkblad over gaat.'; document.getElementById('onderwerp').focus(); return; }
 
+      const aantal = parseInt(document.getElementById('aantal').value, 10) || 4;
       const inv = {
         vak: vak,
         onderwerp: onderwerp,
         groep: document.getElementById('groep').value,
-        aantal: parseInt(document.getElementById('aantal').value, 10) || 4,
-        lengte: document.getElementById('lengte').value,
+        aantal: aantal,
+        // De leerkracht kiest geen lengte meer: de code bepaalt hoeveel per opdracht op
+        // basis van het aantal opdrachten (meer opdrachten = korter per stuk, zodat het
+        // op 2 kantjes past). De lengte-machinerie blijft bestaan (ook voor de preview).
+        lengte: aantal <= 2 ? 'groot' : aantal <= 4 ? 'middel' : 'kort',
         moeilijkheid: document.getElementById('moeilijkheid').value,
         themaKeuze: 'auto',
         context: document.getElementById('context').value.trim()
@@ -915,7 +918,7 @@
         if (m.vak) { const k = Array.from(document.querySelectorAll('#vak-grid .vakkaart')).find(x => x.dataset.v === m.vak); if (k) k.click(); }
         const ow = document.getElementById('onderwerp'); if (ow) { ow.value = m.onderwerp || ''; ow.classList.toggle('filled', !!(m.onderwerp || '')); }
         const cx = document.getElementById('context'); if (cx) { cx.value = m.context || ''; cx.classList.toggle('filled', !!(m.context || '')); }
-        herstelSelect('groep', m.groep); herstelSelect('aantal', m.aantal != null ? String(m.aantal) : ''); herstelSelect('lengte', m.lengte); herstelSelect('moeilijkheid', m.moeilijkheid);
+        herstelSelect('groep', m.groep); herstelSelect('aantal', m.aantal != null ? String(m.aantal) : ''); herstelSelect('moeilijkheid', m.moeilijkheid);
       } catch (e) {}
 
       // terug-knop wijst terug naar Bestanden
