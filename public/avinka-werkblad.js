@@ -441,8 +441,14 @@
   // De twee uitkomsten liggen DICHT bij elkaar (incl. gelijk → "="). Bij een klein
   // getalbereik vooral kale getallen (groep 3: 7 > 5); bij een groter bereik meer
   // sommen, zodat je echt moet rekenen i.p.v. op het oog te zien.
+  // Comparison-engine: vergelijk < > = tussen twee "kanten". De renderer is
+  // representatie-onafhankelijk (toont l.text of l.html en berekent het teken uit
+  // l.val/r.val), dus alleen de generator kiest de representatie via spec.soort:
+  // getallen (default) · keer · min · kommagetallen · breuken · procenten · mix.
   function genVergelijk(spec) {
     spec = spec || {};
+    var soort = spec.soort || "getallen";
+    if (soort !== "getallen") return genVergAnders(spec, soort);
     var aantal = Math.min(14, Math.max(2, spec.aantal || 8)), max = Math.max(8, spec.max || 20);
     var laag = max <= 12; // klein bereik → kale-getallen-werk overheerst
     function som(doel) { var a = randInt(1, doel - 1); return { text: a + " + " + (doel - a), val: doel }; }
@@ -473,6 +479,62 @@
         else { l = getal(lv); r = getal(rv); }               // ook kale getallen
       }
       items.push({ l: l, r: r, teken: l.val < r.val ? "<" : l.val > r.val ? ">" : "=" });
+    }
+    return items;
+  }
+
+  // Vergelijken met andere representaties (breuken, procenten, kommagetallen,
+  // keer/min-sommen, of een mix). Code maakt de paren + berekent het teken uit
+  // de numerieke waarde, dus het teken klopt altijd; de AI kiest alleen de soort.
+  function genVergAnders(spec, soort) {
+    var aantal = Math.min(14, Math.max(2, spec.aantal || 8));
+    function pick(a) { return a[randInt(0, a.length - 1)]; }
+    function round2(x) { return Math.round(x * 100) / 100; }
+    function komma(x, dec) { return x.toFixed(dec).replace(".", ","); }
+    function decNL(x) { return komma(x, (Math.round(x * 100) % 10 === 0) ? 1 : 2); } // 0,4 of 0,45
+    function teken(a, b) { var d = a - b; return Math.abs(d) < 1e-9 ? "=" : d < 0 ? "<" : ">"; }
+    var NOEMERS = [2, 3, 4, 5, 6, 8, 10];
+    function paarKeer() {
+      var a = randInt(2, 9), b = randInt(2, 9), v = a * b, m = Math.random(), l = { text: a + " × " + b, val: v };
+      if (m < 0.15) return { l: l, r: { text: "" + v, val: v } };
+      if (m < 0.6) { var g = Math.max(1, v + pick([-3, -2, -1, 1, 2, 3])); return { l: l, r: { text: "" + g, val: g } }; }
+      var c = randInt(2, 9), d = randInt(2, 9); return { l: l, r: { text: c + " × " + d, val: c * d } };
+    }
+    function paarMin() {
+      var a = randInt(6, 20), b = randInt(1, a - 1), v = a - b, m = Math.random(), l = { text: a + " − " + b, val: v };
+      if (m < 0.15) { var a2 = randInt(v + 1, 20), b2 = a2 - v; if (b2 >= 1 && a2 !== a) return { l: l, r: { text: a2 + " − " + b2, val: v } }; return { l: l, r: { text: "" + v, val: v } }; }
+      if (m < 0.55) { var g = Math.max(0, v + pick([-2, -1, 1, 2])); return { l: l, r: { text: "" + g, val: g } }; }
+      var c = randInt(6, 20), d = randInt(1, c - 1); return { l: l, r: { text: c + " − " + d, val: c - d } };
+    }
+    function paarKomma() {
+      var base = randInt(1, 90) / 10, m = Math.random(), l = { text: komma(base, 1), val: round2(base) };
+      if (m < 0.15) return { l: l, r: { text: komma(base, 2), val: round2(base) } }; // 0,5 = 0,50
+      var d2 = round2(base + pick([-0.3, -0.2, -0.1, 0.1, 0.2, 0.3, -0.05, 0.05])); if (d2 <= 0) d2 = round2(base + 0.1);
+      return { l: l, r: { text: decNL(d2), val: d2 } };
+    }
+    function paarBreuk() {
+      var n1 = pick(NOEMERS), t1 = randInt(1, n1 - 1), v1 = t1 / n1, m = Math.random(), l = { html: breukHtml(t1, n1), text: t1 + "/" + n1, val: v1 };
+      if (m < 0.18) { var f = pick([2, 3]); return { l: l, r: { html: breukHtml(t1 * f, n1 * f), text: (t1 * f) + "/" + (n1 * f), val: v1 } }; }
+      var n2 = pick(NOEMERS), t2 = randInt(1, n2 - 1), v2 = t2 / n2, g = 0;
+      while (Math.abs(v2 - v1) < 1e-9 && g < 16) { n2 = pick(NOEMERS); t2 = randInt(1, n2 - 1); v2 = t2 / n2; g++; }
+      return { l: l, r: { html: breukHtml(t2, n2), text: t2 + "/" + n2, val: v2 } };
+    }
+    function paarProcent() {
+      var pcts = [10, 20, 25, 30, 40, 50, 60, 70, 75, 80], p1 = pick(pcts), v1 = p1 / 100, m = Math.random(), l = { text: p1 + "%", val: v1 };
+      if (m < 0.5) { var v2 = (m < 0.1) ? v1 : Math.max(0.05, Math.min(0.95, round2(v1 + pick([-0.15, -0.1, -0.05, 0.05, 0.1, 0.15])))); return { l: l, r: { text: decNL(v2), val: v2 } }; }
+      var fr = pick([[1, 2, 0.5], [1, 4, 0.25], [3, 4, 0.75], [1, 5, 0.2], [2, 5, 0.4], [3, 5, 0.6], [1, 10, 0.1]]);
+      return { l: l, r: { html: breukHtml(fr[0], fr[1]), text: fr[0] + "/" + fr[1], val: fr[2] } };
+    }
+    var makers = { keer: paarKeer, min: paarMin, kommagetallen: paarKomma, breuken: paarBreuk, procenten: paarProcent };
+    function maak() { return soort === "mix" ? pick([paarBreuk, paarKomma, paarProcent])() : (makers[soort] || paarKeer)(); }
+    var items = [], seen = {}, p = 0;
+    while (items.length < aantal && p < aantal * 14) {
+      p++;
+      var pr = maak(); if (!pr) continue;
+      var key = (pr.l.text || "") + "|" + (pr.r.text || "");
+      if (seen[key]) continue; seen[key] = 1;
+      pr.teken = teken(pr.l.val, pr.r.val);
+      items.push(pr);
     }
     return items;
   }
@@ -1517,9 +1579,9 @@
     h += '<div class="wb-verg" style="grid-template-columns:repeat(' + kolV + ',max-content);grid-template-rows:repeat(' + perColV + ',auto);grid-auto-flow:column">';
     V.forEach(function (it, i) {
       h += '<div class="wb-verg-rij"><span class="wb-som-nr">' + (i + 1) + '.</span>' +
-        '<span class="wb-verg-z wb-verg-l">' + esc(it.l.text) + '</span>' +
+        '<span class="wb-verg-z wb-verg-l">' + (it.l.html || esc(it.l.text)) + '</span>' +
         '<span class="wb-verg-teken' + (ant ? " wb-ant" : "") + '">' + (ant ? esc(it.teken) : "") + '</span>' +
-        '<span class="wb-verg-z wb-verg-r">' + esc(it.r.text) + "</span></div>";
+        '<span class="wb-verg-z wb-verg-r">' + (it.r.html || esc(it.r.text)) + "</span></div>";
     });
     h += "</div>";
     return '<div class="wb-blok">' + h + "</div>";
