@@ -414,8 +414,17 @@
     // hulpgetallen → patroon makkelijker te herkennen).
     var termen = Math.min(14, Math.max(5, spec.termen || (max >= 400 ? 14 : max >= 150 ? 12 : max >= 60 ? 9 : 6)));
     var soorten = arr(spec.soorten).length ? arr(spec.soorten) : (max > 80 ? ["plus", "plus", "regel", "maal"] : ["plus"]);
+    var komma = !!spec.kommagetallen;
     var rijen = [];
     for (var r = 0; r < aantal; r++) {
+      if (komma) {
+        // kommagetallen-reeks: reken in TIENDEN (geen float-ruis), constante stap
+        var st10 = [1, 2, 5][randInt(0, 2)], start10 = randInt(1, 20), termK = Math.min(9, termen), vk = [];
+        for (var ik = 0; ik < termK; ik++) vk.push((start10 + st10 * ik) / 10);
+        var innerK = []; for (ik = 1; ik < termK - 1; ik++) innerK.push(ik);
+        rijen.push({ vals: vk, gaten: shuffle(innerK).slice(0, 2), komma: true });
+        continue;
+      }
       var soort = soorten[randInt(0, soorten.length - 1)], vals = [], gaten, i;
       if (soort === "maal") {
         // ×a explodeert → kort houden, wel een paar hulpgetallen vóór de gaten
@@ -441,8 +450,14 @@
   // De twee uitkomsten liggen DICHT bij elkaar (incl. gelijk → "="). Bij een klein
   // getalbereik vooral kale getallen (groep 3: 7 > 5); bij een groter bereik meer
   // sommen, zodat je echt moet rekenen i.p.v. op het oog te zien.
+  // Comparison-engine: vergelijk < > = tussen twee "kanten". De renderer is
+  // representatie-onafhankelijk (toont l.text of l.html en berekent het teken uit
+  // l.val/r.val), dus alleen de generator kiest de representatie via spec.soort:
+  // getallen (default) · keer · min · kommagetallen · breuken · procenten · mix.
   function genVergelijk(spec) {
     spec = spec || {};
+    var soort = spec.soort || "getallen";
+    if (soort !== "getallen") return genVergAnders(spec, soort);
     var aantal = Math.min(14, Math.max(2, spec.aantal || 8)), max = Math.max(8, spec.max || 20);
     var laag = max <= 12; // klein bereik → kale-getallen-werk overheerst
     function som(doel) { var a = randInt(1, doel - 1); return { text: a + " + " + (doel - a), val: doel }; }
@@ -473,6 +488,62 @@
         else { l = getal(lv); r = getal(rv); }               // ook kale getallen
       }
       items.push({ l: l, r: r, teken: l.val < r.val ? "<" : l.val > r.val ? ">" : "=" });
+    }
+    return items;
+  }
+
+  // Vergelijken met andere representaties (breuken, procenten, kommagetallen,
+  // keer/min-sommen, of een mix). Code maakt de paren + berekent het teken uit
+  // de numerieke waarde, dus het teken klopt altijd; de AI kiest alleen de soort.
+  function genVergAnders(spec, soort) {
+    var aantal = Math.min(14, Math.max(2, spec.aantal || 8));
+    function pick(a) { return a[randInt(0, a.length - 1)]; }
+    function round2(x) { return Math.round(x * 100) / 100; }
+    function komma(x, dec) { return x.toFixed(dec).replace(".", ","); }
+    function decNL(x) { return komma(x, (Math.round(x * 100) % 10 === 0) ? 1 : 2); } // 0,4 of 0,45
+    function teken(a, b) { var d = a - b; return Math.abs(d) < 1e-9 ? "=" : d < 0 ? "<" : ">"; }
+    var NOEMERS = [2, 3, 4, 5, 6, 8, 10];
+    function paarKeer() {
+      var a = randInt(2, 9), b = randInt(2, 9), v = a * b, m = Math.random(), l = { text: a + " × " + b, val: v };
+      if (m < 0.15) return { l: l, r: { text: "" + v, val: v } };
+      if (m < 0.6) { var g = Math.max(1, v + pick([-3, -2, -1, 1, 2, 3])); return { l: l, r: { text: "" + g, val: g } }; }
+      var c = randInt(2, 9), d = randInt(2, 9); return { l: l, r: { text: c + " × " + d, val: c * d } };
+    }
+    function paarMin() {
+      var a = randInt(6, 20), b = randInt(1, a - 1), v = a - b, m = Math.random(), l = { text: a + " − " + b, val: v };
+      if (m < 0.15) { var a2 = randInt(v + 1, 20), b2 = a2 - v; if (b2 >= 1 && a2 !== a) return { l: l, r: { text: a2 + " − " + b2, val: v } }; return { l: l, r: { text: "" + v, val: v } }; }
+      if (m < 0.55) { var g = Math.max(0, v + pick([-2, -1, 1, 2])); return { l: l, r: { text: "" + g, val: g } }; }
+      var c = randInt(6, 20), d = randInt(1, c - 1); return { l: l, r: { text: c + " − " + d, val: c - d } };
+    }
+    function paarKomma() {
+      var base = randInt(1, 90) / 10, m = Math.random(), l = { text: komma(base, 1), val: round2(base) };
+      if (m < 0.15) return { l: l, r: { text: komma(base, 2), val: round2(base) } }; // 0,5 = 0,50
+      var d2 = round2(base + pick([-0.3, -0.2, -0.1, 0.1, 0.2, 0.3, -0.05, 0.05])); if (d2 <= 0) d2 = round2(base + 0.1);
+      return { l: l, r: { text: decNL(d2), val: d2 } };
+    }
+    function paarBreuk() {
+      var n1 = pick(NOEMERS), t1 = randInt(1, n1 - 1), v1 = t1 / n1, m = Math.random(), l = { html: breukHtml(t1, n1), text: t1 + "/" + n1, val: v1 };
+      if (m < 0.18) { var f = pick([2, 3]); return { l: l, r: { html: breukHtml(t1 * f, n1 * f), text: (t1 * f) + "/" + (n1 * f), val: v1 } }; }
+      var n2 = pick(NOEMERS), t2 = randInt(1, n2 - 1), v2 = t2 / n2, g = 0;
+      while (Math.abs(v2 - v1) < 1e-9 && g < 16) { n2 = pick(NOEMERS); t2 = randInt(1, n2 - 1); v2 = t2 / n2; g++; }
+      return { l: l, r: { html: breukHtml(t2, n2), text: t2 + "/" + n2, val: v2 } };
+    }
+    function paarProcent() {
+      var pcts = [10, 20, 25, 30, 40, 50, 60, 70, 75, 80], p1 = pick(pcts), v1 = p1 / 100, m = Math.random(), l = { text: p1 + "%", val: v1 };
+      if (m < 0.5) { var v2 = (m < 0.1) ? v1 : Math.max(0.05, Math.min(0.95, round2(v1 + pick([-0.15, -0.1, -0.05, 0.05, 0.1, 0.15])))); return { l: l, r: { text: decNL(v2), val: v2 } }; }
+      var fr = pick([[1, 2, 0.5], [1, 4, 0.25], [3, 4, 0.75], [1, 5, 0.2], [2, 5, 0.4], [3, 5, 0.6], [1, 10, 0.1]]);
+      return { l: l, r: { html: breukHtml(fr[0], fr[1]), text: fr[0] + "/" + fr[1], val: fr[2] } };
+    }
+    var makers = { keer: paarKeer, min: paarMin, kommagetallen: paarKomma, breuken: paarBreuk, procenten: paarProcent };
+    function maak() { return soort === "mix" ? pick([paarBreuk, paarKomma, paarProcent])() : (makers[soort] || paarKeer)(); }
+    var items = [], seen = {}, p = 0;
+    while (items.length < aantal && p < aantal * 14) {
+      p++;
+      var pr = maak(); if (!pr) continue;
+      var key = (pr.l.text || "") + "|" + (pr.r.text || "");
+      if (seen[key]) continue; seen[key] = 1;
+      pr.teken = teken(pr.l.val, pr.r.val);
+      items.push(pr);
     }
     return items;
   }
@@ -715,8 +786,9 @@
   // Sudoku (4x4 of 6x6) — patroon + permutaties, dan gaten.
   function genSudoku(spec) {
     spec = spec || {};
-    var n = String(spec.grootte || "").indexOf("6") !== -1 || spec.grootte === 6 ? 6 : 4;
-    var br = 2, bc = n === 6 ? 3 : 2; // vak = br rijen × bc kolommen
+    var g = String(spec.grootte || "");
+    var n = (spec.grootte === 9 || g.indexOf("9") !== -1) ? 9 : (spec.grootte === 6 || g.indexOf("6") !== -1) ? 6 : 4;
+    var br = n === 9 ? 3 : 2, bc = n === 4 ? 2 : 3; // vak = br rijen × bc kolommen (4×4→2×2, 6×6→2×3, 9×9→3×3)
     function pat(r, c) { return (bc * (r % br) + Math.floor(r / br) + c) % n; }
     function perm(bandCount, bandSize) { var out = []; shuffle(rangeArr(0, bandCount - 1)).forEach(function (band) { shuffle(rangeArr(0, bandSize - 1)).forEach(function (i) { out.push(band * bandSize + i); }); }); return out; }
     var rows = perm(n / br, br), cols = perm(n / bc, bc), nums = shuffle(rangeArr(1, n));
@@ -765,12 +837,24 @@
     ster: [[50, 6], [60, 38], [94, 38], [66, 58], [77, 92], [50, 72], [23, 92], [34, 58], [6, 38], [40, 38]],
     huis: [[18, 52], [18, 92], [82, 92], [82, 52], [94, 52], [50, 14], [6, 52]],
     boot: [[8, 66], [92, 66], [78, 90], [22, 90]],
-    vis: [[8, 50], [38, 30], [70, 36], [92, 18], [88, 50], [92, 82], [70, 64], [38, 70]]
+    vis: [[8, 50], [38, 30], [70, 36], [92, 18], [88, 50], [92, 82], [70, 64], [38, 70]],
+    hart: [[50, 88], [30, 68], [16, 50], [16, 36], [26, 24], [40, 26], [50, 38], [60, 26], [74, 24], [84, 36], [84, 50], [70, 68]],
+    boom: [[44, 90], [44, 70], [26, 70], [50, 22], [74, 70], [56, 70], [56, 90]],
+    vlieger: [[50, 8], [80, 42], [50, 92], [20, 42]],
+    diamant: [[28, 22], [72, 22], [92, 44], [50, 92], [8, 44]],
+    ijsje: [[50, 94], [34, 54], [30, 42], [38, 30], [50, 26], [62, 30], [70, 42], [66, 54]],
+    raket: [[50, 8], [62, 30], [62, 64], [74, 84], [58, 76], [50, 88], [42, 76], [26, 84], [38, 64], [38, 30]],
+    auto: [[10, 72], [10, 60], [26, 60], [38, 44], [64, 44], [76, 60], [90, 60], [90, 72]],
+    ballon: [[50, 84], [38, 70], [26, 58], [22, 42], [30, 26], [44, 18], [56, 18], [70, 26], [78, 42], [74, 58], [62, 70]],
+    kroon: [[14, 78], [20, 34], [38, 58], [50, 28], [62, 58], [80, 34], [86, 78]],
+    pijl: [[8, 42], [54, 42], [54, 26], [92, 50], [54, 74], [54, 58], [8, 58]]
   };
   function genStippen(spec) {
     spec = spec || {};
     var keys = Object.keys(STIP_VORMEN), naam = spec.vorm && STIP_VORMEN[spec.vorm] ? spec.vorm : keys[randInt(0, keys.length - 1)];
-    return { naam: naam, punten: STIP_VORMEN[naam] };
+    var punten = STIP_VORMEN[naam];
+    if (randInt(0, 1)) punten = punten.map(function (p) { return [100 - p[0], p[1]]; }); // willekeurig horizontaal spiegelen = extra variatie
+    return { naam: naam, punten: punten };
   }
 
   // Bingokaart: rooster met getallen of woorden.
@@ -842,14 +926,20 @@
   // Ontbrekend getal (a + □ = c).
   function genOntbrekend(spec) {
     spec = spec || {};
-    var op = ["+", "-", "×"].indexOf(spec.bewerking) !== -1 ? spec.bewerking : "+";
+    var op = ["+", "-", "×", "÷"].indexOf(spec.bewerking) !== -1 ? spec.bewerking : "+";
+    var komma = !!spec.kommagetallen && (op === "+" || op === "-"); // kommagetallen alleen zinvol bij +/−
     var aantal = Math.min(15, Math.max(2, spec.aantal || 6)), max = spec.max || 20, items = [];
+    function r1(x) { return Math.round(x * 10) / 10; }
     for (var i = 0; i < aantal; i++) {
       var a, b, res;
-      if (op === "+") { a = randInt(1, max); b = randInt(1, max); res = a + b; }
+      if (komma) {
+        if (op === "+") { a = r1(randInt(1, max * 10) / 10); b = r1(randInt(1, max * 10) / 10); res = r1(a + b); }
+        else { a = r1(randInt(2, max * 10) / 10); b = r1(randInt(1, Math.round(a * 10)) / 10); res = r1(a - b); }
+      } else if (op === "+") { a = randInt(1, max); b = randInt(1, max); res = a + b; }
       else if (op === "-") { a = randInt(2, max); b = randInt(1, a); res = a - b; }
-      else { a = randInt(2, 10); b = randInt(2, 10); res = a * b; }
-      items.push({ a: a, b: b, res: res, op: op, mis: randInt(0, 1) });
+      else if (op === "×") { a = randInt(2, 10); b = randInt(2, 10); res = a * b; }
+      else { b = randInt(2, 10); res = randInt(2, 10); a = b * res; } // ÷: a ÷ b = res (altijd heel)
+      items.push({ a: a, b: b, res: res, op: op, komma: komma, mis: randInt(0, 1) });
     }
     return items;
   }
@@ -859,6 +949,20 @@
     spec = spec || {};
     var aantal = Math.min(12, Math.max(2, spec.aantal || 6));
     var max = Math.max(10, spec.max || 100);
+    // Kommagetallen-variant: reken in TIENDEN (geen float-ruis), toon met komma.
+    if (spec.kommagetallen) {
+      var gegevenK = arr(spec.stappen).map(function (s) { return Math.round(s * 10); }).filter(function (s) { return s >= 1; });
+      var wisselK = !!spec.wissel || gegevenK.length > 1;
+      var poolK = gegevenK.length ? gegevenK : [1, 2, 5]; // 0,1 · 0,2 · 0,5
+      var vastK = spec.stap ? Math.round(spec.stap * 10) : (gegevenK.length === 1 ? gegevenK[0] : 2);
+      var maxT = Math.max(20, Math.min(max * 10, 300)), itemsK = [];
+      for (var q = 0; q < aantal; q++) {
+        var sK = wisselK ? poolK[randInt(0, poolK.length - 1)] : vastK;
+        var nK = randInt(sK + 1, maxT - sK);
+        itemsK.push({ n: nK / 10, stap: sK / 10, minder: (nK - sK) / 10, meer: (nK + sK) / 10, komma: true });
+      }
+      return { wissel: wisselK, stap: vastK / 10, komma: true, items: itemsK };
+    }
     // twee modes: vaste stap over de hele opdracht (spec.stap), of wisselende stap
     // per rij (spec.wissel of een lijst spec.stappen). Pool schaalt met het bereik.
     var gegeven = arr(spec.stappen).filter(function (s) { return s >= 1; });
@@ -878,7 +982,41 @@
   // Getallen ordenen.
   function genOrdenen(spec) {
     spec = spec || {};
+    var soort = spec.soort || "getallen";
     var aantal = Math.min(8, Math.max(2, spec.aantal || 4)), max = spec.max || 100, aflopend = !!spec.aflopend, rijen = [];
+    // Kommagetallen/procenten: numeriek sorteren, dán als NL-string tonen.
+    if (soort === "kommagetallen" || soort === "procenten") {
+      var vastK = spec.perRij ? Math.min(6, Math.max(3, spec.perRij)) : 0;
+      function disp(v) { return soort === "procenten" ? v + "%" : String(v).replace(".", ","); }
+      for (var rk = 0; rk < aantal; rk++) {
+        var perRijK = vastK || randInt(3, 5), setK = {};
+        while (Object.keys(setK).length < perRijK) {
+          var val = soort === "procenten" ? randInt(1, 20) * 5 : randInt(1, (spec.max || 10) * 10) / 10;
+          setK[val] = 1;
+        }
+        var numsK = Object.keys(setK).map(Number);
+        var sortedK = numsK.slice().sort(function (a, b) { return aflopend ? b - a : a - b; });
+        rijen.push({ door: shuffle(numsK).map(disp), antwoord: sortedK.map(disp) });
+      }
+      return { aflopend: aflopend, soort: soort, rijen: rijen };
+    }
+    // Breuken ordenen: op WAARDE sorteren (dus vergelijken), tonen als echte breuk.
+    if (soort === "breuken") {
+      var NOEM = [2, 3, 4, 5, 6, 8], vastB = spec.perRij ? Math.min(5, Math.max(3, spec.perRij)) : 0;
+      for (var rb = 0; rb < aantal; rb++) {
+        var perRijB = vastB || randInt(3, 4), zien = {}, fracs = [], guard = 0;
+        while (fracs.length < perRijB && guard < 200) {
+          guard++;
+          var nb = NOEM[randInt(0, NOEM.length - 1)], tb = randInt(1, nb - 1), vb = tb / nb, sleutel = vb.toFixed(4);
+          if (zien[sleutel]) continue; // geen twee gelijke waarden (bijv. 1/2 en 2/4) → eenduidig te ordenen
+          zien[sleutel] = 1; fracs.push({ t: tb, n: nb, val: vb });
+        }
+        var sortedB = fracs.slice().sort(function (a, b) { return aflopend ? b.val - a.val : a.val - b.val; });
+        function frac(f) { return breukHtml(f.t, f.n); }
+        rijen.push({ door: shuffle(fracs).map(frac), antwoord: sortedB.map(frac) });
+      }
+      return { aflopend: aflopend, soort: "breuken", rijen: rijen };
+    }
     // aantal getallen per rij WISSELT (soms minder, soms meer); bovengrens schaalt
     // met het bereik zodat brede getallen niet buiten het werkblad vallen.
     var vast = spec.perRij ? Math.min(8, Math.max(3, spec.perRij)) : 0;
@@ -1185,6 +1323,7 @@
     var W = 660, padX = 30, y = 54;
     var span = L.eind - L.start || 1;
     function x(v) { return padX + ((v - L.start) / span) * (W - 2 * padX); }
+    function lbl(v) { return String(v).replace(".", ","); } // 0.5 → "0,5" (NL); integers ongewijzigd
     var svg = '<svg class="wb-nl" viewBox="0 0 ' + W + ' 96" preserveAspectRatio="xMidYMid meet">';
     svg += '<line x1="' + padX + '" y1="' + y + '" x2="' + (W - padX) + '" y2="' + y + '" class="wb-nl-as"/>';
     svg += '<polygon points="' + (W - padX) + ',' + y + ' ' + (W - padX - 10) + ',' + (y - 5) + ' ' + (W - padX - 10) + ',' + (y + 5) + '" class="wb-nl-pijl"/>';
@@ -1194,10 +1333,10 @@
       if (gevr) {
         // pijl + invulvakje boven de lijn
         svg += '<rect x="' + (x(v) - 17) + '" y="' + (y - 40) + '" width="34" height="22" rx="5" class="wb-nl-box ' + (ant ? "wb-goed" : "") + '"/>';
-        if (ant) svg += '<text x="' + x(v) + '" y="' + (y - 24) + '" class="wb-nl-ant">' + v + "</text>";
+        if (ant) svg += '<text x="' + x(v) + '" y="' + (y - 24) + '" class="wb-nl-ant">' + lbl(v) + "</text>";
         svg += '<line x1="' + x(v) + '" y1="' + (y - 18) + '" x2="' + x(v) + '" y2="' + (y - 2) + '" class="wb-nl-wijs"/>';
       } else {
-        svg += '<text x="' + x(v) + '" y="' + (y + 24) + '" class="wb-nl-label">' + v + "</text>";
+        svg += '<text x="' + x(v) + '" y="' + (y + 24) + '" class="wb-nl-label">' + lbl(v) + "</text>";
       }
     });
     svg += "</svg>";
@@ -1487,7 +1626,8 @@
       h += '<div class="wb-reeks-rij">';
       rij.vals.forEach(function (v, idx) {
         var gat = rij.gaten.indexOf(idx) !== -1, toon = !gat || ant;
-        h += '<span class="wb-reeks-cel' + (gat ? " gat" : "") + (gat && ant ? " wb-ant" : "") + '">' + (toon ? v : "") + "</span>";
+        var w = rij.komma ? String(v).replace(".", ",") : v; // kommagetallen NL tonen
+        h += '<span class="wb-reeks-cel' + (gat ? " gat" : "") + (gat && ant ? " wb-ant" : "") + '">' + (toon ? w : "") + "</span>";
       });
       h += "</div>";
     });
@@ -1504,9 +1644,9 @@
     h += '<div class="wb-verg" style="grid-template-columns:repeat(' + kolV + ',max-content);grid-template-rows:repeat(' + perColV + ',auto);grid-auto-flow:column">';
     V.forEach(function (it, i) {
       h += '<div class="wb-verg-rij"><span class="wb-som-nr">' + (i + 1) + '.</span>' +
-        '<span class="wb-verg-z wb-verg-l">' + esc(it.l.text) + '</span>' +
+        '<span class="wb-verg-z wb-verg-l">' + (it.l.html || esc(it.l.text)) + '</span>' +
         '<span class="wb-verg-teken' + (ant ? " wb-ant" : "") + '">' + (ant ? esc(it.teken) : "") + '</span>' +
-        '<span class="wb-verg-z wb-verg-r">' + esc(it.r.text) + "</span></div>";
+        '<span class="wb-verg-z wb-verg-r">' + (it.r.html || esc(it.r.text)) + "</span></div>";
     });
     h += "</div>";
     return '<div class="wb-blok">' + h + "</div>";
@@ -1642,8 +1782,10 @@
     var h = opdrachtKop(nr, b.opdracht || "Maak van de letters het goede woord.", b.em);
     h += '<div class="wb-invul-lijst">';
     H.forEach(function (it, i) {
-      h += '<div class="wb-invul-rij"><span class="wb-rij-nr">' + (i + 1) + '.</span><span><b class="wb-hussel">' + esc(it.door) + "</b> &nbsp;→&nbsp; " +
-        (ant ? '<span class="wb-ant">' + esc(it.antwoord) + "</span>" : lijn(120)) + "</span></div>";
+      // Schrijfregel ALTIJD op een eigen regel eronder (lange letterreeksen zouden een
+      // inline lijn anders laten wrappen: bij het ene woord ernaast, bij het andere eronder).
+      h += '<div class="wb-anagram-item"><div class="wb-anagram-w"><span class="wb-rij-nr">' + (i + 1) + '.</span> <b class="wb-hussel">' + esc(it.door) + "</b></div>" +
+        (ant ? '<div class="wb-anagram-ant"><span class="wb-ant">' + esc(it.antwoord) + "</span></div>" : '<div class="wb-schrijfregel" style="margin-top:24px"></div>') + "</div>";
     });
     h += "</div>";
     return '<div class="wb-blok">' + h + "</div>";
@@ -1655,7 +1797,7 @@
     Z.forEach(function (it, i) {
       h += '<div class="wb-zin-rij"><div class="wb-zin-chips"><span class="wb-rij-nr">' + (i + 1) + ".</span> " +
         it.door.map(function (w) { return '<span class="wb-chip">' + esc(w) + "</span>"; }).join(" ") + "</div>";
-      h += ant ? '<div class="wb-ant-blok">' + esc(it.antwoord) + "</div>" : '<div class="wb-schrijfregel" style="margin-top:7px"></div>';
+      h += ant ? '<div class="wb-ant-blok">' + esc(it.antwoord) + "</div>" : '<div class="wb-schrijfregel" style="margin-top:24px"></div>';
       h += "</div>";
     });
     return '<div class="wb-blok">' + h + "</div>";
@@ -1675,6 +1817,7 @@
 
   function rRijm(b, nr, ant) {
     var h = opdrachtKop(nr, b.opdracht || "Schrijf bij elk woord een woord dat erop rijmt.", b.em);
+    if (ant) h += '<div class="wb-ant-note">Dit zijn voorbeelden. Andere goede rijmwoorden mogen ook.</div>';
     h += '<div class="wb-invul-lijst">';
     arr(b.woorden).forEach(function (w, i) {
       var woord = (w && w.woord != null ? w.woord : w), rijm = (w && w.rijm) || [];
@@ -1709,7 +1852,7 @@
     arr(b.zinnen).forEach(function (z, i) {
       var zin = (z && z.zin != null ? z.zin : z), correct = (z && z.correct) || "";
       h += '<div class="wb-open-vraag"><div class="wb-vraag-t">' + (i + 1) + ". " + esc(zin) + "</div>" +
-        (ant ? '<div class="wb-ant-blok">' + esc(correct) + "</div>" : '<div class="wb-schrijfregel" style="margin-top:6px"></div>') + "</div>";
+        (ant ? '<div class="wb-ant-blok">' + esc(correct) + "</div>" : '<div class="wb-schrijfregel" style="margin-top:24px"></div>') + "</div>";
     });
     return '<div class="wb-blok">' + h + "</div>";
   }
@@ -1787,8 +1930,9 @@
       var cell = "";
       for (var j = 0; j < perCol; j++) {
         var idx = c * perCol + j; if (idx >= N) break; var it = I[idx];
-        var a = it.mis === 0 ? vakje(ant, it.a) : it.a, bb = it.mis === 1 ? vakje(ant, it.b) : it.b;
-        cell += '<div class="wb-ontbr-rij"><span class="wb-som-nr">' + (idx + 1) + '.</span><span>' + a + " " + it.op + " " + bb + " = " + it.res + "</span></div>";
+        var f = function (v) { return it.komma ? String(v).replace(".", ",") : v; };
+        var a = it.mis === 0 ? vakje(ant, f(it.a)) : f(it.a), bb = it.mis === 1 ? vakje(ant, f(it.b)) : f(it.b);
+        cell += '<div class="wb-ontbr-rij"><span class="wb-som-nr">' + (idx + 1) + '.</span><span>' + a + " " + it.op + " " + bb + " = " + f(it.res) + "</span></div>";
       }
       if (cell) h += '<div class="wb-ontbr-kol">' + cell + "</div>";
     }
@@ -1798,9 +1942,10 @@
 
   function rBuren(b, nr, ant) {
     var B = b._buren || genBuren(b.spec || b);
+    function f(v) { return B.komma ? String(v).replace(".", ",") : v; } // kommagetallen NL tonen
     var opd = b.opdracht || (B.wissel
       ? "Schrijf het juiste getal in de hokjes. Let op het getal dat erbij of eraf moet."
-      : ("Schrijf het getal " + B.stap + " minder en " + B.stap + " meer."));
+      : ("Schrijf het getal " + f(B.stap) + " minder en " + f(B.stap) + " meer."));
     var h = opdrachtKop(nr, opd, b.em);
     var N = B.items.length, kol = N >= 6 ? 2 : 1, perCol = Math.ceil(N / kol);
     h += '<div class="wb-buren-wrap">';
@@ -1809,11 +1954,11 @@
       for (var j = 0; j < perCol; j++) {
         var idx = c * perCol + j; if (idx >= N) break; var it = B.items[idx];
         cell += '<span class="wb-som-nr">' + (idx + 1) + ".</span>" +
-          '<span class="wb-buren-cel">' + vakje(ant, it.minder) + "</span>" +
-          '<span class="wb-buren-op">− ' + it.stap + "</span>" +
-          '<span class="wb-buren-mid">' + it.n + "</span>" +
-          '<span class="wb-buren-op">+ ' + it.stap + "</span>" +
-          '<span class="wb-buren-cel">' + vakje(ant, it.meer) + "</span>";
+          '<span class="wb-buren-cel">' + vakje(ant, f(it.minder)) + "</span>" +
+          '<span class="wb-buren-op">− ' + f(it.stap) + "</span>" +
+          '<span class="wb-buren-mid">' + f(it.n) + "</span>" +
+          '<span class="wb-buren-op">+ ' + f(it.stap) + "</span>" +
+          '<span class="wb-buren-cel">' + vakje(ant, f(it.meer)) + "</span>";
       }
       if (cell) h += '<div class="wb-buren">' + cell + "</div>";
     }
@@ -1824,10 +1969,12 @@
   function rOrdenen(b, nr, ant) {
     var O = b._orden || genOrdenen(b.spec || b);
     var h = opdrachtKop(nr, b.opdracht || ("Zet de getallen van " + (O.aflopend ? "groot naar klein" : "klein naar groot") + " in de hokjes."), b.em);
-    // alle hokjes even breed: kijk naar het grootste getal in de hele opdracht
-    var maxDig = 1;
-    O.rijen.forEach(function (rij) { rij.door.forEach(function (v) { maxDig = Math.max(maxDig, String(v).length); }); });
-    h += '<div class="wb-orden" style="--obw:' + (maxDig + 1.2).toFixed(1) + 'ch">';
+    // alle hokjes even breed: kijk naar het grootste getal in de hele opdracht.
+    // Bij breuken meten we de string-lengte NIET (dat is HTML) → vaste breuk-breedte.
+    var isFrac = O.soort === "breuken", maxDig = 1;
+    if (!isFrac) O.rijen.forEach(function (rij) { rij.door.forEach(function (v) { maxDig = Math.max(maxDig, String(v).length); }); });
+    var obw = isFrac ? "3ch" : ((maxDig + 1.2).toFixed(1) + "ch");
+    h += '<div class="wb-orden' + (isFrac ? " wb-orden-frac" : "") + '" style="--obw:' + obw + '">';
     O.rijen.forEach(function (rij, i) {
       // één grid voor de hele opdracht → kolommen (en dus de doel-hokjes) lijnen
       // gegarandeerd uit, ongeacht het aantal cijfers in het rijnummer.
@@ -2097,6 +2244,7 @@
       ".wb-open-vraag{margin:10px 0 16px}",
       ".wb-schrijfregel{border-bottom:1.5px dotted rgba(34,28,58,.35);height:1px}",
       ".wb-ant-blok{margin-top:5px;background:var(--wb-soft);border-left:3px solid var(--wb-accent);border-radius:8px;padding:7px 11px;font-size:14px;font-weight:600;color:var(--wb-ink)}",
+      ".wb-ant-note{margin:2px 0 10px;font-size:12.5px;font-style:italic;color:rgba(34,28,58,.6)}",
       // Koppelen
       ".wb-kp2{position:relative}",
       ".wb-kp2-rij{position:relative;height:48px}",
@@ -2226,8 +2374,8 @@
       ".wb-breuk-rij{display:flex;align-items:center;gap:11px}",
       ".wb-breuk{height:28px;width:auto}",
       ".wb-breuk-v{font-size:15px;font-weight:700;display:inline-flex;align-items:center;gap:5px}",
-      ".wb-frac{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;vertical-align:middle;line-height:1.05;font-weight:800}",
-      ".wb-frac-t{padding:0 5px 1px;border-bottom:2px solid currentColor}",
+      ".wb-frac{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;vertical-align:middle;line-height:1;font-weight:inherit;font-size:0.9em}", // een tikje kleiner dan de omringende getallen; strakke regelhoogte houdt de hoogte beperkt
+      ".wb-frac-t{padding:0 5px 1px;border-bottom:1.5px solid currentColor}",
       ".wb-frac-n{padding:1px 5px 0}",
       // Kleur-op-som
       ".wb-kleur-legenda{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}",
@@ -2261,6 +2409,8 @@
       ".wb-geheim-in{width:22px;height:24px;border-bottom:2px solid var(--wb-ink);text-align:center;font-weight:800;color:var(--wb-accent)}",
       // Hussel / zin
       ".wb-hussel{letter-spacing:2px;font-size:16px}",
+      ".wb-anagram-item{break-inside:avoid;-webkit-column-break-inside:avoid;margin:0 0 13px}",
+      ".wb-anagram-ant{margin-top:5px}",
       ".wb-zin-rij{margin:0 0 12px}",
       ".wb-zin-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}",
       // Lidwoord
@@ -2304,6 +2454,8 @@
       ".wb-orden-doel{display:flex;gap:6px}",
       ".wb-vakje.wb-orden-vk{width:max(36px,var(--obw,2.6ch));min-width:max(36px,var(--obw,2.6ch));padding:0 2px}",
       ".wb-chip.wb-orden-chip{width:max(36px,var(--obw,2.6ch));min-width:max(36px,var(--obw,2.6ch));text-align:center;padding:3px 4px;box-sizing:border-box}",
+      ".wb-orden-frac .wb-orden-vk{height:auto;min-height:36px;line-height:1;font-weight:600;padding:3px 4px;display:inline-flex;align-items:center;justify-content:center}",
+      ".wb-orden-frac .wb-orden-chip{height:auto;font-weight:600;padding:4px 6px;display:inline-flex;align-items:center;justify-content:center}",
       // Maaltafel-rooster
       ".wb-maalrij{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:16px 22px}",
       ".wb-maal{border-collapse:collapse}",

@@ -458,7 +458,7 @@
   // Taal actief-naam of een fonetische omschrijving). Volgorde = prioriteit.
   // Uitbreidbaar: voeg een categorie of woorden toe (alles met de hand geverifieerd).
   var SPELLING_WOORDEN = [
-    { naam: "woorden waarin je /ie/ hoort maar één i schrijft (zoals kilo, liter)",
+    { naam: "woorden waarin je /ie/ hoort maar één i schrijft (zoals kilo, liter)", bank: "kilo_ie",
       test: /kilo\s*-?woord|liter\s*-?woord|hoor.{0,8}ie.{0,18}schrijf.{0,8}\bi\b|\bi\b[^a-z]{0,8}(klinkt als|als)[^a-z]{0,4}ie/,
       woorden: ["kilo", "liter", "prima", "titel", "crisis", "figuur", "minus", "via", "diploma", "januari", "februari"] },
     { naam: "de c die klinkt als /s/ (zoals cent, citroen)", bank: "c_als_s",
@@ -531,13 +531,27 @@
       test: /klankgroep|open.{0,4}gesloten|verdubbel|kasteel\s*-?woord|jager\s*-?woord|bakker\s*-?woord/,
       woorden: ["boom", "bom", "raam", "ram", "pot", "pen", "kar", "bal", "vis", "man", "zon", "kip"] }
   ];
-  function vindSpellingCat(context) {
-    var t = String(context || "").toLowerCase();
+  // Kenmerk per categorie: de letter(s) die de REGEL oefent en dus in het invul-gat
+  // moeten vallen (niet een willekeurige middenletter). Keyed op bank-id. Zonder
+  // kenmerk (transformatie-categorieen als open/gesloten, verkleinwoord) → geen
+  // vaste letter om te blanken.
+  var SPELLING_FEAT = {
+    kilo_ie: /i/, c_als_s: /c/, c_als_k: /c/, tie: /ties?$/, isch: /isch$/, x: /x/,
+    th: /th/, ch_sj: /ch/, eau: /eau/, accent_e: /[éèê]/, eer_oor_eur: /eer|oor|eur/,
+    aai_ooi_oei: /aai|ooi|oei/, eeuw_ieuw: /eeuw|ieuw/, ei_ij: /ei|ij/, au_ou: /au|ou/,
+    cht: /cht/, ng_nk: /ng|nk/, sch: /sch/
+  };
+
+  // ALLE genoemde categorieen (een leerkracht kan er meerdere tegelijk willen
+  // oefenen, bijv. "taxiwoord, colawoord, centwoord, cadeauwoord").
+  function vindSpellingCats(context) {
+    var t = String(context || "").toLowerCase(), uit = [];
     for (var i = 0; i < SPELLING_WOORDEN.length; i++) {
-      if (SPELLING_WOORDEN[i].test.test(t)) return SPELLING_WOORDEN[i];
+      if (SPELLING_WOORDEN[i].test.test(t)) uit.push(SPELLING_WOORDEN[i]);
     }
-    return null;
+    return uit;
   }
+  function vindSpellingCat(context) { return vindSpellingCats(context)[0] || null; }
 
   window.avinkaLeerlijnen = {
     voor: function (vak, groep) {
@@ -574,14 +588,20 @@
     // niet via een methode-opbouw. De bijbehorende correcte woorden komen uit
     // `spellingWoorden`.
     spellingMethode: function (context, groep) {
-      var cat = vindSpellingCat(context);
+      var cats = vindSpellingCats(context);
       var noemtMethode = METHODE_NAAM.test(String(context || ""));
-      if (!cat && !noemtMethode) return "";
-      var kern = "SPELLINGCATEGORIE (eigen, methode-neutrale aanpak). Een leerkracht gebruikt vaak de termen van de eigen spellingmethode. Herken die term, maar gebruik in de les/het werkblad je EIGEN, neutrale uitleg: neem geen categorienaam, regelformulering of indeling van een methode over, en zet de naam van een methode NIET in de tekst die de leerling ziet. Maak er een eigen, goed opgebouwde en aantrekkelijke les/werkblad van die méér biedt dan een rij oefenwoorden.";
-      if (cat) {
+      if (!cats.length && !noemtMethode) return "";
+      var kern = "SPELLINGCATEGORIE (eigen, methode-neutrale aanpak). Een leerkracht gebruikt vaak de termen van de eigen spellingmethode. Herken die term, maar gebruik in de les/het werkblad je EIGEN, neutrale uitleg: neem geen categorienaam, regelformulering of indeling van een methode over, en zet de naam van een methode NIET in de tekst die de leerling ziet. Maak er een eigen, goed opgebouwde en aantrekkelijke les/werkblad van die méér biedt dan een rij oefenwoorden. Gebruik UITSLUITEND de neutrale omschrijving(en) die hieronder staan; verzin GEEN eigen labels zoals \"zachte c\" of \"harde c\" (die zijn verwarrend en vaak onjuist), en zet geen methode-categorienaam (zoals \"colawoord\") in de leerlingtekst.";
+      if (cats.length === 1) {
         return kern +
-          "\nDeze les/dit werkblad gaat over de categorie: " + cat.naam + "." +
+          "\nDeze les/dit werkblad gaat over de categorie: " + cats[0].naam + "." +
           " Behandel die als hoofdonderwerp: leg de spellingregel in kindtaal en in je eigen woorden uit, en gebruik meerdere passende voorbeeldwoorden uit de woordenbank.";
+      }
+      if (cats.length > 1) {
+        return kern +
+          "\nDe leerkracht wil MEERDERE categorieen tegelijk oefenen. Behandel ELK van deze categorieen op het werkblad en laat er geen enkele weg (verdeel de opdrachten eerlijk over de categorieen, of maak per categorie een eigen onderdeel): " +
+          cats.map(function (c) { return "\"" + c.naam + "\""; }).join("; ") + "." +
+          " Leg per categorie de regel kort in kindtaal uit en gebruik per categorie de bijbehorende woorden uit de woordenbank.";
       }
       // Alleen een methodenaam genoemd, geen specifieke categorie.
       return kern +
@@ -592,31 +612,48 @@
     // CORRECT gespelde, in-categorie woorden terug, of '' als er geen categorie
     // wordt herkend (dan valt de tool terug op de algemene regels).
     spellingWoorden: function (context, groep) {
-      var cat = vindSpellingCat(context);
-      if (!cat) return "";
+      var cats = vindSpellingCats(context);
+      if (!cats.length) return "";
       var g = (String(groep || "").match(/[3-8]/) || [])[0];
-      var regels = "Gebruik in de oefeningen UITSLUITEND woorden uit deze lijst: ze zijn correct gespeld, kindgeschikt en horen gegarandeerd bij deze categorie. Verzin ZELF GEEN andere categoriewoorden; neem ze exact over zoals ze hier staan.";
-      // Nieuwe woordenbank (public/avinka-woordenbank.js): groot, per groep, schoon
-      // en kindveilig, met per woord een vorm-vlag (x[2]==='v' = vervoeging/verbuiging).
-      // We splitsen basisvormen en vervoegingen, zodat de AI VOORAL de basisvorm pakt
-      // (netst voor de meeste opdrachtmodules) en vervoegingen alleen spaarzaam inzet.
-      if (cat.bank && g && window.avinkaWoordenbank && window.avinkaWoordenbank[cat.bank]) {
-        var lijst = window.avinkaWoordenbank[cat.bank].filter(function (x) { return x[1] <= +g; });
-        var grond = lijst.filter(function (x) { return x[2] !== "v"; }).map(function (x) { return x[0]; });
-        var verv = lijst.filter(function (x) { return x[2] === "v"; }).map(function (x) { return x[0]; });
-        if (grond.length >= 8) {
-          var out = "VERPLICHTE WOORDENBANK voor de categorie \"" + cat.naam + "\". " + regels +
-            " Kies VOORAL uit de basisvormen — die zijn voor de meeste opdrachten het netst. Basisvormen: " +
-            sample(grond, Math.min(26, grond.length)).join(", ") + ".";
-          if (verv.length) {
-            out += " Vervoegingen (spaarzaam gebruiken, alleen waar het echt helpt — bijvoorbeeld om woorden in een voorbeeldzin natuurlijk af te wisselen of waar de basisvorm krom zou klinken; niet als standaard-oefenwoord): " +
-              sample(verv, Math.min(8, verv.length)).join(", ") + ".";
+      var meer = cats.length > 1;
+      // Woordenlijst voor één categorie (basisvormen + spaarzaam vervoegingen),
+      // uit de nieuwe woordenbank (public/avinka-woordenbank.js) of anders de
+      // met de hand gecureerde terugval-lijst.
+      function bankVoor(cat) {
+        if (cat.bank && g && window.avinkaWoordenbank && window.avinkaWoordenbank[cat.bank]) {
+          var lijst = window.avinkaWoordenbank[cat.bank].filter(function (x) { return x[1] <= +g; });
+          var grond = lijst.filter(function (x) { return x[2] !== "v"; }).map(function (x) { return x[0]; });
+          var verv = lijst.filter(function (x) { return x[2] === "v"; }).map(function (x) { return x[0]; });
+          if (grond.length >= 8) {
+            var s = "Categorie \"" + cat.naam + "\" — basisvormen (kies hier vooral uit): " +
+              sample(grond, Math.min(meer ? 16 : 26, grond.length)).join(", ") + ".";
+            if (verv.length) s += " Vervoegingen (spaarzaam, alleen waar het echt helpt): " + sample(verv, Math.min(meer ? 5 : 8, verv.length)).join(", ") + ".";
+            return s;
           }
-          return out;
         }
+        return "Categorie \"" + cat.naam + "\" — woorden: " + cat.woorden.join(", ") + ".";
       }
-      // Terugval: de met de hand gecureerde lijst (categorie zonder bank of te weinig woorden).
-      return "VERPLICHTE WOORDENBANK voor de categorie \"" + cat.naam + "\". " + regels + " Woorden: " + cat.woorden.join(", ") + ".";
+      var regels = "Gebruik in de oefeningen UITSLUITEND woorden uit deze lijst(en): correct gespeld, kindgeschikt en gegarandeerd in de juiste categorie. Verzin ZELF GEEN andere categoriewoorden; neem ze exact over zoals ze hier staan.";
+      if (!meer) return "VERPLICHTE WOORDENBANK. " + regels + " " + bankVoor(cats[0]);
+      return "VERPLICHTE WOORDENBANK PER CATEGORIE. " + regels +
+        " Gebruik per categorie de bijbehorende woorden (meng ze niet door elkaar binnen één opdracht, tenzij de opdracht juist het onderscheiden van de categorieen oefent):\n" +
+        cats.map(function (c) { return "• " + bankVoor(c); }).join("\n");
+    },
+    // Gestructureerde bankwoorden per herkende categorie (voor code-controle in de
+    // tool: losse-woord-opdrachten mogen ALLEEN deze woorden bevatten). Geeft
+    // [{naam, key, woorden:[...]}], of [] als er geen categorie wordt herkend.
+    spellingBanken: function (context, groep) {
+      var cats = vindSpellingCats(context);
+      if (!cats.length) return [];
+      var g = (String(groep || "").match(/[3-8]/) || [])[0];
+      return cats.map(function (cat) {
+        var woorden;
+        if (cat.bank && g && window.avinkaWoordenbank && window.avinkaWoordenbank[cat.bank]) {
+          woorden = window.avinkaWoordenbank[cat.bank].filter(function (x) { return x[1] <= +g && x[2] !== "v"; }).map(function (x) { return x[0]; });
+          if (woorden.length < 8) woorden = cat.woorden.slice();
+        } else woorden = cat.woorden.slice();
+        return { naam: cat.naam, key: cat.bank || cat.naam, woorden: woorden, feat: SPELLING_FEAT[cat.bank] || null };
+      });
     },
     verwerkingen: function (vak, groep, n) {
       if (!isZaakvakKey(vak)) return "";

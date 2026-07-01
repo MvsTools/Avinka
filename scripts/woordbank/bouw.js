@@ -101,8 +101,13 @@ const DOELEN = ING.filter(i => i.doel);
 // open/gesloten lettergreep (verdubbelen/verlengen). Verdubbeling (dubbele
 // medeklinker) is betrouwbaar; de "verlenging" (bo-men) blijft fonetisch lastig,
 // dus beperkt tot korte tweelettergrepige woorden om de ruis te dempen.
+// Klankgroepenwoord (open/gesloten lettergreep). De regel gaat over de lettergrepen
+// ÍN het woord zelf: een dubbele medeklinker hoort bij een gesloten klankgroep
+// (kof-fie, pro-fes-sor, bak-ker), of een open klankgroep met één klinker + medeklinker
+// (wa-ter, ta-fel, ka-mer). Bewust ruim gehouden — niet elk woord hoeft een meervoud te
+// vormen; het gaat om de klankgroep-spelling.
 function openGesloten(w) {
-  if (/([bcdfgklmnprstvz])\1/.test(w)) return true; // verdubbeling (gesloten) - betrouwbaar
+  if (/([bcdfgklmnprstvz])\1/.test(w)) return true; // verdubbeling (gesloten klankgroep)
   return lettergrepen(w) === 2 && w.length <= 7 &&
     /^[bcdfghjklmnprstvwz]*[aeou][bcdfghjklmnprstvwz][aeiouy]/.test(w) &&
     !/(aa|ee|oo|uu|oe|eu|ie|ei|ij|ou|au|ui|aai|ooi|oei)/.test(w);
@@ -196,13 +201,26 @@ const BLOCK = new Set([
   "vagina","penis","clitoris","masturberen","vrijen","geslachtsdeel","geslachtsgemeenschap","seksen","viagra",
   // verontrustend medisch / zwaar volwassen onderwerp (gevonden via steekproef-audit):
   "uitzaaiing","uitzaaiingen","seropositief","eunuch","exorcist","gijzeling","gijzelen","gynaecologie","pneumothorax",
+  // te zeldzaam / niet-passend / ongemakkelijk voor een kinderwerkblad (handmatig na
+  // review van gegenereerde spellingwerkbladen, 1-7-2026): celstraf/celgenoot (gevangenis),
+  // celibaat/celibatair (seksueel-getint), en losse rare/onbekende woorden.
+  "cel","celstraf","celgenoot","cellen","celibaat","celibatair","celibataire","narcisme","narcist","narcistisch",
+  "dolce","specifieks","exorcisme","eunuchen","bordeelhouder","maffia","maffiabaas",
+  // Engelse woorden die toevallig een NL-spellingcategorie raken maar er niet in horen:
+  "ice","nice","price","choice","voice","peace","please","cheese","cheer","race","space","dance","place","face",
+  // mild volwassen bijklank, niet voor groep 7:
+  "hartstocht","hartstochtelijk","hartstochten",
 ]);
+// Frequentieplafond: woorden die zeldzamer zijn dan deze rang laten we NIET toe
+// (verjonging — houd het bij woorden die kinderen echt kennen). Tunebaar.
+const MAX_RANG = 24000;
 
 function kindgeschikt(w) {
   if (!/^[a-zà-ÿ]+$/.test(w)) return false;
   if (w.length < 3 || w.length > 12) return false;
   if (!RANG.has(w)) return false;
   if (RANG.get(w) < 60) return false;   // de allerfrequentste = functiewoorden (de, het, hij, zijn) - geen oefenwoord
+  if (RANG.get(w) >= MAX_RANG) return false; // te zeldzaam voor een kinderwerkblad (verjonging)
   if (BLOCK.has(w)) return false;                          // harde blocklist: nooit terug
   if (ONGEPAST.has(w) && !TOEGESTAAN.has(w)) return false;  // AI-ongepast, tenzij toegestaan
   if (WERKWVORMEN.has(w)) return false;   // gegenereerde werkwoordsvormen (werkwoorden.js)

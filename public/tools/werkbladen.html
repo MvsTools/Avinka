@@ -204,7 +204,7 @@
         <div class="veld-tip" id="onderwerp-tip">Beschrijf het onderwerp of leerdoel concreet. Bijvoorbeeld het type sommen, de spellingcategorie of het thema. Hoe scherper, hoe beter het werkblad.</div>
         <textarea id="onderwerp" class="field-input" placeholder="Bijv. 'optellen en aftrekken tot 100 met overschrijding' of 'woorden met -eeuw, -ieuw en -uw'" oninput="this.classList.toggle('filled', !!this.value.trim())"></textarea>
 
-        <div class="rij">
+        <div class="rij" style="grid-template-columns:1fr 1fr;">
           <div>
             <label class="field-label" for="groep">Groep</label>
             <select id="groep" class="field-select avinka-groep" onchange="this.classList.toggle('filled', !!this.value)">
@@ -220,14 +220,6 @@
             <label class="field-label" for="aantal">Aantal opdrachten</label>
             <select id="aantal" class="field-select filled" onchange="this.classList.toggle('filled', !!this.value)">
               <option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option>
-            </select>
-          </div>
-          <div>
-            <label class="field-label" for="lengte">Lengte per opdracht</label>
-            <select id="lengte" class="field-select filled" onchange="this.classList.toggle('filled', !!this.value)">
-              <option value="kort">Kort</option>
-              <option value="middel" selected>Middel</option>
-              <option value="groot">Groot</option>
             </select>
           </div>
         </div>
@@ -347,8 +339,86 @@
       });
     }
 
+    // ── Modulepalet: ENIGE bron van waarheid voor wat de AI mag gebruiken ─────
+    // Een module verschijnt PAS in de systeem-prompt als zijn type hier true is.
+    // Dat gebeurt zodra hij de testronde heeft doorstaan (spiegelt de GETEST-lijst
+    // in werkblad-preview.html). Zo groeit het aanbod vanzelf mee met elke nieuw
+    // geteste module en krijgt de gebruiker NOOIT een nog-niet-geteste module.
+    // Nieuwe module gebouwd? Zet 'm hier pas op true nadat hij is goedgekeurd.
+    var GETESTE_MODULES = {
+      // Algemeen
+      tekst: true, meerkeuze: true, invul: true, open: true, koppelen: true,
+      categoriseren: true, waarnietwaar: true, teken: true, reflectie: true,
+      // Rekenen
+      sommen: true, cijferplus: true, cijfermin: true, cijferkeer: true, ontbrekend: true,
+      getallenlijn: true, rekenmuurtje: true, getalhuis: true, vergelijken: true,
+      tafelkaart: true, maalrooster: true, reeks: true, buurgetallen: true, ordenen: true,
+      plaatswaarde: true, getalwoord: true, afronden: true, romeins: true, automatiseer: true,
+      breuken: true, kleuropsom: true, klok: true, geld: true, staafdiagram: true,
+      // Taal & spelling
+      woordzoeker: true, kruiswoord: true, anagram: true, zinbouwen: true, lettergrepen: true,
+      rijmwoorden: true, synant: true, lidwoord: true, zoekdefout: true,
+      // Puzzels & speels
+      sudoku: true, geheimschrift: true, doolhof: true, bingo: true,
+      verbinddepunten: false // nog NIET getest → wordt niet aangeboden
+    };
+
     // ── Systeem-prompt: het JSON-contract + de regels ────────────────────────
     function bouwSysteem() {
+      // Alle blok-types met beschrijving. Ongeteste types worden er automatisch
+      // uitgefilterd op basis van GETESTE_MODULES (regels zonder "type" blijven staan).
+      var blokTypes = [
+        '- {"type":"tekst","kop":"optioneel","tekst":"uitleg of een leestekst (alinea\'s gescheiden met lege regel)"} — uitleg of leestekst.',
+        '- {"type":"meerkeuze","opdracht":"...","vragen":[{"vraag":"...","opties":["a","b","c"],"goed":0}]} — goed = index van het juiste antwoord. De leerling kruist het goede antwoord aan; formuleer de opdracht zo (bijvoorbeeld "Kruis het goede antwoord aan").',
+        '- {"type":"invul","opdracht":"...","items":[{"voor":"tekst voor het gat","antwoord":"het in te vullen woord","na":"tekst na het gat"}]} — gatentekst.',
+        '- {"type":"open","opdracht":"...","vragen":[{"vraag":"...","antwoord":"het verwachte antwoord","regels":2}]} — open vragen (regels = aantal schrijfregels). GEBRUIK DIT OOK voor verhaaltjessommen (zet het antwoord erbij). Bij een vraag met een feitelijk juist antwoord geef je dat antwoord (bijv. "Hoeveel poten heeft een spin?" → antwoord "8"); gebruik "Eigen antwoord" alleen als het echt een mening of persoonlijke vraag is.',
+        '- {"type":"koppelen","opdracht":"...","links":["..."],"rechts":["..."],"paren":[[0,0],[1,1]]} — paren = welke links-index bij welke rechts-index hoort. Geef 4 tot 6 paren (het eerste paar wordt automatisch als voorbeeld voorgedaan).',
+        '- {"type":"categoriseren","opdracht":"...","categorieen":[{"naam":"...","items":["woord","woord"]}]} — sorteren in vakken; het systeem maakt zelf de woordbank.',
+        '- {"type":"waarnietwaar","opdracht":"...","stellingen":[{"stelling":"...","goed":true}]} — goed = true (waar) of false (niet waar).',
+        '- {"type":"sommen","opdracht":"...","spec":{"bewerking":"+|-|×|÷|mix","min":1,"max":100,"aantal":10,"kolommen":2}} — LET OP: schrijf de sommen NIET zelf; geef alleen de spec, het systeem maakt de sommen én de juiste antwoorden. Kies min/max/bewerking passend bij groep en leerlijn.',
+        '- {"type":"getallenlijn","opdracht":"...","spec":{"start":0,"eind":100,"stap":10,"gevraagd":[30,70]}} — het systeem tekent de lijn; gevraagd = welke getallen ingevuld moeten worden. start/eind/stap mogen ook kommagetallen zijn (bijv. 0 tot 5, stap 0,5) of negatief (bijv. −20 tot 20) — kies passend bij de leerlijn.',
+        '- {"type":"woordzoeker","opdracht":"...","woorden":["WOORD","WOORD"]} — geef 8 tot 16 woorden (passend bij het onderwerp/de spellingcategorie); het systeem bouwt het raster.',
+        '- {"type":"rekenmuurtje","opdracht":"...","spec":{"rijen":3,"max":12}} — rekenmuurtje (elke steen = som van de twee eronder); het systeem maakt het muurtje én de antwoorden. rijen 3 of 4.',
+        '- {"type":"getalhuis","opdracht":"...","spec":{"getal":10,"aantal":6}} — splitsen van een getal; het systeem maakt de splitsingen + antwoorden. Voor de onderbouw.',
+        '- {"type":"klok","opdracht":"...","spec":{"aantal":6,"soort":"half","cijfers":false}} — klokkijken; soort = heel/half/kwartier/vijf. Zet "cijfers":true voor een wijzerplaat MET de cijfers 1 t/m 12 erop (makkelijker, onderbouw). Het systeem tekent de klokken; de leerling schrijft de tijd.',
+        '- {"type":"geld","opdracht":"...","spec":{"aantal":6,"max":20,"kommagetallen":true}} — rekenen met geld; het systeem maakt de geldsommen + antwoorden.',
+        '- {"type":"doolhof","opdracht":"...","spec":{"grootte":11}} — een doolhof van A naar B; het systeem tekent het (leuk als afsluiter).',
+        '- {"type":"kruiswoord","opdracht":"...","woorden":[{"woord":"...","omschrijving":"..."}]} — geef 8 tot 16 woorden met een korte omschrijving; het systeem legt de kruiswoordpuzzel.',
+        '- {"type":"reeks","opdracht":"...","spec":{"aantal":4}} — getallenreeksen aanvullen; het systeem maakt ze + de antwoorden. Zet "kommagetallen":true voor een reeks met kommagetallen (bijv. 0,5 · 1,0 · 1,5 …).',
+        '- {"type":"vergelijken","opdracht":"...","spec":{"soort":"getallen","aantal":8,"max":20}} — < , > of = invullen; het systeem maakt de paren + berekent het teken. Kies "soort" passend bij de leerlijn: getallen (default), keer (3×4 ⃝ 13), min (15−6 ⃝ 12−4), kommagetallen (0,5 ⃝ 0,45), breuken (½ ⃝ ¾), procenten (50% ⃝ 0,4), of mix (breuk/procent/kommagetal door elkaar).',
+        '- {"type":"tafelkaart","opdracht":"...","spec":{"tafel":7,"tm":10}} — een tafel oefenen; het systeem maakt de sommen + antwoorden.',
+        '- {"type":"breuken","opdracht":"...","spec":{"aantal":4,"soort":"kleur"}} — breuken kleuren (soort:"kleur") of aflezen (soort:"lees"); het systeem tekent ze.',
+        '- {"type":"kleuropsom","opdracht":"..."} — rekenkleurplaat met een verborgen plaatje; het systeem maakt de sommen + de kleurcode.',
+        '- {"type":"staafdiagram","opdracht":"...","titel":"Hoeveel kinderen hebben welk huisdier?","eenheid":"aantal kinderen","data":[{"label":"hond","waarde":7},{"label":"kat","waarde":5}]} — geef een PAKKENDE titel (een echt vraagje/verhaaltje) + 5 tot 7 verschillende categorieën met waarden; het systeem tekent de grafiek en maakt de vragen + antwoorden.',
+        '- {"type":"sudoku","opdracht":"...","spec":{"grootte":4}} — sudoku (grootte 4, 6 of 9); het systeem maakt een geldige puzzel + oplossing. Meer werk = grotere grootte: 4×4 jongste/kort, 6×6 midden, 9×9 (echte sudoku) voor de bovenbouw/lang.',
+        '- {"type":"geheimschrift","opdracht":"...","woorden":["WOORD","WOORD"]} — decodeer-puzzel; het systeem maakt de geheime symbolen.',
+        '- {"type":"anagram","opdracht":"...","woorden":[{"woord":"..."}]} — letters husselen tot een woord; het systeem hutselt ze.',
+        '- {"type":"zinbouwen","opdracht":"...","zinnen":[{"zin":"de hond rent hard"}]} — woordvolgorde; geef correcte zinnen, het systeem hutselt de woorden.',
+        '- {"type":"lettergrepen","opdracht":"...","woorden":[{"woord":"konijn","delen":["ko","nijn"]}]} — verdelen in lettergrepen; geef ZELF de juiste verdeling (delen).',
+        '- {"type":"rijmwoorden","opdracht":"...","woorden":[{"woord":"maan","rijm":["baan","laan"]}]} — een rijmwoord schrijven; geef enkele voorbeeldrijmen mee.',
+        '- {"type":"synant","opdracht":"...","soort":"synoniem","paren":[["groot","reusachtig"]]} — synoniemen (soort:"synoniem") of antoniemen (soort:"antoniem") koppelen.',
+        '- {"type":"lidwoord","opdracht":"...","woorden":[{"woord":"tafel","lidwoord":"de"}]} — de/het kiezen; geef het juiste lidwoord mee.',
+        '- {"type":"zoekdefout","opdracht":"...","zinnen":[{"zin":"ik loopt naar huis","correct":"ik loop naar huis"}]} — fout zoeken en verbeteren; geef de zin met precies één fout én de correcte zin.',
+        '- {"type":"verbinddepunten","opdracht":"...","spec":{"vorm":"ster"}} — verbind de punten (vorm: ster/huis/boot/vis/hart/boom/vlieger/diamant/ijsje/raket/auto/ballon/kroon/pijl; laat "vorm" wég voor een willekeurige vorm, of kies er een die bij het thema past); leuke afsluiter.',
+        '- {"type":"bingo","opdracht":"...","spec":{"soort":"getallen","grootte":4}} — bingokaart (soort getallen of woorden, dan ook "woorden":[...]).',
+        '- {"type":"cijferplus","opdracht":"...","spec":{"aantal":8,"max":1000}} — cijferend OPTELLEN onder elkaar (met onthoud-hokjes). Aantal naar lengte: kort 4, middel 6, lang 8. Kalibreer "max" op de groep: onderbouw ~100, middenbouw ~1000, bovenbouw tot 10000.',
+        '- {"type":"cijfermin","opdracht":"...","spec":{"aantal":8,"max":1000}} — cijferend AFTREKKEN onder elkaar. Aantal naar lengte: kort 4, middel 6, lang 8. "max" op de groep (bovenbouw tot 10000).',
+        '- {"type":"cijferkeer","opdracht":"...","spec":{"aantal":8,"maxA":99}} — cijferend VERMENIGVULDIGEN met tussenstappen. Aantal naar lengte: kort 4, middel 6, lang 8. Standaard 2-cijferig × 2-cijferig; voor de bovenbouw mag "maxA" hoger (bijv. 999) voor 3-cijferig × 2-cijferig.',
+        '- {"type":"ontbrekend","opdracht":"...","spec":{"bewerking":"+","aantal":6,"max":20}} — som met een ontbrekend getal (a + □ = c); het systeem maakt ze + antwoorden. bewerking = + , − , × of ÷ (deling is altijd heel). Zet "kommagetallen":true voor +/− met kommagetallen.',
+        '- {"type":"buurgetallen","opdracht":"...","spec":{"aantal":6,"max":100,"stap":1}} — x minder / x meer (stap 1, 10 of 100); het systeem maakt ze + antwoorden. Zet "kommagetallen":true voor kommagetallen (stap bijv. 0,5).',
+        '- {"type":"ordenen","opdracht":"...","spec":{"soort":"getallen","aantal":4,"perRij":5,"max":100,"aflopend":false}} — ordenen (klein→groot, of "aflopend":true); het systeem maakt ze + antwoorden. Kies "soort" passend bij de leerlijn: getallen (default), kommagetallen, procenten of breuken (bij breuken laat je ze de fracties vergelijken en op waarde ordenen).',
+        '- {"type":"plaatswaarde","opdracht":"...","spec":{"aantal":5,"max":1000}} — plaatswaarde (welk cijfer op de tientallen enz.); het systeem maakt ze + antwoorden.',
+        '- {"type":"getalwoord","opdracht":"...","spec":{"aantal":5,"max":1000,"richting":"mix"}} — getal in cijfers ↔ in woorden; het systeem maakt ze + antwoorden.',
+        '- {"type":"afronden","opdracht":"...","spec":{"aantal":6,"naar":10,"max":120}} — afronden op 10/100/1000; het systeem maakt ze + antwoorden.',
+        '- {"type":"maalrooster","opdracht":"...","spec":{"links":[2,3,4],"boven":[5,6,7]}} — maaltafel-rooster (laat links/boven weg voor willekeurig); het systeem vult de antwoorden.',
+        '- {"type":"romeins","opdracht":"...","spec":{"aantal":6,"max":50,"richting":"mix"}} — Romeinse cijfers omzetten; het systeem maakt ze + antwoorden.',
+        '- {"type":"automatiseer","opdracht":"...","spec":{"bewerking":"mix","max":10,"aantal":20}} — automatiseer-sprint (veel kale sommen op tijd); het systeem maakt ze + antwoorden.',
+        '- {"type":"teken","opdracht":"...","hoogte":120} — een kader om iets te tekenen.',
+        '- {"type":"reflectie","vraag":"..."} — afsluitende reflectie met smileys.'
+      ].filter(function (regel) {
+        var m = regel.match(/"type":"(\w+)"/);
+        return !m || GETESTE_MODULES[m[1]] === true;
+      });
       return [
         'Je bent een ervaren leerkracht en ontwerper van werkbladen voor het Nederlandse basisonderwijs. Je maakt werkbladen die er gelikt en uitnodigend uitzien en didactisch sterk zijn, ver boven een snel werkblad uit een chatbot.',
         '',
@@ -361,80 +431,49 @@
         '  "blokken": [ ... 3 tot 7 opdracht-blokken ... ]',
         '}',
         '',
-        'BLOK-TYPES (kies gevarieerd, passend bij vak en onderwerp; elk blok heeft een "type" en meestal een "opdracht"-instructie in kindtaal):',
-        '- {"type":"tekst","kop":"optioneel","tekst":"uitleg of een leestekst (alinea\'s gescheiden met lege regel)"} — uitleg of leestekst.',
-        '- {"type":"meerkeuze","opdracht":"...","vragen":[{"vraag":"...","opties":["a","b","c"],"goed":0}]} — goed = index van het juiste antwoord. De leerling kruist het goede antwoord aan; formuleer de opdracht zo (bijvoorbeeld "Kruis het goede antwoord aan").',
-        '- {"type":"invul","opdracht":"...","items":[{"voor":"tekst voor het gat","antwoord":"het in te vullen woord","na":"tekst na het gat"}]} — gatentekst.',
-        '- {"type":"open","opdracht":"...","vragen":[{"vraag":"...","antwoord":"het verwachte antwoord","regels":2}]} — open vragen (regels = aantal schrijfregels). GEBRUIK DIT OOK voor verhaaltjessommen (zet het antwoord erbij). Bij een vraag met een feitelijk juist antwoord geef je dat antwoord (bijv. "Hoeveel poten heeft een spin?" → antwoord "8"); gebruik "Eigen antwoord" alleen als het echt een mening of persoonlijke vraag is.',
-        '- {"type":"koppelen","opdracht":"...","links":["..."],"rechts":["..."],"paren":[[0,0],[1,1]]} — paren = welke links-index bij welke rechts-index hoort. Geef 4 tot 6 paren (het eerste paar wordt automatisch als voorbeeld voorgedaan).',
-        '- {"type":"categoriseren","opdracht":"...","categorieen":[{"naam":"...","items":["woord","woord"]}]} — sorteren in vakken; het systeem maakt zelf de woordbank.',
-        '- {"type":"waarnietwaar","opdracht":"...","stellingen":[{"stelling":"...","goed":true}]} — goed = true (waar) of false (niet waar).',
-        '- {"type":"sommen","opdracht":"...","spec":{"bewerking":"+|-|×|÷|mix","min":1,"max":100,"aantal":10,"kolommen":2}} — LET OP: schrijf de sommen NIET zelf; geef alleen de spec, het systeem maakt de sommen én de juiste antwoorden. Kies min/max/bewerking passend bij groep en leerlijn.',
-        '- {"type":"getallenlijn","opdracht":"...","spec":{"start":0,"eind":100,"stap":10,"gevraagd":[30,70]}} — het systeem tekent de lijn; gevraagd = welke getallen ingevuld moeten worden.',
-        '- {"type":"woordzoeker","opdracht":"...","woorden":["WOORD","WOORD"]} — geef 8 tot 16 woorden (passend bij het onderwerp/de spellingcategorie); het systeem bouwt het raster.',
-        '- {"type":"rekenmuurtje","opdracht":"...","spec":{"rijen":3,"max":12}} — rekenmuurtje (elke steen = som van de twee eronder); het systeem maakt het muurtje én de antwoorden. rijen 3 of 4.',
-        '- {"type":"getalhuis","opdracht":"...","spec":{"getal":10,"aantal":6}} — splitsen van een getal; het systeem maakt de splitsingen + antwoorden. Voor de onderbouw.',
-        '- {"type":"klok","opdracht":"...","spec":{"aantal":6,"soort":"half","cijfers":false}} — klokkijken; soort = heel/half/kwartier/vijf. Zet "cijfers":true voor een wijzerplaat MET de cijfers 1 t/m 12 erop (makkelijker, onderbouw). Het systeem tekent de klokken; de leerling schrijft de tijd.',
-        '- {"type":"geld","opdracht":"...","spec":{"aantal":6,"max":20,"kommagetallen":true}} — rekenen met geld; het systeem maakt de geldsommen + antwoorden.',
-        '- {"type":"doolhof","opdracht":"...","spec":{"grootte":11}} — een doolhof van A naar B; het systeem tekent het (leuk als afsluiter).',
-        '- {"type":"kruiswoord","opdracht":"...","woorden":[{"woord":"...","omschrijving":"..."}]} — geef 8 tot 16 woorden met een korte omschrijving; het systeem legt de kruiswoordpuzzel.',
-        '- {"type":"reeks","opdracht":"...","spec":{"aantal":4}} — getallenreeksen aanvullen; het systeem maakt ze + de antwoorden.',
-        '- {"type":"vergelijken","opdracht":"...","spec":{"aantal":8,"max":20}} — < , > of = invullen; het systeem maakt de paren + antwoorden.',
-        '- {"type":"tafelkaart","opdracht":"...","spec":{"tafel":7,"tm":10}} — een tafel oefenen; het systeem maakt de sommen + antwoorden.',
-        '- {"type":"breuken","opdracht":"...","spec":{"aantal":4,"soort":"kleur"}} — breuken kleuren (soort:"kleur") of aflezen (soort:"lees"); het systeem tekent ze.',
-        '- {"type":"kleuropsom","opdracht":"..."} — rekenkleurplaat met een verborgen plaatje; het systeem maakt de sommen + de kleurcode.',
-        '- {"type":"staafdiagram","opdracht":"...","titel":"Hoeveel kinderen hebben welk huisdier?","eenheid":"aantal kinderen","data":[{"label":"hond","waarde":7},{"label":"kat","waarde":5}]} — geef een PAKKENDE titel (een echt vraagje/verhaaltje) + 5 tot 7 verschillende categorieën met waarden; het systeem tekent de grafiek en maakt de vragen + antwoorden.',
-        '- {"type":"sudoku","opdracht":"...","spec":{"grootte":4}} — sudoku (grootte 4 of 6); het systeem maakt een geldige puzzel + oplossing. Grootte 4 voor jongere groepen.',
-        '- {"type":"geheimschrift","opdracht":"...","woorden":["WOORD","WOORD"]} — decodeer-puzzel; het systeem maakt de geheime symbolen.',
-        '- {"type":"anagram","opdracht":"...","woorden":[{"woord":"..."}]} — letters husselen tot een woord; het systeem hutselt ze.',
-        '- {"type":"zinbouwen","opdracht":"...","zinnen":[{"zin":"de hond rent hard"}]} — woordvolgorde; geef correcte zinnen, het systeem hutselt de woorden.',
-        '- {"type":"lettergrepen","opdracht":"...","woorden":[{"woord":"konijn","delen":["ko","nijn"]}]} — verdelen in lettergrepen; geef ZELF de juiste verdeling (delen).',
-        '- {"type":"rijmwoorden","opdracht":"...","woorden":[{"woord":"maan","rijm":["baan","laan"]}]} — een rijmwoord schrijven; geef enkele voorbeeldrijmen mee.',
-        '- {"type":"synant","opdracht":"...","soort":"synoniem","paren":[["groot","reusachtig"]]} — synoniemen (soort:"synoniem") of antoniemen (soort:"antoniem") koppelen.',
-        '- {"type":"lidwoord","opdracht":"...","woorden":[{"woord":"tafel","lidwoord":"de"}]} — de/het kiezen; geef het juiste lidwoord mee.',
-        '- {"type":"zoekdefout","opdracht":"...","zinnen":[{"zin":"ik loopt naar huis","correct":"ik loop naar huis"}]} — fout zoeken en verbeteren; geef de zin met precies één fout én de correcte zin.',
-        '- {"type":"verbinddepunten","opdracht":"...","spec":{"vorm":"ster"}} — verbind de punten (vorm: ster/huis/boot/vis); leuke afsluiter.',
-        '- {"type":"bingo","opdracht":"...","spec":{"soort":"getallen","grootte":4}} — bingokaart (soort getallen of woorden, dan ook "woorden":[...]).',
-        '- {"type":"cijferplus","opdracht":"...","spec":{"aantal":8,"max":1000}} — cijferend OPTELLEN onder elkaar (met onthoud-hokjes). Aantal naar lengte: kort 4, middel 6, lang 8. Kalibreer "max" op de groep: onderbouw ~100, middenbouw ~1000, bovenbouw tot 10000.',
-        '- {"type":"cijfermin","opdracht":"...","spec":{"aantal":8,"max":1000}} — cijferend AFTREKKEN onder elkaar. Aantal naar lengte: kort 4, middel 6, lang 8. "max" op de groep (bovenbouw tot 10000).',
-        '- {"type":"cijferkeer","opdracht":"...","spec":{"aantal":8,"maxA":99}} — cijferend VERMENIGVULDIGEN met tussenstappen. Aantal naar lengte: kort 4, middel 6, lang 8. Standaard 2-cijferig × 2-cijferig; voor de bovenbouw mag "maxA" hoger (bijv. 999) voor 3-cijferig × 2-cijferig.',
-        '- {"type":"ontbrekend","opdracht":"...","spec":{"bewerking":"+","aantal":6,"max":20}} — som met een ontbrekend getal (a + □ = c); het systeem maakt ze + antwoorden.',
-        '- {"type":"buurgetallen","opdracht":"...","spec":{"aantal":6,"max":100,"stap":1}} — x minder / x meer (stap 1, 10 of 100); het systeem maakt ze + antwoorden.',
-        '- {"type":"ordenen","opdracht":"...","spec":{"aantal":4,"perRij":5,"max":100,"aflopend":false}} — getallen ordenen; het systeem maakt ze + antwoorden.',
-        '- {"type":"plaatswaarde","opdracht":"...","spec":{"aantal":5,"max":1000}} — plaatswaarde (welk cijfer op de tientallen enz.); het systeem maakt ze + antwoorden.',
-        '- {"type":"getalwoord","opdracht":"...","spec":{"aantal":5,"max":1000,"richting":"mix"}} — getal in cijfers ↔ in woorden; het systeem maakt ze + antwoorden.',
-        '- {"type":"afronden","opdracht":"...","spec":{"aantal":6,"naar":10,"max":120}} — afronden op 10/100/1000; het systeem maakt ze + antwoorden.',
-        '- {"type":"maalrooster","opdracht":"...","spec":{"links":[2,3,4],"boven":[5,6,7]}} — maaltafel-rooster (laat links/boven weg voor willekeurig); het systeem vult de antwoorden.',
-        '- {"type":"romeins","opdracht":"...","spec":{"aantal":6,"max":50,"richting":"mix"}} — Romeinse cijfers omzetten; het systeem maakt ze + antwoorden.',
-        '- {"type":"automatiseer","opdracht":"...","spec":{"bewerking":"mix","max":10,"aantal":20}} — automatiseer-sprint (veel kale sommen op tijd); het systeem maakt ze + antwoorden.',
-        '- {"type":"teken","opdracht":"...","hoogte":120} — een kader om iets te tekenen.',
-        '- {"type":"reflectie","vraag":"..."} — afsluitende reflectie met smileys.',
+        'BLOK-TYPES — je mag UITSLUITEND onderstaande types gebruiken (geen andere verzinnen). Kies WELOVERWOGEN: bepaal eerst welke vaardigheid het leerdoel oefent, kies dán de best passende werkvormen. Elk blok heeft een "type" en meestal een "opdracht"-instructie in kindtaal:'
+      ].concat(blokTypes).concat([
         '',
         'REGELS:',
         '1. Schrijf in correct, natuurlijk Nederlands met juiste lidwoorden; gebruik GEEN liggende streepjes (— of –) in lopende tekst.',
         '2. Kalibreer alles strak op het leerjaar (zie de LEERLIJN-CONTEXT): getalbereik, woordlengte, zinslengte en complexiteit. De woorden en voorbeelden moeten ECHT bij deze groep passen (een groep 7 krijgt groep 7-woorden, geen onderbouwwoorden als "dief" of "vlieg"), met hooguit een enkele moeilijkere uitschieter.',
         '3. Gebruik UITSLUITEND bestaande, correct gespelde Nederlandse woorden, met aansprekende, alledaagse voorbeelden uit de leefwereld van het kind. Verzin NOOIT woorden (geen onzinwoorden zoals "bief", "spiel" of "priemal"); twijfel je of een woord bestaat, kies dan een ander, zeker bestaand woord. Geen zeldzame of ouderwetse woorden.',
-        '4. PASSEND BIJ HET DOEL gaat vóór afwisseling. Kies alleen opdrachttypes die ECHT bij het leerdoel passen, en voeg NOOIT half-passende types toe alleen om het gevraagde aantal te halen. Past er maar één hoofd-type bij (bijvoorbeeld "cijferend optellen" → cijferplus), gebruik dat dan als basis maar varieer via ANDERE VORMEN die DEZELFDE vaardigheid oefenen, zodat het toch afwisselend wordt: (a) toepassing/context = verhaaltjessommen (open mét antwoord); (b) een andere vraagvorm = ontbrekend getal, vergelijken, of "klopt deze som?" (waar/niet-waar); (c) een puzzel/structuur met dezelfde bewerking = rekenmuurtje, getallenlijn, kleur-op-som, doolhof; (d) automatiseren/tempo = de sprint. Varieer ook de getallen en de moeilijkheid (bijv. oplopend). Voorbeeld voor een spellingcategorie: invuldictee + zin maken met die woorden + woordzoeker met die woorden + zoek-de-fout. Is het doel breder (bijvoorbeeld "optellen", "procenten", "woordenschat"), wissel dan juist WEL af tussen alle passende types voor een gevarieerde, verrassende mix. Begin eventueel met een KORTE uitleg (1 à 3 zinnen) en sluit eventueel af met reflectie.',
-        '5. Geef bij elk blok de juiste antwoorden mee (behalve bij tekst/teken/reflectie/bingo/verbinddepunten en bij de blokken die het systeem zelf uitrekent: sommen, getallenlijn, woordzoeker, rekenmuurtje, getalhuis, klok, geld, doolhof, kruiswoord, reeks, vergelijken, tafelkaart, breuken, kleuropsom, staafdiagram, sudoku, geheimschrift, anagram, zinbouwen, cijferplus, cijfermin, cijferkeer, ontbrekend, buurgetallen, ordenen, plaatswaarde, getalwoord, afronden, maalrooster, romeins, automatiseer). Bij lettergrepen/rijmwoorden/synant/lidwoord/zoekdefout geef je de inhoud + de juiste antwoorden zelf mee.',
-        '6. Voor rekenen: gebruik het "sommen"-blok met een spec; verzin nooit zelf sommen of antwoorden. Voor verhaaltjessommen gebruik je "open" mét antwoord.',
-        '7. Houd opdracht-instructies kort en in kindtaal ("Reken uit.", "Zoek de woorden.").',
-        '8. Het hele werkblad past op MAXIMAAL twee kantjes (voor- en achterkant van één A4); maak het nooit langer. Het aantal opdrachten en de lengte per opdracht staan in de opdracht hieronder; houd je daaraan. Liever een paar goed gevulde opdrachten dan veel halflege.'
-      ].join('\n');
+        '4. Kies je opdrachttypes WELOVERWOGEN. PASSEND BIJ HET DOEL gaat vóór afwisseling: kies alleen types die ECHT bij het leerdoel passen, en voeg NOOIT half-passende types toe alleen om het gevraagde aantal te halen. Past er maar één hoofd-type bij (bijvoorbeeld "cijferend optellen" → cijferplus), gebruik dat dan als basis maar varieer via ANDERE VORMEN die DEZELFDE vaardigheid oefenen, zodat het toch afwisselend wordt: (a) toepassing/context = verhaaltjessommen (open mét antwoord); (b) een andere vraagvorm = ontbrekend getal, vergelijken, of "klopt deze som?" (waar/niet-waar); (c) een puzzel/structuur met dezelfde bewerking = rekenmuurtje, getallenlijn, kleur-op-som, doolhof; (d) automatiseren/tempo = de sprint. Varieer ook de getallen en de moeilijkheid (bijv. oplopend). Voorbeeld voor een spellingcategorie: invuldictee + zin maken met die woorden + woordzoeker met die woorden + zoek-de-fout. Is het doel breder (bijvoorbeeld "optellen", "procenten", "woordenschat"), wissel dan juist WEL af tussen alle passende types voor een gevarieerde, verrassende mix. Herhaal NIET telkens dezelfde 3 à 4 vertrouwde types (invullen, open vragen, sorteren, meerkeuze): je hebt een grote gereedschapskist, gebruik die breed en kies per werkblad een frisse, andere combinatie. Bij taal/spelling passen bijvoorbeeld óók woordzoeker, kruiswoord, anagram, lettergrepen, zin bouwen en rijmwoorden met de doelwoorden; bij rekenen de puzzelvormen uit (c) hierboven. Begin eventueel met een KORTE uitleg (1 à 3 zinnen) en sluit eventueel af met reflectie.',
+        '5. Veel blok-types zijn vak-ONAFHANKELIJKE motoren: woordzoeker, kruiswoord, koppelen, categoriseren, geheimschrift, anagram, zoek-de-fout, meerkeuze, invul, open en waar/niet-waar kun je vullen met inhoud uit ELK vakgebied of leerlijn (aardrijkskunde, natuur, geschiedenis, begrijpend lezen, woordenschat, Engels, burgerschap...). Laat je dus niet beperken tot het voor de hand liggende: een woordzoeker met topografiewoorden, koppelen van jaartallen aan gebeurtenissen, of categoriseren van dieren in diersoorten kan juist verrassend goed bij het doel passen. Kies steeds de vorm die het leerdoel het best oefent, ongeacht bij welk vak de vorm "hoort".',
+        '6. Geef bij elk blok de juiste antwoorden mee (behalve bij tekst/teken/reflectie/bingo en bij de blokken die het systeem zelf uitrekent: sommen, getallenlijn, woordzoeker, rekenmuurtje, getalhuis, klok, geld, doolhof, kruiswoord, reeks, vergelijken, tafelkaart, breuken, kleuropsom, staafdiagram, sudoku, geheimschrift, anagram, zinbouwen, cijferplus, cijfermin, cijferkeer, ontbrekend, buurgetallen, ordenen, plaatswaarde, getalwoord, afronden, maalrooster, romeins, automatiseer). Bij lettergrepen/rijmwoorden/synant/lidwoord/zoekdefout geef je de inhoud + de juiste antwoorden zelf mee.',
+        '7. Voor rekenen: gebruik het "sommen"-blok met een spec; verzin nooit zelf sommen of antwoorden. Voor verhaaltjessommen gebruik je "open" mét antwoord.',
+        '8. Houd opdracht-instructies kort en in kindtaal ("Reken uit.", "Zoek de woorden.").',
+        '9. Het hele werkblad past op MAXIMAAL twee kantjes (voor- en achterkant van één A4); maak het nooit langer. Het aantal opdrachten en de lengte per opdracht staan in de opdracht hieronder; houd je daaraan. Reken realistisch met ruimte: een leestekst, open vragen met schrijfregels, koppelen, sorteren, woordzoeker, kruiswoord, staafdiagram, sudoku, doolhof en getallenlijn vreten veel verticale ruimte. Gebruik hooguit 1 à 2 van zulke ruimte-vretende opdrachten per werkblad en beperk daarvan het aantal items. Bij twijfel: minder items en minder blokken. Liever een paar goed gevulde opdrachten binnen twee kantjes dan alles erin proppen en over drie pagina\'s uitlopen.',
+        '10. SPECIAAL BIJ SPELLING (een spellingregel of -categorie oefenen, bijv. "c die klinkt als k"):',
+        '   a. Zoek-de-fout: precies ÉÉN fout per zin, en die fout MOET exact de geoefende spellingregel betreffen (dus geen grammatica- of werkwoordsfout als "de fout"); de rest van de zin is correct, lopend en zinvol Nederlands. Controleer per zin dat er precies één fout in zit en dat de zin klopt.',
+        '   b. Invullen bij spelling = ALLEEN de moeilijke letter(s) van de regel invullen, GEEN half woord laten raden. Laat het woord (bijna) HEEL en herkenbaar staan en blank uitsluitend de letter(s) die de regel oefent. Voorbeelden: c-als-/k/ → het gat is "c" en de rest staat er ("(gat)ola" = cola, "(gat)actus" = cactus); x → "e(gat)amen" (examen), "ta(gat)i" (taxi); eau → "cad(gat)" (cadeau), "bur(gat)" (bureau). REGELS: (1) blank alleen de regelletter(s), nooit een groot woorddeel — het kind schrijft dus 1 tot 3 letters, niet bijna het hele woord; (2) de rest van het woord staat er zodat het woord meteen herkenbaar/oplosbaar is (een leerkracht moet het antwoord direct weten); (3) zet de regelletter NOOIT al voorgedrukt naast het gat; (4) een korte, duidelijke zin eromheen mag, maar alleen als het woord daardoor niet vaag wordt — bij twijfel gewoon het losse woord met het gat.',
+        '   c. Gebruik GEEN sorteren/categoriseren om te sorteren op een spellingkenmerk dat al ZICHTBAAR in het woord staat (bijv. "met c of met k"): de juiste spelling staat dan al in de woordenlijst, dus het kind schrijft alleen over. Kies dan een vorm waarbij het kind de letter zelf moet kiezen of schrijven (invullen met de letter in het gat, of een de/het-achtige keuze). Categoriseren mag wél als er op betekenis wordt gesorteerd.',
+        '   d. Kies woorden die ECHT bij de groep passen; vermijd zeldzame of ouderwetse woorden (voor groep 7 bijv. niet "confidentie", "corsage" of "colbert").'
+      ]).join('\n');
     }
 
     // ── Opdracht-prompt: onderwerp + leerlijn + ideeën ───────────────────────
+    // Willekeurige greep (voor het roteren van werkvormen per generatie).
+    function kiesN(arr, n) { var a = arr.slice(), out = []; while (out.length < n && a.length) out.push(a.splice(Math.floor(Math.random() * a.length), 1)[0]); return out; }
     function bouwOpdracht(inv) {
       const lengteOms = {
-        kort: 'KORT — weinig items per opdracht: meerkeuze ~3 vragen, waar/niet-waar ~3 stellingen, koppelen ~3 paren, invul ~4 zinnen, open ~2 vragen, categoriseren ~6 woorden; bij spec-blokken "aantal" ~6; woordzoeker ~8 woorden; kruiswoord ~8 woorden.',
-        middel: 'MIDDEL — een normale hoeveelheid: meerkeuze 4-5 vragen, waar/niet-waar 5-6 stellingen, koppelen 4-5 paren, invul 6-8 zinnen, open 3-4 vragen, categoriseren ~8 woorden; bij spec-blokken "aantal" ~10; woordzoeker ~12 woorden; kruiswoord ~12 woorden.',
-        groot: 'GROOT — flink gevulde opdrachten: meerkeuze ~6 vragen, waar/niet-waar 7-8 stellingen, koppelen 6 paren, invul 9-12 zinnen, open ~5 vragen, categoriseren ~12 woorden; bij spec-blokken "aantal" 14-16; woordzoeker ~16 woorden; kruiswoord ~16 woorden.'
+        kort: 'KORT — weinig items per opdracht: meerkeuze ~3 vragen, waar/niet-waar ~3 stellingen, koppelen ~3 paren, invul ~4 zinnen, open ~2 vragen, categoriseren ~6 woorden; bij spec-blokken "aantal" ~6; woordzoeker ~8 woorden; kruiswoord ~8 woorden; anagram ~6 woorden; lettergrepen ~6 woorden; rijmwoorden ~6 woorden; synant (synoniemen/antoniemen) ~4 paren; sudoku 4×4.',
+        middel: 'MIDDEL — een normale hoeveelheid: meerkeuze 4-5 vragen, waar/niet-waar 5-6 stellingen, koppelen 4-5 paren, invul 6-8 zinnen, open 3-4 vragen, categoriseren ~8 woorden; bij spec-blokken "aantal" ~10; woordzoeker ~12 woorden; kruiswoord ~12 woorden; anagram ~8 woorden; lettergrepen ~8 woorden; rijmwoorden ~8 woorden; synant (synoniemen/antoniemen) ~6 paren; sudoku 6×6.',
+        groot: 'GROOT — flink gevulde opdrachten: meerkeuze ~6 vragen, waar/niet-waar 7-8 stellingen, koppelen 6 paren, invul 9-12 zinnen, open ~5 vragen, categoriseren ~12 woorden; bij spec-blokken "aantal" 14-16; woordzoeker ~16 woorden; kruiswoord ~16 woorden; anagram ~10 woorden; lettergrepen ~10 woorden; rijmwoorden ~10 woorden; synant (synoniemen/antoniemen) ~8 paren; sudoku 9×9.'
       };
       var lengte = inv.lengte;
       const lijnen = [];
       lijnen.push('Maak een werkblad voor het vak ' + inv.vak + ', ' + inv.groep + '.');
       lijnen.push('Onderwerp / leerdoel: ' + (inv.onderwerp || '(kies zelf een passend, leuk onderwerp bij dit vak en deze groep)') + '.');
-      lijnen.push('Maak PRECIES ' + inv.aantal + ' opdracht' + (inv.aantal === 1 ? '' : 'en') + ' (een korte uitleg vooraf of een reflectie achteraf tellen daar niet in mee en zijn optioneel).');
+      lijnen.push('Maak PRECIES ' + inv.aantal + ' ECHTE OEFENOPDRACHT' + (inv.aantal === 1 ? '' : 'EN') + ' waarin de leerling iets DOET (invullen, sorteren, puzzelen, een zin schrijven enzovoort). Een uitleg-/regelblok vooraf (type "tekst") en een reflectie achteraf (type "reflectie") tellen HIER NIET IN MEE en zijn optioneel: als je die toevoegt, komen ze BOVENOP de ' + inv.aantal + ' opdracht' + (inv.aantal === 1 ? '' : 'en') + '. Dus een reflectie is NOOIT een van de ' + inv.aantal + ' opdrachten.');
       lijnen.push('Lengte per opdracht: ' + (lengteOms[lengte] || lengteOms.middel));
+      // Puzzelgrootte per generatie laten wisselen, anders zien we sommige maten nooit.
+      var puzzelMaten = [
+        'KLEIN (woordzoeker ~8 woorden, kruiswoord ~8 woorden, sudoku 4×4)',
+        'MIDDELGROOT (woordzoeker ~12 woorden, kruiswoord ~12 woorden, sudoku 6×6)',
+        'GROOT (woordzoeker ~16 woorden, kruiswoord ~16 woorden, sudoku 9×9)'
+      ];
+      lijnen.push('PUZZELGROOTTE: gebruik je een puzzel (woordzoeker, kruiswoord, sudoku, doolhof), maak er DEZE keer een ' + kiesN(puzzelMaten, 1)[0] + ' versie van. Varieer de puzzelgrootte per werkblad; kies niet altijd dezelfde maat.');
       lijnen.push('PAGINALIMIET: het hele werkblad past op MAXIMAAL twee kantjes (voor- en achterkant van één A4); maak het nooit langer. Veel opdrachten staan in meerdere kolommen naast elkaar en worden dus NIET lang, ook niet met veel items: die mogen gerust vol (kale sommen, cijferen +/−/×, tafelkaart, vergelijken, ontbrekend getal, ordenen, afronden, buurgetallen, getal-in-woorden, romeins, geld, meerkeuze, invul, lidwoord, lettergrepen, rijmwoorden, anagram). Echt ruimte-vretende opdrachten (open vragen met schrijfregels, leestekst, koppelen, sorteren in vakken, staafdiagram, woordzoeker, kruiswoord, sudoku, doolhof, getallenlijn, tekenen) nemen veel verticale ruimte: beperk daarvan het aantal items zodat alles op twee kantjes blijft passen. Volg de gekozen lengte als richtlijn, maar verklein de ruimte-vretende opdrachten als het geheel anders te lang wordt.');
       if (inv.moeilijkheid && inv.moeilijkheid !== 'op niveau') {
         lijnen.push('Niveau: maak het ' + inv.moeilijkheid + ' dan normaal voor deze groep (blijf wel binnen het leerjaar).');
@@ -466,6 +505,18 @@
         lijnen.push('- Gebruik bij voorkeur invul-opdrachten waarbij juist de moeilijke letter(s) ontbreken (bijvoorbeeld voor "crisis": voor="cr", antwoord="i", na="sis"), woorden laten afmaken, of een mini-dictee-achtige opdracht.');
         lijnen.push('- Vraag de spellingregel NIET terug, tenzij er expliciet een opdracht is als "schrijf de regel op".');
         lijnen.push('- Alle oefenwoorden zijn bestaande Nederlandse woorden op het niveau van ' + inv.groep + '.');
+        // Werkvormen ROTEREN zodat niet elk werkblad dezelfde opzet krijgt.
+        var spellingVormen = [
+          'invullen waarbij ALLEEN de moeilijke letter(s) ontbreken (het woord staat verder heel)',
+          'sorteren op hoe de letter klinkt of op de schrijfwijze',
+          'zoek-de-fout (precies één fout per zin, die de regel betreft)',
+          'een woordzoeker met de doelwoorden',
+          'een kruiswoordpuzzel met de doelwoorden (korte omschrijving per woord; het kind schrijft het woord zelf)',
+          'anagram: de door elkaar gehusselde letters van een doelwoord goed schrijven',
+          'een zin laten schrijven met een paar doelwoorden (open, mét antwoord)',
+          'woorden laten afmaken (het begin staat er, het kind schrijft de rest)'
+        ];
+        lijnen.push('- WISSEL DE WERKVORMEN AF — gebruik NIET elke keer dezelfde opzet. Bouw dit werkblad met een frisse mix uit BIJVOORBEELD deze werkvormen: ' + kiesN(spellingVormen, 4).join('; ') + '. Val niet terug op alleen invullen + sorteren + zoek-de-fout; pak deze keer ook eens een puzzelvorm (woordzoeker, kruiswoord of anagram) als die past.');
       }
 
       lijnen.push('\nGeef nu UITSLUITEND de JSON van het werkblad terug.');
@@ -525,12 +576,16 @@
       const onderwerp = document.getElementById('onderwerp').value.trim();
       if (!onderwerp && !/thema|overig/i.test(vak)) { err.textContent = 'Beschrijf kort waar het werkblad over gaat.'; document.getElementById('onderwerp').focus(); return; }
 
+      const aantal = parseInt(document.getElementById('aantal').value, 10) || 4;
       const inv = {
         vak: vak,
         onderwerp: onderwerp,
         groep: document.getElementById('groep').value,
-        aantal: parseInt(document.getElementById('aantal').value, 10) || 4,
-        lengte: document.getElementById('lengte').value,
+        aantal: aantal,
+        // De leerkracht kiest geen lengte meer: de code bepaalt hoeveel per opdracht op
+        // basis van het aantal opdrachten (meer opdrachten = korter per stuk, zodat het
+        // op 2 kantjes past). De lengte-machinerie blijft bestaan (ook voor de preview).
+        lengte: aantal <= 2 ? 'groot' : aantal <= 4 ? 'middel' : 'kort',
         moeilijkheid: document.getElementById('moeilijkheid').value,
         themaKeuze: 'auto',
         context: document.getElementById('context').value.trim()
@@ -549,15 +604,17 @@
 
         wb.vak = inv.vak; wb.groep = inv.groep;
         wb.thema = bepaalThema(inv.themaKeuze, inv.onderwerp, inv.groep, inv.vak);
+        laatsteMeta = inv;
+        dwingSpellingWoordenAf(wb); // foute/dubbelzinnige losse woorden -> bankwoorden (lokaal)
         window.avinkaWerkblad.normaliseer(wb);
 
         laatsteWb = wb;
-        laatsteMeta = inv;
         toonAntw = false;
         verfijnWensen = [];
         // reset uit een eventueel geladen bestand
         geladenBestandId = ''; geladenBestandNaam = ''; geladenBestandOms = '';
         toonResultaat();
+        pasPaginaAan(); // past het op 2 kantjes? zo niet: lokaal inkorten (geen extra AI-call)
 
         if (typeof avinkaTel === 'function') {
           const aantalOpdr = (wb.blokken || []).filter(b => b && b.type && b.type !== 'tekst' && b.type !== 'reflectie').length;
@@ -570,6 +627,166 @@
         knop.disabled = false;
         document.getElementById('laden').classList.remove('aan');
       }
+    }
+
+    // ── Woordenbank afdwingen bij spelling (losse-woord-opdrachten) ──────────
+    // Bij sorteren/woordzoeker/anagram staat een woord op zichzelf: een fout of
+    // dubbelzinnig woord vervangen we LOKAAL door een goed bankwoord (geen AI-call).
+    // Zinnen (invul/zoek-de-fout) raken we NIET aan: daar zou een swap de context
+    // breken; die laten we aan de prompt over.
+    function dwingSpellingWoordenAf(wb) {
+      try {
+        if (!laatsteMeta || !/spelling/i.test(laatsteMeta.vak || '') || !window.avinkaLeerlijnen.spellingBanken) return;
+        var banken = window.avinkaLeerlijnen.spellingBanken((laatsteMeta.onderwerp || '') + ' ' + (laatsteMeta.context || ''), laatsteMeta.groep);
+        if (!banken || !banken.length) return;
+        function heeft(bank, w) { w = String(w).toLowerCase(); return bank.woorden.some(function (x) { return x.toLowerCase() === w; }); }
+        function sigVan(b) { var m = String(b.naam).match(/\/([a-z]+)\//); if (m) return '/' + m[1] + '/'; return (b.key || '').length ? String(b.key).toLowerCase() : null; }
+        function kiesBank(items) { var best = null, bn = -1; banken.forEach(function (b) { var n = (items || []).filter(function (w) { return heeft(b, w); }).length; if (n > bn) { bn = n; best = b; } }); return best; }
+        function kiesBankVoorKolom(col) {
+          var naam = String(col.naam || '').toLowerCase();
+          var opNaam = banken.filter(function (b) { var s = sigVan(b); return s && naam.indexOf(s.toLowerCase()) !== -1; });
+          if (opNaam.length === 1) return opNaam[0];
+          return kiesBank(col.items) || opNaam[0] || banken[0];
+        }
+        // Dubbelzinnige woorden: die in MEER dan één van de gesorteerde banken zitten
+        // (bijv. "context" in /k/ én /ks/). Bij sorteren zijn die niet eenduidig te
+        // plaatsen, dus die weren we en vervangen we door woorden die uniek zijn.
+        var telPerWoord = {};
+        banken.forEach(function (b) { var g = {}; b.woorden.forEach(function (x) { var lw = x.toLowerCase(); if (!g[lw]) { g[lw] = 1; telPerWoord[lw] = (telPerWoord[lw] || 0) + 1; } }); });
+        function ambigu(w) { return (telPerWoord[String(w).toLowerCase()] || 0) > 1; }
+        // Vervang in een woordenlijst alle ongeldige/dubbele woorden door ongebruikte woorden uit de pool.
+        function herstel(woorden, lees, schrijf, geldig, pool) {
+          var inLijst = {};
+          var stap1 = (woorden || []).map(function (w) {
+            var lw = String(lees(w)).toLowerCase();
+            if (geldig(lw) && !inLijst[lw]) { inLijst[lw] = 1; return w; }
+            return null;
+          });
+          var vrij = pool.filter(function (x) { return !inLijst[x.toLowerCase()]; });
+          return stap1.map(function (w) {
+            if (w !== null) return w;
+            if (!vrij.length) return null;
+            var i = Math.floor(Math.random() * vrij.length), nw = vrij.splice(i, 1)[0];
+            inLijst[nw.toLowerCase()] = 1; return schrijf(nw);
+          }).filter(function (w) { return w !== null; });
+        }
+        var unie = [], gezien = {};
+        banken.forEach(function (b) { b.woorden.forEach(function (x) { if (!gezien[x.toLowerCase()]) { gezien[x.toLowerCase()] = 1; unie.push(x); } }); });
+        function inUnie(w) { return !!gezien[String(w).toLowerCase()]; }
+        (wb.blokken || []).forEach(function (blk) {
+          if (!blk || !blk.type) return;
+          if (blk.type === 'categoriseren') {
+            (blk.categorieen || []).forEach(function (col) {
+              var bank = kiesBankVoorKolom(col);
+              if (!bank) return;
+              var pool = bank.woorden.filter(function (x) { return !ambigu(x); }); // alleen eenduidige woorden
+              col.items = herstel(col.items, function (w) { return w; }, function (w) { return w; },
+                function (lw) { return heeft(bank, lw) && !ambigu(lw); }, pool.length ? pool : bank.woorden);
+            });
+          } else if (blk.type === 'woordzoeker') {
+            blk.woorden = herstel(blk.woorden, function (w) { return w; }, function (w) { return w.toUpperCase(); }, inUnie, unie);
+          } else if (blk.type === 'anagram') {
+            blk.woorden = herstel(blk.woorden, function (w) { return (w && w.woord != null) ? w.woord : w; }, function (w) { return { woord: w }; }, inUnie, unie);
+          } else if (blk.type === 'invul') {
+            // Herverdeel het gat zodat het KENMERK van de regel erin valt (niet een
+            // willekeurige middenletter): reconstrueer het hele woord, vind de categorie
+            // en zet het gat op het kenmerk (isch, x, eau, c, ...). Kan het niet en is het
+            // geen bankwoord, dan is het item kapot ("wexpert") → weglaten (min. 2 over).
+            var nieuw = (blk.items || []).map(function (it) {
+              if (!it) return null;
+              var vf = (String(it.voor || '').match(/([a-zà-ÿ]+)$/i) || [])[1] || '';
+              var nf = (String(it.na || '').match(/^([a-zà-ÿ]+)/i) || [])[1] || '';
+              if (!vf && !nf) return it; // gat = heel woord → laten staan
+              var full = vf + String(it.antwoord || '') + nf, fl = full.toLowerCase();
+              // alleen herverdelen als het woord ECHT in een categorie zit waarvan het kenmerk erin valt
+              var bank = banken.filter(function (b) { return b.feat && b.feat.test(fl) && b.woorden.some(function (x) { return x.toLowerCase() === fl; }); })[0];
+              if (!bank) return inUnie(fl) ? it : null; // geen kenmerk-categorie → vangnet: drop als geen bankwoord (kapot als "wexpert")
+              var m = fl.match(bank.feat); if (!m) return inUnie(fl) ? it : null;
+              var idx = m.index;
+              var voorBase = String(it.voor || '').slice(0, String(it.voor || '').length - vf.length);
+              var naBase = String(it.na || '').slice(nf.length);
+              return { voor: voorBase + full.slice(0, idx), antwoord: full.slice(idx, idx + m[0].length), na: full.slice(idx + m[0].length) + naBase };
+            }).filter(Boolean);
+            if (nieuw.length >= 2) blk.items = nieuw;
+          }
+        });
+      } catch (e) { /* fail-safe */ }
+    }
+
+    // ── Pagina-fit: past het op 2 kantjes? Zo niet: LOKAAL inkorten (geen AI-call) ──
+    // Eén A4-kantje is ~1,2× zo hoog als breed (na printmarge); 2 kantjes = 2×. De guard
+    // schrapt nooit een OPDRACHT (alleen items inkorten + optionele reflectie/uitleg weg),
+    // dus dit bepaalt vooral of de reflectie-wees op pagina 3 wordt weggehaald.
+    var KANTJE_FACTOR = 1.2;
+    function pastPagina(page) {
+      var b = page.offsetWidth || 720;
+      return page.scrollHeight <= b * KANTJE_FACTOR * 2 + 6;
+    }
+    function wisWbCache(b) { ['_wz', '_kw', '_verg', '_reeks', '_hussel', '_zin', '_geheim'].forEach(function (k) { delete b[k]; }); }
+    // Verklein het werkblad met één stap; geeft false als er niets meer in te korten valt.
+    function trimEen(wb) {
+      var blk = (wb.blokken || []).filter(function (b) { return b && b.type; });
+      var GEW = { open: 4.5, koppelen: 3.5, categoriseren: 2.2, staafdiagram: 6, woordzoeker: 5, kruiswoord: 5, invul: 1.6, meerkeuze: 1.8, waarnietwaar: 1.1, zinbouwen: 1.8, zoekdefout: 2, lettergrepen: 1.2, rijmwoorden: 1.2, lidwoord: 1, synant: 1.4, anagram: 1.2 };
+      var MIN = { woordzoeker: 6, kruiswoord: 6, open: 2, invul: 4 };
+      function arrVan(b) {
+        if (b.type === 'meerkeuze' || b.type === 'open') return b.vragen;
+        if (b.type === 'invul') return b.items;
+        if (b.type === 'waarnietwaar') return b.stellingen;
+        if (b.type === 'zinbouwen' || b.type === 'zoekdefout') return b.zinnen;
+        if (b.type === 'woordzoeker' || b.type === 'kruiswoord' || b.type === 'anagram' || b.type === 'lettergrepen' || b.type === 'rijmwoorden' || b.type === 'lidwoord') return b.woorden;
+        if (b.type === 'synant') return b.paren;
+        return null;
+      }
+      // 1) grootste trimbare blok: haal er één item af
+      var best = null, bestScore = -1;
+      blk.forEach(function (b) {
+        var a = arrVan(b); if (!Array.isArray(a)) return;
+        var min = MIN[b.type] || 3;
+        if (a.length <= min) return;
+        var score = a.length * (GEW[b.type] || 1);
+        if (score > bestScore) { bestScore = score; best = { b: b, a: a }; }
+      });
+      if (best) { best.a.pop(); wisWbCache(best.b); return true; }
+      // 2) koppelen: haal er een paar af
+      var kp = blk.filter(function (b) { return b.type === 'koppelen' && (b.paren || []).length > 3; })[0];
+      if (kp) { kp.paren.pop(); wisWbCache(kp); return true; }
+      // 3) categoriseren: haal een woord uit de grootste categorie
+      var cat = null, cbest = 3;
+      blk.forEach(function (b) { if (b.type === 'categoriseren') (b.categorieen || []).forEach(function (c) { if ((c.items || []).length > cbest) { cbest = c.items.length; cat = c; } }); });
+      if (cat) { cat.items.pop(); return true; }
+      // 4) alleen OPTIONELE blokken weg (reflectie/teken/leestekst) — die tellen niet als
+      //    opdracht. Een echte OPDRACHT halen we NOOIT weg: de leerkracht koos het aantal.
+      //    Past het daarna nog niet, dan accepteren we liever een iets langer werkblad dan
+      //    minder opdrachten dan gevraagd.
+      var weg = ['reflectie', 'teken', 'tekst'];
+      for (var w = 0; w < weg.length; w++) {
+        for (var i = wb.blokken.length - 1; i >= 0; i--) {
+          if (wb.blokken[i] && wb.blokken[i].type === weg[w]) { wb.blokken.splice(i, 1); return true; }
+        }
+      }
+      return false;
+    }
+    // Meten pas ná het laden van de webfonts: daarvóór is de tekst smaller/korter en
+    // zou de code ten onrechte denken dat het past.
+    function pasPaginaAan() {
+      try {
+        if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+          document.fonts.ready.then(pasPaginaAanNu, pasPaginaAanNu);
+        } else { setTimeout(pasPaginaAanNu, 90); }
+      } catch (e) { try { pasPaginaAanNu(); } catch (e2) { } }
+    }
+    function pasPaginaAanNu() {
+      try {
+        if (toonAntw || !laatsteWb) return; // meten op het vraagblad
+        var rondes = 10;
+        while (rondes-- > 0) {
+          var page = document.querySelector('#wb-print .wb-page');
+          if (!page || pastPagina(page)) break;
+          if (!trimEen(laatsteWb)) break;
+          window.avinkaWerkblad.normaliseer(laatsteWb);
+          document.getElementById('wb-print').innerHTML = window.avinkaWerkblad.render(laatsteWb, { antwoorden: false });
+        }
+      } catch (e) { /* fail-safe: laat het werkblad staan zoals het is */ }
     }
 
     // ── Resultaat tonen ──────────────────────────────────────────────────────
@@ -701,7 +918,7 @@
         if (m.vak) { const k = Array.from(document.querySelectorAll('#vak-grid .vakkaart')).find(x => x.dataset.v === m.vak); if (k) k.click(); }
         const ow = document.getElementById('onderwerp'); if (ow) { ow.value = m.onderwerp || ''; ow.classList.toggle('filled', !!(m.onderwerp || '')); }
         const cx = document.getElementById('context'); if (cx) { cx.value = m.context || ''; cx.classList.toggle('filled', !!(m.context || '')); }
-        herstelSelect('groep', m.groep); herstelSelect('aantal', m.aantal != null ? String(m.aantal) : ''); herstelSelect('lengte', m.lengte); herstelSelect('moeilijkheid', m.moeilijkheid);
+        herstelSelect('groep', m.groep); herstelSelect('aantal', m.aantal != null ? String(m.aantal) : ''); herstelSelect('moeilijkheid', m.moeilijkheid);
       } catch (e) {}
 
       // terug-knop wijst terug naar Bestanden

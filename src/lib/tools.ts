@@ -66,6 +66,16 @@ export const tools: Tool[] = [
     rand: "hover:border-teal-300",
     pad: "/tools/lesontwerp.html",
   },
+  {
+    slug: "werkbladen",
+    naam: "Werkbladen",
+    emoji: "📄",
+    tekst: "Maak in een paar klikken mooie, printbare werkbladen bij elk onderwerp.",
+    badge: "bg-emerald-500",
+    tint: "bg-emerald-50",
+    rand: "hover:border-emerald-300",
+    pad: "/tools/werkbladen.html",
+  },
 ];
 
 export function toolBySlug(slug: string): Tool | undefined {
