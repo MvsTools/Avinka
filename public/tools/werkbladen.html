@@ -461,6 +461,8 @@
     }
 
     // ── Opdracht-prompt: onderwerp + leerlijn + ideeën ───────────────────────
+    // Willekeurige greep (voor het roteren van werkvormen per generatie).
+    function kiesN(arr, n) { var a = arr.slice(), out = []; while (out.length < n && a.length) out.push(a.splice(Math.floor(Math.random() * a.length), 1)[0]); return out; }
     function bouwOpdracht(inv) {
       const lengteOms = {
         kort: 'KORT — weinig items per opdracht: meerkeuze ~3 vragen, waar/niet-waar ~3 stellingen, koppelen ~3 paren, invul ~4 zinnen, open ~2 vragen, categoriseren ~6 woorden; bij spec-blokken "aantal" ~6; woordzoeker ~8 woorden; kruiswoord ~8 woorden; anagram ~6 woorden; lettergrepen ~6 woorden; rijmwoorden ~6 woorden; synant (synoniemen/antoniemen) ~4 paren; sudoku 4×4.',
@@ -504,6 +506,18 @@
         lijnen.push('- Gebruik bij voorkeur invul-opdrachten waarbij juist de moeilijke letter(s) ontbreken (bijvoorbeeld voor "crisis": voor="cr", antwoord="i", na="sis"), woorden laten afmaken, of een mini-dictee-achtige opdracht.');
         lijnen.push('- Vraag de spellingregel NIET terug, tenzij er expliciet een opdracht is als "schrijf de regel op".');
         lijnen.push('- Alle oefenwoorden zijn bestaande Nederlandse woorden op het niveau van ' + inv.groep + '.');
+        // Werkvormen ROTEREN zodat niet elk werkblad dezelfde opzet krijgt.
+        var spellingVormen = [
+          'invullen waarbij ALLEEN de moeilijke letter(s) ontbreken (het woord staat verder heel)',
+          'sorteren op hoe de letter klinkt of op de schrijfwijze',
+          'zoek-de-fout (precies één fout per zin, die de regel betreft)',
+          'een woordzoeker met de doelwoorden',
+          'een kruiswoordpuzzel met de doelwoorden (korte omschrijving per woord; het kind schrijft het woord zelf)',
+          'anagram: de door elkaar gehusselde letters van een doelwoord goed schrijven',
+          'een zin laten schrijven met een paar doelwoorden (open, mét antwoord)',
+          'woorden laten afmaken (het begin staat er, het kind schrijft de rest)'
+        ];
+        lijnen.push('- WISSEL DE WERKVORMEN AF — gebruik NIET elke keer dezelfde opzet. Bouw dit werkblad met een frisse mix uit BIJVOORBEELD deze werkvormen: ' + kiesN(spellingVormen, 4).join('; ') + '. Val niet terug op alleen invullen + sorteren + zoek-de-fout; pak deze keer ook eens een puzzelvorm (woordzoeker, kruiswoord of anagram) als die past.');
       }
 
       lijnen.push('\nGeef nu UITSLUITEND de JSON van het werkblad terug.');
@@ -670,6 +684,18 @@
             blk.woorden = herstel(blk.woorden, function (w) { return w; }, function (w) { return w.toUpperCase(); }, inUnie, unie);
           } else if (blk.type === 'anagram') {
             blk.woorden = herstel(blk.woorden, function (w) { return (w && w.woord != null) ? w.woord : w; }, function (w) { return { woord: w }; }, inUnie, unie);
+          } else if (blk.type === 'invul') {
+            // Vangnet: bij een gat MIDDEN in een woord moet het hele (gereconstrueerde)
+            // woord een echt bankwoord zijn; anders is het item kapot verdeeld ("wexpert").
+            // Zin niet herschrijven — alleen het foute item weglaten (min. 2 overhouden).
+            var gefilterd = (blk.items || []).filter(function (it) {
+              if (!it) return false;
+              var vf = (String(it.voor || '').match(/([a-zà-ÿ]+)$/i) || [])[1] || '';
+              var nf = (String(it.na || '').match(/^([a-zà-ÿ]+)/i) || [])[1] || '';
+              if (!vf && !nf) return true; // gat = heel woord → laten staan
+              return inUnie((vf + String(it.antwoord || '') + nf).toLowerCase());
+            });
+            if (gefilterd.length >= 2) blk.items = gefilterd;
           }
         });
       } catch (e) { /* fail-safe */ }
