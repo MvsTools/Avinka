@@ -1655,7 +1655,7 @@
     Z.forEach(function (it, i) {
       h += '<div class="wb-zin-rij"><div class="wb-zin-chips"><span class="wb-rij-nr">' + (i + 1) + ".</span> " +
         it.door.map(function (w) { return '<span class="wb-chip">' + esc(w) + "</span>"; }).join(" ") + "</div>";
-      h += ant ? '<div class="wb-ant-blok">' + esc(it.antwoord) + "</div>" : '<div class="wb-schrijfregel" style="margin-top:7px"></div>';
+      h += ant ? '<div class="wb-ant-blok">' + esc(it.antwoord) + "</div>" : '<div class="wb-schrijfregel" style="margin-top:24px"></div>';
       h += "</div>";
     });
     return '<div class="wb-blok">' + h + "</div>";
@@ -1709,7 +1709,7 @@
     arr(b.zinnen).forEach(function (z, i) {
       var zin = (z && z.zin != null ? z.zin : z), correct = (z && z.correct) || "";
       h += '<div class="wb-open-vraag"><div class="wb-vraag-t">' + (i + 1) + ". " + esc(zin) + "</div>" +
-        (ant ? '<div class="wb-ant-blok">' + esc(correct) + "</div>" : '<div class="wb-schrijfregel" style="margin-top:6px"></div>') + "</div>";
+        (ant ? '<div class="wb-ant-blok">' + esc(correct) + "</div>" : '<div class="wb-schrijfregel" style="margin-top:24px"></div>') + "</div>";
     });
     return '<div class="wb-blok">' + h + "</div>";
   }
