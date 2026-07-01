@@ -454,7 +454,7 @@
         '9. Het hele werkblad past op MAXIMAAL twee kantjes (voor- en achterkant van één A4); maak het nooit langer. Het aantal opdrachten en de lengte per opdracht staan in de opdracht hieronder; houd je daaraan. Reken realistisch met ruimte: een leestekst, open vragen met schrijfregels, koppelen, sorteren, woordzoeker, kruiswoord, staafdiagram, sudoku, doolhof en getallenlijn vreten veel verticale ruimte. Gebruik hooguit 1 à 2 van zulke ruimte-vretende opdrachten per werkblad en beperk daarvan het aantal items. Bij twijfel: minder items en minder blokken. Liever een paar goed gevulde opdrachten binnen twee kantjes dan alles erin proppen en over drie pagina\'s uitlopen.',
         '10. SPECIAAL BIJ SPELLING (een spellingregel of -categorie oefenen, bijv. "c die klinkt als k"):',
         '   a. Zoek-de-fout: precies ÉÉN fout per zin, en die fout MOET exact de geoefende spellingregel betreffen (dus geen grammatica- of werkwoordsfout als "de fout"); de rest van de zin is correct, lopend en zinvol Nederlands. Controleer per zin dat er precies één fout in zit en dat de zin klopt.',
-        '   b. Invullen/gatentekst: de te oefenen letter(s) of lettercombinatie MOET ín het gat vallen, nooit al voorgedrukt vlak naast het gat — anders oefent het kind de spelling niet (bij "microfoon" is het gat dus "micro", niet "foon").',
+        '   b. Invullen bij spelling = ALLEEN de moeilijke letter(s) van de regel invullen, GEEN half woord laten raden. Laat het woord (bijna) HEEL en herkenbaar staan en blank uitsluitend de letter(s) die de regel oefent. Voorbeelden: c-als-/k/ → het gat is "c" en de rest staat er ("(gat)ola" = cola, "(gat)actus" = cactus); x → "e(gat)amen" (examen), "ta(gat)i" (taxi); eau → "cad(gat)" (cadeau), "bur(gat)" (bureau). REGELS: (1) blank alleen de regelletter(s), nooit een groot woorddeel — het kind schrijft dus 1 tot 3 letters, niet bijna het hele woord; (2) de rest van het woord staat er zodat het woord meteen herkenbaar/oplosbaar is (een leerkracht moet het antwoord direct weten); (3) zet de regelletter NOOIT al voorgedrukt naast het gat; (4) een korte, duidelijke zin eromheen mag, maar alleen als het woord daardoor niet vaag wordt — bij twijfel gewoon het losse woord met het gat.',
         '   c. Gebruik GEEN sorteren/categoriseren om te sorteren op een spellingkenmerk dat al ZICHTBAAR in het woord staat (bijv. "met c of met k"): de juiste spelling staat dan al in de woordenlijst, dus het kind schrijft alleen over. Kies dan een vorm waarbij het kind de letter zelf moet kiezen of schrijven (invullen met de letter in het gat, of een de/het-achtige keuze). Categoriseren mag wél als er op betekenis wordt gesorteerd.',
         '   d. Kies woorden die ECHT bij de groep passen; vermijd zeldzame of ouderwetse woorden (voor groep 7 bijv. niet "confidentie", "corsage" of "colbert").'
       ]).join('\n');
@@ -741,15 +741,27 @@
     function pasPaginaAanNu() {
       try {
         if (toonAntw || !laatsteWb) return; // meten op het vraagblad
-        var rondes = 10;
+        var rondes = 10, ingekort = 0;
         while (rondes-- > 0) {
           var page = document.querySelector('#wb-print .wb-page');
           if (!page || pastPagina(page)) break;
           if (!trimEen(laatsteWb)) break;
+          ingekort++;
           window.avinkaWerkblad.normaliseer(laatsteWb);
           document.getElementById('wb-print').innerHTML = window.avinkaWerkblad.render(laatsteWb, { antwoorden: false });
         }
+        paginaMeetHulp(ingekort); // TIJDELIJK: laat het gemeten getal zien voor kalibratie
       } catch (e) { /* fail-safe: laat het werkblad staan zoals het is */ }
+    }
+    // TIJDELIJK meethulpje (alleen scherm, niet printen). Weghalen na kalibratie.
+    function paginaMeetHulp(ingekort) {
+      try {
+        var page = document.querySelector('#wb-print .wb-page'); if (!page) return;
+        var b = page.offsetWidth || 720, lim = Math.round(b * KANTJE_FACTOR * 2 + 6), h = page.scrollHeight;
+        var d = document.getElementById('fit-debug');
+        if (!d) { d = document.createElement('div'); d.id = 'fit-debug'; d.setAttribute('style', 'margin:10px 0;padding:9px 13px;background:#fff3cd;border:1px solid #e0c060;border-radius:8px;font-family:monospace;font-size:13px;color:#5a4a00'); var wp = document.getElementById('wb-print'); wp.parentNode.insertBefore(d, wp); }
+        d.textContent = 'PAGINA-FIT (tijdelijk): hoogte ' + h + ' px / limiet ' + lim + ' px (breedte ' + b + ') → ' + (h <= lim ? 'PAST' : 'TE LANG') + ' · ingekort: ' + ingekort + ' stap(pen)';
+      } catch (e) { }
     }
 
     // ── Resultaat tonen ──────────────────────────────────────────────────────
