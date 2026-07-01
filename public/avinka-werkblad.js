@@ -917,14 +917,20 @@
   // Ontbrekend getal (a + □ = c).
   function genOntbrekend(spec) {
     spec = spec || {};
-    var op = ["+", "-", "×"].indexOf(spec.bewerking) !== -1 ? spec.bewerking : "+";
+    var op = ["+", "-", "×", "÷"].indexOf(spec.bewerking) !== -1 ? spec.bewerking : "+";
+    var komma = !!spec.kommagetallen && (op === "+" || op === "-"); // kommagetallen alleen zinvol bij +/−
     var aantal = Math.min(15, Math.max(2, spec.aantal || 6)), max = spec.max || 20, items = [];
+    function r1(x) { return Math.round(x * 10) / 10; }
     for (var i = 0; i < aantal; i++) {
       var a, b, res;
-      if (op === "+") { a = randInt(1, max); b = randInt(1, max); res = a + b; }
+      if (komma) {
+        if (op === "+") { a = r1(randInt(1, max * 10) / 10); b = r1(randInt(1, max * 10) / 10); res = r1(a + b); }
+        else { a = r1(randInt(2, max * 10) / 10); b = r1(randInt(1, Math.round(a * 10)) / 10); res = r1(a - b); }
+      } else if (op === "+") { a = randInt(1, max); b = randInt(1, max); res = a + b; }
       else if (op === "-") { a = randInt(2, max); b = randInt(1, a); res = a - b; }
-      else { a = randInt(2, 10); b = randInt(2, 10); res = a * b; }
-      items.push({ a: a, b: b, res: res, op: op, mis: randInt(0, 1) });
+      else if (op === "×") { a = randInt(2, 10); b = randInt(2, 10); res = a * b; }
+      else { b = randInt(2, 10); res = randInt(2, 10); a = b * res; } // ÷: a ÷ b = res (altijd heel)
+      items.push({ a: a, b: b, res: res, op: op, komma: komma, mis: randInt(0, 1) });
     }
     return items;
   }
@@ -1863,8 +1869,9 @@
       var cell = "";
       for (var j = 0; j < perCol; j++) {
         var idx = c * perCol + j; if (idx >= N) break; var it = I[idx];
-        var a = it.mis === 0 ? vakje(ant, it.a) : it.a, bb = it.mis === 1 ? vakje(ant, it.b) : it.b;
-        cell += '<div class="wb-ontbr-rij"><span class="wb-som-nr">' + (idx + 1) + '.</span><span>' + a + " " + it.op + " " + bb + " = " + it.res + "</span></div>";
+        var f = function (v) { return it.komma ? String(v).replace(".", ",") : v; };
+        var a = it.mis === 0 ? vakje(ant, f(it.a)) : f(it.a), bb = it.mis === 1 ? vakje(ant, f(it.b)) : f(it.b);
+        cell += '<div class="wb-ontbr-rij"><span class="wb-som-nr">' + (idx + 1) + '.</span><span>' + a + " " + it.op + " " + bb + " = " + f(it.res) + "</span></div>";
       }
       if (cell) h += '<div class="wb-ontbr-kol">' + cell + "</div>";
     }
