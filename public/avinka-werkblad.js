@@ -940,6 +940,20 @@
     spec = spec || {};
     var aantal = Math.min(12, Math.max(2, spec.aantal || 6));
     var max = Math.max(10, spec.max || 100);
+    // Kommagetallen-variant: reken in TIENDEN (geen float-ruis), toon met komma.
+    if (spec.kommagetallen) {
+      var gegevenK = arr(spec.stappen).map(function (s) { return Math.round(s * 10); }).filter(function (s) { return s >= 1; });
+      var wisselK = !!spec.wissel || gegevenK.length > 1;
+      var poolK = gegevenK.length ? gegevenK : [1, 2, 5]; // 0,1 · 0,2 · 0,5
+      var vastK = spec.stap ? Math.round(spec.stap * 10) : (gegevenK.length === 1 ? gegevenK[0] : 2);
+      var maxT = Math.max(20, Math.min(max * 10, 300)), itemsK = [];
+      for (var q = 0; q < aantal; q++) {
+        var sK = wisselK ? poolK[randInt(0, poolK.length - 1)] : vastK;
+        var nK = randInt(sK + 1, maxT - sK);
+        itemsK.push({ n: nK / 10, stap: sK / 10, minder: (nK - sK) / 10, meer: (nK + sK) / 10, komma: true });
+      }
+      return { wissel: wisselK, stap: vastK / 10, komma: true, items: itemsK };
+    }
     // twee modes: vaste stap over de hele opdracht (spec.stap), of wisselende stap
     // per rij (spec.wissel of een lijst spec.stappen). Pool schaalt met het bereik.
     var gegeven = arr(spec.stappen).filter(function (s) { return s >= 1; });
@@ -1882,9 +1896,10 @@
 
   function rBuren(b, nr, ant) {
     var B = b._buren || genBuren(b.spec || b);
+    function f(v) { return B.komma ? String(v).replace(".", ",") : v; } // kommagetallen NL tonen
     var opd = b.opdracht || (B.wissel
       ? "Schrijf het juiste getal in de hokjes. Let op het getal dat erbij of eraf moet."
-      : ("Schrijf het getal " + B.stap + " minder en " + B.stap + " meer."));
+      : ("Schrijf het getal " + f(B.stap) + " minder en " + f(B.stap) + " meer."));
     var h = opdrachtKop(nr, opd, b.em);
     var N = B.items.length, kol = N >= 6 ? 2 : 1, perCol = Math.ceil(N / kol);
     h += '<div class="wb-buren-wrap">';
@@ -1893,11 +1908,11 @@
       for (var j = 0; j < perCol; j++) {
         var idx = c * perCol + j; if (idx >= N) break; var it = B.items[idx];
         cell += '<span class="wb-som-nr">' + (idx + 1) + ".</span>" +
-          '<span class="wb-buren-cel">' + vakje(ant, it.minder) + "</span>" +
-          '<span class="wb-buren-op">− ' + it.stap + "</span>" +
-          '<span class="wb-buren-mid">' + it.n + "</span>" +
-          '<span class="wb-buren-op">+ ' + it.stap + "</span>" +
-          '<span class="wb-buren-cel">' + vakje(ant, it.meer) + "</span>";
+          '<span class="wb-buren-cel">' + vakje(ant, f(it.minder)) + "</span>" +
+          '<span class="wb-buren-op">− ' + f(it.stap) + "</span>" +
+          '<span class="wb-buren-mid">' + f(it.n) + "</span>" +
+          '<span class="wb-buren-op">+ ' + f(it.stap) + "</span>" +
+          '<span class="wb-buren-cel">' + vakje(ant, f(it.meer)) + "</span>";
       }
       if (cell) h += '<div class="wb-buren">' + cell + "</div>";
     }
@@ -2311,7 +2326,7 @@
       ".wb-breuk-rij{display:flex;align-items:center;gap:11px}",
       ".wb-breuk{height:28px;width:auto}",
       ".wb-breuk-v{font-size:15px;font-weight:700;display:inline-flex;align-items:center;gap:5px}",
-      ".wb-frac{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;vertical-align:middle;line-height:1.05;font-weight:800}",
+      ".wb-frac{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;vertical-align:middle;line-height:1.05;font-weight:inherit}",
       ".wb-frac-t{padding:0 5px 1px;border-bottom:2px solid currentColor}",
       ".wb-frac-n{padding:1px 5px 0}",
       // Kleur-op-som
