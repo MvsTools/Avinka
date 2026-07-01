@@ -414,8 +414,17 @@
     // hulpgetallen → patroon makkelijker te herkennen).
     var termen = Math.min(14, Math.max(5, spec.termen || (max >= 400 ? 14 : max >= 150 ? 12 : max >= 60 ? 9 : 6)));
     var soorten = arr(spec.soorten).length ? arr(spec.soorten) : (max > 80 ? ["plus", "plus", "regel", "maal"] : ["plus"]);
+    var komma = !!spec.kommagetallen;
     var rijen = [];
     for (var r = 0; r < aantal; r++) {
+      if (komma) {
+        // kommagetallen-reeks: reken in TIENDEN (geen float-ruis), constante stap
+        var st10 = [1, 2, 5][randInt(0, 2)], start10 = randInt(1, 20), termK = Math.min(9, termen), vk = [];
+        for (var ik = 0; ik < termK; ik++) vk.push((start10 + st10 * ik) / 10);
+        var innerK = []; for (ik = 1; ik < termK - 1; ik++) innerK.push(ik);
+        rijen.push({ vals: vk, gaten: shuffle(innerK).slice(0, 2), komma: true });
+        continue;
+      }
       var soort = soorten[randInt(0, soorten.length - 1)], vals = [], gaten, i;
       if (soort === "maal") {
         // ×a explodeert → kort houden, wel een paar hulpgetallen vóór de gaten
@@ -1600,7 +1609,8 @@
       h += '<div class="wb-reeks-rij">';
       rij.vals.forEach(function (v, idx) {
         var gat = rij.gaten.indexOf(idx) !== -1, toon = !gat || ant;
-        h += '<span class="wb-reeks-cel' + (gat ? " gat" : "") + (gat && ant ? " wb-ant" : "") + '">' + (toon ? v : "") + "</span>";
+        var w = rij.komma ? String(v).replace(".", ",") : v; // kommagetallen NL tonen
+        h += '<span class="wb-reeks-cel' + (gat ? " gat" : "") + (gat && ant ? " wb-ant" : "") + '">' + (toon ? w : "") + "</span>";
       });
       h += "</div>";
     });

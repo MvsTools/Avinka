@@ -126,7 +126,7 @@
           { type: "vergelijken", opdracht: "Door elkaar (breuk / procent / kommagetal):", spec: { soort: "mix", aantal: 6 } }]],
         [19, "tafelkaart", "Tafelkaart", [{ type: "tafelkaart", opdracht: "Eén tafel (van 7):", spec: { tafel: 7 } }, { type: "tafelkaart", opdracht: "Tafels door elkaar:", spec: { tafels: [2, 3, 4, 5, 10] } }]],
         [20, "maalrooster", "Maaltafel-rooster", [{ type: "maalrooster", spec: { kolommen: 4, rijen: 4 } }]],
-        [21, "reeks", "Reeksen / patronen", [{ type: "reeks", spec: { max: 500 } }]],
+        [21, "reeks", "Reeksen / patronen (nu ook kommagetallen)", [{ type: "reeks", opdracht: "Hele getallen:", spec: { max: 500 } }, { type: "reeks", opdracht: "Kommagetallen:", spec: { kommagetallen: true, aantal: 4 } }]],
         [22, "buurgetallen", "Buurgetallen (meer / minder) — nu ook kommagetallen", [{ type: "buurgetallen", opdracht: "Vast (telkens 4 erbij en eraf):", spec: { stap: 4, max: 100 } }, { type: "buurgetallen", opdracht: "Wisselend (let op het getal):", spec: { wissel: true, max: 1000 } }, { type: "buurgetallen", opdracht: "Kommagetallen (stap 0,5):", spec: { kommagetallen: true, stap: 0.5, max: 20 } }]],
         [23, "ordenen", "Getallen ordenen (nu ook kommagetallen en procenten)", [
           { type: "ordenen", opdracht: "Hele getallen (klein naar groot):", spec: { aantal: 3, perRij: 5, max: 100 } },
@@ -232,7 +232,7 @@
       return b;
     }
     // Goedgekeurde (geteste) types. Verplaats hier nummers naartoe zodra ze klaar zijn.
-    var GETEST = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 16, 17, 19, 20, 21, 24, 25, 26, 27, 28, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 47];
+    var GETEST = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 16, 17, 19, 20, 24, 25, 26, 27, 28, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 47];
     function isGetest(n) { return GETEST.indexOf(n) !== -1; }
     function telTab(g) { var n = 0, num = 0; CATS.forEach(function (c) { c[3].forEach(function () { num++; if (isGetest(num) === g) n++; }); }); return n; }
     // Cache het gegenereerde (genormaliseerde) blok per type+index+lengte, zodat
