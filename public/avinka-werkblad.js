@@ -2353,7 +2353,7 @@
       ".wb-breuk-rij{display:flex;align-items:center;gap:11px}",
       ".wb-breuk{height:28px;width:auto}",
       ".wb-breuk-v{font-size:15px;font-weight:700;display:inline-flex;align-items:center;gap:5px}",
-      ".wb-frac{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;vertical-align:middle;line-height:1;font-weight:inherit}", // cijfers even groot als de omringende getallen (geen font-size-verkleining); strakke regelhoogte houdt de hoogte beperkt
+      ".wb-frac{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;vertical-align:middle;line-height:1;font-weight:inherit;font-size:0.9em}", // een tikje kleiner dan de omringende getallen; strakke regelhoogte houdt de hoogte beperkt
       ".wb-frac-t{padding:0 5px 1px;border-bottom:1.5px solid currentColor}",
       ".wb-frac-n{padding:1px 5px 0}",
       // Kleur-op-som
