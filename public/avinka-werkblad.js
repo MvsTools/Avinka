@@ -1266,6 +1266,7 @@
     var W = 660, padX = 30, y = 54;
     var span = L.eind - L.start || 1;
     function x(v) { return padX + ((v - L.start) / span) * (W - 2 * padX); }
+    function lbl(v) { return String(v).replace(".", ","); } // 0.5 → "0,5" (NL); integers ongewijzigd
     var svg = '<svg class="wb-nl" viewBox="0 0 ' + W + ' 96" preserveAspectRatio="xMidYMid meet">';
     svg += '<line x1="' + padX + '" y1="' + y + '" x2="' + (W - padX) + '" y2="' + y + '" class="wb-nl-as"/>';
     svg += '<polygon points="' + (W - padX) + ',' + y + ' ' + (W - padX - 10) + ',' + (y - 5) + ' ' + (W - padX - 10) + ',' + (y + 5) + '" class="wb-nl-pijl"/>';
@@ -1275,10 +1276,10 @@
       if (gevr) {
         // pijl + invulvakje boven de lijn
         svg += '<rect x="' + (x(v) - 17) + '" y="' + (y - 40) + '" width="34" height="22" rx="5" class="wb-nl-box ' + (ant ? "wb-goed" : "") + '"/>';
-        if (ant) svg += '<text x="' + x(v) + '" y="' + (y - 24) + '" class="wb-nl-ant">' + v + "</text>";
+        if (ant) svg += '<text x="' + x(v) + '" y="' + (y - 24) + '" class="wb-nl-ant">' + lbl(v) + "</text>";
         svg += '<line x1="' + x(v) + '" y1="' + (y - 18) + '" x2="' + x(v) + '" y2="' + (y - 2) + '" class="wb-nl-wijs"/>';
       } else {
-        svg += '<text x="' + x(v) + '" y="' + (y + 24) + '" class="wb-nl-label">' + v + "</text>";
+        svg += '<text x="' + x(v) + '" y="' + (y + 24) + '" class="wb-nl-label">' + lbl(v) + "</text>";
       }
     });
     svg += "</svg>";
