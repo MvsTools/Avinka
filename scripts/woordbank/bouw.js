@@ -201,6 +201,8 @@ const BLOCK = new Set([
   // celibaat/celibatair (seksueel-getint), en losse rare/onbekende woorden.
   "cel","celstraf","celgenoot","cellen","celibaat","celibatair","celibataire","narcisme","narcist","narcistisch",
   "dolce","specifieks","exorcisme","eunuchen","bordeelhouder","maffia","maffiabaas",
+  // Engelse woorden die toevallig een NL-spellingcategorie raken maar er niet in horen:
+  "ice","nice","price","choice","voice","peace","please","cheese","cheer","race","space","dance","place","face",
 ]);
 // Frequentieplafond: woorden die zeldzamer zijn dan deze rang laten we NIET toe
 // (verjonging — houd het bij woorden die kinderen echt kennen). Tunebaar.
