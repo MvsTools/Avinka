@@ -676,8 +676,8 @@
     }
 
     // ── Pagina-fit: past het op 2 kantjes? Zo niet: LOKAAL inkorten (geen AI-call) ──
-    // Eén A4-kantje is ~1,25× zo hoog als breed (na printmarge); 2 kantjes = 2×.
-    var KANTJE_FACTOR = 1.25;
+    // Eén A4-kantje is ~1,15× zo hoog als breed (na printmarge); 2 kantjes = 2×.
+    var KANTJE_FACTOR = 1.15;
     function pastPagina(page) {
       var b = page.offsetWidth || 720;
       return page.scrollHeight <= b * KANTJE_FACTOR * 2 + 6;
@@ -729,7 +729,16 @@
       }
       return false;
     }
+    // Meten pas ná het laden van de webfonts: daarvóór is de tekst smaller/korter en
+    // zou de code ten onrechte denken dat het past.
     function pasPaginaAan() {
+      try {
+        if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+          document.fonts.ready.then(pasPaginaAanNu, pasPaginaAanNu);
+        } else { setTimeout(pasPaginaAanNu, 90); }
+      } catch (e) { try { pasPaginaAanNu(); } catch (e2) { } }
+    }
+    function pasPaginaAanNu() {
       try {
         if (toonAntw || !laatsteWb) return; // meten op het vraagblad
         var rondes = 10;
