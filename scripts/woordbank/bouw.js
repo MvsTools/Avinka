@@ -101,11 +101,22 @@ const DOELEN = ING.filter(i => i.doel);
 // open/gesloten lettergreep (verdubbelen/verlengen). Verdubbeling (dubbele
 // medeklinker) is betrouwbaar; de "verlenging" (bo-men) blijft fonetisch lastig,
 // dus beperkt tot korte tweelettergrepige woorden om de ruis te dempen.
+// Klankgroepenwoord: alleen woorden waarvan het MEERVOUD écht verdubbelt of verlengt,
+// woordenboek-geverifieerd (net als f->v). Zo vallen functiewoorden (jullie, samen),
+// leenwoorden (koffie, hallo) en -s-meervouden (tafel, water) er vanzelf uit.
 function openGesloten(w) {
-  if (/([bcdfgklmnprstvz])\1/.test(w)) return true; // verdubbeling (gesloten) - betrouwbaar
-  return lettergrepen(w) === 2 && w.length <= 7 &&
-    /^[bcdfghjklmnprstvwz]*[aeou][bcdfghjklmnprstvwz][aeiouy]/.test(w) &&
-    !/(aa|ee|oo|uu|oe|eu|ie|ei|ij|ou|au|ui|aai|ooi|oei)/.test(w);
+  if (w.length < 3 || w.length > 8) return false;
+  if (/(aai|ooi|oei|eeuw|ieuw)$/.test(w)) return false;
+  // GESLOTEN: eindigt op [korte klinker][enkele medeklinker] en de verdubbelvorm bestaat (man -> mannen)
+  var mG = w.match(/(?:^|[^aeiou])[aeiou]([bcdfgklmnprstvz])$/);
+  if (mG && !/(aa|ee|oo|uu|ie|oe|eu|ei|ij|ou|au|ui)/.test(w) && OPENTAAL.has(w + mG[1] + "en")) return true;
+  // OPEN: eindigt op [dubbele klinker][enkele medeklinker] en de verkorte vorm bestaat (maan -> manen)
+  var mO = w.match(/(aa|ee|oo|uu)[bcdfgklmnprstvz]$/);
+  if (mO) {
+    var enkel = w.replace(/(aa|ee|oo|uu)([bcdfgklmnprstvz])$/, function (m, vv, c) { return vv[0] + c; });
+    if (OPENTAAL.has(enkel + "en")) return true;
+  }
+  return false;
 }
 
 // f->v / s->z verlenging: betrouwbaar te checken door de ECHTE verbogen vorm in
@@ -203,6 +214,8 @@ const BLOCK = new Set([
   "dolce","specifieks","exorcisme","eunuchen","bordeelhouder","maffia","maffiabaas",
   // Engelse woorden die toevallig een NL-spellingcategorie raken maar er niet in horen:
   "ice","nice","price","choice","voice","peace","please","cheese","cheer","race","space","dance","place","face",
+  // mild volwassen bijklank, niet voor groep 7:
+  "hartstocht","hartstochtelijk","hartstochten",
 ]);
 // Frequentieplafond: woorden die zeldzamer zijn dan deze rang laten we NIET toe
 // (verjonging — houd het bij woorden die kinderen echt kennen). Tunebaar.
