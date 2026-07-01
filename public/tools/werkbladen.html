@@ -596,6 +596,7 @@
         // reset uit een eventueel geladen bestand
         geladenBestandId = ''; geladenBestandNaam = ''; geladenBestandOms = '';
         toonResultaat();
+        pasPaginaAan(); // past het op 2 kantjes? zo niet: lokaal inkorten (geen extra AI-call)
 
         if (typeof avinkaTel === 'function') {
           const aantalOpdr = (wb.blokken || []).filter(b => b && b.type && b.type !== 'tekst' && b.type !== 'reflectie').length;
@@ -608,6 +609,74 @@
         knop.disabled = false;
         document.getElementById('laden').classList.remove('aan');
       }
+    }
+
+    // ── Pagina-fit: past het op 2 kantjes? Zo niet: LOKAAL inkorten (geen AI-call) ──
+    // Eén A4-kantje is ~1,25× zo hoog als breed (na printmarge); 2 kantjes = 2×.
+    var KANTJE_FACTOR = 1.25;
+    function pastPagina(page) {
+      var b = page.offsetWidth || 720;
+      return page.scrollHeight <= b * KANTJE_FACTOR * 2 + 6;
+    }
+    function wisWbCache(b) { ['_wz', '_kw', '_verg', '_reeks', '_hussel', '_zin', '_geheim'].forEach(function (k) { delete b[k]; }); }
+    // Verklein het werkblad met één stap; geeft false als er niets meer in te korten valt.
+    function trimEen(wb) {
+      var blk = (wb.blokken || []).filter(function (b) { return b && b.type; });
+      var GEW = { open: 4.5, koppelen: 3.5, categoriseren: 2.2, staafdiagram: 6, woordzoeker: 5, kruiswoord: 5, invul: 1.6, meerkeuze: 1.8, waarnietwaar: 1.1, zinbouwen: 1.8, zoekdefout: 2, lettergrepen: 1.2, rijmwoorden: 1.2, lidwoord: 1, synant: 1.4, anagram: 1.2 };
+      var MIN = { woordzoeker: 6, kruiswoord: 6, open: 2, invul: 4 };
+      function arrVan(b) {
+        if (b.type === 'meerkeuze' || b.type === 'open') return b.vragen;
+        if (b.type === 'invul') return b.items;
+        if (b.type === 'waarnietwaar') return b.stellingen;
+        if (b.type === 'zinbouwen' || b.type === 'zoekdefout') return b.zinnen;
+        if (b.type === 'woordzoeker' || b.type === 'kruiswoord' || b.type === 'anagram' || b.type === 'lettergrepen' || b.type === 'rijmwoorden' || b.type === 'lidwoord') return b.woorden;
+        if (b.type === 'synant') return b.paren;
+        return null;
+      }
+      // 1) grootste trimbare blok: haal er één item af
+      var best = null, bestScore = -1;
+      blk.forEach(function (b) {
+        var a = arrVan(b); if (!Array.isArray(a)) return;
+        var min = MIN[b.type] || 3;
+        if (a.length <= min) return;
+        var score = a.length * (GEW[b.type] || 1);
+        if (score > bestScore) { bestScore = score; best = { b: b, a: a }; }
+      });
+      if (best) { best.a.pop(); wisWbCache(best.b); return true; }
+      // 2) koppelen: haal er een paar af
+      var kp = blk.filter(function (b) { return b.type === 'koppelen' && (b.paren || []).length > 3; })[0];
+      if (kp) { kp.paren.pop(); wisWbCache(kp); return true; }
+      // 3) categoriseren: haal een woord uit de grootste categorie
+      var cat = null, cbest = 3;
+      blk.forEach(function (b) { if (b.type === 'categoriseren') (b.categorieen || []).forEach(function (c) { if ((c.items || []).length > cbest) { cbest = c.items.length; cat = c; } }); });
+      if (cat) { cat.items.pop(); return true; }
+      // 4) laatste redmiddel: minst belangrijke blok eruit (reflectie/teken/leestekst), maar hou >= 2 opdrachten
+      var opdrachten = blk.filter(function (b) { return b.type !== 'tekst' && b.type !== 'reflectie'; });
+      var weg = ['reflectie', 'teken', 'tekst'];
+      for (var w = 0; w < weg.length; w++) {
+        for (var i = wb.blokken.length - 1; i >= 0; i--) {
+          if (wb.blokken[i] && wb.blokken[i].type === weg[w]) { wb.blokken.splice(i, 1); return true; }
+        }
+      }
+      // 5) nog te lang: laatste opdracht-blok eruit zolang er >= 2 overblijven
+      if (opdrachten.length > 2) {
+        var idx = wb.blokken.lastIndexOf(opdrachten[opdrachten.length - 1]);
+        if (idx >= 0) { wb.blokken.splice(idx, 1); return true; }
+      }
+      return false;
+    }
+    function pasPaginaAan() {
+      try {
+        if (toonAntw || !laatsteWb) return; // meten op het vraagblad
+        var rondes = 10;
+        while (rondes-- > 0) {
+          var page = document.querySelector('#wb-print .wb-page');
+          if (!page || pastPagina(page)) break;
+          if (!trimEen(laatsteWb)) break;
+          window.avinkaWerkblad.normaliseer(laatsteWb);
+          document.getElementById('wb-print').innerHTML = window.avinkaWerkblad.render(laatsteWb, { antwoorden: false });
+        }
+      } catch (e) { /* fail-safe: laat het werkblad staan zoals het is */ }
     }
 
     // ── Resultaat tonen ──────────────────────────────────────────────────────
