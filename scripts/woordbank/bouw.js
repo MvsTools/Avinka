@@ -101,22 +101,16 @@ const DOELEN = ING.filter(i => i.doel);
 // open/gesloten lettergreep (verdubbelen/verlengen). Verdubbeling (dubbele
 // medeklinker) is betrouwbaar; de "verlenging" (bo-men) blijft fonetisch lastig,
 // dus beperkt tot korte tweelettergrepige woorden om de ruis te dempen.
-// Klankgroepenwoord: alleen woorden waarvan het MEERVOUD écht verdubbelt of verlengt,
-// woordenboek-geverifieerd (net als f->v). Zo vallen functiewoorden (jullie, samen),
-// leenwoorden (koffie, hallo) en -s-meervouden (tafel, water) er vanzelf uit.
+// Klankgroepenwoord (open/gesloten lettergreep). De regel gaat over de lettergrepen
+// ÍN het woord zelf: een dubbele medeklinker hoort bij een gesloten klankgroep
+// (kof-fie, pro-fes-sor, bak-ker), of een open klankgroep met één klinker + medeklinker
+// (wa-ter, ta-fel, ka-mer). Bewust ruim gehouden — niet elk woord hoeft een meervoud te
+// vormen; het gaat om de klankgroep-spelling.
 function openGesloten(w) {
-  if (w.length < 3 || w.length > 8) return false;
-  if (/(aai|ooi|oei|eeuw|ieuw)$/.test(w)) return false;
-  // GESLOTEN: eindigt op [korte klinker][enkele medeklinker] en de verdubbelvorm bestaat (man -> mannen)
-  var mG = w.match(/(?:^|[^aeiou])[aeiou]([bcdfgklmnprstvz])$/);
-  if (mG && !/(aa|ee|oo|uu|ie|oe|eu|ei|ij|ou|au|ui)/.test(w) && OPENTAAL.has(w + mG[1] + "en")) return true;
-  // OPEN: eindigt op [dubbele klinker][enkele medeklinker] en de verkorte vorm bestaat (maan -> manen)
-  var mO = w.match(/(aa|ee|oo|uu)[bcdfgklmnprstvz]$/);
-  if (mO) {
-    var enkel = w.replace(/(aa|ee|oo|uu)([bcdfgklmnprstvz])$/, function (m, vv, c) { return vv[0] + c; });
-    if (OPENTAAL.has(enkel + "en")) return true;
-  }
-  return false;
+  if (/([bcdfgklmnprstvz])\1/.test(w)) return true; // verdubbeling (gesloten klankgroep)
+  return lettergrepen(w) === 2 && w.length <= 7 &&
+    /^[bcdfghjklmnprstvwz]*[aeou][bcdfghjklmnprstvwz][aeiouy]/.test(w) &&
+    !/(aa|ee|oo|uu|oe|eu|ie|ei|ij|ou|au|ui|aai|ooi|oei)/.test(w);
 }
 
 // f->v / s->z verlenging: betrouwbaar te checken door de ECHTE verbogen vorm in
