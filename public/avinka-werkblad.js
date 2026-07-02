@@ -1105,11 +1105,40 @@
 
   // ── Normaliseren: gegenereerde inhoud IN het object vastleggen ─────────────
   // Zo zijn scherm, print en antwoordblad altijd identiek (één keer genereren).
+  // Zoek-de-fout-vangnet: de fout moet ÉCHT bestaan. We tellen de woord-verschillen
+  // tussen de foute zin en de correcte zin; dat moet precies 1 zijn (één verbeterd
+  // woord). Geen verschil = er zit geen fout in (de bug van 2-7); meer dan één, of een
+  // ander aantal woorden = geen schone één-fout-zin → item weggooien (net als het
+  // invul-vangnet). De AARD van de fout (spelling/lidwoord/grammatica) blijft aan de
+  // prompt over; de code controleert alleen dát er precies één woord verandert.
+  function zfTokens(s) {
+    return String(s == null ? "" : s).trim().split(/\s+/)
+      .map(function (t) { return t.replace(/^[^0-9A-Za-zÀ-ÿ]+|[^0-9A-Za-zÀ-ÿ]+$/g, ""); })
+      .filter(function (t) { return t.length; });
+  }
+  function zfWoordVerschil(zin, correct) {
+    var a = zfTokens(zin), b = zfTokens(correct);
+    if (!a.length || a.length !== b.length) return -1; // ander aantal woorden → geen schone verbetering
+    var d = 0;
+    for (var i = 0; i < a.length; i++) if (a[i] !== b[i]) d++;
+    return d;
+  }
+
   function normaliseer(wb) {
     wb = wb || {};
     wb.blokken = arr(wb.blokken);
     wb.blokken.forEach(function (b) {
       if (!b || !b.type) return;
+      // Zoek-de-fout: houd alleen zinnen met precies ÉÉN echte fout (zie hierboven).
+      // Blijft er minstens één goede zin over, dan gebruiken we die; anders laten we de
+      // zinnen staan (fail-safe: liever een niet-perfecte opdracht dan een lege).
+      if (b.type === "zoekdefout") {
+        var goed = arr(b.zinnen).filter(function (z) {
+          var zin = (z && z.zin != null) ? z.zin : z, correct = (z && z.correct) || "";
+          return correct && zfWoordVerschil(zin, correct) === 1;
+        });
+        if (goed.length) b.zinnen = goed;
+      }
       // Meerkeuze-opties één keer husselen, zodat het goede antwoord niet altijd
       // op dezelfde plek staat (ongeacht waar de AI het zette). Eén keer, opgeslagen.
       if (b.type === "meerkeuze" && !b._mkShuf) {
