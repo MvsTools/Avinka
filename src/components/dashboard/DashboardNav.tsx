@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Fragment, type ComponentType } from "react";
+import { Fragment, useEffect, useState, type ComponentType } from "react";
 
 // De navigatie van het dashboard. Op een telefoon een horizontale strook,
 // op een laptop een rustige zijbalk. In twee groepjes (dagelijks werk boven,
@@ -36,6 +36,20 @@ export default function DashboardNav({
 }) {
   const path = usePathname();
 
+  // Zolang de welkomstpop-up openstaat, lichten we de Feedback-knop op: hij komt
+  // scherp bóven de vage achtergrond te staan (de pop-up stuurt open/dicht).
+  const [wijsFeedback, setWijsFeedback] = useState(false);
+  useEffect(() => {
+    const aan = () => setWijsFeedback(true);
+    const uit = () => setWijsFeedback(false);
+    window.addEventListener("avinka-welkom-open", aan);
+    window.addEventListener("avinka-welkom-dicht", uit);
+    return () => {
+      window.removeEventListener("avinka-welkom-open", aan);
+      window.removeEventListener("avinka-welkom-dicht", uit);
+    };
+  }, []);
+
   return (
     <nav className="flex gap-1.5 overflow-x-auto pb-1 md:w-60 md:shrink-0 md:flex-col md:overflow-visible md:pb-0">
       {items.map((it) => {
@@ -44,6 +58,9 @@ export default function DashboardNav({
         const Icon = it.icon;
         // Bestanden op slot (Start): leidt naar het abonnement-scherm + slotje.
         const opSlot = bestandenVergrendeld && it.href === "/dashboard/mijn-teksten";
+        // De Feedback-knop tijdens de welkomstpop-up: scherp boven de waas.
+        const isFeedback = it.href === "/dashboard/feedback";
+        const wijs = wijsFeedback && isFeedback;
         return (
           <Fragment key={it.href}>
             {it.scheiding && (
@@ -52,13 +69,17 @@ export default function DashboardNav({
             <Link
               href={opSlot ? "/dashboard/abonnement" : it.href}
               title={opSlot ? "Bestanden hoort bij Compleet" : undefined}
+              data-feedback-nav={isFeedback ? "" : undefined}
               className={
                 "flex shrink-0 items-center gap-3 rounded-2xl px-4 py-2.5 text-base font-semibold transition " +
                 (active
                   ? "bg-brand text-white shadow-sm shadow-brand/20"
                   : opSlot
                     ? "text-ink/35 hover:bg-white hover:text-ink/50"
-                    : "text-ink/70 hover:bg-white hover:text-ink")
+                    : "text-ink/70 hover:bg-white hover:text-ink") +
+                (wijs
+                  ? " relative z-50 scale-[1.03] bg-brand text-white shadow-xl shadow-black/25 ring-2 ring-white"
+                  : "")
               }
               aria-current={active ? "page" : undefined}
             >

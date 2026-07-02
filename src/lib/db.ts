@@ -90,6 +90,32 @@ export async function saveVoorkeuren(v: Voorkeuren): Promise<boolean> {
   return !e2;
 }
 
+// ── WELKOM-POP-UP ─────────────────────────────────────────────────────────
+// Heeft deze leerkracht de eenmalige welkomstpop-up al gezien? Staat als
+// tijdstempel in de instellingen-rij, zodat 'ie precies één keer per account
+// verschijnt (op elk apparaat). Bestaat de kolom nog niet, dan valt de select
+// stilletjes terug op "nog niet gezien" en mag de pop-up gewoon verschijnen.
+export async function getWelkomGezien(): Promise<boolean> {
+  const sb = createClient();
+  const { data, error } = await sb.from("instellingen").select("welkom_gezien").maybeSingle();
+  if (error || !data) return false;
+  return !!(data as { welkom_gezien?: string | null }).welkom_gezien;
+}
+
+export async function markWelkomGezien(): Promise<void> {
+  const sb = createClient();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return;
+  await sb
+    .from("instellingen")
+    .upsert(
+      { user_id: user.id, welkom_gezien: new Date().toISOString() },
+      { onConflict: "user_id" },
+    );
+}
+
 // ── ABONNEMENT ────────────────────────────────────────────────────────────
 // Leest de abonnementsstand uit de instellingen-rij. Werkt ook vóórdat de
 // migratie is gedraaid: bij een ontbrekende kolom of rij vallen we netjes

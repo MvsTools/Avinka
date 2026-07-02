@@ -4,6 +4,7 @@ import { tools } from "@/lib/tools";
 import { BETALINGEN_LIVE, magToolGebruiken } from "@/lib/abonnement";
 import { getAbonnementServer } from "@/lib/abonnement-server";
 import OnboardingCard from "@/components/dashboard/OnboardingCard";
+import WelkomModal from "@/components/dashboard/WelkomModal";
 import StreakBadge from "@/components/dashboard/StreakBadge";
 import TakenOverzicht from "@/components/dashboard/TakenOverzicht";
 import { amsterdamDatum } from "@/lib/streak";
@@ -29,6 +30,8 @@ export default async function DashboardStart() {
 
   return (
     <div className="flex flex-col gap-8">
+      <WelkomModal />
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-ink sm:text-4xl">
