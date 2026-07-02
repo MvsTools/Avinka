@@ -11,13 +11,20 @@ import JuridischeLayout, { Sectie } from "@/components/JuridischeLayout";
    - Controleer of de genoemde leveranciers (Supabase, Anthropic, Mollie) kloppen
      met wat er live draait, en houd de sub-verwerkerslijst actueel.
    - Laat de definitieve tekst vóór livegang nakijken door een privacyjurist.
+
+   GEBOUWD (2-7): zelf-service account verwijderen + data-export in Instellingen
+   (art. 15/17/20). LET OP: account verwijderen vereist de SQL-functie
+   `verwijder_mijn_account()` in de database (zie chat/commit).
+
+   NOG TE BOUWEN:
+   - Toestemming vastleggen bij registratie (datum + versie), voor art. 7-verantwoording.
    ────────────────────────────────────────────────────────────────────────── */
 
 const BEDRIJF = "[bedrijfsnaam]";
 const ADRES = "[adres]";
 const KVK = "[KvK-nummer]";
 const CONTACT_EMAIL = "[privacy-e-mailadres]";
-const BIJGEWERKT = "23 juni 2026";
+const BIJGEWERKT = "2 juli 2026";
 
 export const metadata: Metadata = {
   title: "Privacyverklaring — Avinka",
@@ -86,9 +93,13 @@ export default function PrivacyPage() {
         <p>
           Om je account te laten werken bewaren we je <strong>voornaam</strong>, je{" "}
           <strong>e-mailadres</strong>, een versleuteld wachtwoord en je voorkeuren
-          (zoals schoolnaam, groep en instellingen). Deze gegevens gebruiken we om je te
-          laten inloggen, je abonnement te beheren en je belangrijke berichten te sturen.
-          Zonder deze gegevens kunnen we de dienst niet leveren.
+          (zoals je groep en je schrijfinstellingen). Kies je bij je profiel een school,
+          dan bewaren we ook de naam van die school en de bijbehorende openbare
+          onderwijscodes (BRIN en vestiging) uit het openbare register van DUO; dat helpt
+          ons je schoolnaam eenduidig te herkennen. Nodig je een collega uit, dan hoort daar
+          een uitnodigingscode bij. Deze gegevens gebruiken we om je te laten inloggen, je
+          abonnement te beheren en je belangrijke berichten te sturen. Zonder deze gegevens
+          kunnen we de dienst niet leveren.
         </p>
 
         <h3 className="pt-2 font-bold text-ink">2. Gegevens over je leerlingen</h3>
@@ -127,6 +138,18 @@ export default function PrivacyPage() {
           we wat eenvoudige gebruiksgegevens bij, zoals hoe vaak je een tool gebruikt, je
           activiteitenreeks (&ldquo;streak&rdquo;) en behaalde beloningen, om je voortgang
           te tonen en het platform te verbeteren.
+        </p>
+        <p>
+          Om het platform veilig en betaalbaar te houden, leggen we per AI-verzoek een paar
+          technische gegevens vast: welke tool je gebruikte, welk AI-model, en hoeveel tekst
+          er verwerkt is (in &ldquo;tokens&rdquo;). We bewaren daarbij <strong>nooit</strong>{" "}
+          de inhoud van je verzoek of het antwoord, alleen deze tellingen.
+        </p>
+        <p>
+          Stuur je ons feedback of een idee, dan bewaren we je bericht samen met je account,
+          zodat we je kunnen terugmailen. Laat je een review achter, dan tonen we die alleen
+          openbaar (met je voornaam) als je daar zelf uitdrukkelijk voor kiest; je kunt dat
+          altijd weer intrekken.
         </p>
       </Sectie>
 
@@ -245,6 +268,14 @@ export default function PrivacyPage() {
             Verwijder je je account, dan verwijderen we deze gegevens.
           </li>
           <li>
+            <strong>Technische gebruiks- en AI-logs</strong> (tellingen, geen inhoud):
+            maximaal 24 maanden, voor beveiliging, foutopsporing en facturatie.
+          </li>
+          <li>
+            <strong>Feedback die je ons stuurt:</strong> zolang die nuttig is om het platform
+            te verbeteren, en niet langer dan nodig.
+          </li>
+          <li>
             <strong>Betaal- en factuurgegevens:</strong> zolang de belastingwet ons
             verplicht ze te bewaren (7 jaar).
           </li>
@@ -263,8 +294,14 @@ export default function PrivacyPage() {
           <li>een gegeven toestemming weer in te trekken.</li>
         </ul>
         <p>
-          Veel hiervan kun je zelf direct in het platform doen (klas of teksten verwijderen,
-          account opzeggen). Lukt iets niet, mail dan {CONTACT_EMAIL} en we helpen je. Ben je
+          Veel kun je zelf direct in het platform doen. Bij{" "}
+          <strong>Instellingen &rsaquo; Mijn gegevens</strong> zie je in een leesbaar overzicht
+          precies wat we van je bewaren, dat je ook kunt downloaden (inzage en
+          overdraagbaarheid), en kun je je hele account,
+          met alle bijbehorende gegevens, definitief laten verwijderen. Je klas, je
+          opgeslagen teksten en je plattegronden verwijder je daar los van ook op elk moment
+          zelf. Kom je ergens niet uit, of wil je iets anders regelen, mail dan{" "}
+          {CONTACT_EMAIL}; we handelen zo&apos;n verzoek uiterlijk binnen 30 dagen af. Ben je
           het ergens niet mee eens, dan kun je ook een klacht indienen bij de Autoriteit
           Persoonsgegevens (autoriteitpersoonsgegevens.nl).
         </p>
