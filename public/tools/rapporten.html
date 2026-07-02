@@ -466,6 +466,12 @@
   .chips .chip{ padding:9px 15px; border:1.5px solid var(--line-strong); border-radius:12px; background:#fff; font-size:13.5px; font-weight:600; color:var(--ink); cursor:pointer; transition:.14s; }
   .chips .chip:hover{ border-color:var(--accent); }
   .chips .chip.on{ border-color:var(--accent); background:var(--violet-soft); color:var(--accent); font-weight:700; box-shadow:0 4px 12px rgba(47,158,110,0.12); }
+  .chips .chip.extra{ display:none; }
+  .chips.meer .chip.extra{ display:inline-block; }
+  .toon-meer{ align-self:center; font-size:12.5px; font-weight:600; color:var(--accent); cursor:pointer; padding:9px 4px; user-select:none; white-space:nowrap; }
+  .toon-meer:hover{ text-decoration:underline; }
+  .toon-meer::before{ content:'+ toon meer'; }
+  .chips.meer .toon-meer::before{ content:'– toon minder'; }
   .kaart .rw-ta{ width:100%; border:1px solid var(--line-strong); background:var(--cream); border-radius:13px; padding:12px 14px; font-family:inherit; font-size:14.5px; color:var(--ink); line-height:1.6; outline:none; resize:vertical; min-height:64px; transition:.15s; }
   .kaart .rw-ta:focus{ border-color:var(--accent); background:#fff; box-shadow:0 0 0 3px rgba(47,158,110,0.13); }
   .kaart-privacy{ font-size:12px; color:var(--muted); display:flex; gap:8px; align-items:flex-start; margin-top:14px; padding-top:12px; border-top:1px dashed var(--line-strong); line-height:1.5; }
@@ -984,10 +990,15 @@ function maakKaarten() {
   // Behoud bestaande antwoorden als de naam al bestond
   const oud = {};
   state.leerlingen.forEach(l => oud[l.naam] = l);
-  state.leerlingen = namen.map((naam, i) => oud[naam] || {
-    id: 'll-' + i + '-' + Math.random().toString(36).slice(2, 7),
-    naam, antwoorden: {}, verhaal: '', status: 'open',
-    geslacht: (window.avinkaKlasGeslacht && window.avinkaKlasGeslacht[naam.toLowerCase()]) || ''
+  state.leerlingen = namen.map((naam, i) => {
+    if (oud[naam]) return oud[naam];
+    // Had dit kind al een opgeslagen rapport? Dan meteen als 'klaar' (groene kaart) met de bewaarde tekst.
+    const bewaard = (window.avinkaOpgeslagenRapporten && window.avinkaOpgeslagenRapporten[naam.toLowerCase()]) || '';
+    return {
+      id: 'll-' + i + '-' + Math.random().toString(36).slice(2, 7),
+      naam, antwoorden: {}, verhaal: bewaard, status: bewaard ? 'klaar' : 'open',
+      geslacht: (window.avinkaKlasGeslacht && window.avinkaKlasGeslacht[naam.toLowerCase()]) || ''
+    };
   });
   buildNameMap(namen);
   renderOverzicht();
@@ -1043,7 +1054,8 @@ const VRAGEN_REGULIER = [
   ]},
   { kop: 'Wie is dit kind?', icon: 'heart', kleur: 'rose', vragen: [
     { key: 'karakter', label: 'Wat past bij dit kind?', type: 'multi', anders: true,
-      opties: ['vrolijk', 'vriendelijk', 'behulpzaam', 'sociaal', 'zelfverzekerd', 'nieuwsgierig', 'enthousiast', 'rustig', 'zorgzaam', 'humoristisch', 'eerlijk', 'creatief', 'leergierig', 'verlegen', 'onzeker', 'snel afgeleid', 'druk/beweeglijk', 'snel gefrustreerd', 'faalangstig', 'eigenwijs', 'gevoelig', 'perfectionistisch', 'vraagt veel aandacht'] },
+      opties: ['vrolijk', 'vriendelijk', 'behulpzaam', 'sociaal', 'zelfverzekerd', 'nieuwsgierig', 'enthousiast', 'rustig', 'zorgzaam', 'humoristisch', 'eerlijk', 'creatief', 'leergierig', 'verlegen', 'onzeker', 'snel afgeleid', 'druk/beweeglijk', 'snel gefrustreerd', 'faalangstig', 'eigenwijs', 'gevoelig', 'perfectionistisch', 'vraagt veel aandacht'],
+      extra: ['spontaan', 'geduldig', 'zorgvuldig', 'gedreven', 'avontuurlijk', 'evenwichtig', 'assertief', 'meelevend', 'ordelijk', 'gefocust', 'doorzetter', 'flexibel', 'bescheiden', 'stil', 'teruggetrokken', 'dromerig', 'chaotisch', 'kort lontje', 'moeite met veranderingen', 'behoefte aan structuur', 'competitief', 'zelfkritisch'] },
     { key: 'omgang', label: 'Omgang met andere kinderen', type: 'enkel', opties: ['heeft vaste vriendjes', 'speelt met wisselende kinderen', 'vindt aansluiting soms lastig', 'speelt vaak alleen'] },
     { key: 'zelfvertrouwen', label: 'Zelfvertrouwen', type: 'enkel', min: 'gemiddeld', opties: ['zelfverzekerd', 'wisselend', 'onzeker / faalangstig'] },
     { key: 'klasgenoot', label: 'Wat maakt dit kind een fijne klasgenoot?', type: 'tekst', min: 'uitgebreid', placeholder: 'optioneel — bijv. helpt anderen, zorgt voor sfeer, komt voor een ander op…' }
@@ -1077,7 +1089,8 @@ const VRAGEN_KLEUTER = [
   ]},
   { kop: 'Wie is dit kind?', icon: 'heart', kleur: 'rose', vragen: [
     { key: 'karakter', label: 'Wat past bij dit kind?', type: 'multi', anders: true,
-      opties: ['vrolijk', 'sociaal', 'behulpzaam', 'zelfverzekerd', 'nieuwsgierig', 'enthousiast', 'zorgzaam', 'speels', 'rustig', 'verlegen', 'onzeker', 'druk/beweeglijk', 'snel afgeleid', 'snel gefrustreerd', 'aanhankelijk', 'eigenwijs', 'gevoelig', 'vraagt veel aandacht'] },
+      opties: ['vrolijk', 'sociaal', 'behulpzaam', 'zelfverzekerd', 'nieuwsgierig', 'enthousiast', 'zorgzaam', 'speels', 'rustig', 'verlegen', 'onzeker', 'druk/beweeglijk', 'snel afgeleid', 'snel gefrustreerd', 'aanhankelijk', 'eigenwijs', 'gevoelig', 'vraagt veel aandacht'],
+      extra: ['spontaan', 'lief', 'geduldig', 'avontuurlijk', 'fantasierijk', 'ondernemend', 'meelevend', 'zorgvuldig', 'stil', 'teruggetrokken', 'dromerig', 'chaotisch', 'kort lontje', 'moeite met veranderingen', 'houdt van structuur', 'assertief'] },
     { key: 'omgang', label: 'Omgang met andere kinderen', type: 'enkel', opties: ['speelt graag samen', 'speelt soms samen', 'speelt vooral alleen'] },
     { key: 'zelfvertrouwen', label: 'Zelfvertrouwen', type: 'enkel', min: 'gemiddeld', opties: ['zelfverzekerd', 'wisselend', 'onzeker'] },
     { key: 'klasgenoot', label: 'Wat maakt dit kind een fijne klasgenoot?', type: 'tekst', min: 'uitgebreid', placeholder: 'optioneel — bijv. helpt anderen, troost, zorgt voor plezier…' }
@@ -1185,10 +1198,16 @@ function renderVragen(l) {
           + '<div class="gevoelig-note" style="display:none;">Dit lijkt een gevoelig of goed herleidbaar detail. Voor de privacy van het kind kun je het beter algemener houden.</div></div>';
       } else if (v.type === 'multi') {
         const arr = Array.isArray(l.antwoorden[v.key]) ? l.antwoorden[v.key] : [];
-        body += '<div class="vr"><label class="vr-label">' + escapeHtml(v.label) + ' <span class="vr-opt">meerdere mogelijk</span></label><div class="chips">';
+        const extra = Array.isArray(v.extra) ? v.extra : [];
+        const meerOpen = extra.some(opt => arr.includes(opt));
+        body += '<div class="vr"><label class="vr-label">' + escapeHtml(v.label) + ' <span class="vr-opt">meerdere mogelijk</span></label><div class="chips' + (meerOpen ? ' meer' : '') + '">';
         v.opties.forEach(opt => {
           body += '<span class="chip' + (arr.includes(opt) ? ' on' : '') + '" data-key="' + v.key + '" data-opt="' + escapeHtml(opt) + '" onclick="kiesChip(this)">' + escapeHtml(opt) + '</span>';
         });
+        extra.forEach(opt => {
+          body += '<span class="chip extra' + (arr.includes(opt) ? ' on' : '') + '" data-key="' + v.key + '" data-opt="' + escapeHtml(opt) + '" onclick="kiesChip(this)">' + escapeHtml(opt) + '</span>';
+        });
+        if (extra.length) body += '<span class="toon-meer" onclick="toggleMeer(this)"></span>';
         body += '</div>';
         if (v.anders) {
           const av = l.antwoorden[v.key + '__anders'] || '';
@@ -1312,6 +1331,7 @@ function kiesChip(el) {
   el.classList.toggle('on');
   verversAlles();
 }
+function toggleMeer(el) { el.parentElement.classList.toggle('meer'); }
 function setTekst(el) {
   const l = huidige();
   const v = el.value.trim();
@@ -1950,25 +1970,22 @@ async function vulMijnKlas(toevoegFn){
   function groepUitNaam(naam){ if(!naam)return ''; var s=String(naam); if(s.indexOf('1/2')>=0||s.indexOf('1 / 2')>=0)return '1/2'; for(var i=0;i<s.length;i++){ var c=s.charCodeAt(i); if(c>=49&&c<=56) return s.charAt(i); } return ''; }
   function zet(id,val){ var e=document.getElementById(id); if(e&&val){ e.value=val; if(e.value) e.classList.add('filled'); } }
   async function prefillStart(){ var k=await haalKlas(); if(!k.leerlingen.length)return; var g=groepUitNaam(k.naam); if(g) zet('f-groep',g); zet('f-aantal', String(k.leerlingen.length)); if(typeof checkStartReady==='function') checkStartReady(); }
-  function notitie(klasNamen, af){
+  function notitie(){
     var teller=document.getElementById('namen-teller'); if(!teller)return;
     var el=document.getElementById('klas-notitie');
     if(!el){ el=document.createElement('div'); el.id='klas-notitie'; el.style.cssText='margin-top:10px;font-size:13px;line-height:1.5;color:var(--muted);'; teller.insertAdjacentElement('afterend', el); }
-    if(af>0){
-      el.innerHTML='✓ <strong style="color:var(--ink)">'+af+'</strong> rapport'+(af===1?'':'en')+' had je al af; die zijn overgeslagen. <a href="#" id="klas-reset" style="color:var(--accent);font-weight:600">Hele klas opnieuw</a>';
-      var rr=document.getElementById('klas-reset');
-      if(rr) rr.onclick=async function(e){ e.preventDefault(); if(!(await avinkaBevestig('Alle opgeslagen rapporten van deze klas wissen en met de hele klas opnieuw beginnen?', { titel: 'Hele klas opnieuw?', bevestig: 'Opnieuw beginnen', gevaar: true })))return; try{ await fetch('/api/rapporten',{method:'DELETE'}); }catch(_){} naamLijst.length=0; renderTags(); var k=await haalKlas(); var kl=k.leerlingen||[]; if(kl.length) voegNaamToe(NL(kl)); notitie(kl,0); };
-    } else { el.innerHTML='Je klas is automatisch ingevuld vanuit je dashboard.'; }
+    el.innerHTML='Je klas is automatisch ingevuld vanuit je dashboard.';
   }
   async function autoVul(){
     if(typeof naamLijst==='undefined'||naamLijst.length)return;
     var res=await Promise.all([haalKlas(),haalRapporten()]);
     var klas=res[0].leerlingen, opg=res[1];
     if(!klas.length)return;
-    var done={}; opg.forEach(function(x){ done[String(x.naam).toLowerCase()]=1; });
-    var teDoen=klas.filter(function(n){ return !done[String(n).toLowerCase()]; });
-    if(teDoen.length) voegNaamToe(NL(teDoen));
-    notitie(klas, klas.length-teDoen.length);
+    // Onthoud de al opgeslagen rapporten, zodat die kinderen straks een groene ('klaar') kaart krijgen.
+    window.avinkaOpgeslagenRapporten={};
+    opg.forEach(function(x){ if(x&&x.naam) window.avinkaOpgeslagenRapporten[String(x.naam).toLowerCase()]=x.verhaal||''; });
+    voegNaamToe(NL(klas));
+    notitie();
   }
   if(typeof naarNamen==='function'){ var _n=naarNamen; naarNamen=function(){ _n.apply(this,arguments); autoVul(); }; }
   if(typeof genereerVerhaal==='function'){ var _g=genereerVerhaal; genereerVerhaal=function(){ var p=_g.apply(this,arguments); Promise.resolve(p).then(function(){ try{ var l=huidige(); if(l&&l.verhaal) slaOp(l.naam,l.verhaal); }catch(e){} }); return p; }; }

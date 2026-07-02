@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { addTaak, getTaken, setTaakGedaan, type Taak } from "@/lib/db";
+import { addTaak, getTaken, setTaakGedaan, setTaakDeadline, type Taak } from "@/lib/db";
 
 // Compact takenlijst-knopje in de header, naast de streak. Ingeklapt zie je
 // alleen hoeveel er openstaat; klik opent een klein paneeltje met je open taken.
@@ -33,8 +33,12 @@ export default function TakenOverzicht() {
     return <div className="h-[50px] w-28 shrink-0 animate-pulse rounded-2xl border border-black/5 bg-white/60" />;
   }
 
+  // Een wekelijkse taak die nog ruim vóór z'n deadline ligt is "gepland": net als
+  // in de takenlijst zelf verschijnt die pas 2 dagen van tevoren, ook hier.
+  const verstopt = (t: Taak) => t.wekelijks && !!t.deadline && dagenTot(t.deadline) > 2;
+
   const open = taken
-    .filter((t) => !t.gedaan)
+    .filter((t) => !t.gedaan && !verstopt(t))
     .sort((a, b) => {
       if (a.deadline && b.deadline) return a.deadline.localeCompare(b.deadline);
       if (a.deadline) return -1;
@@ -42,9 +46,20 @@ export default function TakenOverzicht() {
       return 0;
     });
 
-  function vinkAf(id: string) {
-    setTaken((ts) => (ts ?? []).map((t) => (t.id === id ? { ...t, gedaan: true } : t)));
-    setTaakGedaan(id, true);
+  function vinkAf(taak: Taak) {
+    // Wekelijkse taak afvinken = niet "klaar", maar een week vooruit plannen.
+    // Zo verdwijnt hij uit de lijst en komt hij vanzelf 2 dagen voor de volgende
+    // keer weer terug, precies zoals in de takenlijst zelf.
+    if (taak.wekelijks) {
+      const basis = taak.deadline ? new Date(taak.deadline + "T00:00:00") : new Date();
+      basis.setDate(basis.getDate() + 7);
+      const nieuw = isoDate(basis);
+      setTaken((ts) => (ts ?? []).map((t) => (t.id === taak.id ? { ...t, deadline: nieuw } : t)));
+      setTaakDeadline(taak.id, nieuw);
+      return;
+    }
+    setTaken((ts) => (ts ?? []).map((t) => (t.id === taak.id ? { ...t, gedaan: true } : t)));
+    setTaakGedaan(taak.id, true);
   }
 
   async function voegToe(e: React.FormEvent) {
@@ -95,7 +110,7 @@ export default function TakenOverzicht() {
                 <li key={t.id}>
                   <button
                     type="button"
-                    onClick={() => vinkAf(t.id)}
+                    onClick={() => vinkAf(t)}
                     className="group flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition hover:bg-cream"
                     title="Afvinken"
                   >
@@ -105,6 +120,22 @@ export default function TakenOverzicht() {
                       </svg>
                     </span>
                     <span className="min-w-0 flex-1 text-sm text-ink/80">{t.tekst}</span>
+                    {t.deadline && dagenTot(t.deadline) === 0 && (
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-4 w-4 shrink-0 text-amber-500"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-label="Voor vandaag gepland"
+                      >
+                        <title>Voor vandaag gepland</title>
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M12 7v5l3 2" />
+                      </svg>
+                    )}
                   </button>
                 </li>
               ))}
@@ -137,4 +168,18 @@ export default function TakenOverzicht() {
       )}
     </div>
   );
+}
+
+// Datum als YYYY-MM-DD (lokale tijd).
+function isoDate(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
+// Aantal dagen tot een deadline (negatief = te laat).
+function dagenTot(iso: string): number {
+  const vandaag = new Date();
+  vandaag.setHours(0, 0, 0, 0);
+  return Math.round((new Date(iso + "T00:00:00").getTime() - vandaag.getTime()) / 86400000);
 }

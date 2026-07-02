@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import VoorkeurenForm from "@/components/dashboard/VoorkeurenForm";
+import AccountBeheer from "@/components/dashboard/AccountBeheer";
 
 export default async function InstellingenPage() {
   const supabase = await createClient();
@@ -54,6 +55,8 @@ export default async function InstellingenPage() {
           </span>
         </div>
       </div>
+
+      <AccountBeheer />
 
       {/* Privacy en voorwaarden — altijd terug te vinden vanuit je account. */}
       <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-sm sm:p-7">
