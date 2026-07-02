@@ -467,13 +467,18 @@
       lijnen.push('Onderwerp / leerdoel: ' + (inv.onderwerp || '(kies zelf een passend, leuk onderwerp bij dit vak en deze groep)') + '.');
       lijnen.push('Maak PRECIES ' + inv.aantal + ' ECHTE OEFENOPDRACHT' + (inv.aantal === 1 ? '' : 'EN') + ' waarin de leerling iets DOET (invullen, sorteren, puzzelen, een zin schrijven enzovoort). Een uitleg-/regelblok vooraf (type "tekst") en een reflectie achteraf (type "reflectie") tellen HIER NIET IN MEE en zijn optioneel: als je die toevoegt, komen ze BOVENOP de ' + inv.aantal + ' opdracht' + (inv.aantal === 1 ? '' : 'en') + '. Dus een reflectie is NOOIT een van de ' + inv.aantal + ' opdrachten.');
       lijnen.push('Lengte per opdracht: ' + (lengteOms[lengte] || lengteOms.middel));
-      // Puzzelgrootte per generatie laten wisselen, anders zien we sommige maten nooit.
+      // Puzzelgrootte per generatie laten wisselen, MAAR gekoppeld aan de lengte
+      // (= het aantal opdrachten): bij veel opdrachten (kort) mag een puzzel niet
+      // "groot" worden, anders loopt het werkblad over 3 pagina's. kort → alleen KLEIN,
+      // middel → KLEIN of MIDDELGROOT, groot (1-2 opdrachten) → alle maten.
       var puzzelMaten = [
         'KLEIN (woordzoeker ~8 woorden, kruiswoord ~8 woorden, sudoku 4×4)',
         'MIDDELGROOT (woordzoeker ~12 woorden, kruiswoord ~12 woorden, sudoku 6×6)',
         'GROOT (woordzoeker ~16 woorden, kruiswoord ~16 woorden, sudoku 9×9)'
       ];
-      lijnen.push('PUZZELGROOTTE: gebruik je een puzzel (woordzoeker, kruiswoord, sudoku, doolhof), maak er DEZE keer een ' + kiesN(puzzelMaten, 1)[0] + ' versie van. Varieer de puzzelgrootte per werkblad; kies niet altijd dezelfde maat.');
+      var maxPuzzel = lengte === 'kort' ? 0 : lengte === 'middel' ? 1 : 2;
+      var gekozenPuzzel = puzzelMaten[Math.floor(Math.random() * (maxPuzzel + 1))];
+      lijnen.push('PUZZELGROOTTE: gebruik je een puzzel (woordzoeker, kruiswoord, sudoku, doolhof), maak er DEZE keer een ' + gekozenPuzzel + ' versie van. Varieer de puzzelgrootte per werkblad, maar blijf binnen deze maat zodat alles op twee kantjes past.');
       lijnen.push('PAGINALIMIET: het hele werkblad past op MAXIMAAL twee kantjes (voor- en achterkant van één A4); maak het nooit langer. Veel opdrachten staan in meerdere kolommen naast elkaar en worden dus NIET lang, ook niet met veel items: die mogen gerust vol (kale sommen, cijferen +/−/×, tafelkaart, vergelijken, ontbrekend getal, ordenen, afronden, buurgetallen, getal-in-woorden, romeins, geld, meerkeuze, invul, lidwoord, lettergrepen, rijmwoorden, anagram). Echt ruimte-vretende opdrachten (open vragen met schrijfregels, leestekst, koppelen, sorteren in vakken, staafdiagram, woordzoeker, kruiswoord, sudoku, doolhof, getallenlijn, tekenen) nemen veel verticale ruimte: beperk daarvan het aantal items zodat alles op twee kantjes blijft passen. Volg de gekozen lengte als richtlijn, maar verklein de ruimte-vretende opdrachten als het geheel anders te lang wordt.');
       if (inv.moeilijkheid && inv.moeilijkheid !== 'op niveau') {
         lijnen.push('Niveau: maak het ' + inv.moeilijkheid + ' dan normaal voor deze groep (blijf wel binnen het leerjaar).');
@@ -517,6 +522,7 @@
           'woorden laten afmaken (het begin staat er, het kind schrijft de rest)'
         ];
         lijnen.push('- WISSEL DE WERKVORMEN AF — gebruik NIET elke keer dezelfde opzet. Bouw dit werkblad met een frisse mix uit BIJVOORBEELD deze werkvormen: ' + kiesN(spellingVormen, 4).join('; ') + '. Val niet terug op alleen invullen + sorteren + zoek-de-fout; pak deze keer ook eens een puzzelvorm (woordzoeker, kruiswoord of anagram) als die past.');
+        lijnen.push('- SPREID DE DOELWOORDEN over de opdrachten: gebruik in elke opdracht ZOVEEL MOGELIJK ANDERE woorden. Herhaal dezelfde doelwoorden NIET in meerdere opdrachten (bijvoorbeeld de sorteerwoorden óók in de woordzoeker of het kruiswoord). Zo oefent het kind meer verschillende woorden en oogt het werkblad rijker.');
       }
 
       lijnen.push('\nGeef nu UITSLUITEND de JSON van het werkblad terug.');
@@ -654,25 +660,48 @@
         var telPerWoord = {};
         banken.forEach(function (b) { var g = {}; b.woorden.forEach(function (x) { var lw = x.toLowerCase(); if (!g[lw]) { g[lw] = 1; telPerWoord[lw] = (telPerWoord[lw] || 0) + 1; } }); });
         function ambigu(w) { return (telPerWoord[String(w).toLowerCase()] || 0) > 1; }
-        // Vervang in een woordenlijst alle ongeldige/dubbele woorden door ongebruikte woorden uit de pool.
+        // SPREIDING tussen opdrachten: woorden die al in een EERDER blok staan, weren we
+        // uit de latere blokken (minder woordherhaling tussen bv. sorteren en de puzzel).
+        var gebruikt = {};
+        // Vervang in een woordenlijst alle ongeldige/dubbele woorden door ongebruikte
+        // woorden uit de pool. "Dubbel" = ook al gebruikt in een ander blok (spreiding);
+        // is er geen ongebruikt woord meer, dan houden we liever het originele geldige
+        // woord dan dat het blok krimpt.
         function herstel(woorden, lees, schrijf, geldig, pool) {
-          var inLijst = {};
+          var inLijst = {}; // binnen dit blok geen dubbelen
           var stap1 = (woorden || []).map(function (w) {
             var lw = String(lees(w)).toLowerCase();
-            if (geldig(lw) && !inLijst[lw]) { inLijst[lw] = 1; return w; }
+            if (geldig(lw) && !inLijst[lw] && !gebruikt[lw]) { inLijst[lw] = 1; return w; }
             return null;
           });
-          var vrij = pool.filter(function (x) { return !inLijst[x.toLowerCase()]; });
-          return stap1.map(function (w) {
+          var vrij = pool.filter(function (x) { var lx = x.toLowerCase(); return !inLijst[lx] && !gebruikt[lx]; });
+          var uit = stap1.map(function (w, i) {
             if (w !== null) return w;
-            if (!vrij.length) return null;
-            var i = Math.floor(Math.random() * vrij.length), nw = vrij.splice(i, 1)[0];
-            inLijst[nw.toLowerCase()] = 1; return schrijf(nw);
+            if (vrij.length) {
+              var k = Math.floor(Math.random() * vrij.length), nw = vrij.splice(k, 1)[0];
+              inLijst[nw.toLowerCase()] = 1; return schrijf(nw);
+            }
+            // geen ongebruikt woord meer: val terug op het originele woord als dat geldig is
+            var orig = (woorden || [])[i], lo = String(lees(orig)).toLowerCase();
+            if (geldig(lo) && !inLijst[lo]) { inLijst[lo] = 1; return orig; }
+            return null;
           }).filter(function (w) { return w !== null; });
+          // registreer alles wat nu in dit blok staat, zodat volgende blokken het mijden
+          Object.keys(inLijst).forEach(function (lw) { gebruikt[lw] = 1; });
+          return uit;
         }
         var unie = [], gezien = {};
         banken.forEach(function (b) { b.woorden.forEach(function (x) { if (!gezien[x.toLowerCase()]) { gezien[x.toLowerCase()] = 1; unie.push(x); } }); });
         function inUnie(w) { return !!gezien[String(w).toLowerCase()]; }
+        // Kruiswoordwoorden kunnen we niet swappen (de omschrijving hoort erbij), dus
+        // claimen we ze vooraf: de ANDERE opdrachten (sorteren, woordzoeker, anagram)
+        // mijden die woorden dan, wat de herhaling tussen opdrachten flink terugdringt.
+        (wb.blokken || []).forEach(function (blk) {
+          if (blk && blk.type === 'kruiswoord') (blk.woorden || []).forEach(function (w) {
+            var wd = (w && w.woord != null) ? w.woord : w;
+            if (wd) gebruikt[String(wd).toLowerCase()] = 1;
+          });
+        });
         (wb.blokken || []).forEach(function (blk) {
           if (!blk || !blk.type) return;
           if (blk.type === 'categoriseren') {

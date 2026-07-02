@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<!--
+  TIJDELIJKE reviewpagina (test) — NIET registreren/uitrollen.
+  Doel: de woordenlijst van de categorie "open/gesloten lettergreep" nalopen.
+  Klik de woorden aan die FOUT zijn / niet in de categorie horen; kopieer de lijst
+  onderaan en plak 'm terug in de chat. Selectie blijft bewaard (localStorage).
+  Bereikbaar op: http://localhost:3000/open-gesloten-review.html
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Review · open/gesloten lettergreep</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:wght@500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --ink:#221c3a; --cream:#fbf6ee; --accent:#2f9e6e; --accent2:#25855a; --muted:#6b6880;
+      --soft:#e7f4ed; --line:rgba(34,28,58,.12); --fout:#e11d48; --foutsoft:#fee2e5; }
+    body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--cream); color:var(--ink); padding:0 0 220px; -webkit-font-smoothing:antialiased; }
+    .wrap { max-width:1000px; margin:0 auto; padding:24px 20px; }
+    h1 { font-family:'Fraunces',serif; font-weight:600; font-size:26px; letter-spacing:-.5px; }
+    .lead { color:var(--muted); font-size:14px; line-height:1.6; margin-top:8px; max-width:720px; }
+    .lead b { color:var(--ink); }
+
+    /* Sticky bovenbalk met teller + acties */
+    .bar { position:sticky; top:0; z-index:20; background:rgba(251,246,238,.92); backdrop-filter:blur(8px);
+      border-bottom:1px solid var(--line); padding:12px 0; margin:16px 0 8px; }
+    .bar-in { max-width:1000px; margin:0 auto; padding:0 20px; display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+    .teller { font-weight:800; font-size:15px; }
+    .teller b { color:var(--fout); }
+    .btn { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:12px; padding:9px 14px; font:inherit; font-weight:700; font-size:13px; cursor:pointer; transition:.15s; }
+    .btn:hover { border-color:var(--accent); color:var(--accent); }
+    .btn.groen { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .btn.groen:hover { background:var(--accent2); color:#fff; }
+    .btn.rood { color:var(--fout); }
+    .btn.rood:hover { border-color:var(--fout); color:var(--fout); }
+    .zoek { flex:1; min-width:160px; border:1px solid var(--line); border-radius:12px; padding:9px 13px; font:inherit; font-size:14px; background:#fff; }
+    .zoek:focus { outline:none; border-color:var(--accent); }
+    .chk { display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--muted); cursor:pointer; user-select:none; }
+
+    .groep { margin-top:22px; }
+    .groep-kop { font-family:'Fraunces',serif; font-weight:600; font-size:18px; margin-bottom:2px; }
+    .groep-sub { color:var(--muted); font-size:12.5px; margin-bottom:10px; }
+    .chips { display:flex; flex-wrap:wrap; gap:7px; }
+    .chip { border:1.5px solid var(--line); background:#fff; border-radius:999px; padding:6px 13px; font-size:14px; font-weight:600; cursor:pointer; transition:.12s; line-height:1.2; }
+    .chip:hover { border-color:var(--accent); }
+    .chip.fout { background:var(--foutsoft); border-color:var(--fout); color:var(--fout); text-decoration:line-through; text-decoration-thickness:2px; }
+
+    /* Uitvoer onderaan (vast) */
+    .uit { position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid var(--line); box-shadow:0 -8px 24px rgba(34,28,58,.10); z-index:30; }
+    .uit-in { max-width:1000px; margin:0 auto; padding:12px 20px 16px; }
+    .uit-kop { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+    .uit-kop strong { font-size:14px; }
+    textarea { width:100%; height:74px; border:1px solid var(--line); border-radius:12px; padding:10px 12px; font:inherit; font-size:13px; resize:vertical; background:var(--cream); }
+    textarea:focus { outline:none; border-color:var(--accent); }
+    .hint { color:var(--muted); font-size:12px; margin-top:6px; }
+    .toast { position:fixed; left:50%; bottom:210px; transform:translateX(-50%); background:var(--ink); color:#fff; padding:10px 18px; border-radius:999px; font-size:13px; font-weight:700; opacity:0; transition:.25s; pointer-events:none; z-index:40; }
+    .toast.aan { opacity:1; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Open/gesloten lettergreep — reviewlijst</h1>
+    <p class="lead">Klik de woorden aan die <b>fout zijn of niet in deze categorie horen</b>. Ze worden rood en doorgestreept. Je selectie blijft bewaard, ook als je de pagina sluit. Onderaan staat de kopieerbare lijst — <b>kopieer die en plak 'm terug in de chat</b>. <br><b>Groep 3, 4 en 5 zijn klaar</b> — hieronder staat alleen nog groep 6, 7 en 8. <br>Let op: <b>professor, koffie, water, tafel, kamer, bakker</b> horen er juist wél in (goede klankgroepwoorden).</p>
+  </div>
+
+  <div class="bar">
+    <div class="bar-in">
+      <span class="teller"><b id="t-fout">0</b> fout · <span id="t-tot">0</span> totaal</span>
+      <input class="zoek" id="zoek" placeholder="🔍 Zoek een woord…" />
+      <label class="chk"><input type="checkbox" id="alleen-fout" /> Toon alleen aangeklikte</label>
+      <button class="btn" id="btn-copy2">📋 Kopieer</button>
+      <button class="btn rood" id="btn-wis">Wis selectie</button>
+    </div>
+  </div>
+
+  <div class="wrap" id="lijst"><p style="color:var(--muted)">Woordenbank laden…</p></div>
+
+  <div class="uit">
+    <div class="uit-in">
+      <div class="uit-kop">
+        <strong>Aangeklikt als fout (<span id="u-count">0</span>):</strong>
+        <button class="btn groen" id="btn-copy">📋 Kopieer lijst</button>
+      </div>
+      <textarea id="uit-tekst" readonly placeholder="Nog niets aangeklikt."></textarea>
+      <div class="hint">Deze woorden komen straks uit beide banken + in <code>_bron/geen-klankgroep.txt</code>.</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Gekopieerd ✓</div>
+
+  <script src="/avinka-woordenbank.js"></script>
+  <script>
+    var LSKEY = 'avinka_og_review_fout';
+    var CAT = 'open_gesloten';
+    var fout = {};   // { woord: true }
+    var woorden = [];
+
+    try { fout = JSON.parse(localStorage.getItem(LSKEY) || '{}') || {}; } catch (e) { fout = {}; }
+    function bewaar() { try { localStorage.setItem(LSKEY, JSON.stringify(fout)); } catch (e) {} }
+
+    var KLAAR_GROEPEN = { '3': 1, '4': 1, '5': 1 }; // al nagekeken → niet meer tonen
+    function laadWoorden() {
+      var bank = window.avinkaWoordenbank;
+      if (!bank || !bank[CAT]) return null;
+      return bank[CAT].map(function (w) {
+        return Array.isArray(w) ? { w: w[0], g: (w[1] || '?') } : { w: w, g: '?' };
+      }).filter(function (o) { return !KLAAR_GROEPEN[o.g]; });
+    }
+
+    function render() {
+      var box = document.getElementById('lijst');
+      var alleenFout = document.getElementById('alleen-fout').checked;
+      var q = (document.getElementById('zoek').value || '').trim().toLowerCase();
+      var perG = {};
+      woorden.forEach(function (o) {
+        if (q && o.w.toLowerCase().indexOf(q) === -1) return;
+        if (alleenFout && !fout[o.w]) return;
+        (perG[o.g] = perG[o.g] || []).push(o);
+      });
+      var groepen = Object.keys(perG).sort();
+      if (!groepen.length) { box.innerHTML = '<p style="color:var(--muted)">Geen woorden gevonden.</p>'; return; }
+      var html = '';
+      groepen.forEach(function (g) {
+        var lijst = perG[g];
+        var nFout = lijst.filter(function (o) { return fout[o.w]; }).length;
+        html += '<div class="groep"><div class="groep-kop">Vanaf groep ' + g + '</div>' +
+          '<div class="groep-sub">' + lijst.length + ' woorden' + (nFout ? ' · ' + nFout + ' aangeklikt' : '') + '</div><div class="chips">';
+        lijst.forEach(function (o) {
+          html += '<span class="chip' + (fout[o.w] ? ' fout' : '') + '" data-w="' + o.w.replace(/"/g, '&quot;') + '">' + o.w + '</span>';
+        });
+        html += '</div></div>';
+      });
+      box.innerHTML = html;
+    }
+
+    function updTeller() {
+      var huidig = {};
+      (woorden || []).forEach(function (o) { huidig[o.w] = 1; });
+      // tel alleen aangeklikte woorden die NU nog zichtbaar zijn (groep 6-8)
+      var lijst = Object.keys(fout).filter(function (k) { return fout[k] && huidig[k]; }).sort();
+      document.getElementById('t-fout').textContent = lijst.length;
+      document.getElementById('u-count').textContent = lijst.length;
+      document.getElementById('uit-tekst').value = lijst.join('\n');
+    }
+
+    function toggle(w) {
+      if (fout[w]) delete fout[w]; else fout[w] = true;
+      bewaar(); updTeller();
+    }
+
+    function toast(msg) {
+      var t = document.getElementById('toast');
+      t.textContent = msg || 'Gekopieerd ✓'; t.classList.add('aan');
+      setTimeout(function () { t.classList.remove('aan'); }, 1400);
+    }
+    function kopieer() {
+      var txt = document.getElementById('uit-tekst').value;
+      if (!txt) { toast('Nog niets aangeklikt'); return; }
+      var ta = document.getElementById('uit-tekst');
+      ta.removeAttribute('readonly'); ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      ta.setAttribute('readonly', '');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(function () { toast('Gekopieerd ✓'); }, function () { toast(ok ? 'Gekopieerd ✓' : 'Kopiëren mislukt — selecteer handmatig'); });
+      } else { toast(ok ? 'Gekopieerd ✓' : 'Kopiëren mislukt — selecteer handmatig'); }
+    }
+
+    document.getElementById('lijst').addEventListener('click', function (e) {
+      var chip = e.target.closest('.chip'); if (!chip) return;
+      var w = chip.getAttribute('data-w');
+      toggle(w);
+      chip.classList.toggle('fout', !!fout[w]);
+      // groep-subteller & "alleen fout"-modus verversen
+      if (document.getElementById('alleen-fout').checked) render(); else {
+        var kop = chip.closest('.groep').querySelector('.groep-sub');
+        // laat subteller kloppen zonder volledige re-render
+        render();
+      }
+    });
+    document.getElementById('zoek').addEventListener('input', render);
+    document.getElementById('alleen-fout').addEventListener('change', render);
+    document.getElementById('btn-copy').addEventListener('click', kopieer);
+    document.getElementById('btn-copy2').addEventListener('click', kopieer);
+    document.getElementById('btn-wis').addEventListener('click', function () {
+      if (!confirm('Weet je het zeker? Alle aangeklikte woorden worden gewist.')) return;
+      fout = {}; bewaar(); updTeller(); render();
+    });
+
+    (function init() {
+      woorden = laadWoorden();
+      if (!woorden) {
+        // bank nog niet geladen? kort wachten en opnieuw
+        var pogingen = 0;
+        var iv = setInterval(function () {
+          woorden = laadWoorden(); pogingen++;
+          if (woorden || pogingen > 30) { clearInterval(iv); if (woorden) { document.getElementById('t-tot').textContent = woorden.length; updTeller(); render(); } else { document.getElementById('lijst').innerHTML = '<p style="color:var(--fout)">Woordenbank kon niet geladen worden.</p>'; } }
+        }, 100);
+        return;
+      }
+      document.getElementById('t-tot').textContent = woorden.length;
+      updTeller();
+      render();
+    })();
+  </script>
+</body>
+</html>
