@@ -39,6 +39,8 @@ try { ONGEPAST = new Set(fs.readFileSync(BRON("ongepast.txt"), "utf8").split(/\r
 try { fs.readFileSync(BRON("engels.txt"), "utf8").split(/\r?\n/).filter(Boolean).forEach(w => ONGEPAST.add(w)); } catch (e) {}
 // Eigennamen (voor-/plaatsnamen als kleine letter, AI, kwaliteit) — overal weren.
 try { fs.readFileSync(BRON("eigennamen.txt"), "utf8").split(/\r?\n/).filter(Boolean).forEach(w => ONGEPAST.add(w)); } catch (e) {}
+// Handmatig geweerd (eigenaar-review) — beschermd, ai-controle.js raakt dit NIET aan.
+try { fs.readFileSync(BRON("ongepast-handmatig.txt"), "utf8").split(/\r?\n/).map(s => s.trim()).filter(w => w && !w.startsWith("#")).forEach(w => ONGEPAST.add(w)); } catch (e) {}
 // Woorden die GEEN klankgroepenwoord zijn — alleen uit open_gesloten weren.
 let GEEN_KLANKGROEP = new Set();
 try { GEEN_KLANKGROEP = new Set(fs.readFileSync(BRON("geen-klankgroep.txt"), "utf8").split(/\r?\n/).filter(Boolean)); } catch (e) {}

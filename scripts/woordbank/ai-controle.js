@@ -210,6 +210,28 @@ function uitCache(tag) {
     "prik, verband, bril, allergie) blijven gewoon STAAN. Geef een JSON array van strings, geen uitleg.", "medisch");
   console.log(`Pass 12 (ernstig medisch): ${uitCache("medisch").size} eruit.`);
 
+  // Pass 14: STRENGE LAT — volwassen/verontrustende bijklank die niet grof is en
+  // door de andere passes glipt (bommenwerper, harem, chardonnay, moloch, guerrilla).
+  // Getest (streng-test.js): 14/15 doorglippers gepakt, 0 valse treffers. Gewone
+  // geschiedenis-/alledaagse woorden (leger, soldaat, ridder, wijn, bier) blijven staan.
+  await keur(alleWoorden,
+    "Beoordeel deze Nederlandse woorden voor een SPELLING-werkblad voor basisschoolkinderen (groep 3-8). " +
+    "Geef UITSLUITEND de woorden terug die je ER LIEVER NIET OP ZOU ZETTEN omdat ze een volwassen, " +
+    "verontrustende of niet-kindgerichte bijklank hebben, ook al zijn ze niet grof. Denk aan: " +
+    "specifieke oorlogswapens of aanslag-/geweldsmisdrijven (bommenwerper, bomaanslag, ontvoering, " +
+    "hoogverraad), wreedheid of kannibalisme, alcoholsoorten/drank als thema (chardonnay, sherry, likeur), " +
+    "religieus-duistere of occulte begrippen (moloch, goddeloze, afvallige), en exotisch-volwassen " +
+    "onderwerpen (harem). HEEL BELANGRIJK - laat gewone geschiedenis-, natuur- en alledaagse woorden STAAN: " +
+    "leger, soldaat, oorlog, vrede, ridder, kasteel, zwaard, kanon, koning, strijd, held, gevecht, ruzie, " +
+    "geschiedenis, wijn en bier als gewoon woord, kaas, water, professor, koffie, ziek, dokter, politie. " +
+    "Het gaat om de VOLWASSEN/VERONTRUSTENDE BIJKLANK, niet om moeilijkheid. Geef een JSON array van strings, geen uitleg.",
+    "streng");
+  console.log(`Pass 14 (strenge lat): ${uitCache("streng").size} eruit.`);
+
+  // LET OP: "streng" bewust NIET in de unie. Over de hele bank flagt die pass ~640
+  // woorden, waarvan de meeste LEGITIEM zijn (sterven, gevangenis, rechtbank,
+  // vluchteling, jood, begrafenis) — te grof, zou de bank uithollen. De streng-cache
+  // blijft bewaard voor een handmatige review-pagina (eigenaar kiest de echte treffers).
   const ongepastAll = new Set([...uitCache("ongepast"), ...uitCache("veilig2"), ...uitCache("volwassen"),
     ...uitCache("discriminatie"), ...uitCache("wreedheid"), ...uitCache("drugs"), ...uitCache("medisch")]);
   fs.writeFileSync(BRON("ongepast.txt"), [...ongepastAll].sort().join("\n"));
