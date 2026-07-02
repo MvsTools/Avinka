@@ -39,6 +39,8 @@ try { ONGEPAST = new Set(fs.readFileSync(BRON("ongepast.txt"), "utf8").split(/\r
 try { fs.readFileSync(BRON("engels.txt"), "utf8").split(/\r?\n/).filter(Boolean).forEach(w => ONGEPAST.add(w)); } catch (e) {}
 // Eigennamen (voor-/plaatsnamen als kleine letter, AI, kwaliteit) — overal weren.
 try { fs.readFileSync(BRON("eigennamen.txt"), "utf8").split(/\r?\n/).filter(Boolean).forEach(w => ONGEPAST.add(w)); } catch (e) {}
+// Handmatig geweerd (eigenaar-review) — beschermd, ai-controle.js raakt dit NIET aan.
+try { fs.readFileSync(BRON("ongepast-handmatig.txt"), "utf8").split(/\r?\n/).map(s => s.trim()).filter(w => w && !w.startsWith("#")).forEach(w => ONGEPAST.add(w)); } catch (e) {}
 // Woorden die GEEN klankgroepenwoord zijn — alleen uit open_gesloten weren.
 let GEEN_KLANKGROEP = new Set();
 try { GEEN_KLANKGROEP = new Set(fs.readFileSync(BRON("geen-klankgroep.txt"), "utf8").split(/\r?\n/).filter(Boolean)); } catch (e) {}
@@ -211,6 +213,26 @@ const BLOCK = new Set([
   // mild volwassen bijklank, niet voor groep 7:
   "hartstocht","hartstochtelijk","hartstochten",
 ]);
+// ── Stam-vangnet: samenstellingen/verbuigingen die door de hele-woord-BLOCK
+// glippen (bommenwerper matcht "bom"/"bommen" niet). Alleen LANGE, ondubbelzinnige
+// stammen — korte/ambigue (bom, mes, gif) matchen te veel onschuldigs (mest, kermis)
+// en horen als heel woord in BLOCK. Getest via stam-check.js: 0 valse treffers.
+// TOEGESTAAN (toegestaan.txt) kan een enkele valse treffer alsnog vrijgeven.
+const STAM_BLOCK = [
+  // geweld / oorlog / dood
+  "moord","wapen","bommen","geweer","kogel","granaat","explos","aanslag",
+  "terror","ontvoer","gijzel","martel","mishandel","onthoofd","wurg",
+  "slachting","bloedbad","executie","executeer","lynch","kruisig","gesneuveld",
+  "sneuvel","veldslag","loopgraaf","concentratiekamp","genocide","holocaust",
+  // seksueel / intiem
+  "seks","porno","erotie","erotisch","incest","pedofiel","prostitu","bordeel",
+  "orgie","masturb","condoom","verkracht","aanrand","geslachtsdeel",
+  // drugs / verslaving
+  "cocaine","heroine","verslaaf","junkie","overdosis","drugs","wietplant",
+  // scheldwoord-stammen
+  "kanker","godverd",
+];
+function bevatHeftigeStam(w) { for (const s of STAM_BLOCK) if (w.includes(s)) return true; return false; }
 // Frequentieplafond: woorden die zeldzamer zijn dan deze rang laten we NIET toe
 // (verjonging — houd het bij woorden die kinderen echt kennen). Tunebaar.
 const MAX_RANG = 24000;
@@ -223,6 +245,7 @@ function kindgeschikt(w) {
   if (RANG.get(w) >= MAX_RANG) return false; // te zeldzaam voor een kinderwerkblad (verjonging)
   if (BLOCK.has(w)) return false;                          // harde blocklist: nooit terug
   if (ONGEPAST.has(w) && !TOEGESTAAN.has(w)) return false;  // AI-ongepast, tenzij toegestaan
+  if (bevatHeftigeStam(w) && !TOEGESTAAN.has(w)) return false; // samenstelling/verbuiging van een heftige stam
   if (WERKWVORMEN.has(w)) return false;   // gegenereerde werkwoordsvormen (werkwoorden.js)
   if (isWerkwoordsvorm(w)) return false;
   return true;
