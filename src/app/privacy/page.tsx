@@ -13,8 +13,9 @@ import JuridischeLayout, { Sectie } from "@/components/JuridischeLayout";
    - Laat de definitieve tekst vóór livegang nakijken door een privacyjurist.
 
    GEBOUWD (2-7): zelf-service account verwijderen + data-export in Instellingen
-   (art. 15/17/20). LET OP: account verwijderen vereist de SQL-functie
-   `verwijder_mijn_account()` in de database (zie chat/commit).
+   (art. 15/17/20). Account verwijderen leunt op de SQL-functie
+   `verwijder_mijn_account()` (security definer) — die is in de database gedraaid.
+   Bij een nieuwe/lege database moet die functie opnieuw aangemaakt worden.
 
    NOG TE BOUWEN:
    - Toestemming vastleggen bij registratie (datum + versie), voor art. 7-verantwoording.
