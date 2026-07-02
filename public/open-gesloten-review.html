@@ -61,7 +61,7 @@
 <body>
   <div class="wrap">
     <h1>Open/gesloten lettergreep — reviewlijst</h1>
-    <p class="lead">Klik de woorden aan die <b>fout zijn of niet in deze categorie horen</b>. Ze worden rood en doorgestreept. Je selectie blijft bewaard, ook als je de pagina sluit. Onderaan staat de kopieerbare lijst — <b>kopieer die en plak 'm terug in de chat</b>. <br><b>Groep 3, 4 en 5 zijn klaar</b> — hieronder staat alleen nog groep 6, 7 en 8. <br>Let op: <b>professor, koffie, water, tafel, kamer, bakker</b> horen er juist wél in (goede klankgroepwoorden).</p>
+    <p class="lead">Klik de woorden aan die <b>fout zijn of niet in deze categorie horen</b>. Ze worden rood en doorgestreept. Je selectie blijft bewaard, ook als je de pagina sluit. Onderaan staat de kopieerbare lijst — <b>kopieer die en plak 'm terug in de chat</b>. <br><b>Alle groepen (3 t/m 8) zijn nagekeken ✓</b> — deze reviewronde is klaar. <br>Let op: <b>professor, koffie, water, tafel, kamer, bakker</b> horen er juist wél in (goede klankgroepwoorden).</p>
   </div>
 
   <div class="bar">
@@ -99,7 +99,7 @@
     try { fout = JSON.parse(localStorage.getItem(LSKEY) || '{}') || {}; } catch (e) { fout = {}; }
     function bewaar() { try { localStorage.setItem(LSKEY, JSON.stringify(fout)); } catch (e) {} }
 
-    var KLAAR_GROEPEN = { '3': 1, '4': 1, '5': 1 }; // al nagekeken → niet meer tonen
+    var KLAAR_GROEPEN = { '3': 1, '4': 1, '5': 1, '6': 1, '7': 1, '8': 1 }; // al nagekeken → niet meer tonen
     function laadWoorden() {
       var bank = window.avinkaWoordenbank;
       if (!bank || !bank[CAT]) return null;
