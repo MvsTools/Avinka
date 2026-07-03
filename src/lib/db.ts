@@ -116,6 +116,43 @@ export async function markWelkomGezien(): Promise<void> {
     );
 }
 
+// ── HER-AKKOORD (voorwaarden/privacy bijgewerkt) ──────────────────────────
+// De laatst vastgelegde akkoord-versies van deze leerkracht (of null als er nog
+// niets is vastgelegd). Wordt vergeleken met de huidige versies in juridisch.ts om
+// te bepalen of de her-akkoord-pop-up moet verschijnen.
+export async function getLaatsteToestemming(): Promise<
+  { voorwaarden_versie: string; privacy_versie: string } | null
+> {
+  const sb = createClient();
+  const { data, error } = await sb
+    .from("toestemmingen")
+    .select("voorwaarden_versie, privacy_versie")
+    .order("geaccepteerd_op", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
+  const d = data as { voorwaarden_versie?: string; privacy_versie?: string };
+  return {
+    voorwaarden_versie: d.voorwaarden_versie ?? "",
+    privacy_versie: d.privacy_versie ?? "",
+  };
+}
+
+// Legt een nieuw akkoord vast nadat de voorwaarden/privacy zijn gewijzigd. Schrijft
+// via een SECURITY DEFINER-functie naar de append-only bewijstabel (de app mag daar
+// niet rechtstreeks in schrijven; alleen de trigger + deze functie vullen 'm).
+export async function registreerHerAkkoord(
+  voorwaardenVersie: string,
+  privacyVersie: string,
+): Promise<boolean> {
+  const sb = createClient();
+  const { error } = await sb.rpc("registreer_herakkoord", {
+    p_voorwaarden: voorwaardenVersie,
+    p_privacy: privacyVersie,
+  });
+  return !error;
+}
+
 // ── ABONNEMENT ────────────────────────────────────────────────────────────
 // Leest de abonnementsstand uit de instellingen-rij. Werkt ook vóórdat de
 // migratie is gedraaid: bij een ontbrekende kolom of rij vallen we netjes

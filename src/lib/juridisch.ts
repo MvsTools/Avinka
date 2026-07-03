@@ -14,3 +14,11 @@ export const PRIVACY = {
   versie: "2026-07-02",
   weergave: "2 juli 2026",
 };
+
+// Korte samenvatting van wat er in de LAATSTE inhoudelijke wijziging veranderde.
+// Werk deze bij zodra je hierboven een `versie` bumpt: precies deze regels ziet de
+// leerkracht in de her-akkoord-pop-up. Laat leeg als er (nog) niets inhoudelijks
+// is veranderd; de pop-up toont dan alleen de nette vraag om opnieuw akkoord te gaan.
+export const WIJZIGING_SAMENVATTING: string[] = [
+  // "We hebben verduidelijkt hoe lang we technische logs bewaren.",
+];

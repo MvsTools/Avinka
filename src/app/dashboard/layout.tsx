@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import { signout } from "@/app/auth/actions";
 import DashboardNav from "@/components/dashboard/DashboardNav";
+import HerAkkoordModal from "@/components/dashboard/HerAkkoordModal";
 import RefKoppel from "@/components/RefKoppel";
 import ProefFeedback from "@/components/dashboard/ProefFeedback";
 import Footer from "@/components/Footer";
@@ -28,6 +29,9 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-screen flex-col bg-cream">
+      {/* Verplicht opnieuw akkoord gaan als de voorwaarden/privacy zijn bijgewerkt */}
+      <HerAkkoordModal />
+
       {/* Bovenbalk */}
       <header className="sticky top-0 z-20 border-b border-black/5 bg-white/90 backdrop-blur">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 md:px-6">
