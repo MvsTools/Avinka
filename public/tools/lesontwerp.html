@@ -737,6 +737,9 @@
         r.push('LEERLIJN-CONTEXT (' + inv.groep + ', op basis van de SLO-leerlijnen/referentieniveaus voor dit vak). Kalibreer het niveau, de moeilijkheid en de complexiteit hier exact op; gebruik alléén wat bij dit specifieke lesdoel hoort en blijf bij dit leerjaar:');
         r.push(leerlijn);
       }
+      // Kindvriendelijke toon: altijd, voor elk vak/onderwerp.
+      const tw = (window.avinkaLeerlijnen && window.avinkaLeerlijnen.toonWaarborg) ? window.avinkaLeerlijnen.toonWaarborg((inv.doel || '') + ' ' + (inv.context || '')) : '';
+      if (tw) { r.push(''); r.push(tw); }
       // Spellingcategorie uit de vrije aanvullingen herkennen (ook methode-jargon
       // zoals "colawoord"): koppel aan een eigen, methode-neutrale categorie met
       // eigen regel + eigen, correcte woorden. Geen methode-systeem reproduceren.

@@ -52,6 +52,11 @@ try { VERVOEGING = new Set(fs.readFileSync(BRON("vervoegingen.txt"), "utf8").spl
 // (bv. wippen = op de wip). Overrulet de AI-ongepast-lijst, NOOIT de harde blocklist.
 let TOEGESTAAN = new Set();
 try { TOEGESTAAN = new Set(fs.readFileSync(path.join(__dirname, "toegestaan.txt"), "utf8").split(/\r?\n/).map(s => s.trim()).filter(w => w && !w.startsWith("#"))); } catch (e) {}
+// "Extra gevoelig" (eigenaar-lijst): woorden die MOGEN blijven maar waar de tools
+// een zachte, kindvriendelijke context bij moeten kiezen. Weert niks; wordt als
+// window.avinkaGevoelig meegepubliceerd zodat de prompt er extra op kan letten.
+let GEVOELIG = new Set();
+try { GEVOELIG = new Set(fs.readFileSync(BRON("gevoelig.txt"), "utf8").split(/\r?\n/).map(s => s.trim()).filter(w => w && !w.startsWith("#"))); } catch (e) {}
 
 const KLINKERS = "aeiouyàáâäèéêëìíîïòóôöùúûü";
 function lettergrepen(w) {
@@ -295,7 +300,8 @@ for (const id in banken) slim[id] = banken[id].woorden;
 fs.writeFileSync(path.join(__dirname, "..", "..", "public", "avinka-woordenbank.js"),
   "/* Auto-gegenereerd door scripts/woordbank/bouw.js — NIET handmatig bewerken.\n" +
   "   Bron: OpenTaal (BSD-3/CC-BY-3.0) + hermitdave nl_50k (CC-BY-SA-4.0). Geen methode-materiaal. */\n" +
-  "window.avinkaWoordenbank=" + JSON.stringify(slim) + ";\n");
+  "window.avinkaWoordenbank=" + JSON.stringify(slim) + ";\n" +
+  "window.avinkaGevoelig=" + JSON.stringify([...GEVOELIG].sort()) + ";\n");
 
 // ── Runrapport ────────────────────────────────────────────────────────────────
 console.log("WOORDENBANK gebouwd:", DATUM);

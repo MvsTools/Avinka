@@ -421,6 +421,20 @@
     return out;
   }
 
+  // Doorsnede van een woordenlijst met de "extra gevoelig"-lijst (window.avinkaGevoelig,
+  // meegegenereerd door scripts/woordbank/bouw.js). Uniek, in oorspronkelijke volgorde.
+  function gevoeligeIn(woorden) {
+    var G = window.avinkaGevoelig;
+    if (!G || !G.length || !woorden || !woorden.length) return [];
+    var set = {}; for (var i = 0; i < G.length; i++) set[G[i]] = 1;
+    var uit = [], gezien = {};
+    for (var j = 0; j < woorden.length; j++) {
+      var w = String(woorden[j] || "").toLowerCase();
+      if (set[w] && !gezien[w]) { gezien[w] = 1; uit.push(w); }
+    }
+    return uit;
+  }
+
   function ideeVakKey(vak) {
     var v = String(vak || "").toLowerCase();
     if (/creatief|handvaardig|knutsel|beeldend/.test(v)) return "creatief";
@@ -607,6 +621,24 @@
       return kern +
         " De leerkracht noemt wel een methode maar geen specifieke categorie: kies een spellingcategorie die past bij het leerjaar (zie de leerlijn-context) en werk die uit.";
     },
+    // Brede, ALTIJD-actieve toon-waarborg voor élk werkblad/elke les. Zorgt dat de
+    // AI woorden in een neutrale, kindvriendelijke context gebruikt — geen geweld,
+    // rampen, dood of verontrustende scenario's — ook bij woorden die we niet vooraf
+    // als gevoelig hebben gemarkeerd. Benoemt daarnaast expliciet de gevoelige
+    // woorden die in het onderwerp/aanvullingen zelf voorkomen.
+    toonWaarborg: function (context) {
+      var basis = "KINDVRIENDELIJKE TOON (altijd). Gebruik ELK woord in een neutrale, " +
+        "luchtige, bij kinderen passende context. Ook als een woord op zichzelf wat " +
+        "zwaar kan zijn (bijvoorbeeld \"exploderen\", \"oorlog\", \"gevangenis\"): " +
+        "verzin er GEEN gewelddadig, angstig, gruwelijk of verontrustend zinnetje bij. " +
+        "Dus niet \"het vliegtuig met 100 mensen explodeerde\", maar bijvoorbeeld \"de " +
+        "ballon exploderde met een harde knal\". Vermijd concrete slachtoffers, dood, " +
+        "bloed, rampen en bedreigende situaties in voorbeeldzinnen en verhaaltjes.";
+      var gev = gevoeligeIn(String(context || "").toLowerCase().split(/[^a-zà-ÿ]+/));
+      if (gev.length) basis += " In dit onderwerp zitten gevoelige woorden (" + gev.join(", ") +
+        "): behandel die extra voorzichtig en licht.";
+      return basis;
+    },
     // Gecureerde woordenbank voor de spellingcategorie die in de tekst (onderwerp
     // + aanvullingen) wordt genoemd. Geeft een kant-en-klare instructie-string met
     // CORRECT gespelde, in-categorie woorden terug, of '' als er geen categorie
@@ -625,9 +657,12 @@
           var grond = lijst.filter(function (x) { return x[2] !== "v"; }).map(function (x) { return x[0]; });
           var verv = lijst.filter(function (x) { return x[2] === "v"; }).map(function (x) { return x[0]; });
           if (grond.length >= 8) {
-            var s = "Categorie \"" + cat.naam + "\" — basisvormen (kies hier vooral uit): " +
-              sample(grond, Math.min(meer ? 16 : 26, grond.length)).join(", ") + ".";
-            if (verv.length) s += " Vervoegingen (spaarzaam, alleen waar het echt helpt): " + sample(verv, Math.min(meer ? 5 : 8, verv.length)).join(", ") + ".";
+            var gGrond = sample(grond, Math.min(meer ? 16 : 26, grond.length));
+            var s = "Categorie \"" + cat.naam + "\" — basisvormen (kies hier vooral uit): " + gGrond.join(", ") + ".";
+            var gVerv = verv.length ? sample(verv, Math.min(meer ? 5 : 8, verv.length)) : [];
+            if (gVerv.length) s += " Vervoegingen (spaarzaam, alleen waar het echt helpt): " + gVerv.join(", ") + ".";
+            var gev = gevoeligeIn(gGrond.concat(gVerv));
+            if (gev.length) s += " LET OP — deze woorden zijn gevoelig (" + gev.join(", ") + "): gebruik ze alleen in een neutrale, luchtige context, nooit in een gewelddadig, angstig of verontrustend zinnetje.";
             return s;
           }
         }
