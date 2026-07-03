@@ -1912,7 +1912,7 @@ function renderKopjes() {
       const txt = DATUM_TEKST[k.type] || DATUM_TEKST.agenda;
       body =
         '<div class="agenda-invoer">' +
-          '<input type="date" class="agenda-datum" id="ad-' + k.id + '">' +
+          '<input type="date" class="agenda-datum" id="ad-' + k.id + '" data-avinka-reeks>' +
           '<input type="text" class="agenda-tekst-in" id="at-' + k.id + '" placeholder="' + txt.ph + '" ' +
             'onkeydown="if(event.key===\'Enter\'){agendaVoegToe(\'' + k.id + '\');event.preventDefault();}">' +
           '<button class="btn-soft agenda-add" onclick="agendaVoegToe(\'' + k.id + '\')">Voeg toe</button>' +
@@ -1934,7 +1934,7 @@ function kopjeVatHtml(k) {
     const items = k.items || [];
     if (!items.length) return '<span class="kopje-vat-leeg">Nog niets toegevoegd</span>';
     return items.map(it =>
-      '<div class="kopje-vat-rij"><strong>' + escapeHtml(formatDatumNL(it.datum)) + '</strong> — ' + escapeHtml(it.tekst) + '</div>'
+      '<div class="kopje-vat-rij"><strong>' + escapeHtml(formatDatumReeksNL(it.datum, it.datumTot)) + '</strong> — ' + escapeHtml(it.tekst) + '</div>'
     ).join('');
   }
   const t = (k.waarde || '').trim();
@@ -1960,7 +1960,7 @@ function agendaLijstHtml(k) {
   }
   return items.map((it, i) =>
     '<div class="agenda-item">' +
-      '<span class="agenda-item-datum">' + escapeHtml(formatDatumNL(it.datum)) + '</span>' +
+      '<span class="agenda-item-datum">' + escapeHtml(formatDatumReeksNL(it.datum, it.datumTot)) + '</span>' +
       '<span class="agenda-item-tekst">' + escapeHtml(it.tekst) + '</span>' +
       '<button class="agenda-del" title="Verwijderen" onclick="agendaVerwijder(\'' + k.id + '\', ' + i + ')">×</button>' +
     '</div>'
@@ -1969,11 +1969,13 @@ function agendaLijstHtml(k) {
 function agendaVoegToe(id) {
   const k = week.kopjes.find(k => k.id === id);
   if (!k) return;
-  const datum = document.getElementById('ad-' + id).value;
+  const datumEl = document.getElementById('ad-' + id);
+  const datum = datumEl.value;
+  const datumTot = datumEl.getAttribute('data-tot') || '';
   const tekst = document.getElementById('at-' + id).value.trim();
   if (!datum || !tekst) return;
   k.items = k.items || [];
-  k.items.push({ datum, tekst });
+  k.items.push({ datum, datumTot, tekst });
   k.items.sort((a, b) => a.datum.localeCompare(b.datum));   // chronologisch
   renderKopjes();
 }
@@ -1990,6 +1992,11 @@ function formatDatumNL(iso) {
   const dt = new Date(p[0], p[1] - 1, p[2]);   // lokale datum, geen tijdzone-verschuiving
   try { return dt.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' }); }
   catch (e) { return iso; }
+}
+// Eén datum of een reeks ("… t/m …"), afhankelijk van of er een einddatum is.
+function formatDatumReeksNL(van, tot) {
+  if (tot && tot > van) return formatDatumNL(van) + ' t/m ' + formatDatumNL(tot);
+  return formatDatumNL(van);
 }
 function kopjeGevuld(k) {
   if (isDatumType(k)) return (k.items || []).some(it => it.datum && it.tekst && it.tekst.trim());
@@ -2218,7 +2225,7 @@ function bouwSysteemprompt() {
   p += 'Dit bericht gaat naar alle ouders. Schrijf over de groep als geheel. Noem geen namen van individuele leerlingen en licht geen enkel kind er apart uit.\n\n';
 
   p += '━━━ DATUMS (agenda en huiswerk) ━━━\n';
-  p += 'In het kopje "Agenda" staan afspraken als een lijst "datum — omschrijving". Behoud de datums exact en in dezelfde (chronologische) volgorde, en houd het een lijst met elke afspraak op een eigen regel. Verzorg wél de omschrijving achter het streepje: schrijf gangbare afkortingen voluit (zoals "lln" = leerlingen, "gr" = groep), gebruik een nette hoofdletter en een korte, heldere formulering. Voeg niets toe en verzin niets. Bij "Huiswerk" verwerk je de datums juist in natuurlijke, lopende zinnen; ook daar geldt: neem elke datum precies over zoals gegeven en verzin er niets bij. Verander dus nooit een datum die de leerkracht heeft opgegeven.\n\n';
+  p += 'In het kopje "Agenda" staan afspraken als een lijst "datum — omschrijving". Behoud de datums exact en in dezelfde (chronologische) volgorde, en houd het een lijst met elke afspraak op een eigen regel. Verzorg wél de omschrijving achter het streepje: schrijf gangbare afkortingen voluit (zoals "lln" = leerlingen, "gr" = groep), gebruik een nette hoofdletter en een korte, heldere formulering. Voeg niets toe en verzin niets. Bij "Huiswerk" verwerk je de datums juist in natuurlijke, lopende zinnen; ook daar geldt: neem elke datum precies over zoals gegeven en verzin er niets bij. Verander dus nooit een datum die de leerkracht heeft opgegeven. Een datum kan ook een periode zijn ("… t/m …"); neem die dan als periode net zo exact over.\n\n';
   p += 'Soms zet de leerkracht tussen haakjes een aanwijzing zoals "(leg kort uit)", "(zoek op wat dit is)" of "(uitzoeken)". Dat is een opdracht aan JOU om er, uit je eigen kennis, één of twee korte en feitelijke zinnen uitleg over toe te voegen in gewone taal die ouders nuttig vinden. Verwerk dat natuurlijk in het bericht en laat de haakjes-aanwijzing zelf NOOIT in het bericht staan. Stuur ouders nooit weg met "zoek het zelf maar op".\n';
   p += 'BELANGRIJK: voeg alleen uitleg toe waar je redelijk zeker van bent. Twijfel je, of is het heel specifiek of lokaal, houd het dan algemeen of laat het weg. Verzin nooit feiten — geen verzonnen data, plaatsen, bedragen of details — niet over zo\'n onderwerp en niet over de groep of de kinderen. Voeg alleen uitleg toe bij zo\'n expliciete aanwijzing; staat die er niet, voeg dan niets extra toe.\n\n';
 
@@ -2265,7 +2272,7 @@ function bouwUserContent() {
       if (!items.length) return;
       u += '### ' + (k.label.trim() || 'Agenda') + '\n';
       u += '(Agenda: behoud de datums exact en in dezelfde volgorde, elke afspraak op een eigen regel als "datum — omschrijving". Verzorg alleen de omschrijving achter het streepje — schrijf afkortingen voluit (zoals "lln" = leerlingen, "gr" = groep), nette hoofdletter, korte heldere formulering. Voeg niets toe en verzin niets.)\n';
-      items.forEach(it => { u += '- ' + formatDatumNL(it.datum) + ' — ' + it.tekst.trim() + '\n'; });
+      items.forEach(it => { u += '- ' + formatDatumReeksNL(it.datum, it.datumTot) + ' — ' + it.tekst.trim() + '\n'; });
       u += '\n';
       return;
     }
@@ -2274,7 +2281,7 @@ function bouwUserContent() {
       if (!items.length) return;
       u += '### ' + (k.label.trim() || 'Huiswerk') + '\n';
       u += '(Huiswerk met datums. Verwoord dit natuurlijk in lopende zinnen, maar neem elke datum EXACT over en verzin er niets bij.)\n';
-      items.forEach(it => { u += '- Voor ' + formatDatumNL(it.datum) + ': ' + it.tekst.trim() + '\n'; });
+      items.forEach(it => { u += '- Voor ' + formatDatumReeksNL(it.datum, it.datumTot) + ': ' + it.tekst.trim() + '\n'; });
       u += '\n';
       return;
     }
@@ -2645,7 +2652,7 @@ function nbRenderRubrieken() {
     if (r.type === 'agenda') {
       body =
         '<div class="agenda-invoer">' +
-          '<input type="date" class="agenda-datum" id="nb-ad-' + r.id + '">' +
+          '<input type="date" class="agenda-datum" id="nb-ad-' + r.id + '" data-avinka-reeks>' +
           '<input type="text" class="agenda-tekst-in" id="nb-at-' + r.id + '" placeholder="Wat is er die dag?" ' +
             'onkeydown="if(event.key===\'Enter\'){nbAgendaVoegToe(\'' + r.id + '\');event.preventDefault();}">' +
           '<button class="btn-soft agenda-add" onclick="nbAgendaVoegToe(\'' + r.id + '\')">Voeg toe</button>' +
@@ -2673,7 +2680,7 @@ function nbVatHtml(r) {
     const items = r.items || [];
     if (!items.length) return '<span class="kopje-vat-leeg">Nog geen datums</span>';
     return items.map(it =>
-      '<div class="kopje-vat-rij"><strong>' + escapeHtml(formatDatumNL(it.datum)) + '</strong> — ' + escapeHtml(it.tekst) + '</div>'
+      '<div class="kopje-vat-rij"><strong>' + escapeHtml(formatDatumReeksNL(it.datum, it.datumTot)) + '</strong> — ' + escapeHtml(it.tekst) + '</div>'
     ).join('');
   }
   const t = (r.waarde || '').trim();
@@ -2698,7 +2705,7 @@ function nbAgendaLijstHtml(r) {
   if (!items.length) return '<div class="agenda-leeg">Nog geen datums. Kies een datum, typ wat er die dag is en klik op "Voeg toe".</div>';
   return items.map((it, i) =>
     '<div class="agenda-item">' +
-      '<span class="agenda-item-datum">' + escapeHtml(formatDatumNL(it.datum)) + '</span>' +
+      '<span class="agenda-item-datum">' + escapeHtml(formatDatumReeksNL(it.datum, it.datumTot)) + '</span>' +
       '<span class="agenda-item-tekst">' + escapeHtml(it.tekst) + '</span>' +
       '<button class="agenda-del" title="Verwijderen" onclick="nbAgendaVerwijder(\'' + r.id + '\', ' + i + ')">×</button>' +
     '</div>'
@@ -2707,11 +2714,13 @@ function nbAgendaLijstHtml(r) {
 function nbAgendaVoegToe(id) {
   const r = brief.rubrieken.find(r => r.id === id);
   if (!r) return;
-  const datum = document.getElementById('nb-ad-' + id).value;
+  const datumEl = document.getElementById('nb-ad-' + id);
+  const datum = datumEl.value;
+  const datumTot = datumEl.getAttribute('data-tot') || '';
   const tekst = document.getElementById('nb-at-' + id).value.trim();
   if (!datum || !tekst) return;
   r.items = r.items || [];
-  r.items.push({ datum, tekst });
+  r.items.push({ datum, datumTot, tekst });
   r.items.sort((a, b) => a.datum.localeCompare(b.datum));
   nbRenderRubrieken();
 }
@@ -2795,7 +2804,7 @@ function nbBouwUserContent(rubrieken) {
     if (r.type === 'agenda') {
       const items = (r.items || []).filter(it => it.datum && it.tekst && it.tekst.trim());
       u += 'Dit is een AGENDA. Behoud de datums exact en in dezelfde volgorde, en houd het een lijst met elke afspraak op een eigen regel als "datum — omschrijving". Verzorg alleen de omschrijving achter het streepje: schrijf gangbare afkortingen voluit (zoals "lln" = leerlingen, "gr" = groep, "ouderavond" gewoon zo), nette hoofdletter, korte heldere formulering. Voeg niets toe en verzin niets.\n';
-      items.forEach(it => { u += formatDatumNL(it.datum) + ' — ' + it.tekst.trim() + '\n'; });
+      items.forEach(it => { u += formatDatumReeksNL(it.datum, it.datumTot) + ' — ' + it.tekst.trim() + '\n'; });
       u += '\n';
     } else {
       u += 'Steekwoorden: ' + r.waarde.trim() + '\n\n';
@@ -2874,7 +2883,7 @@ function nbBouwBlokken(gevuld, schrijfRubrieken, bodies) {
       if (!body) {                                     // terugval als de marker ontbrak
         if (r.type === 'agenda') {
           const items = (r.items || []).filter(it => it.datum && it.tekst && it.tekst.trim());
-          body = items.map(it => formatDatumNL(it.datum) + ' — ' + it.tekst.trim()).join('\n');
+          body = items.map(it => formatDatumReeksNL(it.datum, it.datumTot) + ' — ' + it.tekst.trim()).join('\n');
         } else {
           body = (r.waarde || '').trim();
         }

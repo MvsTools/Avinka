@@ -14,6 +14,7 @@ const TABELLEN = [
   "statistiek",
   "taken",
   "reviews",
+  "toestemmingen",
 ] as const;
 
 // Vriendelijke titel per categorie.
@@ -25,6 +26,7 @@ const SECTIES: Record<string, { titel: string; leeg: string }> = {
   statistiek: { titel: "Je gebruik van Avinka", leeg: "Nog geen gebruiksgegevens." },
   taken: { titel: "Je takenlijst", leeg: "Geen taken." },
   reviews: { titel: "Je beoordeling", leeg: "Je hebt geen beoordeling achtergelaten." },
+  toestemmingen: { titel: "Je akkoord op de voorwaarden", leeg: "Nog geen akkoord vastgelegd." },
 };
 
 // Nette labels voor de velden die ertoe doen.
@@ -64,6 +66,10 @@ const LABELS: Record<string, string> = {
   created_at: "Aangemaakt op",
   updated_at: "Laatst gewijzigd",
   gedaan_op: "Afgevinkt op",
+  voorwaarden_versie: "Versie algemene voorwaarden",
+  privacy_versie: "Versie privacyverklaring",
+  geaccepteerd_op: "Akkoord gegeven op",
+  bron: "Waar akkoord gegeven",
 };
 
 // Puur technische velden die niets toevoegen voor een mens.

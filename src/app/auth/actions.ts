@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
+import { VOORWAARDEN, PRIVACY } from "@/lib/juridisch";
 
 // Het resultaat dat de formulieren tonen (foutmelding of bevestiging).
 export type AuthState = { error?: string; message?: string };
@@ -79,12 +80,21 @@ export async function signup(
   const h = await headers();
   const origin = h.get("origin") ?? `https://${h.get("host") ?? ""}`;
 
+  // Leg het akkoord vast: welke versies van voorwaarden + privacy, en wanneer.
+  // Deze metadata reist mee met de accountaanmaak; een database-trigger kopieert
+  // ze naar de append-only bewijstabel `toestemmingen` (AVG-verantwoording).
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { first_name: voornaam },
+      data: {
+        first_name: voornaam,
+        voorwaarden_versie: VOORWAARDEN.versie,
+        privacy_versie: PRIVACY.versie,
+        akkoord_op: new Date().toISOString(),
+        akkoord_bron: "registratie",
+      },
       emailRedirectTo: `${origin}/auth/confirm`,
     },
   });
