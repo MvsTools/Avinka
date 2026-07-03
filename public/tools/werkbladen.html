@@ -490,6 +490,11 @@
         if (window.avinkaLeerlijnen) {
           const ll = window.avinkaLeerlijnen.voor(inv.vak, inv.groep);
           if (ll) lijnen.push('\nLEERLIJN-CONTEXT (kalibreer het niveau hierop):\n' + ll);
+          // Kindvriendelijke toon: altijd, voor elk vak/onderwerp.
+          if (window.avinkaLeerlijnen.toonWaarborg) {
+            const tw = window.avinkaLeerlijnen.toonWaarborg((inv.onderwerp || '') + ' ' + (inv.context || ''));
+            if (tw) lijnen.push('\n' + tw);
+          }
           // Spellingmethode herkennen uit onderwerp + aanvullingen.
           if (/spelling/i.test(inv.vak) && window.avinkaLeerlijnen.spellingMethode) {
             const sm = window.avinkaLeerlijnen.spellingMethode((inv.onderwerp || '') + ' ' + (inv.context || ''), inv.groep);

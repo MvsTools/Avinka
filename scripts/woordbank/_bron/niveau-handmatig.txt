@@ -1,0 +1,5 @@
+# Handmatige BETEKENIS-/woordenschatvloer-correcties (eigenaar-review).
+# Winnen altijd van de AI-niveaupas (Pass 15). Formaat: één per regel,
+#   woord=groep     (groep = 3 t/m 8)   bv.  penthouse=8
+# of met een spatie: woord groep. Regels met # zijn commentaar.
+# Bereikbaar bijstellen via de review-pagina /niveau-review.html.

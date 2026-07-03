@@ -1,0 +1,63 @@
+# "Extra gevoelig" — woorden die in de bank/onderwerpen MOGEN, maar waar de AI
+# een zachte, kindvriendelijke context bij moet kiezen (geen geweld, rampen, dood
+# of verontrustende scenario's). Voorbeeld: bij "exploderen" NIET "het vliegtuig
+# met 100 passagiers explodeerde", maar "de ballon exploderde met een knal".
+#
+# Dit weert de woorden NIET — het geeft de generatie-prompt een extra waarschuwing.
+# De brede toon-regel (altijd actief) vangt daarnaast ook onvoorziene woorden.
+# Regels met # zijn commentaar. Eigenaar vult deze lijst met de hand aan.
+#
+exploderen
+explosie
+ontploffen
+ontploffing
+oorlog
+wapen
+wapens
+geweer
+kanon
+bom
+bommen
+soldaat
+soldaten
+leger
+gevecht
+strijd
+aanval
+vechten
+dood
+doden
+sterven
+gestorven
+overleden
+begrafenis
+graf
+gewond
+bloed
+ongeluk
+ramp
+brand
+vuur
+vlammen
+gevaar
+gevangenis
+gevangene
+misdaad
+dief
+inbreker
+inbraak
+ruzie
+pesten
+bang
+eng
+spook
+monster
+gif
+giftig
+mes
+verdrinken
+vermist
+slachtoffer
+ziekte
+ziek
+koorts

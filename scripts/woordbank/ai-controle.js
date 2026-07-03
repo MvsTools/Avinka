@@ -85,6 +85,32 @@ function uitCache(tag) {
   return new Set(Object.keys(cache).filter(k => k.startsWith(p) && cache[k]).map(k => k.slice(p.length)));
 }
 
+// NUMERIEKE pass: vraag per woord een GETAL (bv. minimale groep 3-8) i.p.v. ja/nee.
+// Cache-waarde = het getal (0 = geen bruikbaar oordeel). Kleinere batch dan keur(),
+// want het JSON-object met een getal per woord is langer dan een lijst afkeuringen.
+const NIVEAU_BATCH = 80;
+async function niveaus(woorden, instructie, tag) {
+  const teVragen = [];
+  for (const w of woorden) if (!((tag + "|" + w) in cache)) teVragen.push(w);
+  for (let i = 0; i < teVragen.length; i += NIVEAU_BATCH) {
+    const groep = teVragen.slice(i, i + NIVEAU_BATCH);
+    const tekst = await callSonnet(instructie + "\n\nWoorden:\n" + groep.join(", "));
+    let obj = {};
+    try { obj = JSON.parse((tekst.match(/\{[\s\S]*\}/) || ["{}"])[0]); } catch (e) {}
+    for (const w of groep) {
+      let g = parseInt(obj[w], 10);
+      if (!(g >= 3 && g <= 8)) g = 0; // geen bruikbaar oordeel → bouw.js valt terug op spelling/freq
+      cache[tag + "|" + w] = g;
+    }
+    bewaarCache();
+    process.stdout.write(`  ${tag}: ${Math.min(i + NIVEAU_BATCH, teVragen.length)}/${teVragen.length}\r`);
+  }
+  // Alle bruikbare getallen (>=3) uit de cache — stabiel, ook zonder verse run.
+  const p = tag + "|", out = {};
+  for (const k of Object.keys(cache)) if (k.startsWith(p) && cache[k] >= 3) out[k.slice(p.length)] = cache[k];
+  return out;
+}
+
 (async () => {
   // ── Pass 1: werkwoordenbank — homografen ──────────────────────────────────
   const wb = require("./werkwoordenbank.json").groepen;
@@ -287,6 +313,28 @@ function uitCache(tag) {
 
   // (Geen open/gesloten-snoei: die categorie is breed maar correct — agent/foto/
   //  samen/alles zijn echte klankgroepenwoorden. We laten 'm staan.)
+
+  // ── Pass 15: BETEKENIS-/WOORDENSCHATVLOER (numeriek) ───────────────────────
+  // Geen veiligheid: bepaalt vanaf welke GROEP (3-8) een woord past op BETEKENIS,
+  // los van spelling-moeilijkheid. bouw.js doet vanaf = max(spelling, freq, dit).
+  // Geijkt met niveau-test.js (gem. afwijking 0,16 groep, 0 grote missers).
+  const niveauMap = await niveaus(alleWoorden,
+    "Je helpt bij het maken van SPELLING-werkbladen voor de basisschool (groep 3 t/m 8). " +
+    "Voor ELK woord hieronder: bepaal vanaf welke GROEP (een getal 3 t/m 8) het woord past " +
+    "op basis van de BETEKENIS en de woordenschat — dus: vanaf welke groep begrijpt een " +
+    "gemiddeld kind dit woord en past het qua onderwerp op een werkblad. " +
+    "LET OP: het gaat NIET om hoe moeilijk het woord te SCHRIJVEN is (spelling), en NIET om " +
+    "of het woord ongepast is — puur om de betekenis/woordenschat. " +
+    "Heel concrete, alledaagse dingen (huis, boom, melk, fiets) horen bij groep 3. " +
+    "Abstracte, maatschappelijke of volwassen begrippen (democratie, hypotheek, faillissement, " +
+    "inflatie) horen pas bij groep 7 of 8. Twijfel je tussen twee groepen, kies dan de LAAGSTE " +
+    "waarbij het nog echt begrijpelijk is. " +
+    "Antwoord met UITSLUITEND een JSON-object dat elk woord aan een getal koppelt, bv. " +
+    '{"huis":3,"democratie":7}. Geen uitleg.', "niveau");
+  fs.writeFileSync(BRON("niveau.json"), JSON.stringify(niveauMap));
+  const verdeling = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+  for (const w in niveauMap) verdeling[niveauMap[w]]++;
+  console.log(`Pass 15 (betekenisvloer): ${Object.keys(niveauMap).length} woorden beoordeeld · verdeling g3-8: ${verdeling.slice(3, 9).join("  ")}`);
 
   console.log(`\nAI-oproepen: ${oproepen}  ·  kosten deze run: $${kostenTotaal.toFixed(4)} (gecachet → herhalen is gratis)`);
   console.log("Voorbeeld afgekeurde werkwoorden:", [...ww].slice(0, 15).join(", "));
