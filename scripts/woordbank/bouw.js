@@ -57,6 +57,20 @@ try { TOEGESTAAN = new Set(fs.readFileSync(path.join(__dirname, "toegestaan.txt"
 // window.avinkaGevoelig meegepubliceerd zodat de prompt er extra op kan letten.
 let GEVOELIG = new Set();
 try { GEVOELIG = new Set(fs.readFileSync(BRON("gevoelig.txt"), "utf8").split(/\r?\n/).map(s => s.trim()).filter(w => w && !w.startsWith("#"))); } catch (e) {}
+// Betekenis-/woordenschatvloer per woord (AI-niveaupas, ai-controle.js) — bepaalt
+// mede vanaf welke groep een woord mag, los van de spelling-moeilijkheid.
+let NIVEAU = {};
+try { NIVEAU = JSON.parse(fs.readFileSync(BRON("niveau.json"), "utf8")); } catch (e) {}
+// Handmatige niveau-correcties (eigenaar), regels "woord=groep" of "woord 6".
+// Winnen altijd van de AI-niveaupas. # = commentaar.
+try {
+  fs.readFileSync(BRON("niveau-handmatig.txt"), "utf8").split(/\r?\n/).forEach(r => {
+    r = r.trim(); if (!r || r.startsWith("#")) return;
+    const m = r.match(/^([a-zà-ÿ]+)\s*[=\s]\s*([3-8])$/i);
+    if (m) NIVEAU[m[1].toLowerCase()] = +m[2];
+  });
+} catch (e) {}
+function semantiekVloer(w) { const g = NIVEAU[w]; return (g >= 3 && g <= 8) ? g : 0; }
 
 const KLINKERS = "aeiouyàáâäèéêëìíîïòóôöùúûü";
 function lettergrepen(w) {
@@ -266,6 +280,7 @@ function freqFloor(w) {
 const banken = {}; // catId -> { ...meta, woorden: [[w, vanaf], ...] }
 for (const d of DOELEN) banken[d.id] = { label: d.label, soort: d.soort, introGroep: d.g, woorden: [] };
 
+let nBump = 0, bumpSom = 0; // woord-slots die de betekenisvloer omhoog duwde
 const kandidaten = OPEN_LIJST.filter(kindgeschikt);
 for (const w of kandidaten) {
   const ings = ING.filter(i => i.test(w));
@@ -276,7 +291,11 @@ for (const w of kandidaten) {
     if (ing.id === "open_gesloten" && GEEN_KLANKGROEP.has(w)) continue; // AI: geen echt klankgroepenwoord
     // achtergrond = zwaarste ANDER ingredient (de doelcategorie zelf telt niet mee)
     const achtergrond = ings.filter(i => i.id !== ing.id).map(i => i.g);
-    const vanaf = Math.max(3, ff, achtergrond.length ? Math.max(...achtergrond) : 0);
+    // vanaf = zwaarste van: spelling-achtergrond, frequentie-vloer, betekenisvloer.
+    const basisVanaf = Math.max(3, ff, achtergrond.length ? Math.max(...achtergrond) : 0);
+    const sem = semantiekVloer(w);
+    const vanaf = Math.max(basisVanaf, sem);
+    if (sem > basisVanaf) { nBump++; bumpSom += (vanaf - basisVanaf); }
     // Verkleinwoorden in hun eigen categorie zijn het doel, geen "vervoeging".
     const isVerv = VERVOEGING.has(w) && ing.id !== "verkleinwoord";
     banken[ing.id].woorden.push(isVerv ? [w, vanaf, "v"] : [w, vanaf]);
@@ -303,6 +322,19 @@ fs.writeFileSync(path.join(__dirname, "..", "..", "public", "avinka-woordenbank.
   "window.avinkaWoordenbank=" + JSON.stringify(slim) + ";\n" +
   "window.avinkaGevoelig=" + JSON.stringify([...GEVOELIG].sort()) + ";\n");
 
+// Review-data voor /niveau-review.html: alle beoordeelde woorden met hun EFFECTIEVE
+// betekenisvloer (AI-pas + handmatige correcties). Alleen bankwoorden (relevant om
+// na te lopen), gesorteerd op groep, dan alfabetisch.
+const bankWoordenSet = new Set();
+for (const id in banken) for (const x of banken[id].woorden) bankWoordenSet.add(x[0]);
+const niveauReview = Object.keys(NIVEAU)
+  .filter(w => bankWoordenSet.has(w) && NIVEAU[w] >= 3 && NIVEAU[w] <= 8)
+  .sort((a, b) => NIVEAU[b] - NIVEAU[a] || a.localeCompare(b))
+  .map(w => [w, NIVEAU[w]]);
+fs.writeFileSync(path.join(__dirname, "..", "..", "public", "niveau-kandidaten.js"),
+  "/* Auto-gegenereerd door scripts/woordbank/bouw.js voor /niveau-review.html. */\n" +
+  "window.niveauKandidaten=" + JSON.stringify(niveauReview) + ";\n");
+
 // ── Runrapport ────────────────────────────────────────────────────────────────
 console.log("WOORDENBANK gebouwd:", DATUM);
 console.log("kandidaten (kindgeschikt, geen werkwoord/blocklist):", kandidaten.length);
@@ -319,6 +351,8 @@ for (const d of DOELEN) {
 let nVerv = 0, nGrond = 0;
 for (const id in banken) for (const x of banken[id].woorden) (x[2] === "v" ? nVerv++ : nGrond++);
 console.log("\nTOTAAL woorden (som over categorieen, met overlap):", totaal, `(grondvorm ${nGrond} · vervoeging ${nVerv})`);
+const nNiveau = Object.keys(NIVEAU).length;
+console.log(`betekenisvloer: ${nNiveau} woorden beoordeeld · ${nBump} slots omhoog geduwd (gem. +${nBump ? (bumpSom / nBump).toFixed(2) : 0} groep)`);
 console.log("bestand: scripts/woordbank/woordenbank.json (" + Math.round(fs.statSync(path.join(__dirname, "woordenbank.json")).size / 1024) + " kB)");
 if (onder.length) console.log("\nLET OP, dunne categorieen (<40):", onder.join(", "));
 console.log("\nVoorbeelden groep 3 'cht':", banken.cht.woorden.filter(x => x[1] === 3).slice(0, 18).map(x => x[0]).join(", "));

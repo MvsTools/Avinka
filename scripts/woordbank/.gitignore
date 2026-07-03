@@ -17,3 +17,5 @@ _bron/*
 !_bron/vervoegingen.txt
 !_bron/scheldwoorden-nl.txt
 !_bron/gevoelig.txt
+!_bron/niveau.json
+!_bron/niveau-handmatig.txt
