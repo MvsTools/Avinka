@@ -322,19 +322,6 @@ fs.writeFileSync(path.join(__dirname, "..", "..", "public", "avinka-woordenbank.
   "window.avinkaWoordenbank=" + JSON.stringify(slim) + ";\n" +
   "window.avinkaGevoelig=" + JSON.stringify([...GEVOELIG].sort()) + ";\n");
 
-// Review-data voor /niveau-review.html: alle beoordeelde woorden met hun EFFECTIEVE
-// betekenisvloer (AI-pas + handmatige correcties). Alleen bankwoorden (relevant om
-// na te lopen), gesorteerd op groep, dan alfabetisch.
-const bankWoordenSet = new Set();
-for (const id in banken) for (const x of banken[id].woorden) bankWoordenSet.add(x[0]);
-const niveauReview = Object.keys(NIVEAU)
-  .filter(w => bankWoordenSet.has(w) && NIVEAU[w] >= 3 && NIVEAU[w] <= 8)
-  .sort((a, b) => NIVEAU[b] - NIVEAU[a] || a.localeCompare(b))
-  .map(w => [w, NIVEAU[w]]);
-fs.writeFileSync(path.join(__dirname, "..", "..", "public", "niveau-kandidaten.js"),
-  "/* Auto-gegenereerd door scripts/woordbank/bouw.js voor /niveau-review.html. */\n" +
-  "window.niveauKandidaten=" + JSON.stringify(niveauReview) + ";\n");
-
 // ── Runrapport ────────────────────────────────────────────────────────────────
 console.log("WOORDENBANK gebouwd:", DATUM);
 console.log("kandidaten (kindgeschikt, geen werkwoord/blocklist):", kandidaten.length);
