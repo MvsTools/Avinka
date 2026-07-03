@@ -47,8 +47,8 @@ const SUB_NAAR_HOOFD: Record<string, string> = {
 type Periode = "vandaag" | "week" | "maand" | "schooljaar";
 const PERIODEN: { id: Periode; label: string }[] = [
   { id: "vandaag", label: "Vandaag" },
-  { id: "week", label: "Deze week" },
-  { id: "maand", label: "Deze maand" },
+  { id: "week", label: "Afgelopen 7 dagen" },
+  { id: "maand", label: "Afgelopen 30 dagen" },
   { id: "schooljaar", label: "Dit schooljaar" },
 ];
 
@@ -58,17 +58,24 @@ function isoDatum(d: Date): string {
   return `${d.getFullYear()}-${m}-${day}`;
 }
 
-// Eerste dag (YYYY-MM-DD) van de gekozen periode, t.o.v. vandaag. Het schooljaar
+// Eerste dag (YYYY-MM-DD) van de gekozen periode, t.o.v. vandaag. Week en maand
+// zijn voortschrijdende vensters (laatste 7 resp. 30 dagen, incl. vandaag) zodat
+// week altijd binnen maand valt — een kalenderweek kan namelijk vóór de 1e van de
+// maand beginnen, waardoor "week" groter kon lijken dan "maand". Het schooljaar
 // loopt van 1 augustus tot en met 31 juli.
 function periodeStart(periode: Periode, vandaag: string): string {
   if (periode === "vandaag") return vandaag;
   const d = new Date(vandaag + "T00:00:00");
   if (periode === "week") {
-    const maandag = new Date(d);
-    maandag.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // maandag = begin van de week
-    return isoDatum(maandag);
+    const van = new Date(d);
+    van.setDate(d.getDate() - 6); // afgelopen 7 dagen, incl. vandaag
+    return isoDatum(van);
   }
-  if (periode === "maand") return vandaag.slice(0, 7) + "-01";
+  if (periode === "maand") {
+    const van = new Date(d);
+    van.setDate(d.getDate() - 29); // afgelopen 30 dagen, incl. vandaag
+    return isoDatum(van);
+  }
   const jaar = d.getMonth() + 1 >= 8 ? d.getFullYear() : d.getFullYear() - 1;
   return `${jaar}-08-01`;
 }

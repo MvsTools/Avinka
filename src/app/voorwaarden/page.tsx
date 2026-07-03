@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import JuridischeLayout, { Sectie } from "@/components/JuridischeLayout";
+import { VOORWAARDEN } from "@/lib/juridisch";
 
 /* ──────────────────────────────────────────────────────────────────────────
    ALGEMENE VOORWAARDEN — alle tekst staat in dit bestand.
@@ -20,7 +21,7 @@ const BEDRIJF = "[bedrijfsnaam]";
 const ADRES = "[adres]";
 const KVK = "[KvK-nummer]";
 const CONTACT_EMAIL = "[contact-e-mailadres]";
-const BIJGEWERKT = "20 juni 2026";
+const BIJGEWERKT = VOORWAARDEN.weergave;
 
 export const metadata: Metadata = {
   title: "Algemene voorwaarden — Avinka",

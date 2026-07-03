@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import JuridischeLayout, { Sectie } from "@/components/JuridischeLayout";
+import { PRIVACY } from "@/lib/juridisch";
 
 /* ──────────────────────────────────────────────────────────────────────────
    PRIVACYVERKLARING — alle tekst staat in dit bestand.
@@ -25,7 +26,7 @@ const BEDRIJF = "[bedrijfsnaam]";
 const ADRES = "[adres]";
 const KVK = "[KvK-nummer]";
 const CONTACT_EMAIL = "[privacy-e-mailadres]";
-const BIJGEWERKT = "2 juli 2026";
+const BIJGEWERKT = PRIVACY.weergave;
 
 export const metadata: Metadata = {
   title: "Privacyverklaring — Avinka",

@@ -33,6 +33,16 @@
       year: "numeric",
     });
   }
+  // Compacte "van t/m tot"-tekst: de maand vervalt vooraan als beide in dezelfde
+  // maand vallen, en het jaar staat alleen achteraan. Bijv. "6 t/m 10 jul 2026".
+  function labelReeksVan(vanIso, totIso) {
+    var v = parse(vanIso), t = parse(totIso);
+    if (!v || !t) return labelVan(vanIso);
+    var zelfdeMaand = v.getFullYear() === t.getFullYear() && v.getMonth() === t.getMonth();
+    var vanTxt = v.toLocaleDateString("nl-NL", zelfdeMaand ? { day: "numeric" } : { day: "numeric", month: "short" });
+    var totTxt = t.toLocaleDateString("nl-NL", { day: "numeric", month: "short", year: "numeric" });
+    return vanTxt + " t/m " + totTxt;
+  }
 
   // ── Stijl (één keer; gebruikt de CSS-variabelen van de tool) ──────────────
   function zorgStijl() {
@@ -45,9 +55,7 @@
       ".avinka-dp-trig:hover{border-color:var(--accent2,#2f9e6e);}" +
       ".avinka-dp-trig.leeg{color:var(--muted,#8a8398);font-weight:500;}" +
       ".avinka-dp-trig svg{width:16px;height:16px;flex-shrink:0;opacity:.8;}" +
-      ".avinka-dp-pop{position:absolute;right:0;z-index:9999;width:268px;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:16px;box-shadow:0 18px 44px rgba(26,22,46,.22);padding:10px;text-align:left;font-family:'Plus Jakarta Sans',system-ui,sans-serif;}" +
-      ".avinka-dp-pop.onder{top:100%;margin-top:8px;}" +
-      ".avinka-dp-pop.boven{bottom:100%;margin-bottom:8px;}" +
+      ".avinka-dp-pop{position:fixed;z-index:100000;width:268px;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:16px;box-shadow:0 18px 44px rgba(26,22,46,.22);padding:10px;text-align:left;font-family:'Plus Jakarta Sans',system-ui,sans-serif;}" +
       ".avinka-dp-snel{display:flex;gap:6px;}" +
       ".avinka-dp-snel button{flex:1;border:none;border-radius:9px;background:var(--cream,#f3efe6);padding:7px 4px;font:inherit;font-size:12px;font-weight:600;color:var(--ink,#2a2540);cursor:pointer;transition:.15s;}" +
       ".avinka-dp-snel button:hover{background:var(--accent2,#2f9e6e);color:#fff;}" +
@@ -56,11 +64,13 @@
       ".avinka-dp-nav{border:none;background:none;cursor:pointer;border-radius:8px;padding:3px 8px;font-size:17px;color:var(--muted,#8a8398);transition:.15s;}" +
       ".avinka-dp-nav:hover{background:var(--cream,#f3efe6);color:var(--ink,#2a2540);}" +
       ".avinka-dp-wk{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;font-weight:600;color:var(--muted,#a8a2b4);margin-top:8px;}" +
-      ".avinka-dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:2px;}" +
+      ".avinka-dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:2px;user-select:none;}" +
       ".avinka-dp-grid button{height:30px;border:none;background:none;border-radius:9px;font:inherit;font-size:13px;color:var(--ink,#2a2540);cursor:pointer;transition:.12s;}" +
       ".avinka-dp-grid button:hover{background:var(--cream,#f3efe6);}" +
       ".avinka-dp-grid button.vandaag{background:rgba(47,158,110,.14);color:var(--accent2,#2f9e6e);font-weight:700;}" +
       ".avinka-dp-grid button.gekozen{background:var(--accent2,#2f9e6e);color:#fff;font-weight:700;}" +
+      ".avinka-dp-grid button.in-reeks{background:rgba(47,158,110,.16);color:var(--accent2,#2f9e6e);border-radius:0;font-weight:600;}" +
+      ".avinka-dp-hint{font-size:11px;color:var(--muted,#8a8398);text-align:center;margin-top:9px;}" +
       ".avinka-dp-voet{display:flex;align-items:center;justify-content:space-between;margin-top:10px;}" +
       ".avinka-dp-wis{border:none;background:none;cursor:pointer;font:inherit;font-size:12px;font-weight:600;color:var(--muted,#8a8398);transition:.15s;}" +
       ".avinka-dp-wis:hover{color:#e11d48;}" +
@@ -78,6 +88,10 @@
     zorgStijl();
     input.style.display = "none";
 
+    // Reeks-selectie (van…t/m…) alleen op velden die er expliciet om vragen,
+    // via data-avinka-reeks. Losse datumvelden blijven één datum.
+    var reeks = input.hasAttribute("data-avinka-reeks");
+
     var wrap = document.createElement("span");
     wrap.className = "avinka-dp";
     var trig = document.createElement("button");
@@ -88,9 +102,11 @@
 
     function syncLabel() {
       var v = input.value;
+      var tot = input.getAttribute("data-tot");
       if (v) {
         trig.classList.remove("leeg");
-        trig.innerHTML = KAL_ICON + "<span>" + labelVan(v) + "</span>";
+        var tekst = (reeks && tot && tot > v) ? labelReeksVan(v, tot) : labelVan(v);
+        trig.innerHTML = KAL_ICON + "<span>" + tekst + "</span>";
       } else {
         trig.classList.add("leeg");
         trig.innerHTML = KAL_ICON + "<span>Kies datum</span>";
@@ -103,12 +119,43 @@
     function sluit() {
       if (pop) { pop.remove(); pop = null; }
       document.removeEventListener("mousedown", buiten);
+      window.removeEventListener("scroll", herplaats, true);
+      window.removeEventListener("resize", herplaats);
     }
     function buiten(e) {
-      if (pop && !wrap.contains(e.target)) sluit();
+      // De popover hangt in de <body>, dus die apart uitsluiten (anders sluit
+      // een klik ín de agenda hem meteen weer).
+      if (pop && !wrap.contains(e.target) && !pop.contains(e.target)) sluit();
+    }
+    function herplaats() { if (pop) plaatsPop(); }
+    // Zet de agenda vlak bij de knop, maar altijd binnen het scherm geklemd:
+    // rechteruitlijning waar het kan, anders schuift hij mee zodat hij nooit
+    // buiten beeld valt of half wordt afgeknipt.
+    function plaatsPop() {
+      var r = wrap.getBoundingClientRect();
+      var vw = document.documentElement.clientWidth;
+      var vh = window.innerHeight;
+      var w = 268;
+      var left = r.right - w;
+      if (left < 8) left = 8;
+      if (left + w > vw - 8) left = vw - 8 - w;
+      var h = pop.offsetHeight || 360;
+      var top = (vh - r.bottom < h + 12 && r.top > h + 12)
+        ? r.top - h - 8
+        : r.bottom + 8;
+      pop.style.left = left + "px";
+      pop.style.top = top + "px";
     }
     function kies(v) {
       input.value = v;
+      input.removeAttribute("data-tot"); // enkele datum → geen reeks meer
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      syncLabel();
+    }
+    function kiesReeks(van, tot) {
+      input.value = van;
+      input.setAttribute("data-tot", tot);
       input.dispatchEvent(new Event("input", { bubbles: true }));
       input.dispatchEvent(new Event("change", { bubbles: true }));
       syncLabel();
@@ -117,21 +164,39 @@
     function open() {
       pop = document.createElement("div");
       pop.className = "avinka-dp-pop";
-      // Boven of onder, afhankelijk van de ruimte (niet hoeven scrollen).
-      var r = wrap.getBoundingClientRect();
-      pop.classList.add(window.innerHeight - r.bottom < 360 ? "boven" : "onder");
-      wrap.appendChild(pop);
+      // In de <body> hangen (portal) i.p.v. in het veld: zo kan geen enkele
+      // kaart/stacking-context er half overheen tekenen.
+      document.body.appendChild(pop);
 
       var basis = parse(input.value) || new Date();
       var maand = new Date(basis.getFullYear(), basis.getMonth(), 1);
+
+      // Reeks-slepen: van indrukken tot loslaten kleuren we het bereik live in.
+      var sleepBezig = false, sleepVan = null, sleepTot = null;
+      function markeer(a, b) {
+        var lo = a, hi = b;
+        if (lo > hi) { var t = lo; lo = hi; hi = t; }
+        pop.querySelectorAll(".avinka-dp-grid button").forEach(function (btn) {
+          var di = btn.getAttribute("data-iso");
+          btn.classList.toggle("gekozen", di === lo || di === hi);
+          btn.classList.toggle("in-reeks", di > lo && di < hi);
+        });
+      }
+      function sleepEinde() {
+        if (!sleepBezig) return;
+        sleepBezig = false;
+        var lo = sleepVan, hi = sleepTot;
+        if (lo > hi) { var t = lo; lo = hi; hi = t; }
+        if (lo === hi) kies(lo); else kiesReeks(lo, hi);
+        sluit();
+      }
 
       function quick(dagen) {
         var d = new Date();
         d.setHours(0, 0, 0, 0);
         d.setDate(d.getDate() + dagen);
         kies(isoVan(d));
-        maand = new Date(d.getFullYear(), d.getMonth(), 1);
-        teken();
+        sluit(); // een snelkeuze is meteen raak → agenda dicht
       }
 
       function teken() {
@@ -141,12 +206,22 @@
         var aantal = new Date(jaar, mnd + 1, 0).getDate();
         var vandaagIso = isoVan(new Date());
 
+        // Bestaande selectie (evt. een reeks) alvast inkleuren.
+        var van = input.value;
+        var tot = reeks ? input.getAttribute("data-tot") : null;
+        var lo = van, hi = tot;
+        if (lo && hi && lo > hi) { var tt = lo; lo = hi; hi = tt; }
+
         var dagen = "";
         for (var i = 0; i < start; i++) dagen += "<span></span>";
         for (var d = 1; d <= aantal; d++) {
           var di = isoVan(new Date(jaar, mnd, d));
-          var kl =
-            di === input.value ? " class=\"gekozen\"" : di === vandaagIso ? " class=\"vandaag\"" : "";
+          var cls;
+          if (di === van || (tot && di === tot)) cls = "gekozen";
+          else if (lo && hi && di > lo && di < hi) cls = "in-reeks";
+          else if (di === vandaagIso) cls = "vandaag";
+          else cls = "";
+          var kl = cls ? ' class="' + cls + '"' : "";
           dagen += '<button type="button" data-iso="' + di + '"' + kl + ">" + d + "</button>";
         }
         var maandTitel = maand.toLocaleDateString("nl-NL", { month: "long", year: "numeric" });
@@ -163,6 +238,7 @@
           "</div>" +
           '<div class="avinka-dp-wk"><span>ma</span><span>di</span><span>wo</span><span>do</span><span>vr</span><span>za</span><span>zo</span></div>' +
           '<div class="avinka-dp-grid">' + dagen + "</div>" +
+          (reeks ? '<div class="avinka-dp-hint">Sleep over meerdere dagen voor een reeks</div>' : "") +
           '<div class="avinka-dp-voet">' +
             (input.value ? '<button type="button" class="avinka-dp-wis">Datum wissen</button>' : "<span></span>") +
             '<button type="button" class="avinka-dp-klaar">Klaar</button>' +
@@ -178,15 +254,33 @@
           };
         });
         pop.querySelectorAll(".avinka-dp-grid button").forEach(function (b) {
-          b.onclick = function () { kies(b.getAttribute("data-iso")); teken(); };
+          if (reeks) {
+            // Indrukken = start, slepen = einde, loslaten = vastleggen. Eén dag
+            // aanklikken (indrukken + loslaten zonder slepen) blijft één datum.
+            b.addEventListener("mousedown", function (e) {
+              e.preventDefault();
+              sleepBezig = true;
+              sleepVan = sleepTot = b.getAttribute("data-iso");
+              markeer(sleepVan, sleepTot);
+              document.addEventListener("mouseup", sleepEinde, { once: true });
+            });
+            b.addEventListener("mouseenter", function () {
+              if (sleepBezig) { sleepTot = b.getAttribute("data-iso"); markeer(sleepVan, sleepTot); }
+            });
+          } else {
+            b.onclick = function () { kies(b.getAttribute("data-iso")); sluit(); };
+          }
         });
         var wis = pop.querySelector(".avinka-dp-wis");
         if (wis) wis.onclick = function () { kies(""); teken(); };
         pop.querySelector(".avinka-dp-klaar").onclick = sluit;
+        plaatsPop();
       }
 
       teken();
       document.addEventListener("mousedown", buiten);
+      window.addEventListener("scroll", herplaats, true);
+      window.addEventListener("resize", herplaats);
     }
 
     trig.addEventListener("click", function (e) {
