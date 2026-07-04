@@ -86,7 +86,8 @@ function lettergrepen(w) {
 const ING = [
   // ── groep 3: klank/eerste vaste klankgroepen
   // Staal splitst dit: zingwoord = ng (zingen, koning), plankwoord = nk (plank, bank).
-  { id: "ng", g: 3, doel: 1, soort: "orthografisch", label: "woorden met ng (zoals zingen, koning)", test: w => /ng/.test(w) },
+  // NIET de "ng" op een woordgrens (on+gehoorzaam, aan+geven): dat is geen ng-KLANK.
+  { id: "ng", g: 3, doel: 1, soort: "orthografisch", label: "woorden met ng (zoals zingen, koning)", test: w => /ng/.test(w) && !/^(on|aan)g/.test(w) },
   { id: "nk", g: 3, doel: 1, soort: "orthografisch", label: "woorden met nk (zoals plank, bank)", test: w => /nk/.test(w) },
   { id: "sch", g: 3, doel: 1, soort: "orthografisch", label: "woorden met sch", test: w => /sch/.test(w) && !/isch/.test(w) },
   { id: "cht", g: 3, doel: 1, soort: "orthografisch", label: "woorden met cht (korte klank + cht)", test: w => /cht/.test(w) },

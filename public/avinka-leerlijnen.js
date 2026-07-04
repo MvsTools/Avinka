@@ -547,9 +547,11 @@
       test: /lucht\s*-?woord|\bcht\s*-?woord|woorden? met cht\b/,
       woorden: ["licht", "nacht", "lucht", "recht", "zacht", "vlucht", "gracht", "kracht", "wacht", "dicht"] },
     { naam: "woorden met ng (zoals zingen, koning)", bank: "ng",
+      regel: "Je hoort de ng-klank (zoals in koning en zingen) en die schrijf je met de twee letters ng.",
       test: /zing\s*-?woord|\bng\s*-?woord|woorden? met ng\b/,
       woorden: ["ding", "koning", "slang", "ring", "jong", "zingen", "lang", "bang", "honger", "vinger"] },
     { naam: "woorden met nk (zoals plank, bank)", bank: "nk",
+      regel: "Je hoort de nk-klank (zoals in bank en denken). Je schrijft nk; er komt GEEN g tussen de n en de k (dus plank, niet plangk).",
       test: /plank\s*-?woord|denk\s*-?woord|\bnk\s*-?woord|woorden? met nk\b/,
       woorden: ["bank", "dank", "plank", "drinken", "denken", "winkel", "donker", "links", "klinken", "wenk"] },
     { naam: "woorden die op een /t/-klank eindigen maar met d of t (langer maken)", bank: "langermaak_d",
@@ -624,8 +626,15 @@
     // enz. worden ook gepakt. We plakken bij "met/op/over <mascotte>" de "<mascotte>woord"-
     // vorm erachter, zodat de bestaande mascotte-tests ("lolly-woord", "cola-woord") matchen.
     // ("lollywoorden" en "lolly woorden" matchen al via \s*-?woord in de tests zelf.)
-    var aug = t.replace(/(\bmet|\bop|\ben|\bof|,)\s+(de |het |een )?([a-zà-ÿ]{3,})\b/g,
-      function (m, prep, det, kw) { return m + " " + kw + "woord"; });
+    // Voor ELK kort token in de invoer (ng, nk, aai, sch, cola, lolly, cadeau…) plakken we
+    // de herkenbare vormen "woorden met <tok>" én "<tok>woord" achter de tekst, zodat zowel
+    // de cluster-tests ("woorden met aai") als de mascotte-tests ("lolly-woord") matchen —
+    // ongeacht schrijfwijze, ook in lijstjes ("ng, nk en aai") en zonder voorzetsel ervoor.
+    var aug = t;
+    t.split(/[\s,;.]+/).forEach(function (tok) {
+      tok = tok.replace(/[-'’]/g, "").replace(/woord(en)?$/, ""); // "ng-woord"/"ngwoorden" → "ng"
+      if (tok.length >= 2 && tok.length <= 9 && /^[a-zà-ÿ]+$/.test(tok)) aug += " woorden met " + tok + " " + tok + "woord";
+    });
     var uit = [];
     for (var i = 0; i < SPELLING_WOORDEN.length; i++) {
       if (SPELLING_WOORDEN[i].test.test(aug)) uit.push(SPELLING_WOORDEN[i]);
@@ -676,13 +685,14 @@
       if (cats.length === 1) {
         return kern +
           "\nDeze les/dit werkblad gaat over de categorie: " + cats[0].naam + "." +
-          " Behandel die als hoofdonderwerp: leg de spellingregel in kindtaal en in je eigen woorden uit, en gebruik meerdere passende voorbeeldwoorden uit de woordenbank.";
+          (cats[0].regel ? " De juiste spellingregel is: " + cats[0].regel : "") +
+          " Behandel die als hoofdonderwerp. Staat er hierboven een regel? Neem die dan (bijna) LETTERLIJK over in je uitleg — parafraseer 'm niet los en verzin er GEEN 'nooit zus of zo'-varianten bij (die kloppen vaak niet). Gebruik meerdere passende voorbeeldwoorden uit de woordenbank.";
       }
       if (cats.length > 1) {
         return kern +
           "\nDe leerkracht wil MEERDERE categorieen tegelijk oefenen. Behandel ELK van deze categorieen op het werkblad en laat er geen enkele weg (verdeel de opdrachten eerlijk over de categorieen, of maak per categorie een eigen onderdeel): " +
-          cats.map(function (c) { return "\"" + c.naam + "\""; }).join("; ") + "." +
-          " Leg per categorie de regel kort in kindtaal uit en gebruik per categorie de bijbehorende woorden uit de woordenbank.";
+          cats.map(function (c) { return "\"" + c.naam + "\"" + (c.regel ? " (regel: " + c.regel + ")" : ""); }).join("; ") + "." +
+          " Leg per categorie de regel kort in kindtaal uit. Waar een regel is meegegeven, neem die dan (bijna) LETTERLIJK over — parafraseer 'm niet los en verzin er GEEN 'nooit zus of zo'-varianten bij (die kloppen vaak niet). Gebruik per categorie de bijbehorende woorden uit de woordenbank.";
       }
       // Alleen een methodenaam genoemd, geen specifieke categorie.
       return kern +

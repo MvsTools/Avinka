@@ -377,13 +377,13 @@
         '- {"type":"waarnietwaar","opdracht":"...","stellingen":[{"stelling":"...","goed":true}]} — goed = true (waar) of false (niet waar).',
         '- {"type":"sommen","opdracht":"...","spec":{"bewerking":"+|-|×|÷|mix","min":1,"max":100,"aantal":10,"kolommen":2}} — LET OP: schrijf de sommen NIET zelf; geef alleen de spec, het systeem maakt de sommen én de juiste antwoorden. Kies min/max/bewerking passend bij groep en leerlijn.',
         '- {"type":"getallenlijn","opdracht":"...","spec":{"start":0,"eind":100,"stap":10,"gevraagd":[30,70]}} — het systeem tekent de lijn; gevraagd = welke getallen ingevuld moeten worden. start/eind/stap mogen ook kommagetallen zijn (bijv. 0 tot 5, stap 0,5) of negatief (bijv. −20 tot 20) — kies passend bij de leerlijn.',
-        '- {"type":"woordzoeker","opdracht":"...","woorden":["WOORD","WOORD"]} — geef 8 tot 16 woorden (passend bij het onderwerp/de spellingcategorie); het systeem bouwt het raster.',
+        '- {"type":"woordzoeker","opdracht":"...","woorden":["WOORD","WOORD"]} — geef 10 tot 16 woorden (passend bij het onderwerp/de spellingcategorie). Een woordzoeker is RUIMTEZUINIG: de woorden staan naast elkaar en meer woorden kosten nauwelijks extra hoogte, dus kies eerder MEER dan minder (mik op ~12). Het systeem bouwt het raster.',
         '- {"type":"rekenmuurtje","opdracht":"...","spec":{"rijen":3,"max":12}} — rekenmuurtje (elke steen = som van de twee eronder); het systeem maakt het muurtje én de antwoorden. rijen 3 of 4.',
         '- {"type":"getalhuis","opdracht":"...","spec":{"getal":10,"aantal":6}} — splitsen van een getal; het systeem maakt de splitsingen + antwoorden. Voor de onderbouw.',
         '- {"type":"klok","opdracht":"...","spec":{"aantal":6,"soort":"half","cijfers":false}} — klokkijken; soort = heel/half/kwartier/vijf. Zet "cijfers":true voor een wijzerplaat MET de cijfers 1 t/m 12 erop (makkelijker, onderbouw). Het systeem tekent de klokken; de leerling schrijft de tijd.',
         '- {"type":"geld","opdracht":"...","spec":{"aantal":6,"max":20,"kommagetallen":true}} — rekenen met geld; het systeem maakt de geldsommen + antwoorden.',
         '- {"type":"doolhof","opdracht":"...","spec":{"grootte":11}} — een doolhof van A naar B; het systeem tekent het (leuk als afsluiter).',
-        '- {"type":"kruiswoord","opdracht":"...","woorden":[{"woord":"...","omschrijving":"..."}]} — geef 8 tot 16 woorden met een korte omschrijving; het systeem legt de kruiswoordpuzzel.',
+        '- {"type":"kruiswoord","opdracht":"...","woorden":[{"woord":"...","omschrijving":"..."}]} — geef 8 tot 14 woorden met een korte omschrijving; het systeem legt de kruiswoordpuzzel. Woorden van elke lengte mogen.',
         '- {"type":"reeks","opdracht":"...","spec":{"aantal":4}} — getallenreeksen aanvullen; het systeem maakt ze + de antwoorden. Zet "kommagetallen":true voor een reeks met kommagetallen (bijv. 0,5 · 1,0 · 1,5 …).',
         '- {"type":"vergelijken","opdracht":"...","spec":{"soort":"getallen","aantal":8,"max":20}} — < , > of = invullen; het systeem maakt de paren + berekent het teken. Kies "soort" passend bij de leerlijn: getallen (default), keer (3×4 ⃝ 13), min (15−6 ⃝ 12−4), kommagetallen (0,5 ⃝ 0,45), breuken (½ ⃝ ¾), procenten (50% ⃝ 0,4), of mix (breuk/procent/kommagetal door elkaar).',
         '- {"type":"tafelkaart","opdracht":"...","spec":{"tafel":7,"tm":10}} — een tafel oefenen; het systeem maakt de sommen + antwoorden.',
@@ -443,7 +443,7 @@
         '6. Geef bij elk blok de juiste antwoorden mee (behalve bij tekst/teken/reflectie/bingo en bij de blokken die het systeem zelf uitrekent: sommen, getallenlijn, woordzoeker, rekenmuurtje, getalhuis, klok, geld, doolhof, kruiswoord, reeks, vergelijken, tafelkaart, breuken, kleuropsom, staafdiagram, sudoku, geheimschrift, anagram, zinbouwen, cijferplus, cijfermin, cijferkeer, ontbrekend, buurgetallen, ordenen, plaatswaarde, getalwoord, afronden, maalrooster, romeins, automatiseer). Bij lettergrepen/rijmwoorden/synant/lidwoord/zoekdefout geef je de inhoud + de juiste antwoorden zelf mee.',
         '7. Voor rekenen: gebruik het "sommen"-blok met een spec; verzin nooit zelf sommen of antwoorden. Voor verhaaltjessommen gebruik je "open" mét antwoord.',
         '8. Houd opdracht-instructies kort en in kindtaal ("Reken uit.", "Zoek de woorden.").',
-        '9. Het hele werkblad VULT twee kantjes (voor- en achterkant van één A4) GOED — niet langer, maar zeker ook niet half leeg. Een leerling moet er echt even mee bezig zijn, niet in twee minuten klaar. Vul dus ELKE opdracht stevig volgens de lengte-richtlijn hieronder, en zorg dat de tweede pagina ook goed vol staat (geen halve lege pagina). Reken realistisch met ruimte: een leestekst, open vragen met schrijfregels, koppelen, sorteren, woordzoeker, kruiswoord, staafdiagram, sudoku, doolhof en getallenlijn vreten veel verticale ruimte; gebruik hooguit 1 à 2 van zulke ruimte-vreters per werkblad. Belangrijk: het systeem kort automatisch in als het geheel tóch over twee kantjes zou lopen — dus wees eerder te GUL dan te karig; te weinig ingevuld wordt niet vanzelf opgelost, te veel wél.',
+        '9. Het hele werkblad past op MAXIMAAL twee kantjes (voor- en achterkant van één A4); nooit meer. HOE vol het moet zijn hangt af van het aantal opdrachten (zie "RUIMTE & VULLING" verderop): bij veel opdrachten vul je beide kantjes goed, bij weinig opdrachten mag het korter — kwaliteit boven volproppen. Reken realistisch met ruimte: een leestekst, open vragen met schrijfregels, koppelen, sorteren, woordzoeker, kruiswoord, staafdiagram, sudoku, doolhof en getallenlijn vreten veel verticale ruimte; gebruik hooguit 1 à 2 van zulke ruimte-vreters per werkblad. Het systeem kort automatisch in als het geheel tóch over twee kantjes zou lopen — dus wees eerder te gul dan te karig.',
         '10. SPECIAAL BIJ SPELLING (een spellingregel of -categorie oefenen, bijv. "c die klinkt als k"):',
         '   a. Zoek-de-fout: precies ÉÉN fout per zin, en die fout MOET exact de geoefende spellingregel betreffen (dus geen grammatica- of werkwoordsfout als "de fout"); de rest van de zin is correct, lopend en zinvol Nederlands. Controleer per zin dat er precies één fout in zit en dat de zin klopt.',
         '   b. Invullen bij spelling = ALLEEN de moeilijke letter(s) van de regel invullen, GEEN half woord laten raden. Laat het woord (bijna) HEEL en herkenbaar staan en blank uitsluitend de letter(s) die de regel oefent. Voorbeelden: c-als-/k/ → het gat is "c" en de rest staat er ("(gat)ola" = cola, "(gat)actus" = cactus); x → "e(gat)amen" (examen), "ta(gat)i" (taxi); eau → "cad(gat)" (cadeau), "bur(gat)" (bureau). REGELS: (1) blank alleen de regelletter(s), nooit een groot woorddeel — het kind schrijft dus 1 tot 3 letters, niet bijna het hele woord; (2) de rest van het woord staat er zodat het woord meteen herkenbaar/oplosbaar is (een leerkracht moet het antwoord direct weten); (3) zet de regelletter NOOIT al voorgedrukt naast het gat; (4) een korte, duidelijke zin eromheen mag, maar alleen als het woord daardoor niet vaag wordt — bij twijfel gewoon het losse woord met het gat; (5) plak GEEN betekenis of omschrijving aan het woord ("bur(gat) — het meubel waaraan je werkt"): dat hoort bij een kruiswoord, niet bij invullen, en is hier overbodig. Gebruik óf het losse woord met het gat, óf een natuurlijke voorbeeldzin — maar NOOIT een definitie van het woord; (6) het antwoordwoord mag NOOIT ergens in de zin/omschrijving eromheen staan (dus niet "het (gat) van groep 7" bij niveau) — dan verklap je het antwoord.',
@@ -456,30 +456,30 @@
     // Willekeurige greep (voor het roteren van werkvormen per generatie).
     function kiesN(arr, n) { var a = arr.slice(), out = []; while (out.length < n && a.length) out.push(a.splice(Math.floor(Math.random() * a.length), 1)[0]); return out; }
     function bouwOpdracht(inv) {
-      const lengteOms = {
-        kort: 'KORT — compacte opdrachten, maar de twee kantjes moeten wél goed gevuld zijn: meerkeuze ~4 vragen, waar/niet-waar ~4 stellingen, koppelen ~4 paren, invul ~6 zinnen, open ~3 vragen, zoek-de-fout ~4 zinnen, categoriseren ~7 woorden; bij spec-blokken "aantal" ~8; woordzoeker ~9 woorden; kruiswoord ~9 woorden; anagram ~7 woorden; lettergrepen ~7 woorden; rijmwoorden ~7 woorden; synant (synoniemen/antoniemen) ~5 paren; sudoku 4×4.',
-        middel: 'MIDDEL — goed gevulde opdrachten: meerkeuze 5-6 vragen, waar/niet-waar 6-7 stellingen, koppelen ~5 paren, invul 8-10 zinnen, open ~4 vragen, zoek-de-fout ~5 zinnen, categoriseren ~9 woorden; bij spec-blokken "aantal" ~12; woordzoeker ~12 woorden; kruiswoord ~12 woorden; anagram ~9 woorden; lettergrepen ~9 woorden; rijmwoorden ~9 woorden; synant (synoniemen/antoniemen) ~6 paren; sudoku 6×6.',
-        groot: 'GROOT — flink gevulde opdrachten: meerkeuze ~7 vragen, waar/niet-waar ~8 stellingen, koppelen 6 paren, invul 11-14 zinnen, open ~6 vragen, zoek-de-fout ~6 zinnen, categoriseren ~13 woorden; bij spec-blokken "aantal" 14-18; woordzoeker ~16 woorden; kruiswoord ~16 woorden; anagram ~11 woorden; lettergrepen ~11 woorden; rijmwoorden ~11 woorden; synant (synoniemen/antoniemen) ~8 paren; sudoku 9×9.'
-      };
-      var lengte = inv.lengte;
+      var lengte = inv.lengte; // alleen nog voor de puzzelgrootte-cap hieronder
       const lijnen = [];
       lijnen.push('Maak een werkblad voor het vak ' + inv.vak + ', ' + inv.groep + '.');
       lijnen.push('Onderwerp / leerdoel: ' + (inv.onderwerp || '(kies zelf een passend, leuk onderwerp bij dit vak en deze groep)') + '.');
       lijnen.push('Maak PRECIES ' + inv.aantal + ' ECHTE OEFENOPDRACHT' + (inv.aantal === 1 ? '' : 'EN') + ' waarin de leerling iets DOET (invullen, sorteren, puzzelen, een zin schrijven enzovoort). Een uitleg-/regelblok vooraf (type "tekst") en een reflectie achteraf (type "reflectie") tellen HIER NIET IN MEE en zijn optioneel: als je die toevoegt, komen ze BOVENOP de ' + inv.aantal + ' opdracht' + (inv.aantal === 1 ? '' : 'en') + '. Dus een reflectie is NOOIT een van de ' + inv.aantal + ' opdrachten.');
-      lijnen.push('Lengte per opdracht: ' + (lengteOms[lengte] || lengteOms.middel));
+      lijnen.push('RUIMTE & VULLING — JIJ bepaalt hoeveel items elke opdracht krijgt, zó dat het HELE werkblad mooi past op MAXIMAAL twee kantjes (A4, voor- en achterkant); nooit meer dan twee. Stem het af op de samenstelling:');
+      lijnen.push('- Er zijn ' + inv.aantal + ' oefenopdracht' + (inv.aantal === 1 ? '' : 'en') + '. Verdeel de beschikbare ruimte daar goed over.');
+      lijnen.push('- VEEL opdrachten (5 of meer): vul BEIDE kantjes goed — geen halve lege tweede pagina — dus stevig gevulde opdrachten.');
+      lijnen.push('- 3 à 4 opdrachten: vul ruim, maar het hoeft niet krampachtig helemaal vol.');
+      lijnen.push('- Weinig opdrachten (1 of 2): kwaliteit boven volproppen; het hoeft de twee kantjes niet te vullen, korter mag.');
+      lijnen.push('- Richtlijn per type (schaal op de beschikbare ruimte): kolom-opdrachten mogen véél items — invul / meerkeuze / waar-niet-waar / anagram / lettergrepen / rijmwoorden / lidwoord ~6 tot 12, categoriseren ~8 tot 14 woorden, open vragen ~3 tot 6, zoek-de-fout ~4 tot 7 zinnen. Ruimte-vreters (open vragen met schrijfregels, sorteren in vakken, woordzoeker, kruiswoord, sudoku, leestekst, staafdiagram) nemen veel verticale ruimte: gebruik er hooguit 1-2 en houd hun aantal beperkt (woordzoeker/kruiswoord 8-16 woorden).');
+      lijnen.push('- Het systeem kort automatisch in als het tóch over twee kantjes zou lopen — dus wees eerder te GUL dan te karig; te weinig ingevuld wordt niet vanzelf opgelost, te veel wél.');
       // Puzzelgrootte per generatie laten wisselen, MAAR gekoppeld aan de lengte
       // (= het aantal opdrachten): bij veel opdrachten (kort) mag een puzzel niet
       // "groot" worden, anders loopt het werkblad over 3 pagina's. kort → alleen KLEIN,
       // middel → KLEIN of MIDDELGROOT, groot (1-2 opdrachten) → alle maten.
       var puzzelMaten = [
-        'KLEIN (woordzoeker ~8 woorden, kruiswoord ~8 woorden, sudoku 4×4)',
-        'MIDDELGROOT (woordzoeker ~12 woorden, kruiswoord ~12 woorden, sudoku 6×6)',
+        'KLEIN (woordzoeker ~10 woorden, kruiswoord ~9 woorden, sudoku 4×4)',
+        'MIDDELGROOT (woordzoeker ~13 woorden, kruiswoord ~12 woorden, sudoku 6×6)',
         'GROOT (woordzoeker ~16 woorden, kruiswoord ~16 woorden, sudoku 9×9)'
       ];
       var maxPuzzel = lengte === 'kort' ? 0 : lengte === 'middel' ? 1 : 2;
       var gekozenPuzzel = puzzelMaten[Math.floor(Math.random() * (maxPuzzel + 1))];
       lijnen.push('PUZZELGROOTTE: gebruik je een puzzel (woordzoeker, kruiswoord, sudoku, doolhof), maak er DEZE keer een ' + gekozenPuzzel + ' versie van. Varieer de puzzelgrootte per werkblad, maar blijf binnen deze maat zodat alles op twee kantjes past.');
-      lijnen.push('PAGINALIMIET: het hele werkblad past op MAXIMAAL twee kantjes (voor- en achterkant van één A4); maak het nooit langer. Veel opdrachten staan in meerdere kolommen naast elkaar en worden dus NIET lang, ook niet met veel items: die mogen gerust vol (kale sommen, cijferen +/−/×, tafelkaart, vergelijken, ontbrekend getal, ordenen, afronden, buurgetallen, getal-in-woorden, romeins, geld, meerkeuze, invul, lidwoord, lettergrepen, rijmwoorden, anagram). Echt ruimte-vretende opdrachten (open vragen met schrijfregels, leestekst, koppelen, sorteren in vakken, staafdiagram, woordzoeker, kruiswoord, sudoku, doolhof, getallenlijn, tekenen) nemen veel verticale ruimte: beperk daarvan het aantal items zodat alles op twee kantjes blijft passen. Volg de gekozen lengte als richtlijn en VUL de twee kantjes goed — laat geen halve lege pagina achter. Wordt het geheel te lang, dan kort het systeem het zelf in; dus liever iets te vol dan te leeg.');
       if (inv.moeilijkheid && inv.moeilijkheid !== 'op niveau') {
         lijnen.push('Niveau: maak het ' + inv.moeilijkheid + ' dan normaal voor deze groep (blijf wel binnen het leerjaar).');
       }
@@ -563,8 +563,10 @@
 
     // ── Het werkblad maken ───────────────────────────────────────────────────
     let laadTimer = null;
-    function startLaden() {
-      const stappen = ['Onderwerp en niveau bekijken', 'Opdrachten bedenken', 'Sommen en puzzels uitrekenen', 'Het thema vormgeven', 'Laatste check'];
+    function startLaden(vak) {
+      // Stap 3 vak-bewust: bij rekenen "sommen", anders neutraal (spelling maakt geen sommen).
+      var stap3 = /reken/i.test(vak || '') ? 'Sommen en puzzels uitrekenen' : 'Opdrachten en puzzels maken';
+      const stappen = ['Onderwerp en niveau bekijken', 'Opdrachten bedenken', stap3, 'Het thema vormgeven', 'Laatste check'];
       const box = document.getElementById('laad-stappen');
       box.innerHTML = stappen.map((s, i) => '<div class="laad-stap" data-i="' + i + '"><span class="laad-stip"></span>' + s + '</div>').join('');
       let i = 0;
@@ -607,7 +609,7 @@
       document.getElementById('uitvoer').style.display = 'none';
       document.getElementById('laden').classList.add('aan');
       document.getElementById('laden').scrollIntoView({ behavior: 'smooth', block: 'center' });
-      startLaden();
+      startLaden(inv.vak);
       try {
         let user = bouwOpdracht(inv);
         if (andereVersie) user += '\n\nMaak een DUIDELIJK ANDERE versie dan eerder: andere opdrachten en andere bloktypes, zelfde onderwerp en niveau.';
@@ -711,6 +713,11 @@
         // Zoek-de-fout: de fout MOET de geoefende regel betreffen. Vergelijk foute en goede
         // zin: precies één verschillend woord, en dat verschil moet de kenmerkletter raken.
         function woordenVan(s) { return String(s).toLowerCase().replace(/[^a-zà-ÿ'’ ]/g, ' ').split(/\s+/).filter(Boolean); }
+        // Strip AI-zelfcorrecties uit de tekst ("het losgelge... nee: het losgel" → "het losgel"):
+        // het model schreef een verkeerde aanzet, corrigeerde zich hardop en dat lekte in de zin.
+        function schoonAI(s) {
+          return String(s == null ? '' : s).replace(/[^\s.]*\.{2,}\s*nee[:,]?\s+(?:\w+\s+)?/gi, '').replace(/\s{2,}/g, ' ');
+        }
         function verschilRaaktKenmerk(fout, goed) {
           var i = 0; while (i < fout.length && i < goed.length && fout[i] === goed[i]) i++;
           var j = 0; while (j < fout.length - i && j < goed.length - i && fout[fout.length - 1 - j] === goed[goed.length - 1 - j]) j++;
@@ -749,6 +756,7 @@
           } else if (blk.type === 'zoekdefout') {
             // Weer zinnen waarvan de fout NIET over de geoefende regel gaat (werkwoord-,
             // grammatica- of andere-regel-fout). Alleen als er iets overblijft (fail-safe).
+            (blk.zinnen || []).forEach(function (z) { if (z) { z.zin = schoonAI(z.zin); z.correct = schoonAI(z.correct); } });
             var goedeZinnen = (blk.zinnen || []).filter(zoekfoutOk);
             if (goedeZinnen.length) blk.zinnen = goedeZinnen;
           } else if (blk.type === 'woordzoeker') {
@@ -762,6 +770,7 @@
             // geen bankwoord, dan is het item kapot ("wexpert") → weglaten (min. 2 over).
             var nieuw = (blk.items || []).map(function (it) {
               if (!it) return null;
+              it.voor = schoonAI(it.voor); it.na = schoonAI(it.na); // AI-zelfcorrectie eruit
               var vf = (String(it.voor || '').match(/([a-zà-ÿ]+)$/i) || [])[1] || '';
               var nf = (String(it.na || '').match(/^([a-zà-ÿ]+)/i) || [])[1] || '';
               if (!vf && !nf) return it; // gat = heel woord → laten staan
@@ -793,13 +802,21 @@
     var KANTJE_FACTOR = 1.2;
     function pastPagina(page) {
       var b = page.offsetWidth || 720;
-      return page.scrollHeight <= b * KANTJE_FACTOR * 2 + 6;
+      // Reserveer wat ruimte: de PRINT is iets hoger dan de schermmeting, en de footer
+      // telt mee — anders wordt die net naar pagina 3 geduwd. Liever iets korter dan spillen.
+      return page.scrollHeight <= b * KANTJE_FACTOR * 2 - 54;
     }
     function wisWbCache(b) { ['_wz', '_kw', '_verg', '_reeks', '_hussel', '_zin', '_geheim'].forEach(function (k) { delete b[k]; }); }
     // Verklein het werkblad met één stap; geeft false als er niets meer in te korten valt.
     function trimEen(wb) {
       var blk = (wb.blokken || []).filter(function (b) { return b && b.type; });
-      var GEW = { open: 4.5, koppelen: 3.5, categoriseren: 2.2, staafdiagram: 6, woordzoeker: 5, kruiswoord: 5, invul: 1.6, meerkeuze: 1.8, waarnietwaar: 1.1, zinbouwen: 1.8, zoekdefout: 2, lettergrepen: 1.2, rijmwoorden: 1.2, lidwoord: 1, synant: 1.4, anagram: 1.2 };
+      // Weging = hoeveel VERTICALE HOOGTE het scheelt om er één item af te halen. Een
+      // grote kruiswoord/woordzoeker is ruimte-hongerig, MAAR een woord eraf halen krimpt
+      // het rooster nauwelijks — dus die krijgen een LAGE weging en worden pas als LAATSTE
+      // ingekort. Bij een te vol werkblad korten we dus eerst de andere (echt krimpbare)
+      // opdrachten in om ruimte te maken voor de puzzel. Open vragen met schrijfregels
+      // scheppen de meeste ruimte per item, dus die het hoogst.
+      var GEW = { open: 4.5, zoekdefout: 2.5, koppelen: 2.5, meerkeuze: 2, zinbouwen: 1.6, invul: 1.5, synant: 1.4, categoriseren: 1.2, waarnietwaar: 1.2, lettergrepen: 1, rijmwoorden: 1, lidwoord: 1, anagram: 1, staafdiagram: 0.6, woordzoeker: 0.4, kruiswoord: 0.4 };
       var MIN = { woordzoeker: 6, kruiswoord: 6, open: 2, invul: 4 };
       function arrVan(b) {
         if (b.type === 'meerkeuze' || b.type === 'open') return b.vragen;
@@ -851,7 +868,7 @@
     function pasPaginaAanNu() {
       try {
         if (toonAntw || !laatsteWb) return; // meten op het vraagblad
-        var rondes = 10;
+        var rondes = 20; // genoeg om desnoods meerdere opdrachten in te korten voor een grote puzzel
         while (rondes-- > 0) {
           var page = document.querySelector('#wb-print .wb-page');
           if (!page || pastPagina(page)) break;
