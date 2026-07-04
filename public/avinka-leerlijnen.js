@@ -582,7 +582,7 @@
       test: /verkleinwoord|verkleining/,
       woorden: ["boom", "bloem", "man", "bal", "stoel", "koning", "raam", "huis", "kar", "tafel"] },
     { naam: "open en gesloten lettergrepen (verdubbelen of verlengen: man → mannen, maan → manen)", bank: "open_gesloten",
-      test: /klankgroep|open.{0,4}gesloten|verdubbel|kasteel\s*-?woord|jager\s*-?woord|bakker\s*-?woord/,
+      test: /klankgroep|open.{0,4}gesloten|open[^.,;]{0,8}letter|gesloten[^.,;]{0,8}letter|verdubbel|verleng|kasteel\s*-?woord|jager\s*-?woord|bakker\s*-?woord/,
       woorden: ["boom", "bom", "raam", "ram", "pot", "pen", "kar", "bal", "vis", "man", "zon", "kip"] },
     // Meervoud met 's: woorden die op een lange klinker (a, o, u, i, y) eindigen krijgen
     // 's in het meervoud (auto → auto's). Geen eigen bank in de woordenbank: eigen,
