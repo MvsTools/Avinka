@@ -421,6 +421,26 @@
     return out;
   }
 
+  // De spellingbank staat al gesorteerd van GEWOON naar ZELDZAAM (op niveau, dan
+  // frequentie; zie scripts/woordbank/bouw.js). Willekeurig grabbelen uit de héle
+  // lijst haalt daarom net zo vaak een zeldzaam of vreemd woord achteraan naar boven
+  // (curator, penicilline, merci, account) als een alledaags woord vooraan. Daarom
+  // kiezen we ALLEEN uit de "gewone kop" van de lijst — met wat variatie, zodat niet
+  // elk werkblad dezelfde woorden krijgt. Geen woord verdwijnt uit de bank; de
+  // zeldzame staart blijft als reserve bestaan, maar drijft niet meer bovenaan.
+  var SPELLING_KOP = 36; // grootte van de gewone-woorden-kop waaruit we kiezen
+  function kop(lijst) { return (lijst || []).slice(0, SPELLING_KOP); }
+  function kopGreep(lijst, n) { return sample(kop(lijst), n); }
+  // Voor volledig-gereviewde banken (hele lijst bruikbaar): greep met bias naar de
+  // GEWONERE (voorste) woorden, maar de HELE lijst bereikbaar. Zo krijg je maximale
+  // variatie zonder dat abstracte/zeldzamere woorden even vaak opduiken als alledaagse.
+  function gewogenGreep(lijst, n) {
+    var pool = (lijst || []).slice(), out = [];
+    n = Math.min(n, pool.length);
+    for (var i = 0; i < n; i++) out.push(pool.splice(Math.floor(Math.pow(Math.random(), 1.8) * pool.length), 1)[0]);
+    return out;
+  }
+
   // Doorsnede van een woordenlijst met de "extra gevoelig"-lijst (window.avinkaGevoelig,
   // meegegenereerd door scripts/woordbank/bouw.js). Uniek, in oorspronkelijke volgorde.
   function gevoeligeIn(woorden) {
@@ -518,10 +538,10 @@
       test: /uw\s*-?(rijtje|woord)|woorden? met uw\b/,
       woorden: ["uw", "duw", "ruw", "schuw", "sluw", "schaduw", "zenuw", "zwaluw"] },
     { naam: "woorden met ei of ij (weetwoorden)", bank: "ei_ij",
-      test: /\bei\s*-?\/?\s*ij\b|ei en ij|ij en ei|woorden? met ei\b|woorden? met ij\b/,
+      test: /\bei\s*-?\/?\s*ij\b|ei en ij|ij en ei|woorden? met ei\b|woorden? met ij\b|\bei\s*-?woord|\bij\s*-?woord/,
       woorden: ["trein", "klein", "plein", "reis", "geit", "eind", "ijs", "fijn", "pijn", "wijn", "tijd", "rijk", "kijk", "zwijn"] },
     { naam: "woorden met au of ou (weetwoorden)", bank: "au_ou",
-      test: /\bau\s*-?\/?\s*ou\b|au en ou|ou en au|woorden? met au\b|woorden? met ou\b/,
+      test: /\bau\s*-?\/?\s*ou\b|au en ou|ou en au|woorden? met au\b|woorden? met ou\b|\bau\s*-?woord|\bou\s*-?woord/,
       woorden: ["blauw", "gauw", "nauw", "dauw", "saus", "pauw", "auto", "kabouter", "koud", "goud", "hout", "zout", "fout", "vrouw", "schouder"] },
     { naam: "woorden met cht (korte klank + cht)", bank: "cht",
       test: /lucht\s*-?woord|\bcht\s*-?woord|woorden? met cht\b/,
@@ -543,7 +563,27 @@
       woorden: ["boom", "bloem", "man", "bal", "stoel", "koning", "raam", "huis", "kar", "tafel"] },
     { naam: "open en gesloten lettergrepen (verdubbelen of verlengen: man → mannen, maan → manen)", bank: "open_gesloten",
       test: /klankgroep|open.{0,4}gesloten|verdubbel|kasteel\s*-?woord|jager\s*-?woord|bakker\s*-?woord/,
-      woorden: ["boom", "bom", "raam", "ram", "pot", "pen", "kar", "bal", "vis", "man", "zon", "kip"] }
+      woorden: ["boom", "bom", "raam", "ram", "pot", "pen", "kar", "bal", "vis", "man", "zon", "kip"] },
+    // Meervoud met 's: woorden die op een lange klinker (a, o, u, i, y) eindigen krijgen
+    // 's in het meervoud (auto → auto's). Geen eigen bank in de woordenbank: eigen,
+    // met de hand gecureerde grondvormen (het kind vormt zelf het meervoud).
+    { naam: "meervoud met 's (bijvoorbeeld auto → auto's)",
+      test: /['’]\s?s\b.{0,12}meervoud|meervoud.{0,12}['’]\s?s\b|komma\s*-?\s*s\b|apostrof|['’]s[\s-]?woord|auto['’]?s/,
+      woorden: ["auto", "foto", "radio", "paraplu", "menu", "taxi", "baby", "pony", "kilo", "piano", "video", "oma", "opa", "hobby"] },
+    { naam: "woorden met sch (zoals school, schaduw)", bank: "sch",
+      test: /\bsch\s*-?woord|woorden? met sch\b/,
+      woorden: ["school", "schoen", "schaap", "schaar", "schat", "schuur", "schilder", "schaduw", "schouder", "schema"] },
+    // voorvoegsel/achtervoegsel/y_grieks: bouw-regexes gefixt 4-7 (valse-positieven weg),
+    // dus nu herkend + op de schone bank.
+    { naam: "woorden met een voorvoegsel (be-, ge-, ver-, ont-, her-)", bank: "voorvoegsel",
+      test: /voorvoegsel|woorden? met (be|ge|ver|ont|her)\s*-/,
+      woorden: ["gebouw", "bezoek", "bewegen", "verhaal", "ontbijt", "gevaar", "verschil", "geluk", "bericht", "gedrag"] },
+    { naam: "woorden op -ig of -lijk", bank: "achtervoegsel",
+      test: /achtervoegsel|woorden? op\s*-?(ig|lijk)\b|\b(ig|lijk)\s*-?woord/,
+      woorden: ["aardig", "voorzichtig", "prachtig", "handig", "moeilijk", "duidelijk", "gelukkig", "vrolijk", "makkelijk", "gezellig"] },
+    { naam: "woorden met de Griekse y (zoals systeem, type)", bank: "y_grieks",
+      test: /griekse\s*y|\by\s*-?woord|woorden? met (de )?(griekse )?y\b/,
+      woorden: ["systeem", "type", "symbool", "mysterie", "cyclus", "fysiek", "gym", "pyjama"] }
   ];
   // Kenmerk per categorie: de letter(s) die de REGEL oefent en dus in het invul-gat
   // moeten vallen (niet een willekeurige middenletter). Keyed op bank-id. Zonder
@@ -553,7 +593,7 @@
     kilo_ie: /i/, c_als_s: /c/, c_als_k: /c/, tie: /ties?$/, isch: /isch$/, x: /x/,
     th: /th/, ch_sj: /ch/, eau: /eau/, accent_e: /[éèê]/, eer_oor_eur: /eer|oor|eur/,
     aai_ooi_oei: /aai|ooi|oei/, eeuw_ieuw: /eeuw|ieuw/, ei_ij: /ei|ij/, au_ou: /au|ou/,
-    cht: /cht/, ng_nk: /ng|nk/, sch: /sch/
+    cht: /cht/, ng_nk: /ng|nk/, sch: /sch/, y_grieks: /y/
   };
 
   // ALLE genoemde categorieen (een leerkracht kan er meerdere tegelijk willen
@@ -605,7 +645,7 @@
       var cats = vindSpellingCats(context);
       var noemtMethode = METHODE_NAAM.test(String(context || ""));
       if (!cats.length && !noemtMethode) return "";
-      var kern = "SPELLINGCATEGORIE (eigen, methode-neutrale aanpak). Een leerkracht gebruikt vaak de termen van de eigen spellingmethode. Herken die term, maar gebruik in de les/het werkblad je EIGEN, neutrale uitleg: neem geen categorienaam, regelformulering of indeling van een methode over, en zet de naam van een methode NIET in de tekst die de leerling ziet. Maak er een eigen, goed opgebouwde en aantrekkelijke les/werkblad van die méér biedt dan een rij oefenwoorden. Gebruik UITSLUITEND de neutrale omschrijving(en) die hieronder staan; verzin GEEN eigen labels zoals \"zachte c\" of \"harde c\" (die zijn verwarrend en vaak onjuist), en zet geen methode-categorienaam (zoals \"colawoord\") in de leerlingtekst.";
+      var kern = "SPELLINGCATEGORIE (eigen, methode-neutrale aanpak). Een leerkracht gebruikt vaak de termen van de eigen spellingmethode. Herken die term, maar gebruik in de les/het werkblad je EIGEN, neutrale uitleg: neem geen categorienaam, regelformulering of indeling van een methode over, en zet de naam van een methode NIET in de tekst die de leerling ziet. Maak er een eigen, goed opgebouwde en aantrekkelijke les/werkblad van die méér biedt dan een rij oefenwoorden. Gebruik UITSLUITEND de neutrale omschrijving(en) die hieronder staan; verzin GEEN eigen labels zoals \"zachte c\" of \"harde c\" (die zijn verwarrend en vaak onjuist), en zet geen methode-categorienaam (zoals \"colawoord\") in de leerlingtekst. BELANGRIJK — DEK DE HELE OPDRACHT: behandel ELK leerdoel dat de leerkracht in het onderwerp noemt. Noemt het onderwerp meerdere spellingcategorieen, of nog een categorie die hieronder niet apart wordt uitgewerkt, werk die dan óók volledig uit (met eigen, passende, correct gespelde woorden). Sla NOOIT stilzwijgend een deel van de opdracht over.";
       if (cats.length === 1) {
         return kern +
           "\nDeze les/dit werkblad gaat over de categorie: " + cats[0].naam + "." +
@@ -657,9 +697,13 @@
           var grond = lijst.filter(function (x) { return x[2] !== "v"; }).map(function (x) { return x[0]; });
           var verv = lijst.filter(function (x) { return x[2] === "v"; }).map(function (x) { return x[0]; });
           if (grond.length >= 8) {
-            var gGrond = sample(grond, Math.min(meer ? 16 : 26, grond.length));
+            // Standaard: kies uit de HELE (doorgereviewde) bank met frequentie-weging,
+            // voor maximale variatie. Een nog-niet-gereviewde bank kan `kopOnly:true`
+            // krijgen → dan alleen de gewone kop (zeldzame/vreemde tail weren).
+            var kies = cat.kopOnly ? kopGreep : gewogenGreep;
+            var gGrond = kies(grond, Math.min(meer ? 16 : 26, grond.length));
             var s = "Categorie \"" + cat.naam + "\" — basisvormen (kies hier vooral uit): " + gGrond.join(", ") + ".";
-            var gVerv = verv.length ? sample(verv, Math.min(meer ? 5 : 8, verv.length)) : [];
+            var gVerv = verv.length ? kies(verv, Math.min(meer ? 5 : 8, verv.length)) : [];
             if (gVerv.length) s += " Vervoegingen (spaarzaam, alleen waar het echt helpt): " + gVerv.join(", ") + ".";
             var gev = gevoeligeIn(gGrond.concat(gVerv));
             if (gev.length) s += " LET OP — deze woorden zijn gevoelig (" + gev.join(", ") + "): gebruik ze alleen in een neutrale, luchtige context, nooit in een gewelddadig, angstig of verontrustend zinnetje.";
@@ -686,6 +730,7 @@
         if (cat.bank && g && window.avinkaWoordenbank && window.avinkaWoordenbank[cat.bank]) {
           woorden = window.avinkaWoordenbank[cat.bank].filter(function (x) { return x[1] <= +g && x[2] !== "v"; }).map(function (x) { return x[0]; });
           if (woorden.length < 8) woorden = cat.woorden.slice();
+          else if (cat.kopOnly) woorden = kop(woorden); // standaard: hele bank; kopOnly → alleen de kop
         } else woorden = cat.woorden.slice();
         return { naam: cat.naam, key: cat.bank || cat.naam, woorden: woorden, feat: SPELLING_FEAT[cat.bank] || null };
       });

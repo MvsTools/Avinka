@@ -66,6 +66,26 @@
     return String(w || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/[^A-Z]/g, "");
   }
 
+  // Getal <-> Nederlands telwoord (1-20; genoeg voor de puzzel-aantallen 8-16).
+  var GETALWOORD = { 1: "één", 2: "twee", 3: "drie", 4: "vier", 5: "vijf", 6: "zes",
+    7: "zeven", 8: "acht", 9: "negen", 10: "tien", 11: "elf", 12: "twaalf", 13: "dertien",
+    14: "veertien", 15: "vijftien", 16: "zestien", 17: "zeventien", 18: "achttien",
+    19: "negentien", 20: "twintig" };
+  var TELWOORD_RE = "een|één|twee|drie|vier|vijf|zes|zeven|acht|negen|tien|elf|twaalf|dertien|veertien|vijftien|zestien|zeventien|achttien|negentien|twintig";
+  // Corrigeert een aantal dat in de opdrachttekst staat ("Zoek de ACHT woorden") naar
+  // het ECHTE aantal items (n). Nodig omdat de AI het getal in de zin schrijft, terwijl
+  // de code de woordlijst daarna nog kan inkorten (bankwoorden afdwingen, pagina-fit):
+  // dan zou de tekst liegen ("acht" terwijl er zes staan). Vervangt alleen een getal dat
+  // vlak vóór "woorden" staat en houdt de rest + de stijl (cijfer/telwoord) heel.
+  function syncAantalWoord(opdracht, n) {
+    if (!opdracht || !n) return opdracht;
+    var re = new RegExp("\\b(\\d{1,2}|" + TELWOORD_RE + ")\\b([\\s\\S]{0,24}?\\bwoorden\\b)", "i");
+    return String(opdracht).replace(re, function (_, getal, rest) {
+      var nieuw = /^\d+$/.test(getal) ? String(n) : (GETALWOORD[n] || String(n));
+      return nieuw + rest;
+    });
+  }
+
   // ── Generators: de CODE maakt de sommen / woordzoeker / getallenlijn ────────
 
   // Reken-engine: maakt sommen + (correcte) antwoorden uit een spec.
@@ -1384,7 +1404,9 @@
     var KLEUR = ["#c0392b", "#d35400", "#b9770e", "#7f8c1a", "#1e8449", "#138d75", "#1f8aa5",
       "#2471a3", "#2c3e9b", "#6c3483", "#9b2d8f", "#b03060", "#8e5a2b", "#34495e", "#196f3d", "#5d4037"];
     function kleurVan(i) { return KLEUR[((i % KLEUR.length) + KLEUR.length) % KLEUR.length]; }
-    var h = opdrachtKop(nr, b.opdracht || "Zoek de woorden en streep ze door.", b.em);
+    // Getal in de opdracht gelijktrekken met het ECHTE aantal geplaatste woorden.
+    var opd = syncAantalWoord(b.opdracht || "Zoek de woorden en streep ze door.", W.woorden.length);
+    var h = opdrachtKop(nr, opd, b.em);
     h += '<div class="wb-wz-wrap"><table class="wb-wz' + (ant ? " wb-wz-ant" : "") + '">';
     W.grid.forEach(function (rij) {
       h += "<tr>";
@@ -1556,7 +1578,8 @@
 
   function rKruiswoord(b, nr, ant) {
     var KW = b._kruis;
-    var h = opdrachtKop(nr, b.opdracht || "Los de kruiswoordpuzzel op.", b.em);
+    var kwAantal = (KW && KW.vragen && KW.vragen.length) || arr(b.woorden).length;
+    var h = opdrachtKop(nr, syncAantalWoord(b.opdracht || "Los de kruiswoordpuzzel op.", kwAantal), b.em);
     if (!KW || !KW.vragen || !KW.vragen.length) {
       // Terugval: een gewone omschrijving-lijst met invullijnen.
       h += '<div class="wb-invul-lijst">';
@@ -2198,7 +2221,9 @@
     });
     h += "</div>";
     // Voet
-    h += '<div class="wb-voet"><span>Gemaakt met Avinka ✓</span><span class="wb-voet-mas">' + (mas[2] || "") + "</span></div>";
+    // Brand-signatuur draagt al de afvinken-✓; kies als decoratie GEEN tweede vinkje
+    // (mas[2] is de ✅) maar de Avinka-ster, anders staan er twee vinkjes naast elkaar.
+    h += '<div class="wb-voet"><span>Gemaakt met Avinka ✓</span><span class="wb-voet-mas">' + (th.emoji || mas[0] || "") + "</span></div>";
     h += "</div>";
     return h;
   }

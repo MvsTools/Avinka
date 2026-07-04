@@ -95,8 +95,12 @@ const ING = [
   { id: "ei_ij", g: 4, doel: 1, soort: "orthografisch", label: "woorden met ei of ij (weetwoorden)", test: w => /ei|ij/.test(w) },
   { id: "au_ou", g: 4, doel: 1, soort: "orthografisch", label: "woorden met au of ou (weetwoorden)", test: w => /au|ou/.test(w) },
   { id: "open_gesloten", g: 4, doel: 1, soort: "fonetisch", label: "open en gesloten lettergreep (verdubbelen of verlengen)", test: w => openGesloten(w) },
-  { id: "voorvoegsel", g: 4, doel: 1, soort: "orthografisch", label: "woorden met een voorvoegsel (be-, ge-, ver-, ont-, her-)", test: w => /^(be|ge|ver|ont|her)[bcdfghjklmnprstvwz]/.test(w) },
-  { id: "achtervoegsel", g: 4, doel: 1, soort: "orthografisch", label: "woorden op -ig of -lijk", test: w => /(ig|lijk|ige|lijke|igheid|lijkheid)$/.test(w) },
+  // voorvoegsel: NIET elk woord dat toevallig met be/ge/ver/ont/her begint (gek, bel,
+  // bed) — alleen als het deel ná het voorvoegsel een bestaand woord is (ge+bouw, ver+haal).
+  { id: "voorvoegsel", g: 4, doel: 1, soort: "orthografisch", label: "woorden met een voorvoegsel (be-, ge-, ver-, ont-, her-)", test: w => heeftVoorvoegsel(w) },
+  // achtervoegsel: -ig/-lijk, maar NIET korte toevalstreffers (big, lig, wig) of de
+  // tig-getallen (twintig, dertig). Lengte-ondergrens + getal-uitsluiting.
+  { id: "achtervoegsel", g: 4, doel: 1, soort: "orthografisch", label: "woorden op -ig of -lijk", test: w => (/lijk(e|heid|er|st)?$/.test(w) && w.length >= 6) || (/ig(e|heid|er|st)?$/.test(w) && w.length >= 5 && !/^(twin|der|veer|vijf|zes|zeven|tach|negen)tig/.test(w)) },
   { id: "langermaak_d", g: 4, doel: 1, soort: "fonetisch", label: "woorden die op een /t/-klank eindigen maar met d (langer maken)", test: w => langermaakD(w) },
   // ── groep 5: verkleinwoord, f->v, s->z, samenstelling
   { id: "verkleinwoord", g: 5, doel: 1, soort: "orthografisch", label: "verkleinwoorden (-je, -tje, -etje, -pje, -kje)", test: w => isVerkleinwoord(w) },
@@ -104,8 +108,12 @@ const ING = [
   { id: "s_naar_z", g: 5, doel: 1, soort: "fonetisch", label: "woorden op /s/ die met z worden verlengd (huis -> huizen)", test: w => verlengtNaar(w, "s", "z") },
   { id: "samenstelling", g: 5, doel: 0, soort: "structuur", label: "samenstelling", test: w => isSamenstelling(w) },
   // ── groep 6: c, -tie, -isch (weetwoorden)
-  { id: "c_als_s", g: 6, doel: 1, soort: "fonetisch", label: "de c die klinkt als /s/ (cent, citroen)", test: w => /c[eiy]/.test(w) },
-  { id: "c_als_k", g: 6, doel: 1, soort: "fonetisch", label: "de c die klinkt als /k/ (cola, cactus)", test: w => /c[aou]|c[lr]|ck/.test(w) },
+  // De c maakt de /s/ zelf (cent, citroen): c vóór e/i/y. NIET na een s (scene, scenario):
+  // daar maakt de s de /s/-klank, niet de c — dat is geen c-als-/s/-woord.
+  { id: "c_als_s", g: 6, doel: 1, soort: "fonetisch", label: "de c die klinkt als /s/ (cent, citroen)", test: w => /(^|[^s])c[eiy]/.test(w) },
+  // De c maakt de /k/ zelf (cola, cactus, club): c vóór a/o/u of in cl/cr. GEEN ck
+  // (ticket, snack, stick): daar komt de /k/ uit de ck-digraaf, niet uit een losse c.
+  { id: "c_als_k", g: 6, doel: 1, soort: "fonetisch", label: "de c die klinkt als /k/ (cola, cactus)", test: w => /c[aou]|c[lr]/.test(w) },
   { id: "tie", g: 6, doel: 1, soort: "orthografisch", label: "woorden op -tie (je hoort /(t)sie/)", test: w => /tie$|ties$/.test(w) },
   { id: "isch", g: 6, doel: 1, soort: "orthografisch", label: "woorden op -isch (je hoort /ies/)", test: w => /isch/.test(w) },
   // ── groep 7/8: leenwoorden / bijzonder
@@ -114,7 +122,9 @@ const ING = [
   { id: "ch_sj", g: 7, doel: 1, soort: "fonetisch", label: "de ch die klinkt als /sj/ (chef, machine)", test: w => /ch/.test(w) && !/sch|cht/.test(w) },
   { id: "eau", g: 8, doel: 1, soort: "orthografisch", label: "woorden met -eau (je hoort /oo/)", test: w => /eau/.test(w) },
   { id: "accent_e", g: 8, doel: 1, soort: "orthografisch", label: "woorden met een accentstreepje op de e (café, privé)", test: w => /[éèê]/.test(w) },
-  { id: "y_grieks", g: 8, doel: 1, soort: "orthografisch", label: "woorden met de Griekse y", test: w => /y/.test(w) && !/ij/.test(w) },
+  // Griekse y = y als klinker MIDDEN in het woord (systeem, type, cyclus), NIET de
+  // Engelse -y aan het eind (baby, party, pony, hobby) en niet de ij.
+  { id: "y_grieks", g: 8, doel: 1, soort: "orthografisch", label: "woorden met de Griekse y", test: w => /y/.test(w) && !/ij/.test(w) && !/y$/.test(w) },
 ];
 const ING_BY_ID = Object.fromEntries(ING.map(i => [i.id, i]));
 const DOELEN = ING.filter(i => i.doel);
@@ -153,6 +163,10 @@ function langermaakD(w) {
   const kand = [w + "en"];
   if (enkel !== w) kand.push(enkel + "en");
   return kand.some(k => OPENTAAL.has(k));
+}
+function heeftVoorvoegsel(w) {
+  var m = w.match(/^(be|ge|ver|ont|her)(.+)/);
+  return !!m && m[2].length >= 3 && OPENTAAL.has(m[2]);
 }
 function isVerkleinwoord(w) {
   const m = w.match(/(etje|pje|kje|tje|je)$/);

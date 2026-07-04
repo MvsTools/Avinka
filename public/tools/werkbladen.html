@@ -515,6 +515,7 @@
         lijnen.push('- Gebruik bij voorkeur invul-opdrachten waarbij juist de moeilijke letter(s) ontbreken (bijvoorbeeld voor "crisis": voor="cr", antwoord="i", na="sis"), woorden laten afmaken, of een mini-dictee-achtige opdracht.');
         lijnen.push('- Vraag de spellingregel NIET terug, tenzij er expliciet een opdracht is als "schrijf de regel op".');
         lijnen.push('- Alle oefenwoorden zijn bestaande Nederlandse woorden op het niveau van ' + inv.groep + '.');
+        lijnen.push('- VOORBEELDEN IN DE UITLEG: gebruik je een uitleg-/regelblok (type "tekst") met voorbeeldwoorden, controleer dan dat ELK voorbeeld de geoefende regel ÉCHT bevat (een voorbeeld bij "de c die klinkt als /s/" moet echt een c vóór e, i of y hebben; "fiets" heeft geen c en is dus fout). Staat er hierboven een verplichte woordenbank, kies je voorbeelden dan óók uit die lijst en verzin er geen eigen woorden bij.');
         // Werkvormen ROTEREN zodat niet elk werkblad dezelfde opzet krijgt.
         var spellingVormen = [
           'invullen waarbij ALLEEN de moeilijke letter(s) ontbreken (het woord staat verder heel)',
@@ -698,6 +699,33 @@
         var unie = [], gezien = {};
         banken.forEach(function (b) { b.woorden.forEach(function (x) { if (!gezien[x.toLowerCase()]) { gezien[x.toLowerCase()] = 1; unie.push(x); } }); });
         function inUnie(w) { return !!gezien[String(w).toLowerCase()]; }
+        // Kenmerkletters van de geoefende regels (c, x, sch, ei ...) + apostrof voor
+        // 's-meervoud. Waarmee we bij zoek-de-fout kunnen toetsen of de fout wel over de
+        // geoefende regel gaat (en niet over een werkwoord of een andere regel).
+        var featlijst = banken.map(function (b) { return b.feat; }).filter(Boolean);
+        if (banken.some(function (b) { return /meervoud/.test(b.naam || ''); })) featlijst.push(/['’]/);
+        // Woord met ZOWEL een c-die-/s/ als een c-die-/k/ maakt (vaccin, concert, circus):
+        // niet eenduidig in een c-sorteeropdracht.
+        function cDual(w) { w = String(w).toLowerCase(); return /c[eiy]/.test(w) && (/c[aou]/.test(w) || /c[bcdfgklmnpqrstvwxz]/.test(w)); }
+        function isCbank(b) { return b && (b.key === 'c_als_s' || b.key === 'c_als_k'); }
+        // Zoek-de-fout: de fout MOET de geoefende regel betreffen. Vergelijk foute en goede
+        // zin: precies één verschillend woord, en dat verschil moet de kenmerkletter raken.
+        function woordenVan(s) { return String(s).toLowerCase().replace(/[^a-zà-ÿ'’ ]/g, ' ').split(/\s+/).filter(Boolean); }
+        function verschilRaaktKenmerk(fout, goed) {
+          var i = 0; while (i < fout.length && i < goed.length && fout[i] === goed[i]) i++;
+          var j = 0; while (j < fout.length - i && j < goed.length - i && fout[fout.length - 1 - j] === goed[goed.length - 1 - j]) j++;
+          var mid = fout.slice(i, fout.length - j) + '|' + goed.slice(i, goed.length - j);
+          return featlijst.some(function (f) { return f.test(mid); });
+        }
+        function zoekfoutOk(z) {
+          if (!featlijst.length || !z) return true; // geen kenmerk om op te toetsen → niet weren
+          var a = woordenVan(z.zin), b = woordenVan(z.correct);
+          if (a.length !== b.length) return false; // ander aantal woorden = geen nette enkele fout
+          var diff = [];
+          for (var k = 0; k < a.length; k++) if (a[k] !== b[k]) diff.push([a[k], b[k]]);
+          if (diff.length !== 1) return false; // precies één fout woord
+          return verschilRaaktKenmerk(diff[0][0], diff[0][1]);
+        }
         // Kruiswoordwoorden kunnen we niet swappen (de omschrijving hoort erbij), dus
         // claimen we ze vooraf: de ANDERE opdrachten (sorteren, woordzoeker, anagram)
         // mijden die woorden dan, wat de herhaling tussen opdrachten flink terugdringt.
@@ -713,10 +741,16 @@
             (blk.categorieen || []).forEach(function (col) {
               var bank = kiesBankVoorKolom(col);
               if (!bank) return;
-              var pool = bank.woorden.filter(function (x) { return !ambigu(x); }); // alleen eenduidige woorden
+              var isC = isCbank(bank); // bij c-sorteren ook dubbel-c-woorden (vaccin) weren
+              var pool = bank.woorden.filter(function (x) { return !ambigu(x) && !(isC && cDual(x)); });
               col.items = herstel(col.items, function (w) { return w; }, function (w) { return w; },
-                function (lw) { return heeft(bank, lw) && !ambigu(lw); }, pool.length ? pool : bank.woorden);
+                function (lw) { return heeft(bank, lw) && !ambigu(lw) && !(isC && cDual(lw)); }, pool.length ? pool : bank.woorden);
             });
+          } else if (blk.type === 'zoekdefout') {
+            // Weer zinnen waarvan de fout NIET over de geoefende regel gaat (werkwoord-,
+            // grammatica- of andere-regel-fout). Alleen als er iets overblijft (fail-safe).
+            var goedeZinnen = (blk.zinnen || []).filter(zoekfoutOk);
+            if (goedeZinnen.length) blk.zinnen = goedeZinnen;
           } else if (blk.type === 'woordzoeker') {
             blk.woorden = herstel(blk.woorden, function (w) { return w; }, function (w) { return w.toUpperCase(); }, inUnie, unie);
           } else if (blk.type === 'anagram') {
