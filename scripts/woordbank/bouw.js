@@ -86,16 +86,23 @@ function lettergrepen(w) {
 // lunch+tijd (geen cht), politie+auto (geen eau). Zulke woorden weren we uit die categorie.
 // Behoedzaam: heeft het woord het kenmerk óók echt in één woorddeel (ver+schillen → "schillen"
 // heeft sch; koning heeft ng zonder samenstelling), dan blijft het gewoon staan.
-const CLUSTER_VOORV = new Set(["aan", "in", "on", "uit", "ont"]); // voorvoegsels vóór de cluster
+const CLUSTER_VOORV = new Set(["aan", "in", "on", "uit", "ont", "wan", "op", "af"]); // voorvoegsels vóór de cluster
+const CLUSTER_SUFFIX = new Set(["heid", "heden", "achtig", "achtige", "loos", "loze"]); // achtervoegsels ná de cluster
 function echtWoord(s) { return s.length >= 3 && OPENTAAL.has(s); }
 function grensKenmerkAlleen(w, feat) {
   if (!feat.test(w)) return false;                 // kenmerk niet aanwezig (los probleem)
-  // STERKE splitsingen: voorvoegsel + woord, of twee echte woorddelen (deel A >= 4 letters).
+  // STERKE splitsingen die een woordgrens markeren:
+  //  - voorvoegsel + rest (lange prefixes ont/aan/uit mogen een niet-los stukje: ont+huld;
+  //    korte prefixes in/op/on eisen een echt woord erachter, anders breekt inkt/index);
+  //  - stam + achtervoegsel (dicht+heid, oprecht+heid);
+  //  - twee echte woorddelen (woon+kamer; ook kort+lang: wet+houder).
   const sterk = [];
   for (let i = 2; i <= w.length - 2; i++) {
     const L = w.slice(0, i), R = w.slice(i);
-    if (R.length < 3 || !OPENTAAL.has(R)) continue;
-    if (CLUSTER_VOORV.has(L) || (L.length >= 4 && OPENTAAL.has(L))) sterk.push(i);
+    const voorvoegsel = CLUSTER_VOORV.has(L) && (L.length >= 3 ? R.length >= 2 : (R.length >= 3 && OPENTAAL.has(R)));
+    const achtervoegsel = L.length >= 3 && OPENTAAL.has(L) && CLUSTER_SUFFIX.has(R);
+    const samenstelling = R.length >= 3 && OPENTAAL.has(R) && OPENTAAL.has(L) && (L.length >= 4 || R.length >= 4);
+    if (voorvoegsel || achtervoegsel || samenstelling) sterk.push(i);
   }
   if (!sterk.length) return false;                 // geen samenstelling → kenmerk is intrinsiek → behouden
   // Behoud zodra het kenmerk ECHT in één woorddeel van een geldige splitsing zit
