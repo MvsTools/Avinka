@@ -469,7 +469,7 @@
       lijnen.push('- VEEL opdrachten (5 of meer): vul BEIDE kantjes goed — geen halve lege tweede pagina — dus stevig gevulde opdrachten.');
       lijnen.push('- 3 à 4 opdrachten: vul ruim, maar het hoeft niet krampachtig helemaal vol.');
       lijnen.push('- Weinig opdrachten (1 of 2): kwaliteit boven volproppen; het hoeft de twee kantjes niet te vullen, korter mag.');
-      lijnen.push('- Richtlijn per type (schaal op de beschikbare ruimte): kolom-opdrachten mogen véél items — invul / meerkeuze / waar-niet-waar / anagram / lettergrepen / rijmwoorden / lidwoord ~6 tot 12, categoriseren ~8 tot 14 woorden, open vragen ~3 tot 6. Ruimte-vreters (open vragen met schrijfregels, sorteren in vakken, leestekst, staafdiagram) nemen veel verticale ruimte: houd hun aantal beperkt.');
+      lijnen.push('- Richtlijn per type — houd je aan deze MAXIMA (schaal er zo nodig onder): invul / meerkeuze / waar-niet-waar / anagram / lettergrepen / rijmwoorden / lidwoord / zin bouwen HOOGSTENS 10 items, categoriseren HOOGSTENS 12 woorden, open vragen ~3 tot 6. Meer dan 10 items in één opdracht is te veel. Ruimte-vreters (open vragen met schrijfregels, sorteren in vakken, leestekst, staafdiagram) nemen veel verticale ruimte: houd hun aantal beperkt.');
       lijnen.push('- HOOGSTENS ÉÉN rooster-puzzel per werkblad: gebruik NIET twee grids (dus niet én een woordzoeker én een kruiswoord, en ook geen twee woordzoekers). Elk rooster kost bijna een halve pagina en een tweede rooster duwt het werkblad gegarandeerd naar een derde kantje. Kies er dus maximaal één (woordzoeker ÓF kruiswoord ÓF sudoku), met 8-16 woorden.');
       lijnen.push('- Het systeem kort automatisch in als het tóch over twee kantjes zou lopen — dus wees eerder te GUL dan te karig; te weinig ingevuld wordt niet vanzelf opgelost, te veel wél.');
       // Puzzelgrootte per generatie laten wisselen, MAAR gekoppeld aan de lengte
@@ -631,6 +631,7 @@
         wb.thema = bepaalThema(inv.themaKeuze, inv.onderwerp, inv.groep, inv.vak);
         laatsteMeta = inv;
         dwingSpellingWoordenAf(wb); // foute/dubbelzinnige losse woorden -> bankwoorden (lokaal)
+        capOpdrachtItems(wb); // harde max op items per opdracht (10 voor lijst-opdrachten)
         window.avinkaWerkblad.normaliseer(wb);
 
         laatsteWb = wb;
@@ -681,6 +682,34 @@
         }
         if (weg.size) wb.blokken = blokken.filter(function (b) { return !weg.has(b); });
       } catch (e) { /* fail-safe: laat het werkblad staan */ }
+    }
+
+    // Harde MAX op het aantal items per opdracht. De AI overschrijdt de prompt-richtlijn
+    // soms fors (14 anagrammen, 18 sorteerwoorden); 10 is genoeg om te oefenen en te vullen.
+    // Rooster-puzzels (woordzoeker/kruiswoord) vallen hier NIET onder — die mogen voller.
+    var MAX_ITEMS = {
+      anagram: 10, meerkeuze: 10, waarnietwaar: 10, zinbouwen: 10, lettergrepen: 10,
+      rijmwoorden: 10, lidwoord: 10, synant: 10, invul: 10, open: 8
+    };
+    function capOpdrachtItems(wb) {
+      try {
+        (wb.blokken || []).forEach(function (b) {
+          if (!b || !b.type) return;
+          if (b.type === 'categoriseren') { // totaal over de kolommen, iets ruimer (3 kolommen)
+            var totaal = function () { return (b.categorieen || []).reduce(function (s, c) { return s + ((c.items || []).length); }, 0); };
+            var veilig = 0;
+            while (totaal() > 12 && veilig++ < 60) {
+              var groot = null;
+              (b.categorieen || []).forEach(function (c) { if (!groot || (c.items || []).length > groot.items.length) groot = c; });
+              if (groot && groot.items.length > 1) groot.items.pop(); else break;
+            }
+            return;
+          }
+          var max = MAX_ITEMS[b.type]; if (!max) return;
+          var arr = b.vragen || b.items || b.stellingen || b.zinnen || b.woorden || b.paren;
+          if (Array.isArray(arr) && arr.length > max) arr.length = max;
+        });
+      } catch (e) { /* fail-safe */ }
     }
 
     // ── Woordenbank afdwingen bij spelling (losse-woord-opdrachten) ──────────
