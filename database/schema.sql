@@ -779,4 +779,67 @@ create policy "eigen bouw_taken" on public.bouw_taken
 grant select, insert, update, delete on public.bouw_taken to authenticated;
 create index if not exists idx_bouw_taken_user on public.bouw_taken(user_id, created_at desc);
 
+-- ── 15) TOESTEMMINGEN — bewijs van akkoord op voorwaarden + privacy (AVG) ──
+-- Append-only bewijstabel: elke registratie- en her-akkoord-actie legt hier de
+-- geaccepteerde VERSIES vast (art. 7 AVG, verantwoordingsplicht). De leerkracht
+-- mag z'n eigen akkoorden LEZEN (voor de her-akkoord-pop-up in het dashboard);
+-- schrijven kan alleen via de SECURITY DEFINER-functies hieronder, zodat de
+-- tabel echt append-only blijft (geen insert/update/delete voor de gebruiker).
+create table if not exists public.toestemmingen (
+  id                 uuid primary key default gen_random_uuid(),
+  user_id            uuid not null references auth.users(id) on delete cascade,
+  voorwaarden_versie text not null,
+  privacy_versie     text not null,
+  bron               text not null default 'registratie',
+  geaccepteerd_op    timestamptz not null default now()
+);
+alter table public.toestemmingen enable row level security;
+drop policy if exists "eigen toestemmingen lezen" on public.toestemmingen;
+create policy "eigen toestemmingen lezen" on public.toestemmingen
+  for select using ((select auth.uid()) = user_id);
+-- LET OP: alleen SELECT voor de gebruiker. Zonder deze grant krijgt de browser
+-- een 403 ("permission denied") en denkt de her-akkoord-pop-up dat er nog geen
+-- akkoord is — dan blijft die elke dashboard-lading vragen.
+grant select on public.toestemmingen to authenticated;
+create index if not exists idx_toestemmingen_user on public.toestemmingen(user_id);
+
+-- Legt een NIEUW akkoord vast na een wijziging van de voorwaarden/privacy
+-- (aangeroepen vanuit de her-akkoord-pop-up).
+create or replace function public.registreer_herakkoord(p_voorwaarden text, p_privacy text)
+returns void language plpgsql security definer set search_path to 'public' as $$
+  begin
+    if auth.uid() is null then
+      raise exception 'niet ingelogd';
+    end if;
+    insert into public.toestemmingen (user_id, voorwaarden_versie, privacy_versie, bron)
+    values (auth.uid(), p_voorwaarden, p_privacy, 'her-akkoord');
+  end;
+$$;
+grant execute on function public.registreer_herakkoord(text, text) to authenticated;
+
+-- Legt het EERSTE akkoord vast bij registratie: leest de versies uit de
+-- user-metadata die bij aanmelden zijn meegegeven. Draait als trigger op auth.users.
+create or replace function public.registreer_toestemming()
+returns trigger language plpgsql security definer set search_path to 'public' as $$
+  begin
+    if new.raw_user_meta_data ? 'voorwaarden_versie' then
+      insert into public.toestemmingen
+        (user_id, voorwaarden_versie, privacy_versie, bron, geaccepteerd_op)
+      values (
+        new.id,
+        new.raw_user_meta_data ->> 'voorwaarden_versie',
+        coalesce(new.raw_user_meta_data ->> 'privacy_versie',
+                 new.raw_user_meta_data ->> 'voorwaarden_versie'),
+        coalesce(new.raw_user_meta_data ->> 'akkoord_bron', 'registratie'),
+        coalesce((new.raw_user_meta_data ->> 'akkoord_op')::timestamptz, now())
+      );
+    end if;
+    return new;
+  end;
+$$;
+drop trigger if exists on_auth_user_created_toestemming on auth.users;
+create trigger on_auth_user_created_toestemming
+  after insert on auth.users
+  for each row execute function public.registreer_toestemming();
+
 -- Klaar. Je tabellen staan klaar en zijn per gebruiker afgeschermd.
