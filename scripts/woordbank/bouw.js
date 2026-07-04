@@ -78,6 +78,47 @@ function lettergrepen(w) {
   return m ? m.length : 1;
 }
 
+// ── Kenmerk dat alleen op een WOORDGRENS ontstaat herkennen ───────────────────
+// Een spellingkenmerk (ng, nk, th, cht, eau …) is alleen ECHT als de letters in één
+// woorddeel/klankgroep zitten. Op een voorvoegsel- of samenstellingsgrens plakken de
+// laatste letter(s) van deel A en de eerste van deel B toevallig tot het patroon aaneen,
+// zonder de klank:  in+gelicht (geen ng), woon+kamer (geen nk), vast+houden (geen th),
+// lunch+tijd (geen cht), politie+auto (geen eau). Zulke woorden weren we uit die categorie.
+// Behoedzaam: heeft het woord het kenmerk óók echt in één woorddeel (ver+schillen → "schillen"
+// heeft sch; koning heeft ng zonder samenstelling), dan blijft het gewoon staan.
+const CLUSTER_VOORV = new Set(["aan", "in", "on", "uit", "ont", "wan", "op", "af"]); // voorvoegsels vóór de cluster
+const CLUSTER_SUFFIX = new Set(["heid", "heden", "achtig", "achtige", "loos", "loze"]); // achtervoegsels ná de cluster
+function echtWoord(s) { return s.length >= 3 && OPENTAAL.has(s); }
+function grensKenmerkAlleen(w, feat) {
+  if (!feat.test(w)) return false;                 // kenmerk niet aanwezig (los probleem)
+  // STERKE splitsingen die een woordgrens markeren:
+  //  - voorvoegsel + rest (lange prefixes ont/aan/uit mogen een niet-los stukje: ont+huld;
+  //    korte prefixes in/op/on eisen een echt woord erachter, anders breekt inkt/index);
+  //  - stam + achtervoegsel (dicht+heid, oprecht+heid);
+  //  - twee echte woorddelen (woon+kamer; ook kort+lang: wet+houder).
+  const sterk = [];
+  for (let i = 2; i <= w.length - 2; i++) {
+    const L = w.slice(0, i), R = w.slice(i);
+    const voorvoegsel = CLUSTER_VOORV.has(L) && (L.length >= 3 ? R.length >= 2 : (R.length >= 3 && OPENTAAL.has(R)));
+    const achtervoegsel = L.length >= 3 && OPENTAAL.has(L) && CLUSTER_SUFFIX.has(R);
+    const samenstelling = R.length >= 3 && OPENTAAL.has(R) && OPENTAAL.has(L) && (L.length >= 4 || R.length >= 4);
+    if (voorvoegsel || achtervoegsel || samenstelling) sterk.push(i);
+  }
+  if (!sterk.length) return false;                 // geen samenstelling → kenmerk is intrinsiek → behouden
+  // Behoud zodra het kenmerk ECHT in één woorddeel van een geldige splitsing zit
+  // (ver+schillen → "schillen" heeft sch). Recursief: dat woorddeel mag het kenmerk zélf
+  // niet ook alleen-op-een-naad hebben (vasthoud = vast+houd telt niet als echt th-woord).
+  for (let i = 2; i <= w.length - 2; i++) {
+    const L = w.slice(0, i), R = w.slice(i);
+    if (!echtWoord(R)) continue;
+    if (echtWoord(L) || CLUSTER_VOORV.has(L)) {
+      if ((feat.test(L) && !grensKenmerkAlleen(L, feat)) || (feat.test(R) && !grensKenmerkAlleen(R, feat))) return false;
+    }
+  }
+  return true;                                     // kenmerk alleen op de naad → uitsluiten
+}
+
+
 // ── Leermomenten-tabel: spelling-ingredienten met "vanaf groep" ───────────────
 // Algemeen/SLO-gekalibreerd, methode-neutraal. `doel` = wordt als oefenlijst
 // aangeboden; verschijnselen zonder `doel` tellen alleen mee als achtergrond.
@@ -85,18 +126,36 @@ function lettergrepen(w) {
 // nodig = benadering, later met AI/handcheck te verfijnen).
 const ING = [
   // ── groep 3: klank/eerste vaste klankgroepen
-  { id: "ng_nk", g: 3, doel: 1, soort: "orthografisch", label: "woorden met ng of nk", test: w => /ng|nk/.test(w) },
+  // Hakwoord = woord van ÉÉN lettergreep/klankgroep dat je "hakt" in klanken: kat, bal,
+  // rij, rijk, trein, school. De vanaf-groep volgt uit een eventuele ANDERE eigenschap
+  // (ei/ij -> groep 4), dus kat=groep 3, rijk=groep 4. LET OP: na de bouw filteren we deze
+  // categorie (zie post-pass onderaan) tot alleen de woorden die óók in een ANDERE, al-geschoonde
+  // categorie zitten (rij=ei/ij, bank=nk, school=sch) ∪ de handmatige mkm-kernlijst — zo erven we
+  // alleen gevette woorden en niet de losse werkwoordsvormen/functiewoorden/Engelse leenwoorden
+  // die als enige-lettergreep-woord anders massaal binnenkomen (gaat, komt, boy, team, uit).
+  { id: "hakwoord", g: 3, doel: 1, soort: "fonetisch", label: "hakwoorden (woorden van één klankgroep, zoals kat, bal, rij)", test: w => lettergrepen(w) === 1 },
+  // Staal splitst dit: zingwoord = ng (zingen, koning), plankwoord = nk (plank, bank).
+  // NIET de "ng" op een woordgrens (on+gehoorzaam, aan+geven): dat is geen ng-KLANK.
+  { id: "ng", g: 3, doel: 1, soort: "orthografisch", label: "woorden met ng (zoals zingen, koning)", test: w => /ng/.test(w) && !grensKenmerkAlleen(w, /ng/) },
+  { id: "nk", g: 3, doel: 1, soort: "orthografisch", label: "woorden met nk (zoals plank, bank)", test: w => /nk/.test(w) && !grensKenmerkAlleen(w, /nk/) },
   { id: "sch", g: 3, doel: 1, soort: "orthografisch", label: "woorden met sch", test: w => /sch/.test(w) && !/isch/.test(w) },
-  { id: "cht", g: 3, doel: 1, soort: "orthografisch", label: "woorden met cht (korte klank + cht)", test: w => /cht/.test(w) },
+  { id: "cht", g: 3, doel: 1, soort: "orthografisch", label: "woorden met cht (korte klank + cht)", test: w => /cht/.test(w) && !grensKenmerkAlleen(w, /cht/) },
   { id: "eer_oor_eur", g: 3, doel: 1, soort: "orthografisch", label: "woorden met eer, oor of eur", test: w => /eer|oor|eur/.test(w) },
-  { id: "aai_ooi_oei", g: 3, doel: 1, soort: "orthografisch", label: "woorden met aai, ooi of oei", test: w => /aai|ooi|oei/.test(w) },
+  // Apart houden zodat je "aai", "ooi" of "oei" los kunt oefenen (of alle drie samen).
+  { id: "aai", g: 3, doel: 1, soort: "orthografisch", label: "woorden met aai (je hoort /j/, je schrijft i)", test: w => /aai/.test(w) },
+  { id: "ooi", g: 3, doel: 1, soort: "orthografisch", label: "woorden met ooi (je hoort /j/, je schrijft i)", test: w => /ooi/.test(w) },
+  { id: "oei", g: 3, doel: 1, soort: "orthografisch", label: "woorden met oei (je hoort /j/, je schrijft i)", test: w => /oei/.test(w) },
   { id: "eeuw_ieuw", g: 3, doel: 1, soort: "orthografisch", label: "woorden met eeuw of ieuw", test: w => /eeuw|ieuw/.test(w) },
   // ── groep 4: ei/ij, au/ou, open/gesloten, voor-/achtervoegsel, langer maken
-  { id: "ei_ij", g: 4, doel: 1, soort: "orthografisch", label: "woorden met ei of ij (weetwoorden)", test: w => /ei|ij/.test(w) },
+  { id: "ei_ij", g: 4, doel: 1, soort: "orthografisch", label: "woorden met ei of ij (weetwoorden)", test: w => /(^|[^o])ei|ij/.test(w) },
   { id: "au_ou", g: 4, doel: 1, soort: "orthografisch", label: "woorden met au of ou (weetwoorden)", test: w => /au|ou/.test(w) },
   { id: "open_gesloten", g: 4, doel: 1, soort: "fonetisch", label: "open en gesloten lettergreep (verdubbelen of verlengen)", test: w => openGesloten(w) },
-  { id: "voorvoegsel", g: 4, doel: 1, soort: "orthografisch", label: "woorden met een voorvoegsel (be-, ge-, ver-, ont-, her-)", test: w => /^(be|ge|ver|ont|her)[bcdfghjklmnprstvwz]/.test(w) },
-  { id: "achtervoegsel", g: 4, doel: 1, soort: "orthografisch", label: "woorden op -ig of -lijk", test: w => /(ig|lijk|ige|lijke|igheid|lijkheid)$/.test(w) },
+  // voorvoegsel: NIET elk woord dat toevallig met be/ge/ver/ont/her begint (gek, bel,
+  // bed) — alleen als het deel ná het voorvoegsel een bestaand woord is (ge+bouw, ver+haal).
+  { id: "voorvoegsel", g: 4, doel: 1, soort: "orthografisch", label: "woorden met een voorvoegsel (be-, ge-, ver-, ont-, her-)", test: w => heeftVoorvoegsel(w) },
+  // achtervoegsel: -ig/-lijk, maar NIET korte toevalstreffers (big, lig, wig) of de
+  // tig-getallen (twintig, dertig). Lengte-ondergrens + getal-uitsluiting.
+  { id: "achtervoegsel", g: 4, doel: 1, soort: "orthografisch", label: "woorden op -ig of -lijk", test: w => (/lijk(e|heid|er|st)?$/.test(w) && w.length >= 6) || (/ig(e|heid|er|st)?$/.test(w) && w.length >= 5 && !/^(twin|der|veer|vijf|zes|zeven|tach|negen)tig/.test(w)) },
   { id: "langermaak_d", g: 4, doel: 1, soort: "fonetisch", label: "woorden die op een /t/-klank eindigen maar met d (langer maken)", test: w => langermaakD(w) },
   // ── groep 5: verkleinwoord, f->v, s->z, samenstelling
   { id: "verkleinwoord", g: 5, doel: 1, soort: "orthografisch", label: "verkleinwoorden (-je, -tje, -etje, -pje, -kje)", test: w => isVerkleinwoord(w) },
@@ -104,17 +163,28 @@ const ING = [
   { id: "s_naar_z", g: 5, doel: 1, soort: "fonetisch", label: "woorden op /s/ die met z worden verlengd (huis -> huizen)", test: w => verlengtNaar(w, "s", "z") },
   { id: "samenstelling", g: 5, doel: 0, soort: "structuur", label: "samenstelling", test: w => isSamenstelling(w) },
   // ── groep 6: c, -tie, -isch (weetwoorden)
-  { id: "c_als_s", g: 6, doel: 1, soort: "fonetisch", label: "de c die klinkt als /s/ (cent, citroen)", test: w => /c[eiy]/.test(w) },
-  { id: "c_als_k", g: 6, doel: 1, soort: "fonetisch", label: "de c die klinkt als /k/ (cola, cactus)", test: w => /c[aou]|c[lr]|ck/.test(w) },
+  // De c maakt de /s/ zelf (cent, citroen): c vóór e/i/y. NIET na een s (scene, scenario):
+  // daar maakt de s de /s/-klank, niet de c — dat is geen c-als-/s/-woord.
+  { id: "c_als_s", g: 6, doel: 1, soort: "fonetisch", label: "de c die klinkt als /s/ (cent, citroen)", test: w => /(^|[^s])c[eiy]/.test(w) },
+  // De c maakt de /k/ zelf (cola, cactus, club): c vóór a/o/u of in cl/cr. GEEN ck
+  // (ticket, snack, stick): daar komt de /k/ uit de ck-digraaf, niet uit een losse c.
+  { id: "c_als_k", g: 6, doel: 1, soort: "fonetisch", label: "de c die klinkt als /k/ (cola, cactus)", test: w => /c[aou]|c[lr]/.test(w) },
   { id: "tie", g: 6, doel: 1, soort: "orthografisch", label: "woorden op -tie (je hoort /(t)sie/)", test: w => /tie$|ties$/.test(w) },
   { id: "isch", g: 6, doel: 1, soort: "orthografisch", label: "woorden op -isch (je hoort /ies/)", test: w => /isch/.test(w) },
   // ── groep 7/8: leenwoorden / bijzonder
   { id: "x", g: 7, doel: 1, soort: "orthografisch", label: "de x die je als /ks/ hoort (taxi, examen)", test: w => /x/.test(w) },
-  { id: "th", g: 7, doel: 1, soort: "orthografisch", label: "de th die je als /t/ hoort (thee, thema)", test: w => /th/.test(w) },
+  { id: "th", g: 7, doel: 1, soort: "orthografisch", label: "de th die je als /t/ hoort (thee, thema)", test: w => /th/.test(w) && !grensKenmerkAlleen(w, /th/) },
   { id: "ch_sj", g: 7, doel: 1, soort: "fonetisch", label: "de ch die klinkt als /sj/ (chef, machine)", test: w => /ch/.test(w) && !/sch|cht/.test(w) },
-  { id: "eau", g: 8, doel: 1, soort: "orthografisch", label: "woorden met -eau (je hoort /oo/)", test: w => /eau/.test(w) },
+  { id: "eau", g: 8, doel: 1, soort: "orthografisch", label: "woorden met -eau (je hoort /oo/)", test: w => /eau/.test(w) && !grensKenmerkAlleen(w, /eau/) },
   { id: "accent_e", g: 8, doel: 1, soort: "orthografisch", label: "woorden met een accentstreepje op de e (café, privé)", test: w => /[éèê]/.test(w) },
-  { id: "y_grieks", g: 8, doel: 1, soort: "orthografisch", label: "woorden met de Griekse y", test: w => /y/.test(w) && !/ij/.test(w) },
+  // Griekse y = y als klinker MIDDEN in het woord (systeem, type, cyclus), NIET de
+  // Engelse -y aan het eind (baby, party, pony, hobby) en niet de ij.
+  { id: "y_grieks", g: 8, doel: 1, soort: "orthografisch", label: "woorden met de Griekse y", test: w => /y/.test(w) && !/ij/.test(w) && !/y$/.test(w) },
+  // Woorden die op -y eindigen (je hoort /ie/, je schrijft y): baby, pony, hobby, lolly.
+  // Medeklinker + y aan het eind (geen -ay/-oy/-ey/-uy, die klinken anders).
+  { id: "y_eind", g: 7, doel: 1, soort: "orthografisch", label: "woorden die eindigen op -y (je hoort /ie/, je schrijft y)", test: w => /[bcdfghjklmnpqrstvz]y$/.test(w) },
+  // Tremawoord (Staal): trema markeert een nieuwe lettergreep (ruïne, egoïst, patiënt, ideeën).
+  { id: "trema", g: 7, doel: 1, soort: "orthografisch", label: "woorden met een trema (ë, ï, ö)", test: w => /[ëïöü]/.test(w) },
 ];
 const ING_BY_ID = Object.fromEntries(ING.map(i => [i.id, i]));
 const DOELEN = ING.filter(i => i.doel);
@@ -153,6 +223,10 @@ function langermaakD(w) {
   const kand = [w + "en"];
   if (enkel !== w) kand.push(enkel + "en");
   return kand.some(k => OPENTAAL.has(k));
+}
+function heeftVoorvoegsel(w) {
+  var m = w.match(/^(be|ge|ver|ont|her)(.+)/);
+  return !!m && m[2].length >= 3 && OPENTAAL.has(m[2]);
 }
 function isVerkleinwoord(w) {
   const m = w.match(/(etje|pje|kje|tje|je)$/);
@@ -254,9 +328,11 @@ const STAM_BLOCK = [
 function bevatHeftigeStam(w) { for (const s of STAM_BLOCK) if (w.includes(s)) return true; return false; }
 // Frequentieplafond: woorden die zeldzamer zijn dan deze rang laten we NIET toe
 // (verjonging — houd het bij woorden die kinderen echt kennen). Tunebaar.
+// (24k->40k getest 4-7: voegde vooral te moeilijke/vreemde/ongepaste woorden toe
+//  — gecastreerd, cougar, sarcofaag — dus teruggedraaid. De bank was al Staal-formaat.)
 const MAX_RANG = 24000;
 
-function kindgeschikt(w) {
+function kindgeschikt(w, staWerkwToe) {
   if (!/^[a-zà-ÿ]+$/.test(w)) return false;
   if (w.length < 3 || w.length > 12) return false;
   if (!RANG.has(w)) return false;
@@ -265,8 +341,10 @@ function kindgeschikt(w) {
   if (BLOCK.has(w)) return false;                          // harde blocklist: nooit terug
   if (ONGEPAST.has(w) && !TOEGESTAAN.has(w)) return false;  // AI-ongepast, tenzij toegestaan
   if (bevatHeftigeStam(w) && !TOEGESTAAN.has(w)) return false; // samenstelling/verbuiging van een heftige stam
-  if (WERKWVORMEN.has(w)) return false;   // gegenereerde werkwoordsvormen (werkwoorden.js)
-  if (isWerkwoordsvorm(w)) return false;
+  if (!staWerkwToe) {
+    if (WERKWVORMEN.has(w)) return false;   // gegenereerde werkwoordsvormen (werkwoorden.js)
+    if (isWerkwoordsvorm(w)) return false;
+  }
   return true;
 }
 
@@ -302,6 +380,86 @@ for (const w of kandidaten) {
   }
 }
 for (const id in banken) banken[id].woorden.sort((a, b) => a[1] - b[1] || RANG.get(a[0]) - RANG.get(b[0]) || a[0].localeCompare(b[0]));
+
+// ── Kleine banken aanvullen met INFINITIEVEN (werkwoorden op -en) ─────────────
+// Klank-categorieen zoals aai/ooi/oei zijn erg klein omdat we werkwoorden weren, terwijl
+// juist veel aai-woorden werkwoorden zijn (draaien, gooien, groeien). Een INFINITIEF is een
+// schoon oefenwoord zonder werkwoordspelling-valkuil (geen +t/+dt/+de), dus die laten we
+// voor KLEINE banken alsnog toe. Conjugaties/participia op -t/-d blijven geweerd.
+const KLEIN_DREMPEL = 60;
+const infinitieven = OPEN_LIJST.filter(w => /en$/.test(w) && w.length >= 4 && !kindgeschikt(w) && kindgeschikt(w, true));
+let nInf = 0;
+for (const d of DOELEN) {
+  const b = banken[d.id];
+  if (b.woorden.filter(x => x[2] !== "v").length >= KLEIN_DREMPEL) continue; // alleen kleine banken
+  const heeft = new Set(b.woorden.map(x => x[0]));
+  for (const w of infinitieven) {
+    if (heeft.has(w) || !d.test(w)) continue;
+    if (d.id === "open_gesloten" && GEEN_KLANKGROEP.has(w)) continue;
+    const achtergrond = ING.filter(i => i.test(w) && i.id !== d.id).map(i => i.g);
+    const vanaf = Math.max(3, freqFloor(w), achtergrond.length ? Math.max(...achtergrond) : 0, semantiekVloer(w));
+    b.woorden.push([w, vanaf]); heeft.add(w); nInf++;
+  }
+  // Ruim losse VERVOEGINGEN/DEELWOORDEN op die door het werkwoordfilter lekten (draait,
+  // draaide, gedraaid, genaaid, bezaaid): houd de infinitief (op -en) + het naamwoord.
+  b.woorden = b.woorden.filter(x => {
+    const w = x[0];
+    // deelwoord op cluster+d met een werkwoord-voorvoegsel (gedraaid, omgedraaid, bezaaid, vermoeid)
+    if (/(aai|ooi|oei)d$/.test(w) && /^(ge|be|ver|ont|her|over|onder|aan|op|uit|af|in|door|om|mee|toe|weg|na|voor)/.test(w)) return false;
+    // tegenwoordige/verleden tijd (draait/draaide/draaiden) ALS we de infinitief hebben
+    var m = w.match(/(aai|ooi|oei)(t|de|te|den|ten|dt)$/);
+    if (m && heeft.has(w.slice(0, w.length - m[2].length) + "en")) return false;
+    return true;
+  });
+  b.woorden.sort((a, b2) => a[1] - b2[1] || RANG.get(a[0]) - RANG.get(b2[0]) || a[0].localeCompare(b2[0]));
+}
+
+// ── Hakwoord opschonen: één klankgroep ÉN geen echte spellingregel ────────────
+// Een hakwoord is een woord van ÉÉN klankgroep dat verder GEEN eigen spellingregel heeft:
+// de kale klankzuivere woorden (kat, bal, vis) plus de weetwoorden die geen echte regel
+// kennen (ei/ij: rij, mij; au/ou: nou, koud). Een woord met cht/ng/nk/sch/c/x/... hoort in
+// DIE categorie (licht=cht, bank=nk, school=sch, zing=ng) en is dus GEEN hakwoord.
+//   - ei/ij en au/ou tellen NIET als regel: het zijn weetwoorden, geen echte categorie.
+//   - f->v en s->z tellen OOK niet: het BASISwoord is klankzuiver (glas, wolf, huis); de
+//     v/z komt pas in het MEERVOUD (glas->glazen, wolf->wolven). Het singuliere woord is
+//     dus gewoon een hakwoord; de meervoudsregel is een aparte, latere les.
+//   - de kale klankzuivere kern komt uit de handmatige mkm-kernlijst (_bron/hakwoord.txt),
+//     want die woorden vallen per definitie in géén categorie, en de ruwe enig-lettergreep-
+//     lijst zit vol losse werkwoordsvormen/functiewoorden/Engelse woorden (gaat, uit, boy).
+const NIET_DISKWALIFICEREND = new Set(["ei_ij", "au_ou", "f_naar_v", "s_naar_z"]);
+const eenLettergreepRegel = new Set(); // 1-klankgroep-woorden mét een ECHTE regel-categorie in het BASISwoord
+for (const id in banken) {
+  if (id === "hakwoord" || NIET_DISKWALIFICEREND.has(id)) continue;
+  for (const [w] of banken[id].woorden) if (lettergrepen(w) === 1) eenLettergreepRegel.add(w);
+}
+const weetEenLettergreep = new Set(); // 1-klankgroep ei/ij + au/ou + f->v + s->z (mogen hakwoord zijn)
+for (const id of NIET_DISKWALIFICEREND) for (const [w] of banken[id].woorden) if (lettergrepen(w) === 1) weetEenLettergreep.add(w);
+
+let hakKernlijst = new Set();
+try {
+  fs.readFileSync(BRON("hakwoord.txt"), "utf8").split(/\r?\n/)
+    .map(s => s.trim().toLowerCase()).filter(w => w && !w.startsWith("#"))
+    .forEach(w => hakKernlijst.add(w));
+} catch (e) { console.log("hakwoord.txt niet gevonden:", e.message); }
+
+// Regel: één klankgroep, GEEN echte regel-categorie, en óf weetwoord (ei/ij, au/ou) óf kernlijst.
+function isHakwoord(w) {
+  if (eenLettergreepRegel.has(w)) return false;       // heeft een eigen regel -> hoort in die categorie
+  return weetEenLettergreep.has(w) || hakKernlijst.has(w);
+}
+const hakVoor = banken.hakwoord.woorden.length;
+const kernAfgevallen = [...hakKernlijst].filter(w => eenLettergreepRegel.has(w)); // kernlijst-woorden met tóch een regel
+banken.hakwoord.woorden = banken.hakwoord.woorden.filter(x => isHakwoord(x[0]));
+// Kernlijst-woorden die kindgeschikt niet haalde (net buiten het frequentieplafond) alsnog toevoegen.
+const heeftHak = new Set(banken.hakwoord.woorden.map(x => x[0]));
+let nKernExtra = 0;
+for (const w of hakKernlijst) {
+  if (heeftHak.has(w) || eenLettergreepRegel.has(w)) continue;
+  banken.hakwoord.woorden.push([w, 3]); heeftHak.add(w); nKernExtra++;
+}
+banken.hakwoord.woorden.sort((a, b) => a[1] - b[1] || (RANG.get(a[0]) || 99999) - (RANG.get(b[0]) || 99999) || a[0].localeCompare(b[0]));
+console.log(`hakwoord: ${hakVoor} ruw -> ${banken.hakwoord.woorden.length} (kern ${nKernExtra + [...hakKernlijst].filter(w=>heeftHak.has(w)&&!weetEenLettergreep.has(w)).length}, weetwoord-1klankgroep ${weetEenLettergreep.size})`);
+if (kernAfgevallen.length) console.log("  (kernlijst-woorden met tóch een eigen regel, dus GEEN hakwoord meer):", kernAfgevallen.join(", "));
 
 // ── Wegschrijven ──────────────────────────────────────────────────────────────
 const uit = {

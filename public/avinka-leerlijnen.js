@@ -421,6 +421,26 @@
     return out;
   }
 
+  // De spellingbank staat al gesorteerd van GEWOON naar ZELDZAAM (op niveau, dan
+  // frequentie; zie scripts/woordbank/bouw.js). Willekeurig grabbelen uit de héle
+  // lijst haalt daarom net zo vaak een zeldzaam of vreemd woord achteraan naar boven
+  // (curator, penicilline, merci, account) als een alledaags woord vooraan. Daarom
+  // kiezen we ALLEEN uit de "gewone kop" van de lijst — met wat variatie, zodat niet
+  // elk werkblad dezelfde woorden krijgt. Geen woord verdwijnt uit de bank; de
+  // zeldzame staart blijft als reserve bestaan, maar drijft niet meer bovenaan.
+  var SPELLING_KOP = 36; // grootte van de gewone-woorden-kop waaruit we kiezen
+  function kop(lijst) { return (lijst || []).slice(0, SPELLING_KOP); }
+  function kopGreep(lijst, n) { return sample(kop(lijst), n); }
+  // Voor volledig-gereviewde banken (hele lijst bruikbaar): greep met bias naar de
+  // GEWONERE (voorste) woorden, maar de HELE lijst bereikbaar. Zo krijg je maximale
+  // variatie zonder dat abstracte/zeldzamere woorden even vaak opduiken als alledaagse.
+  function gewogenGreep(lijst, n) {
+    var pool = (lijst || []).slice(), out = [];
+    n = Math.min(n, pool.length);
+    for (var i = 0; i < n; i++) out.push(pool.splice(Math.floor(Math.pow(Math.random(), 1.8) * pool.length), 1)[0]);
+    return out;
+  }
+
   // Doorsnede van een woordenlijst met de "extra gevoelig"-lijst (window.avinkaGevoelig,
   // meegegenereerd door scripts/woordbank/bouw.js). Uniek, in oorspronkelijke volgorde.
   function gevoeligeIn(woorden) {
@@ -472,14 +492,23 @@
   // Taal actief-naam of een fonetische omschrijving). Volgorde = prioriteit.
   // Uitbreidbaar: voeg een categorie of woorden toe (alles met de hand geverifieerd).
   var SPELLING_WOORDEN = [
+    // Hakwoord (Staal cat 1): woord van ÉÉN klankgroep dat je "hakt" in klanken (kat, bal,
+    // rij, rijk). De bank leidt dit af uit alle enig-lettergreep-woorden die zich al in een
+    // andere geschoonde categorie bewezen hebben (rij=ei/ij, bank=nk, school=sch), plus een
+    // gecureerde mkm-kernlijst (scripts/woordbank/_bron/hakwoord.txt) voor de kale klankzuivere
+    // woorden. Zo krijgt de leerkracht een grote, gevarieerde hakwoord-bank zonder de losse
+    // werkwoordsvormen/Engelse woorden die als enig-lettergreep-woord anders binnenglippen.
+    { naam: "hakwoorden (woorden van één klankgroep, zoals kat, bal, rij)", bank: "hakwoord",
+      test: /hak\s*-?woord|één\s*klankgroep|een\s*klankgroep|schrijf.{0,10}zoals je.{0,4}hoort|\bmkm\b/,
+      woorden: ["kat", "bal", "vis", "bos", "pen", "tak", "stok", "plas", "kast", "mus", "hut", "pot", "bus", "kip"] },
     { naam: "woorden waarin je /ie/ hoort maar één i schrijft (zoals kilo, liter)", bank: "kilo_ie",
-      test: /kilo\s*-?woord|liter\s*-?woord|hoor.{0,8}ie.{0,18}schrijf.{0,8}\bi\b|\bi\b[^a-z]{0,8}(klinkt als|als)[^a-z]{0,4}ie/,
+      test: /kilo\s*-?woord|liter\s*-?woord|hoor.{0,8}ie.{0,18}schrijf.{0,8}\bi\b|\bi\b[^.,;!?]{0,25}?\bals\b[^.,;!?]{0,6}ie/,
       woorden: ["kilo", "liter", "prima", "titel", "crisis", "figuur", "minus", "via", "diploma", "januari", "februari"] },
     { naam: "de c die klinkt als /s/ (zoals cent, citroen)", bank: "c_als_s",
-      test: /cent\s*-?woord|cijfer\s*-?woord|\bc\b[^a-z]{0,8}als[^a-z]{0,4}s\b|hoor.{0,8}\/?s\/?.{0,18}schrijf.{0,8}\bc\b/,
+      test: /cent\s*-?woord|cijfer\s*-?woord|\bc\b[^.,;!?]{0,25}?\bals\b[^.,;!?]{0,6}\/?s\b|hoor.{0,8}\/?s\/?.{0,18}schrijf.{0,8}\bc\b/,
       woorden: ["cent", "citroen", "cirkel", "centrum", "cijfer", "december", "procent", "cement", "centimeter", "ceintuur"] },
     { naam: "de c die klinkt als /k/ (zoals cola, cactus)", bank: "c_als_k",
-      test: /cola\s*-?woord|insect\s*-?woord|\bc\b[^a-z]{0,8}als[^a-z]{0,4}k\b|hoor.{0,8}\/?k\/?.{0,18}schrijf.{0,8}\bc\b/,
+      test: /cola\s*-?woord|insect\s*-?woord|\bc\b[^.,;!?]{0,25}?\bals\b[^.,;!?]{0,6}\/?k\b|hoor.{0,8}\/?k\/?.{0,18}schrijf.{0,8}\bc\b/,
       woorden: ["cola", "club", "computer", "cactus", "contact", "concert", "camera", "cacao", "container", "copiloot"] },
     { naam: "woorden op -tie (je hoort /(t)sie/, je schrijft tie)", bank: "tie",
       test: /politie\s*-?woord|tie\s*-?woord|woorden? (op|met)\s*-?tie\b|tsie/,
@@ -488,16 +517,16 @@
       test: /tropisch\s*-?woord|isch\s*-?woord|woorden? (op|met)\s*-?isch\b/,
       woorden: ["tropisch", "logisch", "magisch", "fantastisch", "praktisch", "automatisch", "komisch", "typisch", "elektrisch", "historisch"] },
     { naam: "de x die je als /ks/ hoort (zoals taxi, examen)", bank: "x",
-      test: /taxi\s*-?woord|\bx\s*-?woord|woorden? met (de )?\bx\b/,
+      test: /taxi\s*-?woord|\bx\s*-?woord|woorden? met (de )?\bx\b|\bx\b[^.,;!?]{0,25}?\bals\b[^.,;!?]{0,6}ks/,
       woorden: ["taxi", "examen", "extra", "exact", "maximaal", "expert", "export", "saxofoon", "exemplaar", "exotisch"] },
     { naam: "de ch die klinkt als /sj/ (zoals chef, machine)", bank: "ch_sj",
-      test: /chef\s*-?woord|\bch\b[^a-z]{0,8}als[^a-z]{0,4}sj|hoor.{0,8}sj.{0,18}schrijf.{0,8}\bch\b/,
+      test: /chef\s*-?woord|\bch\b[^.,;!?]{0,25}?\bals\b[^.,;!?]{0,6}sj|hoor.{0,8}sj.{0,18}schrijf.{0,8}\bch\b/,
       woorden: ["chef", "machine", "chocolade", "douche", "parachute", "chic", "brochure", "charmant", "chauffeur", "champignon"] },
     { naam: "de th die je als /t/ hoort (zoals thee, thema)", bank: "th",
       test: /thee\s*-?woord|\bth\s*-?woord|woorden? met th\b/,
       woorden: ["thee", "thema", "theater", "thermometer", "bibliotheek", "apotheek", "theorie", "thuis", "methode"] },
     { naam: "de g die klinkt als /zj/ (zoals garage, etage)",
-      test: /garage\s*-?woord|\bg\b[^a-z]{0,8}als[^a-z]{0,4}zj|hoor.{0,8}zj.{0,18}schrijf.{0,8}\bg\b/,
+      test: /garage\s*-?woord|\bg\b[^.,;!?]{0,25}?\bals\b[^.,;!?]{0,6}zj|hoor.{0,8}zj.{0,18}schrijf.{0,8}\bg\b/,
       woorden: ["garage", "etage", "bagage", "horloge", "massage", "etalage", "passagier", "reportage", "collage"] },
     { naam: "woorden met -eau (je hoort /oo/, je schrijft eau)", bank: "eau",
       test: /cadeau\s*-?woord|woorden? met eau\b|\beau\b/,
@@ -508,9 +537,15 @@
     { naam: "woorden met eer, oor of eur", bank: "eer_oor_eur",
       test: /eer\s*-?oor\s*-?eur|eer.{0,2}oor.{0,2}eur|woorden? met (eer|oor|eur)\b/,
       woorden: ["beer", "peer", "meer", "deur", "kleur", "geur", "oor", "door", "voor", "spoor", "keer", "leer"] },
-    { naam: "woorden met aai, ooi of oei (je hoort /j/, je schrijft i)", bank: "aai_ooi_oei",
-      test: /aai\s*-?ooi\s*-?oei|aai.{0,2}ooi.{0,2}oei|woorden? met (aai|ooi|oei)\b/,
-      woorden: ["haai", "kraai", "draai", "mooi", "kooi", "gooi", "groei", "bloei", "boei", "fraai"] },
+    { naam: "woorden met aai (je hoort /j/, je schrijft i)", bank: "aai",
+      test: /woorden? met aai\b|\baai\s*-?woord/,
+      woorden: ["haai", "kraai", "draai", "lawaai", "papegaai", "taai", "fraai", "saai", "zwaai", "maaien"] },
+    { naam: "woorden met ooi (je hoort /j/, je schrijft i)", bank: "ooi",
+      test: /woorden? met ooi\b|\booi\s*-?woord/,
+      woorden: ["mooi", "kooi", "gooi", "hooi", "nooit", "ooit", "zooi", "prooi", "plooi", "dooi"] },
+    { naam: "woorden met oei (je hoort /j/, je schrijft i)", bank: "oei",
+      test: /woorden? met oei\b|\boei\s*-?woord/,
+      woorden: ["groei", "bloei", "boei", "foei", "doei", "knoei", "moeite", "gloei", "roei", "vermoeid"] },
     { naam: "woorden met eeuw of ieuw", bank: "eeuw_ieuw",
       test: /eeuw\s*-?ieuw|eeuw.{0,2}ieuw|woorden? met (eeuw|ieuw)\b/,
       woorden: ["leeuw", "sneeuw", "eeuw", "meeuw", "nieuw", "kieuw", "spreeuw", "geeuw"] },
@@ -518,19 +553,24 @@
       test: /uw\s*-?(rijtje|woord)|woorden? met uw\b/,
       woorden: ["uw", "duw", "ruw", "schuw", "sluw", "schaduw", "zenuw", "zwaluw"] },
     { naam: "woorden met ei of ij (weetwoorden)", bank: "ei_ij",
-      test: /\bei\s*-?\/?\s*ij\b|ei en ij|ij en ei|woorden? met ei\b|woorden? met ij\b/,
+      test: /\bei\s*-?\/?\s*ij\b|ei en ij|ij en ei|woorden? met ei\b|woorden? met ij\b|\bei\s*-?woord|\bij\s*-?woord/,
       woorden: ["trein", "klein", "plein", "reis", "geit", "eind", "ijs", "fijn", "pijn", "wijn", "tijd", "rijk", "kijk", "zwijn"] },
     { naam: "woorden met au of ou (weetwoorden)", bank: "au_ou",
-      test: /\bau\s*-?\/?\s*ou\b|au en ou|ou en au|woorden? met au\b|woorden? met ou\b/,
+      test: /\bau\s*-?\/?\s*ou\b|au en ou|ou en au|woorden? met au\b|woorden? met ou\b|\bau\s*-?woord|\bou\s*-?woord/,
       woorden: ["blauw", "gauw", "nauw", "dauw", "saus", "pauw", "auto", "kabouter", "koud", "goud", "hout", "zout", "fout", "vrouw", "schouder"] },
     { naam: "woorden met cht (korte klank + cht)", bank: "cht",
       test: /lucht\s*-?woord|\bcht\s*-?woord|woorden? met cht\b/,
       woorden: ["licht", "nacht", "lucht", "recht", "zacht", "vlucht", "gracht", "kracht", "wacht", "dicht"] },
-    { naam: "woorden met ng of nk", bank: "ng_nk",
-      test: /zing\s*-?woord|\bng\s*-?nk\b|woorden? met (ng|nk)\b/,
-      woorden: ["ding", "koning", "slang", "ring", "jong", "bank", "dank", "plank", "drinken", "bedankt"] },
+    { naam: "woorden met ng (zoals zingen, koning)", bank: "ng",
+      regel: "Je hoort de ng-klank (zoals in koning en zingen) en die schrijf je met de twee letters ng.",
+      test: /zing\s*-?woord|\bng\s*-?woord|woorden? met ng\b/,
+      woorden: ["ding", "koning", "slang", "ring", "jong", "zingen", "lang", "bang", "honger", "vinger"] },
+    { naam: "woorden met nk (zoals plank, bank)", bank: "nk",
+      regel: "Je hoort de nk-klank (zoals in bank en denken). Je schrijft nk; er komt GEEN g tussen de n en de k (dus plank, niet plangk).",
+      test: /plank\s*-?woord|denk\s*-?woord|\bnk\s*-?woord|woorden? met nk\b/,
+      woorden: ["bank", "dank", "plank", "drinken", "denken", "winkel", "donker", "links", "klinken", "wenk"] },
     { naam: "woorden die op een /t/-klank eindigen maar met d of t (langer maken)", bank: "langermaak_d",
-      test: /langer\s*-?maak|verlengwoord|hoor.{0,6}\bt\b.{0,16}schrijf.{0,6}\bd\b|eindigt op (een )?d\b/,
+      test: /langer\s*-?maak|verlengwoord|hoor.{0,6}\bt\b.{0,16}schrijf.{0,6}\bd\b|eindig\w*\s+op\s+(een\s+)?d\b/,
       woorden: ["hand", "hond", "bord", "paard", "woord", "mand", "wind", "hemd", "eend", "rand"] },
     { naam: "woorden op /f/ die met v worden verlengd (duif → duiven)", bank: "f_naar_v",
       test: /duiven\s*-?woord|\bf\b[^a-z]{0,6}(wordt|naar)[^a-z]{0,4}v\b|woord.{0,8}eindigt op (een )?f\b/,
@@ -542,8 +582,45 @@
       test: /verkleinwoord|verkleining/,
       woorden: ["boom", "bloem", "man", "bal", "stoel", "koning", "raam", "huis", "kar", "tafel"] },
     { naam: "open en gesloten lettergrepen (verdubbelen of verlengen: man → mannen, maan → manen)", bank: "open_gesloten",
-      test: /klankgroep|open.{0,4}gesloten|verdubbel|kasteel\s*-?woord|jager\s*-?woord|bakker\s*-?woord/,
-      woorden: ["boom", "bom", "raam", "ram", "pot", "pen", "kar", "bal", "vis", "man", "zon", "kip"] }
+      test: /klankgroep|open.{0,4}gesloten|open[^.,;]{0,8}letter|gesloten[^.,;]{0,8}letter|verdubbel|verleng|kasteel\s*-?woord|jager\s*-?woord|bakker\s*-?woord/,
+      woorden: ["boom", "bom", "raam", "ram", "pot", "pen", "kar", "bal", "vis", "man", "zon", "kip"] },
+    // Meervoud met 's: woorden die op een lange klinker (a, o, u, i, y) eindigen krijgen
+    // 's in het meervoud (auto → auto's). Geen eigen bank in de woordenbank: eigen,
+    // met de hand gecureerde grondvormen (het kind vormt zelf het meervoud).
+    { naam: "meervoud met 's (bijvoorbeeld auto → auto's)",
+      test: /['’]\s?s\b.{0,12}meervoud|meervoud.{0,12}['’]\s?s\b|komma\s*-?\s*s\b|apostrof|['’]s[\s-]?woord|auto['’]?s/,
+      woorden: ["auto", "foto", "radio", "paraplu", "menu", "taxi", "baby", "pony", "kilo", "piano", "video", "oma", "opa", "hobby"] },
+    { naam: "woorden met sch (zoals school, schaduw)", bank: "sch",
+      test: /\bsch\s*-?woord|woorden? met sch\b/,
+      woorden: ["school", "schoen", "schaap", "schaar", "schat", "schuur", "schilder", "schaduw", "schouder", "schema"] },
+    // voorvoegsel/achtervoegsel/y_grieks: bouw-regexes gefixt 4-7 (valse-positieven weg),
+    // dus nu herkend + op de schone bank.
+    { naam: "woorden met een voorvoegsel (be-, ge-, ver-, ont-, her-)", bank: "voorvoegsel",
+      test: /voorvoegsel|woorden? met (be|ge|ver|ont|her)\s*-/,
+      woorden: ["gebouw", "bezoek", "bewegen", "verhaal", "ontbijt", "gevaar", "verschil", "geluk", "bericht", "gedrag"] },
+    { naam: "woorden op -ig of -lijk", bank: "achtervoegsel",
+      test: /achtervoegsel|woorden? op\s*-?(ig|lijk)\b|\b(ig|lijk)\s*-?woord/,
+      woorden: ["aardig", "voorzichtig", "prachtig", "handig", "moeilijk", "duidelijk", "gelukkig", "vrolijk", "makkelijk", "gezellig"] },
+    { naam: "woorden met de Griekse y (zoals systeem, type)", bank: "y_grieks",
+      test: /griekse\s*y|\by\s*-?woord|woorden? met (de )?(griekse )?y\b/,
+      woorden: ["systeem", "type", "symbool", "mysterie", "cyclus", "fysiek", "gym", "pyjama"] },
+    // Lollywoord (Staal): woorden die op -y eindigen, y klinkt als /ie/ (baby, pony, hobby).
+    { naam: "woorden die eindigen op -y (je hoort /ie/, je schrijft y)", bank: "y_eind",
+      test: /lolly\s*-?woord|eindig\w*\s*op\s*-?y\b|op\s*-?y\s*eindig|\by\s*aan\s*het\s*eind|-y\s*-?woord/,
+      woorden: ["baby", "pony", "hobby", "lolly", "party", "puppy", "teddy", "jury", "bunny", "rugby"] },
+    // Tremawoord (Staal): een trema (deelteken) markeert een nieuwe lettergreep (ruïne, egoïst).
+    { naam: "woorden met een trema (deelteken, zoals ruïne, egoïst)", bank: "trema",
+      test: /trema\s*-?woord|\btrema\b|deelteken|puntjes op de/,
+      woorden: ["ideeën", "knieën", "tweeën", "drieën", "poëzie", "reünie", "egoïst", "naïef", "ruïne", "maïs"] },
+    // Routewoord (Staal): ou die klinkt als /oe/ (Franse leenwoorden). Niet uit de letters
+    // af te leiden (ou is meestal /au/), dus een eigen handlijst.
+    { naam: "woorden waarin ou klinkt als /oe/ (zoals route, souvenir)",
+      test: /route\s*-?woord|ou\b.{0,12}\/?oe\/?|klinkt als.{0,6}oe/,
+      woorden: ["route", "souvenir", "journaal", "tour", "silhouet", "bouillon", "douche", "mousse"] },
+    // Trottoirwoord (Staal): oir die klinkt als /waar/. Zeldzaam, eigen handlijst.
+    { naam: "woorden met oir (je hoort /waar/, zoals trottoir)",
+      test: /trottoir\s*-?woord|\boir\s*-?woord|woorden? met oir\b/,
+      woorden: ["trottoir", "reservoir", "repertoire", "memoires"] }
   ];
   // Kenmerk per categorie: de letter(s) die de REGEL oefent en dus in het invul-gat
   // moeten vallen (niet een willekeurige middenletter). Keyed op bank-id. Zonder
@@ -552,16 +629,30 @@
   var SPELLING_FEAT = {
     kilo_ie: /i/, c_als_s: /c/, c_als_k: /c/, tie: /ties?$/, isch: /isch$/, x: /x/,
     th: /th/, ch_sj: /ch/, eau: /eau/, accent_e: /[éèê]/, eer_oor_eur: /eer|oor|eur/,
-    aai_ooi_oei: /aai|ooi|oei/, eeuw_ieuw: /eeuw|ieuw/, ei_ij: /ei|ij/, au_ou: /au|ou/,
-    cht: /cht/, ng_nk: /ng|nk/, sch: /sch/
+    aai: /aai/, ooi: /ooi/, oei: /oei/, eeuw_ieuw: /eeuw|ieuw/, ei_ij: /(^|[^o])ei|ij/, au_ou: /au|ou/,
+    cht: /cht/, ng: /ng/, nk: /nk/, sch: /sch/, y_grieks: /y/, y_eind: /y$/, trema: /[ëïöü]/
   };
 
   // ALLE genoemde categorieen (een leerkracht kan er meerdere tegelijk willen
   // oefenen, bijv. "taxiwoord, colawoord, centwoord, cadeauwoord").
   function vindSpellingCats(context) {
-    var t = String(context || "").toLowerCase(), uit = [];
+    var t = String(context || "").toLowerCase();
+    // Robuuste herkenning: "woorden met lolly", "oefenen met de cola", "sorteren op cent"
+    // enz. worden ook gepakt. We plakken bij "met/op/over <mascotte>" de "<mascotte>woord"-
+    // vorm erachter, zodat de bestaande mascotte-tests ("lolly-woord", "cola-woord") matchen.
+    // ("lollywoorden" en "lolly woorden" matchen al via \s*-?woord in de tests zelf.)
+    // Voor ELK kort token in de invoer (ng, nk, aai, sch, cola, lolly, cadeau…) plakken we
+    // de herkenbare vormen "woorden met <tok>" én "<tok>woord" achter de tekst, zodat zowel
+    // de cluster-tests ("woorden met aai") als de mascotte-tests ("lolly-woord") matchen —
+    // ongeacht schrijfwijze, ook in lijstjes ("ng, nk en aai") en zonder voorzetsel ervoor.
+    var aug = t;
+    t.split(/[\s,;.]+/).forEach(function (tok) {
+      tok = tok.replace(/[-'’]/g, "").replace(/woord(en)?$/, ""); // "ng-woord"/"ngwoorden" → "ng"
+      if (tok.length >= 2 && tok.length <= 9 && /^[a-zà-ÿ]+$/.test(tok)) aug += " woorden met " + tok + " " + tok + "woord";
+    });
+    var uit = [];
     for (var i = 0; i < SPELLING_WOORDEN.length; i++) {
-      if (SPELLING_WOORDEN[i].test.test(t)) uit.push(SPELLING_WOORDEN[i]);
+      if (SPELLING_WOORDEN[i].test.test(aug)) uit.push(SPELLING_WOORDEN[i]);
     }
     return uit;
   }
@@ -605,17 +696,18 @@
       var cats = vindSpellingCats(context);
       var noemtMethode = METHODE_NAAM.test(String(context || ""));
       if (!cats.length && !noemtMethode) return "";
-      var kern = "SPELLINGCATEGORIE (eigen, methode-neutrale aanpak). Een leerkracht gebruikt vaak de termen van de eigen spellingmethode. Herken die term, maar gebruik in de les/het werkblad je EIGEN, neutrale uitleg: neem geen categorienaam, regelformulering of indeling van een methode over, en zet de naam van een methode NIET in de tekst die de leerling ziet. Maak er een eigen, goed opgebouwde en aantrekkelijke les/werkblad van die méér biedt dan een rij oefenwoorden. Gebruik UITSLUITEND de neutrale omschrijving(en) die hieronder staan; verzin GEEN eigen labels zoals \"zachte c\" of \"harde c\" (die zijn verwarrend en vaak onjuist), en zet geen methode-categorienaam (zoals \"colawoord\") in de leerlingtekst.";
+      var kern = "SPELLINGCATEGORIE (eigen, methode-neutrale aanpak). Een leerkracht gebruikt vaak de termen van de eigen spellingmethode. Herken die term, maar gebruik in de les/het werkblad je EIGEN, neutrale uitleg: neem geen categorienaam, regelformulering of indeling van een methode over, en zet de naam van een methode NIET in de tekst die de leerling ziet. Maak er een eigen, goed opgebouwde en aantrekkelijke les/werkblad van die méér biedt dan een rij oefenwoorden. Gebruik UITSLUITEND de neutrale omschrijving(en) die hieronder staan; verzin GEEN eigen labels zoals \"zachte c\" of \"harde c\" (die zijn verwarrend en vaak onjuist), en zet geen methode-categorienaam (zoals \"colawoord\") in de leerlingtekst. BELANGRIJK — DEK DE HELE OPDRACHT: behandel ELK leerdoel dat de leerkracht in het onderwerp noemt. Noemt het onderwerp meerdere spellingcategorieen, of nog een categorie die hieronder niet apart wordt uitgewerkt, werk die dan óók volledig uit (met eigen, passende, correct gespelde woorden). Sla NOOIT stilzwijgend een deel van de opdracht over.";
       if (cats.length === 1) {
         return kern +
           "\nDeze les/dit werkblad gaat over de categorie: " + cats[0].naam + "." +
-          " Behandel die als hoofdonderwerp: leg de spellingregel in kindtaal en in je eigen woorden uit, en gebruik meerdere passende voorbeeldwoorden uit de woordenbank.";
+          (cats[0].regel ? " De juiste spellingregel is: " + cats[0].regel : "") +
+          " Behandel die als hoofdonderwerp. Staat er hierboven een regel? Neem die dan (bijna) LETTERLIJK over in je uitleg — parafraseer 'm niet los en verzin er GEEN 'nooit zus of zo'-varianten bij (die kloppen vaak niet). Gebruik meerdere passende voorbeeldwoorden uit de woordenbank.";
       }
       if (cats.length > 1) {
         return kern +
           "\nDe leerkracht wil MEERDERE categorieen tegelijk oefenen. Behandel ELK van deze categorieen op het werkblad en laat er geen enkele weg (verdeel de opdrachten eerlijk over de categorieen, of maak per categorie een eigen onderdeel): " +
-          cats.map(function (c) { return "\"" + c.naam + "\""; }).join("; ") + "." +
-          " Leg per categorie de regel kort in kindtaal uit en gebruik per categorie de bijbehorende woorden uit de woordenbank.";
+          cats.map(function (c) { return "\"" + c.naam + "\"" + (c.regel ? " (regel: " + c.regel + ")" : ""); }).join("; ") + "." +
+          " Leg per categorie de regel kort in kindtaal uit. Waar een regel is meegegeven, neem die dan (bijna) LETTERLIJK over — parafraseer 'm niet los en verzin er GEEN 'nooit zus of zo'-varianten bij (die kloppen vaak niet). Gebruik per categorie de bijbehorende woorden uit de woordenbank.";
       }
       // Alleen een methodenaam genoemd, geen specifieke categorie.
       return kern +
@@ -657,9 +749,13 @@
           var grond = lijst.filter(function (x) { return x[2] !== "v"; }).map(function (x) { return x[0]; });
           var verv = lijst.filter(function (x) { return x[2] === "v"; }).map(function (x) { return x[0]; });
           if (grond.length >= 8) {
-            var gGrond = sample(grond, Math.min(meer ? 16 : 26, grond.length));
+            // Standaard: kies uit de HELE (doorgereviewde) bank met frequentie-weging,
+            // voor maximale variatie. Een nog-niet-gereviewde bank kan `kopOnly:true`
+            // krijgen → dan alleen de gewone kop (zeldzame/vreemde tail weren).
+            var kies = cat.kopOnly ? kopGreep : gewogenGreep;
+            var gGrond = kies(grond, Math.min(meer ? 16 : 26, grond.length));
             var s = "Categorie \"" + cat.naam + "\" — basisvormen (kies hier vooral uit): " + gGrond.join(", ") + ".";
-            var gVerv = verv.length ? sample(verv, Math.min(meer ? 5 : 8, verv.length)) : [];
+            var gVerv = verv.length ? kies(verv, Math.min(meer ? 5 : 8, verv.length)) : [];
             if (gVerv.length) s += " Vervoegingen (spaarzaam, alleen waar het echt helpt): " + gVerv.join(", ") + ".";
             var gev = gevoeligeIn(gGrond.concat(gVerv));
             if (gev.length) s += " LET OP — deze woorden zijn gevoelig (" + gev.join(", ") + "): gebruik ze alleen in een neutrale, luchtige context, nooit in een gewelddadig, angstig of verontrustend zinnetje.";
@@ -686,6 +782,7 @@
         if (cat.bank && g && window.avinkaWoordenbank && window.avinkaWoordenbank[cat.bank]) {
           woorden = window.avinkaWoordenbank[cat.bank].filter(function (x) { return x[1] <= +g && x[2] !== "v"; }).map(function (x) { return x[0]; });
           if (woorden.length < 8) woorden = cat.woorden.slice();
+          else if (cat.kopOnly) woorden = kop(woorden); // standaard: hele bank; kopOnly → alleen de kop
         } else woorden = cat.woorden.slice();
         return { naam: cat.naam, key: cat.bank || cat.naam, woorden: woorden, feat: SPELLING_FEAT[cat.bank] || null };
       });

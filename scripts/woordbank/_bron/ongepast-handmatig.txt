@@ -249,3 +249,123 @@ romance
 sigaretten
 trance
 vice
+#
+# c-categorie leenwoord-review (4-7-2026) — eigenaar-gekeurd: correct geclassificeerd
+# als c-/k/ of c-/s/, maar Engels/vaag of te zwaar voor een groep-7-spellingwerkblad.
+# BEWUST BEHOUDEN: musical, disco, scooter, cabine + taco, popcorn, score, scan, accu, caravan.
+# cello = echte fout (c klinkt /tsj/, geen /s/).
+service
+center
+ciao
+merci
+barbecue
+crash
+cape
+airco
+cash
+crew
+cruise
+cover
+card
+cricket
+cockpit
+bacon
+clan
+coma
+shock
+cello
+#
+# c-banken volledige review (4-7-2026): banken opengezet (alle nuttige woorden i.p.v.
+# een kop van 36) → hier de niet-bruikbare eruit. Engels/vreemd, te zwaar van toon, of
+# echt obscuur. Abstracte-maar-echte NL-woorden (sollicitatie, licentie, faculteit,
+# democratie, concentratie, certificaat…) BEWUST BEHOUDEN.
+cookie
+cornflakes
+cup
+crackers
+cap
+comeback
+jacuzzi
+catering
+cateraar
+account
+credit
+creditcard
+cloud
+cowboy
+security
+country
+canyon
+coyote
+microchip
+fanclub
+collier
+corps
+loco
+scalpel
+narcose
+brancard
+cavalerie
+cadet
+commandopost
+coup
+ace
+pence
+chance
+cappuccino
+penicilline
+isoleercel
+hallucinatie
+cicero
+#
+# Overige categorieen doorgereviewd (4-7-2026) — vage/Engelse/obscure woorden eruit,
+# zodat álle categorieen (niet alleen c) op de volledige schone bank kunnen draaien.
+# tie:
+mattie
+# x:
+wax
+lex
+relaxen
+# th:
+goliath
+# eau:
+beau
+chateau
+beauty
+# ch (sj):
+cheerleader
+cheeseburger
+chihuahua
+chi
+loch
+mach
+chevron
+sandwich
+# accent-é:
+déjà
+# ei/ij:
+soleil
+monseigneur
+# au/ou:
+gouvernante
+laude
+# ng/nk:
+gringo
+dating
+engineering
+standing
+angelus
+# eer/oor/eur:
+aneurysma
+# Griekse-y (Engelse y-in-midden stragglers):
+babysitter
+bodyguard
+yard
+mayo
+# c: te moeilijk/vreemd voor groep 7 (eigenaar-review 4-7):
+financier
+piccolo
+# trema: drugs die via de trema-spelling langs de blocklist glippen (heroine/cocaine):
+heroïne
+cocaïne
+steroïden

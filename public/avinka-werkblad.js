@@ -66,6 +66,26 @@
     return String(w || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/[^A-Z]/g, "");
   }
 
+  // Getal <-> Nederlands telwoord (1-20; genoeg voor de puzzel-aantallen 8-16).
+  var GETALWOORD = { 1: "één", 2: "twee", 3: "drie", 4: "vier", 5: "vijf", 6: "zes",
+    7: "zeven", 8: "acht", 9: "negen", 10: "tien", 11: "elf", 12: "twaalf", 13: "dertien",
+    14: "veertien", 15: "vijftien", 16: "zestien", 17: "zeventien", 18: "achttien",
+    19: "negentien", 20: "twintig" };
+  var TELWOORD_RE = "een|één|twee|drie|vier|vijf|zes|zeven|acht|negen|tien|elf|twaalf|dertien|veertien|vijftien|zestien|zeventien|achttien|negentien|twintig";
+  // Corrigeert een aantal dat in de opdrachttekst staat ("Zoek de ACHT woorden") naar
+  // het ECHTE aantal items (n). Nodig omdat de AI het getal in de zin schrijft, terwijl
+  // de code de woordlijst daarna nog kan inkorten (bankwoorden afdwingen, pagina-fit):
+  // dan zou de tekst liegen ("acht" terwijl er zes staan). Vervangt alleen een getal dat
+  // vlak vóór "woorden" staat en houdt de rest + de stijl (cijfer/telwoord) heel.
+  function syncAantalWoord(opdracht, n) {
+    if (!opdracht || !n) return opdracht;
+    var re = new RegExp("\\b(\\d{1,2}|" + TELWOORD_RE + ")\\b([\\s\\S]{0,24}?\\bwoorden\\b)", "i");
+    return String(opdracht).replace(re, function (_, getal, rest) {
+      var nieuw = /^\d+$/.test(getal) ? String(n) : (GETALWOORD[n] || String(n));
+      return nieuw + rest;
+    });
+  }
+
   // ── Generators: de CODE maakt de sommen / woordzoeker / getallenlijn ────────
 
   // Reken-engine: maakt sommen + (correcte) antwoorden uit een spec.
@@ -811,13 +831,29 @@
     return { map: map, woorden: lijst };
   }
 
-  // Anagram: husselt de letters van een woord.
+  // Anagram: husselt de letters van een woord. Bij LANGERE woorden houden we een
+  // aaneengesloten stuk op de goede plek staan (als houvast, in de render onderstreept),
+  // zodat er hooguit ~5 letters echt door elkaar staan. Korte woorden (<=5): volledig.
   function genHussel(woorden) {
     return arr(woorden).map(function (w) {
       var W = String(w && w.woord != null ? w.woord : w).trim().toUpperCase(); if (W.length < 2) return null;
-      var letters = W.split(""), door, p = 0;
-      do { door = shuffle(letters); p++; } while (door.join("") === W && p < 12);
-      return { door: door.join(" "), antwoord: W };
+      var n = W.length, letters = W.split("");
+      var ankerLen = n <= 5 ? 0 : Math.max(3, n - 5); // vast blok groeit mee → altijd ~5 los
+      var vast = new Array(n).fill(false);
+      if (ankerLen > 0 && ankerLen < n) {
+        var start = Math.floor(Math.random() * (n - ankerLen + 1));
+        for (var a = 0; a < ankerLen; a++) vast[start + a] = true;
+      }
+      var vrijeIdx = [], vrijeLet = [];
+      for (var i = 0; i < n; i++) if (!vast[i]) { vrijeIdx.push(i); vrijeLet.push(letters[i]); }
+      var out = letters.slice(), p = 0;
+      do {
+        var geschud = shuffle(vrijeLet.slice());
+        for (var j = 0; j < vrijeIdx.length; j++) out[vrijeIdx[j]] = geschud[j];
+        p++;
+      } while (out.join("") === W && p < 12 && vrijeIdx.length > 1);
+      var door = out.map(function (c, idx) { return { c: c, vast: vast[idx] }; });
+      return { door: door, antwoord: W, hint: ankerLen > 0 };
     }).filter(Boolean);
   }
 
@@ -1384,7 +1420,9 @@
     var KLEUR = ["#c0392b", "#d35400", "#b9770e", "#7f8c1a", "#1e8449", "#138d75", "#1f8aa5",
       "#2471a3", "#2c3e9b", "#6c3483", "#9b2d8f", "#b03060", "#8e5a2b", "#34495e", "#196f3d", "#5d4037"];
     function kleurVan(i) { return KLEUR[((i % KLEUR.length) + KLEUR.length) % KLEUR.length]; }
-    var h = opdrachtKop(nr, b.opdracht || "Zoek de woorden en streep ze door.", b.em);
+    // Getal in de opdracht gelijktrekken met het ECHTE aantal geplaatste woorden.
+    var opd = syncAantalWoord(b.opdracht || "Zoek de woorden en streep ze door.", W.woorden.length);
+    var h = opdrachtKop(nr, opd, b.em);
     h += '<div class="wb-wz-wrap"><table class="wb-wz' + (ant ? " wb-wz-ant" : "") + '">';
     W.grid.forEach(function (rij) {
       h += "<tr>";
@@ -1556,7 +1594,8 @@
 
   function rKruiswoord(b, nr, ant) {
     var KW = b._kruis;
-    var h = opdrachtKop(nr, b.opdracht || "Los de kruiswoordpuzzel op.", b.em);
+    var kwAantal = (KW && KW.vragen && KW.vragen.length) || arr(b.woorden).length;
+    var h = opdrachtKop(nr, syncAantalWoord(b.opdracht || "Los de kruiswoordpuzzel op.", kwAantal), b.em);
     if (!KW || !KW.vragen || !KW.vragen.length) {
       // Terugval: een gewone omschrijving-lijst met invullijnen.
       h += '<div class="wb-invul-lijst">';
@@ -1809,11 +1848,17 @@
   function rHussel(b, nr, ant) {
     var H = b._hussel || genHussel(b.woorden);
     var h = opdrachtKop(nr, b.opdracht || "Maak van de letters het goede woord.", b.em);
+    if (H.some(function (it) { return it.hint; })) {
+      h += '<div class="wb-hussel-uitleg">De <u>onderstreepte</u> letters staan al op de goede plek. Zet de andere letters op de juiste volgorde.</div>';
+    }
     h += '<div class="wb-invul-lijst">';
     H.forEach(function (it, i) {
+      // Letters met een spatie ertussen; vaste letters onderstreept als houvast.
+      var reeks = (Array.isArray(it.door) ? it.door : String(it.door).split(/\s+/).map(function (c) { return { c: c, vast: false }; }))
+        .map(function (x) { return x.vast ? '<u class="wb-hussel-vast">' + esc(x.c) + "</u>" : esc(x.c); }).join(" ");
       // Schrijfregel ALTIJD op een eigen regel eronder (lange letterreeksen zouden een
       // inline lijn anders laten wrappen: bij het ene woord ernaast, bij het andere eronder).
-      h += '<div class="wb-anagram-item"><div class="wb-anagram-w"><span class="wb-rij-nr">' + (i + 1) + '.</span> <b class="wb-hussel">' + esc(it.door) + "</b></div>" +
+      h += '<div class="wb-anagram-item"><div class="wb-anagram-w"><span class="wb-rij-nr">' + (i + 1) + '.</span> <b class="wb-hussel">' + reeks + "</b></div>" +
         (ant ? '<div class="wb-anagram-ant"><span class="wb-ant">' + esc(it.antwoord) + "</span></div>" : '<div class="wb-schrijfregel" style="margin-top:24px"></div>') + "</div>";
     });
     h += "</div>";
@@ -2198,7 +2243,9 @@
     });
     h += "</div>";
     // Voet
-    h += '<div class="wb-voet"><span>Gemaakt met Avinka ✓</span><span class="wb-voet-mas">' + (mas[2] || "") + "</span></div>";
+    // Brand-signatuur draagt al de afvinken-✓; kies als decoratie GEEN tweede vinkje
+    // (mas[2] is de ✅) maar de Avinka-ster, anders staan er twee vinkjes naast elkaar.
+    h += '<div class="wb-voet"><span>Gemaakt met Avinka ✓</span><span class="wb-voet-mas">' + (th.emoji || mas[0] || "") + "</span></div>";
     h += "</div>";
     return h;
   }
@@ -2438,6 +2485,8 @@
       ".wb-geheim-in{width:22px;height:24px;border-bottom:2px solid var(--wb-ink);text-align:center;font-weight:800;color:var(--wb-accent)}",
       // Hussel / zin
       ".wb-hussel{letter-spacing:2px;font-size:16px}",
+      ".wb-hussel-vast{color:var(--wb-accent);text-decoration:underline;text-underline-offset:3px}",
+      ".wb-hussel-uitleg{font-size:13px;color:rgba(34,28,58,.7);margin:2px 0 12px}",
       ".wb-anagram-item{break-inside:avoid;-webkit-column-break-inside:avoid;margin:0 0 13px}",
       ".wb-anagram-ant{margin-top:5px}",
       ".wb-zin-rij{margin:0 0 12px}",
@@ -2509,6 +2558,19 @@
       "  .wb-body{padding:14px 20px 4px}",
       "  .wb-blok{margin-bottom:13px}",
       "  .wb-page-ant{page-break-before:always}",
+      // Puzzel-/hokjesranden versterken voor de PDF: dunne (1px) en lichte (rgba .12)
+      // randen worden bij het schalen naar A4 sub-pixel en vallen weg. Alleen in print
+      // opaque + iets steviger maken; de schermweergave blijft ongewijzigd.
+      "  .wb-wz td{border:1.2px solid rgba(34,28,58,.6)!important}",
+      "  .wb-kruis{border-collapse:separate!important;border-spacing:0!important}",
+      "  .wb-kruis td{border:1.4px solid var(--wb-ink)!important;box-sizing:border-box!important}",
+      "  .wb-kruis td.leeg{border:none!important}",
+      "  .wb-sudoku td{border:1.3px solid var(--wb-ink)!important}",
+      "  .wb-sudoku td.rb{border-right:2.5px solid var(--wb-ink)!important}",
+      "  .wb-sudoku td.bb{border-bottom:2.5px solid var(--wb-ink)!important}",
+      "  .wb-kleur-grid td{border:1.3px solid var(--wb-ink)!important}",
+      "  .wb-hok{border:1.2px solid rgba(34,28,58,.6)!important}",
+      "  .wb-cat,.wb-wnw{border-color:rgba(34,28,58,.45)!important}",
       "  @page{size:A4;margin:9mm}",
       "}"
     ].join("\n");
