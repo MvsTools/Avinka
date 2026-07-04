@@ -100,7 +100,7 @@ const ING = [
   { id: "oei", g: 3, doel: 1, soort: "orthografisch", label: "woorden met oei (je hoort /j/, je schrijft i)", test: w => /oei/.test(w) },
   { id: "eeuw_ieuw", g: 3, doel: 1, soort: "orthografisch", label: "woorden met eeuw of ieuw", test: w => /eeuw|ieuw/.test(w) },
   // ── groep 4: ei/ij, au/ou, open/gesloten, voor-/achtervoegsel, langer maken
-  { id: "ei_ij", g: 4, doel: 1, soort: "orthografisch", label: "woorden met ei of ij (weetwoorden)", test: w => /ei|ij/.test(w) },
+  { id: "ei_ij", g: 4, doel: 1, soort: "orthografisch", label: "woorden met ei of ij (weetwoorden)", test: w => /(^|[^o])ei|ij/.test(w) },
   { id: "au_ou", g: 4, doel: 1, soort: "orthografisch", label: "woorden met au of ou (weetwoorden)", test: w => /au|ou/.test(w) },
   { id: "open_gesloten", g: 4, doel: 1, soort: "fonetisch", label: "open en gesloten lettergreep (verdubbelen of verlengen)", test: w => openGesloten(w) },
   // voorvoegsel: NIET elk woord dat toevallig met be/ge/ver/ont/her begint (gek, bel,
