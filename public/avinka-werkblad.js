@@ -2534,6 +2534,19 @@
       "  .wb-body{padding:14px 20px 4px}",
       "  .wb-blok{margin-bottom:13px}",
       "  .wb-page-ant{page-break-before:always}",
+      // Puzzel-/hokjesranden versterken voor de PDF: dunne (1px) en lichte (rgba .12)
+      // randen worden bij het schalen naar A4 sub-pixel en vallen weg. Alleen in print
+      // opaque + iets steviger maken; de schermweergave blijft ongewijzigd.
+      "  .wb-wz td{border:1.2px solid rgba(34,28,58,.6)!important}",
+      "  .wb-kruis{border-collapse:separate!important;border-spacing:0!important}",
+      "  .wb-kruis td{border:1.4px solid var(--wb-ink)!important;box-sizing:border-box!important}",
+      "  .wb-kruis td.leeg{border:none!important}",
+      "  .wb-sudoku td{border:1.3px solid var(--wb-ink)!important}",
+      "  .wb-sudoku td.rb{border-right:2.5px solid var(--wb-ink)!important}",
+      "  .wb-sudoku td.bb{border-bottom:2.5px solid var(--wb-ink)!important}",
+      "  .wb-kleur-grid td{border:1.3px solid var(--wb-ink)!important}",
+      "  .wb-hok{border:1.2px solid rgba(34,28,58,.6)!important}",
+      "  .wb-cat,.wb-wnw{border-color:rgba(34,28,58,.45)!important}",
       "  @page{size:A4;margin:9mm}",
       "}"
     ].join("\n");

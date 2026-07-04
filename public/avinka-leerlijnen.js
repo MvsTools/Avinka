@@ -546,9 +546,12 @@
     { naam: "woorden met cht (korte klank + cht)", bank: "cht",
       test: /lucht\s*-?woord|\bcht\s*-?woord|woorden? met cht\b/,
       woorden: ["licht", "nacht", "lucht", "recht", "zacht", "vlucht", "gracht", "kracht", "wacht", "dicht"] },
-    { naam: "woorden met ng of nk", bank: "ng_nk",
-      test: /zing\s*-?woord|\bng\s*-?nk\b|woorden? met (ng|nk)\b/,
-      woorden: ["ding", "koning", "slang", "ring", "jong", "bank", "dank", "plank", "drinken", "bedankt"] },
+    { naam: "woorden met ng (zoals zingen, koning)", bank: "ng",
+      test: /zing\s*-?woord|\bng\s*-?woord|woorden? met ng\b/,
+      woorden: ["ding", "koning", "slang", "ring", "jong", "zingen", "lang", "bang", "honger", "vinger"] },
+    { naam: "woorden met nk (zoals plank, bank)", bank: "nk",
+      test: /plank\s*-?woord|denk\s*-?woord|\bnk\s*-?woord|woorden? met nk\b/,
+      woorden: ["bank", "dank", "plank", "drinken", "denken", "winkel", "donker", "links", "klinken", "wenk"] },
     { naam: "woorden die op een /t/-klank eindigen maar met d of t (langer maken)", bank: "langermaak_d",
       test: /langer\s*-?maak|verlengwoord|hoor.{0,6}\bt\b.{0,16}schrijf.{0,6}\bd\b|eindigt op (een )?d\b/,
       woorden: ["hand", "hond", "bord", "paard", "woord", "mand", "wind", "hemd", "eend", "rand"] },
@@ -583,7 +586,24 @@
       woorden: ["aardig", "voorzichtig", "prachtig", "handig", "moeilijk", "duidelijk", "gelukkig", "vrolijk", "makkelijk", "gezellig"] },
     { naam: "woorden met de Griekse y (zoals systeem, type)", bank: "y_grieks",
       test: /griekse\s*y|\by\s*-?woord|woorden? met (de )?(griekse )?y\b/,
-      woorden: ["systeem", "type", "symbool", "mysterie", "cyclus", "fysiek", "gym", "pyjama"] }
+      woorden: ["systeem", "type", "symbool", "mysterie", "cyclus", "fysiek", "gym", "pyjama"] },
+    // Lollywoord (Staal): woorden die op -y eindigen, y klinkt als /ie/ (baby, pony, hobby).
+    { naam: "woorden die eindigen op -y (je hoort /ie/, je schrijft y)", bank: "y_eind",
+      test: /lolly\s*-?woord|eindig\w*\s*op\s*-?y\b|op\s*-?y\s*eindig|\by\s*aan\s*het\s*eind|-y\s*-?woord/,
+      woorden: ["baby", "pony", "hobby", "lolly", "party", "puppy", "teddy", "jury", "bunny", "rugby"] },
+    // Tremawoord (Staal): een trema (deelteken) markeert een nieuwe lettergreep (ruïne, egoïst).
+    { naam: "woorden met een trema (deelteken, zoals ruïne, egoïst)", bank: "trema",
+      test: /trema\s*-?woord|\btrema\b|deelteken|puntjes op de/,
+      woorden: ["ideeën", "knieën", "tweeën", "drieën", "poëzie", "reünie", "egoïst", "naïef", "ruïne", "maïs"] },
+    // Routewoord (Staal): ou die klinkt als /oe/ (Franse leenwoorden). Niet uit de letters
+    // af te leiden (ou is meestal /au/), dus een eigen handlijst.
+    { naam: "woorden waarin ou klinkt als /oe/ (zoals route, souvenir)",
+      test: /route\s*-?woord|ou\b.{0,12}\/?oe\/?|klinkt als.{0,6}oe/,
+      woorden: ["route", "souvenir", "journaal", "tour", "silhouet", "bouillon", "douche", "mousse"] },
+    // Trottoirwoord (Staal): oir die klinkt als /waar/. Zeldzaam, eigen handlijst.
+    { naam: "woorden met oir (je hoort /waar/, zoals trottoir)",
+      test: /trottoir\s*-?woord|\boir\s*-?woord|woorden? met oir\b/,
+      woorden: ["trottoir", "reservoir", "repertoire", "memoires"] }
   ];
   // Kenmerk per categorie: de letter(s) die de REGEL oefent en dus in het invul-gat
   // moeten vallen (niet een willekeurige middenletter). Keyed op bank-id. Zonder
@@ -593,15 +613,22 @@
     kilo_ie: /i/, c_als_s: /c/, c_als_k: /c/, tie: /ties?$/, isch: /isch$/, x: /x/,
     th: /th/, ch_sj: /ch/, eau: /eau/, accent_e: /[éèê]/, eer_oor_eur: /eer|oor|eur/,
     aai_ooi_oei: /aai|ooi|oei/, eeuw_ieuw: /eeuw|ieuw/, ei_ij: /ei|ij/, au_ou: /au|ou/,
-    cht: /cht/, ng_nk: /ng|nk/, sch: /sch/, y_grieks: /y/
+    cht: /cht/, ng: /ng/, nk: /nk/, sch: /sch/, y_grieks: /y/, y_eind: /y$/, trema: /[ëïöü]/
   };
 
   // ALLE genoemde categorieen (een leerkracht kan er meerdere tegelijk willen
   // oefenen, bijv. "taxiwoord, colawoord, centwoord, cadeauwoord").
   function vindSpellingCats(context) {
-    var t = String(context || "").toLowerCase(), uit = [];
+    var t = String(context || "").toLowerCase();
+    // Robuuste herkenning: "woorden met lolly", "oefenen met de cola", "sorteren op cent"
+    // enz. worden ook gepakt. We plakken bij "met/op/over <mascotte>" de "<mascotte>woord"-
+    // vorm erachter, zodat de bestaande mascotte-tests ("lolly-woord", "cola-woord") matchen.
+    // ("lollywoorden" en "lolly woorden" matchen al via \s*-?woord in de tests zelf.)
+    var aug = t.replace(/(\bmet|\bop|\ben|\bof|,)\s+(de |het |een )?([a-zà-ÿ]{3,})\b/g,
+      function (m, prep, det, kw) { return m + " " + kw + "woord"; });
+    var uit = [];
     for (var i = 0; i < SPELLING_WOORDEN.length; i++) {
-      if (SPELLING_WOORDEN[i].test.test(t)) uit.push(SPELLING_WOORDEN[i]);
+      if (SPELLING_WOORDEN[i].test.test(aug)) uit.push(SPELLING_WOORDEN[i]);
     }
     return uit;
   }

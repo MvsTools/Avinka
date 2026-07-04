@@ -85,7 +85,9 @@ function lettergrepen(w) {
 // nodig = benadering, later met AI/handcheck te verfijnen).
 const ING = [
   // ── groep 3: klank/eerste vaste klankgroepen
-  { id: "ng_nk", g: 3, doel: 1, soort: "orthografisch", label: "woorden met ng of nk", test: w => /ng|nk/.test(w) },
+  // Staal splitst dit: zingwoord = ng (zingen, koning), plankwoord = nk (plank, bank).
+  { id: "ng", g: 3, doel: 1, soort: "orthografisch", label: "woorden met ng (zoals zingen, koning)", test: w => /ng/.test(w) },
+  { id: "nk", g: 3, doel: 1, soort: "orthografisch", label: "woorden met nk (zoals plank, bank)", test: w => /nk/.test(w) },
   { id: "sch", g: 3, doel: 1, soort: "orthografisch", label: "woorden met sch", test: w => /sch/.test(w) && !/isch/.test(w) },
   { id: "cht", g: 3, doel: 1, soort: "orthografisch", label: "woorden met cht (korte klank + cht)", test: w => /cht/.test(w) },
   { id: "eer_oor_eur", g: 3, doel: 1, soort: "orthografisch", label: "woorden met eer, oor of eur", test: w => /eer|oor|eur/.test(w) },
@@ -125,6 +127,11 @@ const ING = [
   // Griekse y = y als klinker MIDDEN in het woord (systeem, type, cyclus), NIET de
   // Engelse -y aan het eind (baby, party, pony, hobby) en niet de ij.
   { id: "y_grieks", g: 8, doel: 1, soort: "orthografisch", label: "woorden met de Griekse y", test: w => /y/.test(w) && !/ij/.test(w) && !/y$/.test(w) },
+  // Woorden die op -y eindigen (je hoort /ie/, je schrijft y): baby, pony, hobby, lolly.
+  // Medeklinker + y aan het eind (geen -ay/-oy/-ey/-uy, die klinken anders).
+  { id: "y_eind", g: 7, doel: 1, soort: "orthografisch", label: "woorden die eindigen op -y (je hoort /ie/, je schrijft y)", test: w => /[bcdfghjklmnpqrstvz]y$/.test(w) },
+  // Tremawoord (Staal): trema markeert een nieuwe lettergreep (ruïne, egoïst, patiënt, ideeën).
+  { id: "trema", g: 7, doel: 1, soort: "orthografisch", label: "woorden met een trema (ë, ï, ö)", test: w => /[ëïöü]/.test(w) },
 ];
 const ING_BY_ID = Object.fromEntries(ING.map(i => [i.id, i]));
 const DOELEN = ING.filter(i => i.doel);

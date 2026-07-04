@@ -365,3 +365,7 @@ mayo
 # c: te moeilijk/vreemd voor groep 7 (eigenaar-review 4-7):
 financier
 piccolo
+# trema: drugs die via de trema-spelling langs de blocklist glippen (heroine/cocaine):
+heroïne
+cocaïne
+steroïden
