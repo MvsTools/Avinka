@@ -85,6 +85,8 @@ function lettergrepen(w) {
 // nodig = benadering, later met AI/handcheck te verfijnen).
 const ING = [
   // ── groep 3: klank/eerste vaste klankgroepen
+  // (Hakwoord = "schrijf zoals je hoort" doen we NIET auto: de mkm-vorm pakt te veel
+  //  functiewoorden/werkwoorden. Het is een gecureerde handlijst in avinka-leerlijnen.js.)
   // Staal splitst dit: zingwoord = ng (zingen, koning), plankwoord = nk (plank, bank).
   // NIET de "ng" op een woordgrens (on+gehoorzaam, aan+geven): dat is geen ng-KLANK.
   { id: "ng", g: 3, doel: 1, soort: "orthografisch", label: "woorden met ng (zoals zingen, koning)", test: w => /ng/.test(w) && !/^(on|aan)g/.test(w) },
@@ -92,7 +94,10 @@ const ING = [
   { id: "sch", g: 3, doel: 1, soort: "orthografisch", label: "woorden met sch", test: w => /sch/.test(w) && !/isch/.test(w) },
   { id: "cht", g: 3, doel: 1, soort: "orthografisch", label: "woorden met cht (korte klank + cht)", test: w => /cht/.test(w) },
   { id: "eer_oor_eur", g: 3, doel: 1, soort: "orthografisch", label: "woorden met eer, oor of eur", test: w => /eer|oor|eur/.test(w) },
-  { id: "aai_ooi_oei", g: 3, doel: 1, soort: "orthografisch", label: "woorden met aai, ooi of oei", test: w => /aai|ooi|oei/.test(w) },
+  // Apart houden zodat je "aai", "ooi" of "oei" los kunt oefenen (of alle drie samen).
+  { id: "aai", g: 3, doel: 1, soort: "orthografisch", label: "woorden met aai (je hoort /j/, je schrijft i)", test: w => /aai/.test(w) },
+  { id: "ooi", g: 3, doel: 1, soort: "orthografisch", label: "woorden met ooi (je hoort /j/, je schrijft i)", test: w => /ooi/.test(w) },
+  { id: "oei", g: 3, doel: 1, soort: "orthografisch", label: "woorden met oei (je hoort /j/, je schrijft i)", test: w => /oei/.test(w) },
   { id: "eeuw_ieuw", g: 3, doel: 1, soort: "orthografisch", label: "woorden met eeuw of ieuw", test: w => /eeuw|ieuw/.test(w) },
   // ── groep 4: ei/ij, au/ou, open/gesloten, voor-/achtervoegsel, langer maken
   { id: "ei_ij", g: 4, doel: 1, soort: "orthografisch", label: "woorden met ei of ij (weetwoorden)", test: w => /ei|ij/.test(w) },
@@ -276,9 +281,11 @@ const STAM_BLOCK = [
 function bevatHeftigeStam(w) { for (const s of STAM_BLOCK) if (w.includes(s)) return true; return false; }
 // Frequentieplafond: woorden die zeldzamer zijn dan deze rang laten we NIET toe
 // (verjonging — houd het bij woorden die kinderen echt kennen). Tunebaar.
+// (24k->40k getest 4-7: voegde vooral te moeilijke/vreemde/ongepaste woorden toe
+//  — gecastreerd, cougar, sarcofaag — dus teruggedraaid. De bank was al Staal-formaat.)
 const MAX_RANG = 24000;
 
-function kindgeschikt(w) {
+function kindgeschikt(w, staWerkwToe) {
   if (!/^[a-zà-ÿ]+$/.test(w)) return false;
   if (w.length < 3 || w.length > 12) return false;
   if (!RANG.has(w)) return false;
@@ -287,8 +294,10 @@ function kindgeschikt(w) {
   if (BLOCK.has(w)) return false;                          // harde blocklist: nooit terug
   if (ONGEPAST.has(w) && !TOEGESTAAN.has(w)) return false;  // AI-ongepast, tenzij toegestaan
   if (bevatHeftigeStam(w) && !TOEGESTAAN.has(w)) return false; // samenstelling/verbuiging van een heftige stam
-  if (WERKWVORMEN.has(w)) return false;   // gegenereerde werkwoordsvormen (werkwoorden.js)
-  if (isWerkwoordsvorm(w)) return false;
+  if (!staWerkwToe) {
+    if (WERKWVORMEN.has(w)) return false;   // gegenereerde werkwoordsvormen (werkwoorden.js)
+    if (isWerkwoordsvorm(w)) return false;
+  }
   return true;
 }
 
@@ -324,6 +333,51 @@ for (const w of kandidaten) {
   }
 }
 for (const id in banken) banken[id].woorden.sort((a, b) => a[1] - b[1] || RANG.get(a[0]) - RANG.get(b[0]) || a[0].localeCompare(b[0]));
+
+// ── Kleine banken aanvullen met INFINITIEVEN (werkwoorden op -en) ─────────────
+// Klank-categorieen zoals aai/ooi/oei zijn erg klein omdat we werkwoorden weren, terwijl
+// juist veel aai-woorden werkwoorden zijn (draaien, gooien, groeien). Een INFINITIEF is een
+// schoon oefenwoord zonder werkwoordspelling-valkuil (geen +t/+dt/+de), dus die laten we
+// voor KLEINE banken alsnog toe. Conjugaties/participia op -t/-d blijven geweerd.
+const KLEIN_DREMPEL = 60;
+const infinitieven = OPEN_LIJST.filter(w => /en$/.test(w) && w.length >= 4 && !kindgeschikt(w) && kindgeschikt(w, true));
+let nInf = 0;
+for (const d of DOELEN) {
+  const b = banken[d.id];
+  if (b.woorden.filter(x => x[2] !== "v").length >= KLEIN_DREMPEL) continue; // alleen kleine banken
+  const heeft = new Set(b.woorden.map(x => x[0]));
+  for (const w of infinitieven) {
+    if (heeft.has(w) || !d.test(w)) continue;
+    if (d.id === "open_gesloten" && GEEN_KLANKGROEP.has(w)) continue;
+    const achtergrond = ING.filter(i => i.test(w) && i.id !== d.id).map(i => i.g);
+    const vanaf = Math.max(3, freqFloor(w), achtergrond.length ? Math.max(...achtergrond) : 0, semantiekVloer(w));
+    b.woorden.push([w, vanaf]); heeft.add(w); nInf++;
+  }
+  // Ruim losse VERVOEGINGEN/DEELWOORDEN op die door het werkwoordfilter lekten (draait,
+  // draaide, gedraaid, genaaid, bezaaid): houd de infinitief (op -en) + het naamwoord.
+  b.woorden = b.woorden.filter(x => {
+    const w = x[0];
+    // deelwoord op cluster+d met een werkwoord-voorvoegsel (gedraaid, omgedraaid, bezaaid, vermoeid)
+    if (/(aai|ooi|oei)d$/.test(w) && /^(ge|be|ver|ont|her|over|onder|aan|op|uit|af|in|door|om|mee|toe|weg|na|voor)/.test(w)) return false;
+    // tegenwoordige/verleden tijd (draait/draaide/draaiden) ALS we de infinitief hebben
+    var m = w.match(/(aai|ooi|oei)(t|de|te|den|ten|dt)$/);
+    if (m && heeft.has(w.slice(0, w.length - m[2].length) + "en")) return false;
+    return true;
+  });
+  b.woorden.sort((a, b2) => a[1] - b2[1] || RANG.get(a[0]) - RANG.get(b2[0]) || a[0].localeCompare(b2[0]));
+}
+
+// ── Hakwoord: met de hand gecureerde mkm-naamwoorden ─────────────────────────
+// (Auto-genereren uit de freq-lijst gaf een namen/Engels-soep, want korte mkm-woorden
+//  zijn in ondertitels vooral personages. Daarom een handlijst; uitbreidbaar in
+//  _bron/hakwoord.txt.) Groep 3, allemaal vanaf-groep 3.
+try {
+  const hakw = fs.readFileSync(BRON("hakwoord.txt"), "utf8").split(/\r?\n/)
+    .map(s => s.trim().toLowerCase()).filter(w => w && !w.startsWith("#"));
+  const uniek = [...new Set(hakw)];
+  banken.hakwoord = { label: "hakwoorden (schrijf zoals je hoort, zoals kat, bal, vis)", soort: "handlijst", introGroep: 3, woorden: uniek.map(w => [w, 3]) };
+  console.log("hakwoord (handlijst):", uniek.length, "woorden");
+} catch (e) { console.log("hakwoord.txt niet gevonden:", e.message); }
 
 // ── Wegschrijven ──────────────────────────────────────────────────────────────
 const uit = {

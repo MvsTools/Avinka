@@ -492,6 +492,12 @@
   // Taal actief-naam of een fonetische omschrijving). Volgorde = prioriteit.
   // Uitbreidbaar: voeg een categorie of woorden toe (alles met de hand geverifieerd).
   var SPELLING_WOORDEN = [
+    // Hakwoord (Staal cat 1): schrijf zoals je hoort — korte mkm-woorden. Gecureerde
+    // handlijst in de bank (scripts/woordbank/_bron/hakwoord.txt); auto-genereren gaf
+    // een namen/Engels-soep.
+    { naam: "hakwoorden (schrijf zoals je hoort, zoals kat, bal, vis)", bank: "hakwoord",
+      test: /hak\s*-?woord|schrijf.{0,10}zoals je.{0,4}hoort|\bmkm\b/,
+      woorden: ["kat", "bal", "vis", "bos", "pen", "tak", "stok", "plas", "kast", "mus", "hut", "pot", "bus", "kip"] },
     { naam: "woorden waarin je /ie/ hoort maar één i schrijft (zoals kilo, liter)", bank: "kilo_ie",
       test: /kilo\s*-?woord|liter\s*-?woord|hoor.{0,8}ie.{0,18}schrijf.{0,8}\bi\b|\bi\b[^a-z]{0,8}(klinkt als|als)[^a-z]{0,4}ie/,
       woorden: ["kilo", "liter", "prima", "titel", "crisis", "figuur", "minus", "via", "diploma", "januari", "februari"] },
@@ -528,9 +534,15 @@
     { naam: "woorden met eer, oor of eur", bank: "eer_oor_eur",
       test: /eer\s*-?oor\s*-?eur|eer.{0,2}oor.{0,2}eur|woorden? met (eer|oor|eur)\b/,
       woorden: ["beer", "peer", "meer", "deur", "kleur", "geur", "oor", "door", "voor", "spoor", "keer", "leer"] },
-    { naam: "woorden met aai, ooi of oei (je hoort /j/, je schrijft i)", bank: "aai_ooi_oei",
-      test: /aai\s*-?ooi\s*-?oei|aai.{0,2}ooi.{0,2}oei|woorden? met (aai|ooi|oei)\b/,
-      woorden: ["haai", "kraai", "draai", "mooi", "kooi", "gooi", "groei", "bloei", "boei", "fraai"] },
+    { naam: "woorden met aai (je hoort /j/, je schrijft i)", bank: "aai",
+      test: /woorden? met aai\b|\baai\s*-?woord/,
+      woorden: ["haai", "kraai", "draai", "lawaai", "papegaai", "taai", "fraai", "saai", "zwaai", "maaien"] },
+    { naam: "woorden met ooi (je hoort /j/, je schrijft i)", bank: "ooi",
+      test: /woorden? met ooi\b|\booi\s*-?woord/,
+      woorden: ["mooi", "kooi", "gooi", "hooi", "nooit", "ooit", "zooi", "prooi", "plooi", "dooi"] },
+    { naam: "woorden met oei (je hoort /j/, je schrijft i)", bank: "oei",
+      test: /woorden? met oei\b|\boei\s*-?woord/,
+      woorden: ["groei", "bloei", "boei", "foei", "doei", "knoei", "moeite", "gloei", "roei", "vermoeid"] },
     { naam: "woorden met eeuw of ieuw", bank: "eeuw_ieuw",
       test: /eeuw\s*-?ieuw|eeuw.{0,2}ieuw|woorden? met (eeuw|ieuw)\b/,
       woorden: ["leeuw", "sneeuw", "eeuw", "meeuw", "nieuw", "kieuw", "spreeuw", "geeuw"] },
@@ -614,7 +626,7 @@
   var SPELLING_FEAT = {
     kilo_ie: /i/, c_als_s: /c/, c_als_k: /c/, tie: /ties?$/, isch: /isch$/, x: /x/,
     th: /th/, ch_sj: /ch/, eau: /eau/, accent_e: /[éèê]/, eer_oor_eur: /eer|oor|eur/,
-    aai_ooi_oei: /aai|ooi|oei/, eeuw_ieuw: /eeuw|ieuw/, ei_ij: /ei|ij/, au_ou: /au|ou/,
+    aai: /aai/, ooi: /ooi/, oei: /oei/, eeuw_ieuw: /eeuw|ieuw/, ei_ij: /ei|ij/, au_ou: /au|ou/,
     cht: /cht/, ng: /ng/, nk: /nk/, sch: /sch/, y_grieks: /y/, y_eind: /y$/, trema: /[ëïöü]/
   };
 

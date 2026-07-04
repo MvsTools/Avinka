@@ -761,6 +761,15 @@
             if (goedeZinnen.length) blk.zinnen = goedeZinnen;
           } else if (blk.type === 'woordzoeker') {
             blk.woorden = herstel(blk.woorden, function (w) { return w; }, function (w) { return w.toUpperCase(); }, inUnie, unie);
+            // Woordzoeker mag voller — meer woorden kosten nauwelijks extra ruimte. Pad tot ~10
+            // met bankwoorden (spreiding hier relaxen mag: herhaling in een woordzoeker is onschuldig).
+            var wzDoel = 8, wzHeeft = {};
+            blk.woorden.forEach(function (w) { wzHeeft[String(w).toLowerCase()] = 1; });
+            var wzExtra = unie.filter(function (w) { return !wzHeeft[w.toLowerCase()]; });
+            while (blk.woorden.length < wzDoel && wzExtra.length) {
+              var wzW = wzExtra.splice(Math.floor(Math.random() * wzExtra.length), 1)[0];
+              blk.woorden.push(wzW.toUpperCase()); wzHeeft[wzW.toLowerCase()] = 1;
+            }
           } else if (blk.type === 'anagram') {
             blk.woorden = herstel(blk.woorden, function (w) { return (w && w.woord != null) ? w.woord : w; }, function (w) { return { woord: w }; }, inUnie, unie);
           } else if (blk.type === 'invul') {
