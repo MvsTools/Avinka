@@ -1,0 +1,1821 @@
+<!DOCTYPE html>
+<!--
+  Draaiboek — AI maakt een compleet, kant-en-klaar draaiboek voor een schoolevenement.
+  Ontworpen en gemaakt door Michael van Spanje. © 2026 Michael van Spanje.
+
+  STATUS: TESTFASE — losstaande tool, NOG NIET geregistreerd in het platform.
+  Te testen op /tools/draaiboek.html. Pas NA goedkeuring inhaken (5 registratiepunten
+  uit de tool-integratie-checklist + avinkaTel + de Oudercontact-koppeling).
+  Zie de geheugens draaiboek-tool, testfase-bouwen-los en tool-integratie-checklist.
+
+  Filosofie (kwaliteitslat): de CODE regelt de structuur van een écht draaiboek en
+  kent PER TEGEL eigen vragen + een "grote activiteit" die het programma opbouwt; de
+  AI vult alleen de inhoud in. Twee programma-vormen: klok-tijdlijn (1 dag) en
+  dag-voor-dag (meerdaags, bv. projectweek).
+-->
+<html lang="nl">
+<head>
+  <script>
+  try { localStorage.setItem("avinka_apikey", "sk-ant-proxy"); } catch (e) {}
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="author" content="Michael van Spanje" />
+  <title>Draaiboek · Een compleet draaiboek voor elk schoolevenement</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink: #221c3a; --cream: #fbf6ee; --warm: #e9e1d2;
+      --accent: #2f9e6e; --accent2: #25855a; --violet: #25855a; --muted: #6b6880; --card: #ffffff;
+      --brand-soft: #e7f4ed;
+      --line: rgba(34,28,58,0.07); --line-strong: rgba(34,28,58,0.13);
+      --shadow-sm: 0 1px 2px rgba(34,28,58,0.06), 0 2px 6px rgba(34,28,58,0.05);
+      --shadow-md: 0 14px 36px rgba(34,28,58,0.13);
+    }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+    body::before { content: ''; position: fixed; inset: 0; background-image:
+        radial-gradient(circle at 10% 4%, rgba(47,158,110,0.10) 0%, transparent 42%),
+        radial-gradient(circle at 92% 0%, rgba(47,158,110,0.10) 0%, transparent 40%),
+        radial-gradient(rgba(47,158,110,0.05) 1.3px, transparent 1.3px);
+      background-size: auto, auto, 24px 24px; pointer-events: none; z-index: 0; }
+
+    .app { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 22px 24px 30px; }
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+    .terug-menu { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600; color: var(--muted); text-decoration: none; padding: 9px 16px; border: 1.5px solid var(--line-strong); border-radius: 999px; background: var(--card); box-shadow: var(--shadow-sm); transition: all .18s ease; }
+    .terug-menu:hover { color: var(--accent); border-color: var(--accent); transform: translateX(-2px); }
+    .top-logo { display: inline-flex; align-items: center; gap: 9px; font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.5px; color: var(--ink); }
+    .top-logo .mk { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, var(--accent), var(--violet)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px; box-shadow: 0 10px 24px rgba(47,158,110,0.14); }
+
+    .hero { display: grid; grid-template-columns: 1fr 250px; gap: 30px; align-items: center; margin: 4px 0 30px; }
+    @media (max-width: 720px) { .hero { grid-template-columns: 1fr; } .heroart { display: none; } }
+    .hero h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(30px, 4.6vw, 40px); letter-spacing: -1px; line-height: 1.08; }
+    .hero h1 .sw { position: relative; white-space: nowrap; font-style: italic; color: var(--accent); }
+    .hero h1 .sw svg { position: absolute; left: 0; bottom: -7px; width: 100%; height: 11px; color: var(--violet); }
+    .hero .lead { font-size: 15px; color: var(--muted); line-height: 1.55; margin-top: 16px; max-width: 400px; }
+    .heroart { position: relative; width: 250px; align-self: center; display: flex; align-items: center; justify-content: center; padding: 10px 0; }
+    .mockwin { position: relative; width: 228px; background: #fff; border-radius: 18px; box-shadow: 0 22px 46px rgba(34,28,58,0.16); border: 1px solid rgba(34,28,58,0.06); overflow: hidden; transform: rotate(1.2deg); }
+    .mockbar { display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: #f7f5f0; border-bottom: 1px solid rgba(34,28,58,0.06); }
+    .mockbar i { width: 9px; height: 9px; border-radius: 50%; }
+    .mocktab { margin-left: 6px; font-size: 9.5px; font-weight: 700; color: var(--muted); background: #fff; border: 1px solid rgba(34,28,58,0.08); border-radius: 6px; padding: 3px 8px; }
+    .mockbody { padding: 14px; }
+    .mtop { display: flex; align-items: center; gap: 9px; margin-bottom: 11px; }
+    .mic { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 5px 12px rgba(47,158,110,0.32); }
+    .mic svg { width: 16px; height: 16px; }
+    .mtitle { font-family: 'Fraunces', serif; font-weight: 600; font-size: 14px; color: var(--ink); line-height: 1.2; }
+    .mrow { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+    .mtijd { font-size: 9px; font-weight: 800; letter-spacing: .2px; color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 5px; padding: 4px 0; flex-shrink: 0; width: 42px; text-align: center; }
+    .mbar { height: 8px; border-radius: 5px; background: linear-gradient(90deg, var(--accent), #8fd9b9); }
+    .mklaar { margin-top: 4px; display: inline-flex; align-items: center; gap: 6px; background: var(--brand-soft); color: var(--accent2); font-size: 10.5px; font-weight: 700; border-radius: 8px; padding: 5px 11px; }
+    .fbadge { position: absolute; background: #fff; border-radius: 12px; padding: 9px 13px; font-size: 11px; font-weight: 700; color: var(--ink); box-shadow: 0 8px 18px rgba(34,28,58,0.14); border: 1px solid rgba(34,28,58,0.05); top: 2px; left: -14px; transform: rotate(-5deg); white-space: normal; max-width: 156px; line-height: 1.3; }
+    .fbadge b { color: var(--accent); font-weight: 800; }
+
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 20px 22px 22px; box-shadow: var(--shadow-sm); margin-top: 16px; }
+    .card.dim { opacity: .55; }
+    .card-label { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; color: var(--ink); letter-spacing: -0.3px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+    .card-label .ic { width: 44px; height: 44px; border-radius: 14px; background: var(--brand-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+
+    label.veld-l { display: block; font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+    .hint { font-weight: 400; color: var(--muted); font-size: 13px; }
+    .field-label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+    .field-select, .field-input { width: 100%; border: 1px solid var(--line-strong); background: var(--cream); font: inherit; font-size: 14px; color: var(--ink); padding: 11px 13px; border-radius: 12px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; appearance: none; -webkit-appearance: none; }
+    .field-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6880' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 13px center; padding-right: 34px; cursor: pointer; }
+    .field-select:focus, .field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,158,110,0.15); }
+    .field-select.filled, .field-input.filled { border-color: var(--accent); background: var(--brand-soft); }
+    textarea.field-input { resize: vertical; min-height: 78px; line-height: 1.6; border-radius: 14px; padding: 13px 15px; }
+    .rij { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 16px; }
+    .rij.tweekol { grid-template-columns: 1fr 1fr; }
+    @media (max-width: 620px) { .rij, .rij.tweekol { grid-template-columns: 1fr; } }
+
+    /* Evenement-keuze */
+    .ev-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin-top: 4px; }
+    @media (max-width: 740px) { .ev-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 520px) { .ev-grid { grid-template-columns: repeat(2, 1fr); } }
+    .evkaart { border: 1.5px solid var(--line-strong); background: var(--cream); border-radius: 13px; padding: 12px 8px; text-align: center; cursor: pointer; transition: .15s; font-weight: 700; font-size: 12.5px; line-height: 1.2; }
+    .evkaart:hover { border-color: var(--accent); }
+    .evkaart.aan { border-color: var(--accent); background: var(--brand-soft); color: var(--accent2); box-shadow: inset 0 0 0 1px var(--accent); }
+    .evkaart .ve { font-size: 22px; display: block; margin-bottom: 4px; }
+
+    /* Dynamische velden */
+    .veld { margin-top: 18px; }
+    .veld:first-child { margin-top: 0; }
+    /* Grote activiteit = prominente kaarten */
+    .act-l { display: block; font-weight: 700; font-size: 14px; margin-bottom: 10px; }
+    .act-l .ster { color: var(--accent); }
+    .act-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    @media (max-width: 520px) { .act-grid { grid-template-columns: 1fr; } }
+    .actkaart { border: 1.5px solid var(--line-strong); background: var(--cream); border-radius: 14px; padding: 13px 15px; cursor: pointer; transition: .15s; font-weight: 700; font-size: 14px; }
+    .actkaart:hover { border-color: var(--accent); }
+    .actkaart.aan { border-color: var(--accent); background: var(--brand-soft); color: var(--accent2); box-shadow: inset 0 0 0 1px var(--accent); }
+    .actkaart small { display: block; font-weight: 500; font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .actkaart.aan small { color: var(--accent2); }
+    .actkaart-eigen { border-style: dashed; color: var(--muted); }
+    .actkaart-eigen.aan { color: var(--accent2); }
+    /* Segment (ja/nee en korte keuzes) */
+    .seg { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+    .seg .opt { border: 1.5px solid var(--line-strong); background: var(--cream); border-radius: 11px; padding: 9px 15px; font-weight: 600; font-size: 14px; cursor: pointer; transition: .15s; }
+    .seg .opt:hover { border-color: var(--accent); }
+    .seg .opt.aan { border-color: var(--accent); background: var(--brand-soft); color: var(--accent2); }
+    /* Meerkeuze-chips */
+    .multi { display: flex; flex-wrap: wrap; gap: 8px; }
+    .multi .chip { border: 1.5px solid var(--line-strong); background: var(--cream); border-radius: 999px; padding: 8px 14px; font-weight: 600; font-size: 13.5px; cursor: pointer; transition: .15s; display: inline-flex; align-items: center; gap: 6px; }
+    .multi .chip:hover { border-color: var(--accent); }
+    .multi .chip.aan { border-color: var(--accent); background: var(--brand-soft); color: var(--accent2); }
+    .multi .chip .vk { width: 15px; height: 15px; border: 1.5px solid var(--line-strong); border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; color: #fff; }
+    .multi .chip.aan .vk { background: var(--accent); border-color: var(--accent); }
+
+    .btn-primary { width: 100%; margin-top: 24px; border: none; border-radius: 16px; background: var(--accent); color: #fff; font: inherit; font-size: 16px; font-weight: 700; padding: 17px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 10px; letter-spacing: -0.2px; box-shadow: 0 10px 24px rgba(47,158,110,0.28); }
+    .btn-primary:hover:not(:disabled) { background: var(--accent2); transform: translateY(-2px); box-shadow: 0 14px 30px rgba(47,158,110,0.34); }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+    .err { color: #be123c; font-size: 14px; margin-top: 12px; }
+
+    .laden { display: none; text-align: center; color: var(--muted); background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 40px 24px; box-shadow: var(--shadow-sm); margin-top: 16px; }
+    .laden.aan { display: block; }
+    .spin { width: 34px; height: 34px; border: 3px solid var(--brand-soft); border-top-color: var(--accent); border-radius: 50%; margin: 0 auto 14px; animation: dr 0.8s linear infinite; }
+    @keyframes dr { to { transform: rotate(360deg); } }
+    .laad-stappen { margin: 20px auto 0; max-width: 340px; display: flex; flex-direction: column; gap: 6px; text-align: left; }
+    .laad-stap { font-size: 13px; display: flex; align-items: center; gap: 10px; color: var(--muted); opacity: .4; transition: all .35s ease; padding: 3px 0; }
+    .laad-stap.actief { opacity: 1; color: var(--accent); font-weight: 600; }
+    .laad-stap.klaar { opacity: .75; color: var(--ink); }
+    .laad-stip { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; transition: all .35s; }
+    .laad-stap.actief .laad-stip { width: 9px; height: 9px; }
+    .laad-stap.klaar .laad-stip { background: var(--accent); }
+
+    /* Resultaat */
+    #uitvoer { display: none; }
+    .db { line-height: 1.6; font-size: 15px; }
+    .db-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .dm-pill { display: inline-flex; align-items: center; gap: 6px; background: var(--brand-soft); color: var(--accent2); font-size: 12.5px; font-weight: 700; border-radius: 999px; padding: 5px 13px; }
+    .db-titel { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 600; letter-spacing: -0.4px; margin: 0 0 4px; }
+    .sec-kop { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; color: var(--ink); margin: 26px 0 10px; display: flex; align-items: center; gap: 9px; position: relative; }
+    .sec-kop .se { font-size: 20px; }
+    .sec-kop .sec-t { flex: 1; }
+    /* In-tool schrappen: ✕-knopjes die op hover verschijnen */
+    .db-tip { font-size: 12px; color: var(--muted); margin: 0 0 14px; }
+    .rm { position: relative; }
+    .del { position: absolute; top: 2px; right: 0; width: 22px; height: 22px; padding: 0; border: 1px solid var(--line-strong); background: #fff; color: #be123c; border-radius: 7px; font: inherit; font-size: 12px; line-height: 1; cursor: pointer; opacity: 0; transition: opacity .12s, background .12s; box-shadow: var(--shadow-sm); z-index: 3; }
+    .del:hover { background: #fee2e2; border-color: #fca5a5; }
+    .del-sec { position: static; opacity: .3; margin-left: 6px; }
+    .sec-kop:hover > .del-sec { opacity: 1; }
+    .rm:hover > .del, .fase-blok-kop:hover > .del, .tl-item:hover > .del,
+    ul.checks li:hover > .del, ul.mat li:hover > .del, ul.aandacht li:hover > .del, ul.tl-list li:hover > .del { opacity: 1; }
+    .fase-blok-kop { position: relative; padding-right: 64px; }
+    .fase-blok-kop > .del { top: 6px; right: 8px; }
+    .tl-item > .del { top: 0; right: 0; }
+    ul.checks li, ul.mat li, ul.aandacht li, ul.tl-list li { padding-right: 62px; }
+    .rm { padding-right: 62px; }
+    ul.checks li > .del, ul.mat li > .del, ul.tl-list li > .del { top: 5px; }
+    ul.aandacht li > .del { top: 8px; right: 8px; }
+    /* Sleepgreep */
+    .grip { position: absolute; top: 3px; right: 34px; width: 22px; height: 22px; padding: 0; border: 1px solid var(--line-strong); background: #fff; color: var(--muted); border-radius: 7px; font: inherit; font-size: 12px; line-height: 1; cursor: grab; opacity: 0; transition: opacity .12s; box-shadow: var(--shadow-sm); z-index: 3; }
+    .grip:active { cursor: grabbing; }
+    li:hover > .grip, .fase-blok-kop:hover > .grip, .tl-hd:hover > .grip, .sec-kop:hover > .grip, .rm:hover > .grip { opacity: .6; }
+    ul.aandacht li > .grip { top: 7px; }
+    [data-drag].sleep { opacity: .4; }
+    /* Sleep-preview: een duidelijke groene balk waar het blok terechtkomt bij loslaten */
+    [data-drag].drop-voor { box-shadow: inset 0 3px 0 0 var(--accent), 0 -2px 8px rgba(47,158,110,.18); background: rgba(47,158,110,.06); border-radius: 8px; }
+    [data-drag].drop-na { box-shadow: inset 0 -3px 0 0 var(--accent), 0 2px 8px rgba(47,158,110,.18); background: rgba(47,158,110,.06); border-radius: 8px; }
+    [data-drag].sleep { opacity: .35; }
+    /* Afvinken */
+    .vink { position: absolute; left: 0; top: 5px; width: 17px; height: 17px; border: 1.5px solid var(--line-strong); border-radius: 5px; background: #fff; cursor: pointer; z-index: 2; transition: background .12s, border-color .12s; }
+    .vink:hover { border-color: var(--accent); }
+    li.af > .vink { background: var(--accent); border-color: var(--accent); }
+    li.af > .vink::after { content: '✓'; position: absolute; left: 3px; top: -1px; color: #fff; font-size: 11px; font-weight: 800; }
+    li.af > .tx { text-decoration: line-through; color: var(--muted); }
+    ul.checks li.chk::before, ul.mat li.chk::before { display: none; }
+    li.chk { cursor: pointer; }
+    li.chk:hover { background: #fbfaf6; }
+    li.chk > .tx { cursor: text; }
+    /* Boodschappen gegroepeerd in categorieën met ruimte ertussen */
+    .mat-groep { margin: 0 0 16px; }
+    .mat-groep:last-child { margin-bottom: 0; }
+    .mat-kop { position: relative; padding-right: 64px; font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--accent2); margin: 0 0 4px; }
+    .mat-groep ul.mat { column-count: 1; margin: 2px 0; }
+    /* Inline bewerken */
+    .db .tx { border-radius: 6px; transition: box-shadow .12s, background .12s; cursor: text; }
+    .db .tx:hover { background: #fbfaf6; }
+    .db .tx:focus { outline: none; background: #fff; box-shadow: inset 0 0 0 1.5px var(--accent); }
+    .db .tx:empty::before { content: 'Typ hier…'; color: var(--muted); }
+    .tl-hd { position: relative; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px; padding-right: 64px; }
+    .tl-hd > .del { top: 0; right: 0; }
+    /* Lettergrootte gelijktrekken (geen 'ineens kleiner' meer) */
+    .db ul.tl-list li, .db ul.aandacht li { font-size: 15px; }
+    /* Verplaats-knop + menu */
+    li.mv { padding-right: 52px; }
+    .move { position: absolute; top: 3px; right: 26px; width: 22px; height: 22px; padding: 0; border: 1px solid var(--line-strong); background: #fff; color: #2563eb; border-radius: 7px; font: inherit; font-size: 13px; line-height: 1; cursor: pointer; opacity: 0; transition: opacity .12s, background .12s; box-shadow: var(--shadow-sm); z-index: 3; }
+    .move:hover { background: #dbeafe; border-color: #93c5fd; }
+    ul.checks li:hover > .move { opacity: 1; }
+    .move-menu { position: absolute; z-index: 50; background: #fff; border: 1px solid var(--line-strong); border-radius: 12px; box-shadow: var(--shadow-md); padding: 6px; min-width: 190px; }
+    .move-menu .mm-t { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; padding: 4px 8px 6px; }
+    .move-menu button { display: block; width: 100%; text-align: left; border: none; background: none; padding: 8px 9px; border-radius: 8px; font: inherit; font-size: 13.5px; color: var(--ink); cursor: pointer; }
+    .move-menu button:hover { background: var(--brand-soft); color: var(--accent2); }
+    /* Zelf toevoegen-rij */
+    .voegtoe { display: flex; align-items: center; gap: 7px; margin: 8px 0 2px; }
+    .voegtoe .plus { color: var(--accent); font-weight: 800; font-size: 16px; }
+    .voegtoe input { flex: 1; border: 1px dashed var(--line-strong); background: transparent; border-radius: 9px; padding: 6px 10px; font: inherit; font-size: 13.5px; color: var(--ink); }
+    .voegtoe input:focus { outline: none; border-color: var(--accent); border-style: solid; background: #fff; }
+    .voegtoe .meer { border: 1px solid var(--line-strong); background: #fff; color: var(--accent2); border-radius: 9px; padding: 6px 11px; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .voegtoe .meer:hover { border-color: var(--accent); background: var(--brand-soft); }
+    .voegtoe .meer:disabled { opacity: .5; cursor: default; }
+    /* Waarschuwingsvenster vóór downloaden */
+    .modal-wrap { position: fixed; inset: 0; background: rgba(34,28,58,.45); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+    .modal { background: #fff; border-radius: 20px; padding: 24px 24px 22px; max-width: 460px; width: 100%; box-shadow: var(--shadow-md); }
+    .modal-t { font-family: 'Fraunces', serif; font-size: 21px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 9px; }
+    .modal-p { font-size: 14.5px; color: var(--muted); line-height: 1.55; margin-bottom: 18px; }
+    .modal-acties { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+    .nieuw-kopje { margin-top: 22px; text-align: center; }
+    .nieuw-kopje .btn-soft { border-style: dashed; }
+    /* Delen-scherm */
+    .deel-form { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+    .deel-form .field-input { flex: 1; min-width: 170px; }
+    .deel-form .field-select { width: 150px; }
+    .deel-lijst-kop { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin: 18px 0 8px; }
+    .deel-lijst { display: flex; flex-direction: column; gap: 6px; }
+    .deel-rij { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; }
+    .deel-rij .deel-wie { flex: 1; font-size: 14px; min-width: 0; word-break: break-word; }
+    .deel-rij .del { position: static; opacity: .6; }
+    .deel-rij .del:hover { opacity: 1; }
+    /* Live samenwerken-balk */
+    #live-bar { display: none; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; padding: 8px 13px; background: var(--brand-soft); border: 1px solid rgba(47,158,110,.24); border-radius: 12px; font-size: 13px; }
+    .live-lbl { font-weight: 700; color: var(--accent2); }
+    .live-wie { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--ink); }
+    .live-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--k, #2f9e6e); box-shadow: 0 0 0 2px #fff; }
+    .live-typ { color: var(--muted); font-weight: 500; font-style: italic; }
+    @media print { #live-bar { display: none !important; } }
+    .db p { margin: 7px 0; }
+    .db .intro { background: var(--brand-soft); border: 1px solid rgba(47,158,110,0.24); border-radius: 14px; padding: 13px 16px; font-size: 15px; }
+    .db .intro p { margin: 4px 0; }
+    .fase-blok { border: 1px solid var(--line-strong); background: #fff; border-radius: 14px; margin: 10px 0; overflow: hidden; box-shadow: var(--shadow-sm); }
+    .fase-blok-kop { background: var(--cream); border-bottom: 1px solid var(--line); padding: 9px 15px; font-weight: 700; font-size: 14px; color: var(--ink); }
+    .fase-blok-in { padding: 6px 15px 10px; }
+    ul.checks { list-style: none; margin: 4px 0; padding: 0; }
+    ul.checks li { position: relative; padding: 5px 0 5px 28px; margin: 0; border-bottom: 1px dashed var(--line); }
+    ul.checks li:last-child { border-bottom: 0; }
+    /* Niet-afvinkbare lijstjes: een bolletje (geen nep-vinkvakje). Afvinkbare li's
+       krijgen de klasse .chk → dan verbergen we het bolletje en tonen we het echte vakje (.vink). */
+    ul.checks li::before { content: ''; position: absolute; left: 5px; top: 12px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+    .tl { border-left: 2px solid var(--brand-soft); margin: 8px 0 8px 8px; }
+    .tl-item { position: relative; padding: 2px 0 14px 20px; }
+    .tl-item::before { content: ''; position: absolute; left: -7px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); border: 2px solid #fff; box-shadow: 0 0 0 2px var(--brand-soft); }
+    .tl-tijd { display: inline-block; font-size: 12px; font-weight: 800; color: var(--accent2); background: var(--brand-soft); border-radius: 999px; padding: 2px 10px; margin-bottom: 3px; }
+    .tl-naam { font-weight: 700; font-size: 15px; margin-left: 8px; }
+    .tl-item p { margin: 4px 0; font-size: 14.5px; }
+    ul.tl-list { list-style: none; margin: 5px 0 0; padding: 0; }
+    ul.tl-list li { position: relative; padding: 2px 0 2px 16px; font-size: 14px; color: #3a3550; }
+    ul.tl-list li::before { content: ''; position: absolute; left: 2px; top: 10px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+    ul.aandacht { list-style: none; margin: 6px 0; padding: 0; }
+    ul.aandacht li { position: relative; padding: 8px 12px 8px 38px; margin: 7px 0; background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; font-size: 14.5px; line-height: 1.5; }
+    ul.aandacht li::before { content: '!'; position: absolute; left: 12px; top: 8px; width: 18px; height: 18px; border-radius: 50%; background: #f59e0b; color: #fff; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+    ul.mat { list-style: none; margin: 4px 0; padding: 0; column-count: 2; column-gap: 22px; }
+    @media (max-width: 560px) { ul.mat { column-count: 1; } }
+    ul.mat li { position: relative; padding: 4px 0 4px 26px; break-inside: avoid; font-size: 14.5px; }
+    ul.mat li::before { content: ''; position: absolute; left: 0; top: 6px; width: 15px; height: 15px; border: 1.5px solid var(--line-strong); border-radius: 4px; background: #fff; }
+    .db strong { font-weight: 700; }
+    .db h4 { font-size: 14px; font-weight: 800; margin: 12px 0 4px; color: var(--accent2); }
+    .db .komm { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 14px; padding: 12px 16px; }
+    .db .komm .link { margin-top: 8px; font-size: 13px; }
+    .db .komm .link a { color: #2563eb; font-weight: 700; }
+
+    .db.ingeklapt { max-height: 260px; overflow: hidden; position: relative; }
+    .db.ingeklapt::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 90px; background: linear-gradient(to bottom, transparent, var(--card)); pointer-events: none; }
+    .db-toggle { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; border: 1px solid var(--line-strong); background: var(--card); color: var(--accent); border-radius: 14px; padding: 10px 18px; font: inherit; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+    .db-toggle:hover { border-color: var(--accent); background: var(--brand-soft); }
+    .acties { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+    .btn-green { border: none; border-radius: 14px; background: var(--accent); color: #fff; font: inherit; font-weight: 700; font-size: 14.5px; padding: 12px 20px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 6px 16px rgba(47,158,110,.25); }
+    .btn-green:hover { background: var(--accent2); transform: translateY(-1px); }
+    .btn-soft { border: 1px solid var(--line-strong); background: var(--card); color: var(--muted); border-radius: 14px; padding: 12px 18px; font: inherit; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+    .btn-soft:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-koppel { border: 1.5px solid var(--accent); background: var(--brand-soft); color: var(--accent2); border-radius: 14px; padding: 12px 18px; font: inherit; font-weight: 700; font-size: 13.5px; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 7px; }
+    .btn-koppel:hover { background: #d8ecdf; }
+    .verfijn { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line-strong); }
+    .verfijn-acties { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    footer.app-foot { margin-top: 36px; text-align: center; padding: 22px 0 30px; border-top: 1px solid rgba(34,28,58,0.07); font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+
+    @media print {
+      body::before { display: none; }
+      .top, .hero, #ev-kaart, #basis-kaart, #spec-kaart, #details-kaart, #laden, .acties, .verfijn, .db-toggle, footer.app-foot { display: none !important; }
+      .app { max-width: 100%; padding: 0; }
+      #uitvoer { display: block !important; box-shadow: none; border: none; border-radius: 0; padding: 0; margin: 0; }
+      .db.ingeklapt { max-height: none; }
+      .db.ingeklapt::after { display: none; }
+      .fase-blok, .tl-item, ul.aandacht li, ul.mat li, .sec-kop { break-inside: avoid; }
+      .card-label, .del, .db-tip, .move, .voegtoe, .nieuw-kopje, .grip { display: none !important; }
+      li.af > .vink { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .db .tx { box-shadow: none !important; background: none !important; }
+    }
+  </style>
+
+  <link rel="stylesheet" href="/avinka-huisstijl.css" />
+  <link rel="stylesheet" href="/avinka-dropdown.css" />
+  <script src="/avinka-dialog.js"></script>
+  <script src="/avinka-masking.js"></script>
+  <script src="/avinka-bestanden.js"></script>
+  <script src="/avinka-dropdown.js"></script>
+  <script src="/avinka-datum.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="/avinka-draaiboekdocx.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="app">
+    <div class="top">
+      <a href="/dashboard" class="terug-menu" id="terug-link">← Terug naar dashboard</a>
+      <a href="/dashboard" aria-label="Avinka" style="display:inline-flex;flex-shrink:0;"><img src="/Avinka_wordmerk.png" alt="Avinka" style="height:18px;width:auto;display:block;opacity:.82;" /></a>
+      <span class="top-logo"><span class="mk">🎉</span>Draaiboek</span>
+    </div>
+
+    <main>
+      <div class="hero">
+        <div>
+          <h1>Van idee naar een <span class="sw">compleet draaiboek<svg viewBox="0 0 200 12" fill="none" aria-hidden="true"><path d="M3 8C46 3 154 3 197 6" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg></span></h1>
+          <p class="lead">Kies het evenement en beantwoord een paar gerichte vragen. Je krijgt een uitgedacht draaiboek met tijdlijn, taakverdeling, boodschappenlijst en aandachtspunten. Klaar om te downloaden en zelf aan te vullen.</p>
+        </div>
+        <div class="heroart">
+          <div class="mockwin">
+            <div class="mockbar"><i style="background:#fb7185"></i><i style="background:#fbbf24"></i><i style="background:#34d399"></i><span class="mocktab">Kerst · lichtjestocht</span></div>
+            <div class="mockbody">
+              <div class="mtop">
+                <span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/><path d="M8 13h5M8 16.5h3"/></svg></span>
+                <span class="mtitle">Draaiboek Kerst</span>
+              </div>
+              <div class="mrow"><span class="mtijd">17:00</span><span class="mbar" style="width:52%"></span></div>
+              <div class="mrow"><span class="mtijd">17:30</span><span class="mbar" style="width:78%"></span></div>
+              <div class="mrow"><span class="mtijd">18:30</span><span class="mbar" style="width:64%"></span></div>
+              <span class="mklaar">✓ Klaar om aan te vullen</span>
+            </div>
+          </div>
+          <span class="fbadge">⏱️ <b>In één minuut</b> je hele draaiboek</span>
+        </div>
+      </div>
+
+      <!-- KADER 0: het evenement -->
+      <div class="card" id="ev-kaart">
+        <div class="card-label"><span class="ic">🎈</span> Wat organiseer je?</div>
+        <div class="ev-grid" id="ev-grid"></div>
+        <input type="hidden" id="evenement" value="" />
+      </div>
+
+      <!-- KADER 1: de basis -->
+      <div class="card" id="basis-kaart">
+        <div class="card-label"><span class="ic">📅</span> De basis</div>
+        <div class="rij tweekol">
+          <div>
+            <label class="field-label" for="datum">Datum</label>
+            <input type="date" id="datum" class="field-input" onchange="this.classList.toggle('filled', !!this.value)" />
+          </div>
+          <div>
+            <label class="field-label" for="groep">Voor welke groep(en)?</label>
+            <input type="text" id="groep" class="field-input" placeholder="Bijv. hele school, of groep 7 en 8" oninput="this.classList.toggle('filled', !!this.value.trim())" />
+          </div>
+        </div>
+        <div class="rij" id="tijd-rij">
+          <div>
+            <label class="field-label" for="start" id="start-label">Starttijd</label>
+            <select id="start" class="field-select" onchange="this.classList.toggle('filled', !!this.value)"></select>
+          </div>
+          <div>
+            <label class="field-label" for="eind" id="eind-label">Eindtijd</label>
+            <select id="eind" class="field-select" onchange="this.classList.toggle('filled', !!this.value)"></select>
+          </div>
+          <div>
+            <label class="field-label" for="aantal">Aantal kinderen</label>
+            <input type="text" id="aantal" class="field-input" inputmode="numeric" placeholder="bijv. 28 of 120" oninput="this.classList.toggle('filled', !!this.value.trim())" />
+          </div>
+        </div>
+      </div>
+
+      <!-- KADER 2: specifiek voor het gekozen evenement (dynamisch) -->
+      <div class="card" id="spec-kaart" style="display:none">
+        <div class="card-label"><span class="ic">✨</span> <span id="spec-titel">Over je evenement</span></div>
+        <div id="spec-velden"></div>
+      </div>
+
+      <!-- KADER 3: details -->
+      <div class="card" id="details-kaart">
+        <div class="card-label"><span class="ic">✎</span> Nog iets <span class="hint" style="font-weight:400">· optioneel</span></div>
+        <div class="rij tweekol">
+          <div>
+            <label class="field-label" for="hulpouders">Hulpouders / begeleiders</label>
+            <input type="text" id="hulpouders" class="field-input" placeholder="bijv. 6 hulpouders, of 'nog te regelen'" oninput="this.classList.toggle('filled', !!this.value.trim())" />
+          </div>
+          <div>
+            <label class="field-label" for="thema-extra">Sfeer of accent</label>
+            <input type="text" id="thema-extra" class="field-input" placeholder="bijv. 'rustig houden', 'oud-Hollands'" oninput="this.classList.toggle('filled', !!this.value.trim())" />
+          </div>
+        </div>
+        <div style="margin-top:16px">
+          <label class="veld-l" for="bijzonder">Bijzonderheden <span class="hint">· wat moet er zeker in?</span></label>
+          <textarea id="bijzonder" class="field-input" placeholder="Bijv. 'we hebben een springkussen geregeld', 'groep 3 doet niet mee aan het ochtenddeel', 'let op: kind met notenallergie'" oninput="this.classList.toggle('filled', !!this.value.trim())"></textarea>
+        </div>
+
+        <button class="btn-primary" id="btn-maak" onclick="maak()">✨ Maak mijn draaiboek</button>
+        <div class="err" id="err"></div>
+      </div>
+
+      <div class="laden" id="laden">
+        <div class="spin"></div>
+        <div id="laad-tekst">Je draaiboek wordt uitgedacht…</div>
+        <div class="laad-stappen" id="laad-stappen"></div>
+      </div>
+
+      <div class="card" id="uitvoer">
+        <div class="card-label"><span class="ic">📋</span> <span id="uitvoer-titel">Je draaiboek</span></div>
+        <div id="live-bar"></div>
+        <div class="db" id="db"></div>
+        <button class="db-toggle" id="db-toggle" onclick="toggleDb()" style="display:none">Toon het hele draaiboek</button>
+        <div class="acties">
+          <button class="btn-green" onclick="downloadWord(this)">⬇ Download als Word</button>
+          <a class="btn-koppel" id="btn-ouder" onclick="naarOudercontact(event)" href="/tools/oudercontact.html?van=draaiboek&m=informatiebrief">✉️ Schrijf het ouderbericht</a>
+          <button class="btn-soft" onclick="slaOp(this)">💾 Opslaan in Bestanden</button>
+          <button class="btn-soft" onclick="delen()">🔗 Delen met je team</button>
+          <button class="btn-soft" onclick="printDraaiboek()">🖨️ Print</button>
+          <button class="btn-soft" onclick="invoerAanpassen()">🔧 Invoer aanpassen</button>
+          <button class="btn-soft" onclick="maak(true)">🔄 Andere versie</button>
+          <button class="btn-soft" onclick="toonVerfijn()">✏️ Pas iets aan</button>
+        </div>
+        <div class="verfijn" id="verfijn" style="display:none">
+          <label class="veld-l" for="verfijn-tekst">Wat wil je aanpassen? <span class="hint">· de rest blijft precies zo</span></label>
+          <textarea id="verfijn-tekst" class="field-input" placeholder="Bijv. 'maak het ochtenddeel een half uur korter' of 'voeg een moment toe voor de kinderen die niet meedoen'"></textarea>
+          <div class="verfijn-acties">
+            <button class="btn-green" id="btn-verfijn" onclick="verfijn()">✨ Pas aan</button>
+            <button class="btn-soft" onclick="terug()">← Naar de invoer</button>
+          </div>
+          <div class="err" id="verfijn-err"></div>
+        </div>
+      </div>
+
+      <footer class="app-foot">Draaiboek · gemaakt door Michael van Spanje · © 2026</footer>
+    </main>
+  </div>
+
+  <!-- Waarschuwing vóór het downloaden -->
+  <div class="modal-wrap" id="dl-modal" style="display:none">
+    <div class="modal">
+      <div class="modal-t">📝 Heb je alles nagekeken?</div>
+      <p class="modal-p">Dit previewscherm is je werkplek. Je kunt hier nog van alles aanpassen: op tekst klikken om te wijzigen, met ✕ dingen weghalen, met ⇅ taken tussen fases verplaatsen en met ＋ zelf punten toevoegen. Loop het draaiboek even helemaal door voordat je het downloadt.</p>
+      <div class="modal-acties">
+        <button class="btn-soft" onclick="sluitDlModal()">Nog even nakijken</button>
+        <button class="btn-green" onclick="bevestigDl()">Ja, download als Word</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delen met je team -->
+  <div class="modal-wrap" id="deel-modal" style="display:none">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-t">🔗 Draaiboek delen</div>
+      <p class="modal-p">Een draaiboek is vaak een groepsproject. Deel het met je werkgroep: collega's met een Avinka-account kunnen meelezen en (met bewerkrecht) meewerken aan hetzelfde bestand; anderen zien een leesversie. <b>De uitnodiging mailen we nog niet automatisch — kopieer de link en stuur 'm zelf even door.</b></p>
+      <div class="deel-form">
+        <input type="email" id="deel-email" class="field-input" placeholder="E-mailadres (leeg = link voor iedereen)" />
+        <select id="deel-rol" class="field-select">
+          <option value="bewerken">Mag bewerken</option>
+          <option value="bekijken">Alleen lezen</option>
+        </select>
+        <button class="btn-green" id="deel-maak" onclick="maakDeling()">Maak deel-link</button>
+      </div>
+      <div id="deel-nieuwlink" style="display:none; margin-top:10px">
+        <div class="hint" style="margin-bottom:4px">Klaar! Kopieer de link en stuur 'm door:</div>
+        <div style="display:flex; gap:8px">
+          <input type="text" id="deel-linkveld" class="field-input" readonly />
+          <button class="btn-soft" id="deel-kopieer" onclick="kopieerNieuwLink()">Kopieer</button>
+        </div>
+      </div>
+      <div class="deel-lijst-kop">Gedeeld met</div>
+      <div id="deel-lijst" class="deel-lijst"></div>
+      <div class="modal-acties"><button class="btn-soft" onclick="sluitDeelModal()">Sluiten</button></div>
+    </div>
+  </div>
+
+  <script>
+    const MODEL = 'claude-sonnet-4-6';
+    const SOORT = 'draaiboek';
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  PRESET-BIBLIOTHEEK — per tegel: eigen velden + grote activiteit(en).
+    //  Veld-types: 'activiteit' (⭐ prominente kaarten, stuurt het programma),
+    //  'select', 'toggle' (ja/nee), 'multi' (meerkeuze), 'text'. Een veld met
+    //  'toonAls' verschijnt alleen bij een bepaalde keuze (adaptieve subvragen).
+    // ════════════════════════════════════════════════════════════════════════
+    const EVENEMENTEN = [
+      { id: 'sinterklaas', naam: 'Sinterklaas', emoji: '🎁', modus: 'tijd', start: '08:30', eind: '12:00',
+        sfeer: 'Warm, spannend en feestelijk. Onderbouw gelooft nog volop; bovenbouw maakt vaak surprises. Houd de dag magisch en soepel, en de spanning behapbaar.',
+        velden: [
+          { id: 'intocht', label: 'Hoe komt Sinterklaas aan?', type: 'activiteit', eigen: true, opties: [
+            { v: 'verrassing', label: 'Verrassing', sub: 'laat de tool iets leuks verzinnen' },
+            { v: 'boot', label: 'Met de boot' },
+            { v: 'helikopter', label: 'Met een helikopter' },
+            { v: 'brandweer', label: 'Met de brandweerauto' },
+            { v: 'alopschool', label: 'Sint is al op school' } ], default: 'verrassing' },
+          { id: 'verhaallijn', label: 'Verhaallijn van dit jaar', type: 'text', optioneel: true, hint: "bijv. 'Sint is z'n staf kwijt'. Leeg = de tool verzint een rustige verhaallijn.", placeholder: "Laat leeg of typ een verhaallijn" },
+          { id: 'bouw', label: 'Voor welke groepen?', type: 'select', opties: ['Onderbouw', 'Bovenbouw', 'Hele school'], default: 'Hele school' },
+          { id: 'ontvangst', label: 'Hoe ziet Sint de kinderen?', type: 'select', opties: ['Sint gaat de klassen rond', 'Op een vaste plek in de hal/aula', 'Allebei'], default: 'Sint gaat de klassen rond' },
+          { id: 'praatje', label: 'Houdt Sint een praatje of vertelt hij iets?', type: 'toggle', default: true },
+          { id: 'pietengym', label: 'Pietengym / pietenparcours?', type: 'toggle', default: true },
+          { id: 'surprises', label: 'Surprises en gedichten (bovenbouw)?', type: 'toggle', default: true },
+          { id: 'budget', label: 'Cadeaubudget per kind', type: 'text', optioneel: true, placeholder: 'bijv. €7,50', toonAls: { veld: 'surprises', waarde: true } },
+          { id: 'schoen', label: 'Schoenzetten vooraf?', type: 'toggle', default: true } ] },
+
+      { id: 'kerst', naam: 'Kerst', emoji: '🎄', modus: 'tijd', start: '17:00', eind: '19:00',
+        sfeer: 'Sfeervol en gezellig, meestal in het donker met veel lichtjes. Denk aan warme aankleding en samen zijn.',
+        velden: [
+          { id: 'activiteit', label: 'De grote activiteit', type: 'activiteit', eigen: true, opties: [
+            { v: 'kerstdiner', label: 'Kerstdiner in de klas' },
+            { v: 'kerstlunch', label: 'Kerstlunch' },
+            { v: 'lichtjestocht', label: 'Lichtjestocht / kerstwandeling' },
+            { v: 'kerstmarkt', label: 'Kerstmarkt met kraampjes' },
+            { v: 'voorstelling', label: 'Kerstviering-voorstelling', sub: 'het kerstverhaal' } ], default: 'kerstdiner' },
+          { id: 'route', label: 'Route van de tocht', type: 'select', opties: ['Rond het schoolplein', 'Door de wijk / het dorp'], default: 'Rond het schoolplein', toonAls: { veld: 'activiteit', waarde: 'lichtjestocht' } },
+          { id: 'scenes', label: 'Wie speelt de scènes?', type: 'select', opties: ['Groep 7 en 8', 'Samen met ouders', 'Diverse groepen'], default: 'Groep 7 en 8', toonAls: { veld: 'activiteit', waarde: 'lichtjestocht' } },
+          { id: 'kraam', label: 'Elke klas een eigen kraam?', type: 'toggle', default: true, toonAls: { veld: 'activiteit', waarde: 'kerstmarkt' } },
+          { id: 'verkoop', label: 'Verkopen jullie iets?', type: 'select', opties: ['Ja, met opbrengst (goed doel / schoolkas)', 'Nee, het is gratis'], default: 'Ja, met opbrengst (goed doel / schoolkas)', toonAls: { veld: 'activiteit', waarde: 'kerstmarkt' } },
+          { id: 'eten', label: 'Wie verzorgt het eten?', type: 'select', opties: ['Ouders tekenen in (intekenlijst)', 'De school verzorgt het', 'Kinderen nemen zelf iets mee'], default: 'Ouders tekenen in (intekenlijst)' },
+          { id: 'goeddoel', label: 'Koppelen aan een goed doel?', type: 'toggle', default: false },
+          { id: 'kaarsen', label: 'Kaarsen op tafel', type: 'select', opties: ['Led (veilig)', 'Echte kaarsjes, met wateremmer'], default: 'Led (veilig)' } ] },
+
+      { id: 'projectweek', naam: 'Projectweek', emoji: '🔭', modus: 'dag',
+        sfeer: 'Een week rond één thema, vaak groepsdoorbrekend, met opbouw naar een feestelijke afsluiting.',
+        aftel: ['Enkele weken vooraf', 'De week ervoor', 'De dag ervoor'],
+        velden: [
+          { id: 'thema', label: 'Thema van de projectweek', type: 'text', placeholder: "bijv. 'de ruimte', 'kunst', 'onze buurt'" },
+          { id: 'dagen', label: 'Hoeveel dagen?', type: 'select', opties: ['1', '2', '3', '4', '5'], default: '5' },
+          { id: 'indeling', label: 'Hoe werken de groepen?', type: 'select', opties: ['Per klas', 'Groepsdoorbrekend (door elkaar)'], default: 'Per klas' },
+          { id: 'insteek', label: 'Inhoudelijke insteek', type: 'select', opties: ['Creatief / knutselen', 'Onderzoekend / ontdekkend', 'Cultureel', 'Gemengd'], default: 'Gemengd' },
+          { id: 'opening', label: 'Gezamenlijke opening / kick-off?', type: 'toggle', default: true },
+          { id: 'ouderinloop', label: 'Ouderinloop', type: 'select', opties: ['Alleen bij de afsluiting', 'Ook tussendoor', 'Nee'], default: 'Alleen bij de afsluiting' },
+          { id: 'activiteit', label: 'De afsluiting', type: 'activiteit', eigen: true, opties: [
+            { v: 'tentoonstelling', label: 'Tentoonstelling voor ouders' },
+            { v: 'voorstelling', label: 'Voorstelling' },
+            { v: 'markt', label: 'Markt & verkoop' },
+            { v: 'certificaten', label: 'Certificaatuitreiking' } ], default: 'tentoonstelling' },
+          { id: 'gastlessen', label: 'Externe gastlessen of workshops?', type: 'toggle', default: false },
+          { id: 'kerndoelen', label: 'Kerndoelen erbij vermelden?', type: 'toggle', default: false } ] },
+
+      { id: 'eindfeest', naam: 'Zomer- / eindfeest', emoji: '🎪', modus: 'tijd', start: '15:00', eind: '18:00',
+        sfeer: 'Vrolijk schoolfeest, vaak met de hele school en ouders erbij. Afwisseling tussen actief en rustig.',
+        velden: [
+          { id: 'thema', label: 'Thema', type: 'text', optioneel: true, placeholder: "bijv. 'jungle', 'circus', 'disco'" },
+          { id: 'activiteit', label: 'De opzet', type: 'activiteit', meer: true, eigen: true, opties: [
+            { v: 'kraampjes', label: 'Kraampjes & spellen' },
+            { v: 'podium', label: 'Podium met optredens' },
+            { v: 'circuit', label: 'Spellencircuit' },
+            { v: 'playback', label: 'Playbackshow' } ], default: ['kraampjes'] },
+          { id: 'ouders', label: 'Zijn de ouders erbij?', type: 'toggle', default: false, hint: 'zo ja, rekent de tool extra eten/drinken en volwassen-momenten mee' },
+          { id: 'munten', label: 'Muntjes voor eten & drinken?', type: 'toggle', default: false },
+          { id: 'binnenbuiten', label: 'Binnen of buiten?', type: 'select', opties: ['Buiten', 'Binnen', 'Combinatie'], default: 'Buiten' },
+          { id: 'posten', label: 'Wie bemant de posten/kraampjes?', type: 'select', opties: ['Hulpouders', 'Klassen zelf', 'Bovenbouwleerlingen', 'Combinatie'], default: 'Hulpouders' },
+          { id: 'budget', label: 'Budget', type: 'text', optioneel: true, hint: 'bijv. €500 totaal, of €3 per kind. Dan mag de tool leuke extra\'s voorstellen die passen.', placeholder: 'laat leeg of vul een bedrag in' } ] },
+
+      { id: 'afscheid8', naam: 'Afscheid groep 8', emoji: '🎓', modus: 'tijd', start: '18:30', eind: '21:00',
+        sfeer: 'Een avond met de musical als hoogtepunt, een woordje en een cadeau. Emotioneel en feestelijk; familie is erbij.',
+        aftel: ['Enkele maanden vooraf', 'Zes weken vooraf', 'Twee weken vooraf', 'De week ervoor', 'De dag zelf'],
+        velden: [
+          { id: 'activiteit', label: 'Het hoofdmoment', type: 'activiteit', eigen: true, opties: [
+            { v: 'musical', label: 'Eindmusical' },
+            { v: 'filmpjes', label: 'Filmpjes-avond', sub: 'lichter alternatief' },
+            { v: 'playback', label: 'Playbackshow' },
+            { v: 'diner', label: 'Dinerfeest' } ], default: 'musical' },
+          { id: 'musicalbron', label: 'De musical is…', type: 'select', opties: ['Zelf geschreven', 'Een bestaande musical', 'Niet van toepassing'], default: 'Een bestaande musical', toonAls: { veld: 'activiteit', waarde: 'musical' } },
+          { id: 'extras', label: "Extra's", type: 'multi', opties: ['Afscheidsboek', 'Film / USB met herinneringen', 'Cadeau voor de school', "T-shirts beschrijven", 'Nacht van Acht'], default: ['Afscheidsboek'] },
+          { id: 'gasten', label: 'Gasten per kind (familie)', type: 'text', optioneel: true, placeholder: 'bijv. 2 gasten per kind' },
+          { id: 'locatie', label: 'Locatie', type: 'select', opties: ['Op school / in de aula', 'Gehuurde zaal', 'Buiten'], default: 'Op school / in de aula' } ] },
+
+      { id: 'schoolreis', naam: 'Schoolreis', emoji: '🚌', modus: 'tijd', start: '08:30', eind: '16:00',
+        startLabel: 'Vertrek van school', eindLabel: 'Terug bij school',
+        sfeer: 'Een dagje weg. Veiligheid, tellen en een strakke tijdlijn zijn hier het belangrijkst.',
+        velden: [
+          { id: 'regio', label: 'Provincie / regio', type: 'text', optioneel: true, placeholder: 'bijv. Gelderland, of rond Utrecht' },
+          { id: 'bestemming', label: 'Bestemming al gekozen?', type: 'text', optioneel: true, hint: 'Ingevuld = het draaiboek bouwt er helemaal omheen. Leeg = de tool geeft ideeën in de buurt om zelf te checken.', placeholder: 'bijv. Burgers Zoo, of laat leeg' },
+          { id: 'activiteit', label: 'Type uitje', type: 'activiteit', eigen: true, opties: [
+            { v: 'pretpark', label: 'Pretpark' },
+            { v: 'dierentuin', label: 'Dierentuin' },
+            { v: 'museum', label: 'Museum', sub: 'educatief' },
+            { v: 'natuur', label: 'Natuur & buiten' },
+            { v: 'binnen', label: 'Binnenspeeltuin', sub: 'zeker bij slecht weer' } ], default: 'pretpark' },
+          { id: 'vervoer', label: 'Vervoer', type: 'select', opties: ['Touringcar', "Auto's van ouders", 'Lopend / met de fiets'], default: 'Touringcar' },
+          { id: 'lunch', label: 'Lunch', type: 'select', opties: ['Zelf meenemen', 'Verzorgd op locatie'], default: 'Zelf meenemen' },
+          { id: 'kosten', label: 'Kosten per kind', type: 'text', optioneel: true, placeholder: 'bijv. €15' } ] },
+
+      { id: 'sportdag', naam: 'Sportdag', emoji: '🏅', modus: 'tijd', start: '09:00', eind: '14:30',
+        sfeer: 'Actieve dag met sport- en spelonderdelen langs posten. Groepjes rouleren; hulpouders bemannen de posten.',
+        velden: [
+          { id: 'activiteit', label: 'De opzet', type: 'activiteit', meer: true, eigen: true, opties: [
+            { v: 'posten', label: 'Doordraai-posten', sub: 'met kleurenteams' },
+            { v: 'toernooi', label: 'Klassentoernooi' },
+            { v: 'estafette', label: 'Estafette-circuit' } ], default: ['posten'] },
+          { id: 'locatie', label: 'Locatie', type: 'select', opties: ['Schoolplein', 'Gymzaal', 'Sportveld', 'Park'], default: 'Schoolplein' },
+          { id: 'teams', label: 'Teamindeling', type: 'select', opties: ['Kleurenteams (gemengd)', 'Per klas', 'Op leeftijd'], default: 'Kleurenteams (gemengd)' },
+          { id: 'prijs', label: 'Prijsuitreiking / gezamenlijke afsluiting?', type: 'toggle', default: true },
+          { id: 'posten2', label: 'Wie bemant de posten?', type: 'select', opties: ['Hulpouders', 'Bovenbouwleerlingen', 'Leerkrachten', 'Combinatie'], default: 'Hulpouders' } ] },
+
+      { id: 'koningsspelen', naam: 'Koningsspelen', emoji: '👑', modus: 'tijd', start: '08:30', eind: '13:00',
+        sfeer: 'Landelijke sport- en speldag met een Koningsontbijt en de vaste dans. Vrolijk, actief en oranje.',
+        velden: [
+          { id: 'ontbijt', label: 'Koningsontbijt vooraf?', type: 'toggle', default: true },
+          { id: 'dans', label: 'De vaste dans oefenen / opnemen?', type: 'toggle', default: true },
+          { id: 'activiteit', label: 'Opzet sport & spel', type: 'activiteit', meer: true, eigen: true, opties: [
+            { v: 'posten', label: 'Doordraai-posten' },
+            { v: 'circuit', label: 'Circuit' } ], default: ['posten'] },
+          { id: 'locatie', label: 'Locatie', type: 'select', opties: ['Schoolplein', 'Sportveld', 'Gymzaal', 'Park'], default: 'Schoolplein' },
+          { id: 'teams', label: 'Teamindeling', type: 'select', opties: ['Kleurenteams', 'Per klas', 'Op leeftijd'], default: 'Kleurenteams' },
+          { id: 'posten2', label: 'Wie bemant de posten?', type: 'select', opties: ['Hulpouders', 'Bovenbouwleerlingen', 'Leerkrachten', 'Combinatie'], default: 'Hulpouders' },
+          { id: 'prijs', label: 'Prijsuitreiking / afsluiting?', type: 'toggle', default: true } ] },
+
+      { id: 'opendag', naam: 'Open dag', emoji: '🚪', modus: 'tijd', start: '09:00', eind: '12:00',
+        sfeer: 'De school laat zich zien aan (nieuwe) ouders. Gastvrijheid, een heldere route en informatie meegeven staan centraal.',
+        velden: [
+          { id: 'doel', label: 'Doel', type: 'select', opties: ['Nieuwe ouders werven', 'Kijkmoment voor huidige ouders'], default: 'Nieuwe ouders werven' },
+          { id: 'activiteit', label: 'Onderdelen', type: 'multi', opties: ['Rondleiding', 'Doe-activiteiten voor kinderen', 'Info & inschrijven', 'Koffie/thee-plek'], default: ['Rondleiding', 'Doe-activiteiten voor kinderen', 'Info & inschrijven'] },
+          { id: 'gastvrouw', label: 'Gastvrouwen/-heren geregeld?', type: 'select', opties: ['Ja', 'Nog te regelen'], default: 'Nog te regelen' },
+          { id: 'leerlingen', label: 'Helpen huidige leerlingen mee?', type: 'toggle', default: true, hint: 'bijv. bovenbouw als rondleiders' } ] },
+
+      { id: 'juffenmeester', naam: 'Juffen- / meesterdag', emoji: '🎈', modus: 'tijd', start: '08:30', eind: '14:00',
+        sfeer: 'Feestdag voor de leerkracht(en). Spelletjes, een traktatie en een cadeau; vaak stiekem voorbereid.',
+        velden: [
+          { id: 'vorm', label: 'Hoe vieren jullie het?', type: 'select', opties: ['Schoolbreed samen', 'Elke klas kiest een eigen moment'], default: 'Elke klas kiest een eigen moment' },
+          { id: 'wie', label: 'Wie organiseert?', type: 'select', opties: ['Ouders', 'De klas zelf', 'Collega\'s'], default: 'Ouders' },
+          { id: 'verrassing', label: 'Moet het een verrassing blijven?', type: 'toggle', default: true },
+          { id: 'activiteit', label: 'De activiteit', type: 'activiteit', eigen: true, opties: [
+            { v: 'spelletjes', label: 'Spelletjes in de klas' },
+            { v: 'uitje', label: 'Uitje' },
+            { v: 'hightea', label: 'High tea' },
+            { v: 'talentenshow', label: 'Talentenshow' } ], default: 'spelletjes' },
+          { id: 'cadeau', label: 'Cadeau van de klas?', type: 'toggle', default: true },
+          { id: 'budget', label: 'Budget voor het cadeau', type: 'text', optioneel: true, placeholder: 'bijv. €2 per kind', toonAls: { veld: 'cadeau', waarde: true } } ] },
+
+      { id: 'anders', naam: 'Iets anders', emoji: '✨', modus: 'keuze', start: '09:00', eind: '12:00',
+        sfeer: 'Een eigen evenement. Bouw een heldere opbouw: ontvangst en opening, de hoofdactiviteit(en), een moment voor eten/pauze en een nette afsluiting.',
+        velden: [
+          { id: 'wat', label: 'Wat organiseer je?', type: 'text', placeholder: "bijv. 'schoolkamp groep 8', 'boekenweek', 'afscheid directeur'" },
+          { id: 'doelvrij', label: 'Doel of aanleiding', type: 'text', optioneel: true, placeholder: 'optioneel' },
+          { id: 'hoofd', label: 'Hoofdactiviteit', type: 'text', optioneel: true, placeholder: 'optioneel' },
+          { id: 'looptijd', label: 'Eenmalig of meerdaags?', type: 'select', opties: ['Eén dag(deel)', 'Meerdaags'], default: 'Eén dag(deel)' },
+          { id: 'dagen', label: 'Hoeveel dagen?', type: 'select', opties: ['2', '3', '4', '5'], default: '3', toonAls: { veld: 'looptijd', waarde: 'Meerdaags' } } ] },
+    ];
+
+    function evById(id) { return EVENEMENTEN.find(e => e.id === id) || null; }
+
+    // ── State van de dynamische velden ────────────────────────────────────────
+    let huidigeEv = null;
+    const spec = {}; // spec[veld.id] = waarde
+
+    // Evenement-grid opbouwen
+    (function () {
+      const grid = document.getElementById('ev-grid');
+      grid.innerHTML = EVENEMENTEN.map(e =>
+        '<div class="evkaart" data-id="' + e.id + '"><span class="ve">' + e.emoji + '</span>' + e.naam + '</div>'
+      ).join('');
+      grid.querySelectorAll('.evkaart').forEach(k => k.onclick = () => {
+        grid.querySelectorAll('.evkaart').forEach(x => x.classList.remove('aan'));
+        k.classList.add('aan');
+        document.getElementById('evenement').value = k.dataset.id;
+        kiesEvenement(k.dataset.id);
+      });
+    })();
+
+    // Tijd-dropdowns vullen (07:00 t/m 21:00, per kwartier)
+    (function () {
+      const opties = [];
+      for (let m = 7 * 60; m <= 21 * 60; m += 15) opties.push('<option>' + fmtTijd(m) + '</option>');
+      document.getElementById('start').innerHTML = '<option value="">–</option>' + opties.join('');
+      document.getElementById('eind').innerHTML = '<option value="">–</option>' + opties.join('');
+    })();
+
+    let tijdAangepast = false, programmatisch = false;
+    function setSelect(id, val) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.value = val || '';
+      el.classList.toggle('filled', !!el.value);
+      programmatisch = true;
+      try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
+      programmatisch = false;
+    }
+    ['start', 'eind'].forEach(id => document.getElementById(id).addEventListener('change', () => { if (!programmatisch) tijdAangepast = true; }));
+
+    // ── Een evenement kiezen: standaardtijden + dynamische velden opbouwen ─────
+    function kiesEvenement(id) {
+      const ev = evById(id);
+      huidigeEv = ev;
+      if (!ev) return;
+      // reset spec + defaults invullen
+      Object.keys(spec).forEach(k => delete spec[k]);
+      ev.velden.forEach(v => { if (v.default !== undefined) spec[v.id] = Array.isArray(v.default) ? v.default.slice() : v.default; });
+
+      // standaardtijden
+      if (ev.start && !tijdAangepast) { setSelect('start', ev.start); setSelect('eind', ev.eind); }
+      // labels van de tijdvelden (schoolreis = vertrek/terug)
+      document.getElementById('start-label').textContent = ev.startLabel || 'Starttijd';
+      document.getElementById('eind-label').textContent = ev.eindLabel || 'Eindtijd';
+
+      document.getElementById('spec-titel').textContent = 'Over je ' + ev.naam.toLowerCase().replace(' / ', '/');
+      renderVelden(ev);
+      document.getElementById('spec-kaart').style.display = 'block';
+      updateTijdZichtbaar();
+    }
+
+    // Bij dag-modus (of 'anders' + meerdaags) verbergen we de klok-tijden.
+    function updateTijdZichtbaar() {
+      const ev = huidigeEv; if (!ev) return;
+      const meerdaags = ev.modus === 'dag' || (ev.modus === 'keuze' && spec.looptijd === 'Meerdaags');
+      document.getElementById('tijd-rij').style.display = meerdaags ? 'none' : '';
+    }
+
+    // ── Dynamische velden renderen ────────────────────────────────────────────
+    function renderVelden(ev) {
+      const box = document.getElementById('spec-velden');
+      box.innerHTML = ev.velden.map(v => veldHtml(v)).join('');
+      // handlers koppelen
+      ev.velden.forEach(v => koppelVeld(v));
+      updateVeldZichtbaar();
+    }
+
+    function veldHtml(v) {
+      const wrapId = 'svwrap-' + v.id;
+      let inner = '';
+      const labelSmall = v.optioneel ? ' <span class="hint">· optioneel</span>' : '';
+      const hint = v.hint ? '<div class="hint" style="margin:2px 0 8px">' + esc(v.hint) + '</div>' : '';
+      if (v.type === 'activiteit') {
+        const meerHint = v.meer ? ' <span class="hint" style="font-weight:400">· je mag er meerdere kiezen</span>' : '';
+        let kaarten = v.opties.map(o => '<div class="actkaart" data-v="' + o.v + '">' + esc(o.label) + (o.sub ? '<small>' + esc(o.sub) + '</small>' : '') + '</div>').join('');
+        if (v.eigen) kaarten += '<div class="actkaart actkaart-eigen" data-v="eigen">Anders, zelf invullen…</div>';
+        const eigenInput = v.eigen ? '<input type="text" class="field-input act-eigen" data-veld="' + v.id + '__eigen" placeholder="Beschrijf je eigen ' + (v.meer ? 'onderdeel' : 'invulling') + '" style="display:none; margin-top:10px" />' : '';
+        inner = '<label class="act-l"><span class="ster">⭐</span> ' + esc(v.label) + meerHint + '</label>' + hint +
+          '<div class="act-grid" data-veld="' + v.id + '">' + kaarten + '</div>' + eigenInput;
+      } else if (v.type === 'select') {
+        inner = '<label class="field-label">' + esc(v.label) + '</label>' + hint +
+          '<select class="field-select" data-veld="' + v.id + '">' +
+          v.opties.map(o => '<option>' + esc(o) + '</option>').join('') + '</select>';
+      } else if (v.type === 'toggle') {
+        inner = '<label class="veld-l">' + esc(v.label) + '</label>' + hint +
+          '<div class="seg" data-veld="' + v.id + '"><div class="opt" data-v="ja">Ja</div><div class="opt" data-v="nee">Nee</div></div>';
+      } else if (v.type === 'multi') {
+        inner = '<label class="veld-l">' + esc(v.label) + labelSmall + '</label>' + hint +
+          '<div class="multi" data-veld="' + v.id + '">' +
+          v.opties.map(o => '<div class="chip" data-v="' + esc(o) + '"><span class="vk">✓</span>' + esc(o) + '</div>').join('') + '</div>';
+      } else { // text
+        inner = '<label class="veld-l">' + esc(v.label) + labelSmall + '</label>' + hint +
+          '<input type="text" class="field-input" data-veld="' + v.id + '" placeholder="' + esc(v.placeholder || '') + '" />';
+      }
+      return '<div class="veld" id="' + wrapId + '">' + inner + '</div>';
+    }
+
+    function koppelVeld(v) {
+      const el = document.querySelector('[data-veld="' + v.id + '"]');
+      if (!el) return;
+      if (v.type === 'activiteit') {
+        const eigenInput = document.querySelector('[data-veld="' + v.id + '__eigen"]');
+        const isGekozen = (val) => { const cur = spec[v.id]; return Array.isArray(cur) ? cur.indexOf(val) !== -1 : cur === val; };
+        const toonEigen = () => { if (eigenInput) eigenInput.style.display = isGekozen('eigen') ? 'block' : 'none'; };
+        const markeer = () => { el.querySelectorAll('.actkaart').forEach(k => k.classList.toggle('aan', isGekozen(k.dataset.v))); toonEigen(); };
+        markeer();
+        el.querySelectorAll('.actkaart').forEach(k => k.onclick = () => {
+          if (v.meer) {
+            let arr = Array.isArray(spec[v.id]) ? spec[v.id].slice() : (spec[v.id] ? [spec[v.id]] : []);
+            const i = arr.indexOf(k.dataset.v);
+            if (i === -1) arr.push(k.dataset.v); else arr.splice(i, 1);
+            if (!arr.length) arr = [k.dataset.v];   // altijd minstens één
+            spec[v.id] = arr;
+          } else { spec[v.id] = k.dataset.v; }
+          markeer(); updateVeldZichtbaar();
+        });
+        if (eigenInput) { eigenInput.value = spec[v.id + '__eigen'] || ''; eigenInput.addEventListener('input', () => { spec[v.id + '__eigen'] = eigenInput.value.trim(); }); }
+      } else if (v.type === 'select') {
+        el.value = spec[v.id] || v.opties[0];
+        el.classList.add('filled');
+        el.addEventListener('change', () => { spec[v.id] = el.value; updateVeldZichtbaar(); updateTijdZichtbaar(); });
+        // De huisstijl-dropdown (overlay) wordt async gebouwd; even een change sturen
+        // zodat de knoptekst de (soms niet-eerste) standaardwaarde toont.
+        setTimeout(() => { try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {} }, 40);
+      } else if (v.type === 'toggle') {
+        const zet = (val) => { spec[v.id] = val; el.querySelectorAll('.opt').forEach(o => o.classList.toggle('aan', (o.dataset.v === 'ja') === val)); };
+        zet(spec[v.id] === undefined ? false : !!spec[v.id]);
+        el.querySelectorAll('.opt').forEach(o => o.onclick = () => { zet(o.dataset.v === 'ja'); updateVeldZichtbaar(); });
+      } else if (v.type === 'multi') {
+        const arr = () => (spec[v.id] = spec[v.id] || []);
+        el.querySelectorAll('.chip').forEach(c => {
+          if ((spec[v.id] || []).indexOf(c.dataset.v) !== -1) c.classList.add('aan');
+          c.onclick = () => {
+            const a = arr(); const i = a.indexOf(c.dataset.v);
+            if (i === -1) a.push(c.dataset.v); else a.splice(i, 1);
+            c.classList.toggle('aan');
+          };
+        });
+      } else { // text
+        el.value = spec[v.id] || '';
+        el.addEventListener('input', () => { spec[v.id] = el.value.trim(); el.classList.toggle('filled', !!el.value.trim()); });
+      }
+    }
+
+    // Adaptieve subvragen tonen/verbergen op basis van andere antwoorden
+    function updateVeldZichtbaar() {
+      if (!huidigeEv) return;
+      huidigeEv.velden.forEach(v => {
+        if (!v.toonAls) return;
+        const wrap = document.getElementById('svwrap-' + v.id);
+        if (!wrap) return;
+        const tv = spec[v.toonAls.veld];
+        const match = Array.isArray(tv) ? tv.indexOf(v.toonAls.waarde) !== -1 : tv === v.toonAls.waarde;
+        wrap.style.display = match ? '' : 'none';
+      });
+    }
+
+    // ── Tijd-helpers + tijdlijn-engine ────────────────────────────────────────
+    function fmtTijd(min) { const h = Math.floor(min / 60), m = min % 60; return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m; }
+    function parseTijd(s) { const m = String(s || '').match(/(\d{1,2}):(\d{2})/); return m ? (+m[1]) * 60 + (+m[2]) : null; }
+    function verdeelTijd(totaal, gewichten, minPer) {
+      minPer = minPer || 10;
+      const som = gewichten.reduce((a, b) => a + b, 0) || 1;
+      const ruw = gewichten.map(g => totaal * g / som);
+      const uit = ruw.map(x => Math.max(minPer, Math.floor(x)));
+      let rest = totaal - uit.reduce((a, b) => a + b, 0);
+      const volg = ruw.map((x, i) => ({ i, frac: x - Math.floor(x) })).sort((a, b) => b.frac - a.frac);
+      for (let k = 0; k < volg.length && rest > 0; k++) { uit[volg[k].i]++; rest--; }
+      for (let j = volg.length - 1; j >= 0 && rest < 0; j--) { if (uit[volg[j].i] > minPer) { uit[volg[j].i]--; rest++; } }
+      return uit;
+    }
+    function bouwTijdlijn(startMin, eindMin, blokken) {
+      let totaal = (startMin != null && eindMin != null) ? eindMin - startMin : null;
+      const minPer = 10;
+      if (!totaal || totaal < blokken.length * minPer) totaal = blokken.length * 20;
+      const s = startMin != null ? startMin : 9 * 60;
+      const mins = verdeelTijd(totaal, blokken.map(b => b.gewicht), minPer);
+      // Cumulatieve grenzen, daarna de interne grenzen afronden op 5 minuten
+      // (start en eind blijven exact) zodat je nette tijden krijgt: 15:15 i.p.v. 15:18.
+      const grenzen = [s]; let acc = s;
+      for (let i = 0; i < mins.length; i++) { acc += mins[i]; grenzen.push(acc); }
+      for (let i = 1; i < grenzen.length - 1; i++) {
+        let g = Math.round(grenzen[i] / 5) * 5;
+        if (g <= grenzen[i - 1]) g = grenzen[i - 1] + 5;   // altijd oplopend, minstens 5 min
+        grenzen[i] = g;
+      }
+      const uit = [];
+      for (let i = 0; i < blokken.length; i++) {
+        uit.push({ van: fmtTijd(grenzen[i]), tot: fmtTijd(grenzen[i + 1]), naam: blokken[i].naam, min: Math.max(5, grenzen[i + 1] - grenzen[i]) });
+      }
+      return uit;
+    }
+
+    // ── Hulp bij meerkeuze/eigen-invulling van de ⭐ activiteit ────────────────
+    function actArr(a, id) { const v = a[id]; return Array.isArray(v) ? v.slice() : (v ? [v] : []); }
+    function actEigen(a, id) { return (a[id + '__eigen'] || '').trim(); }
+    // Vertaal gekozen waarden naar blok-namen via een map; 'eigen' → de zelf getypte tekst.
+    function actNamen(a, id, map, fallback) {
+      const eig = actEigen(a, id);
+      const namen = actArr(a, id).map(v => v === 'eigen' ? eig : (map[v] || v)).filter(Boolean);
+      return namen.length ? namen : [fallback];
+    }
+
+    // ── De programma-blokken per evenement (de CODE regelt de structuur) ──────
+    function blokkenVoor(id, a) {
+      const b = [];
+      const A = a.activiteit;
+      const eig = actEigen(a, 'activiteit');
+      if (id === 'sinterklaas') {
+        b.push({ naam: 'Aankomst en ontvangst van Sinterklaas', gewicht: 2 });
+        if (a.pietengym) b.push({ naam: 'Pietengym / pietenparcours', gewicht: 2 });
+        if (a.bouw === 'Onderbouw' || a.bouw === 'Hele school') b.push({ naam: 'Sint bezoekt de klassen: cadeautjes en liedjes', gewicht: 3 });
+        if ((a.bouw === 'Bovenbouw' || a.bouw === 'Hele school') && a.surprises) b.push({ naam: 'Surprises en gedichten (bovenbouw)', gewicht: 3 });
+        b.push({ naam: 'Pepernoten en gezamenlijke afsluiting', gewicht: 1 });
+        return b;
+      }
+      if (id === 'kerst') {
+        if (A === 'lichtjestocht') return [{ naam: 'Ontvangst en instructie', gewicht: 1 }, { naam: 'Vertrek in groepjes langs de route', gewicht: 1 }, { naam: 'De scènes onderweg', gewicht: 3 }, { naam: 'Terug op school', gewicht: 1 }, { naam: 'Warme chocolademelk en afsluiting', gewicht: 1 }];
+        if (A === 'kerstmarkt') return [{ naam: 'Opbouw kraampjes en ontvangst', gewicht: 1 }, { naam: 'Over de kerstmarkt lopen', gewicht: 3 }, { naam: 'Gezamenlijk deel / kerstverhaal', gewicht: 2 }, { naam: 'Afsluiting en opruimen', gewicht: 1 }];
+        if (A === 'voorstelling') return [{ naam: 'Ontvangst', gewicht: 1 }, { naam: 'De kerstviering / voorstelling', gewicht: 3 }, { naam: 'Samen zingen', gewicht: 1 }, { naam: 'Hapje en afsluiting', gewicht: 1 }];
+        if (A === 'eigen') return [{ naam: 'Sfeer maken en ontvangst', gewicht: 1 }, { naam: 'Kerstverhaal of gezamenlijke viering', gewicht: 2 }, { naam: eig || 'Het kerstprogramma', gewicht: 3 }, { naam: 'Samen zingen of een spel', gewicht: 1 }, { naam: 'Afsluiting en opruimen', gewicht: 1 }];
+        return [{ naam: 'Sfeer maken en ontvangst', gewicht: 1 }, { naam: 'Kerstverhaal of gezamenlijke viering', gewicht: 2 }, { naam: (A === 'kerstlunch' ? 'Kerstlunch' : 'Kerstdiner') + ' in de klas', gewicht: 3 }, { naam: 'Knutselen of een spel', gewicht: 2 }, { naam: 'Afsluiting en opruimen', gewicht: 1 }];
+      }
+      if (id === 'eindfeest') {
+        const map = { kraampjes: 'Kraampjes en spellen', podium: 'Optredens op het podium', circuit: 'Spellencircuit langs de posten', playback: 'Playbackshow-optredens' };
+        const kernen = actNamen(a, 'activiteit', map, 'Kraampjes en spellen');
+        const b2 = [{ naam: 'Opening', gewicht: 1 }];
+        kernen.forEach(n => b2.push({ naam: n, gewicht: kernen.length > 1 ? 3 : 4 }));
+        b2.push({ naam: 'Eten en drinken', gewicht: 2 }, { naam: 'Afsluiting', gewicht: 1 });
+        return b2;
+      }
+      if (id === 'afscheid8') {
+        const map = { musical: 'De eindmusical', filmpjes: 'De filmpjes-avond', playback: 'De playbackshow', diner: 'Het dinerfeest' };
+        const kern = (A === 'eigen') ? (eig || 'Het hoofdmoment') : (map[A] || 'De eindmusical');
+        return [{ naam: 'Ontvangst van kinderen en familie', gewicht: 1 }, { naam: kern, gewicht: 4 }, { naam: 'Woordje en afscheidscadeau', gewicht: 2 }, { naam: 'Napraten met een hapje en drankje', gewicht: 2 }];
+      }
+      if (id === 'schoolreis') {
+        return [{ naam: 'Verzamelen en vertrek', gewicht: 1 }, { naam: 'Heenreis', gewicht: 1 }, { naam: 'Programma op de bestemming', gewicht: 5 }, { naam: 'Lunch', gewicht: 1 }, { naam: 'Terugreis', gewicht: 2 }, { naam: 'Aankomst bij school', gewicht: 1 }];
+      }
+      if (id === 'sportdag') {
+        const map = { posten: 'Doordraai-posten', toernooi: 'Klassentoernooi', estafette: 'Estafette-circuit' };
+        const kernen = actNamen(a, 'activiteit', map, 'Onderdelen');
+        const slot = [{ naam: 'Verzamelen en warming-up', gewicht: 1 }];
+        const r1 = kernen[0], r2 = kernen.length >= 2 ? kernen[1] : kernen[0];
+        slot.push({ naam: r1 + ' (ronde 1)', gewicht: 3 }, { naam: 'Pauze en drinken', gewicht: 1 }, { naam: r2 + ' (ronde 2)', gewicht: 3 });
+        slot.push({ naam: a.prijs ? 'Prijsuitreiking en afsluiting' : 'Gezamenlijke afsluiting', gewicht: 1 });
+        return slot;
+      }
+      if (id === 'koningsspelen') {
+        const map = { posten: 'Sport en spel: doordraai-posten', circuit: 'Sport en spel: circuit' };
+        const kernen = actNamen(a, 'activiteit', map, 'Sport en spel');
+        const s = [];
+        if (a.ontbijt) s.push({ naam: 'Koningsontbijt', gewicht: 2 });
+        s.push({ naam: 'Opening en de dans', gewicht: 1 });
+        kernen.forEach(n => s.push({ naam: n, gewicht: kernen.length > 1 ? 3 : 4 }));
+        s.push({ naam: a.prijs ? 'Prijsuitreiking en afsluiting' : 'Afsluiting', gewicht: 1 });
+        return s;
+      }
+      if (id === 'opendag') {
+        const on = a.activiteit || [];
+        const s = [{ naam: 'Ontvangst van bezoekers', gewicht: 1 }];
+        if (on.indexOf('Rondleiding') !== -1) s.push({ naam: 'Rondleiding en klassen bekijken', gewicht: 3 });
+        if (on.indexOf('Doe-activiteiten voor kinderen') !== -1) s.push({ naam: 'Doe-activiteiten voor kinderen', gewicht: 2 });
+        if (on.indexOf('Info & inschrijven') !== -1) s.push({ naam: 'Informatie en aanmelden', gewicht: 2 });
+        s.push({ naam: 'Afsluiting', gewicht: 1 });
+        return s;
+      }
+      if (id === 'juffenmeester') {
+        const map = { spelletjes: 'Spelletjes in de klas', uitje: 'Uitje / activiteit', hightea: 'High tea', talentenshow: 'Talentenshow' };
+        const kern = (A === 'eigen') ? (eig || 'De activiteit') : (map[A] || 'Spelletjes in de klas');
+        return [{ naam: 'Verrassing en opening', gewicht: 1 }, { naam: kern, gewicht: A === 'uitje' ? 4 : 3 }, { naam: 'Traktatie of lunch', gewicht: 2 }, { naam: 'Afsluiting', gewicht: 1 }];
+      }
+      // anders (eenmalig)
+      return [{ naam: 'Ontvangst en opening', gewicht: 1 }, { naam: 'Hoofdactiviteit', gewicht: 4 }, { naam: 'Pauze of eten', gewicht: 1 }, { naam: 'Afsluiting', gewicht: 1 }];
+    }
+
+    // Dag-voor-dag skelet (projectweek + anders/meerdaags)
+    function dagenVoor(id, a) {
+      const D = Math.max(1, parseInt(a.dagen || (id === 'projectweek' ? '5' : '3'), 10) || 3);
+      const dagen = [];
+      if (id === 'projectweek') {
+        const eigAfsl = actEigen(a, 'activiteit');
+        const afsl = (a.activiteit === 'eigen' && eigAfsl) ? ('Afsluiting: ' + eigAfsl) : ({ tentoonstelling: 'Afsluiting: tentoonstelling voor ouders', voorstelling: 'Afsluiting: voorstelling', markt: 'Afsluiting: markt en verkoop', certificaten: 'Afsluiting: certificaatuitreiking' }[a.activiteit] || 'Afsluiting');
+        for (let i = 1; i <= D; i++) {
+          let naam;
+          if (i === 1) naam = a.opening ? 'Opening / kick-off en start van het thema' : 'Start van het thema';
+          else if (i === D && D > 1) naam = afsl;
+          else naam = 'Werken aan het thema';
+          dagen.push({ label: 'Dag ' + i, naam });
+        }
+        return dagen;
+      }
+      // anders / meerdaags
+      for (let i = 1; i <= D; i++) {
+        let naam = i === 1 ? 'Opening en start' : i === D ? 'Afsluiting' : 'Hoofdprogramma';
+        dagen.push({ label: 'Dag ' + i, naam });
+      }
+      return dagen;
+    }
+
+    // Bepaalt de programma-vorm + inhoud
+    function programmaVoor(ev, a, startMin, eindMin) {
+      const meerdaags = ev.modus === 'dag' || (ev.modus === 'keuze' && a.looptijd === 'Meerdaags');
+      if (meerdaags) return { modus: 'dag', dagen: dagenVoor(ev.id, a) };
+      return { modus: 'tijd', tijdlijn: bouwTijdlijn(startMin, eindMin, blokkenVoor(ev.id, a)) };
+    }
+
+    // ── Vaste, per-evenement instructies (tilt boven generiek uit) ────────────
+    function extraInstructies(ev, a) {
+      const r = [];
+      const zet = s => r.push(s);
+      if (ev.id === 'sinterklaas') {
+        if (a.surprises) zet('Neem in de aftel-checklist op dat de kinderen 2 weken vooraf een surprise-kaartje invullen (hun hobby\'s en wat ze leuk vinden) en dat de lootjes verdeeld worden.');
+        zet('Houd de spanning behapbaar voor jonge kinderen en werk met een eenvoudige, rustige verhaallijn.');
+      }
+      if (ev.id === 'kerst') {
+        zet('Kerst is meestal in het donker (avond); benut de sfeer van lichtjes.');
+        if (a.activiteit === 'lichtjestocht') zet('Werk de lichtjestocht uit als de kern: een route met scènes onderweg, groepjes die om beurten vertrekken, en warme drank bij terugkomst.');
+      }
+      if (ev.id === 'eindfeest') {
+        zet('Zet als aandachtspunt dat verkleden NIET verplicht is (niet elk kind heeft een kostuum); werk desnoods met schmink of een klein attribuut bij de entree.');
+        if (a.ouders) zet('De ouders zijn erbij: reken op extra eten en drinken (ook voor volwassenen), meer toezicht/ruimte, en plan een moment waarop ouders en kinderen samen iets doen.');
+        else zet('Dit feest is voor de kinderen (ouders zijn er niet standaard bij); reken eten en drinken op het aantal kinderen.');
+      }
+      if (ev.id === 'afscheid8') {
+        zet('Het afscheid wordt maandenlang voorbereid (musical/jaarboek starten al in het najaar); laat de aftel-checklist daarom verder terugtellen (maanden vooraf).');
+        zet('Zet techniek (geluid, microfoons, licht) en een emotioneel afscheidsmoment/woordje als vaste aandachtspunten.');
+      }
+      if (ev.id === 'schoolreis') {
+        if (a.bestemming) zet('Er is al een bestemming gekozen (' + a.bestemming + '): bouw het draaiboek daar concreet omheen.');
+        else zet('Er is nog GEEN bestemming gekozen. Noem in de aandachtspunten enkele bekende bestemmingen die passen bij het type uitje' + (a.regio ? ' in de regio ' + a.regio : '') + ', UITSLUITEND als ideeën om zelf te checken. Verzin GEEN prijzen, openingstijden of reistijden; zet er expliciet bij dat de leerkracht bereikbaarheid, prijs en beschikbaarheid zelf controleert.');
+        zet('Adviseer een realistische begeleider-kind-ratio (ongeveer 1 begeleider per 3 à 4 kinderen). Zet medische info/EHBO-map, vaste verzamelpunten en telmomenten (tellen bij elk vertrek) als aandachtspunten.');
+      }
+      if (ev.id === 'sportdag' || ev.id === 'koningsspelen') zet('Zet water, een gezonde snack, een EHBO-post en een plan-B bij slecht weer als vaste aandachtspunten. Werk een doordraaischema/rouleersysteem uit in het programma.');
+      if (ev.id === 'opendag') zet('Zet een duidelijke looproute met bewegwijzering, folders/aanmeldlijst en een centrale infoplek als vaste aandachtspunten.');
+      if (ev.id === 'juffenmeester') {
+        zet('Zet allergieën bij de traktatie als aandachtspunt.');
+        if (a.vorm && a.vorm.indexOf('eigen moment') !== -1) zet('Elke klas viert een eigen moment: houd het draaiboek lichter en per klas, geen groot schoolbreed programma.');
+        if (a.verrassing) zet('Het moet een verrassing blijven: zet in de taakverdeling wie de klas opvangt tijdens de voorbereiding.');
+      }
+      return r;
+    }
+
+    // Menselijke samenvatting van de antwoorden voor in de opdracht
+    function antwoordRegels(ev, a) {
+      const r = [];
+      ev.velden.forEach(v => {
+        let val = a[v.id];
+        if (val === undefined || val === '' || (Array.isArray(val) && !val.length)) return;
+        // toonAls-velden die niet zichtbaar zijn overslaan (array-proof)
+        if (v.toonAls) { const tv = a[v.toonAls.veld]; const match = Array.isArray(tv) ? tv.indexOf(v.toonAls.waarde) !== -1 : tv === v.toonAls.waarde; if (!match) return; }
+        if (v.type === 'toggle') val = val ? 'ja' : 'nee';
+        else if (v.type === 'multi') val = val.join(', ');
+        else if (v.type === 'activiteit') {
+          const arr = Array.isArray(val) ? val : [val];
+          val = arr.map(x => x === 'eigen' ? (actEigen(a, v.id) || 'eigen invulling') : ((v.opties.find(o => o.v === x) || {}).label || x)).join(', ');
+        }
+        r.push('- ' + v.label + ': ' + val);
+      });
+      return r;
+    }
+
+    // ── De opdracht aan de AI ─────────────────────────────────────────────────
+    function bouwSysteem() {
+      return [
+        'Je bent een ervaren organisator van evenementen op een Nederlandse basisschool (denk aan een ib\'er of een leerkracht uit de festiviteitencommissie). Je maakt complete, kant-en-klare draaiboeken waarmee een leerkracht of oudercommissie meteen aan de slag kan.',
+        '', 'Vaste regels:',
+        '- Schrijf in helder, warm en praktisch Nederlands, gericht aan de organisator. Volledig Nederlands (geen Engelse woorden of insluipende Engelse werkwoordsvormen; dus "Controleer", niet "Check").',
+        '- Taalkundig correct: let op lidwoorden (de/het) en werkwoordspelling.',
+        '- Gebruik GEEN liggende streepjes (— of –) als leesteken in lopende tekst. Gewone komma\'s, punten, dubbele punten of haakjes. Een koppelteken in een samenstelling of een tijdsbereik ("10-15 min") mag wel.',
+        '- Wees CONCREET en direct bruikbaar: echte taken, echte materialen, echte tijden. Nooit vaagheid als "regel de boel" of "zorg voor sfeer".',
+        '- Houd het LEESVRIENDELIJK en SCANBAAR: korte zinnen en bulletpunten, geen lange lappen tekst of alinea\'s. Een leerkracht moet het in één oogopslag kunnen overzien. Liever een paar rake bullets dan een verhaal.',
+        '- Ga uit van vakmanschap; spel algemeen bekende schoolroutines niet uit. Beschrijf wat SPECIFIEK is voor dít evenement, deze groep en deze antwoorden.',
+        '- Stem alles af op de opgegeven groep(en), het aantal kinderen, de locatie en het tijdstip. Reken realistisch met tijd en aantallen.',
+        '- Verzin geen feiten: geen verzonnen adressen, bedragen, openingstijden of namen. Weet je iets niet zeker, houd het algemeen of benoem het als "in te vullen".',
+        '- Houd het HAALBAAR én verdeel het werk REALISTISCH: geef niemand een onmogelijk grote klus. Dus niet "één hulpouder regelt de hele karaoke-installatie" of "één ouder bouwt alle kraampjes op"; splits grote taken op, wijs er meerdere mensen aan, en controleer of een taak echt door dat aantal mensen in die tijd te doen is. Gebruik materiaal en menskracht die een gewone basisschool echt heeft.',
+        '- Denk actief mee over veiligheid, EHBO, allergieën, kinderen die niet meedoen, betaalbaarheid voor elk gezin, en toestemming voor foto\'s (AVG).',
+        '- Maak een feest ook echt UITBUNDIG en LEUK, zeker als er een thema is (disco, jungle, circus…): bedenk VEEL concrete, thema-passende ideeën voor aankleding, activiteiten, spellen en hapjes, zodat het feest echt tot leven komt. Schaal mee met het budget: bij een ruimer budget (denk aan enkele honderden euro\'s) mag je met droge ogen grote publiekstrekkers voorstellen zoals een springkussen, een suikerspin- of popcornmachine, een DJ, een fotobooth, een schminkster of een foodtruck. Zet zulke losse extra\'s UITSLUITEND in de sectie "Extra\'s om het leuker te maken" (elk self-contained: wat het is, wat je ervoor nodig hebt, wie het regelt, en veiligheid) en geef daar RUIM keuze zodat de leerkracht kan kiezen. Verweef ze NIET door de andere secties. Is er geen budget of passen extra\'s niet, laat die sectie dan weg.',
+        '- Gebruik uitsluitend de gevraagde Markdown-koppen en de opgegeven structuur; geen inleidende of afsluitende praatjes, geen scheidingslijnen (---).',
+        '- CONTROLEER het hele draaiboek voordat je het teruggeeft: kloppen de tijden en aantallen, is elke taak concreet en haalbaar, is het Nederlands correct, staat er niets dubbel? Herstel stil wat niet klopt.'
+      ].join('\n');
+    }
+
+    function draaiboekFormat(prog, aftel) {
+      const r = [];
+      r.push('Lever het draaiboek in EXACT deze opbouw, met Markdown-koppen (##) per onderdeel. Bondig en praktisch. Bulletlijsten waar aangegeven (begin elke regel met "- ").');
+      r.push('');
+      r.push('## Overzicht');
+      r.push('Eén of twee korte zinnen die het evenement kaderen: wat het is, voor wie, en de sfeer. Geen opsomming van datum/tijd/groep (die staan al apart).');
+      r.push('');
+      r.push('## Aftellen');
+      r.push('De voorbereiding in de tijd, als checklist met vinkbare taken. Gebruik deze subkoppen (###) met onder elk een korte bulletlijst met concrete taken. Neem hierin ook de communicatie op (ouders op tijd informeren, hulpouders werven). Laat een moment weg als er niets te doen is.');
+      aftel.forEach(s => r.push('### ' + s));
+      r.push('');
+      if (prog.modus === 'dag') {
+        r.push('## Programma');
+        r.push('Een dag-voor-dag-planning. NEEM elke ### dag-kop EXACT over zoals gegeven, en beschrijf eronder kort het programma van die dag (ochtend en middag), concreet en passend bij het thema.');
+        prog.dagen.forEach(d => r.push('### ' + d.label + ' · ' + d.naam));
+      } else {
+        r.push('## Programma');
+        r.push('De tijdlijn van de dag. De tijdvakken hieronder zijn al door het systeem berekend en tellen op tot de opgegeven tijd. NEEM elke ### tijdvak-kop EXACT over (tijd en naam), en schrijf eronder 2 tot 4 KORTE bulletpunten (begin elke regel met "- ") die kort en concreet zeggen wat er gebeurt, wie wat doet en wat klaar moet staan. GEEN lange lopende tekst of alinea\'s; houd het scanbaar. Voeg geen tijdvakken toe of weg. Is een tijdvak de HOOFDACTIVITEIT met spellen, posten, kraampjes, optredens of onderdelen? Houd het hier dan kort (bijvoorbeeld "De kinderen en ouders doen mee aan de spellen langs de posten") en werk de losse spellen/onderdelen zelf UIT in de sectie "De activiteiten in detail" hieronder, zodat het programma overzichtelijk blijft.');
+        prog.tijdlijn.forEach(b => r.push('### ' + b.van + '–' + b.tot + ' · ' + b.naam + ' (' + b.min + ' min)'));
+      }
+      r.push('');
+      r.push('## De activiteiten in detail');
+      r.push('Alleen als het programma spellen, posten, kraampjes, onderdelen of activiteiten bevat die uitwerking verdienen. Werk elke activiteit uit onder een eigen ### kop met 2 tot 4 korte bulletpunten: hoe het werkt (kort de "spelregels"), en WAT JE ERVOOR NODIG HEBT (materiaal per activiteit). Zo staan de spellen en hun benodigdheden overzichtelijk bij elkaar in plaats van in één grote lijst. Geef bij een spellencircuit/posten meerdere concrete spellen. Heeft dit evenement geen losse activiteiten om uit te werken (bijvoorbeeld een diner of een uitje), laat deze hele sectie (inclusief de ## kop) dan weg.');
+      r.push('');
+      r.push('## Taakverdeling');
+      r.push('Wie doet wat. Gebruik deze drie subkoppen (###), elk met een korte bulletlijst. Beschrijf ROLLEN, geen echte namen (bijvoorbeeld "leerkracht groep 7", "twee hulpouders", "conciërge"). Benoem per onderdeel een aanspreekpunt.');
+      r.push('### Vooraf klaarzetten');
+      r.push('### Tijdens het evenement');
+      r.push('### Opruimen achteraf');
+      r.push('');
+      r.push('## Boodschappen en materialen');
+      r.push('Alles wat geregeld/gekocht/klaargezet moet worden voor de KERN van het evenement. GROEPEER het in categorieën met een eigen ### kop (bijvoorbeeld "Eten en drinken", "Aankleding en decoratie", "Techniek en geluid", "Veiligheid en EHBO", "Algemeen"), met onder elke kop een korte bulletlijst, per item kort en waar nuttig met een hoeveelheid. Zo blijft het overzichtelijk in plaats van één lange lijst. Laat een categorie weg als die leeg is. Materiaal dat al bij een uitgewerkte activiteit (hierboven) of bij een extra hoort, hoef je hier NIET te herhalen.');
+      r.push('');
+      r.push('## Extra\'s om het leuker te maken');
+      r.push('OPTIONEEL, maar leuk bij feesten. Geef MEERDERE thema-passende ideeën (zeker als er budget is), maar houd elk idee KORT: één ### kop met daaronder maximaal 2 bulletpunten (in het kort: wat het is en wat je ervoor nodig hebt). Geen uitgebreide beschrijving of aparte veiligheids-/wie-regelt-regel per extra; het is een keuzemenu, geen uitwerking. Elke extra moet los weg te laten zijn. Niets toe te voegen? Laat deze hele sectie (inclusief de ## kop) dan weg.');
+      r.push('');
+      r.push('## Communicatie met ouders');
+      r.push('Kort: wat laat je de ouders weten en wanneer, en waar je hulpouders of spullen voor vraagt. Een bulletlijst met de belangrijkste berichten (bijvoorbeeld een aankondiging vooraf, een oproep voor hulp, en praktische info vlak van tevoren).');
+      r.push('');
+      r.push('## Aandachtspunten');
+      r.push('Een bulletlijst met de belangrijkste dingen om niet te vergeten of goed te regelen (veiligheid, allergieën, kinderen die niet meedoen, betaalbaarheid, AVG/foto\'s, plan-B). Kort en concreet, toegespitst op dit evenement.');
+      r.push('');
+      r.push('## Evaluatie achteraf');
+      r.push('Een korte bulletlijst (2 tot 4 punten) met wat je na afloop even nabespreekt, zodat het volgend jaar nog beter gaat.');
+      return r.join('\n');
+    }
+
+    function bouwOpdracht(ev, a, prog, variatie) {
+      const naam = (ev.id === 'anders' && a.wat) ? a.wat : ev.naam;
+      const r = [];
+      r.push('Maak een compleet draaiboek voor het volgende schoolevenement:');
+      r.push('- Evenement: ' + naam);
+      if (a._datumMooi) r.push('- Datum: ' + a._datumMooi);
+      if (a._groep) r.push('- Voor: ' + a._groep);
+      if (a._aantal) r.push('- Aantal kinderen: ' + a._aantal);
+      if (prog.modus === 'tijd' && a._start && a._eind) r.push('- Tijd: ' + a._start + ' tot ' + a._eind);
+      if (a._hulpouders) r.push('- Hulpouders/begeleiders: ' + a._hulpouders);
+      if (a._sfeer) r.push('- Gewenste sfeer/accent: ' + a._sfeer);
+      if (a._bijzonder) r.push('- Bijzonderheden van de organisator (verwerk deze zeker): ' + a._bijzonder);
+      // De specifieke antwoorden
+      const ant = antwoordRegels(ev, a);
+      if (ant.length) { r.push(''); r.push('Keuzes van de organisator voor dit evenement:'); ant.forEach(x => r.push(x)); }
+      if (ev.sfeer) { r.push(''); r.push('KADER (' + naam + '): ' + ev.sfeer); }
+      const extra = extraInstructies(ev, a);
+      if (extra.length) { r.push(''); r.push('Let hierbij op het volgende:'); extra.forEach(x => r.push('- ' + x)); }
+      if (variatie) { r.push(''); r.push('VARIATIE: ' + variatie + ' Maak een duidelijk ándere uitwerking dan een standaard eerste versie.'); }
+      r.push('');
+      r.push(draaiboekFormat(prog, ev.aftel || ['Uiterlijk vier weken vooraf', 'Uiterlijk twee weken vooraf', 'Uiterlijk een week vooraf', 'De dag ervoor']));
+      return r.join('\n');
+    }
+
+    const INVALSHOEKEN = [
+      'Kies een net iets andere, verrassende invulling van de activiteiten.',
+      'Leg meer nadruk op betrokkenheid van de kinderen zelf (zij helpen mee organiseren).',
+      'Houd het strak en efficiënt met minder maar sterkere programmaonderdelen.',
+      'Maak er iets extra feestelijks van met een klein accent dat door de dag loopt.'
+    ];
+
+    // ── AI-aanroep ────────────────────────────────────────────────────────────
+    async function postClaude(body) {
+      const resp = await fetch('/api/claude', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': 'sk-ant-proxy', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify(body)
+      });
+      if (!resp.ok) {
+        let msg = 'Er ging iets mis (' + resp.status + ').';
+        try { const e = await resp.json(); msg = (e.error && e.error.message) || msg; } catch (_) {}
+        if (resp.status === 429) msg = 'Het is even druk. Probeer het zo opnieuw.';
+        if (resp.status === 529) msg = 'Claude is tijdelijk overbelast. Probeer het zo opnieuw.';
+        throw new Error(msg);
+      }
+      const data = await resp.json();
+      let ruw = (data.content || []).map(b => b.text || '').join('');
+      if (window.avinkaMask) ruw = window.avinkaMask.restore(ruw);
+      return ruw.trim();
+    }
+    async function callClaude(system, user, maxTokens) {
+      if (window.avinkaMask) { try { await window.avinkaMask.ready; } catch (e) {} }
+      const safeUser = window.avinkaMask ? window.avinkaMask.apply(user) : user;
+      return postClaude({ model: MODEL, max_tokens: maxTokens || 8000, messages: [{ role: 'user', content: safeUser }], system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }] });
+    }
+    async function verfijnClaude(basis, wensen) {
+      if (window.avinkaMask) { try { await window.avinkaMask.ready; } catch (e) {} }
+      const dbBlok = 'Je hebt eerder dit draaiboek gemaakt. Lees het goed; je past het zo licht aan.\n\n=== BEGIN DRAAIBOEK ===\n' + basis + '\n=== EINDE DRAAIBOEK ===';
+      const wensBlok = 'De organisator wil het draaiboek houden zoals het is, met ALLEEN de volgende aanpassing(en):\n' + wensen.map(w => '- ' + w).join('\n') + '\n\nGeef het VOLLEDIGE draaiboek opnieuw terug in EXACT dezelfde opbouw en met dezelfde Markdown-koppen, met alleen deze aanpassing(en) doorgevoerd en al het andere ongewijzigd. Geen tekst eromheen.';
+      const safeDb = window.avinkaMask ? window.avinkaMask.apply(dbBlok) : dbBlok;
+      const safeWens = window.avinkaMask ? window.avinkaMask.apply(wensBlok) : wensBlok;
+      return postClaude({ model: MODEL, max_tokens: 8000, system: [{ type: 'text', text: bouwSysteem(), cache_control: { type: 'ephemeral' } }], messages: [{ role: 'user', content: [ { type: 'text', text: safeDb, cache_control: { type: 'ephemeral' } }, { type: 'text', text: safeWens } ] }] });
+    }
+
+    // ── Laad-stappen ──────────────────────────────────────────────────────────
+    let laadTimers = [];
+    function startLaadStappen(stappen, totaalMs) {
+      stopLaadStappen();
+      const box = document.getElementById('laad-stappen');
+      box.innerHTML = stappen.map((s, i) => '<div class="laad-stap" id="lstap-' + i + '"><span class="laad-stip"></span><span>' + s.t + '</span></div>').join('');
+      const zetActief = (i) => { for (let j = 0; j < i; j++) { const e = document.getElementById('lstap-' + j); if (e) e.className = 'laad-stap klaar'; } const e = document.getElementById('lstap-' + i); if (e) e.className = 'laad-stap actief'; };
+      zetActief(0);
+      const totaal = totaalMs || 50000, vroeg = stappen.slice(0, -1), span = totaal * 0.82;
+      const somG = vroeg.reduce((a, s) => a + (s.g || 0), 0) || 1;
+      let t = 0;
+      for (let i = 1; i < stappen.length; i++) { t += span * ((vroeg[i - 1].g || 0) / somG); laadTimers.push(setTimeout(() => zetActief(i), t)); }
+    }
+    function stopLaadStappen() { laadTimers.forEach(clearTimeout); laadTimers = []; }
+    function laadStappen() {
+      return [
+        { t: 'Het evenement en je keuzes doornemen', g: 1.0 },
+        { t: 'De voorbereiding uitzetten in de tijd', g: 1.4 },
+        { t: 'Het programma opbouwen', g: 1.7 },
+        { t: 'De spellen en activiteiten uitwerken', g: 1.6 },
+        { t: 'Taakverdeling en boodschappenlijst maken', g: 1.4 },
+        { t: 'Aandachtspunten en evaluatie nalopen', g: 1.0 },
+        { t: 'De laatste hand leggen (even geduld)…', g: 0 },
+      ];
+    }
+
+    // ── State + flow ──────────────────────────────────────────────────────────
+    let laatsteTekst = '', laatsteMeta = {}, variatieTeller = 0, verfijnBasis = '', verfijnWensen = [];
+
+    function verzamelInvoer() {
+      const datum = document.getElementById('datum').value;
+      let datumMooi = '';
+      if (datum) { try { datumMooi = new Date(datum + 'T00:00:00').toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) { datumMooi = datum; } }
+      // basis + specifieke antwoorden samen in één object (basis met _ ervoor)
+      const a = Object.assign({}, spec);
+      a._datum = datum; a._datumMooi = datumMooi;
+      a._groep = document.getElementById('groep').value.trim();
+      a._aantal = document.getElementById('aantal').value.trim();
+      a._start = document.getElementById('start').value;
+      a._eind = document.getElementById('eind').value;
+      a._hulpouders = document.getElementById('hulpouders').value.trim();
+      a._sfeer = document.getElementById('thema-extra').value.trim();
+      a._bijzonder = document.getElementById('bijzonder').value.trim();
+      return a;
+    }
+
+    async function maak(andereVersie) {
+      const fout = document.getElementById('err');
+      fout.textContent = '';
+      const ev = huidigeEv;
+      if (!ev) { fout.textContent = 'Kies eerst wat je organiseert.'; return; }
+      const a = verzamelInvoer();
+      // Verplichte vrije velden (thema/wat)
+      if (ev.id === 'projectweek' && !a.thema) { fout.textContent = 'Vul eerst het thema van de projectweek in.'; return; }
+      if (ev.id === 'anders' && !a.wat) { fout.textContent = 'Beschrijf eerst kort wat voor evenement het is.'; return; }
+
+      // Een compleet NIEUW draaiboek staat los van een eerder geopend/opgeslagen
+      // bestand: koppeling + live-sessie loskoppelen ("Andere versie" behoudt ze).
+      if (!andereVersie) { geladenBestandId = ''; geladenBestandNaam = ''; geladenBestandOms = ''; rtStop(); }
+
+      const prog = programmaVoor(ev, a, parseTijd(a._start), parseTijd(a._eind));
+      let variatie = '';
+      if (andereVersie) { variatie = INVALSHOEKEN[variatieTeller % INVALSHOEKEN.length]; variatieTeller++; }
+
+      const knop = document.getElementById('btn-maak');
+      knop.disabled = true;
+      ['ev-kaart', 'basis-kaart', 'spec-kaart', 'details-kaart'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('dim'); });
+      document.getElementById('laden').classList.add('aan');
+      document.getElementById('uitvoer').style.display = 'none';
+      document.getElementById('laad-tekst').textContent = andereVersie ? 'Een frisse versie wordt bedacht…' : 'Je draaiboek wordt uitgedacht…';
+      startLaadStappen(laadStappen(), 90000);
+
+      try {
+        const tekst = schoonMd(await callClaude(bouwSysteem(), bouwOpdracht(ev, a, prog, variatie), 8000));
+        laatsteTekst = tekst;
+        laatsteMeta = { evId: ev.id, naam: (ev.id === 'anders' && a.wat) ? a.wat : ev.naam, emoji: ev.emoji, datumMooi: a._datumMooi, start: a._start, eind: a._eind, groep: a._groep, aantal: a._aantal, programmaModus: prog.modus, invoer: a };
+        verfijnBasis = tekst; verfijnWensen = [];
+        document.getElementById('verfijn').style.display = 'none';
+        document.getElementById('verfijn-tekst').value = '';
+        toonResultaat(tekst, laatsteMeta);
+        // TESTFASE: hier komt later avinkaTel(SOORT, {woorden}) na registratie. Nu bewust NIET meetellen.
+      } catch (e) {
+        fout.textContent = e.message || 'Er ging iets mis.';
+      } finally {
+        stopLaadStappen();
+        knop.disabled = false;
+        ['ev-kaart', 'basis-kaart', 'spec-kaart', 'details-kaart'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('dim'); });
+        document.getElementById('laden').classList.remove('aan');
+      }
+    }
+
+    function toonResultaat(tekst, meta) {
+      document.getElementById('uitvoer-titel').textContent = 'Draaiboek ' + (meta.naam || '');
+      _dlGezien = false;   // nieuw draaiboek → opnieuw even waarschuwen bij downloaden
+      docModel = parseModel(tekst);
+      const dbEl = document.getElementById('db');
+      dbEl.innerHTML = renderModel(meta);
+      dbEl.classList.remove('ingeklapt');           // werkbestand-modus: volledig in beeld
+      const tgl = document.getElementById('db-toggle'); if (tgl) tgl.style.display = 'none';
+      toonInvoer(false);                            // de invoer bovenaan valt weg
+      document.getElementById('uitvoer').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Invoer (hero + de vier invoerkaarten) tonen/verbergen.
+    function toonInvoer(aan) {
+      ['ev-kaart', 'basis-kaart', 'spec-kaart', 'details-kaart'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = aan ? '' : 'none'; });
+      const hero = document.querySelector('.hero'); if (hero) hero.style.display = aan ? '' : 'none';
+    }
+    // "Invoer aanpassen": laat de invoervelden weer zien om iets te wijzigen en opnieuw te genereren.
+    function invoerAanpassen() { toonInvoer(true); document.getElementById('basis-kaart').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+
+    function terug() { toonInvoer(true); document.getElementById('uitvoer').style.display = 'none'; document.getElementById('ev-kaart').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    function toggleDb() { const dbEl = document.getElementById('db'), tgl = document.getElementById('db-toggle'); const ing = dbEl.classList.toggle('ingeklapt'); if (tgl) tgl.textContent = ing ? 'Toon het hele draaiboek' : 'Draaiboek inklappen'; }
+    function toonVerfijn() { const p = document.getElementById('verfijn'); const open = p.style.display !== 'block'; p.style.display = open ? 'block' : 'none'; if (open) { p.scrollIntoView({ behavior: 'smooth', block: 'center' }); const t = document.getElementById('verfijn-tekst'); if (t) t.focus(); } }
+
+    async function verfijn() {
+      const err = document.getElementById('verfijn-err'); err.textContent = '';
+      const wens = document.getElementById('verfijn-tekst').value.trim();
+      if (!wens) { err.textContent = 'Beschrijf eerst kort wat je wilt aanpassen.'; return; }
+      if (!verfijnBasis) return;
+      verfijnWensen.push(wens);
+      const knop = document.getElementById('btn-verfijn'); knop.disabled = true;
+      document.getElementById('uitvoer').style.display = 'none';
+      document.getElementById('laden').classList.add('aan');
+      document.getElementById('laad-tekst').textContent = 'Je aanpassing wordt verwerkt…';
+      startLaadStappen([{ t: 'Je wens lezen', g: 0.7 }, { t: 'Het draaiboek aanpassen', g: 1.6 }, { t: 'Alles netjes opmaken', g: 0 }], 45000);
+      try {
+        const tekst = schoonMd(await verfijnClaude(verfijnBasis, verfijnWensen));
+        laatsteTekst = tekst;
+        toonResultaat(tekst, laatsteMeta);
+        document.getElementById('verfijn-tekst').value = '';
+      } catch (e) { verfijnWensen.pop(); document.getElementById('uitvoer').style.display = 'block'; err.textContent = e.message || 'Er ging iets mis.'; }
+      finally { stopLaadStappen(); knop.disabled = false; document.getElementById('laden').classList.remove('aan'); }
+    }
+
+    function printDraaiboek() { window.print(); }
+
+    // ── Delen met je team ─────────────────────────────────────────────────────
+    // Een draaiboek delen kan pas als het is opgeslagen (dan is er een bestand-id).
+    async function delen() {
+      if (!laatsteTekst) return;
+      if (!geladenBestandId) {
+        if (typeof avinkaAlert === 'function') avinkaAlert('Ik sla je draaiboek eerst op in Bestanden, dan kun je het delen.');
+        await slaOp();
+        if (!geladenBestandId) return; // geannuleerd of geen toegang
+      }
+      document.getElementById('deel-nieuwlink').style.display = 'none';
+      document.getElementById('deel-modal').style.display = 'flex';
+      laadDelingen();
+    }
+    function sluitDeelModal() { document.getElementById('deel-modal').style.display = 'none'; }
+    async function laadDelingen() {
+      const box = document.getElementById('deel-lijst'); box.innerHTML = '<div class="hint">Laden…</div>';
+      try {
+        const r = await fetch('/api/draaiboek/delen?bestand_id=' + encodeURIComponent(geladenBestandId));
+        const j = await r.json(); toonDelingen(j.delingen || []);
+      } catch (e) { box.innerHTML = '<div class="hint">Kon de delingen niet laden.</div>'; }
+    }
+    function toonDelingen(lijst) {
+      const box = document.getElementById('deel-lijst');
+      if (!lijst.length) { box.innerHTML = '<div class="hint">Nog niet gedeeld.</div>'; return; }
+      box.innerHTML = lijst.map(d => {
+        const wie = d.gedeeld_email ? esc(d.gedeeld_email) : 'Iedereen met de link';
+        const rol = d.rol === 'bewerken' ? 'mag bewerken' : 'alleen lezen';
+        const link = String(d.link || '').replace(/"/g, '');
+        return '<div class="deel-rij"><div class="deel-wie"><b>' + wie + '</b><span class="hint"> · ' + rol + '</span></div>' +
+          '<button class="btn-soft" onclick="kopieerLink(this,\'' + link + '\')">Kopieer link</button>' +
+          '<button class="del" onclick="verwijderDeling(\'' + d.id + '\')" title="Intrekken">✕</button></div>';
+      }).join('');
+    }
+    async function maakDeling() {
+      const email = document.getElementById('deel-email').value.trim();
+      const rol = document.getElementById('deel-rol').value;
+      const btn = document.getElementById('deel-maak'); const oud = btn.textContent; btn.disabled = true; btn.textContent = 'Bezig…';
+      try {
+        const r = await fetch('/api/draaiboek/delen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bestand_id: geladenBestandId, email: email || null, rol: rol }) });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error || 'fout');
+        document.getElementById('deel-email').value = '';
+        document.getElementById('deel-nieuwlink').style.display = 'block';
+        document.getElementById('deel-linkveld').value = j.link || '';
+        laadDelingen();
+      } catch (e) {
+        if (typeof avinkaAlert === 'function') avinkaAlert(e.message === 'geen_eigenaar' ? 'Alleen de eigenaar van dit draaiboek kan het delen.' : 'Delen lukte niet. Probeer het opnieuw.');
+      } finally { btn.disabled = false; btn.textContent = oud; }
+    }
+    function kopieerLink(btn, link) { navigator.clipboard.writeText(link).then(() => { if (btn) { const o = btn.textContent; btn.textContent = '✓ Gekopieerd'; setTimeout(() => btn.textContent = o, 1500); } }); }
+    function kopieerNieuwLink() { const v = document.getElementById('deel-linkveld'); try { v.select(); } catch (e) {} navigator.clipboard.writeText(v.value); const b = document.getElementById('deel-kopieer'); const o = b.textContent; b.textContent = '✓ Gekopieerd'; setTimeout(() => b.textContent = o, 1500); }
+    async function verwijderDeling(id) { try { await fetch('/api/draaiboek/delen?id=' + encodeURIComponent(id), { method: 'DELETE' }); laadDelingen(); } catch (e) {} }
+
+    // ── Live samenwerken (Supabase Realtime: presence + wijzigingen delen) ────
+    // Werkt zodra het draaiboek is opgeslagen/geopend (dan is er een bestand-id).
+    // Kost geen AI: puur database/Realtime. Geen conflictvrij letter-voor-letter
+    // samen typen (dat is de zwaardere CRDT-route) — wél elkaar zien en elkaars
+    // wijzigingen live binnen krijgen; wie tegelijk in hetzelfde stuk typt: laatste
+    // opslag wint (de "bewerkt…"-indicator helpt om dat te vermijden).
+    let rtChannel = null, rtNaam = 'Iemand', rtDebounce = null, rtRemote = false, rtBezigTimer = null;
+    const RT_KLEUREN = ['#2f9e6e', '#e11d48', '#2563eb', '#d97706', '#7c3aed', '#0891b2', '#db2777'];
+    function kleurVoor(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return RT_KLEUREN[h % RT_KLEUREN.length]; }
+    async function startRealtime() {
+      if (rtChannel || !geladenBestandId || !window.supabase) return;
+      let cfg;
+      try { const r = await fetch('/api/realtime-config'); if (!r.ok) return; cfg = await r.json(); } catch (e) { return; }
+      if (!cfg || !cfg.url || !cfg.key) return;
+      try {
+        const client = window.supabase.createClient(cfg.url, cfg.key, { realtime: { params: { eventsPerSecond: 5 } } });
+        if (cfg.token && client.realtime && client.realtime.setAuth) client.realtime.setAuth(cfg.token);
+        rtNaam = cfg.naam || 'Iemand';
+        rtChannel = client.channel('draaiboek:' + geladenBestandId, { config: { presence: { key: cfg.userId || rtNaam } } });
+        rtChannel.on('presence', { event: 'sync' }, toonAanwezigen);
+        rtChannel.on('broadcast', { event: 'patch' }, (m) => ontvangPatch(m.payload));
+        rtChannel.subscribe(async (status) => { if (status === 'SUBSCRIBED') { try { await rtChannel.track({ naam: rtNaam, kleur: kleurVoor(rtNaam), bezig: false }); } catch (e) {} } });
+      } catch (e) { rtChannel = null; }
+    }
+    function rtStop() {
+      if (rtChannel) { try { rtChannel.unsubscribe(); } catch (e) {} rtChannel = null; }
+      const bar = document.getElementById('live-bar'); if (bar) { bar.style.display = 'none'; bar.innerHTML = ''; }
+    }
+    function toonAanwezigen() {
+      if (!rtChannel) return;
+      const bar = document.getElementById('live-bar'); if (!bar) return;
+      let st = {}; try { st = rtChannel.presenceState(); } catch (e) {}
+      const mensen = [];
+      Object.keys(st).forEach((k) => { const p = st[k] && st[k][0]; if (p) mensen.push(p); });
+      if (mensen.length <= 1) { bar.style.display = 'none'; return; } // alleen jij → niks tonen
+      bar.style.display = 'flex';
+      bar.innerHTML = '<span class="live-lbl">👥 Live samen:</span>' + mensen.map((p) =>
+        '<span class="live-wie"><span class="live-dot" style="--k:' + (p.kleur || '#2f9e6e') + '"></span>' + esc(p.naam || 'Iemand') + (p.bezig ? ' <span class="live-typ">bewerkt…</span>' : '') + '</span>'
+      ).join('');
+    }
+    function stuurBezig(aan) {
+      if (!rtChannel) return;
+      try { rtChannel.track({ naam: rtNaam, kleur: kleurVoor(rtNaam), bezig: !!aan }); } catch (e) {}
+    }
+    // Onze wijziging naar de rest sturen (gedebounced; niet als de wijziging van een ander kwam).
+    function syncNaarTeam() {
+      if (rtRemote || !rtChannel) return;
+      clearTimeout(rtDebounce);
+      rtDebounce = setTimeout(() => { try { rtChannel.send({ type: 'broadcast', event: 'patch', payload: { tekst: laatsteTekst } }); } catch (e) {} }, 400);
+    }
+    // Een wijziging van een teamlid ontvangen. Terwijl jij zelf typt niet storen;
+    // de volgende update komt vanzelf zodra je klaar bent.
+    function ontvangPatch(p) {
+      if (!p || typeof p.tekst !== 'string') return;
+      const ae = document.activeElement;
+      if (ae && ae.closest && ae.closest('#db .tx[data-id]')) return;
+      rtRemote = true;
+      try {
+        docModel = parseModel(p.tekst); laatsteTekst = serialize(docModel); verfijnBasis = laatsteTekst;
+        const dbEl = document.getElementById('db'); if (dbEl) { dbEl.innerHTML = renderModel(laatsteMeta); dbEl.classList.remove('ingeklapt'); }
+      } catch (e) {}
+      rtRemote = false;
+    }
+
+    // Waarschuwing vóór downloaden (één keer per gegenereerd draaiboek).
+    let _dlResolve = null, _dlGezien = false;
+    function vraagDownload() { return new Promise(res => { _dlResolve = res; document.getElementById('dl-modal').style.display = 'flex'; }); }
+    function sluitDlModal() { document.getElementById('dl-modal').style.display = 'none'; if (_dlResolve) { _dlResolve(false); _dlResolve = null; } }
+    function bevestigDl() { document.getElementById('dl-modal').style.display = 'none'; _dlGezien = true; if (_dlResolve) { _dlResolve(true); _dlResolve = null; } }
+
+    async function downloadWord(btn) {
+      if (!laatsteTekst) return;
+      if (!window.avinkaDraaiboekDocx) { if (typeof avinkaAlert === 'function') avinkaAlert('Downloaden is even niet beschikbaar. Ververs de pagina en probeer opnieuw.'); return; }
+      if (!_dlGezien) { const ok = await vraagDownload(); if (!ok) return; }
+      const meta2 = { titel: laatsteMeta.naam, emoji: laatsteMeta.emoji, datumMooi: laatsteMeta.datumMooi, start: laatsteMeta.start, eind: laatsteMeta.eind, groep: laatsteMeta.groep, aantal: laatsteMeta.aantal };
+      const oud = btn ? btn.textContent : '';
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Even je Word maken…'; }
+      try { await window.avinkaDraaiboekDocx.download(laatsteTekst, meta2); }
+      catch (e) { if (typeof avinkaAlert === 'function') avinkaAlert('Het downloaden lukte niet. Probeer het opnieuw.'); }
+      finally { if (btn) { btn.disabled = false; btn.textContent = oud || '⬇ Download als Word'; } }
+    }
+
+    function naarOudercontact() {
+      try {
+        const m = laatsteMeta || {}, a = m.invoer || {};
+        const punten = [];
+        if (m.datumMooi) punten.push('wanneer: ' + m.datumMooi);
+        if (m.programmaModus === 'tijd' && m.start && m.eind) punten.push('tijd: van ' + m.start + ' tot ' + m.eind);
+        if (a.locatie) punten.push('waar: ' + a.locatie);
+        if (m.groep) punten.push('voor: ' + m.groep);
+        if (a._hulpouders) punten.push('hulpouders: ' + a._hulpouders);
+        const onderwerp = 'Informatiebrief aan de ouders over ' + (m.naam || 'ons evenement') + '. ' +
+          (punten.length ? 'Belangrijkste punten: ' + punten.join('; ') + '. ' : '') +
+          'Laat de ouders weten wat ze moeten weten en of ze iets moeten regelen of meegeven.';
+        sessionStorage.setItem('avinka_oudercontact_seed', JSON.stringify({ van: 'draaiboek', module: 'informatiebrief', onderwerp }));
+      } catch (_) {}
+      // de <a> href opent /tools/oudercontact.html?van=draaiboek&m=informatiebrief
+    }
+
+    // ── Opslaan in Bestanden ──────────────────────────────────────────────────
+    let geladenBestandNaam = '', geladenBestandOms = '', geladenBestandId = '';
+    async function slaOp(btn) {
+      if (!laatsteTekst) return;
+      if (!window.avinkaBestanden) { if (typeof avinkaAlert === 'function') avinkaAlert('Opslaan is even niet beschikbaar. Ververs de pagina en probeer opnieuw.'); return; }
+      const evNaam = laatsteMeta.naam || 'Evenement';
+      let naam, omschrijving;
+      if (geladenBestandNaam) { naam = geladenBestandNaam; omschrijving = geladenBestandOms; }
+      else {
+        naam = 'Draaiboek ' + (evNaam.charAt(0).toUpperCase() + evNaam.slice(1)) + (laatsteMeta.datumMooi ? ' (' + laatsteMeta.datumMooi + ')' : '');
+        omschrijving = 'Draaiboek voor ' + evNaam + (laatsteMeta.groep ? ', ' + laatsteMeta.groep : '') + (laatsteMeta.datumMooi ? ', op ' + laatsteMeta.datumMooi : '') + '.';
+      }
+      const res = await window.avinkaBestanden.opslaan({
+        type: 'draaiboek', tool: 'draaiboek', naam, omschrijving, inhoud: laatsteTekst,
+        data: { tekst: laatsteTekst, meta: laatsteMeta },
+        suggestiePad: ['Draaiboeken', evNaam], bestandId: geladenBestandId || undefined,
+      });
+      if (!res || !res.ok) { if (res && res.reason === 'geen_toegang' && typeof avinkaAlert === 'function') avinkaAlert('Opslaan in Bestanden hoort bij Compleet en Pro. Upgrade om je draaiboeken te bewaren.'); return; }
+      if (res.id) geladenBestandId = res.id;
+      geladenBestandNaam = res.naam || naam;
+      geladenBestandOms = (res.oms != null ? res.oms : omschrijving) || '';
+      startRealtime(); // opgeslagen → live samenwerken kan nu (bij delen)
+      if (typeof avinkaAlert === 'function') avinkaAlert('Opgeslagen in Bestanden.');
+    }
+
+    async function laadOpgeslagen() {
+      let id = null;
+      try { id = new URLSearchParams(location.search).get('bestand'); } catch (e) {}
+      if (!id) return;
+      let rij = null;
+      try { const r = await fetch('/api/bestanden?id=' + encodeURIComponent(id), { headers: { accept: 'application/json' } }); if (!r.ok) return; rij = await r.json(); } catch (e) { return; }
+      const data = rij && rij.data;
+      if (!data || !data.tekst) return;
+      const meta = data.meta || {};
+      geladenBestandNaam = (rij && rij.naam) || '';
+      geladenBestandOms = (data.omschrijving || '') + '';
+      geladenBestandId = id;
+      const terugLink = document.getElementById('terug-link');
+      if (terugLink) { let vanMap = ''; try { vanMap = new URLSearchParams(location.search).get('map') || ''; } catch (e) {} terugLink.href = '/dashboard/mijn-teksten' + (vanMap ? '?map=' + encodeURIComponent(vanMap) : ''); terugLink.textContent = '← Terug naar bestanden'; }
+      laatsteTekst = data.tekst; laatsteMeta = meta; verfijnBasis = data.tekst; verfijnWensen = [];
+      // evenement-tegel actief zetten (best effort) zodat de titel/emoji kloppen
+      if (meta.evId) { const k = document.querySelector('#ev-grid .evkaart[data-id="' + meta.evId + '"]'); if (k) k.click(); }
+      toonResultaat(data.tekst, meta);
+      startRealtime(); // geopend bestand → live samenwerken aanzetten
+    }
+    window.addEventListener('load', laadOpgeslagen);
+
+    // ── Opmaak-helpers ────────────────────────────────────────────────────────
+    function schoonMd(t) { return (t || '').split('\n').filter(r => !/^\s*([-*_]\s*){3,}$/.test(r)).join('\n'); }
+    function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    function inline(s) { return esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>'); }
+
+    // ── Draaiboek-renderer ────────────────────────────────────────────────────
+    const SEC_ICON = [['overzicht', '📌'], ['aftellen', '⏳'], ['programma', '🕘'], ['taakverdeling', '🙌'], ['boodschappen', '🛒'], ['extra', '🎡'], ['communicatie', '✉️'], ['aandacht', '⚠️'], ['evaluatie', '🔎']];
+    function secIcon(low) { if (/activiteiten/.test(low)) return '🎯'; for (const [k, ic] of SEC_ICON) if (low.indexOf(k) === 0) return ic; if (/materialen/.test(low)) return '🛒'; return '•'; }
+
+    // Markdown → model met stabiele ids (elke regel = 1 blok), zodat je losse
+    // regels/blokken/secties met ✕ kunt weghalen en de tekst opnieuw kunt opbouwen.
+    let docModel = [], _idc = 0;
+    function parseModel(md) {
+      const out = [];
+      String(md || '').split('\n').forEach(raw => {
+        const t = raw.replace(/\s+$/, '');
+        if (!t.trim()) return;
+        if (/^\s*([-*_]\s*){3,}$/.test(t)) return;
+        let m;
+        if ((m = t.match(/^##\s+(?!#)(.+)$/))) out.push({ id: ++_idc, kind: 'h2', text: m[1].trim() });
+        else if ((m = t.match(/^###\s+(.+)$/))) out.push({ id: ++_idc, kind: 'h3', text: m[1].trim() });
+        else if ((m = t.match(/^[-*]\s+(.+)$/))) { let tx = m[1], done = false; const tm = tx.match(/^\[([ xX])\]\s+(.*)$/); if (tm) { done = tm[1].toLowerCase() === 'x'; tx = tm[2]; } out.push({ id: ++_idc, kind: 'li', text: tx, done: done }); }
+        else out.push({ id: ++_idc, kind: 'p', text: t });
+      });
+      return out;
+    }
+    function serialize(model) {
+      return model.map(b => b.kind === 'h2' ? '## ' + b.text : b.kind === 'h3' ? '### ' + b.text : b.kind === 'li' ? '- ' + (b.done ? '[x] ' : '') + b.text : b.text).join('\n');
+    }
+    function delBtn(id, extra) { return '<button class="del ' + (extra || '') + '" data-del="' + id + '" title="Weghalen" aria-label="Weghalen">✕</button>'; }
+
+    // Een regel (li/p), een blok (### + de regels eronder) of een hele sectie (##) weghalen.
+    function verwijderId(id) {
+      const idx = docModel.findIndex(b => b.id === id);
+      if (idx < 0) return;
+      const b = docModel[idx];
+      let end = idx + 1;
+      if (b.kind === 'h2') { while (end < docModel.length && docModel[end].kind !== 'h2') end++; }
+      else if (b.kind === 'h3') { while (end < docModel.length && docModel[end].kind !== 'h3' && docModel[end].kind !== 'h2') end++; }
+      docModel.splice(idx, end - idx);
+      laatsteTekst = serialize(docModel);
+      verfijnBasis = laatsteTekst;
+      const dbEl = document.getElementById('db');
+      dbEl.innerHTML = renderModel(laatsteMeta);
+      dbEl.classList.remove('ingeklapt');
+      const tgl = document.getElementById('db-toggle'); if (tgl) tgl.textContent = 'Draaiboek inklappen';
+    }
+
+    // Opnieuw tekenen + tekst opnieuw opbouwen (na toevoegen/verplaatsen/verwijderen).
+    function herteken() {
+      const dbEl = document.getElementById('db');
+      if (!dbEl) return;
+      dbEl.innerHTML = renderModel(laatsteMeta);
+      dbEl.classList.remove('ingeklapt');
+      const tgl = document.getElementById('db-toggle'); if (tgl) tgl.textContent = 'Draaiboek inklappen';
+      laatsteTekst = serialize(docModel); verfijnBasis = laatsteTekst;
+      syncNaarTeam();
+    }
+    // Einde van een groep (### tot volgende ###/##, of ## tot volgende ##).
+    function groepEinde(idx) {
+      const k = docModel[idx].kind; let end = idx + 1;
+      if (k === 'h2') { while (end < docModel.length && docModel[end].kind !== 'h2') end++; }
+      else { while (end < docModel.length && docModel[end].kind !== 'h3' && docModel[end].kind !== 'h2') end++; }
+      return end;
+    }
+    function voegLiToe(groepId, text) {
+      const idx = docModel.findIndex(b => b.id === groepId); if (idx < 0) return;
+      docModel.splice(groepEinde(idx), 0, { id: ++_idc, kind: 'li', text: text });
+      herteken();
+    }
+    function verplaatsLi(liId, doelId) {
+      const li = docModel.findIndex(b => b.id === liId); if (li < 0) return;
+      const blk = docModel.splice(li, 1)[0];
+      const idx = docModel.findIndex(b => b.id === doelId); if (idx < 0) return;
+      docModel.splice(groepEinde(idx), 0, blk);
+      herteken();
+    }
+
+    function renderModel(meta) {
+      let html = '';
+      html += '<div class="db-titel">' + (meta.emoji ? meta.emoji + ' ' : '') + esc('Draaiboek ' + (meta.naam || '')) + '</div>';
+      const pills = [];
+      if (meta.datumMooi) pills.push('📅 ' + meta.datumMooi);
+      if (meta.programmaModus !== 'dag' && meta.start && meta.eind) pills.push('🕘 ' + meta.start + '–' + meta.eind);
+      if (meta.groep) pills.push('👥 ' + meta.groep);
+      if (meta.aantal) pills.push('🧒 ' + meta.aantal + ' kinderen');
+      if (pills.length) html += '<div class="db-meta">' + pills.map(p => '<span class="dm-pill">' + esc(p) + '</span>').join('') + '</div>';
+      html += '<div class="db-tip">Dit is je werkbestand: <b>klik op tekst</b> om aan te passen, <b>✕</b> om weg te halen, <b>＋</b> om zelf iets toe te voegen, sleep met <b>⠿</b> om te verschuiven, en <b>vink taken af</b>. Alles wat je hier doet, gaat mee in opslaan en downloaden.</div>';
+      let i = 0;
+      while (i < docModel.length) {
+        if (docModel[i].kind !== 'h2') { i++; continue; }
+        const sec = docModel[i], lines = [];
+        let j = i + 1;
+        while (j < docModel.length && docModel[j].kind !== 'h2') { lines.push(docModel[j]); j++; }
+        html += renderSectie(sec, lines, meta);
+        i = j;
+      }
+      html += '<div class="nieuw-kopje"><button class="btn-soft" data-nieuwkop="1">＋ Nieuw kopje toevoegen</button></div>';
+      return html;
+    }
+    // ── Bewerkbare + sleepbare + afvinkbare bouwstenen ────────────────────────
+    function ceSpan(id, text, part) { return '<span class="tx" contenteditable="true" data-id="' + id + '"' + (part ? ' data-part="' + part + '"' : '') + '>' + inline(text) + '</span>'; }
+    function gripHtml() { return '<button class="grip" data-grip="1" title="Sleep om te verschuiven" aria-label="Verschuiven">⠿</button>'; }
+    function liRow(l, opt) {
+      opt = opt || {};
+      const box = opt.check ? '<span class="vink" data-vink="' + l.id + '" title="Afvinken"></span>' : '';
+      const cls = (l.done ? 'af ' : '') + (opt.check ? 'chk' : '');
+      return '<li class="' + cls.trim() + '" data-drag="' + l.id + '">' + box + ceSpan(l.id, l.text) + gripHtml() + delBtn(l.id) + '</li>';
+    }
+    function voegToeRij(groepId) { return '<div class="voegtoe" data-add="' + groepId + '"><span class="plus">＋</span><input type="text" placeholder="Zelf iets toevoegen en op Enter drukken…" /><button class="meer" data-meer="' + groepId + '" title="Laat de AI een paar extra ideeën bij dit onderdeel bedenken">✨ Meer ideeën van AI</button></div>'; }
+
+    function renderSectie(sec, lines, meta) {
+      const low = sec.text.toLowerCase();
+      let body;
+      if (/^overzicht/.test(low)) body = renderIntro(lines);
+      else if (/^programma/.test(low)) body = (meta && meta.programmaModus === 'dag') ? renderFasen(lines, sec.id, false) : renderProgramma(lines);
+      else if (/^aftellen/.test(low) || /^taakverdeling/.test(low) || /^evaluatie/.test(low)) body = renderFasen(lines, sec.id, true);
+      else if (/activiteiten/.test(low) || /^extra/.test(low)) body = renderFasen(lines, sec.id, false);
+      else if (/^aandacht/.test(low)) body = renderLijst(lines, 'aandacht', sec.id, false);
+      else if (/^communicatie/.test(low)) body = renderCommunicatie(lines, sec.id);
+      else if (/boodschappen|materialen/.test(low)) body = renderMat(lines, sec.id);
+      else body = renderVrij(lines, sec.id);
+      return '<div class="sec" data-drag="' + sec.id + '"><div class="sec-kop"><span class="se">' + secIcon(low) + '</span><span class="sec-t tx" contenteditable="true" data-id="' + sec.id + '">' + esc(sec.text) + '</span>' + gripHtml() + delBtn(sec.id, 'del-sec') + '</div>' + body + '</div>';
+    }
+    function renderIntro(lines) {
+      const p = lines.filter(l => l.kind === 'p' || l.kind === 'li').map(l => '<div class="rm" data-drag="' + l.id + '">' + ceSpan(l.id, l.text) + gripHtml() + delBtn(l.id) + '</div>').join('');
+      return '<div class="intro">' + (p || '<p></p>') + '</div>';
+    }
+    function renderFasen(lines, secId, check) {
+      let out = '', h3id = null, lijst = false, zagH3 = false;
+      const sluitLijst = () => { if (lijst) { out += '</ul>'; lijst = false; } };
+      const sluitBlok = () => { sluitLijst(); if (h3id != null) { out += voegToeRij(h3id) + '</div></div>'; h3id = null; } };
+      for (const l of lines) {
+        if (l.kind === 'h3') { sluitBlok(); zagH3 = true; out += '<div class="fase-blok" data-drag="' + l.id + '"><div class="fase-blok-kop">' + ceSpan(l.id, l.text) + gripHtml() + delBtn(l.id, 'del-blok') + '</div><div class="fase-blok-in">'; h3id = l.id; continue; }
+        if (l.kind === 'li') { if (!lijst) { out += '<ul class="checks">'; lijst = true; } out += liRow(l, { check: check }); continue; }
+        sluitLijst(); out += '<div class="rm" data-drag="' + l.id + '">' + ceSpan(l.id, l.text) + gripHtml() + delBtn(l.id) + '</div>';
+      }
+      sluitBlok();
+      if (!zagH3 && secId) out += voegToeRij(secId);
+      return out;
+    }
+    function renderProgramma(lines) {
+      let out = '<div class="tl">', itemId = null, lijst = false;
+      const sluitLijst = () => { if (lijst) { out += '</ul>'; lijst = false; } };
+      const sluit = () => { sluitLijst(); if (itemId != null) { out += voegToeRij(itemId) + '</div>'; itemId = null; } };
+      for (const l of lines) {
+        if (l.kind === 'h3') {
+          sluit(); let kop = l.text; const m = kop.match(/^([\d:]+\s*[–-]\s*[\d:]+)\s*[·:-]?\s*(.*)$/); let tijd = '', rest = kop;
+          if (m) { tijd = m[1].replace(/\s+/g, ''); rest = m[2]; } rest = rest.replace(/\s*\(\s*\d+\s*min\s*\)\s*$/i, '').trim();
+          out += '<div class="tl-item" data-drag="' + l.id + '"><div class="tl-hd">' + (tijd ? '<span class="tl-tijd tx" contenteditable="true" data-id="' + l.id + '" data-part="tijd">' + esc(tijd) + '</span>' : '') + '<span class="tl-naam tx" contenteditable="true" data-id="' + l.id + '" data-part="naam">' + inline(rest) + '</span>' + gripHtml() + delBtn(l.id, 'del-blok') + '</div>'; itemId = l.id; continue;
+        }
+        if (itemId == null) continue;
+        if (l.kind === 'li') { if (!lijst) { out += '<ul class="tl-list">'; lijst = true; } out += liRow(l); }
+        else { sluitLijst(); out += '<div class="rm" data-drag="' + l.id + '">' + ceSpan(l.id, l.text) + gripHtml() + delBtn(l.id) + '</div>'; }
+      }
+      sluit(); out += '</div>'; return out;
+    }
+    function renderLijst(lines, cls, secId, check) {
+      let out = '', lijst = false; const sluit = () => { if (lijst) { out += '</ul>'; lijst = false; } };
+      for (const l of lines) {
+        if (l.kind === 'li') { if (!lijst) { out += '<ul class="' + cls + '">'; lijst = true; } out += liRow(l, { check: check }); continue; }
+        sluit(); out += '<div class="rm" data-drag="' + l.id + '">' + ceSpan(l.id, l.text) + gripHtml() + delBtn(l.id) + '</div>';
+      }
+      sluit();
+      if (secId) out += voegToeRij(secId);
+      return out;
+    }
+    // Boodschappen: gegroepeerd in categorieën (### = categorie) met ruimte ertussen.
+    function renderMat(lines, secId) {
+      let out = '', groepId = null, lijst = false, zag = false;
+      const sluitLijst = () => { if (lijst) { out += '</ul>'; lijst = false; } };
+      const sluitGroep = () => { sluitLijst(); if (groepId != null) { out += voegToeRij(groepId) + '</div>'; groepId = null; } };
+      for (const l of lines) {
+        if (l.kind === 'h3') { sluitGroep(); zag = true; out += '<div class="mat-groep" data-drag="' + l.id + '"><div class="mat-kop">' + ceSpan(l.id, l.text) + gripHtml() + delBtn(l.id, 'del-blok') + '</div>'; groepId = l.id; continue; }
+        if (l.kind === 'li') { if (!lijst) { out += '<ul class="mat">'; lijst = true; } out += liRow(l, { check: true }); continue; }
+        sluitLijst(); out += '<div class="rm" data-drag="' + l.id + '">' + ceSpan(l.id, l.text) + gripHtml() + delBtn(l.id) + '</div>';
+      }
+      sluitGroep();
+      if (!zag && secId) out += voegToeRij(secId);
+      return out;
+    }
+    function renderCommunicatie(lines, secId) {
+      let out = '<div class="komm">', lijst = false; const sluit = () => { if (lijst) { out += '</ul>'; lijst = false; } };
+      for (const l of lines) {
+        if (l.kind === 'li') { if (!lijst) { out += '<ul class="checks">'; lijst = true; } out += liRow(l); continue; }
+        sluit(); out += '<div class="rm" data-drag="' + l.id + '">' + ceSpan(l.id, l.text) + gripHtml() + delBtn(l.id) + '</div>';
+      }
+      sluit();
+      if (secId) out += voegToeRij(secId);
+      out += '<div class="link">✉️ Tip: laat het ouderbericht met één klik schrijven via de knop "Schrijf het ouderbericht" hieronder.</div></div>';
+      return out;
+    }
+    function renderVrij(lines, secId) {
+      let out = '', lijst = false; const sluit = () => { if (lijst) { out += '</ul>'; lijst = false; } };
+      for (const l of lines) {
+        if (l.kind === 'h3') { sluit(); out += '<div class="rm" data-drag="' + l.id + '"><h4 class="tx" contenteditable="true" data-id="' + l.id + '">' + inline(l.text) + '</h4>' + gripHtml() + delBtn(l.id, 'del-blok') + '</div>'; continue; }
+        if (l.kind === 'li') { if (!lijst) { out += '<ul class="checks">'; lijst = true; } out += liRow(l); continue; }
+        sluit(); out += '<div class="rm" data-drag="' + l.id + '">' + ceSpan(l.id, l.text) + gripHtml() + delBtn(l.id) + '</div>';
+      }
+      sluit();
+      if (secId) out += voegToeRij(secId);
+      return out;
+    }
+
+    // ── Interactie: bewerken, verplaatsen, toevoegen, "meer" via AI ───────────
+    function syncEdit(span) {
+      const id = +span.getAttribute('data-id'); const blk = docModel.find(b => b.id === id); if (!blk) return;
+      if (span.getAttribute('data-part')) {
+        const item = span.closest('.tl-item'); if (!item) return;
+        const tEl = item.querySelector('[data-part="tijd"]'), nEl = item.querySelector('[data-part="naam"]');
+        const tijd = tEl ? tEl.textContent.trim() : '', naam = nEl ? nEl.textContent.trim() : '';
+        blk.text = (tijd ? tijd + ' · ' : '') + naam;
+      } else {
+        const txt = span.textContent.replace(/\s+/g, ' ').trim();
+        if (!txt) {
+          if (blk.kind === 'h2') { blk.text = 'Kopje'; span.textContent = 'Kopje'; } // kopje niet per ongeluk wissen
+          else { verwijderId(id); return; }
+        } else blk.text = txt;
+      }
+      laatsteTekst = serialize(docModel); verfijnBasis = laatsteTekst;
+      syncNaarTeam();
+    }
+    // Het bereik (index-range) van een blok: een li/p = 1 regel, een ### = het blok,
+    // een ## = de hele sectie. Nodig om te slepen/verschuiven.
+    function bereik(id) {
+      const idx = docModel.findIndex(b => b.id === id); if (idx < 0) return null;
+      const k = docModel[idx].kind; let end = idx + 1;
+      if (k === 'h2') { while (end < docModel.length && docModel[end].kind !== 'h2') end++; }
+      else if (k === 'h3') { while (end < docModel.length && docModel[end].kind !== 'h3' && docModel[end].kind !== 'h2') end++; }
+      return [idx, end];
+    }
+    // Sleep een blok (regel/fase/sectie) vóór of ná een ander blok.
+    function verplaatsBlok(sleepId, doelId, plaats) {
+      if (sleepId === doelId) return;
+      const sr = bereik(sleepId); if (!sr) return;
+      const doelIdx = docModel.findIndex(b => b.id === doelId);
+      if (doelIdx >= sr[0] && doelIdx < sr[1]) return; // niet in zichzelf laten vallen
+      const seg = docModel.slice(sr[0], sr[1]);
+      docModel.splice(sr[0], sr[1] - sr[0]);
+      const dr = bereik(doelId); if (!dr) return;
+      docModel.splice(plaats === 'na' ? dr[1] : dr[0], 0, ...seg);
+      herteken();
+    }
+    // Een taak afvinken (blijft bewaard: serialiseert als "- [x]").
+    function vinkAf(id, liEl) { const blk = docModel.find(b => b.id === id); if (!blk) return; blk.done = !blk.done; if (liEl) liEl.classList.toggle('af', blk.done); laatsteTekst = serialize(docModel); verfijnBasis = laatsteTekst; syncNaarTeam(); }
+
+    // ── Sleep-begrenzing ──────────────────────────────────────────────────────
+    function sectieVanId(id) { let idx = docModel.findIndex(b => b.id === id); if (idx < 0) return null; while (idx >= 0 && docModel[idx].kind !== 'h2') idx--; return idx >= 0 ? docModel[idx].id : null; }
+    function groepVanId(id) { let idx = docModel.findIndex(b => b.id === id); if (idx < 0) return null; for (let k = idx; k >= 0; k--) { if (docModel[k].kind === 'h3' || docModel[k].kind === 'h2') return docModel[k].id; } return null; }
+    function isAftelSectie(id) { const sid = sectieVanId(id); const b = sid != null ? docModel.find(x => x.id === sid) : null; return !!(b && /^aftellen/i.test(b.text)); }
+    // Losse tekst (li/p) mag alleen binnen z'n eigen vakje verschuiven — behalve in
+    // de Aftellen-sectie, waar een taak tussen "uiterlijk 4 weken / 2 weken / de dag
+    // ervoor" gesleept mag worden. Blokken (###) blijven binnen hun sectie; een hele
+    // sectie (##) mag overal heen.
+    function magSlepen(sleepId, doelId) {
+      const s = docModel.find(b => b.id === sleepId), d = docModel.find(b => b.id === doelId);
+      if (!s || !d) return false;
+      if (s.kind === 'li' || s.kind === 'p') {
+        // losse tekst: alleen binnen de eigen sectie bij Aftellen, anders binnen het eigen vakje
+        if (isAftelSectie(sleepId)) return sectieVanId(sleepId) === sectieVanId(doelId);
+        return groepVanId(sleepId) === groepVanId(doelId);
+      }
+      if (s.kind === 'h3') return d.kind === 'h3' && sectieVanId(sleepId) === sectieVanId(doelId); // blok tussen blokken van dezelfde sectie
+      return d.kind === 'h2'; // sectie tussen secties
+    }
+    async function meerIdeeen(btn) {
+      const groepId = +btn.getAttribute('data-meer');
+      const idx = docModel.findIndex(b => b.id === groepId); if (idx < 0) return;
+      const kop = docModel[idx].text, end = groepEinde(idx), huidige = [];
+      for (let k = idx + 1; k < end; k++) { if (docModel[k].kind === 'li') huidige.push(docModel[k].text); }
+      const oud = btn.textContent; btn.disabled = true; btn.textContent = '⏳ even…';
+      try {
+        const prompt = 'Hieronder een onderdeel uit een draaiboek voor "' + (laatsteMeta.naam || 'een schoolevenement') + '". Geef 1 tot 3 EXTRA korte, concrete bulletpunten die hier logisch bij passen en nog NIET genoemd zijn. Antwoord met ALLEEN de bullets, elk op een eigen regel beginnend met "- ", niets anders.\n\nOnderdeel: ' + kop + '\nAl genoemd:\n' + (huidige.map(h => '- ' + h).join('\n') || '(nog niets)');
+        const ruw = await callClaude('Je bent een behulpzame assistent die korte, concrete bulletpunten voor een schooldraaiboek geeft.', prompt, 400);
+        const nieuw = ruw.split('\n').map(r => r.trim()).filter(r => /^[-*]\s+/.test(r)).map(r => r.replace(/^[-*]\s+/, ''));
+        if (nieuw.length) { const e2 = groepEinde(docModel.findIndex(b => b.id === groepId)); nieuw.forEach((t, i2) => docModel.splice(e2 + i2, 0, { id: ++_idc, kind: 'li', text: t })); herteken(); }
+        else if (typeof avinkaAlert === 'function') avinkaAlert('Geen nieuwe ideeën gevonden. Probeer het nog eens.');
+      } catch (e) { if (typeof avinkaAlert === 'function') avinkaAlert('Het ophalen lukte niet. Probeer het opnieuw.'); }
+      finally { if (btn && btn.isConnected) { btn.disabled = false; btn.textContent = oud; } }
+    }
+
+    (function () {
+      const db = document.getElementById('db');
+      if (!db) return;
+      let sleepId = null;
+      const wisDrop = () => db.querySelectorAll('.drop-voor,.drop-na').forEach(x => x.classList.remove('drop-voor', 'drop-na'));
+      const losDrag = () => db.querySelectorAll('[draggable="true"]').forEach(x => x.removeAttribute('draggable'));
+      const dropDoel = (t) => {
+        const h = t.closest('[data-drag]'); if (!h) return null;
+        const hid = +h.getAttribute('data-drag');
+        if (sleepId != null) {
+          if (hid === sleepId) return null;
+          const sr = bereik(sleepId); if (sr) { const di = docModel.findIndex(b => b.id === hid); if (di >= sr[0] && di < sr[1]) return null; }
+          if (!magSlepen(sleepId, hid)) return null;
+        }
+        return h;
+      };
+
+      db.addEventListener('click', e => {
+        // Afvinken: de hele checklist-regel is klikbaar (behalve de tekst, greep of ✕).
+        const chk = e.target.closest('li.chk');
+        if (chk && !e.target.closest('.tx, [data-grip], [data-del]')) { e.preventDefault(); vinkAf(+chk.getAttribute('data-drag'), chk); return; }
+        const del = e.target.closest('[data-del]'); if (del) { e.preventDefault(); verwijderId(+del.getAttribute('data-del')); return; }
+        const meer = e.target.closest('[data-meer]'); if (meer) { e.preventDefault(); meerIdeeen(meer); return; }
+        const nk = e.target.closest('[data-nieuwkop]'); if (nk) { e.preventDefault(); docModel.push({ id: ++_idc, kind: 'h2', text: 'Nieuw kopje' }, { id: ++_idc, kind: 'li', text: 'Typ hier je eerste punt' }); herteken(); return; }
+      });
+      db.addEventListener('focusin', e => { if (e.target.closest && e.target.closest('.tx[data-id]')) { clearTimeout(rtBezigTimer); stuurBezig(true); } });
+      db.addEventListener('focusout', e => { const sp = e.target.closest('.tx[data-id]'); if (sp) { syncEdit(sp); clearTimeout(rtBezigTimer); rtBezigTimer = setTimeout(() => stuurBezig(false), 1500); } });
+      db.addEventListener('keydown', e => {
+        const inp = e.target.closest('.voegtoe input');
+        if (inp && e.key === 'Enter') { e.preventDefault(); const t = inp.value.trim(); if (t) voegLiToe(+inp.closest('.voegtoe').getAttribute('data-add'), t); return; }
+        const tx = e.target.closest('.tx[data-id]');
+        if (tx && e.key === 'Enter') { e.preventDefault(); tx.blur(); }
+      });
+      // Slepen: grip indrukken maakt het blok sleepbaar; daarna HTML5 drag.
+      db.addEventListener('mousedown', e => { const g = e.target.closest('[data-grip]'); if (g) { const host = g.closest('[data-drag]'); if (host) host.setAttribute('draggable', 'true'); } });
+      document.addEventListener('mouseup', () => setTimeout(losDrag, 0));
+      db.addEventListener('dragstart', e => { const host = e.target.closest('[data-drag][draggable="true"]'); if (!host) return; sleepId = +host.getAttribute('data-drag'); host.classList.add('sleep'); try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(sleepId)); } catch (_) {} });
+      db.addEventListener('dragover', e => { if (sleepId == null) return; const h = dropDoel(e.target); if (!h) return; e.preventDefault(); wisDrop(); const r = h.getBoundingClientRect(); h.classList.add(e.clientY > r.top + r.height / 2 ? 'drop-na' : 'drop-voor'); });
+      db.addEventListener('drop', e => { if (sleepId == null) { wisDrop(); return; } const h = dropDoel(e.target); wisDrop(); if (h) { e.preventDefault(); const r = h.getBoundingClientRect(); verplaatsBlok(sleepId, +h.getAttribute('data-drag'), e.clientY > r.top + r.height / 2 ? 'na' : 'voor'); } sleepId = null; });
+      db.addEventListener('dragend', () => { wisDrop(); sleepId = null; db.querySelectorAll('.sleep').forEach(x => x.classList.remove('sleep')); losDrag(); });
+    })();
+  </script>
+</body>
+</html>

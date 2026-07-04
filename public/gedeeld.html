@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<!--
+  Gedeeld draaiboek — publieke, read-only weergave via een deel-link (?token=…).
+  Valt buiten de inlog-gate (alleen /dashboard, /tools, /admin zijn beschermd),
+  dus ook mensen zonder Avinka-account kunnen dit bekijken. Wie mag bewerken
+  krijgt een "Bewerk in Avinka"-knop; de rest een uitnodiging om een account te maken.
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gedeeld draaiboek · Avinka</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --ink:#221c3a; --cream:#fbf6ee; --accent:#2f9e6e; --accent2:#25855a; --muted:#6b6880; --card:#fff;
+      --line:rgba(34,28,58,.07); --line-strong:rgba(34,28,58,.13); --brand-soft:#e7f4ed;
+      --shadow-sm:0 1px 2px rgba(34,28,58,.06),0 2px 6px rgba(34,28,58,.05); --shadow-md:0 14px 36px rgba(34,28,58,.13); }
+    body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--cream); color:var(--ink); min-height:100vh; -webkit-font-smoothing:antialiased; }
+    .app { max-width:820px; margin:0 auto; padding:22px 24px 40px; }
+    .top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+    .brand { display:inline-flex; align-items:center; gap:9px; font-family:'Fraunces',serif; font-weight:600; font-size:18px; }
+    .brand .mk { width:30px; height:30px; border-radius:9px; background:linear-gradient(135deg,var(--accent),var(--accent2)); display:flex; align-items:center; justify-content:center; color:#fff; }
+    .badge-ro { font-size:12px; font-weight:700; color:var(--muted); background:var(--card); border:1px solid var(--line-strong); border-radius:999px; padding:6px 13px; }
+
+    .banner { background:var(--card); border:1px solid var(--line); border-radius:18px; box-shadow:var(--shadow-sm); padding:16px 18px; margin-bottom:18px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+    .banner .bicon { font-size:24px; }
+    .banner .btxt { flex:1; min-width:180px; font-size:14px; color:var(--muted); line-height:1.5; }
+    .banner .btxt b { color:var(--ink); }
+    .btn { border:none; border-radius:13px; background:var(--accent); color:#fff; font:inherit; font-weight:700; font-size:14.5px; padding:12px 20px; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:8px; box-shadow:0 6px 16px rgba(47,158,110,.25); }
+    .btn:hover { background:var(--accent2); }
+
+    .card { background:var(--card); border:1px solid var(--line); border-radius:22px; padding:22px 24px 26px; box-shadow:var(--shadow-sm); }
+    .db-titel { font-family:'Fraunces',serif; font-size:25px; font-weight:600; letter-spacing:-.4px; margin:0 0 6px; }
+    .db-meta { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; }
+    .dm-pill { display:inline-flex; align-items:center; gap:6px; background:var(--brand-soft); color:var(--accent2); font-size:12.5px; font-weight:700; border-radius:999px; padding:5px 13px; }
+    .sec-kop { font-family:'Fraunces',serif; font-size:19px; font-weight:600; margin:26px 0 10px; display:flex; align-items:center; gap:9px; }
+    .intro { background:var(--brand-soft); border:1px solid rgba(47,158,110,.24); border-radius:14px; padding:13px 16px; font-size:15px; line-height:1.6; }
+    .intro p { margin:4px 0; }
+    .fase-blok { border:1px solid var(--line-strong); background:#fff; border-radius:14px; margin:10px 0; overflow:hidden; box-shadow:var(--shadow-sm); }
+    .fase-blok-kop { background:var(--cream); border-bottom:1px solid var(--line); padding:9px 15px; font-weight:700; font-size:14px; }
+    .fase-blok-in { padding:8px 15px 10px; }
+    ul.checks { list-style:none; margin:4px 0; padding:0; }
+    ul.checks li { position:relative; padding:5px 0 5px 28px; border-bottom:1px dashed var(--line); font-size:15px; }
+    ul.checks li:last-child { border-bottom:0; }
+    ul.checks li::before { content:''; position:absolute; left:0; top:7px; width:16px; height:16px; border:1.5px solid var(--line-strong); border-radius:5px; background:#fff; }
+    li.af::before { background:var(--accent); border-color:var(--accent); }
+    li.af::after { content:'✓'; position:absolute; left:3px; top:4px; color:#fff; font-size:11px; font-weight:800; }
+    li.af { text-decoration:line-through; color:var(--muted); }
+    .tl { border-left:2px solid var(--brand-soft); margin:8px 0 8px 8px; }
+    .tl-item { position:relative; padding:2px 0 14px 20px; }
+    .tl-item::before { content:''; position:absolute; left:-7px; top:6px; width:12px; height:12px; border-radius:50%; background:var(--accent); border:2px solid #fff; box-shadow:0 0 0 2px var(--brand-soft); }
+    .tl-tijd { display:inline-block; font-size:12px; font-weight:800; color:var(--accent2); background:var(--brand-soft); border-radius:999px; padding:2px 10px; }
+    .tl-naam { font-weight:700; font-size:15px; margin-left:8px; }
+    .tl ul { list-style:none; margin:5px 0 0; padding:0; }
+    .tl li { position:relative; padding:2px 0 2px 16px; font-size:14.5px; color:#3a3550; }
+    .tl li::before { content:''; position:absolute; left:2px; top:10px; width:5px; height:5px; border-radius:50%; background:var(--accent); }
+    ul.aandacht { list-style:none; margin:6px 0; padding:0; }
+    ul.aandacht li { position:relative; padding:8px 12px 8px 38px; margin:7px 0; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; font-size:14.5px; line-height:1.5; }
+    ul.aandacht li::before { content:'!'; position:absolute; left:12px; top:8px; width:18px; height:18px; border-radius:50%; background:#f59e0b; color:#fff; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; }
+    ul.mat { list-style:none; margin:4px 0; padding:0; column-count:2; column-gap:22px; }
+    ul.mat li { position:relative; padding:4px 0 4px 26px; break-inside:avoid; font-size:14.5px; }
+    ul.mat li::before { content:''; position:absolute; left:0; top:6px; width:15px; height:15px; border:1.5px solid var(--line-strong); border-radius:4px; }
+    li.af.matli::before { background:var(--accent); border-color:var(--accent); }
+    @media (max-width:560px){ ul.mat { column-count:1; } }
+    .db p { margin:7px 0; font-size:15px; line-height:1.6; }
+    .db h4 { font-size:14px; font-weight:800; margin:12px 0 4px; color:var(--accent2); }
+    .laad, .fout { text-align:center; color:var(--muted); padding:60px 20px; }
+    footer { text-align:center; color:var(--muted); font-size:12.5px; margin-top:26px; line-height:1.7; }
+    footer a { color:var(--accent2); font-weight:700; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="top">
+      <a class="brand" href="/"><span class="mk">🎉</span> Avinka · Draaiboek</a>
+      <span class="badge-ro">👁 Alleen-lezen</span>
+    </div>
+
+    <div id="banner"></div>
+    <div class="card" id="doc"><div class="laad">Draaiboek laden…</div></div>
+
+    <footer>Gedeeld met Avinka · <a href="/">avinka.nl</a></footer>
+  </div>
+
+  <script>
+    function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function inline(s){ return esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>'); }
+    function secIcon(low){
+      if(/^overzicht/.test(low))return '📌'; if(/^aftellen/.test(low))return '⏳'; if(/^programma/.test(low))return '🕘';
+      if(/^taakverdeling/.test(low))return '🙌'; if(/boodschappen|materialen/.test(low))return '🛒'; if(/^extra/.test(low))return '🎡';
+      if(/^communicatie/.test(low))return '✉️'; if(/^aandacht/.test(low))return '⚠️'; if(/^evaluatie/.test(low))return '🔎'; return '•';
+    }
+    // Splits een li in {done, text} op basis van de "[x] "-markering.
+    function liDone(t){ const m=t.match(/^\[([ xX])\]\s+(.*)$/); return m?{done:m[1].toLowerCase()==='x',text:m[2]}:{done:false,text:t}; }
+
+    function renderDraaiboek(tekst, meta){
+      meta=meta||{};
+      let html='<div class="db-titel">'+(meta.emoji?meta.emoji+' ':'')+esc('Draaiboek '+(meta.naam||''))+'</div>';
+      const pills=[];
+      if(meta.datumMooi)pills.push('📅 '+meta.datumMooi);
+      if(meta.programmaModus!=='dag'&&meta.start&&meta.eind)pills.push('🕘 '+meta.start+'–'+meta.eind);
+      if(meta.groep)pills.push('👥 '+meta.groep);
+      if(meta.aantal)pills.push('🧒 '+meta.aantal+' kinderen');
+      if(pills.length)html+='<div class="db-meta">'+pills.map(p=>'<span class="dm-pill">'+esc(p)+'</span>').join('')+'</div>';
+      html+='<div class="db">';
+      // secties
+      let sec='', buf=[];
+      const flush=()=>{ if(sec)html+=renderSectie(sec,buf,meta); sec=''; buf=[]; };
+      String(tekst||'').split('\n').forEach(raw=>{
+        const t=raw.replace(/\s+$/,''); const h2=t.match(/^##\s+(?!#)(.+)$/);
+        if(h2){ flush(); sec=h2[1].trim(); return; }
+        if(sec)buf.push(t);
+      });
+      flush();
+      html+='</div>';
+      return html;
+    }
+    function renderSectie(titel, regels, meta){
+      const low=titel.toLowerCase(); let body;
+      if(/^overzicht/.test(low))body=renderIntro(regels);
+      else if(/^programma/.test(low))body=(meta.programmaModus==='dag')?renderFasen(regels,false):renderProgramma(regels);
+      else if(/^aftellen/.test(low)||/^taakverdeling/.test(low))body=renderFasen(regels,true);
+      else if(/^evaluatie/.test(low)||/^extra/.test(low))body=renderFasen(regels,false);
+      else if(/^aandacht/.test(low))body=renderLijst(regels,'aandacht',false);
+      else if(/boodschappen|materialen/.test(low))body=renderLijst(regels,'mat',true);
+      else body=renderVrij(regels);
+      return '<div class="sec-kop"><span>'+secIcon(low)+'</span>'+esc(titel)+'</div>'+body;
+    }
+    function liHtml(t, check){ const d=liDone(t); return '<li class="'+(d.done?'af ':'')+(check?'matli':'')+'">'+inline(d.text)+'</li>'; }
+    function renderIntro(regels){ const p=regels.map(r=>r.trim()).filter(Boolean).map(r=>'<p>'+inline(r.replace(/^[-*]\s+/,''))+'</p>').join(''); return '<div class="intro">'+(p||'')+'</div>'; }
+    function renderFasen(regels, check){
+      let out='',open=false,lijst=false;
+      const sl=()=>{if(lijst){out+='</ul>';lijst=false;}}; const sb=()=>{sl(); if(open){out+='</div></div>';open=false;}};
+      for(const raw of regels){ const t=raw.trim(); if(!t){sl();continue;}
+        const h3=t.match(/^###\s+(.+)$/);
+        if(h3){ sb(); out+='<div class="fase-blok"><div class="fase-blok-kop">'+inline(h3[1].trim())+'</div><div class="fase-blok-in">'; open=true; continue; }
+        if(/^[-*]\s+/.test(t)){ if(!lijst){out+='<ul class="checks">';lijst=true;} out+=liHtml(t.replace(/^[-*]\s+/,''),false); continue; }
+        sl(); out+='<p>'+inline(t)+'</p>';
+      }
+      sb(); return out;
+    }
+    function renderProgramma(regels){
+      let out='<div class="tl">',open=false,lijst=false;
+      const sl=()=>{if(lijst){out+='</ul>';lijst=false;}}; const s=()=>{sl(); if(open){out+='</div>';open=false;}};
+      for(const raw of regels){ const t=raw.trim(); if(!t)continue;
+        const h3=t.match(/^###\s+(.+)$/);
+        if(h3){ s(); let kop=h3[1].trim(); const m=kop.match(/^([\d:]+\s*[–-]\s*[\d:]+)\s*[·:-]?\s*(.*)$/); let tijd='',rest=kop; if(m){tijd=m[1].replace(/\s+/g,'');rest=m[2];} rest=rest.replace(/\s*\(\s*\d+\s*min\s*\)\s*$/i,'').trim(); out+='<div class="tl-item">'+(tijd?'<span class="tl-tijd">'+esc(tijd)+'</span>':'')+'<span class="tl-naam">'+inline(rest)+'</span>'; open=true; continue; }
+        if(!open)continue;
+        if(/^[-*]\s+/.test(t)){ if(!lijst){out+='<ul>';lijst=true;} out+='<li>'+inline(t.replace(/^[-*]\s+/,''))+'</li>'; }
+        else { sl(); out+='<p>'+inline(t)+'</p>'; }
+      }
+      s(); out+='</div>'; return out;
+    }
+    function renderLijst(regels, cls, check){
+      let out='',lijst=false; const sl=()=>{if(lijst){out+='</ul>';lijst=false;}};
+      for(const raw of regels){ const t=raw.trim(); if(!t)continue;
+        if(/^[-*]\s+/.test(t)){ if(!lijst){out+='<ul class="'+cls+'">';lijst=true;} out+=liHtml(t.replace(/^[-*]\s+/,''),check); continue; }
+        sl(); out+='<p>'+inline(t)+'</p>';
+      }
+      sl(); return out;
+    }
+    function renderVrij(regels){
+      let out='',lijst=false; const sl=()=>{if(lijst){out+='</ul>';lijst=false;}};
+      for(const raw of regels){ const t=raw.trim(); if(!t){sl();continue;}
+        const h3=t.match(/^###\s+(.+)$/); if(h3){ sl(); out+='<h4>'+inline(h3[1].trim())+'</h4>'; continue; }
+        if(/^[-*]\s+/.test(t)){ if(!lijst){out+='<ul class="checks">';lijst=true;} out+=liHtml(t.replace(/^[-*]\s+/,''),false); continue; }
+        sl(); out+='<p>'+inline(t)+'</p>';
+      }
+      sl(); return out;
+    }
+
+    (async function(){
+      const doc=document.getElementById('doc'), banner=document.getElementById('banner');
+      let token=''; try{ token=new URLSearchParams(location.search).get('token')||''; }catch(e){}
+      if(!token){ doc.innerHTML='<div class="fout">Geen geldige link.</div>'; return; }
+      let res;
+      try{ const r=await fetch('/api/draaiboek/publiek?token='+encodeURIComponent(token)); if(!r.ok)throw 0; res=await r.json(); }
+      catch(e){ doc.innerHTML='<div class="fout">Dit draaiboek bestaat niet (meer) of de link klopt niet.</div>'; return; }
+      const data=res.data||{}; const meta=data.meta||{ naam:res.naam||'' };
+      if(!meta.naam)meta.naam=res.naam||'';
+      doc.innerHTML=renderDraaiboek(data.tekst||'', meta);
+
+      if(res.kanBewerken){
+        banner.innerHTML='<div class="banner"><span class="bicon">✏️</span><div class="btxt">Je mag dit draaiboek <b>bewerken</b>. Openen in je eigen Avinka-omgeving:</div><a class="btn" href="/tools/draaiboek.html?bestand='+encodeURIComponent(res.bestandId)+'">Bewerk in Avinka</a></div>';
+      } else {
+        banner.innerHTML='<div class="banner"><span class="bicon">🤝</span><div class="btxt">Dit draaiboek is met je gedeeld om mee te lezen. Wil je zelf meebouwen aan draaiboeken en samen met je team werken? <b>Maak een Avinka-account.</b></div><a class="btn" href="/">Account maken</a></div>';
+      }
+    })();
+  </script>
+</body>
+</html>
