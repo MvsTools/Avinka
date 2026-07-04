@@ -902,6 +902,28 @@
             }
           } else if (blk.type === 'anagram') {
             blk.woorden = herstel(blk.woorden, function (w) { return (w && w.woord != null) ? w.woord : w; }, function (w) { return { woord: w }; }, inUnie, unie);
+          } else if (blk.type === 'geheimschrift') {
+            // Losse woordenlijst → net als woordzoeker: ongeldige woorden vervangen door bankwoorden.
+            blk.woorden = herstel(blk.woorden, function (w) { return w; }, function (w) { return w.toUpperCase(); }, inUnie, unie);
+          } else if (blk.type === 'koppelen') {
+            // Woord ↔ betekenis. Het linkerwoord moet een geldig bankwoord zijn (op de categorie,
+            // correct gespeld); de betekenis mag het woord zelf niet bevatten. We kunnen de
+            // woord-betekenis-koppeling niet swappen, dus foute paren gaan ERUIT (min. 3 over).
+            var kL = blk.links || [], kR = blk.rechts || [], kP = blk.paren || [];
+            var nL = [], nR = [], nP = [];
+            kP.forEach(function (pr) {
+              if (!pr) return;
+              var lw = kL[pr[0]], rw = kR[pr[1]];
+              if (lw == null || rw == null || !inUnie(lw)) return;
+              if (String(rw).toLowerCase().indexOf(String(lw).toLowerCase()) !== -1) return; // antwoord in omschrijving
+              nL.push(lw); nR.push(rw); nP.push([nL.length - 1, nR.length - 1]);
+            });
+            if (nP.length >= 3) { blk.links = nL; blk.rechts = nR; blk.paren = nP; }
+          } else if (blk.type === 'lettergrepen' || blk.type === 'rijmwoorden') {
+            // Woord + verdeling/rijm (metadata hangt aan het woord) → we swappen niet, maar
+            // gooien woorden die geen geldig bankwoord zijn eruit (grenswoord/typefout). Min. 3 over.
+            var geldigW = (blk.woorden || []).filter(function (it) { return inUnie((it && it.woord != null) ? it.woord : it); });
+            if (geldigW.length >= 3) blk.woorden = geldigW;
           } else if (blk.type === 'invul') {
             // Herverdeel het gat zodat het KENMERK van de regel erin valt (niet een
             // willekeurige middenletter): reconstrueer het hele woord, vind de categorie
