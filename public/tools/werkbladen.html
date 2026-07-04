@@ -469,7 +469,8 @@
       lijnen.push('- VEEL opdrachten (5 of meer): vul BEIDE kantjes goed — geen halve lege tweede pagina — dus stevig gevulde opdrachten.');
       lijnen.push('- 3 à 4 opdrachten: vul ruim, maar het hoeft niet krampachtig helemaal vol.');
       lijnen.push('- Weinig opdrachten (1 of 2): kwaliteit boven volproppen; het hoeft de twee kantjes niet te vullen, korter mag.');
-      lijnen.push('- Richtlijn per type (schaal op de beschikbare ruimte): kolom-opdrachten mogen véél items — invul / meerkeuze / waar-niet-waar / anagram / lettergrepen / rijmwoorden / lidwoord ~6 tot 12, categoriseren ~8 tot 14 woorden, open vragen ~3 tot 6, zoek-de-fout ~4 tot 7 zinnen. Ruimte-vreters (open vragen met schrijfregels, sorteren in vakken, woordzoeker, kruiswoord, sudoku, leestekst, staafdiagram) nemen veel verticale ruimte: gebruik er hooguit 1-2 en houd hun aantal beperkt (woordzoeker/kruiswoord 8-16 woorden).');
+      lijnen.push('- Richtlijn per type (schaal op de beschikbare ruimte): kolom-opdrachten mogen véél items — invul / meerkeuze / waar-niet-waar / anagram / lettergrepen / rijmwoorden / lidwoord ~6 tot 12, categoriseren ~8 tot 14 woorden, open vragen ~3 tot 6. Ruimte-vreters (open vragen met schrijfregels, sorteren in vakken, leestekst, staafdiagram) nemen veel verticale ruimte: houd hun aantal beperkt.');
+      lijnen.push('- HOOGSTENS ÉÉN rooster-puzzel per werkblad: gebruik NIET twee grids (dus niet én een woordzoeker én een kruiswoord, en ook geen twee woordzoekers). Elk rooster kost bijna een halve pagina en een tweede rooster duwt het werkblad gegarandeerd naar een derde kantje. Kies er dus maximaal één (woordzoeker ÓF kruiswoord ÓF sudoku), met 8-16 woorden.');
       lijnen.push('- Het systeem kort automatisch in als het tóch over twee kantjes zou lopen — dus wees eerder te GUL dan te karig; te weinig ingevuld wordt niet vanzelf opgelost, te veel wél.');
       // Puzzelgrootte per generatie laten wisselen, MAAR gekoppeld aan de lengte
       // (= het aantal opdrachten): bij veel opdrachten (kort) mag een puzzel niet
@@ -823,16 +824,34 @@
     }
 
     // ── Pagina-fit: past het op 2 kantjes? Zo niet: LOKAAL inkorten (geen AI-call) ──
-    // Eén A4-kantje is ~1,2× zo hoog als breed (na printmarge); 2 kantjes = 2×. De guard
-    // schrapt nooit een OPDRACHT (alleen items inkorten + optionele reflectie/uitleg weg),
-    // dus dit bepaalt vooral of de reflectie-wees op pagina 3 wordt weggehaald.
-    var KANTJE_FACTOR = 1.2;
-    function pastPagina(page) {
+    // Past het op 2 kantjes? We SIMULEREN de print-paginering i.p.v. de doorlopende hoogte
+    // te meten. Elk blok heeft break-inside:avoid, dus een groot ondeelbaar blok (woordzoeker/
+    // kruiswoord-grid) dat niet meer op de huidige pagina past, springt HEEL naar de volgende —
+    // met witruimte ervóór. Die pagina-sprong zit NIET in scrollHeight, waardoor een "doorlopend
+    // 2 pagina's" werkblad tóch als 3 print (precies de klacht: halve lege pagina 1 → 3 kantjes).
+    // Geometrie: print = A4 (210×297mm) met 9mm marge → bruikbaar 192×279mm. De pagina rendert op
+    // schermbreedte b (px) ≡ 192mm, dus 1 pagina bruikbare HOOGTE ≈ b × 279/192 ≈ b × 1.45.
+    function telPaginas(page) {
       var b = page.offsetWidth || 720;
-      // Reserveer wat ruimte: de PRINT is iets hoger dan de schermmeting, en de footer
-      // telt mee — anders wordt die net naar pagina 3 geduwd. Liever iets korter dan spillen.
-      return page.scrollHeight <= b * KANTJE_FACTOR * 2 - 54;
+      var pageH = b * 1.45 - 6; // klein reservetje voor afronding/footer
+      var kinderen = [];
+      ['.wb-band', '.wb-naamrij'].forEach(function (sel) { var el = page.querySelector(sel); if (el) kinderen.push(el); });
+      var body = page.querySelector('.wb-body');
+      if (body) Array.prototype.forEach.call(body.children, function (el) { kinderen.push(el); });
+      if (!kinderen.length) return Math.ceil(page.scrollHeight / (pageH || 1));
+      var paginas = 1, cursor = 0;
+      kinderen.forEach(function (el) {
+        var cs = window.getComputedStyle(el);
+        var h = el.offsetHeight + (parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0);
+        if (h > pageH) { // blok is zelf groter dan een pagina: breekt sowieso
+          if (cursor > 0) { paginas++; cursor = 0; }
+          paginas += Math.floor(h / pageH); cursor = h % pageH;
+        } else if (cursor + h > pageH) { paginas++; cursor = h; } // past niet meer → springt naar volgende kantje
+        else cursor += h;
+      });
+      return paginas;
     }
+    function pastPagina(page) { return telPaginas(page) <= 2; }
     function wisWbCache(b) { ['_wz', '_kw', '_verg', '_reeks', '_hussel', '_zin', '_geheim'].forEach(function (k) { delete b[k]; }); }
     // Verklein het werkblad met één stap; geeft false als er niets meer in te korten valt.
     function trimEen(wb) {
