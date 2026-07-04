@@ -375,7 +375,7 @@
         '- {"type":"meerkeuze","opdracht":"...","vragen":[{"vraag":"...","opties":["a","b","c"],"goed":0}]} — goed = index van het juiste antwoord. De leerling kruist het goede antwoord aan; formuleer de opdracht zo (bijvoorbeeld "Kruis het goede antwoord aan").',
         '- {"type":"invul","opdracht":"...","items":[{"voor":"tekst voor het gat","antwoord":"het in te vullen woord","na":"tekst na het gat"}]} — gatentekst.',
         '- {"type":"open","opdracht":"...","vragen":[{"vraag":"...","antwoord":"het verwachte antwoord","regels":2}]} — open vragen (regels = aantal schrijfregels). GEBRUIK DIT OOK voor verhaaltjessommen (zet het antwoord erbij). Bij een vraag met een feitelijk juist antwoord geef je dat antwoord (bijv. "Hoeveel poten heeft een spin?" → antwoord "8"); gebruik "Eigen antwoord" alleen als het echt een mening of persoonlijke vraag is.',
-        '- {"type":"koppelen","opdracht":"...","links":["..."],"rechts":["..."],"paren":[[0,0],[1,1]]} — paren = welke links-index bij welke rechts-index hoort. Geef 4 tot 6 paren (het eerste paar wordt automatisch als voorbeeld voorgedaan).',
+        '- {"type":"koppelen","opdracht":"...","links":["..."],"rechts":["..."],"paren":[[0,0],[1,1]]} — paren = welke links-index bij welke rechts-index hoort. Geef 5 of 6 paren (het eerste paar wordt automatisch als voorbeeld voorgedaan, dus met minder dan 5 blijft er te weinig te doen).',
         '- {"type":"categoriseren","opdracht":"...","categorieen":[{"naam":"...","items":["woord","woord"]}]} — sorteren in vakken; het systeem maakt zelf de woordbank.',
         '- {"type":"waarnietwaar","opdracht":"...","stellingen":[{"stelling":"...","goed":true}]} — goed = true (waar) of false (niet waar).',
         '- {"type":"sommen","opdracht":"...","spec":{"bewerking":"+|-|×|÷|mix","min":1,"max":100,"aantal":10,"kolommen":2}} — LET OP: schrijf de sommen NIET zelf; geef alleen de spec, het systeem maakt de sommen én de juiste antwoorden. Kies min/max/bewerking passend bij groep en leerlijn.',
@@ -647,6 +647,7 @@
         dwingSpellingWoordenAf(wb); // foute/dubbelzinnige losse woorden -> bankwoorden (lokaal)
         capOpdrachtItems(wb); // harde max op items per opdracht (10 voor lijst-opdrachten)
         poetsKruiswoord(wb); // grammaticahint uit kruiswoord-omschrijvingen halen
+        syncWoordbankInvul(wb); // woordbank-lijst = precies de antwoordwoorden (geen woorden over)
         window.avinkaWerkblad.normaliseer(wb);
 
         laatsteWb = wb;
@@ -741,6 +742,23 @@
               .replace(/^\s*(verleden tijd|tegenwoordige tijd|gebiedende wijs|voltooid deelwoord|meervoud|enkelvoud|verkleinwoord)\s+van\s+[a-zà-ÿ]+\s*[:;,-]\s*(?=\S)/i, '');
             if (o && o !== w.omschrijving) w.omschrijving = o.charAt(0).toUpperCase() + o.slice(1);
           });
+        });
+      } catch (e) { /* fail-safe */ }
+    }
+
+    // Woordbank-invul ("Lees de zin en schrijf het goede woord. Kies uit: …"): de AI zet er
+    // soms MEER woorden in de bank dan er gaten zijn (verwarrend: woorden blijven over).
+    // Herschrijf de lijst na "kies … uit:" naar EXACT de antwoordwoorden (geschud), zodat de
+    // bank precies bij de gaten past — elk woord één keer, niets over.
+    function syncWoordbankInvul(wb) {
+      try {
+        (wb.blokken || []).forEach(function (b) {
+          if (!b || b.type !== 'invul' || !b.opdracht) return;
+          if (!/\bkies\b[^:]{0,30}:\s*\S/i.test(b.opdracht)) return; // geen woordbank in de opdracht
+          var antw = (b.items || []).map(function (it) { return it && it.antwoord; }).filter(function (a) { return a && String(a).length >= 3; });
+          if (antw.length < 2) return;
+          for (var i = antw.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = antw[i]; antw[i] = antw[j]; antw[j] = t; }
+          b.opdracht = b.opdracht.replace(/(\bkies\b[^:]{0,30}:\s*)([^.!?\n]*)/i, '$1' + antw.join(', '));
         });
       } catch (e) { /* fail-safe */ }
     }
@@ -922,7 +940,13 @@
               var nn = (String(it.na || '').match(/^([a-zà-ÿ]+)/i) || [])[1] || '';
               return (vv + (it.antwoord || '') + nn).toLowerCase();
             };
-            if (blk.items && blk.items.length >= 2 && blk.items.length < INVUL_MIN) {
+            // Alleen bijvullen bij een "woord-afmaken/letters"-invul (gat midden in een woord).
+            // Een HEEL-woord-gat (kies uit de woordbank, of een gat in een zin) padden we niet
+            // met letter-gaten — dat zou de opzet breken.
+            var partieelInvul = (blk.items || []).some(function (it) {
+              return /[a-zà-ÿ]$/i.test(String(it.voor || '')) || /^[a-zà-ÿ]/i.test(String(it.na || ''));
+            });
+            if (partieelInvul && blk.items && blk.items.length >= 2 && blk.items.length < INVUL_MIN) {
               var reFeat = banken.filter(function (b) {
                 return b.feat && (blk.items || []).some(function (it) { return b.feat.test(volFull(it)) && b.woorden.some(function (x) { return x.toLowerCase() === volFull(it); }); });
               });

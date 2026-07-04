@@ -831,13 +831,29 @@
     return { map: map, woorden: lijst };
   }
 
-  // Anagram: husselt de letters van een woord.
+  // Anagram: husselt de letters van een woord. Bij LANGERE woorden houden we een
+  // aaneengesloten stuk op de goede plek staan (als houvast, in de render onderstreept),
+  // zodat er hooguit ~5 letters echt door elkaar staan. Korte woorden (<=5): volledig.
   function genHussel(woorden) {
     return arr(woorden).map(function (w) {
       var W = String(w && w.woord != null ? w.woord : w).trim().toUpperCase(); if (W.length < 2) return null;
-      var letters = W.split(""), door, p = 0;
-      do { door = shuffle(letters); p++; } while (door.join("") === W && p < 12);
-      return { door: door.join(" "), antwoord: W };
+      var n = W.length, letters = W.split("");
+      var ankerLen = n <= 5 ? 0 : Math.max(3, n - 5); // vast blok groeit mee → altijd ~5 los
+      var vast = new Array(n).fill(false);
+      if (ankerLen > 0 && ankerLen < n) {
+        var start = Math.floor(Math.random() * (n - ankerLen + 1));
+        for (var a = 0; a < ankerLen; a++) vast[start + a] = true;
+      }
+      var vrijeIdx = [], vrijeLet = [];
+      for (var i = 0; i < n; i++) if (!vast[i]) { vrijeIdx.push(i); vrijeLet.push(letters[i]); }
+      var out = letters.slice(), p = 0;
+      do {
+        var geschud = shuffle(vrijeLet.slice());
+        for (var j = 0; j < vrijeIdx.length; j++) out[vrijeIdx[j]] = geschud[j];
+        p++;
+      } while (out.join("") === W && p < 12 && vrijeIdx.length > 1);
+      var door = out.map(function (c, idx) { return { c: c, vast: vast[idx] }; });
+      return { door: door, antwoord: W, hint: ankerLen > 0 };
     }).filter(Boolean);
   }
 
@@ -1832,11 +1848,17 @@
   function rHussel(b, nr, ant) {
     var H = b._hussel || genHussel(b.woorden);
     var h = opdrachtKop(nr, b.opdracht || "Maak van de letters het goede woord.", b.em);
+    if (H.some(function (it) { return it.hint; })) {
+      h += '<div class="wb-hussel-uitleg">De <u>onderstreepte</u> letters staan al op de goede plek. Zet de andere letters op de juiste volgorde.</div>';
+    }
     h += '<div class="wb-invul-lijst">';
     H.forEach(function (it, i) {
+      // Letters met een spatie ertussen; vaste letters onderstreept als houvast.
+      var reeks = (Array.isArray(it.door) ? it.door : String(it.door).split(/\s+/).map(function (c) { return { c: c, vast: false }; }))
+        .map(function (x) { return x.vast ? '<u class="wb-hussel-vast">' + esc(x.c) + "</u>" : esc(x.c); }).join(" ");
       // Schrijfregel ALTIJD op een eigen regel eronder (lange letterreeksen zouden een
       // inline lijn anders laten wrappen: bij het ene woord ernaast, bij het andere eronder).
-      h += '<div class="wb-anagram-item"><div class="wb-anagram-w"><span class="wb-rij-nr">' + (i + 1) + '.</span> <b class="wb-hussel">' + esc(it.door) + "</b></div>" +
+      h += '<div class="wb-anagram-item"><div class="wb-anagram-w"><span class="wb-rij-nr">' + (i + 1) + '.</span> <b class="wb-hussel">' + reeks + "</b></div>" +
         (ant ? '<div class="wb-anagram-ant"><span class="wb-ant">' + esc(it.antwoord) + "</span></div>" : '<div class="wb-schrijfregel" style="margin-top:24px"></div>') + "</div>";
     });
     h += "</div>";
@@ -2463,6 +2485,8 @@
       ".wb-geheim-in{width:22px;height:24px;border-bottom:2px solid var(--wb-ink);text-align:center;font-weight:800;color:var(--wb-accent)}",
       // Hussel / zin
       ".wb-hussel{letter-spacing:2px;font-size:16px}",
+      ".wb-hussel-vast{color:var(--wb-accent);text-decoration:underline;text-underline-offset:3px}",
+      ".wb-hussel-uitleg{font-size:13px;color:rgba(34,28,58,.7);margin:2px 0 12px}",
       ".wb-anagram-item{break-inside:avoid;-webkit-column-break-inside:avoid;margin:0 0 13px}",
       ".wb-anagram-ant{margin-top:5px}",
       ".wb-zin-rij{margin:0 0 12px}",
