@@ -14,7 +14,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="author" content="Michael van Spanje">
-<title>Plattegrond — Klassenplattegrond</title>
+<title>Plattegrond · Klassenplattegrond</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;1,300&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
@@ -152,6 +152,12 @@
   .bord-in { position:absolute; left:0; right:0; bottom:0; height:30px; background:linear-gradient(#2c2c44,var(--ink)); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; letter-spacing:2px; text-transform:uppercase; font-weight:500; opacity:.92; border-radius:0 0 5px 5px; pointer-events:none; }
 
   .zoombar { position:absolute; right:22px; bottom:52px; z-index:8; display:flex; align-items:center; gap:2px; background:var(--card); border:1.5px solid var(--warm); border-radius:11px; padding:3px; box-shadow:0 6px 18px rgba(0,0,0,.12); }
+  .tafel-teller { position:absolute; top:14px; right:22px; z-index:9; white-space:nowrap; font-family:'Plus Jakarta Sans'; font-size:12.5px; font-weight:600; padding:9px 14px; border-radius:11px; border:1.5px solid var(--warm); background:var(--card); color:var(--ink); box-shadow:0 4px 14px rgba(0,0,0,.12); transition:background .15s, border-color .15s, transform .12s; }
+  .tafel-teller.tekort { border-color:rgba(200,85,61,.45); color:var(--accent); }
+  .tafel-teller.rust { border-color:rgba(74,124,111,.45); color:var(--accent2); }
+  .tafel-teller.klaar { cursor:pointer; padding:8px 14px; background:var(--accent2); border-color:var(--accent2); color:#fff; box-shadow:0 6px 18px rgba(74,124,111,.35); }
+  .tafel-teller.klaar:hover { background:#3f6f63; transform:translateY(-1px); }
+  .tafel-teller.klaar:active { transform:translateY(0); }
   .zoombar button { border:none; background:transparent; cursor:pointer; font-family:'Plus Jakarta Sans'; color:var(--ink); border-radius:8px; padding:5px 9px; font-size:14px; }
   .zoombar button:hover { background:var(--cream); }
   .zoombar .zlabel { font-size:12px; color:var(--muted); min-width:42px; text-align:center; font-variant-numeric:tabular-nums; }
@@ -170,8 +176,10 @@
   .obj.sel .frame { outline:2px solid var(--accent2); outline-offset:2px; border-radius:8px; }
   .obj.snapping .frame { outline:2.5px solid var(--accent); outline-offset:2px; box-shadow:0 0 0 4px rgba(47,158,110,.18); }
   .obj.snap-target .frame { outline:2.5px dashed var(--accent); outline-offset:3px; }
-  #trashZone { position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:9; padding:9px 18px; border-radius:999px; border:1.5px dashed var(--muted); background:var(--card); color:var(--muted); font-size:13px; font-weight:500; display:flex; align-items:center; gap:8px; pointer-events:none; box-shadow:0 4px 16px rgba(0,0,0,.14); transition:transform .12s, background .12s, border-color .12s, color .12s; }
-  #trashZone.armed { border-color:var(--accent); border-style:solid; color:var(--accent); background:rgba(47,158,110,.14); transform:translateX(-50%) scale(1.06); }
+  #trashZone.trash-icon { position:absolute; top:10px; left:10px; z-index:40; width:44px; height:44px; border-radius:13px; border:1.5px solid var(--warm); background:var(--card); color:var(--muted); display:flex; align-items:center; justify-content:center; pointer-events:none; box-shadow:0 4px 16px rgba(0,0,0,.14); transition:transform .12s, background .12s, border-color .12s, color .12s; }
+  #trashZone.trash-icon.armed { border-color:var(--accent); color:var(--accent); background:rgba(200,85,61,.13); transform:scale(1.12); }
+  #trashZone .trash-lid { transition:transform .16s ease; transform-origin:12px 6.5px; }
+  #trashZone.armed .trash-lid { transform:translateY(-2.5px) rotate(-20deg); }
   .tt-btn { border:none; background:transparent; width:26px; height:24px; border-radius:6px; cursor:pointer; font-size:13px; color:var(--ink); display:flex; align-items:center; justify-content:center; }
   .tt-btn:hover { background:var(--cream); }
   .tt-btn.danger:hover { background:rgba(47,158,110,.12); color:var(--accent); }
@@ -202,7 +210,7 @@
   @media print {
     @page { size:A4 landscape; margin:10mm; }
     body { display:block; overflow:visible; background:#fff; height:auto; }
-    body::before, header, .side, .tools, .dx, .dplus, .rsz, #selOverlay, .zoombar, #trashZone { display:none !important; }
+    body::before, header, .side, .tools, .dx, .dplus, .rsz, #selOverlay, .zoombar, #trashZone, .tafel-teller { display:none !important; }
     .werk, .stage, .canvas-scroll { display:block !important; overflow:visible !important; padding:0 !important; height:auto !important; min-height:0 !important; }
     #fieldSizer { margin:0 !important; }
     #print-titel { display:block !important; font-family:'Fraunces',serif; font-size:22px; margin-bottom:12px; }
@@ -286,6 +294,56 @@
   .socio-status:empty { display:none; }
   .socio-status.werk { color:var(--accent2); }
   .socio-status.fout { color:var(--accent); }
+  .bron-toggle { display:flex; gap:5px; padding-left:2px; }
+  .bron-tab { padding:9px 16px; border:1.5px solid var(--warm); border-bottom-color:transparent; background:#fff; color:var(--muted); border-radius:11px 11px 0 0; font-family:'Plus Jakarta Sans'; font-size:12.5px; font-weight:600; cursor:pointer; margin-bottom:-1.5px; transition:color .15s; }
+  .bron-tab:hover { color:var(--ink); }
+  .bron-tab.actief { color:var(--ink); background:var(--cream); position:relative; z-index:1; }
+  .bron-paneel { border:1.5px solid var(--warm); border-radius:0 13px 13px 13px; padding:16px; background:var(--cream); }
+  .bron-hint { font-size:12px; line-height:1.5; color:var(--muted); margin-bottom:13px; }
+  .rel-add { display:grid; grid-template-columns:repeat(auto-fit,minmax(104px,1fr)); gap:9px; }
+  .rel-hero { width:100%; display:flex; align-items:center; gap:11px; padding:14px 16px; border:1.5px solid var(--accent); background:rgba(200,85,61,.06); color:var(--accent); border-radius:13px; cursor:pointer; font-family:'Plus Jakarta Sans'; font-size:14.5px; font-weight:600; transition:all .15s; }
+  .rel-hero:hover { background:rgba(200,85,61,.12); }
+  .rel-hero .ico { font-size:17px; }
+  .rel-sec-rij { display:flex; flex-wrap:wrap; gap:9px; }
+  .rel-sec { min-width:0; display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 11px; border:1.5px solid var(--warm); background:#fff; color:var(--ink); border-radius:11px; cursor:pointer; font-family:'Plus Jakarta Sans'; font-size:12.5px; font-weight:500; transition:all .15s; }
+  .rel-sec:hover { border-color:var(--accent2); color:var(--accent2); }
+  .rel-kiezer { border:1.5px solid var(--warm); border-radius:13px; padding:13px 15px 15px; background:#fff; margin-top:12px; }
+  .rel-kiezer-kop { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:11px; }
+  .rel-vraag { font-size:13px; font-weight:600; color:var(--ink); }
+  .rel-x { border:1.5px solid var(--warm); background:#fff; width:28px; height:28px; border-radius:50%; color:var(--muted); font-size:17px; line-height:1; cursor:pointer; flex-shrink:0; }
+  .rel-x:hover { color:var(--ink); }
+  .rel-namen { display:flex; flex-wrap:wrap; gap:8px; }
+  .rel-naam { position:relative; font-family:'Plus Jakarta Sans'; font-size:12.5px; border:1.5px solid var(--warm); background:#fff; color:var(--ink); padding:6px 12px; border-radius:999px; cursor:pointer; transition:all .12s; }
+  .rel-naam:hover { border-color:var(--accent2); }
+  .rel-naam.arm { background:var(--accent2); border-color:var(--accent2); color:#fff; font-weight:600; }
+  .rel-naam.uit { opacity:.32; pointer-events:none; }
+  .rel-naam.gebruikt { border-color:var(--accent2); background:rgba(74,124,111,.10); }
+  .rel-voet { display:flex; gap:9px; margin-top:13px; }
+  .rel-sluit { flex:0 0 auto; padding:10px 16px; border:1.5px solid var(--warm); background:#fff; color:var(--muted); border-radius:10px; font-family:'Plus Jakarta Sans'; font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; }
+  .rel-sluit:hover { color:var(--ink); border-color:var(--accent2); }
+  .rel-toevoeg { display:block; width:100%; margin-top:13px; padding:10px; border:none; background:var(--accent2); color:#fff; border-radius:10px; font-family:'Plus Jakarta Sans'; font-size:13px; font-weight:600; cursor:pointer; transition:opacity .15s; }
+  .rel-toevoeg:disabled { opacity:.35; cursor:default; }
+  .rel-stap-kop { display:flex; align-items:baseline; gap:9px; margin-bottom:11px; }
+  .rel-stap-nr { flex-shrink:0; font-size:10.5px; font-weight:700; color:var(--accent2); text-transform:uppercase; letter-spacing:.5px; }
+  .rel-nav { display:flex; justify-content:space-between; gap:9px; margin-top:10px; }
+  .rel-nav-btn { padding:9px 15px; border:1.5px solid var(--warm); background:#fff; color:var(--ink); border-radius:10px; font-family:'Plus Jakarta Sans'; font-size:12.5px; font-weight:600; cursor:pointer; transition:all .15s; }
+  .rel-nav-btn:hover { border-color:var(--accent2); }
+  .rel-nav-btn.primair { background:var(--accent2); color:#fff; border-color:var(--accent2); }
+  .rel-klaar { display:flex; align-items:center; flex-wrap:wrap; gap:10px; font-size:12.5px; line-height:1.5; color:var(--ink); background:#fff; border:1.5px solid var(--warm); border-radius:11px; padding:11px 13px; }
+  .rel-aanpassen { margin-left:auto; border:1.5px solid var(--warm); background:var(--cream); color:var(--ink); border-radius:8px; padding:6px 12px; font-family:'Plus Jakarta Sans'; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; }
+  .rel-aanpassen:hover { border-color:var(--accent2); }
+  .rel-lijst { margin-top:14px; display:flex; flex-direction:column; gap:8px; }
+  .rel-leeg { font-size:12px; color:var(--muted); text-align:center; padding:14px 8px 4px; line-height:1.6; }
+  .rel-regel { display:flex; align-items:center; gap:10px; padding:9px 12px; background:#fff; border:1.5px solid var(--warm); border-radius:11px; }
+  .rel-dot { flex-shrink:0; width:9px; height:9px; border-radius:50%; }
+  .rel-dot.d-uitelkaar { background:#c8553d; }
+  .rel-dot.d-vooraan { background:#4a7c6f; }
+  .rel-dot.d-rust { background:#7ca89b; }
+  .rel-dot.d-samen { background:#c6ac82; }
+  .rel-tx { flex:1; font-size:13px; line-height:1.4; }
+  .rel-rel { color:var(--muted); font-weight:500; font-size:11.5px; }
+  .rel-del { border:none; background:transparent; color:var(--muted); font-size:17px; line-height:1; cursor:pointer; padding:2px 4px; border-radius:6px; }
+  .rel-del:hover { color:var(--accent); }
   .socio-groep { margin-top:10px; }
   .socio-groep-kop { font-size:12px; font-weight:600; color:var(--ink); margin:8px 0 5px; display:flex; align-items:center; gap:6px; }
   .socio-rij { display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:9px; background:var(--cream); border:1.5px solid var(--warm); font-size:12.5px; margin-bottom:5px; }
@@ -314,6 +372,8 @@
   .opt1-cfg { font-size:12.5px; color:var(--ink); display:flex; align-items:center; gap:8px; margin-bottom:12px; padding-left:2px; }
   .slim-check { display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink); margin:2px 0 12px; cursor:pointer; line-height:1.4; }
   .slim-check input { accent-color:var(--accent); flex-shrink:0; }
+  .slim-check input:disabled { opacity:.5; }
+  .mix-hint { font-size:11.5px; line-height:1.5; color:var(--accent); margin:-6px 0 12px; }
   .voorstel-uitleg { margin-top:14px; }
   .voorstel-uitleg:empty { display:none; }
   .vu-kop { font-family:'Fraunces',serif; font-size:14px; font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:7px; }
@@ -363,13 +423,13 @@
   <a href="/dashboard" class="menu-link" title="Terug naar dashboard">← Terug naar dashboard</a>
   <a href="/dashboard" aria-label="Avinka" style="display:inline-flex;flex-shrink:0;"><img src="/Avinka_wordmerk.png" alt="Avinka" style="height:18px;width:auto;display:block;opacity:.82;"></a>
   <div class="logo-mark"><div class="logo-icon">▦</div><div class="logo-text">Plattegrond</div></div>
-  <input class="titel-input" id="titel" value="Groep ___ — plattegrond" aria-label="Titel">
+  <input class="titel-input" id="titel" value="Groep ___ plattegrond" aria-label="Titel">
   <div class="top-spacer"></div>
   <div class="hdr-actions">
     <button class="icon-btn" id="undoBtn" title="Ongedaan maken (Ctrl+Z)" disabled>↶</button>
     <button class="icon-btn" id="redoBtn" title="Opnieuw (Ctrl+Shift+Z)" disabled>↷</button>
     <span class="hdr-sep"></span>
-    <button class="icon-btn accent" id="aiBtn" title="✨ Slim plaatsen — wensen + sociogram + automatisch verdelen">✨</button>
+    <button class="icon-btn accent" id="aiBtn" title="✨ Slim plaatsen: wensen, sociogram en automatisch verdelen">✨</button>
     <button class="icon-btn" id="openBtn" title="Openen (.json)">📂</button>
     <button class="icon-btn" id="saveBtn" title="Opslaan als bestand (.json)">💾</button>
     <button class="icon-btn accent" id="printBtn" title="Print / PDF">🖨</button>
@@ -407,13 +467,19 @@
   </aside>
 
   <div class="stage">
-    <div id="trashZone" title="Sleep hierheen om te verwijderen" style="display:none;">🗑 Sleep hierheen om te verwijderen</div>
+    <div class="tafel-teller" id="tafelTeller" style="display:none"></div>
     <h2 id="print-titel"></h2>
     <div class="canvas-scroll" id="canvasScroll">
       <div id="fieldSizer">
         <div id="canvas">
           <div class="canvas-leeg" id="canvasLeeg">Nog leeg.<br><em>Sleep hiernaast een tafel het raster op.</em></div>
           <div class="bord-in" id="bordIn">Digibord · voorkant van de klas</div>
+          <div id="trashZone" class="trash-icon" title="Sleep hierheen om te verwijderen" style="display:none;">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <g class="trash-lid"><path d="M3.5 6.5h17"/><path d="M9.5 6.5V4.9a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1.6"/></g>
+              <path d="M5.6 6.5l.9 13.1a1.6 1.6 0 0 0 1.6 1.5h7.8a1.6 1.6 0 0 0 1.6-1.5l.9-13.1"/>
+            </svg>
+          </div>
         </div>
       </div>
     </div>
@@ -452,42 +518,46 @@
       <span class="modal-titel">✨ Slim plaatsen</span>
       <button class="modal-close" id="slimClose" title="Sluiten">×</button>
     </div>
-    <div class="modal-intro privacy">🔒 Privacyvriendelijk<span class="intro-tip">Alles gebeurt op je eigen apparaat — het sociogram wordt hier uitgelezen, er gaat niets de deur uit. De tool verdeelt de klas op basis van het sociogram; jouw eigen wensen wegen daarbij het zwaarst.</span></div>
     <div class="modal-body">
 
-      <section class="slim-sec" id="secSocio">
-        <div class="sec-head"><span class="sec-num">1</span><div><div class="sec-titel">Sociogram inlezen</div><div class="sec-sub">Lees de Kanjer-PDF "Matrix vriendschap" in. De smileys worden lokaal uitgelezen.</div></div></div>
-        <div class="socio-actie">
-          <input type="file" id="socioFile" accept="application/pdf" class="hidden-file">
-          <button class="slim-btn ghost" id="socioBtn">📄 Sociogram-PDF inlezen</button>
-          <button class="slim-btn" id="socioWis" style="display:none">Wissen</button>
+      <section class="slim-sec" id="secBron">
+        <div class="sec-head"><span class="sec-num">1</span><div><div class="sec-titel">Waarop baseer ik de plaatsing?</div><div class="sec-sub">Vertel me de paar dingen die tellen, dan verdeel ik de rest er netjes omheen. Alles blijft op je eigen apparaat.</div></div></div>
+        <div class="bron-toggle">
+          <button type="button" class="bron-tab actief" data-bron="mijn">Mijn inschatting</button>
+          <button type="button" class="bron-tab" data-bron="kanjer">Sociogram van de klas</button>
         </div>
-        <div class="socio-status" id="socioStatus"></div>
-        <div class="gesl-grid" id="geslGrid"></div>
-        <div class="ai-uitleg" id="aiUitleg"></div>
-        <button class="slim-btn analyse-knop" id="analyseBtn" style="display:none">📊 Bekijk de klasanalyse</button>
-      </section>
+        <div class="bron-paneel">
 
-      <section class="slim-sec" id="secWens">
-        <div class="sec-head"><span class="sec-num">2</span><div><div class="sec-titel">Jouw wensen <span class="badge badge-hard">jij beslist</span></div><div class="sec-sub">"Niet naast elkaar" is een harde regel — dat gebeurt sowieso niet, wat het sociogram ook zegt.</div></div></div>
-        <div class="wens-add">
-          <select id="wensType" class="slim-select">
-            <option value="apart">mag NIET naast …</option>
-            <option value="apartGroep">niet in hetzelfde groepje …</option>
-            <option value="samen">graag naast …</option>
-            <option value="vooraan">liefst vooraan (bij het bord)</option>
-            <option value="rust">liefst een rustige plek</option>
-          </select>
-          <select id="wensA" class="slim-select"></select>
-          <span id="wensBwrap"><span class="wens-en">en</span><select id="wensB" class="slim-select"></select></span>
-          <button class="slim-btn" id="wensAdd">+ toevoegen</button>
+          <div id="bronMijn">
+            <div class="rel-wizard" id="relWizard">
+              <div class="rel-stap-kop"><span class="rel-stap-nr" id="relStapNr"></span><span class="rel-vraag" id="relVraag"></span></div>
+              <div class="rel-namen" id="relNamen"></div>
+              <button type="button" class="rel-toevoeg" id="relToevoeg">+ Toevoegen</button>
+              <div class="rel-nav"><button type="button" class="rel-nav-btn" id="relVorige">← Vorige</button><button type="button" class="rel-nav-btn primair" id="relVolgende">Volgende →</button></div>
+            </div>
+            <div class="rel-klaar" id="relKlaarBalk" style="display:none">Klaar met invullen. Ga verder naar <b>Plaatsen</b> hieronder. <button type="button" class="rel-aanpassen" id="relAanpassen">Aanpassen</button></div>
+            <div class="rel-lijst" id="relLijst"></div>
+          </div>
+
+          <div id="bronKanjer" style="display:none">
+            <div class="bron-hint">Lees de Kanjer-matrix "Matrix vriendschap" in. De tool leest 'm lokaal uit en verdeelt de klas op basis van wat de kinderen zelf aangaven.</div>
+            <div class="socio-actie">
+              <input type="file" id="socioFile" accept="application/pdf" class="hidden-file">
+              <button class="slim-btn ghost" id="socioBtn">📄 Sociogram-PDF inlezen</button>
+              <button class="slim-btn" id="socioWis" style="display:none">Wissen</button>
+            </div>
+            <div class="socio-status" id="socioStatus"></div>
+            <div class="ai-uitleg" id="aiUitleg"></div>
+            <button class="slim-btn analyse-knop" id="analyseBtn" style="display:none">📊 Bekijk de klasanalyse</button>
+          </div>
+
         </div>
-        <div class="regel-lijst" id="regelLijst"></div>
       </section>
 
       <section class="slim-sec" id="secPlaats">
-        <div class="sec-head"><span class="sec-num">3</span><div><div class="sec-titel">Plaatsen</div><div class="sec-sub">Zet eerst je tafels klaar op het raster; daarna verdeelt deze knop de klas.</div></div></div>
+        <div class="sec-head"><span class="sec-num">2</span><div><div class="sec-titel">Plaatsen</div><div class="sec-sub">Zet eerst je tafels klaar op het raster; daarna verdeelt deze knop de klas.</div></div></div>
         <label class="slim-check"><input type="checkbox" id="mixChk" checked> Streef naar gemengde groepjes (jongens &amp; meisjes door elkaar)</label>
+        <div class="mix-hint" id="mixHint" style="display:none"></div>
         <button class="slim-btn primary" id="genBtn">✨ Genereer voorstel</button>
         <div class="voorstel-uitleg" id="voorstelUitleg"></div>
       </section>
@@ -502,7 +572,7 @@
       <span class="modal-titel">📊 Klasanalyse</span>
       <button class="modal-close" id="analyseClose" title="Sluiten">×</button>
     </div>
-    <div class="modal-intro">Een beeld van de klas op basis van het sociogram, berekend op dit apparaat. <b>Een hulpmiddel, geen oordeel</b> — jouw blik op de klas blijft leidend.</div>
+    <div class="modal-intro">Een beeld van de klas op basis van het sociogram, berekend op dit apparaat. <b>Een hulpmiddel, geen oordeel</b>. Jouw blik op de klas blijft leidend.</div>
     <div class="modal-body" id="analyseBody"></div>
   </div>
 </div>
@@ -693,7 +763,7 @@ function plaatsWillekeurig(){
   const los=shuffle(unplaced.filter(s=>!s.groep||!state.groups.some(g=>g.id===s.groep)));
   los.forEach(stu=>{ const av=avail(); if(!av.length)return; assign(stu,av[Math.floor(Math.random()*av.length)]); });
   armed=null; render();
-  if(unplaced.length>seats.length) avinkaAlert('Niet genoeg stoelen voor iedereen — '+(unplaced.length-seats.length)+' leerling(en) staan nog in de lijst.'); }
+  if(unplaced.length>seats.length) avinkaAlert('Niet genoeg stoelen voor iedereen: '+(unplaced.length-seats.length)+' leerling(en) staan nog in de lijst.'); }
 function husselOpnieuw(){ if(!legeStoelen().length && !state.students.some(s=>isPlaced(s.id))){ avinkaAlert('Er zijn nog geen stoelen. Sleep eerst tafels op het raster.'); return; }
   state.objects.forEach(o=>{ if(o.desks)o.desks.forEach(d=>d.studentId=null); }); plaatsWillekeurig(); }
 function groepKleur(id){ const g=state.groups.find(x=>x.id===id); return g?g.kleur:'#c9b79c'; }
@@ -711,7 +781,7 @@ function renderGroepen(){ const wrap=document.getElementById('groepLijst'); if(!
     row.addEventListener('click',()=>{ actieveGroep=(actieveGroep===g.id)?null:g.id; render(); });
     wrap.appendChild(row); });
   const u=document.getElementById('groepUitleg'); if(u){ const ag=state.groups.find(g=>g.id===actieveGroep);
-    if(ag){ u.innerHTML=''; const t=document.createElement('div'); t.textContent='Indelen aan voor "'+ag.naam+'" — tik leerlingen aan om toe te voegen/weghalen (slepen blijft verplaatsen).'; u.appendChild(t);
+    if(ag){ u.innerHTML=''; const t=document.createElement('div'); t.textContent='Indelen aan voor "'+ag.naam+'": tik leerlingen aan om toe te voegen of weg te halen (slepen blijft verplaatsen).'; u.appendChild(t);
       const b=document.createElement('button'); b.className='groep-klaar'; b.textContent='✓ Klaar met indelen'; b.addEventListener('click',()=>{ actieveGroep=null; openGroepFlyout(false); render(); }); u.appendChild(b); }
     else { u.textContent = state.groups.length? 'Klik een groep om leerlingen in te delen.' : 'Nog geen groepjes. Maak er een met "+ groep" en klik daarna leerlingen aan.'; } }
   document.querySelectorAll('.zij').forEach(z=>z.classList.toggle('indeel',actieveGroep!=null));
@@ -803,6 +873,7 @@ function render(){
   else onge.forEach(s=>lijst.appendChild(maakChip(s)));
   document.getElementById('teller').textContent=(state.students.length-onge.length)+' / '+state.students.length+' geplaatst';
   document.getElementById('tellerTab').textContent=(state.students.length-onge.length)+'/'+state.students.length;
+  updateTafelTeller();
   { const placed=state.students.length-onge.length, showR=onge.length>0, showS=placed>0;
     const rb=document.getElementById('randomBtn'), sb=document.getElementById('shuffleBtn'), vw=document.getElementById('verdeelWrap');
     if(rb)rb.style.display=showR?'':'none'; if(sb)sb.style.display=showS?'':'none'; if(vw)vw.style.display=(showR||showS)?'flex':'none'; }
@@ -1051,30 +1122,39 @@ function legendCarry(e, key, isMeubel){
   const src=e.currentTarget; let w,h;
   if(isMeubel){ const m=MEUBELS[key]; if(!m) return; w=m.w; h=m.h; }
   else { const t=TAFELS[key]; if(!t) return; let cs=0,rs=0; t.desks.forEach(d=>{cs=Math.max(cs,d[0]+1);rs=Math.max(rs,d[1]+1);}); w=cs*C; h=rs*C; }
-  const sx=e.clientX, sy=e.clientY; let moved=false, ghost=null, lastX=sx, lastY=sy;
+  const sx=e.clientX, sy=e.clientY; let moved=false, ghost=null, lastX=sx, lastY=sy, o=null, elem=null;
   try{src.setPointerCapture(e.pointerId);}catch(_){}
   const overCanvas=(cx,cy)=>{ const r=canvasScroll.getBoundingClientRect(); return cx>=r.left&&cx<=r.right&&cy>=r.top&&cy<=r.bottom; };
   const toXY=(cx,cy)=>{ const r=canvasEl.getBoundingClientRect(); return {lx:(cx-r.left)/Z, ly:(cy-r.top)/Z}; };
   const move=ev=>{ lastX=ev.clientX; lastY=ev.clientY;
     if(!moved && Math.hypot(ev.clientX-sx,ev.clientY-sy)<6) return;
+    const onTrash=overTrash(ev.clientX,ev.clientY);
     if(!moved){ moved=true; dragging=true; closeDD(); showTrash();
-      ghost=document.createElement('div'); ghost.className='legenda-ghost';
-      ghost.innerHTML = isMeubel ? meubelSVG(key,w,h) : tafelIcon(key,26);
-      document.body.appendChild(ghost); }
-    ghost.style.left=ev.clientX+'px'; ghost.style.top=ev.clientY+'px';
-    const onTrash=overTrash(ev.clientX,ev.clientY); armTrash(onTrash);
-    ghost.classList.toggle('over', overCanvas(ev.clientX,ev.clientY) && !onTrash);
-    ghost.style.opacity = onTrash ? '.4' : '1'; };
+      if(isMeubel){ ghost=document.createElement('div'); ghost.className='legenda-ghost'; ghost.innerHTML=meubelSVG(key,w,h); document.body.appendChild(ghost); }
+      else { const pt=toXY(ev.clientX,ev.clientY); o=voegTafel(key, clamp(pt.lx-w/2,0,FIELD_W-w), clamp(pt.ly-h/2,0,FIELD_H-h)); elem=el(o); } }
+    armTrash(onTrash);
+    if(isMeubel){ ghost.style.left=ev.clientX+'px'; ghost.style.top=ev.clientY+'px';
+      ghost.classList.toggle('over', overCanvas(ev.clientX,ev.clientY) && !onTrash); ghost.style.opacity = onTrash ? '.4' : '1'; return; }
+    /* tafel: versleep het echte tafeltje, met dezelfde koppel-preview als op het raster */
+    if(!elem){ elem=el(o); if(!elem) return; }
+    const pt=toXY(ev.clientX,ev.clientY);
+    let nx=clamp(pt.lx-w/2,0,FIELD_W-w), ny=clamp(pt.ly-h/2,0,FIELD_H-h), useRot=o.rot||0;
+    clearSnapVis(); o._snap=null;
+    const snap=(!onTrash)?snapFor(o,nx,ny):null;
+    if(snap){ nx=snap.x; ny=snap.y; useRot=snap.rot; o._snap=snap; elem.classList.add('snapping'); const te=el(snap.target); if(te)te.classList.add('snap-target'); }
+    o._x=nx; o._y=ny; elem.style.left=nx+'px'; elem.style.top=ny+'px'; elem.style.opacity=onTrash?'.4':'1'; applyLiveTransform(elem,o,useRot); };
   const up=()=>{ try{src.releasePointerCapture(e.pointerId);}catch(_){} src.removeEventListener('pointermove',move); src.removeEventListener('pointerup',up);
-    if(ghost) ghost.remove(); hideTrash(); dragging=false;
+    const wasTrash = moved && overTrash(lastX,lastY);        /* bepalen vóór hideTrash — anders geeft overTrash false */
+    const offCanvas = !overCanvas(lastX,lastY);
+    if(ghost) ghost.remove(); clearSnapVis(); hideTrash(); dragging=false;
     if(!moved){ closeDD(); if(isMeubel) voegMeubel(key); else voegTafel(key); return; }   /* klik zonder slepen = midden */
-    if(overTrash(lastX,lastY) || !overCanvas(lastX,lastY)) return;                         /* buiten het raster losgelaten = niets plaatsen */
-    const pt=toXY(lastX,lastY);
-    if(isMeubel){ voegMeubel(key, pt.lx, pt.ly); return; }
-    const nx=clamp(pt.lx-w/2,0,FIELD_W-w), ny=clamp(pt.ly-h/2,0,FIELD_H-h);
-    const o=voegTafel(key,nx,ny);
-    const snap=snapFor(o,nx,ny);
-    if(snap){ o.x=snap.x; o.y=snap.y; o.rot=snap.rot; mergeGroups(o,snap.target); render(); } };
+    if(isMeubel){ if(wasTrash || offCanvas) return; const pt=toXY(lastX,lastY); voegMeubel(key, pt.lx, pt.ly); return; }
+    if(!o) return;
+    if(wasTrash || offCanvas){ delete o._x; delete o._y; delete o._snap; verwijderObj(o.id); return; }   /* prullenbak of buiten raster = weggooien */
+    if(o._x!=null){ o.x=o._x; o.y=o._y; delete o._x; delete o._y; }
+    const snap=o._snap; delete o._snap;
+    if(snap){ o.x=snap.x; o.y=snap.y; o.rot=snap.rot; mergeGroups(o,snap.target); }
+    render(); };
   src.addEventListener('pointermove',move); src.addEventListener('pointerup',up);
 }
 document.querySelectorAll('[data-tpl]').forEach(b=>{ b.innerHTML=`<span class="ger-ico">${tafelIcon(b.dataset.tpl,14)}</span><span>${TAFELS[b.dataset.tpl].label}</span>`; b.style.touchAction='none'; b.addEventListener('pointerdown',e=>legendCarry(e,b.dataset.tpl,false)); });
@@ -1116,46 +1196,21 @@ document.getElementById('cloudBtn').addEventListener('click',bewaarInBestanden);
 /* ===================== SLIM PLAATSEN ===================== */
 /* Privacy: alleen gemaskeerde codes (L1, L2 …) zouden naar de AI gaan, nooit namen.
    Leerkracht-regels zijn HARD (apart = nooit naast elkaar). AI-regels zijn zachte voorkeuren. */
-const REGEL_ICO={apart:'⛔',apartGroep:'🚫',samen:'🤝',vooraan:'⬇️',rust:'🌿'};
-const REGEL_TXT={apart:'niet naast elkaar',apartGroep:'niet in hetzelfde groepje',samen:'graag naast elkaar',vooraan:'vooraan (bij het bord)',rust:'rustige plek (aan de rand)'};
 function naamVan(id){ const s=state.students.find(x=>x.id===id); return s?s.name:'?'; }
 function maskeerKlas(){ const m=new Map(); state.students.forEach((s,i)=>m.set(s.id,'L'+(i+1))); return m; }
 
 /* ---- modal openen/sluiten ---- */
-function openSlim(){ if(!state.students.length){ /* leeg mag: je kunt namen uit het sociogram overnemen */ }
-  vulWensSelects(); renderRegels(); renderGeslGrid(); document.getElementById('voorstelUitleg').innerHTML='';
+function openSlim(){ relInit(); renderRelLijst(); updateMixChk(); document.getElementById('voorstelUitleg').innerHTML='';
   if(!socioData){ document.getElementById('aiUitleg').innerHTML=''; const ss=document.getElementById('socioStatus'); ss.className='socio-status'; ss.textContent=''; document.getElementById('socioWis').style.display='none'; }
   document.getElementById('analyseBtn').style.display = socioData ? '' : 'none';
   document.getElementById('slimModal').classList.add('open'); }
 function sluitSlim(){ document.getElementById('slimModal').classList.remove('open'); }
+function updateMixChk(){ const mc=document.getElementById('mixChk'), h=document.getElementById('mixHint'); if(!mc)return;
+  const bekend=state.students.filter(s=>s.geslacht==='j'||s.geslacht==='m').length>=2;
+  if(!bekend){ mc.checked=false; mc.disabled=true; if(h){ h.style.display=''; h.innerHTML='Geslacht nog niet bekend. Vul dit in bij <b>Mijn klas</b>, dan kan de tool gemengde groepjes maken.'; } }
+  else { if(mc.disabled) mc.checked=true; mc.disabled=false; if(h) h.style.display='none'; } }
 
-function vulWensSelects(){ const a=document.getElementById('wensA'), b=document.getElementById('wensB');
-  const opts=state.students.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('');
-  a.innerHTML=opts; b.innerHTML=opts; if(b.options.length>1)b.selectedIndex=1; toggleWensB(); }
-function toggleWensB(){ const t=document.getElementById('wensType').value; const dual=(t==='apart'||t==='apartGroep'||t==='samen');
-  document.getElementById('wensBwrap').style.display=dual?'':'none'; }
-function voegWens(){ const t=document.getElementById('wensType').value, a=document.getElementById('wensA').value;
-  const dual=(t==='apart'||t==='apartGroep'||t==='samen'); const b=dual?document.getElementById('wensB').value:null;
-  if(dual){ if(a===b){ avinkaAlert('Kies twee verschillende leerlingen.'); return; }
-    if(state.regels.some(r=>r.bron==='leerkracht'&&r.type===t&&((r.a===a&&r.b===b)||(r.a===b&&r.b===a)))) return; }
-  else if(state.regels.some(r=>r.bron==='leerkracht'&&r.type===t&&r.a===a)) return;
-  state.regels.push({id:nid(),type:t,a,b,bron:'leerkracht',hard:(t==='apart'||t==='apartGroep')}); renderRegels(); commitHist(); }
-function verwijderRegel(id){ state.regels=state.regels.filter(r=>r.id!==id); renderRegels(); commitHist(); }
-function renderRegels(){ const wrap=document.getElementById('regelLijst'); if(!wrap)return; wrap.innerHTML='';
-  const eigen=state.regels.filter(r=>r.bron==='leerkracht');   /* sociogram-voorkeuren regelt de tool stil, niet tonen */
-  if(!eigen.length){ wrap.innerHTML='<div class="regel-leeg">Nog geen eigen wensen. Het sociogram regelt de rest vanzelf.</div>'; return; }
-  const order={apart:0,apartGroep:1,samen:2,vooraan:3,rust:4};
-  eigen.slice().sort((x,y)=>order[x.type]-order[y.type]).forEach(r=>{
-    const row=document.createElement('div'); row.className='regel-chip'+(r.hard?' hard':'');
-    const ico=document.createElement('span'); ico.className='regel-ico'; ico.textContent=REGEL_ICO[r.type]; row.appendChild(ico);
-    const txt=document.createElement('span'); txt.className='regel-txt';
-    const dual=(r.type==='apart'||r.type==='apartGroep'||r.type==='samen');
-    txt.innerHTML = dual ? `<b>${esc(naamVan(r.a))}</b> ${REGEL_TXT[r.type]} <b>${esc(naamVan(r.b))}</b>` : `<b>${esc(naamVan(r.a))}</b> · ${REGEL_TXT[r.type]}`;
-    if(r.hard) txt.innerHTML+=' <span style="color:var(--accent);font-weight:600;font-size:11px">(hard)</span>';
-    row.appendChild(txt);
-    const del=document.createElement('span'); del.className='regel-del'; del.textContent='×'; del.title='Verwijderen'; del.addEventListener('click',()=>verwijderRegel(r.id)); row.appendChild(del);
-    wrap.appendChild(row); });
-}
+/* (wensen-invoer is vervangen door het relatiepaneel — zie 'Relatie-invoer' verderop) */
 /* ---- Sociogram inlezen (volledig lokaal, niets verstuurd) ---- */
 /* pdf.js zit gecomprimeerd in het bestand; we pakken het pas uit bij het eerste gebruik */
 let _pdfReady=null;
@@ -1274,7 +1329,7 @@ function socioWissen(){ socioData=null; state.regels=state.regels.filter(r=>r.br
   document.getElementById('socioStatus').className='socio-status'; document.getElementById('socioStatus').textContent='';
   document.getElementById('aiUitleg').innerHTML=''; document.getElementById('socioWis').style.display='none';
   document.getElementById('analyseBtn').style.display='none';
-  document.getElementById('socioFile').value=''; renderRegels(); commitHist(); }
+  document.getElementById('socioFile').value=''; renderRelLijst(); commitHist(); }
 async function verwerkSocioBestand(file){ if(!file)return; const st=document.getElementById('socioStatus');
   st.className='socio-status werk'; st.textContent='Bezig met inlezen van het sociogram…';
   try{ await ensurePdfjs(); }catch(e){ st.className='socio-status fout'; st.textContent='Het inlees-onderdeel kon niet laden. Gebruik een recente browser (Chrome, Firefox of Safari).'; return; }
@@ -1303,18 +1358,121 @@ async function verwerkSocioBestand(file){ if(!file)return; const st=document.get
     document.getElementById('socioWis').style.display='';
     document.getElementById('analyseBtn').style.display='';
     toonSocioUitleg(nieuw,kwetsbaar);
-    vulWensSelects(); renderRegels(); renderGeslGrid(); commitHist();
+    renderRelLijst(); commitHist();
   }catch(e){ console.error(e); st.className='socio-status fout';
     st.textContent='Dit bestand kon niet als Kanjer-matrix worden gelezen. Klopt het dat dit de PDF "Matrix vriendschap" is? Anders kun je je wensen hierboven met de hand toevoegen.'; }
 }
 function toonSocioUitleg(nieuw,kwetsbaar){ const u=document.getElementById('aiUitleg');
   const sam=nieuw.filter(r=>r.type==='samen'), ap=nieuw.filter(r=>r.type==='apart');
-  let h='<div class="vu-info">Uit het sociogram gehaald — de tool verwerkt dit vanzelf:<br>';
+  let h='<div class="vu-info">Uit het sociogram gehaald, de tool verwerkt dit vanzelf:<br>';
   h+='🤝 <b>'+sam.length+'</b> vriendschappen om bij elkaar te zetten<br>';
   h+='⛔ <b>'+ap.length+'</b> spanningen om uit elkaar te houden';
-  if(kwetsbaar.length) h+='<br>🌱 <b>'+kwetsbaar.length+'</b> leerling(en) die weinig gekozen werden — die krijgen een vertrouwd maatje naast zich';
+  if(kwetsbaar.length) h+='<br>🌱 <b>'+kwetsbaar.length+'</b> leerling(en) die weinig gekozen werden; die krijgen een vertrouwd maatje naast zich';
   h+='<br><br>Dit zijn voorkeuren; <b>jouw eigen wensen (stap 2) gaan altijd voor</b>.</div>';
   u.innerHTML=h; }
+
+/* ---- Relatie-invoer (jouw inschatting, 100% lokaal, niets verstuurd) ---- */
+let relStap=0, relMode=null, relSel=[];
+const REL_STAPPEN=[
+  {mode:'uitelkaar', vraag:'Wie moeten er <b>niet</b> bij elkaar zitten? Tik ze aan (twee of meer per keer) en druk op "Toevoegen".'},
+  {mode:'vooraan',   vraag:'Wie zet je graag <b>vooraan</b>, bij het bord?'},
+  {mode:'rust',      vraag:'Wie krijgt een <b>rustige plek</b>, aan de rand?'},
+  {mode:'maatje',    vraag:'Wie kan een <b>maatje</b> gebruiken? Tik het kind en daarna een goed maatje.'},
+];
+
+function switchBron(b){ document.querySelectorAll('.bron-tab').forEach(k=>k.classList.toggle('actief',k.dataset.bron===b));
+  document.getElementById('bronMijn').style.display = b==='mijn'?'':'none';
+  document.getElementById('bronKanjer').style.display = b==='kanjer'?'':'none'; if(b==='mijn')relInit(); }
+
+function relEigen(){ return state.regels.filter(r=>r.bron==='leerkracht'); }
+function uitelkaarPaar(a,b){ return state.regels.some(r=>r.type==='uitelkaar' && r.namen && r.namen.includes(a) && r.namen.includes(b)); }
+function maatjePaar(a,b){ return state.regels.some(r=>r.type==='samen' && r.bron==='leerkracht' && ((r.a===a&&r.b===b)||(r.a===b&&r.b===a))); }
+function heeftPlek(id,t){ return state.regels.some(r=>r.type===t && r.a===id); }
+function relGebruikt(id){ return state.regels.some(r=>r.bron==='leerkracht' && (r.a===id || r.b===id || (r.namen && r.namen.includes(id)))); }
+function relGebruiktInStap(id){   // is dit kind al gebruikt binnen de HUIDIGE stap? (geen carryover)
+  if(relMode==='uitelkaar') return state.regels.some(r=>r.type==='uitelkaar' && r.namen && r.namen.includes(id));
+  if(relMode==='vooraan') return heeftPlek(id,'vooraan');
+  if(relMode==='rust') return heeftPlek(id,'rust');
+  if(relMode==='maatje') return state.regels.some(r=>r.type==='samen' && r.bron==='leerkracht' && (r.a===id||r.b===id));
+  return false; }
+function relKindRegels(id){ const uit=[]; state.regels.forEach(r=>{ if(r.bron!=='leerkracht')return;
+    if(r.type==='uitelkaar' && r.namen && r.namen.includes(id)) uit.push('niet bij '+r.namen.filter(x=>x!==id).map(naamVan).join(', '));
+    else if(r.type==='vooraan' && r.a===id) uit.push('vooraan');
+    else if(r.type==='rust' && r.a===id) uit.push('rustige plek');
+    else if(r.type==='samen' && (r.a===id||r.b===id)) uit.push('maatje van '+naamVan(r.a===id?r.b:r.a)); });
+  return uit; }
+
+function relInit(){ if(relEigen().length){ relToonWizard(false); } else { relStap=0; relToonStap(); } }
+function relToonWizard(aan){ const w=document.getElementById('relWizard'), kl=document.getElementById('relKlaarBalk');
+  if(w)w.style.display=aan?'':'none'; if(kl)kl.style.display=aan?'none':''; }
+function relToonStap(){ relToonWizard(true); relSel=[]; relMode=REL_STAPPEN[relStap].mode;
+  const nr=document.getElementById('relStapNr'); if(nr)nr.textContent=`Vraag ${relStap+1} van ${REL_STAPPEN.length}`;
+  const vor=document.getElementById('relVorige'); if(vor)vor.style.visibility=relStap>0?'visible':'hidden';
+  const vol=document.getElementById('relVolgende'); if(vol)vol.textContent=relStap<REL_STAPPEN.length-1?'Volgende →':'Klaar';
+  relVraag(); relChips(); relToevoegKnop(); }
+function relVolgende(){ relVoegToe(); if(relStap<REL_STAPPEN.length-1){ relStap++; relToonStap(); } else { relSel=[]; relToonWizard(false); } }
+function relVorige(){ if(relStap>0){ relStap--; relToonStap(); } }
+function relAanpassen(){ relStap=0; relToonStap(); }
+
+function relVraag(){ const el=document.getElementById('relVraag'); if(!el)return;
+  el.innerHTML = (relMode==='maatje' && relSel.length) ? `…en wie is een goed maatje voor <b>${esc(naamVan(relSel[0]))}</b>?` : REL_STAPPEN[relStap].vraag; }
+
+function relChipUit(id){ if(relSel.includes(id)) return false;
+  if(relMode==='maatje'){ if(!relSel.length) return false; const a=relSel[0]; return uitelkaarPaar(a,id)||maatjePaar(a,id); }
+  if(relMode==='uitelkaar') return relSel.some(s=>maatjePaar(s,id));
+  if(relMode==='vooraan') return heeftPlek(id,'vooraan')||heeftPlek(id,'rust');
+  if(relMode==='rust') return heeftPlek(id,'rust')||heeftPlek(id,'vooraan');
+  return false; }
+
+function relChips(){ const wrap=document.getElementById('relNamen'); if(!wrap)return;
+  wrap.innerHTML = state.students.map(st=>{ const arm=relSel.includes(st.id), uit=relChipUit(st.id), used=!uit&&relGebruiktInStap(st.id);
+    return `<button type="button" class="rel-naam${arm?' arm':''}${uit?' uit':''}${used?' gebruikt':''}" data-id="${st.id}">${esc(st.name)}</button>`; }).join('');
+  wrap.querySelectorAll('[data-id]').forEach(b=>{ if(!b.classList.contains('uit')) b.addEventListener('click',()=>relKies(b.dataset.id)); }); }
+
+function relToevoegKnop(){ const k=document.getElementById('relToevoeg'); if(!k)return;
+  if(relMode==='maatje'){ k.style.display='none'; return; }
+  k.style.display=''; const min=relMode==='uitelkaar'?2:1; k.disabled=relSel.length<min;
+  k.textContent = relSel.length ? `+ Toevoegen (${relSel.length})` : '+ Toevoegen'; }
+
+function relKies(id){
+  if(relMode==='maatje'){ if(relSel.includes(id)){ relSel=relSel.filter(x=>x!==id); }
+    else { relSel.push(id); if(relSel.length===2){ state.regels.push({id:nid(),type:'samen',a:relSel[0],b:relSel[1],bron:'leerkracht',hard:false}); relSel=[]; renderRelLijst(); commitHist(); } }
+    relVraag(); relChips(); return; }
+  if(relSel.includes(id)) relSel=relSel.filter(x=>x!==id); else relSel.push(id);
+  relVraag(); relChips(); relToevoegKnop(); }
+
+function relVoegToe(){   // zet huidige selectie in de lijst en blijf in het scherm
+  if(relMode==='uitelkaar'){ if(relSel.length<2) return; const sel=relSel.slice();
+    /* al gedekt? (deze namen zitten al samen in één bestaande groep) → niets doen */
+    const alGedekt=state.regels.some(r=>r.type==='uitelkaar' && r.namen && sel.every(n=>r.namen.includes(n)));
+    if(!alGedekt){
+      /* alleen samenvoegen als de nieuwe selectie een bestaande groep VOLLEDIG bevat (superset) → die wordt erin opgenomen */
+      const absorb=state.regels.filter(r=>r.type==='uitelkaar' && r.namen && r.namen.every(n=>sel.includes(n)));
+      state.regels=state.regels.filter(r=>!absorb.includes(r));
+      state.regels.push({id:nid(),type:'uitelkaar',namen:sel,bron:'leerkracht'});
+    } }
+  else if(relMode==='vooraan'||relMode==='rust'){ if(!relSel.length) return; relSel.forEach(id=>state.regels.push({id:nid(),type:relMode,a:id,bron:'leerkracht'})); }
+  relSel=[]; relVraag(); relChips(); relToevoegKnop(); renderRelLijst(); commitHist(); }
+
+function verwijderRegel(id){ state.regels=state.regels.filter(r=>r.id!==id); renderRelLijst(); commitHist(); }
+
+function relNaamReeks(ids){ const ns=ids.map(id=>esc(naamVan(id)));
+  if(ns.length<=1) return ns.map(n=>`<b>${n}</b>`).join('');
+  if(ns.length===2) return `<b>${ns[0]}</b> <span class="rel-rel">en</span> <b>${ns[1]}</b>`;
+  return ns.map((n,i)=>`<b>${n}</b>${i<ns.length-2?', ':i===ns.length-2?' <span class="rel-rel">en</span> ':''}`).join(''); }
+
+function relRegelTekst(r){
+  if(r.type==='uitelkaar') return `${relNaamReeks(r.namen||[])} <span class="rel-rel">niet bij elkaar</span>`;
+  if(r.type==='vooraan') return `<b>${esc(naamVan(r.a))}</b> <span class="rel-rel">vooraan</span>`;
+  if(r.type==='rust') return `<b>${esc(naamVan(r.a))}</b> <span class="rel-rel">rustige plek</span>`;
+  return `<b>${esc(naamVan(r.a))}</b> <span class="rel-rel">naast</span> <b>${esc(naamVan(r.b))}</b> <span class="rel-rel">(maatje)</span>`; }
+
+function renderRelLijst(){ const l=document.getElementById('relLijst'); if(!l)return;
+  const order={uitelkaar:0,vooraan:1,rust:2,samen:3};
+  const eigen=relEigen().filter(r=>order[r.type]!=null).sort((x,y)=>order[x.type]-order[y.type]);
+  if(!eigen.length){ l.innerHTML=''; return; }
+  l.innerHTML = eigen.map(r=>`<div class="rel-regel"><span class="rel-dot d-${r.type}"></span><span class="rel-tx">${relRegelTekst(r)}</span><button class="rel-del" data-id="${r.id}" title="Verwijderen">×</button></div>`).join('');
+  l.querySelectorAll('[data-id]').forEach(b=>b.addEventListener('click',()=>verwijderRegel(b.dataset.id))); }
 
 /* ---- Klasanalyse (lokaal berekend uit het sociogram) ---- */
 function klasAnalyse(){ if(!socioData||!socioData.ids) return null;
@@ -1343,15 +1501,15 @@ function renderAnalyse(){ const body=document.getElementById('analyseBody'); con
   let h='';
   h+=anCat('💚','Geliefd in de klas','Krijgen van opvallend veel klasgenoten een positieve smiley.',
     A.geliefd.map(j=>anChip(A.ids[j], A.rpos[j]+'× positief', 'warm')).join(''));
-  h+=anCat('🧡','Krijgt veel tegenwind','Wordt door relatief veel kinderen gemeden — fijn om een oogje in het zeil te houden.',
+  h+=anCat('🧡','Krijgt veel tegenwind','Wordt door relatief veel kinderen gemeden; fijn om een oogje in het zeil te houden.',
     A.druk.map(j=>anChip(A.ids[j], A.rneg[j]+'× negatief', 'let')).join(''));
-  h+=anCat('🔍','Weinig in beeld','Weinig positieve keuzes én geen wederzijdse vriend — makkelijk over het hoofd gezien.',
+  h+=anCat('🔍','Weinig in beeld','Weinig positieve keuzes én geen wederzijdse vriend; makkelijk over het hoofd gezien.',
     A.wein.map(j=>anChip(A.ids[j], A.rpos[j]+' vriend(en)', 'let')).join(''));
   h+=anCat('🤝','Zoekt aansluiting','Geeft anderen positieve smileys, maar krijgt nog weinig terug.',
     A.aansl.map(j=>anChip(A.ids[j], A.onesd[j]+'× eenzijdig')).join(''));
   h+=anCat('🌟','Sterkste vriendschappen','Kinderen die elkaar allebei een dikke positieve smiley geven.',
     A.pairs.map(([s,i,j])=>`<span class="an-paar">${esc(naamVan(A.ids[i]))} ↔ ${esc(naamVan(A.ids[j]))}</span>`).join(''));
-  h+=anCat('💬','Deelt veel complimenten uit','Geven zelf opvallend vaak een positieve smiley — fijne sfeermakers.',
+  h+=anCat('💬','Deelt veel complimenten uit','Geven zelf opvallend vaak een positieve smiley; fijne sfeermakers.',
     A.gever.map(j=>anChip(A.ids[j], A.gpos[j]+'× positief gegeven')).join(''));
   if(!h) h='<div class="an-leeg">Geen opvallende patronen gevonden in deze klas.</div>';
   body.innerHTML=h; }
@@ -1360,6 +1518,15 @@ function sluitAnalyse(){ document.getElementById('analyseModal').classList.remov
 
 /* ---- de plaatsings-engine (heuristiek; alles lokaal) ---- */
 function alleStoelen(){ const arr=[]; state.objects.forEach(o=>{ if(o.desks) o.desks.forEach((d,i)=>arr.push({o,i,c:cellCenter(o,d)})); }); return arr; }
+function updateTafelTeller(){ const el=document.getElementById('tafelTeller'); if(!el)return;
+  const klas=state.students.length; if(!klas){ el.style.display='none'; return; }
+  let stoelen=0; state.objects.forEach(o=>{ if(o.desks) stoelen+=o.desks.length; });
+  const tekort=klas-stoelen, onge=ongeplaatst().length; el.style.display='';
+  if(tekort>0){ el.className='tafel-teller tekort'; el.onclick=null;
+    el.innerHTML=`Nog <b>${tekort}</b> tafel${tekort>1?'s':''} nodig`; }
+  else if(onge>0){ el.className='tafel-teller klaar'; el.onclick=openSlim;
+    el.innerHTML='✨ Slim plaatsen'; }
+  else { el.className='tafel-teller rust'; el.onclick=null; el.innerHTML='Iedereen zit ✓'; } }
 function bouwSeatGraph(seats){ const TH=1.28*C; seats.forEach(s=>s.adj=[]);
   for(let i=0;i<seats.length;i++) for(let j=i+1;j<seats.length;j++){ const dx=seats[i].c.x-seats[j].c.x, dy=seats[i].c.y-seats[j].c.y;
     if(Math.hypot(dx,dy)<TH){ seats[i].adj.push(j); seats[j].adj.push(i); } } }
@@ -1375,7 +1542,8 @@ function bouwContext(seats){
   const edge=si=>Math.hypot(seats[si].c.x-cx,seats[si].c.y-cy)/mxD;
   /* zachte regels + harde apart-paren (naast) + harde apartGroep-paren (zelfde tafel) */
   const soft=[], hard=[], hardGroep=[];
-  state.regels.forEach(r=>{ if(r.hard && r.type==='apart'){ hard.push([r.a,r.b]); return; }
+  state.regels.forEach(r=>{ if(r.type==='uitelkaar'){ const m=r.namen||[]; for(let i=0;i<m.length;i++)for(let j=i+1;j<m.length;j++){ hard.push([m[i],m[j]]); hardGroep.push([m[i],m[j]]); } return; }
+    if(r.hard && r.type==='apart'){ hard.push([r.a,r.b]); return; }
     if(r.hard && r.type==='apartGroep'){ hardGroep.push([r.a,r.b]); return; }
     if(r.type==='apart') soft.push({type:'apart',a:r.a,b:r.b,w:r.bron==='leerkracht'?W.aiApart+4:W.aiApart});
     else if(r.type==='samen') soft.push({type:'samen',a:r.a,b:r.b,w:r.bron==='leerkracht'?W.lkSamen:W.aiSamen});
@@ -1475,7 +1643,7 @@ function toonUitleg(res){ const uit=document.getElementById('voorstelUitleg'); c
   let html=`<div class="vu-kop">✨ Voorstel klaar</div>`;
   const seated=res.assign.filter(Boolean).length;
   if(items.length){ html+=`<div class="vu-lijst">`+items.map(it=>`<div class="vu-item ${it.ok?'vu-ok':'vu-no'}"><span class="vi">${it.ok?'✓':'•'}</span><span>${it.txt}</span></div>`).join('')+`</div>`; }
-  else { html+=`<div class="vu-info">Geen specifieke wensen opgegeven — iedereen is netjes verdeeld. Voeg wensen of een sociogram toe voor een gerichter voorstel.</div>`; }
+  else { html+=`<div class="vu-info">Geen specifieke wensen opgegeven. Iedereen is netjes verdeeld; voeg wensen of een sociogram toe voor een gerichter voorstel.</div>`; }
   const notes=[];
   notes.push(`${seated} van ${state.students.length} leerlingen geplaatst`);
   if(streefMix){ let gem=0,zelfde=0; const gv=id=>{const s=state.students.find(x=>x.id===id);return s&&s.geslacht;};
@@ -1483,8 +1651,8 @@ function toonUitleg(res){ const uit=document.getElementById('voorstelUitleg'); c
       res.ctx.seats[i].adj.forEach(j=>{ if(j>i){ const b=res.assign[j]; if(!b)return; const gb=gv(b); if(!gb)return; if(ga===gb)zelfde++; else gem++; } }); }
     if(gem+zelfde>0) notes.push(`Gemengde groepjes nagestreefd: ${gem} van ${gem+zelfde} buurparen is jongen↔meisje`);
     else notes.push(`Tip: geef leerlingen een ♂/♀ in de lijst, dan kan de tool gemengde groepjes maken`); }
-  if(res.over&&res.over.length) notes.push(`<b style="color:var(--accent)">${res.over.length} leerling(en) pasten niet</b> (${res.over.map(id=>esc(naamVan(id))).join(', ')}) — voeg tafels toe of verklein de groepjes`);
-  if(res.hardViol>0) notes.push(`<b style="color:var(--accent)">${res.hardViol} harde "niet naast elkaar"-regel(s) konden niet</b> — er is te weinig ruimte; zet er een tafel bij`);
+  if(res.over&&res.over.length) notes.push(`<b style="color:var(--accent)">${res.over.length} leerling(en) pasten niet</b> (${res.over.map(id=>esc(naamVan(id))).join(', ')}). Voeg tafels toe of verklein de groepjes`);
+  if(res.hardViol>0) notes.push(`<b style="color:var(--accent)">${res.hardViol} harde "niet naast elkaar"-regel(s) konden niet</b>. Er is te weinig ruimte; zet er een tafel bij`);
   html+=`<div class="vu-info">${notes.join('<br>')}<br><br>Niet tevreden? Pas je wensen aan en genereer opnieuw, of sleep daarna gerust zelf nog leerlingen om. <button class="slim-btn" id="slimKlaar" style="margin-top:8px">Bekijk de plattegrond</button></div>`;
   uit.innerHTML=html;
   document.getElementById('slimKlaar').addEventListener('click',sluitSlim);
@@ -1495,11 +1663,14 @@ document.getElementById('slimModal').addEventListener('click',e=>{ if(e.target.i
 document.getElementById('analyseBtn').addEventListener('click',openAnalyse);
 document.getElementById('analyseClose').addEventListener('click',sluitAnalyse);
 document.getElementById('analyseModal').addEventListener('click',e=>{ if(e.target.id==='analyseModal')sluitAnalyse(); });
-document.getElementById('wensType').addEventListener('change',toggleWensB);
-document.getElementById('wensAdd').addEventListener('click',voegWens);
 document.getElementById('socioBtn').addEventListener('click',startSocioInlezen);
 document.getElementById('socioWis').addEventListener('click',socioWissen);
 document.getElementById('socioFile').addEventListener('change',e=>{ verwerkSocioBestand(e.target.files[0]); });
+document.querySelectorAll('.bron-tab').forEach(k=>k.addEventListener('click',()=>switchBron(k.dataset.bron)));
+document.getElementById('relToevoeg').addEventListener('click',relVoegToe);
+document.getElementById('relVolgende').addEventListener('click',relVolgende);
+document.getElementById('relVorige').addEventListener('click',relVorige);
+document.getElementById('relAanpassen').addEventListener('click',relAanpassen);
 document.getElementById('genBtn').addEventListener('click',genereerSlim);
 function setCollapsed(elx,on){ elx.classList.toggle('collapsed',on); setTimeout(()=>{ minZ=fitZoom(); if(Z<minZ)Z=minZ; applyZoom(); },210); }
 document.getElementById('railLeftCollapse').addEventListener('click',()=>setCollapsed(document.getElementById('railLeft'),true));
@@ -1512,15 +1683,15 @@ document.getElementById('zoomFit').addEventListener('click',zoomFit);
 window.addEventListener('resize',()=>{ const fz=fitZoom(); minZ=fz; if(Z<fz)Z=fz; applyZoom(); });
 
 const SNELTOETSEN='Sneltoetsen\n\n'+
- 'Backspace / Delete — geselecteerde groep verwijderen\n'+
- 'R — 90° draaien\n'+
- 'D — kopiëren\n'+
- 'U — loskoppelen in losse tafels\n'+
- 'Pijltjes — verschuiven (Shift = grotere stappen)\n'+
- '+ / −  — in-/uitzoomen   ·   0 — passend\n'+
- 'Esc — selectie opheffen\n'+
- 'Ctrl/Cmd + Z — ongedaan maken   ·   Ctrl/Cmd + Shift + Z — opnieuw\n'+
- 'Ctrl/Cmd + S — opslaan';
+ 'Backspace / Delete : geselecteerde groep verwijderen\n'+
+ 'R : 90° draaien\n'+
+ 'D : kopiëren\n'+
+ 'U : loskoppelen in losse tafels\n'+
+ 'Pijltjes : verschuiven (Shift = grotere stappen)\n'+
+ '+ / −  : in-/uitzoomen   ·   0 : passend\n'+
+ 'Esc : selectie opheffen\n'+
+ 'Ctrl/Cmd + Z : ongedaan maken   ·   Ctrl/Cmd + Shift + Z : opnieuw\n'+
+ 'Ctrl/Cmd + S : opslaan';
 document.getElementById('hulpBtn').addEventListener('click',()=>avinkaAlert(SNELTOETSEN));
 document.getElementById('undoBtn').addEventListener('click',undo);
 document.getElementById('redoBtn').addEventListener('click',redo);
@@ -1559,6 +1730,21 @@ function pasKlasGeslachtToe(leerlingenData){
   state.students.forEach(function(s){ var g=map[(s.name||'').toLowerCase()]; if((g==='j'||g==='m') && s.geslacht!==g){ s.geslacht=g; veranderd=true; } });
   if(veranderd){ try{ render(); renderGeslGrid(); }catch(e){} }
 }
+// Titel automatisch: "Plattegrond groep <actieve groep> <maand> <jaar>"
+var PLG_MAANDEN=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+function titelUitGroep(naam){
+  var nu=new Date(); var md=PLG_MAANDEN[nu.getMonth()]+' '+nu.getFullYear();
+  var g=(naam||'').trim();
+  if(!g) return 'Plattegrond '+md;
+  return (/groep/i.test(g) ? 'Plattegrond '+g : 'Plattegrond groep '+g)+' · '+md;
+}
+function sizeTitel(){ var t=document.getElementById('titel'); if(t) t.size=Math.min(Math.max((t.value||'').length+1,16),46); }
+function setTitelAuto(naam){ var t=document.getElementById('titel'); if(!t) return;
+  var huidig=(t.value||'').trim();
+  if(huidig && huidig!=='Groep ___ plattegrond') return;   // opgeslagen of zelf-getypte titel niet overschrijven
+  t.value=titelUitGroep(naam); sizeTitel();
+  try{ if(typeof commitHist==='function') commitHist(); }catch(e){}
+}
 async function vulMijnKlas(toevoegFn){
   try{
     const r = await fetch('/api/klas', { headers: { accept: 'application/json' } });
@@ -1569,6 +1755,7 @@ async function vulMijnKlas(toevoegFn){
     if(!namen.length){ avinkaAlert('Je hebt nog geen klas ingevuld.\n\nGa naar je dashboard, naar "Mijn klas", om je klassenlijst klaar te zetten.'); return; }
     toevoegFn(namen.join('\n'));
     pasKlasGeslachtToe(data.leerlingenData);
+    setTitelAuto(data.naam);
   }catch(e){ avinkaAlert('Er ging iets mis bij het ophalen van je klas.'); }
 }
 </script>
@@ -1578,10 +1765,11 @@ async function vulMijnKlas(toevoegFn){
     try{
       var r=await fetch('/api/klas',{headers:{accept:'application/json'}});
       if(!r.ok)return; var d=await r.json(); var namen=(d&&d.leerlingen)||[];
-      if(namen.length && typeof state!=='undefined' && state.students && !state.students.length){ voegNamen(namen.join(String.fromCharCode(10))); if(typeof pasKlasGeslachtToe==='function') pasKlasGeslachtToe(d.leerlingenData); }
+      if(namen.length && typeof state!=='undefined' && state.students && !state.students.length){ voegNamen(namen.join(String.fromCharCode(10))); if(typeof pasKlasGeslachtToe==='function') pasKlasGeslachtToe(d.leerlingenData); if(typeof setTitelAuto==='function') setTitelAuto(d.naam); }
     }catch(e){}
   }
   autoKlas();
+  var _t=document.getElementById('titel'); if(_t){ _t.addEventListener('input',function(){ if(typeof sizeTitel==='function') sizeTitel(); }); if(typeof sizeTitel==='function') sizeTitel(); }
 })();
 </script>
 </body>
