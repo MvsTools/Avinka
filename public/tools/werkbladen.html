@@ -357,7 +357,10 @@
       breuken: true, kleuropsom: true, klok: true, geld: true, staafdiagram: true,
       // Taal & spelling
       woordzoeker: true, kruiswoord: true, anagram: true, zinbouwen: true, lettergrepen: true,
-      rijmwoorden: true, synant: true, lidwoord: true, zoekdefout: true,
+      rijmwoorden: true, synant: true, lidwoord: true,
+      // zoek-de-fout bewust UIT: een fout woordbeeld tonen is spellingtechnisch schadelijk
+      // (je leert het verkeerde woordbeeld aan). Niet aanbieden en hard uitfilteren.
+      zoekdefout: false,
       // Puzzels & speels
       sudoku: true, geheimschrift: true, doolhof: true, bingo: true,
       verbinddepunten: false // nog NIET getest → wordt niet aangeboden
@@ -377,7 +380,7 @@
         '- {"type":"waarnietwaar","opdracht":"...","stellingen":[{"stelling":"...","goed":true}]} — goed = true (waar) of false (niet waar).',
         '- {"type":"sommen","opdracht":"...","spec":{"bewerking":"+|-|×|÷|mix","min":1,"max":100,"aantal":10,"kolommen":2}} — LET OP: schrijf de sommen NIET zelf; geef alleen de spec, het systeem maakt de sommen én de juiste antwoorden. Kies min/max/bewerking passend bij groep en leerlijn.',
         '- {"type":"getallenlijn","opdracht":"...","spec":{"start":0,"eind":100,"stap":10,"gevraagd":[30,70]}} — het systeem tekent de lijn; gevraagd = welke getallen ingevuld moeten worden. start/eind/stap mogen ook kommagetallen zijn (bijv. 0 tot 5, stap 0,5) of negatief (bijv. −20 tot 20) — kies passend bij de leerlijn.',
-        '- {"type":"woordzoeker","opdracht":"...","woorden":["WOORD","WOORD"]} — geef 10 tot 16 woorden (passend bij het onderwerp/de spellingcategorie). Een woordzoeker is RUIMTEZUINIG: de woorden staan naast elkaar en meer woorden kosten nauwelijks extra hoogte, dus kies eerder MEER dan minder (mik op ~12). Het systeem bouwt het raster.',
+        '- {"type":"woordzoeker","opdracht":"...","woorden":["WOORD","WOORD"]} — geef 12 tot 16 woorden (passend bij het onderwerp/de spellingcategorie). Een woordzoeker is RUIMTEZUINIG: de woorden staan naast elkaar en meer woorden kosten nauwelijks extra hoogte, dus kies eerder MEER dan minder (mik op ~14). Kies AFWISSELENDE woorden: verschillende lengtes en NIET een rij bijna-identieke rijmwoorden (dus niet zaaien/paaien/draaien/maaien achter elkaar); zit het werkblad op meerdere spellingcategorieën, verdeel de woorden dan over die categorieën. Het systeem bouwt het raster.',
         '- {"type":"rekenmuurtje","opdracht":"...","spec":{"rijen":3,"max":12}} — rekenmuurtje (elke steen = som van de twee eronder); het systeem maakt het muurtje én de antwoorden. rijen 3 of 4.',
         '- {"type":"getalhuis","opdracht":"...","spec":{"getal":10,"aantal":6}} — splitsen van een getal; het systeem maakt de splitsingen + antwoorden. Voor de onderbouw.',
         '- {"type":"klok","opdracht":"...","spec":{"aantal":6,"soort":"half","cijfers":false}} — klokkijken; soort = heel/half/kwartier/vijf. Zet "cijfers":true voor een wijzerplaat MET de cijfers 1 t/m 12 erop (makkelijker, onderbouw). Het systeem tekent de klokken; de leerling schrijft de tijd.',
@@ -513,6 +516,7 @@
         lijnen.push('\nDIT IS EEN SCHRIFTELIJK SPELLINGWERKBLAD. Houd hier rekening mee:');
         lijnen.push('- Verklap het antwoord NIET visueel. Gebruik dus GEEN meerkeuze waarbij de juiste schrijfwijze van het woord gewoon tussen de opties staat (bijvoorbeeld "crisis of criesis"); op papier geef je dan het antwoord weg. Zo\'n vraag werkt alleen mondeling. Laat de leerling de spelling ZELF schrijven.');
         lijnen.push('- Gebruik bij voorkeur invul-opdrachten waarbij juist de moeilijke letter(s) ontbreken (bijvoorbeeld voor "crisis": voor="cr", antwoord="i", na="sis"), woorden laten afmaken, of een mini-dictee-achtige opdracht.');
+        lijnen.push('- STAAT er een gat in een ZIN, dan moet die zin een LOPENDE, correcte Nederlandse zin zijn waarin het ingevulde woord grammaticaal én qua betekenis klopt. Lees de zin met het woord ingevuld terug: klinkt hij onnatuurlijk of onzinnig (bijv. "Kun jij me de dringen doorgeven"), kies dan een ander woord of een andere zin. Gebruik het woord in zijn juiste vorm (enkelvoud/meervoud past bij de zin).');
         lijnen.push('- Vraag de spellingregel NIET terug, tenzij er expliciet een opdracht is als "schrijf de regel op".');
         lijnen.push('- Alle oefenwoorden zijn bestaande Nederlandse woorden op het niveau van ' + inv.groep + '.');
         lijnen.push('- VOORBEELDEN IN DE UITLEG: gebruik je een uitleg-/regelblok (type "tekst") met voorbeeldwoorden, controleer dan dat ELK voorbeeld de geoefende regel ÉCHT bevat (een voorbeeld bij "de c die klinkt als /s/" moet echt een c vóór e, i of y hebben; "fiets" heeft geen c en is dus fout). Staat er hierboven een verplichte woordenbank, kies je voorbeelden dan óók uit die lijst en verzin er geen eigen woorden bij.');
@@ -520,14 +524,13 @@
         var spellingVormen = [
           'invullen waarbij ALLEEN de moeilijke letter(s) ontbreken (het woord staat verder heel)',
           'sorteren op hoe de letter klinkt of op de schrijfwijze',
-          'zoek-de-fout (precies één fout per zin, die de regel betreft)',
           'een woordzoeker met de doelwoorden',
           'een kruiswoordpuzzel met de doelwoorden (korte omschrijving per woord; het kind schrijft het woord zelf)',
           'anagram: de door elkaar gehusselde letters van een doelwoord goed schrijven',
           'een zin laten schrijven met een paar doelwoorden (open, mét antwoord)',
           'woorden laten afmaken (het begin staat er, het kind schrijft de rest)'
         ];
-        lijnen.push('- WISSEL DE WERKVORMEN AF — gebruik NIET elke keer dezelfde opzet. Bouw dit werkblad met een frisse mix uit BIJVOORBEELD deze werkvormen: ' + kiesN(spellingVormen, 4).join('; ') + '. Val niet terug op alleen invullen + sorteren + zoek-de-fout; pak deze keer ook eens een puzzelvorm (woordzoeker, kruiswoord of anagram) als die past.');
+        lijnen.push('- WISSEL DE WERKVORMEN AF — gebruik NIET elke keer dezelfde opzet. Bouw dit werkblad met een frisse mix uit BIJVOORBEELD deze werkvormen: ' + kiesN(spellingVormen, 4).join('; ') + '. Val niet terug op alleen invullen + sorteren; pak deze keer ook eens een puzzelvorm (woordzoeker, kruiswoord of anagram) als die past.');
         lijnen.push('- SPREID DE DOELWOORDEN over de opdrachten: gebruik in elke opdracht ZOVEEL MOGELIJK ANDERE woorden. Herhaal dezelfde doelwoorden NIET in meerdere opdrachten (bijvoorbeeld de sorteerwoorden óók in de woordzoeker of het kruiswoord). Zo oefent het kind meer verschillende woorden en oogt het werkblad rijker.');
       }
 
@@ -548,6 +551,11 @@
         catch (e2) { throw new Error('Het werkblad kon niet worden gelezen. Probeer het opnieuw.'); }
       }
       if (!obj || !Array.isArray(obj.blokken)) throw new Error('Het werkblad was niet compleet. Probeer het opnieuw.');
+      // Veiligheidsnet: laat ALLEEN geteste/aangeboden modules door. Zo verdwijnt een per
+      // ongeluk gegenereerde niet-aangeboden module (zoals zoek-de-fout) meteen, ook al noemt
+      // de prompt hem niet meer.
+      obj.blokken = obj.blokken.filter(function (b) { return b && b.type && GETESTE_MODULES[b.type] === true; });
+      if (!obj.blokken.length) throw new Error('Het werkblad was niet compleet. Probeer het opnieuw.');
       return obj;
     }
 
@@ -753,22 +761,32 @@
               col.items = herstel(col.items, function (w) { return w; }, function (w) { return w; },
                 function (lw) { return heeft(bank, lw) && !ambigu(lw) && !(isC && cDual(lw)); }, pool.length ? pool : bank.woorden);
             });
-          } else if (blk.type === 'zoekdefout') {
-            // Weer zinnen waarvan de fout NIET over de geoefende regel gaat (werkwoord-,
-            // grammatica- of andere-regel-fout). Alleen als er iets overblijft (fail-safe).
-            (blk.zinnen || []).forEach(function (z) { if (z) { z.zin = schoonAI(z.zin); z.correct = schoonAI(z.correct); } });
-            var goedeZinnen = (blk.zinnen || []).filter(zoekfoutOk);
-            if (goedeZinnen.length) blk.zinnen = goedeZinnen;
           } else if (blk.type === 'woordzoeker') {
             blk.woorden = herstel(blk.woorden, function (w) { return w; }, function (w) { return w.toUpperCase(); }, inUnie, unie);
-            // Woordzoeker mag voller — meer woorden kosten nauwelijks extra ruimte. Pad tot ~10
-            // met bankwoorden (spreiding hier relaxen mag: herhaling in een woordzoeker is onschuldig).
-            var wzDoel = 8, wzHeeft = {};
-            blk.woorden.forEach(function (w) { wzHeeft[String(w).toLowerCase()] = 1; });
+            // Woordzoeker mag voller — meer woorden kosten nauwelijks extra ruimte, dus mik op ~12.
+            // MAAR waak over AFWISSELING: de AI kiest vaak bijna-identieke, rijmende woorden
+            // (zaaien/paaien/draaien/maaien). Sta per woordeinde (laatste 4 letters) hooguit 2 toe,
+            // en vul aan met bankwoorden — eerst met NIEUWE woordeinden voor maximale variatie.
+            var wzDoel = 12, wzHeeft = {}, wzStaart = {};
+            var wzStaartVan = function (w) { w = String(w).toLowerCase(); return w.length <= 4 ? w : w.slice(-4); };
+            var wzSchoon = [];
+            blk.woorden.forEach(function (w) {
+              var lw = String(w).toLowerCase(), st = wzStaartVan(w);
+              if (wzHeeft[lw] || (wzStaart[st] || 0) >= 2) return; // dubbel of te veel rijmende einden
+              wzHeeft[lw] = 1; wzStaart[st] = (wzStaart[st] || 0) + 1; wzSchoon.push(w);
+            });
+            blk.woorden = wzSchoon;
             var wzExtra = unie.filter(function (w) { return !wzHeeft[w.toLowerCase()]; });
-            while (blk.woorden.length < wzDoel && wzExtra.length) {
-              var wzW = wzExtra.splice(Math.floor(Math.random() * wzExtra.length), 1)[0];
-              blk.woorden.push(wzW.toUpperCase()); wzHeeft[wzW.toLowerCase()] = 1;
+            for (var wzi = wzExtra.length - 1; wzi > 0; wzi--) { var wzj = Math.floor(Math.random() * (wzi + 1)); var wzt = wzExtra[wzi]; wzExtra[wzi] = wzExtra[wzj]; wzExtra[wzj] = wzt; }
+            for (var wzPass = 0; wzPass < 2 && blk.woorden.length < wzDoel; wzPass++) {
+              for (var wzx = 0; wzx < wzExtra.length && blk.woorden.length < wzDoel; wzx++) {
+                var wzC = wzExtra[wzx]; if (wzC == null) continue;
+                var wzCl = wzC.toLowerCase(), wzCs = wzStaartVan(wzC);
+                if (wzHeeft[wzCl]) continue;
+                if (wzPass === 0 && (wzStaart[wzCs] || 0) >= 1) continue; // ronde 1: alleen nieuwe woordeinden
+                if ((wzStaart[wzCs] || 0) >= 2) continue;                 // altijd: max 2 per woordeinde
+                blk.woorden.push(wzC.toUpperCase()); wzHeeft[wzCl] = 1; wzStaart[wzCs] = (wzStaart[wzCs] || 0) + 1; wzExtra[wzx] = null;
+              }
             }
           } else if (blk.type === 'anagram') {
             blk.woorden = herstel(blk.woorden, function (w) { return (w && w.woord != null) ? w.woord : w; }, function (w) { return { woord: w }; }, inUnie, unie);
@@ -826,7 +844,7 @@
       // opdrachten in om ruimte te maken voor de puzzel. Open vragen met schrijfregels
       // scheppen de meeste ruimte per item, dus die het hoogst.
       var GEW = { open: 4.5, zoekdefout: 2.5, koppelen: 2.5, meerkeuze: 2, zinbouwen: 1.6, invul: 1.5, synant: 1.4, categoriseren: 1.2, waarnietwaar: 1.2, lettergrepen: 1, rijmwoorden: 1, lidwoord: 1, anagram: 1, staafdiagram: 0.6, woordzoeker: 0.4, kruiswoord: 0.4 };
-      var MIN = { woordzoeker: 6, kruiswoord: 6, open: 2, invul: 4 };
+      var MIN = { woordzoeker: 10, kruiswoord: 6, open: 2, invul: 4 };
       function arrVan(b) {
         if (b.type === 'meerkeuze' || b.type === 'open') return b.vragen;
         if (b.type === 'invul') return b.items;
