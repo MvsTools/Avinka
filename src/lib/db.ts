@@ -128,10 +128,9 @@ export async function getLaatsteToestemming(): Promise<
     .from("toestemmingen")
     .select("voorwaarden_versie, privacy_versie")
     .order("geaccepteerd_op", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error || !data) return null;
-  const d = data as { voorwaarden_versie?: string; privacy_versie?: string };
+    .limit(1);
+  if (error || !data || data.length === 0) return null;
+  const d = data[0] as { voorwaarden_versie?: string; privacy_versie?: string };
   return {
     voorwaarden_versie: d.voorwaarden_versie ?? "",
     privacy_versie: d.privacy_versie ?? "",
