@@ -78,6 +78,7 @@ function lettergrepen(w) {
   return m ? m.length : 1;
 }
 
+
 // ── Leermomenten-tabel: spelling-ingredienten met "vanaf groep" ───────────────
 // Algemeen/SLO-gekalibreerd, methode-neutraal. `doel` = wordt als oefenlijst
 // aangeboden; verschijnselen zonder `doel` tellen alleen mee als achtergrond.
@@ -85,8 +86,14 @@ function lettergrepen(w) {
 // nodig = benadering, later met AI/handcheck te verfijnen).
 const ING = [
   // ── groep 3: klank/eerste vaste klankgroepen
-  // (Hakwoord = "schrijf zoals je hoort" doen we NIET auto: de mkm-vorm pakt te veel
-  //  functiewoorden/werkwoorden. Het is een gecureerde handlijst in avinka-leerlijnen.js.)
+  // Hakwoord = woord van ÉÉN lettergreep/klankgroep dat je "hakt" in klanken: kat, bal,
+  // rij, rijk, trein, school. De vanaf-groep volgt uit een eventuele ANDERE eigenschap
+  // (ei/ij -> groep 4), dus kat=groep 3, rijk=groep 4. LET OP: na de bouw filteren we deze
+  // categorie (zie post-pass onderaan) tot alleen de woorden die óók in een ANDERE, al-geschoonde
+  // categorie zitten (rij=ei/ij, bank=nk, school=sch) ∪ de handmatige mkm-kernlijst — zo erven we
+  // alleen gevette woorden en niet de losse werkwoordsvormen/functiewoorden/Engelse leenwoorden
+  // die als enige-lettergreep-woord anders massaal binnenkomen (gaat, komt, boy, team, uit).
+  { id: "hakwoord", g: 3, doel: 1, soort: "fonetisch", label: "hakwoorden (woorden van één klankgroep, zoals kat, bal, rij)", test: w => lettergrepen(w) === 1 },
   // Staal splitst dit: zingwoord = ng (zingen, koning), plankwoord = nk (plank, bank).
   // NIET de "ng" op een woordgrens (on+gehoorzaam, aan+geven): dat is geen ng-KLANK.
   { id: "ng", g: 3, doel: 1, soort: "orthografisch", label: "woorden met ng (zoals zingen, koning)", test: w => /ng/.test(w) && !/^(on|aan)g/.test(w) },
@@ -367,17 +374,52 @@ for (const d of DOELEN) {
   b.woorden.sort((a, b2) => a[1] - b2[1] || RANG.get(a[0]) - RANG.get(b2[0]) || a[0].localeCompare(b2[0]));
 }
 
-// ── Hakwoord: met de hand gecureerde mkm-naamwoorden ─────────────────────────
-// (Auto-genereren uit de freq-lijst gaf een namen/Engels-soep, want korte mkm-woorden
-//  zijn in ondertitels vooral personages. Daarom een handlijst; uitbreidbaar in
-//  _bron/hakwoord.txt.) Groep 3, allemaal vanaf-groep 3.
+// ── Hakwoord opschonen: één klankgroep ÉN geen echte spellingregel ────────────
+// Een hakwoord is een woord van ÉÉN klankgroep dat verder GEEN eigen spellingregel heeft:
+// de kale klankzuivere woorden (kat, bal, vis) plus de weetwoorden die geen echte regel
+// kennen (ei/ij: rij, mij; au/ou: nou, koud). Een woord met cht/ng/nk/sch/c/x/... hoort in
+// DIE categorie (licht=cht, bank=nk, school=sch, zing=ng) en is dus GEEN hakwoord.
+//   - ei/ij en au/ou tellen NIET als regel: het zijn weetwoorden, geen echte categorie.
+//   - f->v en s->z tellen OOK niet: het BASISwoord is klankzuiver (glas, wolf, huis); de
+//     v/z komt pas in het MEERVOUD (glas->glazen, wolf->wolven). Het singuliere woord is
+//     dus gewoon een hakwoord; de meervoudsregel is een aparte, latere les.
+//   - de kale klankzuivere kern komt uit de handmatige mkm-kernlijst (_bron/hakwoord.txt),
+//     want die woorden vallen per definitie in géén categorie, en de ruwe enig-lettergreep-
+//     lijst zit vol losse werkwoordsvormen/functiewoorden/Engelse woorden (gaat, uit, boy).
+const NIET_DISKWALIFICEREND = new Set(["ei_ij", "au_ou", "f_naar_v", "s_naar_z"]);
+const eenLettergreepRegel = new Set(); // 1-klankgroep-woorden mét een ECHTE regel-categorie in het BASISwoord
+for (const id in banken) {
+  if (id === "hakwoord" || NIET_DISKWALIFICEREND.has(id)) continue;
+  for (const [w] of banken[id].woorden) if (lettergrepen(w) === 1) eenLettergreepRegel.add(w);
+}
+const weetEenLettergreep = new Set(); // 1-klankgroep ei/ij + au/ou + f->v + s->z (mogen hakwoord zijn)
+for (const id of NIET_DISKWALIFICEREND) for (const [w] of banken[id].woorden) if (lettergrepen(w) === 1) weetEenLettergreep.add(w);
+
+let hakKernlijst = new Set();
 try {
-  const hakw = fs.readFileSync(BRON("hakwoord.txt"), "utf8").split(/\r?\n/)
-    .map(s => s.trim().toLowerCase()).filter(w => w && !w.startsWith("#"));
-  const uniek = [...new Set(hakw)];
-  banken.hakwoord = { label: "hakwoorden (schrijf zoals je hoort, zoals kat, bal, vis)", soort: "handlijst", introGroep: 3, woorden: uniek.map(w => [w, 3]) };
-  console.log("hakwoord (handlijst):", uniek.length, "woorden");
+  fs.readFileSync(BRON("hakwoord.txt"), "utf8").split(/\r?\n/)
+    .map(s => s.trim().toLowerCase()).filter(w => w && !w.startsWith("#"))
+    .forEach(w => hakKernlijst.add(w));
 } catch (e) { console.log("hakwoord.txt niet gevonden:", e.message); }
+
+// Regel: één klankgroep, GEEN echte regel-categorie, en óf weetwoord (ei/ij, au/ou) óf kernlijst.
+function isHakwoord(w) {
+  if (eenLettergreepRegel.has(w)) return false;       // heeft een eigen regel -> hoort in die categorie
+  return weetEenLettergreep.has(w) || hakKernlijst.has(w);
+}
+const hakVoor = banken.hakwoord.woorden.length;
+const kernAfgevallen = [...hakKernlijst].filter(w => eenLettergreepRegel.has(w)); // kernlijst-woorden met tóch een regel
+banken.hakwoord.woorden = banken.hakwoord.woorden.filter(x => isHakwoord(x[0]));
+// Kernlijst-woorden die kindgeschikt niet haalde (net buiten het frequentieplafond) alsnog toevoegen.
+const heeftHak = new Set(banken.hakwoord.woorden.map(x => x[0]));
+let nKernExtra = 0;
+for (const w of hakKernlijst) {
+  if (heeftHak.has(w) || eenLettergreepRegel.has(w)) continue;
+  banken.hakwoord.woorden.push([w, 3]); heeftHak.add(w); nKernExtra++;
+}
+banken.hakwoord.woorden.sort((a, b) => a[1] - b[1] || (RANG.get(a[0]) || 99999) - (RANG.get(b[0]) || 99999) || a[0].localeCompare(b[0]));
+console.log(`hakwoord: ${hakVoor} ruw -> ${banken.hakwoord.woorden.length} (kern ${nKernExtra + [...hakKernlijst].filter(w=>heeftHak.has(w)&&!weetEenLettergreep.has(w)).length}, weetwoord-1klankgroep ${weetEenLettergreep.size})`);
+if (kernAfgevallen.length) console.log("  (kernlijst-woorden met tóch een eigen regel, dus GEEN hakwoord meer):", kernAfgevallen.join(", "));
 
 // ── Wegschrijven ──────────────────────────────────────────────────────────────
 const uit = {

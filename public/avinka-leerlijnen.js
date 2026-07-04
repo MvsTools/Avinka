@@ -492,11 +492,14 @@
   // Taal actief-naam of een fonetische omschrijving). Volgorde = prioriteit.
   // Uitbreidbaar: voeg een categorie of woorden toe (alles met de hand geverifieerd).
   var SPELLING_WOORDEN = [
-    // Hakwoord (Staal cat 1): schrijf zoals je hoort — korte mkm-woorden. Gecureerde
-    // handlijst in de bank (scripts/woordbank/_bron/hakwoord.txt); auto-genereren gaf
-    // een namen/Engels-soep.
-    { naam: "hakwoorden (schrijf zoals je hoort, zoals kat, bal, vis)", bank: "hakwoord",
-      test: /hak\s*-?woord|schrijf.{0,10}zoals je.{0,4}hoort|\bmkm\b/,
+    // Hakwoord (Staal cat 1): woord van ÉÉN klankgroep dat je "hakt" in klanken (kat, bal,
+    // rij, rijk). De bank leidt dit af uit alle enig-lettergreep-woorden die zich al in een
+    // andere geschoonde categorie bewezen hebben (rij=ei/ij, bank=nk, school=sch), plus een
+    // gecureerde mkm-kernlijst (scripts/woordbank/_bron/hakwoord.txt) voor de kale klankzuivere
+    // woorden. Zo krijgt de leerkracht een grote, gevarieerde hakwoord-bank zonder de losse
+    // werkwoordsvormen/Engelse woorden die als enig-lettergreep-woord anders binnenglippen.
+    { naam: "hakwoorden (woorden van één klankgroep, zoals kat, bal, rij)", bank: "hakwoord",
+      test: /hak\s*-?woord|één\s*klankgroep|een\s*klankgroep|schrijf.{0,10}zoals je.{0,4}hoort|\bmkm\b/,
       woorden: ["kat", "bal", "vis", "bos", "pen", "tak", "stok", "plas", "kast", "mus", "hut", "pot", "bus", "kip"] },
     { naam: "woorden waarin je /ie/ hoort maar één i schrijft (zoals kilo, liter)", bank: "kilo_ie",
       test: /kilo\s*-?woord|liter\s*-?woord|hoor.{0,8}ie.{0,18}schrijf.{0,8}\bi\b|\bi\b[^a-z]{0,8}(klinkt als|als)[^a-z]{0,4}ie/,
