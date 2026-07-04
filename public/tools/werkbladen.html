@@ -907,6 +907,35 @@
               return { voor: voorBase + full.slice(0, idx), antwoord: full.slice(idx, idx + m[0].length), na: full.slice(idx + m[0].length) + naBase };
             }).filter(Boolean);
             if (nieuw.length >= 2) blk.items = nieuw;
+            // Vangnet tegen te weinig items: bij een SMALLE categorie levert de AI soms maar
+            // 3-4 invul-items. Vul bij tot 6 met bankwoorden uit DEZELFDE kenmerk-categorie(en)
+            // die de bestaande items gebruiken, met het gat op het kenmerk (zelfde "woord
+            // afmaken"-vorm). Alleen categorieen mét een kenmerk-regex (ng, eeuw, cht, ...);
+            // een hakwoord heeft geen los kenmerk om te blanken, dus die padden we niet.
+            var INVUL_MIN = 6;
+            var volFull = function (it) {
+              var vv = (String(it.voor || '').match(/([a-zà-ÿ]+)$/i) || [])[1] || '';
+              var nn = (String(it.na || '').match(/^([a-zà-ÿ]+)/i) || [])[1] || '';
+              return (vv + (it.antwoord || '') + nn).toLowerCase();
+            };
+            if (blk.items && blk.items.length >= 2 && blk.items.length < INVUL_MIN) {
+              var reFeat = banken.filter(function (b) {
+                return b.feat && (blk.items || []).some(function (it) { return b.feat.test(volFull(it)) && b.woorden.some(function (x) { return x.toLowerCase() === volFull(it); }); });
+              });
+              if (!reFeat.length) reFeat = banken.filter(function (b) { return b.feat; });
+              var alInvul = {};
+              (blk.items || []).forEach(function (it) { alInvul[volFull(it)] = 1; });
+              for (var rb = 0; rb < reFeat.length && blk.items.length < INVUL_MIN; rb++) {
+                var rbw = reFeat[rb].woorden, rf = reFeat[rb].feat;
+                for (var ri = 0; ri < rbw.length && blk.items.length < INVUL_MIN; ri++) {
+                  var cw = String(rbw[ri]).toLowerCase();
+                  if (alInvul[cw] || ambigu(cw) || cw.length < 3) continue;
+                  var cm = cw.match(rf); if (!cm) continue;
+                  blk.items.push({ voor: cw.slice(0, cm.index), antwoord: cm[0], na: cw.slice(cm.index + cm[0].length) });
+                  alInvul[cw] = 1;
+                }
+              }
+            }
           }
         });
       } catch (e) { /* fail-safe */ }
