@@ -540,9 +540,19 @@
       return lijnen.join('\n');
     }
 
+    // Cyrillische lookalike-letters die de AI soms per ongeluk in Nederlandse woorden
+    // zet (opvoeд, deuropен) → terug naar Latijn. Fonetische 1-op-1-map; niet-gemapte
+    // Cyrillische tekens worden verwijderd. Nederlands bevat nooit Cyrillisch, dus veilig.
+    var CYR_LATIJN = { 'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e','ж':'zh','з':'z','и':'i','й':'j','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'ch','ц':'ts','ч':'ch','ш':'sh','щ':'sch','ы':'y','э':'e','ю':'u','я':'a','і':'i','ј':'j','ѕ':'s','А':'A','Б':'B','В':'V','Г':'G','Д':'D','Е':'E','К':'K','М':'M','Н':'N','О':'O','П':'P','Р':'P','С':'C','Т':'T','У':'U','Х':'Ch' };
+    function latiniseer(s) {
+      return String(s).replace(/[Ѐ-ӿ]/g, function (ch) { return CYR_LATIJN[ch] != null ? CYR_LATIJN[ch] : ''; });
+    }
+
     // ── JSON robuust uit het antwoord halen ──────────────────────────────────
     function parseWb(ruw) {
       let t = (ruw || '').replace(/```json|```/g, '').trim();
+      t = latiniseer(t);                       // Cyrillische lookalikes -> Latijn
+      t = t.replace(/\*\*(.+?)\*\*/g, '$1');    // markdown-nadruk (**woord**) rendert niet -> platte tekst
       const m = t.match(/\{[\s\S]*\}/);
       if (!m) throw new Error('Het werkblad kon niet worden gelezen. Probeer het opnieuw.');
       let obj;
@@ -632,6 +642,7 @@
         laatsteMeta = inv;
         dwingSpellingWoordenAf(wb); // foute/dubbelzinnige losse woorden -> bankwoorden (lokaal)
         capOpdrachtItems(wb); // harde max op items per opdracht (10 voor lijst-opdrachten)
+        poetsKruiswoord(wb); // grammaticahint uit kruiswoord-omschrijvingen halen
         window.avinkaWerkblad.normaliseer(wb);
 
         laatsteWb = wb;
@@ -708,6 +719,24 @@
           var max = MAX_ITEMS[b.type]; if (!max) return;
           var arr = b.vragen || b.items || b.stellingen || b.zinnen || b.woorden || b.paren;
           if (Array.isArray(arr) && arr.length > max) arr.length = max;
+        });
+      } catch (e) { /* fail-safe */ }
+    }
+
+    // Poets kruiswoord-omschrijvingen: als de AI tóch een grammaticahint vooraan zet
+    // ("Verleden tijd van klinken: het geluid dat je hoorde") en er staat een echte
+    // betekenis achter, houd dan alleen die betekenis. Staat er niks nuttigs achter,
+    // dan laten we de omschrijving met rust (liever een zwakke hint dan een lege).
+    function poetsKruiswoord(wb) {
+      try {
+        (wb.blokken || []).forEach(function (b) {
+          if (!b || b.type !== 'kruiswoord') return;
+          (b.woorden || []).forEach(function (w) {
+            if (!w || !w.omschrijving) return;
+            var o = String(w.omschrijving)
+              .replace(/^\s*(verleden tijd|tegenwoordige tijd|gebiedende wijs|voltooid deelwoord|meervoud|enkelvoud|verkleinwoord)\s+van\s+[a-zà-ÿ]+\s*[:;,-]\s*(?=\S)/i, '');
+            if (o && o !== w.omschrijving) w.omschrijving = o.charAt(0).toUpperCase() + o.slice(1);
+          });
         });
       } catch (e) { /* fail-safe */ }
     }
