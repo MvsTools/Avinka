@@ -17,6 +17,17 @@ const ICON: Record<string, string> = {
   tekst: "📄",
   plattegrond: "🗺️",
   les: "📚",
+  draaiboek: "🎉",
+};
+
+// Een bestand dat met mij gedeeld is (voor de "Gedeeld met mij"-tab).
+type Gedeeld = {
+  id: string;
+  naam: string;
+  tool: string | null;
+  type: string;
+  updated_at: string;
+  rol: string;
 };
 
 function typeOrder(t: string): number {
@@ -48,9 +59,23 @@ export default function BestandenManager() {
   const [bekijk, setBekijk] = useState<Bestand | null>(null);
   const [gekopieerd, setGekopieerd] = useState(false);
   const [modal, setModal] = useState<ModalState>(null);
+  const [tab, setTab] = useState<"mijn" | "gedeeld">("mijn");
+  const [gedeeld, setGedeeld] = useState<Gedeeld[]>([]);
+  const [gedeeldGeladen, setGedeeldGeladen] = useState(false);
 
   async function herlaad() {
     setBestanden(await getBestanden());
+  }
+
+  async function laadGedeeld() {
+    try {
+      const r = await fetch("/api/draaiboek/gedeeld-met-mij");
+      const j = await r.json();
+      setGedeeld(Array.isArray(j.bestanden) ? j.bestanden : []);
+    } catch {
+      setGedeeld([]);
+    }
+    setGedeeldGeladen(true);
   }
 
   useEffect(() => {
@@ -189,6 +214,28 @@ export default function BestandenManager() {
         strategy="lazyOnload"
       />
       <Script src="/avinka-lesdocx.js" strategy="lazyOnload" />
+
+      {/* Tabs: eigen bestanden vs. gedeeld met mij */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setTab("mijn")}
+          className={`rounded-xl px-4 py-2 text-sm font-bold transition ${tab === "mijn" ? "bg-brand text-white shadow-sm shadow-brand/20" : "border border-black/10 bg-white text-ink/60 hover:text-ink"}`}
+        >
+          🗂️ Mijn bestanden
+        </button>
+        <button
+          onClick={() => {
+            setTab("gedeeld");
+            if (!gedeeldGeladen) laadGedeeld();
+          }}
+          className={`rounded-xl px-4 py-2 text-sm font-bold transition ${tab === "gedeeld" ? "bg-brand text-white shadow-sm shadow-brand/20" : "border border-black/10 bg-white text-ink/60 hover:text-ink"}`}
+        >
+          🤝 Gedeeld met mij
+        </button>
+      </div>
+
+      {tab === "mijn" && (
+        <>
       {/* Broodkruimels + acties */}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
         <nav className="flex flex-wrap items-center gap-1 text-sm font-semibold">
@@ -350,6 +397,55 @@ export default function BestandenManager() {
             </li>
           ))}
         </ul>
+      )}
+        </>
+      )}
+
+      {tab === "gedeeld" && (
+        <div>
+          {!gedeeldGeladen ? (
+            <div className="rounded-3xl border border-dashed border-black/15 bg-white/60 p-10 text-center text-ink/60">
+              Laden…
+            </div>
+          ) : gedeeld.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-black/15 bg-white/60 p-10 text-center">
+              <span className="text-4xl">🤝</span>
+              <h2 className="mt-3 text-lg font-bold text-ink">Nog niets met je gedeeld</h2>
+              <p className="mx-auto mt-2 max-w-md leading-7 text-ink/65">
+                Zodra een collega een draaiboek met jouw e-mailadres deelt, verschijnt het hier.
+                Jullie werken dan samen aan hetzelfde bestand.
+              </p>
+            </div>
+          ) : (
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {gedeeld.map((g) => (
+                <li
+                  key={g.id}
+                  className="group flex items-center gap-3 rounded-2xl border border-black/5 bg-white p-3 shadow-sm transition hover:border-brand/30 hover:shadow-md"
+                >
+                  <button
+                    onClick={() => {
+                      window.location.href = `/tools/${g.tool || "draaiboek"}.html?bestand=${g.id}`;
+                    }}
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                  >
+                    <span className="text-2xl">{ICON[g.type] ?? "📄"}</span>
+                    <span className="min-w-0">
+                      <span className="block truncate font-bold text-ink">{g.naam}</span>
+                      <span className="block truncate text-xs text-ink/45">
+                        {g.rol === "bewerken" ? "Mag bewerken" : "Alleen lezen"} ·{" "}
+                        {nlDatum(g.updated_at)}
+                      </span>
+                    </span>
+                  </button>
+                  <span className="shrink-0 rounded-lg bg-cream px-2 py-1 text-xs font-semibold text-ink/50">
+                    gedeeld
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
 
       {/* Tekst bekijken */}
