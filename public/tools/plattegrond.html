@@ -176,7 +176,7 @@
   .obj.sel .frame { outline:2px solid var(--accent2); outline-offset:2px; border-radius:8px; }
   .obj.snapping .frame { outline:2.5px solid var(--accent); outline-offset:2px; box-shadow:0 0 0 4px rgba(47,158,110,.18); }
   .obj.snap-target .frame { outline:2.5px dashed var(--accent); outline-offset:3px; }
-  #trashZone.trash-icon { position:absolute; top:10px; left:10px; z-index:40; width:44px; height:44px; border-radius:13px; border:1.5px solid var(--warm); background:var(--card); color:var(--muted); display:flex; align-items:center; justify-content:center; pointer-events:none; box-shadow:0 4px 16px rgba(0,0,0,.14); transition:transform .12s, background .12s, border-color .12s, color .12s; }
+  #trashZone.trash-icon { position:absolute; top:10px; left:10px; z-index:40; width:54px; height:54px; border-radius:15px; border:1.5px solid var(--warm); background:var(--card); color:var(--muted); display:flex; align-items:center; justify-content:center; pointer-events:none; box-shadow:0 4px 16px rgba(0,0,0,.14); transition:transform .12s, background .12s, border-color .12s, color .12s; }
   #trashZone.trash-icon.armed { border-color:var(--accent); color:var(--accent); background:rgba(200,85,61,.13); transform:scale(1.12); }
   #trashZone .trash-lid { transition:transform .16s ease; transform-origin:12px 6.5px; }
   #trashZone.armed .trash-lid { transform:translateY(-2.5px) rotate(-20deg); }
@@ -475,7 +475,7 @@
           <div class="canvas-leeg" id="canvasLeeg">Nog leeg.<br><em>Sleep hiernaast een tafel het raster op.</em></div>
           <div class="bord-in" id="bordIn">Digibord · voorkant van de klas</div>
           <div id="trashZone" class="trash-icon" title="Sleep hierheen om te verwijderen" style="display:none;">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <g class="trash-lid"><path d="M3.5 6.5h17"/><path d="M9.5 6.5V4.9a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1.6"/></g>
               <path d="M5.6 6.5l.9 13.1a1.6 1.6 0 0 0 1.6 1.5h7.8a1.6 1.6 0 0 0 1.6-1.5l.9-13.1"/>
             </svg>
@@ -1126,16 +1126,26 @@ function legendCarry(e, key, isMeubel){
   try{src.setPointerCapture(e.pointerId);}catch(_){}
   const overCanvas=(cx,cy)=>{ const r=canvasScroll.getBoundingClientRect(); return cx>=r.left&&cx<=r.right&&cy>=r.top&&cy<=r.bottom; };
   const toXY=(cx,cy)=>{ const r=canvasEl.getBoundingClientRect(); return {lx:(cx-r.left)/Z, ly:(cy-r.top)/Z}; };
+  const overGrid=(cx,cy)=>{ const r=canvasEl.getBoundingClientRect(); return cx>=r.left&&cx<=r.right&&cy>=r.top&&cy<=r.bottom; };  /* het ECHTE raster, niet de scroll-marge eromheen */
+  const toonGhost=(ev,onTrash,onCanvas)=>{ if(!ghost){ ghost=document.createElement('div'); ghost.className='legenda-ghost';
+      ghost.innerHTML = isMeubel ? meubelSVG(key,w,h) : tafelIcon(key,26); document.body.appendChild(ghost); }
+    ghost.style.left=ev.clientX+'px'; ghost.style.top=ev.clientY+'px';
+    ghost.classList.toggle('over', onCanvas); ghost.style.opacity = onTrash ? '.4' : '1'; };
   const move=ev=>{ lastX=ev.clientX; lastY=ev.clientY;
     if(!moved && Math.hypot(ev.clientX-sx,ev.clientY-sy)<6) return;
-    const onTrash=overTrash(ev.clientX,ev.clientY);
-    if(!moved){ moved=true; dragging=true; closeDD(); showTrash();
-      if(isMeubel){ ghost=document.createElement('div'); ghost.className='legenda-ghost'; ghost.innerHTML=meubelSVG(key,w,h); document.body.appendChild(ghost); }
-      else { const pt=toXY(ev.clientX,ev.clientY); o=voegTafel(key, clamp(pt.lx-w/2,0,FIELD_W-w), clamp(pt.ly-h/2,0,FIELD_H-h)); elem=el(o); } }
-    armTrash(onTrash);
-    if(isMeubel){ ghost.style.left=ev.clientX+'px'; ghost.style.top=ev.clientY+'px';
-      ghost.classList.toggle('over', overCanvas(ev.clientX,ev.clientY) && !onTrash); ghost.style.opacity = onTrash ? '.4' : '1'; return; }
-    /* tafel: versleep het echte tafeltje, met dezelfde koppel-preview als op het raster */
+    if(!moved){ moved=true; dragging=true; closeDD(); showTrash(); }
+    const onTrash=overTrash(ev.clientX,ev.clientY); armTrash(onTrash);
+    const onCanvas = overCanvas(ev.clientX,ev.clientY) && !onTrash;
+    const onGrid = overGrid(ev.clientX,ev.clientY) && !onTrash;
+    /* meubel: altijd een zwevend icoon (koppelt niet), pas plaatsen bij loslaten */
+    if(isMeubel){ toonGhost(ev,onTrash,onCanvas); return; }
+    /* tafel: soepel zwevend icoon tot je boven het raster komt; dán pas de echte
+       tafel onder de cursor + koppel-preview (geen 'spawn' aan de rand meer) */
+    if(!o){
+      if(!onGrid){ toonGhost(ev,onTrash,onCanvas); return; }
+      if(ghost){ ghost.remove(); ghost=null; }
+      const p0=toXY(ev.clientX,ev.clientY); o=voegTafel(key, clamp(p0.lx-w/2,0,FIELD_W-w), clamp(p0.ly-h/2,0,FIELD_H-h)); elem=el(o);
+    }
     if(!elem){ elem=el(o); if(!elem) return; }
     const pt=toXY(ev.clientX,ev.clientY);
     let nx=clamp(pt.lx-w/2,0,FIELD_W-w), ny=clamp(pt.ly-h/2,0,FIELD_H-h), useRot=o.rot||0;
@@ -1146,10 +1156,10 @@ function legendCarry(e, key, isMeubel){
   const up=()=>{ try{src.releasePointerCapture(e.pointerId);}catch(_){} src.removeEventListener('pointermove',move); src.removeEventListener('pointerup',up);
     const wasTrash = moved && overTrash(lastX,lastY);        /* bepalen vóór hideTrash — anders geeft overTrash false */
     const offCanvas = !overCanvas(lastX,lastY);
-    if(ghost) ghost.remove(); clearSnapVis(); hideTrash(); dragging=false;
+    if(ghost){ ghost.remove(); ghost=null; } clearSnapVis(); hideTrash(); dragging=false;
     if(!moved){ closeDD(); if(isMeubel) voegMeubel(key); else voegTafel(key); return; }   /* klik zonder slepen = midden */
     if(isMeubel){ if(wasTrash || offCanvas) return; const pt=toXY(lastX,lastY); voegMeubel(key, pt.lx, pt.ly); return; }
-    if(!o) return;
+    if(!o) return;   /* tafel is nooit boven het raster geweest (alleen zwevend icoon) → niets plaatsen */
     if(wasTrash || offCanvas){ delete o._x; delete o._y; delete o._snap; verwijderObj(o.id); return; }   /* prullenbak of buiten raster = weggooien */
     if(o._x!=null){ o.x=o._x; o.y=o._y; delete o._x; delete o._y; }
     const snap=o._snap; delete o._snap;
