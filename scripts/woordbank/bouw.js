@@ -78,6 +78,39 @@ function lettergrepen(w) {
   return m ? m.length : 1;
 }
 
+// ── Kenmerk dat alleen op een WOORDGRENS ontstaat herkennen ───────────────────
+// Een spellingkenmerk (ng, nk, th, cht, eau …) is alleen ECHT als de letters in één
+// woorddeel/klankgroep zitten. Op een voorvoegsel- of samenstellingsgrens plakken de
+// laatste letter(s) van deel A en de eerste van deel B toevallig tot het patroon aaneen,
+// zonder de klank:  in+gelicht (geen ng), woon+kamer (geen nk), vast+houden (geen th),
+// lunch+tijd (geen cht), politie+auto (geen eau). Zulke woorden weren we uit die categorie.
+// Behoedzaam: heeft het woord het kenmerk óók echt in één woorddeel (ver+schillen → "schillen"
+// heeft sch; koning heeft ng zonder samenstelling), dan blijft het gewoon staan.
+const CLUSTER_VOORV = new Set(["aan", "in", "on", "uit", "ont"]); // voorvoegsels vóór de cluster
+function echtWoord(s) { return s.length >= 3 && OPENTAAL.has(s); }
+function grensKenmerkAlleen(w, feat) {
+  if (!feat.test(w)) return false;                 // kenmerk niet aanwezig (los probleem)
+  // STERKE splitsingen: voorvoegsel + woord, of twee echte woorddelen (deel A >= 4 letters).
+  const sterk = [];
+  for (let i = 2; i <= w.length - 2; i++) {
+    const L = w.slice(0, i), R = w.slice(i);
+    if (R.length < 3 || !OPENTAAL.has(R)) continue;
+    if (CLUSTER_VOORV.has(L) || (L.length >= 4 && OPENTAAL.has(L))) sterk.push(i);
+  }
+  if (!sterk.length) return false;                 // geen samenstelling → kenmerk is intrinsiek → behouden
+  // Behoud zodra het kenmerk ECHT in één woorddeel van een geldige splitsing zit
+  // (ver+schillen → "schillen" heeft sch). Recursief: dat woorddeel mag het kenmerk zélf
+  // niet ook alleen-op-een-naad hebben (vasthoud = vast+houd telt niet als echt th-woord).
+  for (let i = 2; i <= w.length - 2; i++) {
+    const L = w.slice(0, i), R = w.slice(i);
+    if (!echtWoord(R)) continue;
+    if (echtWoord(L) || CLUSTER_VOORV.has(L)) {
+      if ((feat.test(L) && !grensKenmerkAlleen(L, feat)) || (feat.test(R) && !grensKenmerkAlleen(R, feat))) return false;
+    }
+  }
+  return true;                                     // kenmerk alleen op de naad → uitsluiten
+}
+
 
 // ── Leermomenten-tabel: spelling-ingredienten met "vanaf groep" ───────────────
 // Algemeen/SLO-gekalibreerd, methode-neutraal. `doel` = wordt als oefenlijst
@@ -96,10 +129,10 @@ const ING = [
   { id: "hakwoord", g: 3, doel: 1, soort: "fonetisch", label: "hakwoorden (woorden van één klankgroep, zoals kat, bal, rij)", test: w => lettergrepen(w) === 1 },
   // Staal splitst dit: zingwoord = ng (zingen, koning), plankwoord = nk (plank, bank).
   // NIET de "ng" op een woordgrens (on+gehoorzaam, aan+geven): dat is geen ng-KLANK.
-  { id: "ng", g: 3, doel: 1, soort: "orthografisch", label: "woorden met ng (zoals zingen, koning)", test: w => /ng/.test(w) && !/^(on|aan)g/.test(w) },
-  { id: "nk", g: 3, doel: 1, soort: "orthografisch", label: "woorden met nk (zoals plank, bank)", test: w => /nk/.test(w) },
+  { id: "ng", g: 3, doel: 1, soort: "orthografisch", label: "woorden met ng (zoals zingen, koning)", test: w => /ng/.test(w) && !grensKenmerkAlleen(w, /ng/) },
+  { id: "nk", g: 3, doel: 1, soort: "orthografisch", label: "woorden met nk (zoals plank, bank)", test: w => /nk/.test(w) && !grensKenmerkAlleen(w, /nk/) },
   { id: "sch", g: 3, doel: 1, soort: "orthografisch", label: "woorden met sch", test: w => /sch/.test(w) && !/isch/.test(w) },
-  { id: "cht", g: 3, doel: 1, soort: "orthografisch", label: "woorden met cht (korte klank + cht)", test: w => /cht/.test(w) },
+  { id: "cht", g: 3, doel: 1, soort: "orthografisch", label: "woorden met cht (korte klank + cht)", test: w => /cht/.test(w) && !grensKenmerkAlleen(w, /cht/) },
   { id: "eer_oor_eur", g: 3, doel: 1, soort: "orthografisch", label: "woorden met eer, oor of eur", test: w => /eer|oor|eur/.test(w) },
   // Apart houden zodat je "aai", "ooi" of "oei" los kunt oefenen (of alle drie samen).
   { id: "aai", g: 3, doel: 1, soort: "orthografisch", label: "woorden met aai (je hoort /j/, je schrijft i)", test: w => /aai/.test(w) },
@@ -133,9 +166,9 @@ const ING = [
   { id: "isch", g: 6, doel: 1, soort: "orthografisch", label: "woorden op -isch (je hoort /ies/)", test: w => /isch/.test(w) },
   // ── groep 7/8: leenwoorden / bijzonder
   { id: "x", g: 7, doel: 1, soort: "orthografisch", label: "de x die je als /ks/ hoort (taxi, examen)", test: w => /x/.test(w) },
-  { id: "th", g: 7, doel: 1, soort: "orthografisch", label: "de th die je als /t/ hoort (thee, thema)", test: w => /th/.test(w) },
+  { id: "th", g: 7, doel: 1, soort: "orthografisch", label: "de th die je als /t/ hoort (thee, thema)", test: w => /th/.test(w) && !grensKenmerkAlleen(w, /th/) },
   { id: "ch_sj", g: 7, doel: 1, soort: "fonetisch", label: "de ch die klinkt als /sj/ (chef, machine)", test: w => /ch/.test(w) && !/sch|cht/.test(w) },
-  { id: "eau", g: 8, doel: 1, soort: "orthografisch", label: "woorden met -eau (je hoort /oo/)", test: w => /eau/.test(w) },
+  { id: "eau", g: 8, doel: 1, soort: "orthografisch", label: "woorden met -eau (je hoort /oo/)", test: w => /eau/.test(w) && !grensKenmerkAlleen(w, /eau/) },
   { id: "accent_e", g: 8, doel: 1, soort: "orthografisch", label: "woorden met een accentstreepje op de e (café, privé)", test: w => /[éèê]/.test(w) },
   // Griekse y = y als klinker MIDDEN in het woord (systeem, type, cyclus), NIET de
   // Engelse -y aan het eind (baby, party, pony, hobby) en niet de ij.
