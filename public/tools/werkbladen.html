@@ -517,6 +517,7 @@
         lijnen.push('\nDIT IS EEN SCHRIFTELIJK SPELLINGWERKBLAD. Houd hier rekening mee:');
         lijnen.push('- TOON NOOIT een fout gespeld woord in beeld. Een kind onthoudt het woordbeeld dat het ziet, dus een verkeerde spelling laten zien leert het verkeerde aan. Dus GEEN "welk woord is goed geschreven: plank of plangk?", GEEN waar/niet-waar of stelling met een fout gespeld woord erin ("het woord \'plangk\' is goed"), en GEEN zoek-de-fout. Elk woord dat op het blad staat, is correct gespeld. Toets de regel via de goede spelling (invullen, sorteren, woord afmaken, zin schrijven), niet via een foute variant.');
         lijnen.push('- Verklap het antwoord NIET visueel. Gebruik dus GEEN meerkeuze waarbij de juiste schrijfwijze van het woord gewoon tussen de opties staat (bijvoorbeeld "crisis of criesis"); op papier geef je dan het antwoord weg. Zo\'n vraag werkt alleen mondeling. Laat de leerling de spelling ZELF schrijven.');
+        lijnen.push('- Dit geldt OOK als de keuze in een gewone (open) vraag of zin verstopt zit. Zet NOOIT twee spellingvarianten van hetzelfde woord naast elkaar met "of" (bijvoorbeeld "Welk woord past: zonnebrand of zonne-brand?"). Eén van de twee is dan fout gespeld en staat toch op het blad. Vraag in plaats daarvan om het woord ZELF te schrijven ("...welk woord past hier? Schrijf het goed op.").');
         lijnen.push('- Gebruik bij voorkeur invul-opdrachten waarbij juist de moeilijke letter(s) ontbreken (bijvoorbeeld voor "crisis": voor="cr", antwoord="i", na="sis"), woorden laten afmaken, of een mini-dictee-achtige opdracht.');
         lijnen.push('- STAAT er een gat in een ZIN, dan moet die zin een LOPENDE, correcte Nederlandse zin zijn waarin het ingevulde woord grammaticaal én qua betekenis klopt. Lees de zin met het woord ingevuld terug: klinkt hij onnatuurlijk of onzinnig (bijv. "Kun jij me de dringen doorgeven"), kies dan een ander woord of een andere zin. Gebruik het woord in zijn juiste vorm (enkelvoud/meervoud past bij de zin).');
         lijnen.push('- TRANSFORMATIE-CATEGORIEEN (meervoud, verkleinwoord, langer maken voor d/t, f→v, s→z, trappen van vergelijking): gebruik BIJ VOORKEUR de vorm "grondwoord → ___" (voor="auto → ", antwoord="auto\'s", na=""), NIET het gevormde woord in een losse zin proppen. Veel meervouds-/verkleinvormen klinken gek of fout in een zin ("twee kilo\'s appels" is geen goed Nederlands). Dus liever: "boom → ___" (antwoord: boompje), "hond → ___" (antwoord: honden).');
@@ -845,6 +846,28 @@
         function schoonAI(s) {
           return String(s == null ? '' : s).replace(/[^\s.]*\.{2,}\s*nee[:,]?\s+(?:\w+\s+)?/gi, '').replace(/\s{2,}/g, ' ');
         }
+        // Twee (bijna) identieke woorden met "of" ertussen = een spelling-KEUZE op papier
+        // ("plank of plangk", "zonnebrand of zonne-brand"). Verboden: het kind ziet dan een
+        // FOUT woordbeeld. We detecteren het en gooien zulke items eruit.
+        function normSp(w) {
+          return String(w).toLowerCase()
+            .replace(/[àáâã]/g, 'a').replace(/[èéêë]/g, 'e').replace(/[ìíîï]/g, 'i')
+            .replace(/[òóôõ]/g, 'o').replace(/[ùúûü]/g, 'u').replace(/ç/g, 'c').replace(/[^a-z]/g, '');
+        }
+        function lev(a, b) {
+          var m = a.length, n = b.length, d = [], i, j;
+          for (i = 0; i <= m; i++) d[i] = [i];
+          for (j = 0; j <= n; j++) d[0][j] = j;
+          for (i = 1; i <= m; i++) for (j = 1; j <= n; j++)
+            d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+          return d[m][n];
+        }
+        function varianten(a, b) { a = normSp(a); b = normSp(b); return !!a && a.length >= 4 && (a === b || lev(a, b) <= 1); }
+        function bevatSpellingKeuze(s) {
+          var re = /([a-zà-ÿ]{4,}(?:-[a-zà-ÿ]+)*)\s+(?:of|óf)\s+([a-zà-ÿ]{4,}(?:-[a-zà-ÿ]+)*)/gi, m2;
+          while ((m2 = re.exec(String(s || '')))) { if (varianten(m2[1], m2[2])) return true; }
+          return false;
+        }
         function verschilRaaktKenmerk(fout, goed) {
           var i = 0; while (i < fout.length && i < goed.length && fout[i] === goed[i]) i++;
           var j = 0; while (j < fout.length - i && j < goed.length - i && fout[fout.length - 1 - j] === goed[goed.length - 1 - j]) j++;
@@ -880,6 +903,10 @@
               col.items = herstel(col.items, function (w) { return w; }, function (w) { return w; },
                 function (lw) { return heeft(bank, lw) && !ambigu(lw) && !(isC && cDual(lw)); }, pool.length ? pool : bank.woorden);
             });
+            // Een sorteerkolom die (na controle) leeg blijft, is een kapotte opdracht
+            // (bv. een lege "geen van beide"-kolom) → weglaten, mits er 2+ kolommen overblijven.
+            var gevuld = (blk.categorieen || []).filter(function (col) { return (col.items || []).length > 0; });
+            if (gevuld.length >= 2) blk.categorieen = gevuld;
           } else if (blk.type === 'woordzoeker') {
             blk.woorden = herstel(blk.woorden, function (w) { return w; }, function (w) { return w.toUpperCase(); }, inUnie, unie);
             // Alleen mark-vrije woorden in het rooster (zie markVrij); trema/accent/koppelteken
@@ -1028,6 +1055,26 @@
               else if (pijl) blk.opdracht = 'Schrijf de juiste vorm van het woord.';
               else if (nZin > 0) blk.opdracht = 'Lees de zin en schrijf het juiste woord op de stippellijn.';
             }
+          }
+        });
+        // Gooi items eruit die een fout gespeld woord als KEUZE tonen ("X of Y?") — dat
+        // hoort niet op een spellingblad (het kind onthoudt het foute woordbeeld).
+        (wb.blokken || []).forEach(function (blk) {
+          if (!blk) return;
+          if (blk.type === 'open' && blk.vragen && blk.vragen.length) {
+            var vo = blk.vragen.filter(function (q) { return !bevatSpellingKeuze(q && q.vraag); });
+            if (vo.length) blk.vragen = vo;
+          } else if (blk.type === 'waarnietwaar' && blk.stellingen && blk.stellingen.length) {
+            var vs = blk.stellingen.filter(function (q) { return !bevatSpellingKeuze(q && q.stelling); });
+            if (vs.length) blk.stellingen = vs;
+          } else if (blk.type === 'meerkeuze' && blk.vragen && blk.vragen.length) {
+            var vm = blk.vragen.filter(function (q) {
+              if (bevatSpellingKeuze(q && q.vraag)) return false;
+              var opt = (q && q.opties) || [];
+              for (var oi = 0; oi < opt.length; oi++) for (var oj = oi + 1; oj < opt.length; oj++) if (varianten(opt[oi], opt[oj])) return false;
+              return true;
+            });
+            if (vm.length) blk.vragen = vm;
           }
         });
       } catch (e) { /* fail-safe */ }
