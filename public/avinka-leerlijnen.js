@@ -498,6 +498,10 @@
   //   met "begin/vooraan" of een tijdwoord ('s ochtends…) -> alleen s_begin
   var RX_APOS_GEN = /komma['’\s-]*s\b|apostrof|['’]\s?s[\s-]?woord/;
   var RX_MEERVOUD = /meervoud/;
+  // "meervoud" alleen is GÉÉN apostrof-s-signaal: élke categorie heeft een meervoud
+  // ("trema-meervoud" = meervoud van tremawoorden). Alleen "meervoud" mét een apostrof-s-
+  // markering (of "auto's") wijst op de meervoud-'s-categorie.
+  var RX_MV_S = /meervoud[^.!?]{0,14}(['’]|komma|apostrof)|(['’]|komma|apostrof)[^.!?]{0,14}meervoud/;
   var RX_S_BEGIN = /aan\s*(het\s*)?begin|voor\s*aan|vooraan|\bbegin\b|ervoor|['’]\s?s\s*(ochtends|morgens|middags|avonds|nachts|zomers|winters|maandags|dinsdags|woensdags|donderdags|vrijdags|zaterdags|zondags)/;
   var RX_BEZIT = /bezit|genitief|van\s+wie/;
   // Tussenletters in samenstellingen: generiek "tussenletter" -> alle drie; "tussen-n/-s/-e" -> alleen die.
@@ -601,7 +605,7 @@
     // met de hand gecureerde grondvormen (het kind vormt zelf het meervoud).
     { naam: "meervoud met 's (bijvoorbeeld auto → auto's)", bank: "meervoud_s",
       regel: "Woorden die eindigen op een lange klinker (a, o, u, i, y) krijgen in het meervoud een apostrof (') en dan een s: auto → auto's, baby → baby's, foto → foto's.",
-      test: function (t) { return RX_MEERVOUD.test(t) || /auto['’]?s/.test(t) || (RX_APOS_GEN.test(t) && !RX_S_BEGIN.test(t) && !RX_BEZIT.test(t)); },
+      test: function (t) { return RX_MV_S.test(t) || /auto['’]?s/.test(t) || (RX_APOS_GEN.test(t) && !RX_S_BEGIN.test(t) && !RX_BEZIT.test(t)); },
       woorden: ["auto", "foto", "radio", "paraplu", "menu", "taxi", "baby", "pony", "kilo", "piano", "video", "oma", "opa", "hobby"] },
     // De 's vooraan tijdwoorden (verkorting van "des"): 's ochtends, 's avonds. Gesloten,
     // klein lijstje; géén meervoud-apostrof maar een los kopstukje vóór het woord.
