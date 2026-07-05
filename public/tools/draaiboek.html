@@ -172,11 +172,15 @@
     .grip:active { cursor: grabbing; }
     li:hover > .grip, .fase-blok-kop:hover > .grip, .tl-hd:hover > .grip, .sec-kop:hover > .grip, .rm:hover > .grip { opacity: .6; }
     ul.aandacht li > .grip { top: 7px; }
-    [data-drag].sleep { opacity: .4; }
-    /* Sleep-preview: een duidelijke groene balk waar het blok terechtkomt bij loslaten */
-    [data-drag].drop-voor { box-shadow: inset 0 3px 0 0 var(--accent), 0 -2px 8px rgba(47,158,110,.18); background: rgba(47,158,110,.06); border-radius: 8px; }
-    [data-drag].drop-na { box-shadow: inset 0 -3px 0 0 var(--accent), 0 2px 8px rgba(47,158,110,.18); background: rgba(47,158,110,.06); border-radius: 8px; }
-    [data-drag].sleep { opacity: .35; }
+    [data-drag].sleep { opacity: .35; box-shadow: 0 4px 14px rgba(0,0,0,.10); }
+    /* Sleep-preview: een duidelijke lijn (met stip) precies waar het blok terechtkomt */
+    #drop-lijn { position: fixed; height: 0; border-top: 3px solid var(--accent); border-radius: 3px; pointer-events: none; opacity: 0; transition: opacity .1s ease; z-index: 9998; box-shadow: 0 0 6px rgba(47,158,110,.55); }
+    #drop-lijn::before { content: ''; position: absolute; left: -4px; top: -5px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 4px rgba(47,158,110,.6); }
+    #drop-lijn.zichtbaar { opacity: 1; }
+    /* In-/uitklappen van een sectie */
+    .sec-toggle { border: none; background: transparent; color: var(--accent2, #888); cursor: pointer; font-size: 14px; line-height: 1; padding: 2px 3px; margin-left: -4px; transition: transform .15s ease; }
+    .sec.dicht .sec-toggle { transform: rotate(-90deg); }
+    .sec.dicht > *:not(.sec-kop) { display: none; }
     /* Afvinken */
     .vink { position: absolute; left: 0; top: 5px; width: 17px; height: 17px; border: 1.5px solid var(--line-strong); border-radius: 5px; background: #fff; cursor: pointer; z-index: 2; transition: background .12s, border-color .12s; }
     .vink:hover { border-color: var(--accent); }
@@ -218,6 +222,40 @@
     .voegtoe .meer { border: 1px solid var(--line-strong); background: #fff; color: var(--accent2); border-radius: 9px; padding: 6px 11px; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
     .voegtoe .meer:hover { border-color: var(--accent); background: var(--brand-soft); }
     .voegtoe .meer:disabled { opacity: .5; cursor: default; }
+    .meer-sec { margin: 12px 0 2px; }
+    .meer-sec .meer { border: 1px solid var(--line-strong); background: #fff; color: var(--accent2); border-radius: 10px; padding: 8px 14px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .meer-sec .meer:hover { border-color: var(--accent); background: var(--brand-soft); }
+    .meer-sec .meer:disabled { opacity: .5; cursor: default; }
+    #db-toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); background: #1f7a4d; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 14px; font-weight: 600; box-shadow: 0 6px 20px rgba(0,0,0,.18); opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; z-index: 9999; max-width: 90%; }
+    #db-toast.zichtbaar { opacity: 1; transform: translate(-50%, 0); }
+    /* Werk-aids onder het draaiboek: aantekeningen + plattegrond (horen bij het bestand, los van het draaiboek zelf) */
+    #db-extras { margin-top: 22px; display: grid; gap: 16px; }
+    .extra-blok { border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; background: var(--card); }
+    .extra-kop { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+    .extra-hint { font-size: 13px; color: var(--muted, #777); margin: 0 0 10px; }
+    #extra-notities { width: 100%; min-height: 90px; border: 1px solid var(--line-strong); border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 14px; color: var(--ink); resize: vertical; background: #fff; }
+    #extra-notities:focus { outline: none; border-color: var(--accent); }
+    .pg-upload { display: inline-flex; align-items: center; gap: 8px; border: 1px dashed var(--line-strong); background: #fff; color: var(--accent2); border-radius: 10px; padding: 10px 16px; font: inherit; font-weight: 600; font-size: 14px; cursor: pointer; }
+    .pg-upload:hover { border-color: var(--accent); background: var(--brand-soft); border-style: solid; }
+    .pg-preview { margin-top: 4px; }
+    .pg-preview img { max-width: 100%; max-height: 480px; border-radius: 10px; border: 1px solid var(--line); display: block; }
+    .pg-verwijder { margin-top: 8px; border: 1px solid var(--line-strong); background: #fff; color: var(--ink); border-radius: 9px; padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+    .pg-verwijder:hover { border-color: #c0392b; color: #c0392b; }
+    /* "Wie doet dit?"-veld per taak */
+    .wie-in { flex: 0 0 auto; width: 96px; margin-left: 8px; border: 1px solid var(--line); border-radius: 8px; padding: 3px 8px; font: inherit; font-size: 12.5px; color: var(--accent2); background: #fff; }
+    .wie-in::placeholder { color: #b7b3c4; font-style: italic; }
+    .wie-in:focus { outline: none; border-color: var(--accent); background: #fff; }
+    .wie-in.vol { border-color: var(--accent); background: var(--brand-soft); color: var(--accent2); font-weight: 600; }
+    li.chk, ul.mat li, ul.checks li { display: flex; align-items: center; }
+    li.chk .tx, ul.mat li .tx, ul.checks li .tx { flex: 1 1 auto; }
+    /* Takenlijst per persoon */
+    #db-taken { margin-top: 16px; }
+    .taken-persoon { margin: 10px 0; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    .taken-naam { font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+    .taken-tel { display: inline-block; margin-left: 6px; font-size: 12px; font-weight: 600; color: var(--accent2); background: var(--brand-soft); border-radius: 10px; padding: 1px 8px; }
+    .taken-lijst { margin: 0; padding-left: 18px; }
+    .taken-lijst li { margin: 2px 0; }
+    .taken-sec { color: var(--muted, #999); font-size: 12px; }
     /* Waarschuwingsvenster vóór downloaden */
     .modal-wrap { position: fixed; inset: 0; background: rgba(34,28,58,.45); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
     .modal { background: #fff; border-radius: 20px; padding: 24px 24px 22px; max-width: 460px; width: 100%; box-shadow: var(--shadow-md); }
@@ -300,7 +338,8 @@
       .db.ingeklapt { max-height: none; }
       .db.ingeklapt::after { display: none; }
       .fase-blok, .tl-item, ul.aandacht li, ul.mat li, .sec-kop { break-inside: avoid; }
-      .card-label, .del, .db-tip, .move, .voegtoe, .nieuw-kopje, .grip { display: none !important; }
+      .card-label, .del, .db-tip, .move, .voegtoe, .meer-sec, .nieuw-kopje, .grip, .sec-toggle, .pg-upload, .pg-verwijder { display: none !important; }
+      .sec.dicht > *:not(.sec-kop) { display: revert !important; } /* bij printen alles tonen, ook ingeklapte secties */
       li.af > .vink { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .db .tx { box-shadow: none !important; background: none !important; }
     }
@@ -401,12 +440,21 @@
           </div>
           <div>
             <label class="field-label" for="thema-extra">Sfeer of accent</label>
-            <input type="text" id="thema-extra" class="field-input" placeholder="bijv. 'rustig houden', 'oud-Hollands'" oninput="this.classList.toggle('filled', !!this.value.trim())" />
+            <input type="text" id="thema-extra" class="field-input" placeholder="bijv. 'rustig houden', 'uitbundig'" oninput="this.classList.toggle('filled', !!this.value.trim())" />
           </div>
         </div>
         <div style="margin-top:16px">
           <label class="veld-l" for="bijzonder">Bijzonderheden <span class="hint">· wat moet er zeker in?</span></label>
           <textarea id="bijzonder" class="field-input" placeholder="Bijv. 'we hebben een springkussen geregeld', 'groep 3 doet niet mee aan het ochtenddeel', 'let op: kind met notenallergie'" oninput="this.classList.toggle('filled', !!this.value.trim())"></textarea>
+        </div>
+
+        <div style="margin-top:16px">
+          <label class="veld-l">Hoe uitgebreid? <span class="hint">· je kunt het daarna altijd zelf aanpassen</span></label>
+          <div class="seg" id="versie-seg">
+            <div class="opt aan" data-v="volledig" onclick="kiesVersie(this,'volledig')">Volledig</div>
+            <div class="opt" data-v="verkort" onclick="kiesVersie(this,'verkort')">Verkort</div>
+          </div>
+          <div class="hint" id="versie-uitleg" style="margin-top:6px">Een compleet draaiboek met alle details uitgewerkt.</div>
         </div>
 
         <button class="btn-primary" id="btn-maak" onclick="maak()">✨ Maak mijn draaiboek</button>
@@ -424,6 +472,8 @@
         <div id="live-bar"></div>
         <div class="db" id="db"></div>
         <button class="db-toggle" id="db-toggle" onclick="toggleDb()" style="display:none">Toon het hele draaiboek</button>
+        <div id="db-taken"></div>
+        <div id="db-extras"></div>
         <div class="acties">
           <button class="btn-green" onclick="downloadWord(this)">⬇ Download als Word</button>
           <a class="btn-koppel" id="btn-ouder" onclick="naarOudercontact(event)" href="/tools/oudercontact.html?van=draaiboek&m=informatiebrief">✉️ Schrijf het ouderbericht</a>
@@ -432,6 +482,7 @@
           <button class="btn-soft" onclick="printDraaiboek()">🖨️ Print</button>
           <button class="btn-soft" onclick="invoerAanpassen()">🔧 Invoer aanpassen</button>
           <button class="btn-soft" onclick="maak(true)">🔄 Andere versie</button>
+          <button class="btn-soft" onclick="verkortDraaiboek(this)">✂️ Maak beknopte versie</button>
           <button class="btn-soft" onclick="toonVerfijn()">✏️ Pas iets aan</button>
         </div>
         <div class="verfijn" id="verfijn" style="display:none">
@@ -498,8 +549,9 @@
     //  'toonAls' verschijnt alleen bij een bepaalde keuze (adaptieve subvragen).
     // ════════════════════════════════════════════════════════════════════════
     const EVENEMENTEN = [
-      { id: 'sinterklaas', naam: 'Sinterklaas', emoji: '🎁', modus: 'tijd', start: '08:30', eind: '12:00',
+      { id: 'sinterklaas', naam: 'Sinterklaas', emoji: '🎁', modus: 'tijd', losProgramma: true, start: '08:30', eind: '12:00',
         sfeer: 'Warm, spannend en feestelijk. Onderbouw gelooft nog volop; bovenbouw maakt vaak surprises. Houd de dag magisch en soepel, en de spanning behapbaar.',
+        aftel: ['Enkele maanden vooraf', 'Uiterlijk zes weken vooraf', 'Uiterlijk vier weken vooraf', 'Uiterlijk twee weken vooraf', 'Uiterlijk één week vooraf', 'De dag ervoor'],
         velden: [
           { id: 'intocht', label: 'Hoe komt Sinterklaas aan?', type: 'activiteit', eigen: true, opties: [
             { v: 'verrassing', label: 'Verrassing', sub: 'laat de tool iets leuks verzinnen' },
@@ -509,15 +561,19 @@
             { v: 'alopschool', label: 'Sint is al op school' } ], default: 'verrassing' },
           { id: 'verhaallijn', label: 'Verhaallijn van dit jaar', type: 'text', optioneel: true, hint: "bijv. 'Sint is z'n staf kwijt'. Leeg = de tool verzint een rustige verhaallijn.", placeholder: "Laat leeg of typ een verhaallijn" },
           { id: 'bouw', label: 'Voor welke groepen?', type: 'select', opties: ['Onderbouw', 'Bovenbouw', 'Hele school'], default: 'Hele school' },
-          { id: 'ontvangst', label: 'Hoe ziet Sint de kinderen?', type: 'select', opties: ['Sint gaat de klassen rond', 'Op een vaste plek in de hal/aula', 'Allebei'], default: 'Sint gaat de klassen rond' },
+          { id: 'ontvangst', label: 'Hoe ziet Sint de kinderen?', type: 'select', eigen: true, opties: ['Sint gaat de klassen rond', 'Op een vaste plek in de hal/aula', 'Allebei'], default: 'Sint gaat de klassen rond' },
           { id: 'praatje', label: 'Houdt Sint een praatje of vertelt hij iets?', type: 'toggle', default: true },
           { id: 'pietengym', label: 'Pietengym / pietenparcours?', type: 'toggle', default: true },
-          { id: 'surprises', label: 'Surprises en gedichten (bovenbouw)?', type: 'toggle', default: true },
-          { id: 'budget', label: 'Cadeaubudget per kind', type: 'text', optioneel: true, placeholder: 'bijv. €7,50', toonAls: { veld: 'surprises', waarde: true } },
-          { id: 'schoen', label: 'Schoenzetten vooraf?', type: 'toggle', default: true } ] },
+          { id: 'surprises', label: 'Surprises en gedichten maken?', type: 'toggle', default: true },
+          { id: 'surprisevanaf', label: 'Vanaf welke groep maken de kinderen surprises?', type: 'select', opties: ['Groep 4', 'Groep 5', 'Groep 6'], default: 'Groep 5', toonAls: { veld: 'surprises', waarde: true } },
+          { id: 'budget', label: 'Maximaal bedrag per surprise', type: 'text', optioneel: true, placeholder: 'bijv. €5', hint: 'wat elk kind aan de ander besteedt; betalen de gezinnen zelf', toonAls: { veld: 'surprises', waarde: true } },
+          { id: 'bovenbouwsint', label: 'Hoe betrekt de bovenbouw Sinterklaas?', type: 'select', eigen: true, opties: ['Alleen bij de aankomst, daarna zelf surprises', 'Sint komt kort langs bij de surprises', 'De bovenbouw krijgt ook een cadeautje van Sint'], default: 'Sint komt kort langs bij de surprises', toonAls: { veld: 'bouw', waarde: ['Bovenbouw', 'Hele school'] } },
+          { id: 'schoen', label: 'Schoenzetten vooraf?', type: 'toggle', default: true },
+          { id: 'schoendatum', label: 'Wanneer wordt de schoen gezet?', type: 'datum', optioneel: true, hint: 'vaak een week of twee voor het feest', toonAls: { veld: 'schoen', waarde: true } } ] },
 
       { id: 'kerst', naam: 'Kerst', emoji: '🎄', modus: 'tijd', start: '17:00', eind: '19:00',
         sfeer: 'Sfeervol en gezellig, meestal in het donker met veel lichtjes. Denk aan warme aankleding en samen zijn.',
+        aftel: ['Uiterlijk zes weken vooraf', 'Uiterlijk vier weken vooraf', 'Uiterlijk twee weken vooraf', 'Uiterlijk één week vooraf', 'De dag ervoor'],
         velden: [
           { id: 'activiteit', label: 'De grote activiteit', type: 'activiteit', eigen: true, opties: [
             { v: 'kerstdiner', label: 'Kerstdiner in de klas' },
@@ -525,13 +581,13 @@
             { v: 'lichtjestocht', label: 'Lichtjestocht / kerstwandeling' },
             { v: 'kerstmarkt', label: 'Kerstmarkt met kraampjes' },
             { v: 'voorstelling', label: 'Kerstviering-voorstelling', sub: 'het kerstverhaal' } ], default: 'kerstdiner' },
-          { id: 'route', label: 'Route van de tocht', type: 'select', opties: ['Rond het schoolplein', 'Door de wijk / het dorp'], default: 'Rond het schoolplein', toonAls: { veld: 'activiteit', waarde: 'lichtjestocht' } },
-          { id: 'scenes', label: 'Wie speelt de scènes?', type: 'select', opties: ['Groep 7 en 8', 'Samen met ouders', 'Diverse groepen'], default: 'Groep 7 en 8', toonAls: { veld: 'activiteit', waarde: 'lichtjestocht' } },
+          { id: 'route', label: 'Route van de tocht', type: 'select', eigen: true, opties: ['Rond het schoolplein', 'Door de wijk / het dorp'], default: 'Rond het schoolplein', toonAls: { veld: 'activiteit', waarde: 'lichtjestocht' } },
+          { id: 'scenes', label: 'Wie speelt de scènes?', type: 'select', eigen: true, opties: ['Groep 7 en 8', 'Samen met ouders', 'Diverse groepen'], default: 'Groep 7 en 8', toonAls: { veld: 'activiteit', waarde: 'lichtjestocht' } },
           { id: 'kraam', label: 'Elke klas een eigen kraam?', type: 'toggle', default: true, toonAls: { veld: 'activiteit', waarde: 'kerstmarkt' } },
           { id: 'verkoop', label: 'Verkopen jullie iets?', type: 'select', opties: ['Ja, met opbrengst (goed doel / schoolkas)', 'Nee, het is gratis'], default: 'Ja, met opbrengst (goed doel / schoolkas)', toonAls: { veld: 'activiteit', waarde: 'kerstmarkt' } },
-          { id: 'eten', label: 'Wie verzorgt het eten?', type: 'select', opties: ['Ouders tekenen in (intekenlijst)', 'De school verzorgt het', 'Kinderen nemen zelf iets mee'], default: 'Ouders tekenen in (intekenlijst)' },
+          { id: 'eten', label: 'Wie verzorgt het eten?', type: 'select', eigen: true, opties: ['Ouders tekenen in (intekenlijst)', 'De school verzorgt het', 'Kinderen nemen zelf iets mee'], default: 'Ouders tekenen in (intekenlijst)', toonAls: { veld: 'activiteit', waarde: ['kerstdiner', 'kerstlunch'] } },
           { id: 'goeddoel', label: 'Koppelen aan een goed doel?', type: 'toggle', default: false },
-          { id: 'kaarsen', label: 'Kaarsen op tafel', type: 'select', opties: ['Led (veilig)', 'Echte kaarsjes, met wateremmer'], default: 'Led (veilig)' } ] },
+          { id: 'kaarsen', label: 'Kaarsen op tafel', type: 'select', opties: ['Led (veilig)', 'Echte kaarsjes, met wateremmer'], default: 'Led (veilig)', toonAls: { veld: 'activiteit', waarde: ['kerstdiner', 'kerstlunch'] } } ] },
 
       { id: 'projectweek', naam: 'Projectweek', emoji: '🔭', modus: 'dag',
         sfeer: 'Een week rond één thema, vaak groepsdoorbrekend, met opbouw naar een feestelijke afsluiting.',
@@ -551,8 +607,9 @@
           { id: 'gastlessen', label: 'Externe gastlessen of workshops?', type: 'toggle', default: false },
           { id: 'kerndoelen', label: 'Kerndoelen erbij vermelden?', type: 'toggle', default: false } ] },
 
-      { id: 'eindfeest', naam: 'Zomer- / eindfeest', emoji: '🎪', modus: 'tijd', start: '15:00', eind: '18:00',
+      { id: 'eindfeest', naam: 'Zomer- / eindfeest', emoji: '🎪', modus: 'tijd', losProgramma: true, start: '15:00', eind: '18:00',
         sfeer: 'Vrolijk schoolfeest, vaak met de hele school en ouders erbij. Afwisseling tussen actief en rustig.',
+        aftel: ['Uiterlijk twaalf weken vooraf', 'Uiterlijk zes weken vooraf', 'Uiterlijk vier weken vooraf', 'Uiterlijk twee weken vooraf', 'Uiterlijk één week vooraf', 'De dag ervoor'],
         velden: [
           { id: 'thema', label: 'Thema', type: 'text', optioneel: true, placeholder: "bijv. 'jungle', 'circus', 'disco'" },
           { id: 'activiteit', label: 'De opzet', type: 'activiteit', meer: true, eigen: true, opties: [
@@ -563,7 +620,7 @@
           { id: 'ouders', label: 'Zijn de ouders erbij?', type: 'toggle', default: false, hint: 'zo ja, rekent de tool extra eten/drinken en volwassen-momenten mee' },
           { id: 'munten', label: 'Muntjes voor eten & drinken?', type: 'toggle', default: false },
           { id: 'binnenbuiten', label: 'Binnen of buiten?', type: 'select', opties: ['Buiten', 'Binnen', 'Combinatie'], default: 'Buiten' },
-          { id: 'posten', label: 'Wie bemant de posten/kraampjes?', type: 'select', opties: ['Hulpouders', 'Klassen zelf', 'Bovenbouwleerlingen', 'Combinatie'], default: 'Hulpouders' },
+          { id: 'posten', label: 'Wie bemant de posten/kraampjes?', type: 'select', eigen: true, opties: ['Hulpouders', 'Klassen zelf', 'Bovenbouwleerlingen', 'Combinatie'], default: 'Hulpouders' },
           { id: 'budget', label: 'Budget', type: 'text', optioneel: true, hint: 'bijv. €500 totaal, of €3 per kind. Dan mag de tool leuke extra\'s voorstellen die passen.', placeholder: 'laat leeg of vul een bedrag in' } ] },
 
       { id: 'afscheid8', naam: 'Afscheid groep 8', emoji: '🎓', modus: 'tijd', start: '18:30', eind: '21:00',
@@ -578,7 +635,7 @@
           { id: 'musicalbron', label: 'De musical is…', type: 'select', opties: ['Zelf geschreven', 'Een bestaande musical', 'Niet van toepassing'], default: 'Een bestaande musical', toonAls: { veld: 'activiteit', waarde: 'musical' } },
           { id: 'extras', label: "Extra's", type: 'multi', opties: ['Afscheidsboek', 'Film / USB met herinneringen', 'Cadeau voor de school', "T-shirts beschrijven", 'Nacht van Acht'], default: ['Afscheidsboek'] },
           { id: 'gasten', label: 'Gasten per kind (familie)', type: 'text', optioneel: true, placeholder: 'bijv. 2 gasten per kind' },
-          { id: 'locatie', label: 'Locatie', type: 'select', opties: ['Op school / in de aula', 'Gehuurde zaal', 'Buiten'], default: 'Op school / in de aula' } ] },
+          { id: 'locatie', label: 'Locatie', type: 'select', eigen: true, opties: ['Op school / in de aula', 'Gehuurde zaal', 'Buiten'], default: 'Op school / in de aula' } ] },
 
       { id: 'schoolreis', naam: 'Schoolreis', emoji: '🚌', modus: 'tijd', start: '08:30', eind: '16:00',
         startLabel: 'Vertrek van school', eindLabel: 'Terug bij school',
@@ -592,23 +649,23 @@
             { v: 'museum', label: 'Museum', sub: 'educatief' },
             { v: 'natuur', label: 'Natuur & buiten' },
             { v: 'binnen', label: 'Binnenspeeltuin', sub: 'zeker bij slecht weer' } ], default: 'pretpark' },
-          { id: 'vervoer', label: 'Vervoer', type: 'select', opties: ['Touringcar', "Auto's van ouders", 'Lopend / met de fiets'], default: 'Touringcar' },
+          { id: 'vervoer', label: 'Vervoer', type: 'select', eigen: true, opties: ['Touringcar', "Auto's van ouders", 'Lopend / met de fiets'], default: 'Touringcar' },
           { id: 'lunch', label: 'Lunch', type: 'select', opties: ['Zelf meenemen', 'Verzorgd op locatie'], default: 'Zelf meenemen' },
           { id: 'kosten', label: 'Kosten per kind', type: 'text', optioneel: true, placeholder: 'bijv. €15' } ] },
 
-      { id: 'sportdag', naam: 'Sportdag', emoji: '🏅', modus: 'tijd', start: '09:00', eind: '14:30',
+      { id: 'sportdag', naam: 'Sportdag', emoji: '🏅', modus: 'tijd', losProgramma: true, start: '09:00', eind: '14:30',
         sfeer: 'Actieve dag met sport- en spelonderdelen langs posten. Groepjes rouleren; hulpouders bemannen de posten.',
         velden: [
           { id: 'activiteit', label: 'De opzet', type: 'activiteit', meer: true, eigen: true, opties: [
             { v: 'posten', label: 'Doordraai-posten', sub: 'met kleurenteams' },
             { v: 'toernooi', label: 'Klassentoernooi' },
             { v: 'estafette', label: 'Estafette-circuit' } ], default: ['posten'] },
-          { id: 'locatie', label: 'Locatie', type: 'select', opties: ['Schoolplein', 'Gymzaal', 'Sportveld', 'Park'], default: 'Schoolplein' },
+          { id: 'locatie', label: 'Locatie', type: 'select', eigen: true, opties: ['Schoolplein', 'Gymzaal', 'Sportveld', 'Park'], default: 'Schoolplein' },
           { id: 'teams', label: 'Teamindeling', type: 'select', opties: ['Kleurenteams (gemengd)', 'Per klas', 'Op leeftijd'], default: 'Kleurenteams (gemengd)' },
           { id: 'prijs', label: 'Prijsuitreiking / gezamenlijke afsluiting?', type: 'toggle', default: true },
-          { id: 'posten2', label: 'Wie bemant de posten?', type: 'select', opties: ['Hulpouders', 'Bovenbouwleerlingen', 'Leerkrachten', 'Combinatie'], default: 'Hulpouders' } ] },
+          { id: 'posten2', label: 'Wie bemant de posten?', type: 'select', eigen: true, opties: ['Hulpouders', 'Bovenbouwleerlingen', 'Leerkrachten', 'Combinatie'], default: 'Hulpouders' } ] },
 
-      { id: 'koningsspelen', naam: 'Koningsspelen', emoji: '👑', modus: 'tijd', start: '08:30', eind: '13:00',
+      { id: 'koningsspelen', naam: 'Koningsspelen', emoji: '👑', modus: 'tijd', losProgramma: true, start: '08:30', eind: '13:00',
         sfeer: 'Landelijke sport- en speldag met een Koningsontbijt en de vaste dans. Vrolijk, actief en oranje.',
         velden: [
           { id: 'ontbijt', label: 'Koningsontbijt vooraf?', type: 'toggle', default: true },
@@ -616,12 +673,12 @@
           { id: 'activiteit', label: 'Opzet sport & spel', type: 'activiteit', meer: true, eigen: true, opties: [
             { v: 'posten', label: 'Doordraai-posten' },
             { v: 'circuit', label: 'Circuit' } ], default: ['posten'] },
-          { id: 'locatie', label: 'Locatie', type: 'select', opties: ['Schoolplein', 'Sportveld', 'Gymzaal', 'Park'], default: 'Schoolplein' },
+          { id: 'locatie', label: 'Locatie', type: 'select', eigen: true, opties: ['Schoolplein', 'Sportveld', 'Gymzaal', 'Park'], default: 'Schoolplein' },
           { id: 'teams', label: 'Teamindeling', type: 'select', opties: ['Kleurenteams', 'Per klas', 'Op leeftijd'], default: 'Kleurenteams' },
-          { id: 'posten2', label: 'Wie bemant de posten?', type: 'select', opties: ['Hulpouders', 'Bovenbouwleerlingen', 'Leerkrachten', 'Combinatie'], default: 'Hulpouders' },
+          { id: 'posten2', label: 'Wie bemant de posten?', type: 'select', eigen: true, opties: ['Hulpouders', 'Bovenbouwleerlingen', 'Leerkrachten', 'Combinatie'], default: 'Hulpouders' },
           { id: 'prijs', label: 'Prijsuitreiking / afsluiting?', type: 'toggle', default: true } ] },
 
-      { id: 'opendag', naam: 'Open dag', emoji: '🚪', modus: 'tijd', start: '09:00', eind: '12:00',
+      { id: 'opendag', naam: 'Open dag', emoji: '🚪', modus: 'tijd', losProgramma: true, start: '09:00', eind: '12:00',
         sfeer: 'De school laat zich zien aan (nieuwe) ouders. Gastvrijheid, een heldere route en informatie meegeven staan centraal.',
         velden: [
           { id: 'doel', label: 'Doel', type: 'select', opties: ['Nieuwe ouders werven', 'Kijkmoment voor huidige ouders'], default: 'Nieuwe ouders werven' },
@@ -629,11 +686,11 @@
           { id: 'gastvrouw', label: 'Gastvrouwen/-heren geregeld?', type: 'select', opties: ['Ja', 'Nog te regelen'], default: 'Nog te regelen' },
           { id: 'leerlingen', label: 'Helpen huidige leerlingen mee?', type: 'toggle', default: true, hint: 'bijv. bovenbouw als rondleiders' } ] },
 
-      { id: 'juffenmeester', naam: 'Juffen- / meesterdag', emoji: '🎈', modus: 'tijd', start: '08:30', eind: '14:00',
+      { id: 'juffenmeester', naam: 'Juffen- / meesterdag', emoji: '🎈', modus: 'tijd', losProgramma: true, start: '08:30', eind: '14:00',
         sfeer: 'Feestdag voor de leerkracht(en). Spelletjes, een traktatie en een cadeau; vaak stiekem voorbereid.',
         velden: [
           { id: 'vorm', label: 'Hoe vieren jullie het?', type: 'select', opties: ['Schoolbreed samen', 'Elke klas kiest een eigen moment'], default: 'Elke klas kiest een eigen moment' },
-          { id: 'wie', label: 'Wie organiseert?', type: 'select', opties: ['Ouders', 'De klas zelf', 'Collega\'s'], default: 'Ouders' },
+          { id: 'wie', label: 'Wie organiseert?', type: 'select', eigen: true, opties: ['Ouders', 'De klas zelf', 'Collega\'s'], default: 'Ouders' },
           { id: 'verrassing', label: 'Moet het een verrassing blijven?', type: 'toggle', default: true },
           { id: 'activiteit', label: 'De activiteit', type: 'activiteit', eigen: true, opties: [
             { v: 'spelletjes', label: 'Spelletjes in de klas' },
@@ -694,6 +751,36 @@
     ['start', 'eind'].forEach(id => document.getElementById(id).addEventListener('change', () => { if (!programmatisch) tijdAangepast = true; }));
 
     // ── Een evenement kiezen: standaardtijden + dynamische velden opbouwen ─────
+    // Voorbeeldzin voor het "Bijzonderheden"-veld, specifiek per tegel (een springkussen
+    // als voorbeeld bij Sinterklaas slaat nergens op).
+    const BIJZONDER_HINT = {
+      sinterklaas: "Bijv. 'de Sint komt met de brandweerauto', 'een kind uit groep 3 is bang voor Pieten', 'let op: notenallergie bij de pepernoten'",
+      kerst: "Bijv. 'de lichtjestocht loopt door de wijk achter school', 'we vieren het samen met de kerk', 'let op: een kind met een notenallergie'",
+      projectweek: "Bijv. 'we werken groepsdoorbrekend', 'woensdag komt er een gastdocent', 'de afsluiting is vrijdagmiddag voor ouders'",
+      eindfeest: "Bijv. 'we hebben een springkussen geregeld', 'groep 3 doet niet mee aan het ochtenddeel', 'let op: een kind met een notenallergie'",
+      afscheid8: "Bijv. 'we spelen een zelfgeschreven musical', 'we huren de zaal van het buurthuis', 'twee kinderen staan liever niet in de spotlights'",
+      schoolreis: "Bijv. 'we gaan met de bus', 'een kind heeft snel last van reisziekte', 'let op: een kind met epilepsie, de juf heeft de medicijnen'",
+      sportdag: "Bijv. 'we gebruiken het sportveld naast school', 'groep 1/2 doet een eigen kleutercircuit', 'let op: een kind in een rolstoel'",
+      koningsspelen: "Bijv. 'we starten met het Koningsontbijt', 'de dans oefenen we de week ervoor', 'let op: een pinda-allergie bij het ontbijt'",
+      opendag: "Bijv. 'we willen vooral nieuwe ouders trekken', 'de bovenbouw geeft rondleidingen', 'we serveren koffie in de aula'",
+      juffenmeester: "Bijv. 'het moet een verrassing blijven voor juf Anke', 'de ouders regelen de high tea', 'let op: een kind met een glutenallergie'"
+    };
+    const BIJZONDER_STANDAARD = "Bijv. 'we hebben iets bijzonders geregeld', 'groep 3 doet niet mee', 'let op: een kind met een notenallergie'";
+    // Voorbeeld voor het "Sfeer of accent"-veld, ook per tegel.
+    const SFEER_HINT = {
+      sinterklaas: "bijv. 'rustig en niet te spannend voor de kleuters', 'warm en gezellig'",
+      kerst: "bijv. 'warm en sfeervol met veel lichtjes', 'ingetogen'",
+      projectweek: "bijv. 'onderzoekend en actief', 'veel zelf laten ontdekken'",
+      eindfeest: "bijv. 'uitbundig en kleurrijk', 'disco', 'jungle'",
+      afscheid8: "bijv. 'emotioneel en persoonlijk', 'groots afsluiten'",
+      schoolreis: "bijv. 'ontspannen dagje uit', 'avontuurlijk'",
+      sportdag: "bijv. 'fanatiek en sportief', 'vooral gezellig meedoen'",
+      koningsspelen: "bijv. 'vrolijk en oranje', 'echt koninklijk'",
+      opendag: "bijv. 'warm en gastvrij', 'professioneel'",
+      juffenmeester: "bijv. 'verrassend en gezellig', 'een relaxte dag'"
+    };
+    const SFEER_STANDAARD = "bijv. 'rustig houden', 'uitbundig'";
+
     function kiesEvenement(id) {
       const ev = evById(id);
       huidigeEv = ev;
@@ -709,6 +796,8 @@
       document.getElementById('eind-label').textContent = ev.eindLabel || 'Eindtijd';
 
       document.getElementById('spec-titel').textContent = 'Over je ' + ev.naam.toLowerCase().replace(' / ', '/');
+      const bz = document.getElementById('bijzonder'); if (bz) bz.placeholder = BIJZONDER_HINT[ev.id] || BIJZONDER_STANDAARD;
+      const tx = document.getElementById('thema-extra'); if (tx) tx.placeholder = SFEER_HINT[ev.id] || SFEER_STANDAARD;
       renderVelden(ev);
       document.getElementById('spec-kaart').style.display = 'block';
       updateTijdZichtbaar();
@@ -743,9 +832,11 @@
         inner = '<label class="act-l"><span class="ster">⭐</span> ' + esc(v.label) + meerHint + '</label>' + hint +
           '<div class="act-grid" data-veld="' + v.id + '">' + kaarten + '</div>' + eigenInput;
       } else if (v.type === 'select') {
+        const andersOpt = v.eigen ? '<option value="__anders__">Anders, namelijk…</option>' : '';
+        const eigenInput = v.eigen ? '<input type="text" class="field-input act-eigen" data-veld="' + v.id + '__eigen" placeholder="Vul je eigen antwoord in" style="display:none; margin-top:10px" />' : '';
         inner = '<label class="field-label">' + esc(v.label) + '</label>' + hint +
           '<select class="field-select" data-veld="' + v.id + '">' +
-          v.opties.map(o => '<option>' + esc(o) + '</option>').join('') + '</select>';
+          v.opties.map(o => '<option>' + esc(o) + '</option>').join('') + andersOpt + '</select>' + eigenInput;
       } else if (v.type === 'toggle') {
         inner = '<label class="veld-l">' + esc(v.label) + '</label>' + hint +
           '<div class="seg" data-veld="' + v.id + '"><div class="opt" data-v="ja">Ja</div><div class="opt" data-v="nee">Nee</div></div>';
@@ -753,6 +844,9 @@
         inner = '<label class="veld-l">' + esc(v.label) + labelSmall + '</label>' + hint +
           '<div class="multi" data-veld="' + v.id + '">' +
           v.opties.map(o => '<div class="chip" data-v="' + esc(o) + '"><span class="vk">✓</span>' + esc(o) + '</div>').join('') + '</div>';
+      } else if (v.type === 'datum') {
+        inner = '<label class="veld-l">' + esc(v.label) + labelSmall + '</label>' + hint +
+          '<input type="date" class="field-input" data-veld="' + v.id + '" />';
       } else { // text
         inner = '<label class="veld-l">' + esc(v.label) + labelSmall + '</label>' + hint +
           '<input type="text" class="field-input" data-veld="' + v.id + '" placeholder="' + esc(v.placeholder || '') + '" />';
@@ -783,7 +877,11 @@
       } else if (v.type === 'select') {
         el.value = spec[v.id] || v.opties[0];
         el.classList.add('filled');
-        el.addEventListener('change', () => { spec[v.id] = el.value; updateVeldZichtbaar(); updateTijdZichtbaar(); });
+        const eigenInput = v.eigen ? document.querySelector('[data-veld="' + v.id + '__eigen"]') : null;
+        const toonEigen = () => { if (eigenInput) eigenInput.style.display = (el.value === '__anders__') ? 'block' : 'none'; };
+        if (eigenInput) { eigenInput.value = spec[v.id + '__eigen'] || ''; eigenInput.addEventListener('input', () => { spec[v.id + '__eigen'] = eigenInput.value.trim(); }); }
+        toonEigen();
+        el.addEventListener('change', () => { spec[v.id] = el.value; toonEigen(); updateVeldZichtbaar(); updateTijdZichtbaar(); });
         // De huisstijl-dropdown (overlay) wordt async gebouwd; even een change sturen
         // zodat de knoptekst de (soms niet-eerste) standaardwaarde toont.
         setTimeout(() => { try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {} }, 40);
@@ -801,6 +899,12 @@
             c.classList.toggle('aan');
           };
         });
+      } else if (v.type === 'datum') {
+        // avinka-datum.js zet dit type=date-veld automatisch om in de agenda-kiezer;
+        // de (verborgen) input houdt de ISO-waarde vast en vuurt input/change bij een keuze.
+        el.value = spec[v.id] || '';
+        const upd = () => { spec[v.id] = el.value; el.classList.toggle('filled', !!el.value); };
+        el.addEventListener('input', upd); el.addEventListener('change', upd);
       } else { // text
         el.value = spec[v.id] || '';
         el.addEventListener('input', () => { spec[v.id] = el.value.trim(); el.classList.toggle('filled', !!el.value.trim()); });
@@ -815,7 +919,8 @@
         const wrap = document.getElementById('svwrap-' + v.id);
         if (!wrap) return;
         const tv = spec[v.toonAls.veld];
-        const match = Array.isArray(tv) ? tv.indexOf(v.toonAls.waarde) !== -1 : tv === v.toonAls.waarde;
+        const wl = Array.isArray(v.toonAls.waarde) ? v.toonAls.waarde : [v.toonAls.waarde];
+        const match = Array.isArray(tv) ? wl.some(w => tv.indexOf(w) !== -1) : wl.indexOf(tv) !== -1;
         wrap.style.display = match ? '' : 'none';
       });
     }
@@ -823,6 +928,7 @@
     // ── Tijd-helpers + tijdlijn-engine ────────────────────────────────────────
     function fmtTijd(min) { const h = Math.floor(min / 60), m = min % 60; return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m; }
     function parseTijd(s) { const m = String(s || '').match(/(\d{1,2}):(\d{2})/); return m ? (+m[1]) * 60 + (+m[2]) : null; }
+    function mooieDatum(iso) { if (!iso) return ''; try { return new Date(iso + 'T00:00:00').toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) { return iso; } }
     function verdeelTijd(totaal, gewichten, minPer) {
       minPer = minPer || 10;
       const som = gewichten.reduce((a, b) => a + b, 0) || 1;
@@ -872,10 +978,18 @@
       const A = a.activiteit;
       const eig = actEigen(a, 'activiteit');
       if (id === 'sinterklaas') {
-        b.push({ naam: 'Aankomst en ontvangst van Sinterklaas', gewicht: 2 });
-        if (a.pietengym) b.push({ naam: 'Pietengym / pietenparcours', gewicht: 2 });
-        if (a.bouw === 'Onderbouw' || a.bouw === 'Hele school') b.push({ naam: 'Sint bezoekt de klassen: cadeautjes en liedjes', gewicht: 3 });
-        if ((a.bouw === 'Bovenbouw' || a.bouw === 'Hele school') && a.surprises) b.push({ naam: 'Surprises en gedichten (bovenbouw)', gewicht: 3 });
+        const heleSchool = a.bouw === 'Hele school';
+        b.push({ naam: 'Aankomst en ontvangst van Sinterklaas' + (heleSchool ? ' (hele school)' : ''), gewicht: 1 });
+        if (heleSchool) {
+          // Twee sporen die de HELE ochtend naast elkaar lopen (geen strak tijdschema).
+          b.push({ naam: 'De ochtend, onderbouw: Sint bezoeken' + (a.pietengym ? ' en pietengym (roulerend)' : ''), gewicht: 3 });
+          b.push({ naam: 'De ochtend, bovenbouw: ' + (a.surprises ? 'surprises in de eigen klas' : 'eigen sinterklaasprogramma in de klas'), gewicht: 3 });
+        } else if (a.bouw === 'Onderbouw') {
+          if (a.pietengym) b.push({ naam: 'Pietengym / pietenparcours', gewicht: 2 });
+          b.push({ naam: 'Sint bezoekt de klassen: cadeautjes en liedjes', gewicht: 3 });
+        } else {
+          b.push({ naam: a.surprises ? 'Surprises in de eigen klas' : 'Sinterklaasprogramma in de klas', gewicht: 4 });
+        }
         b.push({ naam: 'Pepernoten en gezamenlijke afsluiting', gewicht: 1 });
         return b;
       }
@@ -967,6 +1081,9 @@
     function programmaVoor(ev, a, startMin, eindMin) {
       const meerdaags = ev.modus === 'dag' || (ev.modus === 'keuze' && a.looptijd === 'Meerdaags');
       if (meerdaags) return { modus: 'dag', dagen: dagenVoor(ev.id, a) };
+      // Feesten waar alles doorloopt (geen strak tijdschema): een 'los' programma met
+      // onderdelen in volgorde, zonder kloktijden. Later in de editor te wisselen.
+      if (ev.losProgramma) return { modus: 'los', blokken: blokkenVoor(ev.id, a).map(b => b.naam) };
       return { modus: 'tijd', tijdlijn: bouwTijdlijn(startMin, eindMin, blokkenVoor(ev.id, a)) };
     }
 
@@ -975,8 +1092,32 @@
       const r = [];
       const zet = s => r.push(s);
       if (ev.id === 'sinterklaas') {
-        if (a.surprises) zet('Neem in de aftel-checklist op dat de kinderen 2 weken vooraf een surprise-kaartje invullen (hun hobby\'s en wat ze leuk vinden) en dat de lootjes verdeeld worden.');
-        zet('Houd de spanning behapbaar voor jonge kinderen en werk met een eenvoudige, rustige verhaallijn.');
+        if (a.verhaallijn) zet('Verwerk de opgegeven verhaallijn ("' + a.verhaallijn + '") vooral rond de aankomst.');
+        else zet('Er is GEEN verhaallijn opgegeven: bedenk er ZELF een concrete, uitgewerkte manier van aankomen en varieer in insteek. Soms is een grappige, spannende AANKOMST al genoeg (Sint komt op een onverwachte manier aan, bijvoorbeeld met de brandweerauto, op een tractor of per boot). Soms werkt een klein PROBLEEM juist leuk, waarbij de onderbouw Sint helpt (de cadeautjes zijn zoek, een Piet is verdwaald, de staf of het grote boek is kwijt). Zeg NOOIT "bedenk zelf een verhaallijn" of "overleg met de stuurgroep"; jij doet het volledige voorstel.');
+        zet('BELANGRIJK: houd de verhaallijn KORT en helemaal BINNEN het aankomstmoment (ongeveer een kwartier). Een probleem wordt dus nog tijdens de aankomst zelf opgelost; smeer het NIET uit over de dag en verweef het NIET met de pietengym of de Sint-bezoeken. Daarna begint gewoon het programma.');
+        zet('Denk praktisch, als een school die dit echt moet organiseren: de onderbouwklassen gaan om de beurt bij Sinterklaas langs, dus dat bezoek begint kort na de aankomst en loopt door de hele ochtend. De pietengym is een LOSSTAANDE, leuke activiteit op zich (een parcours of spelletjes) en GEEN onderdeel van de verhaallijn en GEEN voorwaarde om bij Sint te mogen komen. Laat de pietengym en de Sint-bezoeken bij de onderbouw naast elkaar of roulerend lopen, zodat klassen niet onnodig hoeven te wachten.');
+        zet('De aankomst is meestal op het schoolplein: de hele school (en vaak ook ouders) verzamelt zich rond half negen om Sinterklaas op te wachten. Introduceer de verhaallijn juist op dat spannende aankomstmoment.');
+        zet('De sinterklaassfeer en de versiering in school hangen meestal al weken van tevoren (rond de landelijke intocht), niet pas de dag ervoor. Zet het aankleden van de school dus ruim vooraf in de aftel-checklist; "de dag ervoor" is alleen voor de laatste klaarzet-taken.');
+        zet('Begin de planning ruim op tijd: een Sint(-acteur) en Pieten regel je al maanden van tevoren, niet pas zes weken vooraf. Zet dat in het vroegste aftel-moment ("Enkele maanden vooraf").');
+        const bbRaw = (a.bovenbouwsint === '__anders__' ? actEigen(a, 'bovenbouwsint') : a.bovenbouwsint) || 'Sint komt kort langs bij de surprises';
+        let bbSint, bbBezoek = false;
+        if (/alleen bij de aankomst/i.test(bbRaw)) bbSint = 'de bovenbouw doet ALLEEN mee aan de gezamenlijke aankomst (dat kwartiertje) en is daarna de hele ochtend zelf bezig met de surprises in de eigen klas; Sinterklaas bezoekt de bovenbouw niet.';
+        else if (/cadeautje/i.test(bbRaw)) { bbSint = 'de bovenbouw is de ochtend bezig met de surprises in de eigen klas en krijgt daarnaast een eigen moment met Sinterklaas waarop hij hun ook een klein cadeautje geeft (vaak via een verlanglijstje tot een afgesproken bedrag).'; bbBezoek = true; }
+        else if (/kort langs|bliksembezoek|bewonder|bezoek/i.test(bbRaw)) { bbSint = 'de bovenbouw is de hele ochtend bezig met de surprises in de eigen klas; Sinterklaas komt op één moment kort langs (een bliksembezoek) om de mooiste surprises te bewonderen.'; bbBezoek = true; }
+        else { bbSint = 'de bovenbouw wordt zo bij Sinterklaas betrokken: "' + bbRaw + '". Werk dat concreet, praktisch en passend uit voor de bovenbouw-ochtend.'; bbBezoek = true; }
+        if (a.bouw === 'Hele school') zet('Splits het programma in twee sporen die de HELE ochtend NAAST elkaar lopen (parallel, niet na elkaar). ONDERBOUW-spoor (groep 1 t/m 4, gelooft nog): zij beleven de intocht mee, bezoeken Sint (de klassen gaan om de beurt langs, de hele ochtend) en doen de pietengym als losse activiteit. BOVENBOUW-spoor: ' + bbSint + ' De bovenbouw doet niet mee aan de pietengym.');
+        else if (a.bouw === 'Bovenbouw') zet('Dit is een bovenbouwfeest: ' + bbSint);
+        if (a.bouw === 'Hele school' && bbBezoek) zet('Sinterklaas kan maar op één plek tegelijk zijn: laat het bovenbouw-moment (het bezoekje of het cadeau-moment) NIET botsen met de klassenbezoeken bij de onderbouw. Plan het er netjes tussendoor of aansluitend in, zodat de onderbouwrondes niet in de knel komen.');
+        if (a.surprises) {
+          zet('Surprises worden gemaakt vanaf ' + (a.surprisevanaf || 'groep 5').toString().toLowerCase() + '. Ze werken zo: ongeveer vier weken vooraf trekt elk kind een lootje van een ander kind. Op dat lootje staan de hobby\'s en interesses en een paar cadeauwensen tot het maximale budget' + (a.budget ? ' (' + a.budget + ' per kind)' : '') + '. Elk kind koopt dat cadeau voor het getrokken kind en verwerkt het in een surprise met gedicht. Dit budget komt van de gezinnen zelf, NIET van school; zet de surprise-cadeaus dus NIET als schoolkosten in de begroting of boodschappen.');
+          zet('Surprises staan LOS van Sinterklaas: Sint deelt ze niet uit. De kinderen nemen hun surprise een dag van tevoren mee naar school, zodat gecontroleerd kan worden dat er voor iedereen één is. Zet dat duidelijk in het draaiboek, met een aparte taak "surprises inleveren" op de dag ervoor.');
+          if (a.surprisevanaf !== 'Groep 6') zet('Sommige kinderen in groep 5 geloven nog in Sinterklaas. Een gangbare oplossing: leg uit dat de groepen 5 t/m 8 Sinterklaas HELPEN omdat hij het zo druk heeft, zodat ook zij surprises maken zonder de verrassing te bederven.');
+          zet('Houd bij de surprises rekening met kinderen die de traditie niet kennen (bijvoorbeeld NT2-kinderen): organiseer bijvoorbeeld een middag op school waar zij samen met een paar hulpouders hun surprise en gedicht maken, zodat niemand buiten de boot valt. Zet dit als aandachtspunt én als taak in de aftel-checklist.');
+        }
+        if (a.bouw === 'Onderbouw' || a.bouw === 'Hele school') zet('Voor de onderbouw (die geen surprises maakt) wordt meestal een klein cadeautje per kind gekocht dat Sinterklaas uitdeelt; dat wordt vaak door de school of de ouderraad (OR) betaald. Neem het op in de begroting en de boodschappen.');
+        if (a.schoen) zet('Schoenzetten is een apart moment, meestal een dag of twee weken vóór het feest' + (a.schoendatum ? ' (' + mooieDatum(a.schoendatum) + ')' : '') + '. Beschrijf het duidelijk: de kinderen zetten hun schoen en krijgen een klein cadeautje (ongeveer één euro, zoals een pen, een spiegeltje of een klein speeltje) met wat pepernoten. Zet het als aparte taak in de aftel-checklist rond die datum, los van de feestdag zelf.');
+        zet('De school heeft wel een budget nodig voor de sinterklaasspullen zelf (pepernoten, cadeautjes voor de onderbouw, decoratie, pietenspullen); dat staat los van de surprise-cadeaus. De ouderraad (OR) financiert dit soort dingen vaak.');
+        zet('Houd de spanning behapbaar voor de jongste kinderen.');
       }
       if (ev.id === 'kerst') {
         zet('Kerst is meestal in het donker (avond); benut de sfeer van lichtjes.');
@@ -1013,8 +1154,10 @@
         let val = a[v.id];
         if (val === undefined || val === '' || (Array.isArray(val) && !val.length)) return;
         // toonAls-velden die niet zichtbaar zijn overslaan (array-proof)
-        if (v.toonAls) { const tv = a[v.toonAls.veld]; const match = Array.isArray(tv) ? tv.indexOf(v.toonAls.waarde) !== -1 : tv === v.toonAls.waarde; if (!match) return; }
+        if (v.toonAls) { const tv = a[v.toonAls.veld]; const wl = Array.isArray(v.toonAls.waarde) ? v.toonAls.waarde : [v.toonAls.waarde]; const match = Array.isArray(tv) ? wl.some(w => tv.indexOf(w) !== -1) : wl.indexOf(tv) !== -1; if (!match) return; }
         if (v.type === 'toggle') val = val ? 'ja' : 'nee';
+        else if (v.type === 'datum') val = mooieDatum(val);
+        else if (v.type === 'select' && val === '__anders__') val = actEigen(a, v.id) || 'anders';
         else if (v.type === 'multi') val = val.join(', ');
         else if (v.type === 'activiteit') {
           const arr = Array.isArray(val) ? val : [val];
@@ -1030,8 +1173,9 @@
       return [
         'Je bent een ervaren organisator van evenementen op een Nederlandse basisschool (denk aan een ib\'er of een leerkracht uit de festiviteitencommissie). Je maakt complete, kant-en-klare draaiboeken waarmee een leerkracht of oudercommissie meteen aan de slag kan.',
         '', 'Vaste regels:',
+        '- Schaal de omvang op het evenement. Een groot schoolfeest (zomer-/eindfeest, kerst, projectweek, afscheid groep 8) verdient een uitgebreid draaiboek; een schoolreis, open dag, sportdag of juffen-/meesterdag mag juist een stuk korter en compacter, met bondiger lijsten. Laat secties die voor dit evenement weinig toevoegen gewoon weg en blaas een klein evenement niet kunstmatig op. Kwaliteit en bruikbaarheid gaan boven volledigheid.',
         '- Schrijf in helder, warm en praktisch Nederlands, gericht aan de organisator. Volledig Nederlands (geen Engelse woorden of insluipende Engelse werkwoordsvormen; dus "Controleer", niet "Check").',
-        '- Taalkundig correct: let op lidwoorden (de/het) en werkwoordspelling.',
+        '- Taalkundig correct en verzorgd: let op lidwoorden (de/het; dus "een kort welkomstwoord" niet "een korte", "de weersverwachting" niet "het"), werkwoordspelling en correcte samenstellingen. Gebruik UITSLUITEND bestaande Nederlandse woorden die in de context kloppen: verzin geen eigen samentrekkingen of onzin-samenstellingen (niet "discoversie/discoverbasie", "completelijst", "restvoeding", "balonnen", en zeker geen woord als "maniok-raadsels" waar je "sinterklaas-raadsels" bedoelt) en geen Vlaamse of kromme constructies (kinderen "haasten zich", niet "rapen"). Twijfel je of een (samengesteld) woord bestaat, kies dan een gewone omschrijving. Lees elke zin na alsof een collega meeleest.',
         '- Gebruik GEEN liggende streepjes (— of –) als leesteken in lopende tekst. Gewone komma\'s, punten, dubbele punten of haakjes. Een koppelteken in een samenstelling of een tijdsbereik ("10-15 min") mag wel.',
         '- Wees CONCREET en direct bruikbaar: echte taken, echte materialen, echte tijden. Nooit vaagheid als "regel de boel" of "zorg voor sfeer".',
         '- Houd het LEESVRIENDELIJK en SCANBAAR: korte zinnen en bulletpunten, geen lange lappen tekst of alinea\'s. Een leerkracht moet het in één oogopslag kunnen overzien. Liever een paar rake bullets dan een verhaal.',
@@ -1039,10 +1183,14 @@
         '- Stem alles af op de opgegeven groep(en), het aantal kinderen, de locatie en het tijdstip. Reken realistisch met tijd en aantallen.',
         '- Verzin geen feiten: geen verzonnen adressen, bedragen, openingstijden of namen. Weet je iets niet zeker, houd het algemeen of benoem het als "in te vullen".',
         '- Houd het HAALBAAR én verdeel het werk REALISTISCH: geef niemand een onmogelijk grote klus. Dus niet "één hulpouder regelt de hele karaoke-installatie" of "één ouder bouwt alle kraampjes op"; splits grote taken op, wijs er meerdere mensen aan, en controleer of een taak echt door dat aantal mensen in die tijd te doen is. Gebruik materiaal en menskracht die een gewone basisschool echt heeft.',
+        '- Wijs taken en klussen toe aan ALGEMENE rollen die op elke school bestaan: leerkracht, hulpouder of vrijwilliger, en het organisatieteam. Ga NIET uit van een specifieke functie die er misschien niet is (dus niet standaard "de conciërge", "de technicus" of "de directeur" iets laten doen) en gebruik NOOIT echte namen. Dit is een voorzet; de school vult zelf in wie het precies doet. Formuleer een taak zo dat de naam of rol er makkelijk uit te halen of te vervangen is.',
+        '- Op veel scholen speelt de ouderraad (OR), oudervereniging of oudercommissie een grote rol bij het organiseren én FINANCIEREN van dit soort dagen (cadeautjes, hapjes, materiaal). Betrek die waar het logisch is, als algemene rol en herkenbaar benoemd (bijvoorbeeld "de ouderraad (OR)"); ga er niet blind vanuit, maar noem het waar het voor de hand ligt.',
+        '- Draait dit evenement om spellen, posten of kraampjes (zoals een zomer-/eindfeest, sportdag, koningsspelen of kermis)? Zorg dan dat er GENOEG tegelijk te doen is: reken na hoeveel mensen er zijn (kinderen plus eventueel ouders) en zorg dat minstens de HELFT tegelijk aan een activiteit kan meedoen. Tel de capaciteit van de posten/spellen bij elkaar op en voeg net zoveel korte, laagdrempelige, thema-passende spelletjes toe tot je die helft haalt; liever meer kleine spellen naast elkaar dan een paar posten waar de rest voor in de rij staat. Draait het evenement NIET om spellen (een diner, een lichtjestocht of andere wandeling, een voorstelling, een viering, een uitje), FORCEER dan geen spelletjes: houd het volledig passend bij de sfeer van dat evenement.',
+        '- Als er met munten gewerkt wordt: er is een muntenverkooppunt (een kraampje of kassa) waar bezoekers, meestal de ouders, munten KOPEN om uit te geven aan hapjes, drankjes of spellen. Deel niet automatisch gratis munten of muntenzakjes uit aan de kinderen en ga er niet vanuit dat elk kind munten krijgt, tenzij de organisator dat expliciet aangeeft. Beschrijf dus het verkooppunt, niet het uitdelen.',
         '- Denk actief mee over veiligheid, EHBO, allergieën, kinderen die niet meedoen, betaalbaarheid voor elk gezin, en toestemming voor foto\'s (AVG).',
         '- Maak een feest ook echt UITBUNDIG en LEUK, zeker als er een thema is (disco, jungle, circus…): bedenk VEEL concrete, thema-passende ideeën voor aankleding, activiteiten, spellen en hapjes, zodat het feest echt tot leven komt. Schaal mee met het budget: bij een ruimer budget (denk aan enkele honderden euro\'s) mag je met droge ogen grote publiekstrekkers voorstellen zoals een springkussen, een suikerspin- of popcornmachine, een DJ, een fotobooth, een schminkster of een foodtruck. Zet zulke losse extra\'s UITSLUITEND in de sectie "Extra\'s om het leuker te maken" (elk self-contained: wat het is, wat je ervoor nodig hebt, wie het regelt, en veiligheid) en geef daar RUIM keuze zodat de leerkracht kan kiezen. Verweef ze NIET door de andere secties. Is er geen budget of passen extra\'s niet, laat die sectie dan weg.',
         '- Gebruik uitsluitend de gevraagde Markdown-koppen en de opgegeven structuur; geen inleidende of afsluitende praatjes, geen scheidingslijnen (---).',
-        '- CONTROLEER het hele draaiboek voordat je het teruggeeft: kloppen de tijden en aantallen, is elke taak concreet en haalbaar, is het Nederlands correct, staat er niets dubbel? Herstel stil wat niet klopt.'
+        '- CONTROLEER het hele draaiboek voordat je het teruggeeft: kloppen de tijden en aantallen, is elke taak concreet en haalbaar, kan minstens de helft van de aanwezigen tegelijk meedoen, is het Nederlands overal correct en verzorgd (elk woord bestaat echt en past in de context, geen verzonnen onzin-samenstellingen zoals "maniok-raadsels", geen kromme zinnen), staan cadeautjes niet onder eten/drinken, en staat er niets dubbel (herhaal de datum/tijd/groep NIET in het Overzicht)? Herstel stil wat niet klopt.'
       ].join('\n');
     }
 
@@ -1051,16 +1199,21 @@
       r.push('Lever het draaiboek in EXACT deze opbouw, met Markdown-koppen (##) per onderdeel. Bondig en praktisch. Bulletlijsten waar aangegeven (begin elke regel met "- ").');
       r.push('');
       r.push('## Overzicht');
-      r.push('Eén of twee korte zinnen die het evenement kaderen: wat het is, voor wie, en de sfeer. Geen opsomming van datum/tijd/groep (die staan al apart).');
+      r.push('Eén of twee korte, lopende zinnen die het evenement kaderen: wat het is, voor wie, en de sfeer. ABSOLUUT GEEN regels met labels als "Datum:", "Tijd:", "Tijdstip:", "Locatie:", "Deelnemers:", "Aantal:" of "Budget:" en geen opsomming daarvan; die gegevens staan al bovenaan in de kop. Puur twee sfeervolle zinnen, verder niets.');
       r.push('');
       r.push('## Aftellen');
       r.push('De voorbereiding in de tijd, als checklist met vinkbare taken. Gebruik deze subkoppen (###) met onder elk een korte bulletlijst met concrete taken. Neem hierin ook de communicatie op (ouders op tijd informeren, hulpouders werven). Laat een moment weg als er niets te doen is.');
+      r.push('Leerkrachten willen ruim op tijd klaar zijn, dus verdeel het werk realistisch en niet te laat. Vroege momenten (ver vooraf) zijn voor het eerste overleg en de grote lijnen (datum prikken, taken verdelen, begroting); daarna komt het werven en indelen van hulpouders; de middenmomenten voor het maken van knutsels, materialen en aankleding; de late momenten voor laatste aanpassingen en herinneringsberichten; en de dag ervoor voor het klaarzetten. Houd rekening met schoolvakanties: valt een voorbereidingsmoment in of vlak na een vakantie (bijvoorbeeld een feest kort na de zomervakantie), plan die taken dan al vóór de vakantie en benoem dat expliciet.');
       aftel.forEach(s => r.push('### ' + s));
       r.push('');
       if (prog.modus === 'dag') {
         r.push('## Programma');
         r.push('Een dag-voor-dag-planning. NEEM elke ### dag-kop EXACT over zoals gegeven, en beschrijf eronder kort het programma van die dag (ochtend en middag), concreet en passend bij het thema.');
         prog.dagen.forEach(d => r.push('### ' + d.label + ' · ' + d.naam));
+      } else if (prog.modus === 'los') {
+        r.push('## Programma');
+        r.push('Een DOORLOPEND programma ZONDER vaste kloktijden: op dit soort feesten loopt alles vloeiend door elkaar en wil je juist geen strak tijdschema. NEEM elke ### kop EXACT over zoals gegeven (dit zijn de onderdelen/momenten in een logische volgorde), en schrijf eronder 2 tot 4 KORTE bulletpunten (begin elke regel met "- ") die concreet zeggen wat er gebeurt, wie wat doet en wat klaar moet staan. Gebruik GEEN kloktijden of tijdvakken en verzin ze ook niet; hooguit losse woorden als "bij aankomst", "tussendoor" of "aan het eind". VARIEER je formuleringen: begin niet elke bullet met dezelfde woorden (dus niet telkens "Doorlopend kunnen kinderen…"). Is een onderdeel de HOOFDACTIVITEIT met spellen, posten, kraampjes of optredens? Houd het hier dan kort en werk de losse onderdelen uit in de sectie "De activiteiten in detail" hieronder.');
+        prog.blokken.forEach(n => r.push('### ' + n));
       } else {
         r.push('## Programma');
         r.push('De tijdlijn van de dag. De tijdvakken hieronder zijn al door het systeem berekend en tellen op tot de opgegeven tijd. NEEM elke ### tijdvak-kop EXACT over (tijd en naam), en schrijf eronder 2 tot 4 KORTE bulletpunten (begin elke regel met "- ") die kort en concreet zeggen wat er gebeurt, wie wat doet en wat klaar moet staan. GEEN lange lopende tekst of alinea\'s; houd het scanbaar. Voeg geen tijdvakken toe of weg. Is een tijdvak de HOOFDACTIVITEIT met spellen, posten, kraampjes, optredens of onderdelen? Houd het hier dan kort (bijvoorbeeld "De kinderen en ouders doen mee aan de spellen langs de posten") en werk de losse spellen/onderdelen zelf UIT in de sectie "De activiteiten in detail" hieronder, zodat het programma overzichtelijk blijft.');
@@ -1068,16 +1221,16 @@
       }
       r.push('');
       r.push('## De activiteiten in detail');
-      r.push('Alleen als het programma spellen, posten, kraampjes, onderdelen of activiteiten bevat die uitwerking verdienen. Werk elke activiteit uit onder een eigen ### kop met 2 tot 4 korte bulletpunten: hoe het werkt (kort de "spelregels"), en WAT JE ERVOOR NODIG HEBT (materiaal per activiteit). Zo staan de spellen en hun benodigdheden overzichtelijk bij elkaar in plaats van in één grote lijst. Geef bij een spellencircuit/posten meerdere concrete spellen. Heeft dit evenement geen losse activiteiten om uit te werken (bijvoorbeeld een diner of een uitje), laat deze hele sectie (inclusief de ## kop) dan weg.');
+      r.push('Alleen als het programma spellen, posten, kraampjes, onderdelen of activiteiten bevat die uitwerking verdienen. Werk elke activiteit uit onder een eigen ### kop. Schrijf EERST in 1 of 2 korte zinnen hoe het werkt (de spelregels), als gewone lopende tekst ZONDER streepje ervoor. Zet DAARNA op nieuwe regels wat je ervoor nodig hebt als bulletlijst (elke regel begint met "- "), zodat de leerkracht die benodigdheden per stuk kan afvinken. Geef bij een spellencircuit/posten meerdere concrete spellen. Zo staan de spellen en hun benodigdheden overzichtelijk bij elkaar in plaats van in één grote lijst. Heeft dit evenement geen losse activiteiten om uit te werken (bijvoorbeeld een diner of een uitje), laat deze hele sectie (inclusief de ## kop) dan weg.');
       r.push('');
       r.push('## Taakverdeling');
-      r.push('Wie doet wat. Gebruik deze drie subkoppen (###), elk met een korte bulletlijst. Beschrijf ROLLEN, geen echte namen (bijvoorbeeld "leerkracht groep 7", "twee hulpouders", "conciërge"). Benoem per onderdeel een aanspreekpunt.');
+      r.push('Wie doet wat. Gebruik deze drie subkoppen (###), elk met een korte bulletlijst. Beschrijf ALGEMENE rollen die op elke school bestaan ("leerkracht", "een leerkracht groep 7", "twee hulpouders", "een vrijwilliger", "iemand van het organisatieteam"), geen echte namen en geen specifieke functies die er misschien niet zijn (dus niet standaard "de conciërge" of "de technicus"). Benoem per onderdeel een aanspreekpunt. Dit is een voorzet die het team zelf invult; formuleer zo dat een naam of rol makkelijk te vervangen is.');
       r.push('### Vooraf klaarzetten');
       r.push('### Tijdens het evenement');
       r.push('### Opruimen achteraf');
       r.push('');
       r.push('## Boodschappen en materialen');
-      r.push('Alles wat geregeld/gekocht/klaargezet moet worden voor de KERN van het evenement. GROEPEER het in categorieën met een eigen ### kop (bijvoorbeeld "Eten en drinken", "Aankleding en decoratie", "Techniek en geluid", "Veiligheid en EHBO", "Algemeen"), met onder elke kop een korte bulletlijst, per item kort en waar nuttig met een hoeveelheid. Zo blijft het overzichtelijk in plaats van één lange lijst. Laat een categorie weg als die leeg is. Materiaal dat al bij een uitgewerkte activiteit (hierboven) of bij een extra hoort, hoef je hier NIET te herhalen.');
+      r.push('Alles wat geregeld/gekocht/klaargezet moet worden voor de KERN van het evenement. GROEPEER het in categorieën met een eigen ### kop (bijvoorbeeld "Eten en drinken", "Cadeautjes en presentjes", "Aankleding en decoratie", "Techniek en geluid", "Veiligheid en EHBO", "Algemeen"), met onder elke kop een korte bulletlijst, per item kort en waar nuttig met een hoeveelheid. Zet cadeautjes, presentjes en dergelijke onder "Cadeautjes en presentjes", NOOIT onder "Eten en drinken". Zo blijft het overzichtelijk in plaats van één lange lijst. Laat een categorie weg als die leeg is. Materiaal dat al bij een uitgewerkte activiteit (hierboven) of bij een extra hoort, hoef je hier NIET te herhalen.');
       r.push('');
       r.push('## Extra\'s om het leuker te maken');
       r.push('OPTIONEEL, maar leuk bij feesten. Geef MEERDERE thema-passende ideeën (zeker als er budget is), maar houd elk idee KORT: één ### kop met daaronder maximaal 2 bulletpunten (in het kort: wat het is en wat je ervoor nodig hebt). Geen uitgebreide beschrijving of aparte veiligheids-/wie-regelt-regel per extra; het is een keuzemenu, geen uitwerking. Elke extra moet los weg te laten zijn. Niets toe te voegen? Laat deze hele sectie (inclusief de ## kop) dan weg.');
@@ -1102,6 +1255,7 @@
       if (a._groep) r.push('- Voor: ' + a._groep);
       if (a._aantal) r.push('- Aantal kinderen: ' + a._aantal);
       if (prog.modus === 'tijd' && a._start && a._eind) r.push('- Tijd: ' + a._start + ' tot ' + a._eind);
+      else if (prog.modus === 'los' && a._start && a._eind) r.push('- Tijdsduur: ongeveer ' + a._start + ' tot ' + a._eind + ' (het feest loopt door, zonder strak tijdschema)');
       if (a._hulpouders) r.push('- Hulpouders/begeleiders: ' + a._hulpouders);
       if (a._sfeer) r.push('- Gewenste sfeer/accent: ' + a._sfeer);
       if (a._bijzonder) r.push('- Bijzonderheden van de organisator (verwerk deze zeker): ' + a._bijzonder);
@@ -1112,6 +1266,9 @@
       const extra = extraInstructies(ev, a);
       if (extra.length) { r.push(''); r.push('Let hierbij op het volgende:'); extra.forEach(x => r.push('- ' + x)); }
       if (variatie) { r.push(''); r.push('VARIATIE: ' + variatie + ' Maak een duidelijk ándere uitwerking dan een standaard eerste versie.'); }
+      r.push('');
+      if (a._versie === 'verkort') r.push('LENGTE: maak een VERKORTE, beknopte versie. Houd alles kort, simpel en overzichtelijk met ALLEEN de belangrijkste punten: korte bulletpunten en geen lange uitwerkingen of uitgebreide beschrijvingen. Werk activiteiten NIET in detail uit (hooguit één korte regel per activiteit) en laat de sectie "De activiteiten in detail" weg of houd die minimaal. Houd elke lijst kort en laat niet-essentiële onderdelen weg. Het moet in één oogopslag te overzien zijn, terwijl alle echt belangrijke dingen (planning, taken, boodschappen, veiligheid) er wel in staan.');
+      else r.push('LENGTE: maak een VOLLEDIGE, uitgebreide versie waarin alles netjes is uitgewerkt.');
       r.push('');
       r.push(draaiboekFormat(prog, ev.aftel || ['Uiterlijk vier weken vooraf', 'Uiterlijk twee weken vooraf', 'Uiterlijk een week vooraf', 'De dag ervoor']));
       return r.join('\n');
@@ -1150,7 +1307,7 @@
     }
     async function verfijnClaude(basis, wensen) {
       if (window.avinkaMask) { try { await window.avinkaMask.ready; } catch (e) {} }
-      const dbBlok = 'Je hebt eerder dit draaiboek gemaakt. Lees het goed; je past het zo licht aan.\n\n=== BEGIN DRAAIBOEK ===\n' + basis + '\n=== EINDE DRAAIBOEK ===';
+      const dbBlok = 'Je hebt eerder dit draaiboek gemaakt. Lees het goed; je past het zo licht aan.\n\n=== BEGIN DRAAIBOEK ===\n' + zonderWie(basis) + '\n=== EINDE DRAAIBOEK ===';
       const wensBlok = 'De organisator wil het draaiboek houden zoals het is, met ALLEEN de volgende aanpassing(en):\n' + wensen.map(w => '- ' + w).join('\n') + '\n\nGeef het VOLLEDIGE draaiboek opnieuw terug in EXACT dezelfde opbouw en met dezelfde Markdown-koppen, met alleen deze aanpassing(en) doorgevoerd en al het andere ongewijzigd. Geen tekst eromheen.';
       const safeDb = window.avinkaMask ? window.avinkaMask.apply(dbBlok) : dbBlok;
       const safeWens = window.avinkaMask ? window.avinkaMask.apply(wensBlok) : wensBlok;
@@ -1185,6 +1342,14 @@
 
     // ── State + flow ──────────────────────────────────────────────────────────
     let laatsteTekst = '', laatsteMeta = {}, variatieTeller = 0, verfijnBasis = '', verfijnWensen = [];
+    // Verkort of volledig draaiboek (de editor werkt in beide gevallen hetzelfde).
+    let versieKeuze = 'volledig';
+    function kiesVersie(el, v) {
+      versieKeuze = v;
+      const seg = el.parentNode; seg.querySelectorAll('.opt').forEach(o => o.classList.toggle('aan', o === el));
+      const uit = document.getElementById('versie-uitleg');
+      if (uit) uit.textContent = v === 'verkort' ? 'Alleen de belangrijkste punten, kort en overzichtelijk. Namen toevoegen, slepen en afvinken werken gewoon.' : 'Een compleet draaiboek met alle details uitgewerkt.';
+    }
 
     function verzamelInvoer() {
       const datum = document.getElementById('datum').value;
@@ -1200,6 +1365,7 @@
       a._hulpouders = document.getElementById('hulpouders').value.trim();
       a._sfeer = document.getElementById('thema-extra').value.trim();
       a._bijzonder = document.getElementById('bijzonder').value.trim();
+      a._versie = versieKeuze;
       return a;
     }
 
@@ -1232,7 +1398,13 @@
       try {
         const tekst = schoonMd(await callClaude(bouwSysteem(), bouwOpdracht(ev, a, prog, variatie), 8000));
         laatsteTekst = tekst;
+        // Bij "Andere versie" (zelfde evenement, frisse uitwerking) blijven de plattegrond
+        // en aantekeningen behouden; bij een compleet nieuw draaiboek niet.
+        const vorigePg = (andereVersie && laatsteMeta) ? laatsteMeta.plattegrond : undefined;
+        const vorigeNot = (andereVersie && laatsteMeta) ? laatsteMeta.aantekeningen : undefined;
         laatsteMeta = { evId: ev.id, naam: (ev.id === 'anders' && a.wat) ? a.wat : ev.naam, emoji: ev.emoji, datumMooi: a._datumMooi, start: a._start, eind: a._eind, groep: a._groep, aantal: a._aantal, programmaModus: prog.modus, invoer: a };
+        if (vorigePg) laatsteMeta.plattegrond = vorigePg;
+        if (vorigeNot) laatsteMeta.aantekeningen = vorigeNot;
         verfijnBasis = tekst; verfijnWensen = [];
         document.getElementById('verfijn').style.display = 'none';
         document.getElementById('verfijn-tekst').value = '';
@@ -1258,7 +1430,87 @@
       const tgl = document.getElementById('db-toggle'); if (tgl) tgl.style.display = 'none';
       toonInvoer(false);                            // de invoer bovenaan valt weg
       document.getElementById('uitvoer').style.display = 'block';
+      renderTakenlijst();                           // "wie doet wat" per persoon
+      renderExtras();                               // aantekeningen + plattegrond onderin
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ── Werk-aids onder het draaiboek: aantekeningen + plattegrond ────────────
+    // Horen bij het bestand (opgeslagen in laatsteMeta), maar staan los van het
+    // draaiboek zelf en gaan NIET naar de AI. Reizen mee bij opslaan en delen.
+    function renderExtras() {
+      const el = document.getElementById('db-extras'); if (!el) return;
+      const pg = laatsteMeta && laatsteMeta.plattegrond;
+      const notities = (laatsteMeta && laatsteMeta.aantekeningen) || '';
+      const pgVak = pg
+        ? '<div class="pg-preview"><img src="' + pg + '" alt="Plattegrond" /></div><button class="pg-verwijder" data-pg-verwijder="1">Plattegrond verwijderen</button>'
+        : '<label class="pg-upload">🗺️ Plattegrond uploaden<input type="file" accept="image/*" id="pg-input" style="display:none" /></label>';
+      el.innerHTML =
+        '<div class="extra-blok"><div class="extra-kop">📝 Aantekeningen &amp; overleg</div>' +
+        '<p class="extra-hint">Voor jezelf: noteer besluiten uit overleggen, wie je nog moet bellen, losse ideeën. Deze aantekeningen horen bij je opgeslagen bestand, maar staan los van het draaiboek en gaan niet naar de AI.</p>' +
+        '<textarea id="extra-notities" placeholder="Bijv. \'Overleg 12 wk: datum geprikt op 5 juni, Aneke regelt de kraampjes. Overleg 6 wk: budget rond, nog een springkussen aanvragen.\'"></textarea></div>' +
+        '<div class="extra-blok"><div class="extra-kop">🗺️ Plattegrond</div>' +
+        '<p class="extra-hint">Upload een plattegrond of opstelling (foto of afbeelding); die wordt bij je draaiboek bewaard.</p>' + pgVak + '</div>';
+      const ta = document.getElementById('extra-notities'); if (ta) ta.value = notities;
+    }
+    // ── Takenlijst per persoon ────────────────────────────────────────────────
+    // Verzamelt alle taken waar een naam bij is ingevuld en groepeert per persoon
+    // (hoofdletter-ongevoelig), met de sectie erbij als context.
+    function verzamelTaken() {
+      const map = new Map(); let sectie = '';
+      docModel.forEach(b => {
+        if (b.kind === 'h2') sectie = b.text;
+        if (b.kind === 'li' && b.wie && b.wie.trim()) {
+          const key = b.wie.trim().toLowerCase();
+          if (!map.has(key)) map.set(key, { naam: b.wie.trim(), taken: [] });
+          map.get(key).taken.push({ text: b.text, sectie: sectie });
+        }
+      });
+      return Array.from(map.values());
+    }
+    function renderTakenlijst() {
+      const el = document.getElementById('db-taken'); if (!el) return;
+      const groepen = verzamelTaken();
+      if (!groepen.length) { el.innerHTML = ''; return; }
+      let html = '<div class="extra-blok"><div class="extra-kop">👥 Wie doet wat</div>';
+      html += '<p class="extra-hint">Automatisch samengesteld uit de namen die je bij de taken invult. Los te downloaden als takenlijst per persoon.</p>';
+      groepen.forEach(g => {
+        html += '<div class="taken-persoon"><div class="taken-naam">' + esc(g.naam) + '<span class="taken-tel">' + g.taken.length + (g.taken.length === 1 ? ' taak' : ' taken') + '</span></div><ul class="taken-lijst">';
+        g.taken.forEach(t => { html += '<li>' + inline(t.text) + (t.sectie ? ' <span class="taken-sec">· ' + esc(t.sectie) + '</span>' : '') + '</li>'; });
+        html += '</ul></div>';
+      });
+      html += '<button class="pg-upload" data-taken-dl="1">⬇ Download takenlijst</button></div>';
+      el.innerHTML = html;
+    }
+    async function downloadTakenlijst() {
+      const groepen = verzamelTaken(); if (!groepen.length) return;
+      if (!window.avinkaDraaiboekDocx) { if (typeof avinkaAlert === 'function') avinkaAlert('Downloaden is even niet beschikbaar. Ververs de pagina.'); return; }
+      const md = groepen.map(g => '## ' + g.naam + '\n' + g.taken.map(t => '- ' + t.text + (t.sectie ? ' (' + t.sectie + ')' : '')).join('\n')).join('\n');
+      const ev = laatsteMeta.naam || 'evenement';
+      const meta = { titelVol: 'Takenlijst · ' + ev, emoji: '👥', datumMooi: laatsteMeta.datumMooi, groep: laatsteMeta.groep };
+      const kaal = String(ev).toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      try { await window.avinkaDraaiboekDocx.download(md, meta, 'takenlijst_' + kaal + '.docx'); }
+      catch (e) { if (typeof avinkaAlert === 'function') avinkaAlert('Het downloaden lukte niet. Probeer het opnieuw.'); }
+    }
+    function verwerkPlattegrond(file) {
+      if (!file) return;
+      if (!/^image\//.test(file.type)) { if (typeof avinkaAlert === 'function') avinkaAlert('Kies een afbeelding (foto, PNG of JPG).'); return; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const max = 1500; let w = img.width, h = img.height;
+          if (w > max || h > max) { const s = Math.min(max / w, max / h); w = Math.round(w * s); h = Math.round(h * s); }
+          let dataUrl;
+          try { const cv = document.createElement('canvas'); cv.width = w; cv.height = h; cv.getContext('2d').drawImage(img, 0, 0, w, h); dataUrl = cv.toDataURL('image/jpeg', 0.82); }
+          catch (e) { dataUrl = reader.result; }
+          laatsteMeta.plattegrond = dataUrl; renderExtras();
+          if (typeof toonToast === 'function') toonToast('Plattegrond toegevoegd. Vergeet niet op te slaan.');
+        };
+        img.onerror = () => { laatsteMeta.plattegrond = reader.result; renderExtras(); };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
     }
 
     // Invoer (hero + de vier invoerkaarten) tonen/verbergen.
@@ -1291,6 +1543,36 @@
         document.getElementById('verfijn-tekst').value = '';
       } catch (e) { verfijnWensen.pop(); document.getElementById('uitvoer').style.display = 'block'; err.textContent = e.message || 'Er ging iets mis.'; }
       finally { stopLaadStappen(); knop.disabled = false; document.getElementById('laden').classList.remove('aan'); }
+    }
+
+    // Van het huidige (volledige) draaiboek een beknopte versie maken: zelfde secties
+    // en koppen, maar kort. Deelt het gecachete systeemprompt met genereren/verfijnen.
+    async function verkortClaude(basis) {
+      if (window.avinkaMask) { try { await window.avinkaMask.ready; } catch (e) {} }
+      const wie = maskWie(basis); // namen → codes (AVG); terugzetten na het antwoord
+      const dbBlok = 'Hieronder een volledig draaiboek.\n\n=== BEGIN DRAAIBOEK ===\n' + wie.tekst + '\n=== EINDE DRAAIBOEK ===';
+      const opdr = 'Maak hiervan een VERKORTE, beknopte versie. Behoud EXACT dezelfde secties en Markdown-koppen (## en ###) in dezelfde volgorde, en houd de tijd- of dag-koppen zoals ze zijn, maar houd alles kort en simpel: alleen de belangrijkste punten, korte bulletpunten, geen lange uitwerkingen of beschrijvingen. Vat per onderdeel samen tot de kern. Werk activiteiten NIET in detail uit (hooguit één korte regel) en laat de sectie "De activiteiten in detail" weg of houd die minimaal. Zorg dat alle echt belangrijke dingen (planning, taken, boodschappen, veiligheid) er wel in blijven.\n\nBELANGRIJK: aan het eind van sommige taken staat een markering in de vorm %%naam%% (een toegewezen persoon). Laat die markeringen ONGEWIJZIGD staan aan het eind van precies de taak waar ze bij horen: verwijder, verplaats of verander ze niet. Voeg je twee taken samen, behoud dan de bijbehorende markering(en); alleen als je een taak helemaal weglaat, vervalt zijn markering. Geef ALLEEN het verkorte draaiboek terug, geen tekst eromheen.';
+      const safeDb = window.avinkaMask ? window.avinkaMask.apply(dbBlok) : dbBlok;
+      const safeOpdr = window.avinkaMask ? window.avinkaMask.apply(opdr) : opdr;
+      const ruw = await postClaude({ model: MODEL, max_tokens: 8000, system: [{ type: 'text', text: bouwSysteem(), cache_control: { type: 'ephemeral' } }], messages: [{ role: 'user', content: [ { type: 'text', text: safeDb, cache_control: { type: 'ephemeral' } }, { type: 'text', text: safeOpdr } ] }] });
+      return unmaskWie(ruw, wie.map); // codes → echte namen terug
+    }
+    async function verkortDraaiboek(btn) {
+      if (!laatsteTekst) return;
+      const vraag = 'Ik maak een beknopte versie van dit draaiboek. Je toegewezen namen en aanpassingen blijven behouden, alleen de tekst wordt korter. De volledige versie op je scherm wordt hierdoor wel vervangen, dus sla die eerst op als je hem apart wilt bewaren.';
+      if (typeof window.avinkaBevestig === 'function') { let ok = true; try { ok = await window.avinkaBevestig(vraag, { titel: 'Beknopte versie maken', bevestig: 'Ja, verkort', annuleer: 'Annuleren' }); } catch (e) { ok = true; } if (!ok) return; }
+      const oud = btn ? btn.textContent : '';
+      if (btn) btn.disabled = true;
+      document.getElementById('uitvoer').style.display = 'none';
+      document.getElementById('laden').classList.add('aan');
+      document.getElementById('laad-tekst').textContent = 'Je beknopte versie wordt gemaakt…';
+      startLaadStappen([{ t: 'Het draaiboek doornemen', g: 0.8 }, { t: 'Inkorten tot de kern', g: 1.6 }, { t: 'Alles netjes opmaken', g: 0 }], 45000);
+      try {
+        const tekst = schoonMd(await verkortClaude(verfijnBasis || laatsteTekst));
+        laatsteTekst = tekst;
+        toonResultaat(tekst, laatsteMeta);
+      } catch (e) { document.getElementById('uitvoer').style.display = 'block'; if (typeof avinkaAlert === 'function') avinkaAlert(e.message || 'Het verkorten lukte niet. Probeer het opnieuw.'); }
+      finally { stopLaadStappen(); document.getElementById('laden').classList.remove('aan'); if (btn) { btn.disabled = false; if (btn.isConnected) btn.textContent = oud; } }
     }
 
     function printDraaiboek() { window.print(); }
@@ -1422,7 +1704,7 @@
       if (!laatsteTekst) return;
       if (!window.avinkaDraaiboekDocx) { if (typeof avinkaAlert === 'function') avinkaAlert('Downloaden is even niet beschikbaar. Ververs de pagina en probeer opnieuw.'); return; }
       if (!_dlGezien) { const ok = await vraagDownload(); if (!ok) return; }
-      const meta2 = { titel: laatsteMeta.naam, emoji: laatsteMeta.emoji, datumMooi: laatsteMeta.datumMooi, start: laatsteMeta.start, eind: laatsteMeta.eind, groep: laatsteMeta.groep, aantal: laatsteMeta.aantal };
+      const meta2 = { titel: laatsteMeta.naam, emoji: laatsteMeta.emoji, datumMooi: laatsteMeta.datumMooi, start: laatsteMeta.start, eind: laatsteMeta.eind, groep: laatsteMeta.groep, aantal: laatsteMeta.aantal, aantekeningen: laatsteMeta.aantekeningen, plattegrond: laatsteMeta.plattegrond };
       const oud = btn ? btn.textContent : '';
       if (btn) { btn.disabled = true; btn.textContent = '⏳ Even je Word maken…'; }
       try { await window.avinkaDraaiboekDocx.download(laatsteTekst, meta2); }
@@ -1506,6 +1788,7 @@
     // Markdown → model met stabiele ids (elke regel = 1 blok), zodat je losse
     // regels/blokken/secties met ✕ kunt weghalen en de tekst opnieuw kunt opbouwen.
     let docModel = [], _idc = 0;
+    const dichteSecties = new Set(); // welke secties de gebruiker heeft ingeklapt (op sectie-id)
     function parseModel(md) {
       const out = [];
       String(md || '').split('\n').forEach(raw => {
@@ -1515,13 +1798,31 @@
         let m;
         if ((m = t.match(/^##\s+(?!#)(.+)$/))) out.push({ id: ++_idc, kind: 'h2', text: m[1].trim() });
         else if ((m = t.match(/^###\s+(.+)$/))) out.push({ id: ++_idc, kind: 'h3', text: m[1].trim() });
-        else if ((m = t.match(/^[-*]\s+(.+)$/))) { let tx = m[1], done = false; const tm = tx.match(/^\[([ xX])\]\s+(.*)$/); if (tm) { done = tm[1].toLowerCase() === 'x'; tx = tm[2]; } out.push({ id: ++_idc, kind: 'li', text: tx, done: done }); }
+        else if ((m = t.match(/^[-*]\s+(.+)$/))) { let tx = m[1], done = false, wie = ''; const wm = tx.match(/\s*%%([^%]+)%%\s*$/); if (wm) { wie = wm[1].trim(); tx = tx.slice(0, wm.index); } const tm = tx.match(/^\[([ xX])\]\s+(.*)$/); if (tm) { done = tm[1].toLowerCase() === 'x'; tx = tm[2]; } out.push({ id: ++_idc, kind: 'li', text: tx.trim(), done: done, wie: wie }); }
         else out.push({ id: ++_idc, kind: 'p', text: t });
       });
       return out;
     }
     function serialize(model) {
-      return model.map(b => b.kind === 'h2' ? '## ' + b.text : b.kind === 'h3' ? '### ' + b.text : b.kind === 'li' ? '- ' + (b.done ? '[x] ' : '') + b.text : b.text).join('\n');
+      return model.map(b => b.kind === 'h2' ? '## ' + b.text : b.kind === 'h3' ? '### ' + b.text : b.kind === 'li' ? '- ' + (b.done ? '[x] ' : '') + b.text + (b.wie ? ' %%' + b.wie + '%%' : '') : b.text).join('\n');
+    }
+    // Wie-markers weghalen voor AI-context (de AI hoeft de toewijzingen niet te zien).
+    function zonderWie(s) { return String(s == null ? '' : s).replace(/\s*%%[^%]+%%/g, ''); }
+    // AVG: toegewezen namen (%%naam%%) vervangen door een code (%%WIE1%%) voordat de tekst
+    // naar de AI gaat, en terugzetten zodra het antwoord terug is. Zelfde naam = zelfde code.
+    function maskWie(s) {
+      const naarCode = new Map(); const map = []; let i = 0;
+      const tekst = String(s == null ? '' : s).replace(/%%([^%]+)%%/g, (m, naam) => {
+        naam = naam.trim();
+        if (!naarCode.has(naam)) { i++; const code = 'WIE' + i; naarCode.set(naam, code); map.push({ code, naam }); }
+        return '%%' + naarCode.get(naam) + '%%';
+      });
+      return { tekst, map };
+    }
+    function unmaskWie(s, map) {
+      let uit = String(s == null ? '' : s);
+      (map || []).forEach(({ code, naam }) => { uit = uit.split('%%' + code + '%%').join('%%' + naam + '%%'); });
+      return uit;
     }
     function delBtn(id, extra) { return '<button class="del ' + (extra || '') + '" data-del="' + id + '" title="Weghalen" aria-label="Weghalen">✕</button>'; }
 
@@ -1550,6 +1851,7 @@
       dbEl.classList.remove('ingeklapt');
       const tgl = document.getElementById('db-toggle'); if (tgl) tgl.textContent = 'Draaiboek inklappen';
       laatsteTekst = serialize(docModel); verfijnBasis = laatsteTekst;
+      renderTakenlijst();
       syncNaarTeam();
     }
     // Einde van een groep (### tot volgende ###/##, of ## tot volgende ##).
@@ -1601,34 +1903,43 @@
       opt = opt || {};
       const box = opt.check ? '<span class="vink" data-vink="' + l.id + '" title="Afvinken"></span>' : '';
       const cls = (l.done ? 'af ' : '') + (opt.check ? 'chk' : '');
-      return '<li class="' + cls.trim() + '" data-drag="' + l.id + '">' + box + ceSpan(l.id, l.text) + gripHtml() + delBtn(l.id) + '</li>';
+      const wie = opt.wie ? '<input class="wie-in' + (l.wie ? ' vol' : '') + '" data-wie="' + l.id + '" placeholder="Wie?" value="' + esc(l.wie || '') + '" title="Wie doet dit? Vul een naam in" />' : '';
+      return '<li class="' + cls.trim() + '" data-drag="' + l.id + '">' + box + ceSpan(l.id, l.text) + wie + gripHtml() + delBtn(l.id) + '</li>';
     }
-    function voegToeRij(groepId) { return '<div class="voegtoe" data-add="' + groepId + '"><span class="plus">＋</span><input type="text" placeholder="Zelf iets toevoegen en op Enter drukken…" /><button class="meer" data-meer="' + groepId + '" title="Laat de AI een paar extra ideeën bij dit onderdeel bedenken">✨ Meer ideeën van AI</button></div>'; }
+    function voegToeRij(groepId) { return '<div class="voegtoe" data-add="' + groepId + '"><span class="plus">＋</span><input type="text" placeholder="Zelf iets toevoegen en op Enter drukken…" /></div>'; }
 
     function renderSectie(sec, lines, meta) {
       const low = sec.text.toLowerCase();
       let body;
       if (/^overzicht/.test(low)) body = renderIntro(lines);
-      else if (/^programma/.test(low)) body = (meta && meta.programmaModus === 'dag') ? renderFasen(lines, sec.id, false) : renderProgramma(lines);
-      else if (/^aftellen/.test(low) || /^taakverdeling/.test(low) || /^evaluatie/.test(low)) body = renderFasen(lines, sec.id, true);
-      else if (/activiteiten/.test(low) || /^extra/.test(low)) body = renderFasen(lines, sec.id, false);
+      else if (/^programma/.test(low)) body = (meta && (meta.programmaModus === 'dag' || meta.programmaModus === 'los')) ? renderFasen(lines, sec.id, false) : renderProgramma(lines);
+      else if (/^aftellen/.test(low) || /^taakverdeling/.test(low)) body = renderFasen(lines, sec.id, true, true); // taken: afvinkbaar + "Wie?"-veld
+      else if (/^evaluatie/.test(low)) body = renderFasen(lines, sec.id, true, false);
+      else if (/activiteiten/.test(low)) body = renderFasen(lines, sec.id, true, false); // benodigdheden per activiteit afvinkbaar
+      else if (/^extra/.test(low)) body = renderFasen(lines, sec.id, false, false);
       else if (/^aandacht/.test(low)) body = renderLijst(lines, 'aandacht', sec.id, false);
       else if (/^communicatie/.test(low)) body = renderCommunicatie(lines, sec.id);
       else if (/boodschappen|materialen/.test(low)) body = renderMat(lines, sec.id);
       else body = renderVrij(lines, sec.id);
-      return '<div class="sec" data-drag="' + sec.id + '"><div class="sec-kop"><span class="se">' + secIcon(low) + '</span><span class="sec-t tx" contenteditable="true" data-id="' + sec.id + '">' + esc(sec.text) + '</span>' + gripHtml() + delBtn(sec.id, 'del-sec') + '</div>' + body + '</div>';
+      // ✨ "Meer …" alleen op de twee ideatie-secties: activiteiten (mét overlap) en extra's (los).
+      let meerKnop = '';
+      if (/activiteiten/.test(low)) meerKnop = '<div class="meer-sec"><button class="meer" data-meer-act="' + sec.id + '" title="Laat de AI er een activiteit bij bedenken en verwerk die meteen in boodschappen, to-do en taakverdeling">✨ Meer activiteiten van AI</button></div>';
+      else if (/^extra/.test(low)) meerKnop = '<div class="meer-sec"><button class="meer" data-meer-extra="' + sec.id + '" title="Laat de AI er een paar leuke extra\'s bij bedenken">✨ Meer extra\'s van AI</button></div>';
+      else if (/^programma/.test(low) && meta && meta.programmaModus !== 'dag') { const naarLos = meta.programmaModus === 'tijd'; meerKnop = '<div class="meer-sec"><button class="meer" data-progwissel="1" title="Wissel tussen vaste kloktijden en een doorlopend programma">' + (naarLos ? '🔀 Laat het programma doorlopen (zonder vaste tijden)' : '🕘 Zet er vaste tijden bij') + '</button></div>'; }
+      const dicht = dichteSecties.has(sec.id) ? ' dicht' : '';
+      return '<div class="sec' + dicht + '" data-drag="' + sec.id + '"><div class="sec-kop"><button class="sec-toggle" data-sectoggle="' + sec.id + '" title="In-/uitklappen" aria-label="In-/uitklappen">▾</button><span class="se">' + secIcon(low) + '</span><span class="sec-t tx" contenteditable="true" data-id="' + sec.id + '">' + esc(sec.text) + '</span>' + gripHtml() + delBtn(sec.id, 'del-sec') + '</div>' + body + meerKnop + '</div>';
     }
     function renderIntro(lines) {
       const p = lines.filter(l => l.kind === 'p' || l.kind === 'li').map(l => '<div class="rm" data-drag="' + l.id + '">' + ceSpan(l.id, l.text) + gripHtml() + delBtn(l.id) + '</div>').join('');
       return '<div class="intro">' + (p || '<p></p>') + '</div>';
     }
-    function renderFasen(lines, secId, check) {
+    function renderFasen(lines, secId, check, wieAan) {
       let out = '', h3id = null, lijst = false, zagH3 = false;
       const sluitLijst = () => { if (lijst) { out += '</ul>'; lijst = false; } };
       const sluitBlok = () => { sluitLijst(); if (h3id != null) { out += voegToeRij(h3id) + '</div></div>'; h3id = null; } };
       for (const l of lines) {
         if (l.kind === 'h3') { sluitBlok(); zagH3 = true; out += '<div class="fase-blok" data-drag="' + l.id + '"><div class="fase-blok-kop">' + ceSpan(l.id, l.text) + gripHtml() + delBtn(l.id, 'del-blok') + '</div><div class="fase-blok-in">'; h3id = l.id; continue; }
-        if (l.kind === 'li') { if (!lijst) { out += '<ul class="checks">'; lijst = true; } out += liRow(l, { check: check }); continue; }
+        if (l.kind === 'li') { if (!lijst) { out += '<ul class="checks">'; lijst = true; } out += liRow(l, { check: check, wie: wieAan }); continue; }
         sluitLijst(); out += '<div class="rm" data-drag="' + l.id + '">' + ceSpan(l.id, l.text) + gripHtml() + delBtn(l.id) + '</div>';
       }
       sluitBlok();
@@ -1668,7 +1979,7 @@
       const sluitGroep = () => { sluitLijst(); if (groepId != null) { out += voegToeRij(groepId) + '</div>'; groepId = null; } };
       for (const l of lines) {
         if (l.kind === 'h3') { sluitGroep(); zag = true; out += '<div class="mat-groep" data-drag="' + l.id + '"><div class="mat-kop">' + ceSpan(l.id, l.text) + gripHtml() + delBtn(l.id, 'del-blok') + '</div>'; groepId = l.id; continue; }
-        if (l.kind === 'li') { if (!lijst) { out += '<ul class="mat">'; lijst = true; } out += liRow(l, { check: true }); continue; }
+        if (l.kind === 'li') { if (!lijst) { out += '<ul class="mat">'; lijst = true; } out += liRow(l, { check: true, wie: true }); continue; }
         sluitLijst(); out += '<div class="rm" data-drag="' + l.id + '">' + ceSpan(l.id, l.text) + gripHtml() + delBtn(l.id) + '</div>';
       }
       sluitGroep();
@@ -1759,18 +2070,112 @@
       if (s.kind === 'h3') return d.kind === 'h3' && sectieVanId(sleepId) === sectieVanId(doelId); // blok tussen blokken van dezelfde sectie
       return d.kind === 'h2'; // sectie tussen secties
     }
-    async function meerIdeeen(btn) {
-      const groepId = +btn.getAttribute('data-meer');
-      const idx = docModel.findIndex(b => b.id === groepId); if (idx < 0) return;
-      const kop = docModel[idx].text, end = groepEinde(idx), huidige = [];
-      for (let k = idx + 1; k < end; k++) { if (docModel[k].kind === 'li') huidige.push(docModel[k].text); }
+    // ── "Meer ideeën van AI" (alleen Activiteiten + Extra's) ──────────────────
+    // Een lichte toast rechtsonder: "ook verwerkt bij Boodschappen, To-do…".
+    let _toastT = null;
+    function toonToast(msg) {
+      let el = document.getElementById('db-toast');
+      if (!el) { el = document.createElement('div'); el.id = 'db-toast'; document.body.appendChild(el); }
+      el.textContent = '✨ ' + msg; el.classList.add('zichtbaar');
+      clearTimeout(_toastT); _toastT = setTimeout(() => el.classList.remove('zichtbaar'), 3400);
+    }
+    // Ruwe AI-tekst → JSON (haalt ```-hekjes weg, snijdt naar de buitenste { } of [ ]).
+    function parseJson(ruw) {
+      if (!ruw) return null;
+      let s = String(ruw).trim().replace(/^```(?:json)?/i, '').replace(/```\s*$/, '').trim();
+      try { return JSON.parse(s); } catch (e) {}
+      const a = s.search(/[\[{]/), b = Math.max(s.lastIndexOf('}'), s.lastIndexOf(']'));
+      if (a >= 0 && b > a) { try { return JSON.parse(s.slice(a, b + 1)); } catch (e) {} }
+      return null;
+    }
+    const alsBullets = (v) => (Array.isArray(v) ? v : (v ? [v] : [])).map(x => String(x).trim()).filter(Boolean);
+    // Deelt hetzelfde (gecachete) systeemprompt als genereren/verfijnen; alleen de
+    // taak wisselt. Zo is een extra activiteit/extra goedkoop en komt er iets BIJ.
+    async function meerClaude(ctxBlok, taakBlok, maxTokens) {
+      if (window.avinkaMask) { try { await window.avinkaMask.ready; } catch (e) {} }
+      const m = (t) => window.avinkaMask ? window.avinkaMask.apply(t) : t;
+      return postClaude({ model: MODEL, max_tokens: maxTokens || 900, system: [{ type: 'text', text: bouwSysteem(), cache_control: { type: 'ephemeral' } }], messages: [{ role: 'user', content: [ { type: 'text', text: m(ctxBlok), cache_control: { type: 'ephemeral' } }, { type: 'text', text: m(taakBlok) } ] }] });
+    }
+    function ctxDraaiboek() {
+      return 'Dit is het huidige draaiboek voor "' + (laatsteMeta.naam || 'een schoolevenement') + '":\n\n=== BEGIN DRAAIBOEK ===\n' + zonderWie(serialize(docModel)) + '\n=== EINDE DRAAIBOEK ===';
+    }
+    // Programma wisselen tussen vaste kloktijden ('tijd') en doorlopend ('los').
+    // Gebeurt lokaal (geen AI): de onderdelen blijven, alleen de tijden gaan eraf/erbij.
+    function schoneNaam(t) { const m = String(t).match(/^([\d:]+\s*[–-]\s*[\d:]+)\s*[·:-]?\s*(.*)$/); const naam = m ? m[2] : String(t); return naam.replace(/\s*\(\s*\d+\s*min\s*\)\s*$/i, '').trim(); }
+    function wisselProgramma() {
+      const naar = laatsteMeta.programmaModus === 'tijd' ? 'los' : 'tijd';
+      const si = sectieIdx(/^programma/); if (si < 0) return;
+      const end = groepEinde(si), h3s = [];
+      for (let k = si + 1; k < end; k++) if (docModel[k].kind === 'h3') h3s.push(docModel[k]);
+      if (naar === 'los') { h3s.forEach(h => { h.text = schoneNaam(h.text); }); }
+      else {
+        const s = parseTijd(laatsteMeta.start), e = parseTijd(laatsteMeta.eind);
+        const namen = h3s.map(h => schoneNaam(h.text));
+        const tl = bouwTijdlijn(s, e, namen.map(n => ({ naam: n, gewicht: 1 })));
+        h3s.forEach((h, i) => { const b = tl[i]; h.text = b ? (b.van + '–' + b.tot + ' · ' + b.naam) : schoneNaam(h.text); });
+      }
+      laatsteMeta.programmaModus = naar;
+      herteken();
+      toonToast(naar === 'los' ? 'Programma loopt nu door, zonder vaste tijden.' : 'Programma staat nu op vaste tijden.');
+    }
+    // ── Model-helpers om overlap op de juiste plek toe te voegen ──────────────
+    function sectieIdx(re) { return docModel.findIndex(b => b.kind === 'h2' && re.test(b.text.toLowerCase())); }
+    function blokIdxInSectie(si, re) { const end = groepEinde(si); for (let k = si + 1; k < end; k++) if (docModel[k].kind === 'h3' && re.test(docModel[k].text.toLowerCase())) return k; return -1; }
+    function laatsteBlokInSectie(si) { const end = groepEinde(si); let bi = -1; for (let k = si + 1; k < end; k++) if (docModel[k].kind === 'h3') bi = k; return bi; }
+    function voegBulletsToe(groepIdx, teksten) { let ins = groepEinde(groepIdx); teksten.forEach(t => { docModel.splice(ins, 0, { id: ++_idc, kind: 'li', text: t }); ins++; }); }
+    function voegBlokInSectie(secIdx, kop, bullets) { let ins = groepEinde(secIdx); docModel.splice(ins, 0, { id: ++_idc, kind: 'h3', text: kop }); ins++; bullets.forEach(t => { docModel.splice(ins, 0, { id: ++_idc, kind: 'li', text: t }); ins++; }); }
+    function overlapAftellen(taak) {
+      if (!taak) return false;
+      const si = sectieIdx(/^aftellen/); if (si < 0) return false;
+      let bi = blokIdxInSectie(si, /week vooraf/); if (bi < 0) bi = laatsteBlokInSectie(si);
+      if (bi < 0) voegBulletsToe(si, [taak]); else voegBulletsToe(bi, [taak]);
+      return true;
+    }
+    function overlapTaakverdeling(rol) {
+      if (!rol) return false;
+      const si = sectieIdx(/^taakverdeling/); if (si < 0) return false;
+      let bi = blokIdxInSectie(si, /tijdens/); if (bi < 0) { const end = groepEinde(si); for (let k = si + 1; k < end; k++) if (docModel[k].kind === 'h3') { bi = k; break; } }
+      if (bi < 0) voegBulletsToe(si, [rol]); else voegBulletsToe(bi, [rol]);
+      return true;
+    }
+    // Eén nieuwe activiteit + verwerk 'm meteen in boodschappen, to-do en taakverdeling.
+    async function meerActiviteit(secId, btn) {
       const oud = btn.textContent; btn.disabled = true; btn.textContent = '⏳ even…';
       try {
-        const prompt = 'Hieronder een onderdeel uit een draaiboek voor "' + (laatsteMeta.naam || 'een schoolevenement') + '". Geef 1 tot 3 EXTRA korte, concrete bulletpunten die hier logisch bij passen en nog NIET genoemd zijn. Antwoord met ALLEEN de bullets, elk op een eigen regel beginnend met "- ", niets anders.\n\nOnderdeel: ' + kop + '\nAl genoemd:\n' + (huidige.map(h => '- ' + h).join('\n') || '(nog niets)');
-        const ruw = await callClaude('Je bent een behulpzame assistent die korte, concrete bulletpunten voor een schooldraaiboek geeft.', prompt, 400);
-        const nieuw = ruw.split('\n').map(r => r.trim()).filter(r => /^[-*]\s+/.test(r)).map(r => r.replace(/^[-*]\s+/, ''));
-        if (nieuw.length) { const e2 = groepEinde(docModel.findIndex(b => b.id === groepId)); nieuw.forEach((t, i2) => docModel.splice(e2 + i2, 0, { id: ++_idc, kind: 'li', text: t })); herteken(); }
-        else if (typeof avinkaAlert === 'function') avinkaAlert('Geen nieuwe ideeën gevonden. Probeer het nog eens.');
+        const taak = 'De organisator wil ER ÉÉN ACTIVITEIT BIJ. Bedenk precies ÉÉN nieuwe, concrete activiteit die past bij dit evenement en die NOG NIET in het draaiboek staat (kies een andere dan de bestaande activiteiten hierboven). Houd het haalbaar met materiaal en menskracht die een gewone basisschool echt heeft; verzin geen merknamen, prijzen of plekken.\n\nGeef ALLEEN geldige JSON terug, exact in deze vorm en niets eromheen:\n{\n  "titel": "korte naam van de activiteit",\n  "hoe": ["1 tot 3 korte bulletpunten: hoe het werkt / de spelregels"],\n  "materiaal": ["de spullen die je ervoor nodig hebt, elk kort"],\n  "voorbereiding": "één korte taak die vooraf geregeld moet worden",\n  "wie": "wie het tijdens het evenement begeleidt (een rol, geen naam)"\n}';
+        const ruw = await meerClaude(ctxDraaiboek(), taak, 900);
+        const act = parseJson(ruw);
+        if (!act || !act.titel) { if (typeof avinkaAlert === 'function') avinkaAlert('Geen nieuwe activiteit gevonden. Probeer het nog eens.'); return; }
+        const titel = String(act.titel).trim(), hoe = alsBullets(act.hoe), materiaal = alsBullets(act.materiaal);
+        const secIdx2 = docModel.findIndex(b => b.id === secId); if (secIdx2 < 0) return;
+        // Activiteit = kop + "zo werkt het" (zin, gewone tekst) + benodigdheden (afvinkbare bullets).
+        // Materiaal blijft bewust BIJ de activiteit (niet in de boodschappenlijst) —
+        // activiteiten en benodigdheden zijn losgekoppeld voor het overzicht.
+        let insA = groepEinde(secIdx2);
+        docModel.splice(insA, 0, { id: ++_idc, kind: 'h3', text: titel }); insA++;
+        const hoeZin = hoe.join(' ');
+        if (hoeZin) { docModel.splice(insA, 0, { id: ++_idc, kind: 'p', text: hoeZin }); insA++; }
+        materiaal.forEach(t => { docModel.splice(insA, 0, { id: ++_idc, kind: 'li', text: t }); insA++; });
+        const raakte = [];
+        if (act.voorbereiding && overlapAftellen(String(act.voorbereiding).trim())) raakte.push('To-do');
+        if (act.wie && overlapTaakverdeling(titel + ': ' + String(act.wie).trim())) raakte.push('Taakverdeling');
+        herteken();
+        toonToast(raakte.length ? 'Activiteit toegevoegd, ook verwerkt bij ' + raakte.join(', ') + '.' : 'Activiteit toegevoegd.');
+      } catch (e) { if (typeof avinkaAlert === 'function') avinkaAlert('Het ophalen lukte niet. Probeer het opnieuw.'); }
+      finally { if (btn && btn.isConnected) { btn.disabled = false; btn.textContent = oud; } }
+    }
+    // Eén of twee losse extra's (self-contained, geen overlap).
+    async function meerExtra(secId, btn) {
+      const oud = btn.textContent; btn.disabled = true; btn.textContent = '⏳ even…';
+      try {
+        const taak = 'De organisator wil er één of twee EXTRA\'s bij om het feest leuker te maken (optionele publiekstrekkers, thema-aankleding of hapjes). Bedenk 1 tot 2 nieuwe extra\'s die passen bij het thema en het budget en die NOG NIET genoemd zijn. Houd elke extra KORT en verzin geen merknamen, prijzen of bedrijven.\n\nGeef ALLEEN geldige JSON terug, exact zo en niets eromheen:\n[ { "titel": "korte naam", "bullets": ["maximaal 2 korte punten: wat het is en wat je nodig hebt"] } ]';
+        const ruw = await meerClaude(ctxDraaiboek(), taak, 700);
+        const arr = parseJson(ruw);
+        const lijst = Array.isArray(arr) ? arr : (arr && arr.titel ? [arr] : []);
+        let n = 0;
+        lijst.forEach(x => { if (x && x.titel) { const si = docModel.findIndex(z => z.id === secId); if (si < 0) return; voegBlokInSectie(si, String(x.titel).trim(), alsBullets(x.bullets).slice(0, 2)); n++; } });
+        if (n) { herteken(); toonToast(n === 1 ? 'Extra toegevoegd.' : n + " extra's toegevoegd."); }
+        else if (typeof avinkaAlert === 'function') avinkaAlert('Geen nieuwe extra\'s gevonden. Probeer het nog eens.');
       } catch (e) { if (typeof avinkaAlert === 'function') avinkaAlert('Het ophalen lukte niet. Probeer het opnieuw.'); }
       finally { if (btn && btn.isConnected) { btn.disabled = false; btn.textContent = oud; } }
     }
@@ -1778,8 +2183,17 @@
     (function () {
       const db = document.getElementById('db');
       if (!db) return;
-      let sleepId = null;
-      const wisDrop = () => db.querySelectorAll('.drop-voor,.drop-na').forEach(x => x.classList.remove('drop-voor', 'drop-na'));
+      let sleepId = null, dragActief = false, laatsteY = 0;
+      const dropLijn = () => { let el = document.getElementById('drop-lijn'); if (!el) { el = document.createElement('div'); el.id = 'drop-lijn'; document.body.appendChild(el); } return el; };
+      const wisDrop = () => { const el = document.getElementById('drop-lijn'); if (el) el.classList.remove('zichtbaar'); };
+      // Soepel meescrollen als je bij het slepen tegen de boven- of onderrand komt.
+      const autoScroll = () => {
+        if (!dragActief) return;
+        const m = 90;
+        if (laatsteY > 0 && laatsteY < m) window.scrollBy(0, -Math.max(4, Math.ceil((m - laatsteY) / 5)));
+        else if (laatsteY > 0 && laatsteY > window.innerHeight - m) window.scrollBy(0, Math.max(4, Math.ceil((laatsteY - (window.innerHeight - m)) / 5)));
+        requestAnimationFrame(autoScroll);
+      };
       const losDrag = () => db.querySelectorAll('[draggable="true"]').forEach(x => x.removeAttribute('draggable'));
       const dropDoel = (t) => {
         const h = t.closest('[data-drag]'); if (!h) return null;
@@ -1794,11 +2208,25 @@
 
       db.addEventListener('click', e => {
         // Afvinken: de hele checklist-regel is klikbaar (behalve de tekst, greep of ✕).
+        const st = e.target.closest('[data-sectoggle]');
+        if (st) { e.preventDefault(); const id = +st.getAttribute('data-sectoggle'); const sec = st.closest('.sec'); if (dichteSecties.has(id)) { dichteSecties.delete(id); if (sec) sec.classList.remove('dicht'); } else { dichteSecties.add(id); if (sec) sec.classList.add('dicht'); } return; }
         const chk = e.target.closest('li.chk');
-        if (chk && !e.target.closest('.tx, [data-grip], [data-del]')) { e.preventDefault(); vinkAf(+chk.getAttribute('data-drag'), chk); return; }
+        if (chk && !e.target.closest('.tx, [data-grip], [data-del], .wie-in')) { e.preventDefault(); vinkAf(+chk.getAttribute('data-drag'), chk); return; }
         const del = e.target.closest('[data-del]'); if (del) { e.preventDefault(); verwijderId(+del.getAttribute('data-del')); return; }
-        const meer = e.target.closest('[data-meer]'); if (meer) { e.preventDefault(); meerIdeeen(meer); return; }
+        const meerAct = e.target.closest('[data-meer-act]'); if (meerAct) { e.preventDefault(); meerActiviteit(+meerAct.getAttribute('data-meer-act'), meerAct); return; }
+        const meerExtra2 = e.target.closest('[data-meer-extra]'); if (meerExtra2) { e.preventDefault(); meerExtra(+meerExtra2.getAttribute('data-meer-extra'), meerExtra2); return; }
+        const pw = e.target.closest('[data-progwissel]'); if (pw) { e.preventDefault(); wisselProgramma(); return; }
         const nk = e.target.closest('[data-nieuwkop]'); if (nk) { e.preventDefault(); docModel.push({ id: ++_idc, kind: 'h2', text: 'Nieuw kopje' }, { id: ++_idc, kind: 'li', text: 'Typ hier je eerste punt' }); herteken(); return; }
+      });
+      // "Wie doet dit?"-veld: naam bewaren (reist mee in de tekst) + de takenlijst bijwerken.
+      // Geen herteken() zodat het invoerveld z'n focus houdt tijdens typen.
+      db.addEventListener('input', e => {
+        const w = e.target.closest('.wie-in'); if (!w) return;
+        const b = docModel.find(x => x.id === +w.getAttribute('data-wie')); if (!b) return;
+        b.wie = w.value.trim();
+        w.classList.toggle('vol', !!b.wie);
+        laatsteTekst = serialize(docModel); verfijnBasis = laatsteTekst;
+        renderTakenlijst(); syncNaarTeam();
       });
       db.addEventListener('focusin', e => { if (e.target.closest && e.target.closest('.tx[data-id]')) { clearTimeout(rtBezigTimer); stuurBezig(true); } });
       db.addEventListener('focusout', e => { const sp = e.target.closest('.tx[data-id]'); if (sp) { syncEdit(sp); clearTimeout(rtBezigTimer); rtBezigTimer = setTimeout(() => stuurBezig(false), 1500); } });
@@ -1811,10 +2239,25 @@
       // Slepen: grip indrukken maakt het blok sleepbaar; daarna HTML5 drag.
       db.addEventListener('mousedown', e => { const g = e.target.closest('[data-grip]'); if (g) { const host = g.closest('[data-drag]'); if (host) host.setAttribute('draggable', 'true'); } });
       document.addEventListener('mouseup', () => setTimeout(losDrag, 0));
-      db.addEventListener('dragstart', e => { const host = e.target.closest('[data-drag][draggable="true"]'); if (!host) return; sleepId = +host.getAttribute('data-drag'); host.classList.add('sleep'); try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(sleepId)); } catch (_) {} });
-      db.addEventListener('dragover', e => { if (sleepId == null) return; const h = dropDoel(e.target); if (!h) return; e.preventDefault(); wisDrop(); const r = h.getBoundingClientRect(); h.classList.add(e.clientY > r.top + r.height / 2 ? 'drop-na' : 'drop-voor'); });
-      db.addEventListener('drop', e => { if (sleepId == null) { wisDrop(); return; } const h = dropDoel(e.target); wisDrop(); if (h) { e.preventDefault(); const r = h.getBoundingClientRect(); verplaatsBlok(sleepId, +h.getAttribute('data-drag'), e.clientY > r.top + r.height / 2 ? 'na' : 'voor'); } sleepId = null; });
-      db.addEventListener('dragend', () => { wisDrop(); sleepId = null; db.querySelectorAll('.sleep').forEach(x => x.classList.remove('sleep')); losDrag(); });
+      db.addEventListener('dragstart', e => { const host = e.target.closest('[data-drag][draggable="true"]'); if (!host) return; sleepId = +host.getAttribute('data-drag'); host.classList.add('sleep'); dragActief = true; requestAnimationFrame(autoScroll); try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(sleepId)); } catch (_) {} });
+      db.addEventListener('dragover', e => { if (sleepId == null) return; laatsteY = e.clientY; const h = dropDoel(e.target); if (!h) { wisDrop(); return; } e.preventDefault(); const r = h.getBoundingClientRect(); const na = e.clientY > r.top + r.height / 2; const lijn = dropLijn(); lijn.style.left = r.left + 'px'; lijn.style.width = r.width + 'px'; lijn.style.top = ((na ? r.bottom : r.top) - 1.5) + 'px'; lijn.classList.add('zichtbaar'); });
+      db.addEventListener('drop', e => { if (sleepId == null) { wisDrop(); return; } const h = dropDoel(e.target); wisDrop(); if (h) { e.preventDefault(); const r = h.getBoundingClientRect(); verplaatsBlok(sleepId, +h.getAttribute('data-drag'), e.clientY > r.top + r.height / 2 ? 'na' : 'voor'); } sleepId = null; dragActief = false; });
+      db.addEventListener('dragend', () => { wisDrop(); sleepId = null; dragActief = false; db.querySelectorAll('.sleep').forEach(x => x.classList.remove('sleep')); losDrag(); });
+    })();
+
+    // Aantekeningen + plattegrond onder het draaiboek (delegatie op de vaste container).
+    (function () {
+      const ex = document.getElementById('db-extras');
+      if (!ex) return;
+      ex.addEventListener('input', e => { const ta = e.target.closest('#extra-notities'); if (ta && laatsteMeta) laatsteMeta.aantekeningen = ta.value; });
+      ex.addEventListener('change', e => { const inp = e.target.closest('#pg-input'); if (inp && inp.files && inp.files[0]) verwerkPlattegrond(inp.files[0]); });
+      ex.addEventListener('click', e => { const v = e.target.closest('[data-pg-verwijder]'); if (v) { e.preventDefault(); if (laatsteMeta) delete laatsteMeta.plattegrond; renderExtras(); } });
+    })();
+
+    // Takenlijst-download (knop zit in #db-taken).
+    (function () {
+      const tk = document.getElementById('db-taken');
+      if (tk) tk.addEventListener('click', e => { const d = e.target.closest('[data-taken-dl]'); if (d) { e.preventDefault(); downloadTakenlijst(); } });
     })();
   </script>
 </body>
