@@ -502,7 +502,10 @@
   // ("trema-meervoud" = meervoud van tremawoorden). Alleen "meervoud" mét een apostrof-s-
   // markering (of "auto's") wijst op de meervoud-'s-categorie.
   var RX_MV_S = /meervoud[^.!?]{0,14}(['’]|komma|apostrof)|(['’]|komma|apostrof)[^.!?]{0,14}meervoud/;
-  var RX_S_BEGIN = /aan\s*(het\s*)?begin|voor\s*aan|vooraan|\bbegin\b|ervoor|['’]\s?s\s*(ochtends|morgens|middags|avonds|nachts|zomers|winters|maandags|dinsdags|woensdags|donderdags|vrijdags|zaterdags|zondags)/;
+  // Let op: "begin/vooraan" alleen is GÉÉN s_begin-signaal (elke categorie kan iets
+  // "aan het begin van het woord" hebben). Vereist daarom een apostrof ernaast, of een
+  // concreet tijdwoord ('s ochtends …).
+  var RX_S_BEGIN = /['’]\s?s\s*(ochtends|morgens|middags|avonds|nachts|zomers|winters|maandags|dinsdags|woensdags|donderdags|vrijdags|zaterdags|zondags)|['’][^.!?]{0,18}(begin|voor\s*aan|vooraan|ervoor)|(begin|voor\s*aan|vooraan|ervoor)[^.!?]{0,10}['’]/;
   var RX_BEZIT = /bezit|genitief|van\s+wie/;
   // Tussenletters in samenstellingen: generiek "tussenletter" -> alle drie; "tussen-n/-s/-e" -> alleen die.
   var RX_TUSSEN_GEN = /tussenletter|verbindingsletter/;
@@ -740,8 +743,12 @@
         (tel[w] = tel[w] || []).push(i);
       }
     }
+    // Gewone woorden die in bijna elke prompt kunnen staan of een verwarrende categorie
+    // geven — niet als voorbeeldwoord-trigger gebruiken (anders zet "woord"/"extra"/"prima"
+    // in een omschrijvende zin per ongeluk een categorie aan).
+    var STOP = " woord woorden hand wind extra prima via minus figuur crisis menu deel item mini tot ";
     var idx = {};
-    for (var w2 in tel) if (tel[w2].length === 1) idx[w2] = tel[w2][0];
+    for (var w2 in tel) if (tel[w2].length === 1 && STOP.indexOf(" " + w2 + " ") === -1) idx[w2] = tel[w2][0];
     return idx;
   })();
 
@@ -765,21 +772,28 @@
     var uit = [];
     for (var i = 0; i < SPELLING_WOORDEN.length; i++) {
       var tst = SPELLING_WOORDEN[i].test;
-      var raak = (typeof tst === "function") ? tst(aug) : tst.test(aug);
+      // Functie-tests (apostrof-/tussenletter-familie) kijken naar de RAUWE prompt: de
+      // augmentatie ("… woorden met <tok>") is alleen bedoeld voor de mascotte-/cluster-
+      // regexes en zou anders "auto's" + " woorden" tot een vals "'s woord" plakken.
+      var raak = (typeof tst === "function") ? tst(t) : tst.test(aug);
       if (raak) uit.push(SPELLING_WOORDEN[i]);
     }
     // Voorbeeldwoorden: een woord dat maar bij ÉÉN categorie hoort (garage → g_zj,
     // politie → tie, citroen → c_als_s) is een signaal. We nemen zo'n categorie mee als
     // de leerkracht er 2+ van noemt (sterk signaal), of bij korte invoer (dan is het woord
     // duidelijk als voorbeeld bedoeld, niet als thema-woord in een lange opdracht).
+    // Voorbeeldwoorden werken als VANGNET: alleen meenemen als de regex-herkenning niets
+    // vond (dan is een genoemd woord duidelijk het onderwerp), of als er 2+ voorbeelden van
+    // dezelfde categorie staan (sterk signaal). Zo zet een gewoon woord in een omschrijvende
+    // zin ("een prima werkblad over cht") geen extra categorie aan.
+    var wasLeeg = uit.length === 0, hits = {};
     var toks = t.split(/[^a-zà-ÿ'’]+/).filter(Boolean);
-    var kort = toks.length <= 6, hits = {};
     for (var vi = 0; vi < toks.length; vi++) {
       var ci = SPELLING_VBWORD[toks[vi]];
       if (ci != null) hits[ci] = (hits[ci] || 0) + 1;
     }
     for (var key in hits) {
-      if ((hits[key] >= 2 || kort) && uit.indexOf(SPELLING_WOORDEN[key]) === -1)
+      if ((hits[key] >= 2 || wasLeeg) && uit.indexOf(SPELLING_WOORDEN[key]) === -1)
         uit.push(SPELLING_WOORDEN[key]);
     }
     return uit;
