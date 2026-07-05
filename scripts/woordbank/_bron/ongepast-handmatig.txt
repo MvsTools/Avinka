@@ -369,3 +369,26 @@ piccolo
 heroïne
 cocaïne
 steroïden
+#
+# Excel-review (5-7-2026) — eigenaar liep de volledige bank in Excel na:
+# geweld/dood, en woorden te zwaar/ongepast voor een kinderwerkblad.
+doodschiet
+doodschoot
+neerschiet
+neerschieten
+neerschoot
+doodvonnis
+gedood
+doodde
+doodging
+doodvallen
+slacht
+slachter
+geslacht
+vergiftigd
+terreur
+bloedzuiger
+bloedige
+bloedingen
+tabak
+borstvoeding
