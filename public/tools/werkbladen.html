@@ -976,6 +976,12 @@
             var nieuw = (blk.items || []).map(function (it) {
               if (!it) return null;
               it.voor = schoonAI(it.voor); it.na = schoonAI(it.na); // AI-zelfcorrectie eruit
+              // "Bronzin → gaten-zin" is misleidend: de bronzin toont het woord vaak ZONDER teken
+              // (patient i.p.v. patiënt = een fout woordbeeld). Een échte transformatie is
+              // "grondwoord →" (één woord vóór de pijl). Staat er een hele ZIN vóór de pijl, strip
+              // die weg — dan blijft alleen de gaten-zin over.
+              var pijlM = String(it.voor || '').match(/^(.+?)\s*[→>]\s*([\s\S]*)$/);
+              if (pijlM && (/[.!?]/.test(pijlM[1]) || pijlM[1].trim().split(/\s+/).length >= 3)) it.voor = pijlM[2];
               var vf = (String(it.voor || '').match(/([a-zà-ÿ]+)$/i) || [])[1] || '';
               var nf = (String(it.na || '').match(/^([a-zà-ÿ]+)/i) || [])[1] || '';
               var glued = !!(vf || nf); // zit het gat al IN een woord, of is het een heel-woord-gat in een zin?
