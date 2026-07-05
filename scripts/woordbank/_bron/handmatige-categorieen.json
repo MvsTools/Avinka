@@ -1,0 +1,70 @@
+{
+  "_toelichting": "Hand-gecureerde spellingcategorieën die niet betrouwbaar uit OpenTaal te winnen zijn: zeldzame Franse leenwoorden, streepjeswoorden en transformatie-regels. bouw.js voegt ze ongewijzigd toe aan de woordenbank; elk woord krijgt de categorie-vanaf-groep (introGroep). Correct gespeld en kindveilig, met de hand geverifieerd. Volgorde = gewoon -> minder gewoon (de tool kiest met voorkeur uit de voorste woorden).",
+  "categorieen": {
+    "kilo_ie": {
+      "label": "woorden waarin je /ie/ hoort maar één i schrijft (zoals kilo, liter)",
+      "introGroep": 4,
+      "woorden": [["audio",4],["cabrio",4],["cavia",4],["dia",4],["dino",4],["februari",4],["giraf",4],["gitaar",4],["iglo",4],["item",4],["januari",4],["kilo",4],["kimono",4],["kiwi",4],["liter",4],["loempia",4],["mini",4],["minus",4],["minuut",4],["patio",4],["piano",4],["prima",4],["radio",4],["safari",4],["salami",4],["ski",4],["studio",4],["taxi",4],["titel",4],["trio",4],["via",4],["video",4],["virus",4],["yeti",4],["admiraal",5],["aspirine",5],["aubergine",5],["benzine",5],["broccoli",5],["cabine",5],["cafetaria",5],["citroen",5],["clementine",5],["confetti",5],["crisis",5],["diploma",5],["familie",5],["figuur",5],["gelatine",5],["kantine",5],["lawine",5],["limousine",5],["macaroni",5],["mandoline",5],["margarine",5],["marine",5],["microfoon",5],["microscoop",5],["minibus",5],["minirok",5],["mummie",5],["nectarine",5],["origami",5],["paprika",5],["pianist",5],["piloot",5],["pizzeria",5],["praline",5],["ravioli",5],["routine",5],["sardine",5],["scenario",5],["sneeuwlawine",5],["spaghetti",5],["trampoline",5],["triangel",5],["tribune",5],["tsunami",5],["turbine",5],["uniform",5],["viaduct",5],["violet",5],["viool",5],["visite",5],["vitamine",5],["vitrine",5],["diplomaat",6],["directeur",6],["horizon",6],["militair",6],["minister",6],["televisie",6],["visie",6],["politie",5,"2"],["ambitie",6,"2"],["coalitie",6,"2"],["competitie",6,"2"],["conditie",6,"2"],["definitie",6,"2"],["editie",6,"2"],["expeditie",6,"2"],["munitie",6,"2"],["organisatie",6,"2"],["petitie",6,"2"],["positie",6,"2"],["publicatie",6,"2"],["repetitie",6,"2"],["traditie",6,"2"],["applicatie",7,"2"],["communicatie",7,"2"],["compositie",7,"2"],["oppositie",7,"2"],["realisatie",7,"2"]]
+    },
+    "g_zj": {
+      "label": "de g die klinkt als /zj/ (zoals garage, etage)",
+      "introGroep": 5,
+      "woorden": [["bagage",5],["bandage",5],["beige",5],["collage",5],["etage",5],["garage",5],["handbagage",5],["horloge",5],["massage",5],["passage",5],["plantage",5],["ravage",5],["rouge",5],["stage",5],["tatoeage",5],["vitrage",5],["camouflage",6],["college",6],["etalage",6],["genre",6],["gilet",6],["lekkage",6],["logeren",6],["montage",6],["passagier",6],["percentage",6],["reportage",6],["sabotage",6],["slijtage",6],["spionage",6],["voltage",6],["wattage",6],["personage",7]]
+    },
+    "uw": {
+      "label": "woorden met uw (je hoort /uu/, je schrijft u)",
+      "introGroep": 3,
+      "woorden": ["uw", "duw", "ruw", "schuw", "sluw", "schaduw", "zenuw", "zwaluw", "waarschuw", "spuw", "stuw", "oogschaduw", "waterschuw", "cameraschuw", "mensenschuw", "schouderduw", "gierzwaluw", "huiszwaluw"]
+    },
+    "meervoud_s": {
+      "label": "woorden die op een lange klinker eindigen en in het meervoud een apostrof-s krijgen (zoals auto's, baby's, komma's)",
+      "introGroep": 4,
+      "woorden": [["accu",4],["auto",4],["baby",4],["cola",4],["dino",4],["disco",4],["euro",4],["foto",4],["hobby",4],["kilo",4],["kiwi",4],["komma",4],["logo",4],["lolly",4],["mama",4],["memo",4],["menu",4],["oma",4],["opa",4],["panda",4],["papa",4],["piano",4],["pizza",4],["pony",4],["radio",4],["ski",4],["taxi",4],["video",4],["zebra",4],["agenda",5],["alinea",5],["arena",5],["aroma",5],["aula",5],["avocado",5],["bikini",5],["bunny",5],["cabrio",5],["camera",5],["cavia",5],["cobra",5],["curry",5],["dahlia",5],["demo",5],["diploma",5],["domino",5],["drama",5],["duo",5],["echo",5],["extra",5],["flamingo",5],["gorilla",5],["husky",5],["iglo",5],["info",5],["jury",5],["kimono",5],["koala",5],["lama",5],["mango",5],["metro",5],["paraplu",5],["party",5],["pasta",5],["puppy",5],["pyjama",5],["safari",5],["salami",5],["silo",5],["studio",5],["taco",5],["tango",5],["teddy",5],["tempo",5],["tornado",5],["villa",5],["autoradio",6],["begonia",6],["buggy",6],["collega",6],["derby",6],["dilemma",6],["docu",6],["dummy",6],["espresso",6],["ferry",6],["haiku",6],["jetski",6],["kerstmenu",6],["kindermenu",6],["penalty",6],["rally",6],["scenario",6],["tsunami",6],["tutu",6],["waterski",6]]
+    },
+    "s_begin": {
+      "label": "de 's aan het begin van tijdwoorden (zoals 's ochtends, 's avonds)",
+      "introGroep": 6,
+      "woorden": ["'s ochtends", "'s morgens", "'s middags", "'s avonds", "'s nachts", "'s zomers", "'s winters", "'s maandags", "'s dinsdags", "'s woensdags", "'s donderdags", "'s vrijdags", "'s zaterdags", "'s zondags"]
+    },
+    "bezit_s": {
+      "label": "de bezit-'s (genitief, zoals papa's fiets, oma's bril)",
+      "introGroep": 7,
+      "woorden": ["papa", "mama", "oma", "opa", "baby", "pony", "Anna", "Bo", "Lisa", "Milo", "Nova", "Romy"]
+    },
+    "tussen_n": {
+      "label": "samenstellingen met een tussen-n (zoals pannenkoek, kippenhok)",
+      "introGroep": 7,
+      "woorden": ["pannenkoek", "kippenhok", "kattenbak", "hondenhok", "boekenkast", "boekenplank", "boekenlegger", "krentenbol", "krentenbrood", "bessensap", "notenkraker", "notenbalk", "plantenbak", "ganzenbord", "sterrenhemel", "sterrenkijker", "gastenboek", "tandenborstel", "tandenstoker", "ballenbak", "bloemenkrans", "bonenstaak", "erwtensoep", "rozenstruik", "berenhol", "leeuwenkuil", "hanenkam", "bomenrij", "ogenblik"]
+    },
+    "tussen_s": {
+      "label": "samenstellingen met een tussen-s (zoals dorpsstraat, verkeersbord)",
+      "introGroep": 7,
+      "woorden": ["dorpsstraat", "dorpsplein", "dorpshuis", "stationsplein", "verkeersbord", "verkeerslicht", "verkeersregel", "verkeersweg", "verjaardagsfeest", "verjaardagstaart", "verjaardagskalender", "gezelschapsspel", "koningshuis", "scheepsbouw", "levensgevaar", "meningsverschil", "uitgangspunt", "uitgangsdeur", "gezichtsuitdrukking", "lievelingskleur", "lievelingseten", "scheidsrechter", "zonsopgang", "zonsondergang", "stadsmuur", "voorjaarsvakantie", "beroepskeuze", "staatshoofd"]
+    },
+    "tussen_e": {
+      "label": "samenstellingen met een tussen-e (zoals zonnebloem, elleboog)",
+      "introGroep": 7,
+      "woorden": ["zonnebloem", "zonnebril", "zonnescherm", "zonnesteek", "zonneschijn", "zonnestraal", "zonnestelsel", "zonnewijzer", "zonnebrand", "maneschijn", "beresterk", "beregoed", "beretrots", "reuzeleuk", "reuzegroot", "reuzeklein", "apetrots", "boordevol", "stekeblind", "elleboog", "bolleboos", "bruidegom", "papegaai", "nachtegaal", "wielewaal", "apekool", "bakkebaard", "koekepeer", "petekind", "ledemaat"]
+    },
+    "stoffelijk_en": {
+      "label": "stoffelijke bijvoeglijke naamwoorden op -en (zoals houten, wollen)",
+      "introGroep": 8,
+      "woorden": ["houten", "wollen", "gouden", "zilveren", "ijzeren", "koperen", "stenen", "glazen", "kartonnen", "rubberen", "leren", "zijden", "betonnen", "katoenen", "papieren", "rieten", "bronzen", "stalen", "tinnen", "loden", "vilten", "kurken", "gipsen", "marmeren", "porseleinen", "satijnen", "fluwelen", "kanten", "strooien", "linnen"]
+    },
+    "koppelteken": {
+      "label": "woorden met een koppelteken bij botsende klinkers (zoals zee-eend, na-apen)",
+      "introGroep": 7,
+      "woorden": ["zo-even", "na-apen", "zee-eend", "zee-egel", "mee-eten", "familie-uitje", "cadeau-idee", "zonne-energie", "auto-ongeluk", "chocolade-ijs", "vanille-ijs", "tosti-ijzer", "thema-avond", "gala-avond", "diploma-uitreiking", "video-opname", "solo-optreden", "jojo-effect", "mega-evenement", "studie-uur", "radio-uitzending", "auto-onderdeel", "co-ouder", "lente-ui", "auto-eigenaar", "video-upload", "familie-uitstapje", "na-aap", "mede-eigenaar", "toe-eigenen", "zee-eenden", "zee-egels", "na-aper", "na-apers", "gala-avonden", "thema-avonden", "auto-ongelukken", "auto-onderdelen", "solo-optredens", "co-ouders", "familie-uitjes", "studie-uren", "cadeau-ideetje", "cadeau-ideeën", "tosti-ijzers", "mega-evenementen", "radio-uitzendingen"]
+    },
+    "route": {
+      "label": "woorden waarin ou klinkt als /oe/ (zoals route, souvenir)",
+      "introGroep": 7,
+      "woorden": ["route", "douche", "douchen", "souvenir", "tour", "journaal", "bouillon", "coupon", "routine", "camouflage", "courgette", "carrousel", "boulevard", "douane", "silhouet", "fietsroute", "wandelroute", "busroute", "journalist", "coureur", "gourmet", "gourmetten", "routekaart", "routebeschrijving", "routeplanner", "routeboekje", "vluchtroute", "sluiproute", "vaarroute", "retour", "retourtje", "souvenirs", "souvenirtje", "souvenirwinkel", "douchegordijn", "douchekop", "chocolademousse", "bouillonblokje", "gourmetstel", "couplet", "coupé", "treincoupé", "wereldtour", "tourbus", "tournee"]
+    },
+    "oir": {
+      "label": "woorden met oir (je hoort /waar/, zoals trottoir)",
+      "introGroep": 7,
+      "woorden": ["trottoir", "reservoir", "accessoire", "accessoires", "repertoire", "memoires"]
+    }
+  }
+}

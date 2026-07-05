@@ -461,6 +461,27 @@ banken.hakwoord.woorden.sort((a, b) => a[1] - b[1] || (RANG.get(a[0]) || 99999) 
 console.log(`hakwoord: ${hakVoor} ruw -> ${banken.hakwoord.woorden.length} (kern ${nKernExtra + [...hakKernlijst].filter(w=>heeftHak.has(w)&&!weetEenLettergreep.has(w)).length}, weetwoord-1klankgroep ${weetEenLettergreep.size})`);
 if (kernAfgevallen.length) console.log("  (kernlijst-woorden met tóch een eigen regel, dus GEEN hakwoord meer):", kernAfgevallen.join(", "));
 
+// ── Handmatige categorieën ──────────────────────────────────────────────────────
+// Zeldzame of transformatie-categorieën die niet betrouwbaar uit OpenTaal te winnen
+// zijn (streepjeswoorden, Franse leenwoorden, meervoud-'s). Met de hand gecureerd +
+// kindveilig; elk woord krijgt de categorie-vanaf-groep. Zo staat ALLES in één bank.
+let nHand = 0, nHandCat = 0;
+try {
+  const hand = JSON.parse(fs.readFileSync(BRON("handmatige-categorieen.json"), "utf8"));
+  for (const id in hand.categorieen) {
+    const c = hand.categorieen[id];
+    banken[id] = {
+      label: c.label,
+      soort: "handmatig",
+      introGroep: c.introGroep,
+      // woord mag een string zijn (→ categorie-introGroep) of [woord, groep] (eigen vanaf-groep)
+      woorden: c.woorden.map(w => Array.isArray(w) ? w : [w, c.introGroep]),
+    };
+    nHand += c.woorden.length; nHandCat++;
+  }
+  console.log(`handmatige categorieën toegevoegd: ${nHandCat} (${nHand} woorden)`);
+} catch (e) { console.log("LET OP: handmatige-categorieen.json niet geladen:", e.message); }
+
 // ── Wegschrijven ──────────────────────────────────────────────────────────────
 const uit = {
   versie: "1.0",

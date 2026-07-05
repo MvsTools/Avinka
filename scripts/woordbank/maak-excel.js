@@ -25,7 +25,7 @@ for (const id of Object.keys(bank.categorieen)) {
       id,
       cat.label,
       w[1],
-      w[2] === "v" ? "vervoeging/verbuiging" : "grondvorm",
+      w[2] === "v" ? "vervoeging/verbuiging" : w[2] === "2" ? "ook geldig (hoort ook bij andere categorie)" : "grondvorm",
       w[0],
     ]);
   }
