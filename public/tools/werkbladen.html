@@ -519,6 +519,7 @@
         lijnen.push('- Verklap het antwoord NIET visueel. Gebruik dus GEEN meerkeuze waarbij de juiste schrijfwijze van het woord gewoon tussen de opties staat (bijvoorbeeld "crisis of criesis"); op papier geef je dan het antwoord weg. Zo\'n vraag werkt alleen mondeling. Laat de leerling de spelling ZELF schrijven.');
         lijnen.push('- Gebruik bij voorkeur invul-opdrachten waarbij juist de moeilijke letter(s) ontbreken (bijvoorbeeld voor "crisis": voor="cr", antwoord="i", na="sis"), woorden laten afmaken, of een mini-dictee-achtige opdracht.');
         lijnen.push('- STAAT er een gat in een ZIN, dan moet die zin een LOPENDE, correcte Nederlandse zin zijn waarin het ingevulde woord grammaticaal én qua betekenis klopt. Lees de zin met het woord ingevuld terug: klinkt hij onnatuurlijk of onzinnig (bijv. "Kun jij me de dringen doorgeven"), kies dan een ander woord of een andere zin. Gebruik het woord in zijn juiste vorm (enkelvoud/meervoud past bij de zin).');
+        lijnen.push('- TRANSFORMATIE-CATEGORIEEN (meervoud, verkleinwoord, langer maken voor d/t, f→v, s→z, trappen van vergelijking): gebruik BIJ VOORKEUR de vorm "grondwoord → ___" (voor="auto → ", antwoord="auto\'s", na=""), NIET het gevormde woord in een losse zin proppen. Veel meervouds-/verkleinvormen klinken gek of fout in een zin ("twee kilo\'s appels" is geen goed Nederlands). Dus liever: "boom → ___" (antwoord: boompje), "hond → ___" (antwoord: honden).');
         lijnen.push('- Vraag de spellingregel NIET terug, tenzij er expliciet een opdracht is als "schrijf de regel op".');
         lijnen.push('- Alle oefenwoorden zijn bestaande Nederlandse woorden op het niveau van ' + inv.groep + '.');
         lijnen.push('- VOORBEELDEN IN DE UITLEG: gebruik je een uitleg-/regelblok (type "tekst") met voorbeeldwoorden, controleer dan dat ELK voorbeeld de geoefende regel ÉCHT bevat (een voorbeeld bij "de c die klinkt als /s/" moet echt een c vóór e, i of y hebben; "fiets" heeft geen c en is dus fout). Staat er hierboven een verplichte woordenbank, kies je voorbeelden dan óók uit die lijst en verzin er geen eigen woorden bij.');
@@ -934,15 +935,26 @@
               it.voor = schoonAI(it.voor); it.na = schoonAI(it.na); // AI-zelfcorrectie eruit
               var vf = (String(it.voor || '').match(/([a-zà-ÿ]+)$/i) || [])[1] || '';
               var nf = (String(it.na || '').match(/^([a-zà-ÿ]+)/i) || [])[1] || '';
-              if (!vf && !nf) return it; // gat = heel woord → laten staan
-              var full = vf + String(it.antwoord || '') + nf, fl = full.toLowerCase();
-              // alleen herverdelen als het woord ECHT in een categorie zit waarvan het kenmerk erin valt
+              var glued = !!(vf || nf); // zit het gat al IN een woord, of is het een heel-woord-gat in een zin?
+              var full = (glued ? vf : '') + String(it.antwoord || '') + (glued ? nf : ''), fl = full.toLowerCase();
+              // Zet het gat op het KENMERK van de regel als het antwoord een bankwoord is met dat
+              // kenmerk erin — ÓÓK bij een heel-woord-gat in een zin ("de [patiënt]" → "de pati[ë]nt").
               var bank = banken.filter(function (b) { return b.feat && b.feat.test(fl) && b.woorden.some(function (x) { return x.toLowerCase() === fl; }); })[0];
-              if (!bank) return inUnie(fl) ? it : null; // geen kenmerk-categorie → vangnet: drop als geen bankwoord (kapot als "wexpert")
-              var m = fl.match(bank.feat); if (!m) return inUnie(fl) ? it : null;
+              if (!bank) {
+                // Vangnet: een ZELF-BEWIJZEND kenmerk (diakriet ë/ï/ö/ü/é of een koppelteken)
+                // bewijst de categorie al zónder bankwoord → zo worden trema/accent/koppelteken óók
+                // surgical op woorden die niet in de bank staan (patiënt, kopiëren, cafeïne).
+                bank = banken.filter(function (b) { return b.feat && /[ëïöüéèê-]/.test((fl.match(b.feat) || [''])[0]); })[0];
+              }
+              if (!bank) {
+                // Geen kenmerk-categorie. Partieel gat dat geen bankwoord is = kapot ("wexpert") → drop.
+                // Heel-woord-gat in een zin (transformatie zoals meervoud/verkleinwoord) → laten staan.
+                return glued ? (inUnie(fl) ? it : null) : it;
+              }
+              var m = fl.match(bank.feat); if (!m) return glued ? (inUnie(fl) ? it : null) : it;
               var idx = m.index;
-              var voorBase = String(it.voor || '').slice(0, String(it.voor || '').length - vf.length);
-              var naBase = String(it.na || '').slice(nf.length);
+              var voorBase = glued ? String(it.voor || '').slice(0, String(it.voor || '').length - vf.length) : String(it.voor || '');
+              var naBase = glued ? String(it.na || '').slice(nf.length) : String(it.na || '');
               // Strip een aangeplakte betekenis/definitie ("woord — het meubel waaraan je werkt"):
               // die hoort bij een kruiswoord, niet bij invul (overbodig, inconsistent, en soms
               // staat het antwoord er letterlijk in). Een lopende zin (geen liggend streepje) blijft.
@@ -985,6 +997,20 @@
                   alInvul[cw] = 1;
                 }
               }
+            }
+            // De instructie ALTIJD laten kloppen met de werkelijke gaten — de losse AI-opdrachttekst
+            // beloofde soms iets anders (bv. "vul alleen het trema in" boven een heel-woord-gat).
+            // Woordbank-invul ("Kies uit: …") laten we met rust: die opsomming is essentieel.
+            if ((blk.items || []).length && !/kies uit/i.test(String(blk.opdracht || ''))) {
+              var nLetter = 0, nZin = 0;
+              blk.items.forEach(function (it) {
+                if (/[a-zà-ÿ]$/i.test(String(it.voor || '')) || /^[a-zà-ÿ]/i.test(String(it.na || ''))) nLetter++;
+                else if (String(it.voor || '').trim() || String(it.na || '').trim()) nZin++;
+              });
+              var pijl = blk.items.some(function (it) { return /[→>]\s*$/.test(String(it.voor || '')); });
+              if (nLetter > 0 && nLetter >= nZin) blk.opdracht = 'Vul de ontbrekende letter(s) in.';
+              else if (pijl) blk.opdracht = 'Schrijf de juiste vorm van het woord.';
+              else if (nZin > 0) blk.opdracht = 'Lees de zin en schrijf het juiste woord op de stippellijn.';
             }
           }
         });
