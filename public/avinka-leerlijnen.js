@@ -491,6 +491,25 @@
   // `test` herkent de categorie uit het onderwerp/de aanvullingen (Staal-naam,
   // Taal actief-naam of een fonetische omschrijving). Volgorde = prioriteit.
   // Uitbreidbaar: voeg een categorie of woorden toe (alles met de hand geverifieerd).
+  // Apostrof-s-familie: twee regels die allebei 's gebruiken maar niet door elkaar mogen —
+  // het MEERVOUD (auto's) en de 's VOORAAN tijdwoorden ('s ochtends). De herkenning schakelt:
+  //   generiek ("komma s", "'s-woord")   -> allebei
+  //   met het woord "meervoud"           -> alleen meervoud_s
+  //   met "begin/vooraan" of een tijdwoord ('s ochtends…) -> alleen s_begin
+  var RX_APOS_GEN = /komma['’\s-]*s\b|apostrof|['’]\s?s[\s-]?woord/;
+  var RX_MEERVOUD = /meervoud/;
+  // "meervoud" alleen is GÉÉN apostrof-s-signaal: élke categorie heeft een meervoud
+  // ("trema-meervoud" = meervoud van tremawoorden). Alleen "meervoud" mét een apostrof-s-
+  // markering (of "auto's") wijst op de meervoud-'s-categorie.
+  var RX_MV_S = /meervoud[^.!?]{0,14}(['’]|komma|apostrof)|(['’]|komma|apostrof)[^.!?]{0,14}meervoud/;
+  // Let op: "begin/vooraan" alleen is GÉÉN s_begin-signaal (elke categorie kan iets
+  // "aan het begin van het woord" hebben). Vereist daarom een apostrof ernaast, of een
+  // concreet tijdwoord ('s ochtends …).
+  var RX_S_BEGIN = /['’]\s?s\s*(ochtends|morgens|middags|avonds|nachts|zomers|winters|maandags|dinsdags|woensdags|donderdags|vrijdags|zaterdags|zondags)|['’][^.!?]{0,18}(begin|voor\s*aan|vooraan|ervoor)|(begin|voor\s*aan|vooraan|ervoor)[^.!?]{0,10}['’]/;
+  var RX_BEZIT = /bezit|genitief|van\s+wie/;
+  // Tussenletters in samenstellingen: generiek "tussenletter" -> alle drie; "tussen-n/-s/-e" -> alleen die.
+  var RX_TUSSEN_GEN = /tussenletter|verbindingsletter/;
+  var RX_TN = /tussen[-\s]?n\b/, RX_TS = /tussen[-\s]?s\b/, RX_TE = /tussen[-\s]?e\b/;
   var SPELLING_WOORDEN = [
     // Hakwoord (Staal cat 1): woord van ÉÉN klankgroep dat je "hakt" in klanken (kat, bal,
     // rij, rijk). De bank leidt dit af uit alle enig-lettergreep-woorden die zich al in een
@@ -525,7 +544,7 @@
     { naam: "de th die je als /t/ hoort (zoals thee, thema)", bank: "th",
       test: /thee\s*-?woord|\bth\s*-?woord|woorden? met th\b/,
       woorden: ["thee", "thema", "theater", "thermometer", "bibliotheek", "apotheek", "theorie", "thuis", "methode"] },
-    { naam: "de g die klinkt als /zj/ (zoals garage, etage)",
+    { naam: "de g die klinkt als /zj/ (zoals garage, etage)", bank: "g_zj",
       test: /garage\s*-?woord|\bg\b[^.,;!?]{0,25}?\bals\b[^.,;!?]{0,6}zj|hoor.{0,8}zj.{0,18}schrijf.{0,8}\bg\b/,
       woorden: ["garage", "etage", "bagage", "horloge", "massage", "etalage", "passagier", "reportage", "collage"] },
     { naam: "woorden met -eau (je hoort /oo/, je schrijft eau)", bank: "eau",
@@ -549,7 +568,7 @@
     { naam: "woorden met eeuw of ieuw", bank: "eeuw_ieuw",
       test: /eeuw\s*-?ieuw|eeuw.{0,2}ieuw|woorden? met (eeuw|ieuw)\b/,
       woorden: ["leeuw", "sneeuw", "eeuw", "meeuw", "nieuw", "kieuw", "spreeuw", "geeuw"] },
-    { naam: "woorden met uw (je hoort /uu/, je schrijft u)",
+    { naam: "woorden met uw (je hoort /uu/, je schrijft u)", bank: "uw",
       test: /uw\s*-?(rijtje|woord)|woorden? met uw\b/,
       woorden: ["uw", "duw", "ruw", "schuw", "sluw", "schaduw", "zenuw", "zwaluw"] },
     { naam: "woorden met ei of ij (weetwoorden)", bank: "ei_ij",
@@ -587,9 +606,39 @@
     // Meervoud met 's: woorden die op een lange klinker (a, o, u, i, y) eindigen krijgen
     // 's in het meervoud (auto → auto's). Geen eigen bank in de woordenbank: eigen,
     // met de hand gecureerde grondvormen (het kind vormt zelf het meervoud).
-    { naam: "meervoud met 's (bijvoorbeeld auto → auto's)",
-      test: /['’]\s?s\b.{0,12}meervoud|meervoud.{0,12}['’]\s?s\b|komma\s*-?\s*s\b|apostrof|['’]s[\s-]?woord|auto['’]?s/,
+    { naam: "meervoud met 's (bijvoorbeeld auto → auto's)", bank: "meervoud_s",
+      regel: "Woorden die eindigen op een lange klinker (a, o, u, i, y) krijgen in het meervoud een apostrof (') en dan een s: auto → auto's, baby → baby's, foto → foto's.",
+      test: function (t) { return RX_MV_S.test(t) || /auto['’]?s/.test(t) || (RX_APOS_GEN.test(t) && !RX_S_BEGIN.test(t) && !RX_BEZIT.test(t)); },
       woorden: ["auto", "foto", "radio", "paraplu", "menu", "taxi", "baby", "pony", "kilo", "piano", "video", "oma", "opa", "hobby"] },
+    // De 's vooraan tijdwoorden (verkorting van "des"): 's ochtends, 's avonds. Gesloten,
+    // klein lijstje; géén meervoud-apostrof maar een los kopstukje vóór het woord.
+    { naam: "de 's aan het begin van tijdwoorden (zoals 's ochtends, 's avonds)", bank: "s_begin",
+      regel: "Bij sommige tijdwoorden staat een los kopstukje 's vooraan (een verkorting van 'des'). Je schrijft een apostrof, dan een s, dan een spatie en dan het woord: 's ochtends, 's avonds, 's nachts.",
+      test: function (t) { return RX_S_BEGIN.test(t) || (RX_APOS_GEN.test(t) && !RX_MEERVOUD.test(t) && !RX_BEZIT.test(t)); },
+      woorden: ["'s ochtends", "'s middags", "'s avonds", "'s nachts", "'s morgens", "'s zomers", "'s winters", "'s maandags", "'s zondags"] },
+    // Bezit-'s (genitief): iets is van iemand. Zelfde apostrof-plek als het meervoud, maar
+    // andere functie (bezit i.p.v. meervoud) — daarom een eigen categorie met eigen regel.
+    { naam: "de bezit-'s (genitief, zoals papa's fiets, oma's bril)", bank: "bezit_s",
+      regel: "Als iets van iemand is en die naam of dat woord eindigt op een lange klinker (a, o, u, i, y), schrijf je een apostrof en dan een s: papa → papa's fiets, oma → oma's bril, Bo → Bo's tas.",
+      test: function (t) { return RX_BEZIT.test(t); },
+      woorden: ["papa", "mama", "oma", "opa", "baby", "pony"] },
+    // Tussen-n / -s / -e in samenstellingen.
+    { naam: "samenstellingen met een tussen-n (zoals pannenkoek, kippenhok)", bank: "tussen_n",
+      regel: "Bij sommige samenstellingen hoor je tussen de twee woorden een /ə(n)/ en schrijf je -en-: pannenkoek, kippenhok, boekenkast. Meestal kan het eerste woord er méér zijn (veel pannen, veel kippen).",
+      test: function (t) { return RX_TN.test(t) || (RX_TUSSEN_GEN.test(t) && !RX_TS.test(t) && !RX_TE.test(t)) || /pannenkoek|kippenhok/.test(t); },
+      woorden: ["pannenkoek", "kippenhok", "kattenbak", "hondenhok", "boekenkast", "krentenbol", "bessensap", "notenkraker", "plantenbak", "ganzenbord"] },
+    { naam: "samenstellingen met een tussen-s (zoals dorpsstraat, verkeersbord)", bank: "tussen_s",
+      regel: "Bij sommige samenstellingen hoor je tussen de twee woorden een /s/ die je vast schrijft: dorpsstraat, verkeersbord, verjaardagsfeest.",
+      test: function (t) { return RX_TS.test(t) || (RX_TUSSEN_GEN.test(t) && !RX_TN.test(t) && !RX_TE.test(t)) || /dorpsstraat|verkeersbord/.test(t); },
+      woorden: ["dorpsstraat", "stationsplein", "verkeersbord", "verkeerslicht", "verjaardagsfeest", "gezelschapsspel", "scheepsbouw", "koningshuis", "levensgevaar", "meningsverschil"] },
+    { naam: "samenstellingen met een tussen-e (zoals zonnebloem, elleboog)", bank: "tussen_e",
+      regel: "Soms hoor je een /ə/ tussen twee woorden maar schrijf je maar één e (geen -en-), vaak omdat er maar één van is (de zon, de maan) of bij vaste woorden: zonnebloem, maneschijn, elleboog, apetrots.",
+      test: function (t) { return RX_TE.test(t) || (RX_TUSSEN_GEN.test(t) && !RX_TN.test(t) && !RX_TS.test(t)) || /zonnebloem|elleboog|apetrots/.test(t); },
+      woorden: ["zonnebloem", "zonnebril", "zonnescherm", "zonnesteek", "maneschijn", "elleboog", "apetrots", "bolleboos", "bruidegom"] },
+    { naam: "stoffelijke bijvoeglijke naamwoorden op -en (zoals houten, wollen)", bank: "stoffelijk_en",
+      regel: "Een bijvoeglijk naamwoord dat zegt van welk materiaal iets is, eindigt op -en: hout → houten, wol → wollen, goud → gouden, ijzer → ijzeren.",
+      test: /stoffelijk|van\s+welk\s+materiaal|gemaakt\s+van|\bhouten\b|\bwollen\b|\bgouden\b/,
+      woorden: ["houten", "wollen", "gouden", "zilveren", "ijzeren", "koperen", "stenen", "glazen", "kartonnen", "rubberen", "leren", "zijden", "betonnen"] },
     { naam: "woorden met sch (zoals school, schaduw)", bank: "sch",
       test: /\bsch\s*-?woord|woorden? met sch\b/,
       woorden: ["school", "schoen", "schaap", "schaar", "schat", "schuur", "schilder", "schaduw", "schouder", "schema"] },
@@ -610,15 +659,25 @@
       woorden: ["baby", "pony", "hobby", "lolly", "party", "puppy", "teddy", "jury", "bunny", "rugby"] },
     // Tremawoord (Staal): een trema (deelteken) markeert een nieuwe lettergreep (ruïne, egoïst).
     { naam: "woorden met een trema (deelteken, zoals ruïne, egoïst)", bank: "trema",
+      regel: "Een trema (twee puntjes, ¨) zet je op een klinker om te laten zien dat daar een nieuwe klank begint, zodat je twee klinkers die elkaar raken niet als één klank leest: ideeën, patiënt, ruïne. Het trema staat altijd binnen één woord.",
       test: /trema\s*-?woord|\btrema\b|deelteken|puntjes op de/,
       woorden: ["ideeën", "knieën", "tweeën", "drieën", "poëzie", "reünie", "egoïst", "naïef", "ruïne", "maïs"] },
+    // Koppelteken bij botsende klinkers: bij het samenvoegen van twee HELE woorden botsen
+    // de klinkers op de grens (zee+eend → zee-eend). Dan komt er een koppelteken tussen,
+    // NIET een trema — een trema staat binnen één woord, het koppelteken tussen twee woorden.
+    // Let op: onderzeeër/kopieën e.d. zijn afleidingen van één woord en krijgen dus een
+    // trema, geen koppelteken. Zeldzaam, eigen handlijst; géén bank in de woordenbank.
+    { naam: "woorden met een koppelteken bij botsende klinkers (zoals zee-eend, na-apen)", bank: "koppelteken",
+      regel: "Als je twee losse woorden samenvoegt en de klinkers op de grens tegen elkaar botsen, zet je er een koppelteken (-) tussen zodat je het goed leest: zee-eend (anders lees je 'zeeeend'), na-apen, auto-ongeluk. Het koppelteken staat tússen twee woorden; een trema staat binnen één woord.",
+      test: /koppelteken|verbindingsstreepje|koppel\s*-?woord/,
+      woorden: ["zee-eend", "na-apen", "zo-even", "auto-ongeluk", "na-aap", "zee-egel", "mede-eigenaar", "toe-eigenen"] },
     // Routewoord (Staal): ou die klinkt als /oe/ (Franse leenwoorden). Niet uit de letters
     // af te leiden (ou is meestal /au/), dus een eigen handlijst.
-    { naam: "woorden waarin ou klinkt als /oe/ (zoals route, souvenir)",
+    { naam: "woorden waarin ou klinkt als /oe/ (zoals route, souvenir)", bank: "route",
       test: /route\s*-?woord|ou\b.{0,12}\/?oe\/?|klinkt als.{0,6}oe/,
       woorden: ["route", "souvenir", "journaal", "tour", "silhouet", "bouillon", "douche", "mousse"] },
     // Trottoirwoord (Staal): oir die klinkt als /waar/. Zeldzaam, eigen handlijst.
-    { naam: "woorden met oir (je hoort /waar/, zoals trottoir)",
+    { naam: "woorden met oir (je hoort /waar/, zoals trottoir)", bank: "oir",
       test: /trottoir\s*-?woord|\boir\s*-?woord|woorden? met oir\b/,
       woorden: ["trottoir", "reservoir", "repertoire", "memoires"] }
   ];
@@ -629,9 +688,70 @@
   var SPELLING_FEAT = {
     kilo_ie: /i/, c_als_s: /c/, c_als_k: /c/, tie: /ties?$/, isch: /isch$/, x: /x/,
     th: /th/, ch_sj: /ch/, eau: /eau/, accent_e: /[éèê]/, eer_oor_eur: /eer|oor|eur/,
-    aai: /aai/, ooi: /ooi/, oei: /oei/, eeuw_ieuw: /eeuw|ieuw/, ei_ij: /(^|[^o])ei|ij/, au_ou: /au|ou/,
-    cht: /cht/, ng: /ng/, nk: /nk/, sch: /sch/, y_grieks: /y/, y_eind: /y$/, trema: /[ëïöü]/
+    aai: /aai/, ooi: /ooi/, oei: /oei/, eeuw_ieuw: /eeuw|ieuw/, ei_ij: /(?<!o)ei|ij/, au_ou: /au|ou/,
+    cht: /cht/, ng: /ng/, nk: /nk/, sch: /sch/, y_grieks: /y/, y_eind: /y$/, trema: /[ëïöü]/,
+    koppelteken: /-/, route: /ou/, oir: /oir/, uw: /uw/, achtervoegsel: /ig$|lijk$/
   };
+
+  // Curated uitleg (kindtaal) per bank-id — zodat het uitleg-blokje ALTIJD een correcte
+  // regel heeft en de AI er geen (mogelijk foute) eigen uitleg bij verzint. Een categorie
+  // met een eigen `regel` op het item gebruikt die; anders valt de tool hierop terug.
+  var SPELLING_REGELS = {
+    hakwoord: "Een hakwoord bestaat uit één klankgroep. Je hakt het in losse klanken en schrijft precies wat je hoort: k-a-t → kat, s-t-o-k → stok.",
+    kilo_ie: "In sommige (vaak buitenlandse) woorden hoor je /ie/, maar schrijf je maar één i (geen ie): kilo, liter, minuut, titel.",
+    c_als_s: "In sommige woorden klinkt de c als /s/, meestal vóór een e, i of y: cent, citroen, cirkel. Je hoort /s/, maar je schrijft een c.",
+    c_als_k: "In sommige woorden klinkt de c als /k/, meestal vóór een a, o, u of een medeklinker: cola, cactus, club. Je hoort /k/, maar je schrijft een c.",
+    tie: "Veel woorden eindigen op -tie. Je hoort /(t)sie/, maar je schrijft t-i-e: politie, vakantie, informatie.",
+    isch: "Sommige woorden eindigen op -isch. Je hoort /ies/, maar je schrijft i-s-c-h: logisch, tropisch, fantastisch.",
+    x: "In sommige woorden hoor je /ks/ en schrijf je dat met één letter x: taxi, examen, extra, exact.",
+    ch_sj: "In sommige (vaak Franse) woorden klinkt de ch als /sj/: chef, machine, douche. Je hoort /sj/, maar je schrijft ch.",
+    th: "In sommige woorden schrijf je th, maar je hoort alleen /t/ (de h hoor je niet): thee, thema, theater.",
+    g_zj: "In sommige (vaak Franse) woorden klinkt de g als /zj/: garage, etage, horloge. Je hoort /zj/, maar je schrijft een g.",
+    eau: "In sommige Franse woorden schrijf je -eau, maar je hoort /oo/: cadeau, bureau, niveau.",
+    accent_e: "In sommige Franse woorden staat een accentstreepje (´) op de e: café, privé, logé. Daardoor spreek je die e uit als /ee/.",
+    eer_oor_eur: "Vóór de r schrijf je de lange klank met twee klinkers: eer, oor of eur (beer, oor, deur, kleur).",
+    aai: "Je hoort /aai/ met een j-klank op het eind, maar je schrijft aai (met een i, geen j): haai, draai, lawaai.",
+    ooi: "Je hoort /ooi/ met een j-klank op het eind, maar je schrijft ooi (met een i, geen j): mooi, kooi, gooi.",
+    oei: "Je hoort /oei/ met een j-klank op het eind, maar je schrijft oei (met een i, geen j): groei, bloei, boei.",
+    eeuw_ieuw: "Je hoort /eeuw/ of /ieuw/ met een w-klank op het eind en schrijft dat met eeuw of ieuw: leeuw, sneeuw, nieuw.",
+    uw: "Je hoort /uu/ met een w-klank op het eind en schrijft dat met uw: duw, ruw, schuw, schaduw.",
+    ei_ij: "De ei (korte ei) en de ij (lange ij) klinken hetzelfde. Je kunt niet horen welke het is; die woorden moet je onthouden (weetwoorden): trein, ijs, fijn, tijd.",
+    au_ou: "De au en de ou klinken hetzelfde. Je kunt niet horen welke het is; die woorden moet je onthouden (weetwoorden): blauw, koud, goud, vrouw.",
+    cht: "Na een korte klank hoor je /cht/ en schrijf je cht (met een c die je niet los hoort): licht, nacht, zacht, lucht.",
+    langermaak_d: "Hoor je aan het eind een /t/, maak het woord dan langer om te horen wat je schrijft: hond → honden (dus met een d), krant → kranten (dus met een t).",
+    f_naar_v: "Sommige woorden eindigen op /f/, maar als je ze langer maakt hoor je een v. Dan schrijf je een v: duif → duiven, brief → brieven.",
+    s_naar_z: "Sommige woorden eindigen op /s/, maar als je ze langer maakt hoor je een z. Dan schrijf je een z: huis → huizen, roos → rozen.",
+    verkleinwoord: "Een verkleinwoord maak je met -je, -tje, -etje, -pje of -kje. Je kiest de vorm die bij het woord past: boom → boompje, bal → balletje, huis → huisje.",
+    open_gesloten: "Verdeel het woord in klankgroepen. Eindigt een klankgroep op een lange klank (open), dan schrijf je één klinker: ma-nen → manen. Hoor je een korte klank (gesloten), dan verdubbel je de medeklinker: man-nen → mannen.",
+    sch: "Aan het begin van sommige woorden hoor je een s die overgaat in een blaasklank; je schrijft dat met de drie letters sch: school, schoen, schaar.",
+    voorvoegsel: "Sommige woorden beginnen met een voorvoegsel: be-, ge-, ver-, ont- of her-. Dat stukje schrijf je vast aan het woord: bewegen, gevaar, verhaal, ontbijt.",
+    achtervoegsel: "Sommige woorden eindigen op -ig of -lijk. Je hoort vaak /ug/ of /luk/, maar je schrijft -ig en -lijk: aardig, voorzichtig, moeilijk, vrolijk.",
+    y_grieks: "In sommige woorden schrijf je een y (de 'Griekse y') die klinkt als /ie/ of /i/: systeem, type, symbool, gym.",
+    y_eind: "Sommige woorden eindigen op -y. Je hoort /ie/, maar je schrijft een y: baby, pony, hobby, lolly.",
+    route: "In sommige Franse leenwoorden schrijf je ou, maar je hoort /oe/: route, souvenir, douche, bouillon.",
+    oir: "In sommige Franse woorden hoor je aan het eind /waar/ en schrijf je -oir of -oire: trottoir, reservoir, repertoire."
+  };
+  function regelVan(cat) { return (cat && (cat.regel || SPELLING_REGELS[cat.bank])) || ""; }
+
+  // Voorbeeldwoord-index: een woord dat bij PRECIES ÉÉN categorie hoort is een betrouwbaar
+  // signaal. Zo herkent de tool ook een losse voorbeeldwoord-invoer ("oefen met garage").
+  var SPELLING_VBWORD = (function () {
+    var tel = {};
+    for (var i = 0; i < SPELLING_WOORDEN.length; i++) {
+      var ws = SPELLING_WOORDEN[i].woorden || [];
+      for (var j = 0; j < ws.length; j++) {
+        var w = String(ws[j]).toLowerCase();
+        (tel[w] = tel[w] || []).push(i);
+      }
+    }
+    // Gewone woorden die in bijna elke prompt kunnen staan of een verwarrende categorie
+    // geven — niet als voorbeeldwoord-trigger gebruiken (anders zet "woord"/"extra"/"prima"
+    // in een omschrijvende zin per ongeluk een categorie aan).
+    var STOP = " woord woorden hand wind extra prima via minus figuur crisis menu deel item mini tot ";
+    var idx = {};
+    for (var w2 in tel) if (tel[w2].length === 1 && STOP.indexOf(" " + w2 + " ") === -1) idx[w2] = tel[w2][0];
+    return idx;
+  })();
 
   // ALLE genoemde categorieen (een leerkracht kan er meerdere tegelijk willen
   // oefenen, bijv. "taxiwoord, colawoord, centwoord, cadeauwoord").
@@ -652,7 +772,30 @@
     });
     var uit = [];
     for (var i = 0; i < SPELLING_WOORDEN.length; i++) {
-      if (SPELLING_WOORDEN[i].test.test(aug)) uit.push(SPELLING_WOORDEN[i]);
+      var tst = SPELLING_WOORDEN[i].test;
+      // Functie-tests (apostrof-/tussenletter-familie) kijken naar de RAUWE prompt: de
+      // augmentatie ("… woorden met <tok>") is alleen bedoeld voor de mascotte-/cluster-
+      // regexes en zou anders "auto's" + " woorden" tot een vals "'s woord" plakken.
+      var raak = (typeof tst === "function") ? tst(t) : tst.test(aug);
+      if (raak) uit.push(SPELLING_WOORDEN[i]);
+    }
+    // Voorbeeldwoorden: een woord dat maar bij ÉÉN categorie hoort (garage → g_zj,
+    // politie → tie, citroen → c_als_s) is een signaal. We nemen zo'n categorie mee als
+    // de leerkracht er 2+ van noemt (sterk signaal), of bij korte invoer (dan is het woord
+    // duidelijk als voorbeeld bedoeld, niet als thema-woord in een lange opdracht).
+    // Voorbeeldwoorden werken als VANGNET: alleen meenemen als de regex-herkenning niets
+    // vond (dan is een genoemd woord duidelijk het onderwerp), of als er 2+ voorbeelden van
+    // dezelfde categorie staan (sterk signaal). Zo zet een gewoon woord in een omschrijvende
+    // zin ("een prima werkblad over cht") geen extra categorie aan.
+    var wasLeeg = uit.length === 0, hits = {};
+    var toks = t.split(/[^a-zà-ÿ'’]+/).filter(Boolean);
+    for (var vi = 0; vi < toks.length; vi++) {
+      var ci = SPELLING_VBWORD[toks[vi]];
+      if (ci != null) hits[ci] = (hits[ci] || 0) + 1;
+    }
+    for (var key in hits) {
+      if ((hits[key] >= 2 || wasLeeg) && uit.indexOf(SPELLING_WOORDEN[key]) === -1)
+        uit.push(SPELLING_WOORDEN[key]);
     }
     return uit;
   }
@@ -700,13 +843,13 @@
       if (cats.length === 1) {
         return kern +
           "\nDeze les/dit werkblad gaat over de categorie: " + cats[0].naam + "." +
-          (cats[0].regel ? " De juiste spellingregel is: " + cats[0].regel : "") +
+          (regelVan(cats[0]) ? " De juiste spellingregel is: " + regelVan(cats[0]) : "") +
           " Behandel die als hoofdonderwerp. Staat er hierboven een regel? Neem die dan (bijna) LETTERLIJK over in je uitleg — parafraseer 'm niet los en verzin er GEEN 'nooit zus of zo'-varianten bij (die kloppen vaak niet). Gebruik meerdere passende voorbeeldwoorden uit de woordenbank.";
       }
       if (cats.length > 1) {
         return kern +
           "\nDe leerkracht wil MEERDERE categorieen tegelijk oefenen. Behandel ELK van deze categorieen op het werkblad en laat er geen enkele weg (verdeel de opdrachten eerlijk over de categorieen, of maak per categorie een eigen onderdeel): " +
-          cats.map(function (c) { return "\"" + c.naam + "\"" + (c.regel ? " (regel: " + c.regel + ")" : ""); }).join("; ") + "." +
+          cats.map(function (c) { return "\"" + c.naam + "\"" + (regelVan(c) ? " (regel: " + regelVan(c) + ")" : ""); }).join("; ") + "." +
           " Leg per categorie de regel kort in kindtaal uit. Waar een regel is meegegeven, neem die dan (bijna) LETTERLIJK over — parafraseer 'm niet los en verzin er GEEN 'nooit zus of zo'-varianten bij (die kloppen vaak niet). Gebruik per categorie de bijbehorende woorden uit de woordenbank.";
       }
       // Alleen een methodenaam genoemd, geen specifieke categorie.
@@ -746,7 +889,10 @@
       function bankVoor(cat) {
         if (cat.bank && g && window.avinkaWoordenbank && window.avinkaWoordenbank[cat.bank]) {
           var lijst = window.avinkaWoordenbank[cat.bank].filter(function (x) { return x[1] <= +g; });
-          var grond = lijst.filter(function (x) { return x[2] !== "v"; }).map(function (x) { return x[0]; });
+          // x[2] === "2" = secundair: het woord hoort óók bij een andere categorie waar
+          // de regel duidelijker is (bv. politie = eigenlijk een -tie-woord). Voor een
+          // GERICHT werkblad over déze categorie laten we die weg; de kern is zuiverder.
+          var grond = lijst.filter(function (x) { return x[2] !== "v" && x[2] !== "2"; }).map(function (x) { return x[0]; });
           var verv = lijst.filter(function (x) { return x[2] === "v"; }).map(function (x) { return x[0]; });
           if (grond.length >= 8) {
             // Standaard: kies uit de HELE (doorgereviewde) bank met frequentie-weging,
@@ -780,11 +926,11 @@
       return cats.map(function (cat) {
         var woorden;
         if (cat.bank && g && window.avinkaWoordenbank && window.avinkaWoordenbank[cat.bank]) {
-          woorden = window.avinkaWoordenbank[cat.bank].filter(function (x) { return x[1] <= +g && x[2] !== "v"; }).map(function (x) { return x[0]; });
+          woorden = window.avinkaWoordenbank[cat.bank].filter(function (x) { return x[1] <= +g && x[2] !== "v" && x[2] !== "2"; }).map(function (x) { return x[0]; });
           if (woorden.length < 8) woorden = cat.woorden.slice();
           else if (cat.kopOnly) woorden = kop(woorden); // standaard: hele bank; kopOnly → alleen de kop
         } else woorden = cat.woorden.slice();
-        return { naam: cat.naam, key: cat.bank || cat.naam, woorden: woorden, feat: SPELLING_FEAT[cat.bank] || null };
+        return { naam: cat.naam, key: cat.bank || cat.naam, woorden: woorden, feat: SPELLING_FEAT[cat.bank] || null, regel: regelVan(cat) };
       });
     },
     verwerkingen: function (vak, groep, n) {

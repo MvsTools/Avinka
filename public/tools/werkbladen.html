@@ -219,7 +219,7 @@
           <div>
             <label class="field-label" for="aantal">Aantal opdrachten</label>
             <select id="aantal" class="field-select filled" onchange="this.classList.toggle('filled', !!this.value)">
-              <option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option>
+              <option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option>
             </select>
           </div>
         </div>
@@ -517,11 +517,13 @@
         lijnen.push('\nDIT IS EEN SCHRIFTELIJK SPELLINGWERKBLAD. Houd hier rekening mee:');
         lijnen.push('- TOON NOOIT een fout gespeld woord in beeld. Een kind onthoudt het woordbeeld dat het ziet, dus een verkeerde spelling laten zien leert het verkeerde aan. Dus GEEN "welk woord is goed geschreven: plank of plangk?", GEEN waar/niet-waar of stelling met een fout gespeld woord erin ("het woord \'plangk\' is goed"), en GEEN zoek-de-fout. Elk woord dat op het blad staat, is correct gespeld. Toets de regel via de goede spelling (invullen, sorteren, woord afmaken, zin schrijven), niet via een foute variant.');
         lijnen.push('- Verklap het antwoord NIET visueel. Gebruik dus GEEN meerkeuze waarbij de juiste schrijfwijze van het woord gewoon tussen de opties staat (bijvoorbeeld "crisis of criesis"); op papier geef je dan het antwoord weg. Zo\'n vraag werkt alleen mondeling. Laat de leerling de spelling ZELF schrijven.');
+        lijnen.push('- Dit geldt OOK als de keuze in een gewone (open) vraag of zin verstopt zit. Zet NOOIT twee spellingvarianten van hetzelfde woord naast elkaar met "of" (bijvoorbeeld "Welk woord past: zonnebrand of zonne-brand?"). Eén van de twee is dan fout gespeld en staat toch op het blad. Vraag in plaats daarvan om het woord ZELF te schrijven ("...welk woord past hier? Schrijf het goed op.").');
         lijnen.push('- Gebruik bij voorkeur invul-opdrachten waarbij juist de moeilijke letter(s) ontbreken (bijvoorbeeld voor "crisis": voor="cr", antwoord="i", na="sis"), woorden laten afmaken, of een mini-dictee-achtige opdracht.');
         lijnen.push('- STAAT er een gat in een ZIN, dan moet die zin een LOPENDE, correcte Nederlandse zin zijn waarin het ingevulde woord grammaticaal én qua betekenis klopt. Lees de zin met het woord ingevuld terug: klinkt hij onnatuurlijk of onzinnig (bijv. "Kun jij me de dringen doorgeven"), kies dan een ander woord of een andere zin. Gebruik het woord in zijn juiste vorm (enkelvoud/meervoud past bij de zin).');
+        lijnen.push('- TRANSFORMATIE-CATEGORIEEN (meervoud, verkleinwoord, langer maken voor d/t, f→v, s→z, trappen van vergelijking): gebruik BIJ VOORKEUR de vorm "grondwoord → ___" (voor="auto → ", antwoord="auto\'s", na=""), NIET het gevormde woord in een losse zin proppen. Veel meervouds-/verkleinvormen klinken gek of fout in een zin ("twee kilo\'s appels" is geen goed Nederlands). Dus liever: "boom → ___" (antwoord: boompje), "hond → ___" (antwoord: honden).');
         lijnen.push('- Vraag de spellingregel NIET terug, tenzij er expliciet een opdracht is als "schrijf de regel op".');
         lijnen.push('- Alle oefenwoorden zijn bestaande Nederlandse woorden op het niveau van ' + inv.groep + '.');
-        lijnen.push('- VOORBEELDEN IN DE UITLEG: gebruik je een uitleg-/regelblok (type "tekst") met voorbeeldwoorden, controleer dan dat ELK voorbeeld de geoefende regel ÉCHT bevat (een voorbeeld bij "de c die klinkt als /s/" moet echt een c vóór e, i of y hebben; "fiets" heeft geen c en is dus fout). Staat er hierboven een verplichte woordenbank, kies je voorbeelden dan óók uit die lijst en verzin er geen eigen woorden bij.');
+        lijnen.push('- HET UITLEG-/REGELBLOK WORDT DOOR HET SYSTEEM INGEVULD met de juiste, gecureerde spellingregel — schrijf ZELF GEEN regeluitleg of "zo werkt de regel"-tekst (die wordt toch automatisch vervangen door de correcte versie). Richt je helemaal op goede, gevarieerde OEFENOPDRACHTEN. (Een leestekst mag natuurlijk wel, als het onderwerp daarom vraagt.)');
         // Werkvormen ROTEREN zodat niet elk werkblad dezelfde opzet krijgt.
         var spellingVormen = [
           'invullen waarbij ALLEEN de moeilijke letter(s) ontbreken (het woord staat verder heel)',
@@ -538,6 +540,8 @@
         ];
         lijnen.push('- WISSEL DE WERKVORMEN AF — gebruik NIET elke keer dezelfde opzet. Bouw dit werkblad met een frisse mix uit BIJVOORBEELD deze werkvormen: ' + kiesN(spellingVormen, 4).join('; ') + '. Val niet terug op alleen invullen + sorteren; pak deze keer ook eens een puzzelvorm (woordzoeker, kruiswoord of anagram) als die past.');
         lijnen.push('- SPREID DE DOELWOORDEN over de opdrachten: gebruik in elke opdracht ZOVEEL MOGELIJK ANDERE woorden. Herhaal dezelfde doelwoorden NIET in meerdere opdrachten (bijvoorbeeld de sorteerwoorden óók in de woordzoeker of het kruiswoord). Zo oefent het kind meer verschillende woorden en oogt het werkblad rijker.');
+        lijnen.push('- MEERDERE CATEGORIEEN MENGEN MAG en is juist mooi: een opdracht (woordzoeker, sorteren, anagram, zinnen) mag woorden uit ÁLLE geoefende categorieën van vandaag bevatten. MAAR: de instructie mag dan GEEN losse categorie claimen die niet voor alle woorden geldt. Schrijf dus NIET "alle woorden horen bij de tussen-e-regel" als er ook trema- of koppelteken-woorden in staan; hou de instructie dan algemeen (bijv. "Zoek de woorden").');
+        lijnen.push('- LETTERROOSTER (woordzoeker, kruiswoord) = ALLEEN kale letters. Zet er GEEN woorden met een trema (ë/ï), accent (é) of koppelteken (-) in: in een rooster verdwijnt dat teken (patiënt → PATIENT, zee-eend → ZEEEEND) — dat is een FOUT woordbeeld én je oefent de regel niet. Oefen trema/accent/koppelteken juist in invullen, sorteren, anagram of samenstellen, waar het teken zichtbaar is en het kind het zélf schrijft.');
       }
 
       lijnen.push('\nGeef nu UITSLUITEND de JSON van het werkblad terug.');
@@ -821,6 +825,10 @@
         var unie = [], gezien = {};
         banken.forEach(function (b) { b.woorden.forEach(function (x) { if (!gezien[x.toLowerCase()]) { gezien[x.toLowerCase()] = 1; unie.push(x); } }); });
         function inUnie(w) { return !!gezien[String(w).toLowerCase()]; }
+        // Een letterrooster (woordzoeker/kruiswoord) kan alleen kale letters tonen — geen trema
+        // (ë), accent (é) of koppelteken (-). Zulke woorden zouden hun kenmerk verliezen
+        // ("PATIENT" i.p.v. patiënt = een FOUT woordbeeld) en de regel juist niet oefenen.
+        function markVrij(w) { return /^[a-z]+$/i.test(String(w)); }
         // Kenmerkletters van de geoefende regels (c, x, sch, ei ...) + apostrof voor
         // 's-meervoud. Waarmee we bij zoek-de-fout kunnen toetsen of de fout wel over de
         // geoefende regel gaat (en niet over een werkwoord of een andere regel).
@@ -837,6 +845,28 @@
         // het model schreef een verkeerde aanzet, corrigeerde zich hardop en dat lekte in de zin.
         function schoonAI(s) {
           return String(s == null ? '' : s).replace(/[^\s.]*\.{2,}\s*nee[:,]?\s+(?:\w+\s+)?/gi, '').replace(/\s{2,}/g, ' ');
+        }
+        // Twee (bijna) identieke woorden met "of" ertussen = een spelling-KEUZE op papier
+        // ("plank of plangk", "zonnebrand of zonne-brand"). Verboden: het kind ziet dan een
+        // FOUT woordbeeld. We detecteren het en gooien zulke items eruit.
+        function normSp(w) {
+          return String(w).toLowerCase()
+            .replace(/[àáâã]/g, 'a').replace(/[èéêë]/g, 'e').replace(/[ìíîï]/g, 'i')
+            .replace(/[òóôõ]/g, 'o').replace(/[ùúûü]/g, 'u').replace(/ç/g, 'c').replace(/[^a-z]/g, '');
+        }
+        function lev(a, b) {
+          var m = a.length, n = b.length, d = [], i, j;
+          for (i = 0; i <= m; i++) d[i] = [i];
+          for (j = 0; j <= n; j++) d[0][j] = j;
+          for (i = 1; i <= m; i++) for (j = 1; j <= n; j++)
+            d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+          return d[m][n];
+        }
+        function varianten(a, b) { a = normSp(a); b = normSp(b); return !!a && a.length >= 4 && (a === b || lev(a, b) <= 1); }
+        function bevatSpellingKeuze(s) {
+          var re = /([a-zà-ÿ]{4,}(?:-[a-zà-ÿ]+)*)\s+(?:of|óf)\s+([a-zà-ÿ]{4,}(?:-[a-zà-ÿ]+)*)/gi, m2;
+          while ((m2 = re.exec(String(s || '')))) { if (varianten(m2[1], m2[2])) return true; }
+          return false;
         }
         function verschilRaaktKenmerk(fout, goed) {
           var i = 0; while (i < fout.length && i < goed.length && fout[i] === goed[i]) i++;
@@ -873,8 +903,18 @@
               col.items = herstel(col.items, function (w) { return w; }, function (w) { return w; },
                 function (lw) { return heeft(bank, lw) && !ambigu(lw) && !(isC && cDual(lw)); }, pool.length ? pool : bank.woorden);
             });
+            // Een sorteerkolom die (na controle) leeg blijft, is een kapotte opdracht
+            // (bv. een lege "geen van beide"-kolom) → weglaten, mits er 2+ kolommen overblijven.
+            var gevuld = (blk.categorieen || []).filter(function (col) { return (col.items || []).length > 0; });
+            if (gevuld.length >= 2) blk.categorieen = gevuld;
           } else if (blk.type === 'woordzoeker') {
             blk.woorden = herstel(blk.woorden, function (w) { return w; }, function (w) { return w.toUpperCase(); }, inUnie, unie);
+            // Alleen mark-vrije woorden in het rooster (zie markVrij); trema/accent/koppelteken
+            // horen in de schrijf-opdrachten. De instructie claimt geen categorie (woorden mogen
+            // uit ALLE geoefende categorieën komen — dat mag en is juist mooi).
+            var unieGrid = unie.filter(markVrij);
+            blk.woorden = blk.woorden.filter(function (w) { return markVrij(w) && inUnie(w); });
+            blk.opdracht = 'Zoek de woorden in het raster. Ze staan horizontaal of verticaal.';
             // Woordzoeker mag voller — meer woorden kosten nauwelijks extra ruimte, dus mik op ~12.
             // MAAR waak over AFWISSELING: de AI kiest vaak bijna-identieke, rijmende woorden
             // (zaaien/paaien/draaien/maaien). Sta per woordeinde (laatste 4 letters) hooguit 2 toe,
@@ -888,7 +928,7 @@
               wzHeeft[lw] = 1; wzStaart[st] = (wzStaart[st] || 0) + 1; wzSchoon.push(w);
             });
             blk.woorden = wzSchoon;
-            var wzExtra = unie.filter(function (w) { return !wzHeeft[w.toLowerCase()]; });
+            var wzExtra = unieGrid.filter(function (w) { return !wzHeeft[w.toLowerCase()]; });
             for (var wzi = wzExtra.length - 1; wzi > 0; wzi--) { var wzj = Math.floor(Math.random() * (wzi + 1)); var wzt = wzExtra[wzi]; wzExtra[wzi] = wzExtra[wzj]; wzExtra[wzj] = wzt; }
             for (var wzPass = 0; wzPass < 2 && blk.woorden.length < wzDoel; wzPass++) {
               for (var wzx = 0; wzx < wzExtra.length && blk.woorden.length < wzDoel; wzx++) {
@@ -902,6 +942,10 @@
             }
           } else if (blk.type === 'anagram') {
             blk.woorden = herstel(blk.woorden, function (w) { return (w && w.woord != null) ? w.woord : w; }, function (w) { return { woord: w }; }, inUnie, unie);
+            // Instructie mag geen categorie claimen (woorden mogen uit alle geoefende categorieën
+            // komen). Bewaar wél de "onderstreepte letters"-uitleg als die er was.
+            var aOnd = /onderstreep/i.test(String(blk.opdracht || ''));
+            blk.opdracht = 'Zet de door elkaar gegooide letters in de goede volgorde en schrijf elk woord goed op.' + (aOnd ? ' De onderstreepte letters staan al op de goede plek.' : '');
           } else if (blk.type === 'geheimschrift') {
             // Losse woordenlijst → net als woordzoeker: ongeldige woorden vervangen door bankwoorden.
             blk.woorden = herstel(blk.woorden, function (w) { return w; }, function (w) { return w.toUpperCase(); }, inUnie, unie);
@@ -932,17 +976,34 @@
             var nieuw = (blk.items || []).map(function (it) {
               if (!it) return null;
               it.voor = schoonAI(it.voor); it.na = schoonAI(it.na); // AI-zelfcorrectie eruit
+              // "Bronzin → gaten-zin" is misleidend: de bronzin toont het woord vaak ZONDER teken
+              // (patient i.p.v. patiënt = een fout woordbeeld). Een échte transformatie is
+              // "grondwoord →" (één woord vóór de pijl). Staat er een hele ZIN vóór de pijl, strip
+              // die weg — dan blijft alleen de gaten-zin over.
+              var pijlM = String(it.voor || '').match(/^(.+?)\s*[→>]\s*([\s\S]*)$/);
+              if (pijlM && (/[.!?]/.test(pijlM[1]) || pijlM[1].trim().split(/\s+/).length >= 3)) it.voor = pijlM[2];
               var vf = (String(it.voor || '').match(/([a-zà-ÿ]+)$/i) || [])[1] || '';
               var nf = (String(it.na || '').match(/^([a-zà-ÿ]+)/i) || [])[1] || '';
-              if (!vf && !nf) return it; // gat = heel woord → laten staan
-              var full = vf + String(it.antwoord || '') + nf, fl = full.toLowerCase();
-              // alleen herverdelen als het woord ECHT in een categorie zit waarvan het kenmerk erin valt
+              var glued = !!(vf || nf); // zit het gat al IN een woord, of is het een heel-woord-gat in een zin?
+              var full = (glued ? vf : '') + String(it.antwoord || '') + (glued ? nf : ''), fl = full.toLowerCase();
+              // Zet het gat op het KENMERK van de regel als het antwoord een bankwoord is met dat
+              // kenmerk erin — ÓÓK bij een heel-woord-gat in een zin ("de [patiënt]" → "de pati[ë]nt").
               var bank = banken.filter(function (b) { return b.feat && b.feat.test(fl) && b.woorden.some(function (x) { return x.toLowerCase() === fl; }); })[0];
-              if (!bank) return inUnie(fl) ? it : null; // geen kenmerk-categorie → vangnet: drop als geen bankwoord (kapot als "wexpert")
-              var m = fl.match(bank.feat); if (!m) return inUnie(fl) ? it : null;
+              if (!bank) {
+                // Vangnet: een ZELF-BEWIJZEND kenmerk (diakriet ë/ï/ö/ü/é of een koppelteken)
+                // bewijst de categorie al zónder bankwoord → zo worden trema/accent/koppelteken óók
+                // surgical op woorden die niet in de bank staan (patiënt, kopiëren, cafeïne).
+                bank = banken.filter(function (b) { return b.feat && /[ëïöüéèê-]/.test((fl.match(b.feat) || [''])[0]); })[0];
+              }
+              if (!bank) {
+                // Geen kenmerk-categorie. Partieel gat dat geen bankwoord is = kapot ("wexpert") → drop.
+                // Heel-woord-gat in een zin (transformatie zoals meervoud/verkleinwoord) → laten staan.
+                return glued ? (inUnie(fl) ? it : null) : it;
+              }
+              var m = fl.match(bank.feat); if (!m) return glued ? (inUnie(fl) ? it : null) : it;
               var idx = m.index;
-              var voorBase = String(it.voor || '').slice(0, String(it.voor || '').length - vf.length);
-              var naBase = String(it.na || '').slice(nf.length);
+              var voorBase = glued ? String(it.voor || '').slice(0, String(it.voor || '').length - vf.length) : String(it.voor || '');
+              var naBase = glued ? String(it.na || '').slice(nf.length) : String(it.na || '');
               // Strip een aangeplakte betekenis/definitie ("woord — het meubel waaraan je werkt"):
               // die hoort bij een kruiswoord, niet bij invul (overbodig, inconsistent, en soms
               // staat het antwoord er letterlijk in). Een lopende zin (geen liggend streepje) blijft.
@@ -986,8 +1047,61 @@
                 }
               }
             }
+            // De instructie ALTIJD laten kloppen met de werkelijke gaten — de losse AI-opdrachttekst
+            // beloofde soms iets anders (bv. "vul alleen het trema in" boven een heel-woord-gat).
+            // Woordbank-invul ("Kies uit: …") laten we met rust: die opsomming is essentieel.
+            if ((blk.items || []).length && !/kies uit/i.test(String(blk.opdracht || ''))) {
+              var nLetter = 0, nZin = 0;
+              blk.items.forEach(function (it) {
+                if (/[a-zà-ÿ]$/i.test(String(it.voor || '')) || /^[a-zà-ÿ]/i.test(String(it.na || ''))) nLetter++;
+                else if (String(it.voor || '').trim() || String(it.na || '').trim()) nZin++;
+              });
+              var pijl = blk.items.some(function (it) { return /[→>]\s*$/.test(String(it.voor || '')); });
+              if (nLetter > 0 && nLetter >= nZin) blk.opdracht = 'Vul de ontbrekende letter(s) in.';
+              else if (pijl) blk.opdracht = 'Schrijf de juiste vorm van het woord.';
+              else if (nZin > 0) blk.opdracht = 'Lees de zin en schrijf het juiste woord op de stippellijn.';
+            }
           }
         });
+        // Gooi items eruit die een fout gespeld woord als KEUZE tonen ("X of Y?") — dat
+        // hoort niet op een spellingblad (het kind onthoudt het foute woordbeeld).
+        (wb.blokken || []).forEach(function (blk) {
+          if (!blk) return;
+          if (blk.type === 'open' && blk.vragen && blk.vragen.length) {
+            var vo = blk.vragen.filter(function (q) { return !bevatSpellingKeuze(q && q.vraag); });
+            if (vo.length) blk.vragen = vo;
+          } else if (blk.type === 'waarnietwaar' && blk.stellingen && blk.stellingen.length) {
+            var vs = blk.stellingen.filter(function (q) { return !bevatSpellingKeuze(q && q.stelling); });
+            if (vs.length) blk.stellingen = vs;
+          } else if (blk.type === 'meerkeuze' && blk.vragen && blk.vragen.length) {
+            var vm = blk.vragen.filter(function (q) {
+              if (bevatSpellingKeuze(q && q.vraag)) return false;
+              var opt = (q && q.opties) || [];
+              for (var oi = 0; oi < opt.length; oi++) for (var oj = oi + 1; oj < opt.length; oj++) if (varianten(opt[oi], opt[oj])) return false;
+              return true;
+            });
+            if (vm.length) blk.vragen = vm;
+          }
+        });
+        // UITLEG-BLOK: de tool zet ZELF de gecureerde regel neer. De AI schreef de regel
+        // telkens opnieuw (en telkens fout, bv. trema "op de tweede klinker"). Nu vervangen we
+        // de tekst van het eerste uitleg-blok door onze correcte regel(s); is er geen, dan
+        // zetten we er één bovenaan. Zo staat er ALTIJD de juiste uitleg.
+        var regels = banken.map(function (b) { return b.regel; }).filter(Boolean);
+        if (regels.length) {
+          var uitlegTekst = regels.join('\n\n');
+          var uitlegKop = regels.length > 1 ? 'De spellingregels' : 'De spellingregel';
+          // Haal een eventueel door de AI geschreven regel-blok weg (herkenbaar aan een
+          // regel-kop óf een korte uitleg-tekst); een echte leestekst (lang, thema-kop)
+          // blijft staan. Daarna zetten we ONZE correcte regel bovenaan.
+          wb.blokken = (wb.blokken || []).filter(function (b) {
+            if (!b || b.type !== 'tekst') return true;
+            var regelKop = /regel|spelling|uitleg/i.test(String(b.kop || ''));
+            var korteUitleg = String(b.tekst || '').length < 600;
+            return !(regelKop || korteUitleg);
+          });
+          wb.blokken.unshift({ type: 'tekst', kop: uitlegKop, tekst: uitlegTekst });
+        }
       } catch (e) { /* fail-safe */ }
     }
 
