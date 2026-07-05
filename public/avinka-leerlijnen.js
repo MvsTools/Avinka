@@ -726,7 +726,7 @@
     sch: "Aan het begin van sommige woorden hoor je een s die overgaat in een blaasklank; je schrijft dat met de drie letters sch: school, schoen, schaar.",
     voorvoegsel: "Sommige woorden beginnen met een voorvoegsel: be-, ge-, ver-, ont- of her-. Dat stukje schrijf je vast aan het woord: bewegen, gevaar, verhaal, ontbijt.",
     achtervoegsel: "Sommige woorden eindigen op -ig of -lijk. Je hoort vaak /ug/ of /luk/, maar je schrijft -ig en -lijk: aardig, voorzichtig, moeilijk, vrolijk.",
-    y_grieks: "In sommige woorden uit het Grieks schrijf je een y (de Griekse y). Die klinkt als /ie/ of /i/: systeem, type, gym, pyjama.",
+    y_grieks: "In sommige woorden schrijf je een y (de 'Griekse y') die klinkt als /ie/ of /i/: systeem, type, symbool, gym.",
     y_eind: "Sommige woorden eindigen op -y. Je hoort /ie/, maar je schrijft een y: baby, pony, hobby, lolly.",
     route: "In sommige Franse leenwoorden schrijf je ou, maar je hoort /oe/: route, souvenir, douche, bouillon.",
     oir: "In sommige Franse woorden hoor je aan het eind /waar/ en schrijf je -oir of -oire: trottoir, reservoir, repertoire."
