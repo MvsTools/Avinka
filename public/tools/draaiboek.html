@@ -181,6 +181,30 @@
     .sec-toggle { border: none; background: transparent; color: var(--accent2, #888); cursor: pointer; font-size: 14px; line-height: 1; padding: 2px 3px; margin-left: -4px; transition: transform .15s ease; }
     .sec.dicht .sec-toggle { transform: rotate(-90deg); }
     .sec.dicht > *:not(.sec-kop) { display: none; }
+    /* Overzichtslaag: een aparte legenda-balk, duidelijk losgekoppeld van het draaiboek */
+    .db-toolbar { margin: 0 0 26px; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; background: var(--cream, #f6f2ea); }
+    .db-nav { display: flex; flex-wrap: wrap; gap: 6px; }
+    .db-chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line-strong); background: #fff; color: var(--ink); border-radius: 999px; padding: 4px 11px; font: inherit; font-size: 12.5px; cursor: pointer; transition: .12s; }
+    .db-chip:hover { border-color: var(--accent); background: var(--brand-soft); color: var(--accent2); }
+    .db-chip .ic { font-size: 13px; }
+    .db-bar-rij { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+    .db-prog { display: flex; align-items: center; gap: 8px; flex: 1 1 200px; min-width: 150px; }
+    .db-prog-balk { flex: 1 1 auto; height: 8px; background: var(--line); border-radius: 999px; overflow: hidden; max-width: 260px; }
+    .db-prog-balk > i { display: block; height: 100%; width: 0; background: var(--accent2); border-radius: 999px; transition: width .25s; }
+    .db-prog-tekst { font-size: 12.5px; color: var(--muted, #777); white-space: nowrap; }
+    .db-bar-knoppen { display: flex; gap: 8px; margin-left: auto; }
+    .db-mini { border: 1px solid var(--line-strong); background: #fff; color: var(--accent2); border-radius: 9px; padding: 6px 12px; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+    .db-mini:hover { border-color: var(--accent); background: var(--brand-soft); }
+    .db-mini.aan { background: var(--accent2); color: #fff; border-color: var(--accent2); }
+    .sec-tel { font-size: 12px; font-weight: 600; color: var(--accent2); background: var(--brand-soft); border-radius: 999px; padding: 1px 9px; margin-left: 8px; }
+    .sec { scroll-margin-top: 14px; }
+    /* Compacte weergave: dichter op elkaar, hulptekst weg (geen inhoud kwijt) */
+    .db.compact .db-tip { display: none; }
+    .db.compact .sec-kop { margin: 14px 0 5px; font-size: 17px; }
+    .db.compact .fase-blok { margin: 6px 0; }
+    .db.compact .fase-blok-in { padding: 3px 0 1px; }
+    .db.compact ul.checks li, .db.compact ul.mat li, .db.compact ul.aandacht li, .db.compact ul.tl-list li, .db.compact .rm, .db.compact .tl-item { padding-top: 2px; padding-bottom: 2px; }
+    .db.compact .intro, .db.compact .komm { font-size: 13.5px; }
     /* Afvinken */
     .vink { position: absolute; left: 0; top: 5px; width: 17px; height: 17px; border: 1.5px solid var(--line-strong); border-radius: 5px; background: #fff; cursor: pointer; z-index: 2; transition: background .12s, border-color .12s; }
     .vink:hover { border-color: var(--accent); }
@@ -228,6 +252,11 @@
     .meer-sec .meer:disabled { opacity: .5; cursor: default; }
     #db-toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); background: #1f7a4d; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 14px; font-weight: 600; box-shadow: 0 6px 20px rgba(0,0,0,.18); opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; z-index: 9999; max-width: 90%; }
     #db-toast.zichtbaar { opacity: 1; transform: translate(-50%, 0); }
+    /* Terug naar boven */
+    #naar-boven { position: fixed; right: 22px; bottom: 22px; width: 46px; height: 46px; border-radius: 50%; border: none; background: var(--accent); color: #fff; font-size: 20px; line-height: 1; cursor: pointer; box-shadow: 0 10px 26px rgba(47,158,110,.36); opacity: 0; transform: translateY(14px); pointer-events: none; transition: opacity .2s, transform .2s, background .15s; z-index: 9997; }
+    #naar-boven.zichtbaar { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    #naar-boven:hover { background: var(--accent2); transform: translateY(-2px); }
+    @media print { #naar-boven { display: none !important; } }
     /* Werk-aids onder het draaiboek: aantekeningen + plattegrond (horen bij het bestand, los van het draaiboek zelf) */
     #db-extras { margin-top: 22px; display: grid; gap: 16px; }
     .extra-blok { border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; background: var(--card); }
@@ -315,6 +344,27 @@
     .db .komm .link { margin-top: 8px; font-size: 13px; }
     .db .komm .link a { color: #2563eb; font-weight: 700; }
 
+    /* ── Previewscherm in de huisstijl: stevige hero + designde secties ── */
+    #uitvoer > .card-label { display: none; }               /* dubbele titel weg; de hero is de kop */
+    .db-hero { background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 20px; padding: 22px 24px; margin: 0 0 20px; color: #fff; box-shadow: 0 16px 34px rgba(47,158,110,.26); }
+    .db-hero .db-titel { font-family: 'Fraunces', serif; font-size: clamp(23px, 3.2vw, 31px); font-weight: 600; letter-spacing: -0.5px; margin: 0; color: #fff; display: flex; align-items: center; gap: 12px; line-height: 1.12; }
+    .db-hero .db-emoji { font-size: 1.3em; line-height: 1; }
+    .db-hero .db-meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 15px 0 0; }
+    .db-hero .dm-pill { background: rgba(255,255,255,.20); color: #fff; font-weight: 700; }
+    /* Resultaatkaart wat meer aanwezig */
+    #uitvoer { border-radius: 24px; box-shadow: var(--shadow-md); padding: 24px 26px 26px; }
+    /* Sectiekoppen: groter, icoon in een chip, een groen-getinte scheidingslijn */
+    .sec-kop { font-size: 21px; margin: 30px 0 12px; padding-bottom: 9px; border-bottom: 2px solid var(--brand-soft); }
+    .sec-kop .se { width: 36px; height: 36px; border-radius: 11px; background: var(--brand-soft); color: var(--accent2); display: inline-flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(47,158,110,.10); }
+    .sec:first-of-type .sec-kop { margin-top: 6px; }
+    /* Blok-koppen (###) in de huisstijl-kleur i.p.v. grijs */
+    .fase-blok { border-color: var(--line); box-shadow: 0 4px 14px rgba(34,28,58,.06); }
+    .fase-blok-kop { background: var(--brand-soft); border-bottom-color: rgba(47,158,110,.18); color: var(--accent2); font-weight: 800; }
+    .mat-kop { color: var(--accent2); }
+    /* Legenda-kopje + chips duidelijker als knoppen */
+    .db-nav-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 9px; }
+    .db-chip { font-weight: 600; box-shadow: var(--shadow-sm); }
+
     .db.ingeklapt { max-height: 260px; overflow: hidden; position: relative; }
     .db.ingeklapt::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 90px; background: linear-gradient(to bottom, transparent, var(--card)); pointer-events: none; }
     .db-toggle { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; border: 1px solid var(--line-strong); background: var(--card); color: var(--accent); border-radius: 14px; padding: 10px 18px; font: inherit; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; }
@@ -333,12 +383,16 @@
     @media print {
       body::before { display: none; }
       .top, .hero, #ev-kaart, #basis-kaart, #spec-kaart, #details-kaart, #laden, .acties, .verfijn, .db-toggle, footer.app-foot { display: none !important; }
+      /* Hero op papier: geen groen vlak, gewoon een leesbare titel */
+      .db-hero { background: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 0 10px !important; }
+      .db-hero .db-titel { color: var(--ink) !important; }
+      .db-hero .dm-pill { background: var(--brand-soft) !important; color: var(--accent2) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .app { max-width: 100%; padding: 0; }
       #uitvoer { display: block !important; box-shadow: none; border: none; border-radius: 0; padding: 0; margin: 0; }
       .db.ingeklapt { max-height: none; }
       .db.ingeklapt::after { display: none; }
       .fase-blok, .tl-item, ul.aandacht li, ul.mat li, .sec-kop { break-inside: avoid; }
-      .card-label, .del, .db-tip, .move, .voegtoe, .meer-sec, .nieuw-kopje, .grip, .sec-toggle, .pg-upload, .pg-verwijder { display: none !important; }
+      .card-label, .del, .db-tip, .move, .voegtoe, .meer-sec, .nieuw-kopje, .grip, .sec-toggle, .pg-upload, .pg-verwijder, .db-toolbar { display: none !important; }
       .sec.dicht > *:not(.sec-kop) { display: revert !important; } /* bij printen alles tonen, ook ingeklapte secties */
       li.af > .vink { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .db .tx { box-shadow: none !important; background: none !important; }
@@ -448,15 +502,6 @@
           <textarea id="bijzonder" class="field-input" placeholder="Bijv. 'we hebben een springkussen geregeld', 'groep 3 doet niet mee aan het ochtenddeel', 'let op: kind met notenallergie'" oninput="this.classList.toggle('filled', !!this.value.trim())"></textarea>
         </div>
 
-        <div style="margin-top:16px">
-          <label class="veld-l">Hoe uitgebreid? <span class="hint">· je kunt het daarna altijd zelf aanpassen</span></label>
-          <div class="seg" id="versie-seg">
-            <div class="opt aan" data-v="volledig" onclick="kiesVersie(this,'volledig')">Volledig</div>
-            <div class="opt" data-v="verkort" onclick="kiesVersie(this,'verkort')">Verkort</div>
-          </div>
-          <div class="hint" id="versie-uitleg" style="margin-top:6px">Een compleet draaiboek met alle details uitgewerkt.</div>
-        </div>
-
         <button class="btn-primary" id="btn-maak" onclick="maak()">✨ Maak mijn draaiboek</button>
         <div class="err" id="err"></div>
       </div>
@@ -470,6 +515,7 @@
       <div class="card" id="uitvoer">
         <div class="card-label"><span class="ic">📋</span> <span id="uitvoer-titel">Je draaiboek</span></div>
         <div id="live-bar"></div>
+        <div id="db-toolbar" class="db-toolbar" style="display:none"></div>
         <div class="db" id="db"></div>
         <button class="db-toggle" id="db-toggle" onclick="toggleDb()" style="display:none">Toon het hele draaiboek</button>
         <div id="db-taken"></div>
@@ -482,7 +528,6 @@
           <button class="btn-soft" onclick="printDraaiboek()">🖨️ Print</button>
           <button class="btn-soft" onclick="invoerAanpassen()">🔧 Invoer aanpassen</button>
           <button class="btn-soft" onclick="maak(true)">🔄 Andere versie</button>
-          <button class="btn-soft" onclick="verkortDraaiboek(this)">✂️ Maak beknopte versie</button>
           <button class="btn-soft" onclick="toonVerfijn()">✏️ Pas iets aan</button>
         </div>
         <div class="verfijn" id="verfijn" style="display:none">
@@ -499,6 +544,8 @@
       <footer class="app-foot">Draaiboek · gemaakt door Michael van Spanje · © 2026</footer>
     </main>
   </div>
+
+  <button id="naar-boven" title="Terug naar boven" aria-label="Terug naar boven">↑</button>
 
   <!-- Waarschuwing vóór het downloaden -->
   <div class="modal-wrap" id="dl-modal" style="display:none">
@@ -569,7 +616,7 @@
           { id: 'budget', label: 'Maximaal bedrag per surprise', type: 'text', optioneel: true, placeholder: 'bijv. €5', hint: 'wat elk kind aan de ander besteedt; betalen de gezinnen zelf', toonAls: { veld: 'surprises', waarde: true } },
           { id: 'bovenbouwsint', label: 'Hoe betrekt de bovenbouw Sinterklaas?', type: 'select', eigen: true, opties: ['Alleen bij de aankomst, daarna zelf surprises', 'Sint komt kort langs bij de surprises', 'De bovenbouw krijgt ook een cadeautje van Sint'], default: 'Sint komt kort langs bij de surprises', toonAls: { veld: 'bouw', waarde: ['Bovenbouw', 'Hele school'] } },
           { id: 'schoen', label: 'Schoenzetten vooraf?', type: 'toggle', default: true },
-          { id: 'schoendatum', label: 'Wanneer wordt de schoen gezet?', type: 'datum', optioneel: true, hint: 'vaak een week of twee voor het feest', toonAls: { veld: 'schoen', waarde: true } } ] },
+          { id: 'schoendatum', label: 'Wanneer wordt de schoen gezet?', type: 'datum', optioneel: true, startMaand: 11, hint: 'vaak een week of twee voor het feest', toonAls: { veld: 'schoen', waarde: true } } ] },
 
       { id: 'kerst', naam: 'Kerst', emoji: '🎄', modus: 'tijd', start: '17:00', eind: '19:00',
         sfeer: 'Sfeervol en gezellig, meestal in het donker met veel lichtjes. Denk aan warme aankleding en samen zijn.',
@@ -780,6 +827,8 @@
       juffenmeester: "bijv. 'verrassend en gezellig', 'een relaxte dag'"
     };
     const SFEER_STANDAARD = "bijv. 'rustig houden', 'uitbundig'";
+    // Feesten met een vaste datum: de agenda opent meteen in die maand (1-12).
+    const VASTE_MAAND = { sinterklaas: 12, kerst: 12, koningsspelen: 4 };
 
     function kiesEvenement(id) {
       const ev = evById(id);
@@ -796,6 +845,9 @@
       document.getElementById('eind-label').textContent = ev.eindLabel || 'Eindtijd';
 
       document.getElementById('spec-titel').textContent = 'Over je ' + ev.naam.toLowerCase().replace(' / ', '/');
+      // Vaste feestdagen: open de agenda meteen in de juiste maand.
+      const dEl = document.getElementById('datum');
+      if (dEl) { const vm = VASTE_MAAND[ev.id]; if (vm) dEl.setAttribute('data-startmaand', vm); else dEl.removeAttribute('data-startmaand'); }
       const bz = document.getElementById('bijzonder'); if (bz) bz.placeholder = BIJZONDER_HINT[ev.id] || BIJZONDER_STANDAARD;
       const tx = document.getElementById('thema-extra'); if (tx) tx.placeholder = SFEER_HINT[ev.id] || SFEER_STANDAARD;
       renderVelden(ev);
@@ -846,7 +898,7 @@
           v.opties.map(o => '<div class="chip" data-v="' + esc(o) + '"><span class="vk">✓</span>' + esc(o) + '</div>').join('') + '</div>';
       } else if (v.type === 'datum') {
         inner = '<label class="veld-l">' + esc(v.label) + labelSmall + '</label>' + hint +
-          '<input type="date" class="field-input" data-veld="' + v.id + '" />';
+          '<input type="date" class="field-input" data-veld="' + v.id + '"' + (v.startMaand ? ' data-startmaand="' + v.startMaand + '"' : '') + ' />';
       } else { // text
         inner = '<label class="veld-l">' + esc(v.label) + labelSmall + '</label>' + hint +
           '<input type="text" class="field-input" data-veld="' + v.id + '" placeholder="' + esc(v.placeholder || '') + '" />';
@@ -1098,7 +1150,8 @@
         zet('Denk praktisch, als een school die dit echt moet organiseren: de onderbouwklassen gaan om de beurt bij Sinterklaas langs, dus dat bezoek begint kort na de aankomst en loopt door de hele ochtend. De pietengym is een LOSSTAANDE, leuke activiteit op zich (een parcours of spelletjes) en GEEN onderdeel van de verhaallijn en GEEN voorwaarde om bij Sint te mogen komen. Laat de pietengym en de Sint-bezoeken bij de onderbouw naast elkaar of roulerend lopen, zodat klassen niet onnodig hoeven te wachten.');
         zet('De aankomst is meestal op het schoolplein: de hele school (en vaak ook ouders) verzamelt zich rond half negen om Sinterklaas op te wachten. Introduceer de verhaallijn juist op dat spannende aankomstmoment.');
         zet('De sinterklaassfeer en de versiering in school hangen meestal al weken van tevoren (rond de landelijke intocht), niet pas de dag ervoor. Zet het aankleden van de school dus ruim vooraf in de aftel-checklist; "de dag ervoor" is alleen voor de laatste klaarzet-taken.');
-        zet('Begin de planning ruim op tijd: een Sint(-acteur) en Pieten regel je al maanden van tevoren, niet pas zes weken vooraf. Zet dat in het vroegste aftel-moment ("Enkele maanden vooraf").');
+        zet('Onder "Enkele maanden vooraf" horen ALTIJD deze vier vaste taken, hoe klein het feest ook is: (1) de datum prikken en intern communiceren, (2) een Sint-acteur en twee Pieten boeken (die regel je maanden vooraf, niet pas zes weken vooraf), (3) een organisatieteam samenstellen en de hoofdtaken verdelen, (4) het budget met de ouderraad (OR) bespreken. Neem deze vier sowieso op.');
+        zet('Voeg onder "Enkele maanden vooraf" alleen EXTRA vroege taken toe als de keuzes van de organisator daarom vragen: bepaal op basis van wat is ingevuld of iets nu al geregeld moet worden (bijvoorbeeld een bijzondere aankomst zoals een helikopter of boot die ver vooruit geboekt moet worden, of het alvast vastleggen van de aanpak van de surprises). Verzin geen vroege taken die er niet toe doen.');
         const bbRaw = (a.bovenbouwsint === '__anders__' ? actEigen(a, 'bovenbouwsint') : a.bovenbouwsint) || 'Sint komt kort langs bij de surprises';
         let bbSint, bbBezoek = false;
         if (/alleen bij de aankomst/i.test(bbRaw)) bbSint = 'de bovenbouw doet ALLEEN mee aan de gezamenlijke aankomst (dat kwartiertje) en is daarna de hele ochtend zelf bezig met de surprises in de eigen klas; Sinterklaas bezoekt de bovenbouw niet.';
@@ -1120,8 +1173,13 @@
         zet('Houd de spanning behapbaar voor de jongste kinderen.');
       }
       if (ev.id === 'kerst') {
-        zet('Kerst is meestal in het donker (avond); benut de sfeer van lichtjes.');
+        zet('Kerst is meestal in het donker (avond); benut de sfeer van lichtjes. Kies voor de veiligheid led-waxinelichtjes of ledkaarsen in plaats van echte kaarsen; wordt er toch met echte kaarsen gewerkt, zet dan een emmer of kan water klaar.');
         if (a.activiteit === 'lichtjestocht') zet('Werk de lichtjestocht uit als de kern: een route met scènes onderweg, groepjes die om beurten vertrekken, en warme drank bij terugkomst.');
+        if (a.activiteit === 'kerstdiner' || a.activiteit === 'kerstlunch') {
+          zet('Een kerst' + (a.activiteit === 'kerstlunch' ? 'lunch' : 'diner') + ' in de klas draait vooral om sfeer. De klas wordt op de dag zelf door hulpouders ingericht: tafels in groepjes (ook aan de kopse kanten, want er is vaak niet voor elk kind een tafel) met tafelkleden (gezellig en makkelijker schoonmaken), gedimd licht en bijvoorbeeld een open haard op het digibord. De kinderen nemen hun eigen bord, bestek en beker mee en komen in feestkleding. Houd er rekening mee dat dit vaak een "lange dag" is: de kinderen zijn dan \'s middags vrij en komen \'s avonds terug.');
+          zet('Een leuke klas-taak vóóraf voor de leerkracht zelf: in de weken ervoor met de kinderen iets voor op tafel knutselen, zoals een placemat of een houdertje voor een led-waxinelichtje.');
+          if (!a.eten || !/school verzorgt/i.test(a.eten)) zet('Het eten wordt verdeeld via een intekenlijst die ongeveer een week vooraf bij het lokaal (of online) hangt, het liefst deels voorgedrukt (voor-, hoofd- en nagerechten) en met een DUIDELIJK MAXIMUM per kind (bijvoorbeeld maximaal vijf hapjes), anders krijg je overal dezelfde hapjes en veel te veel eten. Vraag om variatie (warm en koud, zoet en hartig, en ook vegetarische opties), houd rekening met allergieën, en spreek voor warme gerechten een aanlevertijd en warmhoudplaatjes af (er is meestal geen magnetron op school). Zet het ophangen van die intekenlijst als taak in de aftel-checklist.');
+        }
       }
       if (ev.id === 'eindfeest') {
         zet('Zet als aandachtspunt dat verkleden NIET verplicht is (niet elk kind heeft een kostuum); werk desnoods met schmink of een klein attribuut bij de entree.');
@@ -1184,6 +1242,7 @@
         '- Verzin geen feiten: geen verzonnen adressen, bedragen, openingstijden of namen. Weet je iets niet zeker, houd het algemeen of benoem het als "in te vullen".',
         '- Houd het HAALBAAR én verdeel het werk REALISTISCH: geef niemand een onmogelijk grote klus. Dus niet "één hulpouder regelt de hele karaoke-installatie" of "één ouder bouwt alle kraampjes op"; splits grote taken op, wijs er meerdere mensen aan, en controleer of een taak echt door dat aantal mensen in die tijd te doen is. Gebruik materiaal en menskracht die een gewone basisschool echt heeft.',
         '- Wijs taken en klussen toe aan ALGEMENE rollen die op elke school bestaan: leerkracht, hulpouder of vrijwilliger, en het organisatieteam. Ga NIET uit van een specifieke functie die er misschien niet is (dus niet standaard "de conciërge", "de technicus" of "de directeur" iets laten doen) en gebruik NOOIT echte namen. Dit is een voorzet; de school vult zelf in wie het precies doet. Formuleer een taak zo dat de naam of rol er makkelijk uit te halen of te vervangen is.',
+        '- Dit draaiboek is voor de organiserende WERKGROEP (de oudercommissie, festiviteitencommissie of OR), niet voor individuele leerkrachten. De werkgroep regelt en levert alles aan. Wijs het voorbereidende regelwerk daarom aan de WERKGROEP toe, niet aan "de leerkracht". Een leerkracht hoeft vooraf bijna niets te regelen: zijn of haar rol is vooral op de dag of avond zelf, in de eigen klas (sfeer maken, de kinderen begeleiden en vertellen wat ze gaan doen). Schrijf taken dus zo dat de werkgroep het VOOR de leerkracht klaarzet, tenzij een taak echt in de klas bij de leerkracht hoort.',
         '- Op veel scholen speelt de ouderraad (OR), oudervereniging of oudercommissie een grote rol bij het organiseren én FINANCIEREN van dit soort dagen (cadeautjes, hapjes, materiaal). Betrek die waar het logisch is, als algemene rol en herkenbaar benoemd (bijvoorbeeld "de ouderraad (OR)"); ga er niet blind vanuit, maar noem het waar het voor de hand ligt.',
         '- Draait dit evenement om spellen, posten of kraampjes (zoals een zomer-/eindfeest, sportdag, koningsspelen of kermis)? Zorg dan dat er GENOEG tegelijk te doen is: reken na hoeveel mensen er zijn (kinderen plus eventueel ouders) en zorg dat minstens de HELFT tegelijk aan een activiteit kan meedoen. Tel de capaciteit van de posten/spellen bij elkaar op en voeg net zoveel korte, laagdrempelige, thema-passende spelletjes toe tot je die helft haalt; liever meer kleine spellen naast elkaar dan een paar posten waar de rest voor in de rij staat. Draait het evenement NIET om spellen (een diner, een lichtjestocht of andere wandeling, een voorstelling, een viering, een uitje), FORCEER dan geen spelletjes: houd het volledig passend bij de sfeer van dat evenement.',
         '- Als er met munten gewerkt wordt: er is een muntenverkooppunt (een kraampje of kassa) waar bezoekers, meestal de ouders, munten KOPEN om uit te geven aan hapjes, drankjes of spellen. Deel niet automatisch gratis munten of muntenzakjes uit aan de kinderen en ga er niet vanuit dat elk kind munten krijgt, tenzij de organisator dat expliciet aangeeft. Beschrijf dus het verkooppunt, niet het uitdelen.',
@@ -1267,9 +1326,6 @@
       if (extra.length) { r.push(''); r.push('Let hierbij op het volgende:'); extra.forEach(x => r.push('- ' + x)); }
       if (variatie) { r.push(''); r.push('VARIATIE: ' + variatie + ' Maak een duidelijk ándere uitwerking dan een standaard eerste versie.'); }
       r.push('');
-      if (a._versie === 'verkort') r.push('LENGTE: maak een VERKORTE, beknopte versie. Houd alles kort, simpel en overzichtelijk met ALLEEN de belangrijkste punten: korte bulletpunten en geen lange uitwerkingen of uitgebreide beschrijvingen. Werk activiteiten NIET in detail uit (hooguit één korte regel per activiteit) en laat de sectie "De activiteiten in detail" weg of houd die minimaal. Houd elke lijst kort en laat niet-essentiële onderdelen weg. Het moet in één oogopslag te overzien zijn, terwijl alle echt belangrijke dingen (planning, taken, boodschappen, veiligheid) er wel in staan.');
-      else r.push('LENGTE: maak een VOLLEDIGE, uitgebreide versie waarin alles netjes is uitgewerkt.');
-      r.push('');
       r.push(draaiboekFormat(prog, ev.aftel || ['Uiterlijk vier weken vooraf', 'Uiterlijk twee weken vooraf', 'Uiterlijk een week vooraf', 'De dag ervoor']));
       return r.join('\n');
     }
@@ -1342,14 +1398,6 @@
 
     // ── State + flow ──────────────────────────────────────────────────────────
     let laatsteTekst = '', laatsteMeta = {}, variatieTeller = 0, verfijnBasis = '', verfijnWensen = [];
-    // Verkort of volledig draaiboek (de editor werkt in beide gevallen hetzelfde).
-    let versieKeuze = 'volledig';
-    function kiesVersie(el, v) {
-      versieKeuze = v;
-      const seg = el.parentNode; seg.querySelectorAll('.opt').forEach(o => o.classList.toggle('aan', o === el));
-      const uit = document.getElementById('versie-uitleg');
-      if (uit) uit.textContent = v === 'verkort' ? 'Alleen de belangrijkste punten, kort en overzichtelijk. Namen toevoegen, slepen en afvinken werken gewoon.' : 'Een compleet draaiboek met alle details uitgewerkt.';
-    }
 
     function verzamelInvoer() {
       const datum = document.getElementById('datum').value;
@@ -1365,7 +1413,6 @@
       a._hulpouders = document.getElementById('hulpouders').value.trim();
       a._sfeer = document.getElementById('thema-extra').value.trim();
       a._bijzonder = document.getElementById('bijzonder').value.trim();
-      a._versie = versieKeuze;
       return a;
     }
 
@@ -1427,6 +1474,7 @@
       const dbEl = document.getElementById('db');
       dbEl.innerHTML = renderModel(meta);
       dbEl.classList.remove('ingeklapt');           // werkbestand-modus: volledig in beeld
+      renderToolbar();
       const tgl = document.getElementById('db-toggle'); if (tgl) tgl.style.display = 'none';
       toonInvoer(false);                            // de invoer bovenaan valt weg
       document.getElementById('uitvoer').style.display = 'block';
@@ -1545,36 +1593,6 @@
       finally { stopLaadStappen(); knop.disabled = false; document.getElementById('laden').classList.remove('aan'); }
     }
 
-    // Van het huidige (volledige) draaiboek een beknopte versie maken: zelfde secties
-    // en koppen, maar kort. Deelt het gecachete systeemprompt met genereren/verfijnen.
-    async function verkortClaude(basis) {
-      if (window.avinkaMask) { try { await window.avinkaMask.ready; } catch (e) {} }
-      const wie = maskWie(basis); // namen → codes (AVG); terugzetten na het antwoord
-      const dbBlok = 'Hieronder een volledig draaiboek.\n\n=== BEGIN DRAAIBOEK ===\n' + wie.tekst + '\n=== EINDE DRAAIBOEK ===';
-      const opdr = 'Maak hiervan een VERKORTE, beknopte versie. Behoud EXACT dezelfde secties en Markdown-koppen (## en ###) in dezelfde volgorde, en houd de tijd- of dag-koppen zoals ze zijn, maar houd alles kort en simpel: alleen de belangrijkste punten, korte bulletpunten, geen lange uitwerkingen of beschrijvingen. Vat per onderdeel samen tot de kern. Werk activiteiten NIET in detail uit (hooguit één korte regel) en laat de sectie "De activiteiten in detail" weg of houd die minimaal. Zorg dat alle echt belangrijke dingen (planning, taken, boodschappen, veiligheid) er wel in blijven.\n\nBELANGRIJK: aan het eind van sommige taken staat een markering in de vorm %%naam%% (een toegewezen persoon). Laat die markeringen ONGEWIJZIGD staan aan het eind van precies de taak waar ze bij horen: verwijder, verplaats of verander ze niet. Voeg je twee taken samen, behoud dan de bijbehorende markering(en); alleen als je een taak helemaal weglaat, vervalt zijn markering. Geef ALLEEN het verkorte draaiboek terug, geen tekst eromheen.';
-      const safeDb = window.avinkaMask ? window.avinkaMask.apply(dbBlok) : dbBlok;
-      const safeOpdr = window.avinkaMask ? window.avinkaMask.apply(opdr) : opdr;
-      const ruw = await postClaude({ model: MODEL, max_tokens: 8000, system: [{ type: 'text', text: bouwSysteem(), cache_control: { type: 'ephemeral' } }], messages: [{ role: 'user', content: [ { type: 'text', text: safeDb, cache_control: { type: 'ephemeral' } }, { type: 'text', text: safeOpdr } ] }] });
-      return unmaskWie(ruw, wie.map); // codes → echte namen terug
-    }
-    async function verkortDraaiboek(btn) {
-      if (!laatsteTekst) return;
-      const vraag = 'Ik maak een beknopte versie van dit draaiboek. Je toegewezen namen en aanpassingen blijven behouden, alleen de tekst wordt korter. De volledige versie op je scherm wordt hierdoor wel vervangen, dus sla die eerst op als je hem apart wilt bewaren.';
-      if (typeof window.avinkaBevestig === 'function') { let ok = true; try { ok = await window.avinkaBevestig(vraag, { titel: 'Beknopte versie maken', bevestig: 'Ja, verkort', annuleer: 'Annuleren' }); } catch (e) { ok = true; } if (!ok) return; }
-      const oud = btn ? btn.textContent : '';
-      if (btn) btn.disabled = true;
-      document.getElementById('uitvoer').style.display = 'none';
-      document.getElementById('laden').classList.add('aan');
-      document.getElementById('laad-tekst').textContent = 'Je beknopte versie wordt gemaakt…';
-      startLaadStappen([{ t: 'Het draaiboek doornemen', g: 0.8 }, { t: 'Inkorten tot de kern', g: 1.6 }, { t: 'Alles netjes opmaken', g: 0 }], 45000);
-      try {
-        const tekst = schoonMd(await verkortClaude(verfijnBasis || laatsteTekst));
-        laatsteTekst = tekst;
-        toonResultaat(tekst, laatsteMeta);
-      } catch (e) { document.getElementById('uitvoer').style.display = 'block'; if (typeof avinkaAlert === 'function') avinkaAlert(e.message || 'Het verkorten lukte niet. Probeer het opnieuw.'); }
-      finally { stopLaadStappen(); document.getElementById('laden').classList.remove('aan'); if (btn) { btn.disabled = false; if (btn.isConnected) btn.textContent = oud; } }
-    }
-
     function printDraaiboek() { window.print(); }
 
     // ── Delen met je team ─────────────────────────────────────────────────────
@@ -1689,7 +1707,7 @@
       rtRemote = true;
       try {
         docModel = parseModel(p.tekst); laatsteTekst = serialize(docModel); verfijnBasis = laatsteTekst;
-        const dbEl = document.getElementById('db'); if (dbEl) { dbEl.innerHTML = renderModel(laatsteMeta); dbEl.classList.remove('ingeklapt'); }
+        const dbEl = document.getElementById('db'); if (dbEl) { dbEl.innerHTML = renderModel(laatsteMeta); dbEl.classList.remove('ingeklapt'); renderToolbar(); }
       } catch (e) {}
       rtRemote = false;
     }
@@ -1776,6 +1794,114 @@
     }
     window.addEventListener('load', laadOpgeslagen);
 
+    // ── Demo-draaiboek (Sinterklaas) om de layout te testen zonder AI-kosten ──
+    // Open /tools/draaiboek.html?demo (of ?demo=sint). Ververs = opnieuw.
+    const DEMO_SINT_META = { evId: 'sinterklaas', naam: 'Sinterklaas', emoji: '🎁', datumMooi: 'donderdag 4 december 2025', start: '08:30', eind: '12:00', groep: 'Hele school', aantal: '200', programmaModus: 'los', invoer: {} };
+    const DEMO_SINT_MD = [
+      '## Overzicht',
+      'Een magische sinterklaasochtend voor de hele school. De onderbouw beleeft het feest met huid en haar en bezoekt Sint, de bovenbouw maakt surprises en krijgt een kort bezoek van de Sint.',
+      '## Aftellen',
+      '### Enkele maanden vooraf',
+      '- [x] Prik de datum en communiceer die intern',
+      '- [x] Boek een Sint-acteur en twee Pieten',
+      '- Stel een organisatieteam samen en verdeel de hoofdtaken',
+      '- Bespreek het budget met de ouderraad (OR)',
+      '### Uiterlijk zes weken vooraf',
+      '- Bevestig de afspraken met de Sint-acteur schriftelijk',
+      '- Maak een rouleringsschema voor de Sint-bezoeken en de pietengym',
+      '- Plan een begeleide surprise-middag voor kinderen die de traditie niet kennen',
+      '### Uiterlijk vier weken vooraf',
+      '- [x] Schoenzetten (woensdag 19 november): kleine cadeautjes en pepernoten',
+      '- Trek de lootjes voor de surprises in groep 5 tot en met 8',
+      '- Begin met de aankleding van de school',
+      '### Uiterlijk twee weken vooraf',
+      '- Koop de onderbouwcadeautjes (via de OR-begroting)',
+      '- Vraag hulpouders voor de pietengym',
+      '### Uiterlijk één week vooraf',
+      '- Stuur de praktische informatie naar alle ouders',
+      '- Regel een EHBO-doos en een aanspreekpunt',
+      '### De dag ervoor',
+      '- Surprises inleveren (woensdag 3 december): controleer of er voor iedereen één is',
+      '- Zet de hal klaar voor het Sint-bezoek (troon, sfeer, geluid)',
+      '## Programma',
+      '### Aankomst en ontvangst van Sinterklaas (hele school)',
+      '- Rond half negen verzamelt de hele school zich op het plein',
+      '- Sint komt aan met de brandweerauto; een Piet vist het "verloren" grote boek uit de zak',
+      '- Het aankomstmoment duurt ongeveer een kwartier',
+      '### De ochtend, onderbouw: Sint bezoeken en pietengym (roulerend)',
+      '- De klassen van groep 1 tot en met 4 rouleren tussen Sint en de pietengym',
+      '- Bij Sint krijgt elk kind een klein cadeautje en een persoonlijk praatje',
+      '### De ochtend, bovenbouw: surprises in de eigen klas',
+      '- De groepen 5 tot en met 8 wisselen de surprises klassikaal uit',
+      '- Sint komt op een gekozen moment kort langs om de mooiste surprises te bewonderen',
+      '### Pepernoten en gezamenlijke afsluiting',
+      '- Alle klassen komen samen voor een kort slotmoment',
+      '- Sint gooit met de Pieten nog een laatste regen pepernoten',
+      '## De activiteiten in detail',
+      '### Sint-bezoek (onderbouw, in de hal)',
+      'De klas komt binnen, zingt een lied, en Sint roept elk kind bij naam en geeft een cadeautje.',
+      '- Troon met rood kleed',
+      '- Klassenlijsten met namen',
+      '- Cadeautjes voor de onderbouw',
+      '### Pietengym (onderbouw, gymzaal)',
+      'Een beweegparcours met vijf tot zes posten met kleine sinterklaasopdrachten.',
+      '- Pionnen en tape voor de posten',
+      '- Zakken, emmers en nep-pepernoten',
+      '- Sinterklaasmuziek op een speaker',
+      '## Taakverdeling',
+      '### Vooraf klaarzetten',
+      '- Het organisatieteam coördineert de Sint-acteur en de planning %%Jara%%',
+      '- Twee hulpouders richten de hal in (troon, geluid) %%Michael%%',
+      '- Twee hulpouders bouwen de pietengym op %%Michael%%',
+      '### Tijdens het evenement',
+      '- Eén leerkracht is aanspreekpunt en bewaakt het rouleringsschema %%Jara%%',
+      '- Vier tot zes hulpouders bemannen de pietengym-posten',
+      '- Eén hulpouder begeleidt Sint tijdens de bezoeken',
+      '### Opruimen achteraf',
+      '- Hulpouders ruimen de pietengym-posten op %%Edith%%',
+      '- Twee leerkrachten ruimen de hal op %%Edith%%',
+      '## Boodschappen en materialen',
+      '### Eten en drinken',
+      '- Pepernoten (7,5 kg)',
+      '- Schuimpjes en kruidnoten',
+      '- Ranja en bekers',
+      '### Cadeautjes en presentjes',
+      '- Kleine cadeautjes voor het schoenzetten (rond 1 euro per kind)',
+      '- Cadeautjes voor de onderbouw (één per kind)',
+      '### Techniek en geluid',
+      '- Microfoon en speaker %%Michael%%',
+      '- Playlist met sinterklaasliedjes',
+      '### Veiligheid en EHBO',
+      '- EHBO-doos op een vaste plek',
+      '- Vrij pad op het plein voor de brandweerauto',
+      '### Algemeen',
+      '- Rouleringsschema (uitgeprint per leerkracht)',
+      '- Klassenlijsten voor de Sint-acteur',
+      '## Extra\'s om het leuker te maken',
+      '### Fotobooth met sinterklaas-props',
+      '- Achtergrond, mandje met props, tablet op statief',
+      '### Schmink als Piet',
+      '- Twee schminkers, huidvriendelijke verf, spiegel',
+      '## Communicatie met ouders',
+      '- Vier weken vooraf: aankondiging met datum, programma en de surprise-uitleg voor groep 5 tot en met 8',
+      '- Eén week vooraf: herinnering dat de surprises op 3 december mee moeten',
+      '## Aandachtspunten',
+      '- Allergieën: pepernoten bevatten gluten; zorg voor een alternatief',
+      '- AVG en foto\'s: controleer welke kinderen niet gefotografeerd mogen worden',
+      '- Groep 5 gelooft soms nog: gebruik de framing "jullie helpen Sint"',
+      '- Kinderen die bang zijn voor Sint: dwing nooit een kind naar hem toe',
+      '## Evaluatie achteraf',
+      '- Verliep de roulering soepel of moeten de tijdvakken bijgesteld worden?',
+      '- Waren er knelpunten bij de surprise-uitwisseling?'
+    ].join('\n');
+    function laadDemo() {
+      let d = null; try { d = new URLSearchParams(location.search).get('demo'); } catch (e) {}
+      if (d === null) return;
+      laatsteTekst = DEMO_SINT_MD; laatsteMeta = Object.assign({}, DEMO_SINT_META); verfijnBasis = DEMO_SINT_MD; verfijnWensen = [];
+      toonResultaat(DEMO_SINT_MD, laatsteMeta);
+    }
+    window.addEventListener('load', laadDemo);
+
     // ── Opmaak-helpers ────────────────────────────────────────────────────────
     function schoonMd(t) { return (t || '').split('\n').filter(r => !/^\s*([-*_]\s*){3,}$/.test(r)).join('\n'); }
     function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -1808,22 +1934,6 @@
     }
     // Wie-markers weghalen voor AI-context (de AI hoeft de toewijzingen niet te zien).
     function zonderWie(s) { return String(s == null ? '' : s).replace(/\s*%%[^%]+%%/g, ''); }
-    // AVG: toegewezen namen (%%naam%%) vervangen door een code (%%WIE1%%) voordat de tekst
-    // naar de AI gaat, en terugzetten zodra het antwoord terug is. Zelfde naam = zelfde code.
-    function maskWie(s) {
-      const naarCode = new Map(); const map = []; let i = 0;
-      const tekst = String(s == null ? '' : s).replace(/%%([^%]+)%%/g, (m, naam) => {
-        naam = naam.trim();
-        if (!naarCode.has(naam)) { i++; const code = 'WIE' + i; naarCode.set(naam, code); map.push({ code, naam }); }
-        return '%%' + naarCode.get(naam) + '%%';
-      });
-      return { tekst, map };
-    }
-    function unmaskWie(s, map) {
-      let uit = String(s == null ? '' : s);
-      (map || []).forEach(({ code, naam }) => { uit = uit.split('%%' + code + '%%').join('%%' + naam + '%%'); });
-      return uit;
-    }
     function delBtn(id, extra) { return '<button class="del ' + (extra || '') + '" data-del="' + id + '" title="Weghalen" aria-label="Weghalen">✕</button>'; }
 
     // Een regel (li/p), een blok (### + de regels eronder) of een hele sectie (##) weghalen.
@@ -1840,6 +1950,7 @@
       const dbEl = document.getElementById('db');
       dbEl.innerHTML = renderModel(laatsteMeta);
       dbEl.classList.remove('ingeklapt');
+      renderToolbar();
       const tgl = document.getElementById('db-toggle'); if (tgl) tgl.textContent = 'Draaiboek inklappen';
     }
 
@@ -1849,6 +1960,7 @@
       if (!dbEl) return;
       dbEl.innerHTML = renderModel(laatsteMeta);
       dbEl.classList.remove('ingeklapt');
+      renderToolbar();
       const tgl = document.getElementById('db-toggle'); if (tgl) tgl.textContent = 'Draaiboek inklappen';
       laatsteTekst = serialize(docModel); verfijnBasis = laatsteTekst;
       renderTakenlijst();
@@ -1874,16 +1986,57 @@
       herteken();
     }
 
+    // ── Overzichtslaag: sprongmenu + voortgang + alles-inklappen + compacte weergave ──
+    let compactAan = false;
+    // Losse besturingsbalk boven het draaiboek (eigen paneel, niet in het document zelf).
+    function renderToolbar() {
+      const bar = document.getElementById('db-toolbar'); if (!bar) return;
+      const secs = docModel.filter(b => b.kind === 'h2');
+      if (!secs.length) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
+      const chips = secs.map(s => '<button class="db-chip" data-spring="' + s.id + '"><span class="ic">' + secIcon(s.text.toLowerCase()) + '</span>' + esc(s.text) + '</button>').join('');
+      const h2ids = secs.map(s => s.id);
+      const alleDicht = h2ids.length > 0 && h2ids.every(id => dichteSecties.has(id));
+      bar.innerHTML =
+        '<div class="db-nav-lbl">📑 Legenda · klik om naar een onderdeel te springen</div>' +
+        '<div class="db-nav">' + chips + '</div>' +
+        '<div class="db-bar-rij">' +
+          '<div class="db-prog" style="display:none"><div class="db-prog-balk"><i></i></div><span class="db-prog-tekst"></span></div>' +
+          '<div class="db-bar-knoppen">' +
+            '<button class="db-mini" data-allesin="1">' + (alleDicht ? '📖 Alles uitklappen' : '📑 Alles inklappen') + '</button>' +
+            '<button class="db-mini' + (compactAan ? ' aan' : '') + '" data-compact="1">' + (compactAan ? '↕ Ruime weergave' : '↔ Compacte weergave') + '</button>' +
+          '</div>' +
+        '</div>';
+      bar.style.display = '';
+      updateVoortgang();
+    }
+    // Afvink-voortgang per sectie + totaal (leest de gerenderde DOM: li.chk / li.chk.af).
+    function updateVoortgang() {
+      const db = document.getElementById('db'); if (!db) return;
+      let totaal = 0, gedaan = 0;
+      db.querySelectorAll('.sec').forEach(sec => {
+        const chks = sec.querySelectorAll('li.chk').length, done = sec.querySelectorAll('li.chk.af').length;
+        const tel = sec.querySelector('.sec-tel');
+        if (tel) { if (chks) { tel.textContent = done + '/' + chks; tel.style.display = ''; } else tel.style.display = 'none'; }
+        totaal += chks; gedaan += done;
+      });
+      const wrap = db.querySelector('.db-prog');
+      if (wrap) {
+        if (totaal) { wrap.style.display = ''; const b = wrap.querySelector('.db-prog-balk > i'); if (b) b.style.width = Math.round(gedaan / totaal * 100) + '%'; const t = wrap.querySelector('.db-prog-tekst'); if (t) t.textContent = gedaan + '/' + totaal + ' afgevinkt'; }
+        else wrap.style.display = 'none';
+      }
+    }
+
     function renderModel(meta) {
       let html = '';
-      html += '<div class="db-titel">' + (meta.emoji ? meta.emoji + ' ' : '') + esc('Draaiboek ' + (meta.naam || '')) + '</div>';
+      html += '<div class="db-hero"><div class="db-titel">' + (meta.emoji ? '<span class="db-emoji">' + meta.emoji + '</span> ' : '') + esc('Draaiboek ' + (meta.naam || '')) + '</div>';
       const pills = [];
       if (meta.datumMooi) pills.push('📅 ' + meta.datumMooi);
       if (meta.programmaModus !== 'dag' && meta.start && meta.eind) pills.push('🕘 ' + meta.start + '–' + meta.eind);
       if (meta.groep) pills.push('👥 ' + meta.groep);
       if (meta.aantal) pills.push('🧒 ' + meta.aantal + ' kinderen');
       if (pills.length) html += '<div class="db-meta">' + pills.map(p => '<span class="dm-pill">' + esc(p) + '</span>').join('') + '</div>';
-      html += '<div class="db-tip">Dit is je werkbestand: <b>klik op tekst</b> om aan te passen, <b>✕</b> om weg te halen, <b>＋</b> om zelf iets toe te voegen, sleep met <b>⠿</b> om te verschuiven, en <b>vink taken af</b>. Alles wat je hier doet, gaat mee in opslaan en downloaden.</div>';
+      html += '</div>';
+      html += '<div class="db-tip">Klik op tekst om aan te passen · vink taken af · sleep met ⠿</div>';
       let i = 0;
       while (i < docModel.length) {
         if (docModel[i].kind !== 'h2') { i++; continue; }
@@ -1927,7 +2080,7 @@
       else if (/^extra/.test(low)) meerKnop = '<div class="meer-sec"><button class="meer" data-meer-extra="' + sec.id + '" title="Laat de AI er een paar leuke extra\'s bij bedenken">✨ Meer extra\'s van AI</button></div>';
       else if (/^programma/.test(low) && meta && meta.programmaModus !== 'dag') { const naarLos = meta.programmaModus === 'tijd'; meerKnop = '<div class="meer-sec"><button class="meer" data-progwissel="1" title="Wissel tussen vaste kloktijden en een doorlopend programma">' + (naarLos ? '🔀 Laat het programma doorlopen (zonder vaste tijden)' : '🕘 Zet er vaste tijden bij') + '</button></div>'; }
       const dicht = dichteSecties.has(sec.id) ? ' dicht' : '';
-      return '<div class="sec' + dicht + '" data-drag="' + sec.id + '"><div class="sec-kop"><button class="sec-toggle" data-sectoggle="' + sec.id + '" title="In-/uitklappen" aria-label="In-/uitklappen">▾</button><span class="se">' + secIcon(low) + '</span><span class="sec-t tx" contenteditable="true" data-id="' + sec.id + '">' + esc(sec.text) + '</span>' + gripHtml() + delBtn(sec.id, 'del-sec') + '</div>' + body + meerKnop + '</div>';
+      return '<div class="sec' + dicht + '" data-drag="' + sec.id + '"><div class="sec-kop"><button class="sec-toggle" data-sectoggle="' + sec.id + '" title="In-/uitklappen" aria-label="In-/uitklappen">▾</button><span class="se">' + secIcon(low) + '</span><span class="sec-t tx" contenteditable="true" data-id="' + sec.id + '">' + esc(sec.text) + '</span><span class="sec-tel" style="display:none"></span>' + gripHtml() + delBtn(sec.id, 'del-sec') + '</div>' + body + meerKnop + '</div>';
     }
     function renderIntro(lines) {
       const p = lines.filter(l => l.kind === 'p' || l.kind === 'li').map(l => '<div class="rm" data-drag="' + l.id + '">' + ceSpan(l.id, l.text) + gripHtml() + delBtn(l.id) + '</div>').join('');
@@ -2049,7 +2202,7 @@
       herteken();
     }
     // Een taak afvinken (blijft bewaard: serialiseert als "- [x]").
-    function vinkAf(id, liEl) { const blk = docModel.find(b => b.id === id); if (!blk) return; blk.done = !blk.done; if (liEl) liEl.classList.toggle('af', blk.done); laatsteTekst = serialize(docModel); verfijnBasis = laatsteTekst; syncNaarTeam(); }
+    function vinkAf(id, liEl) { const blk = docModel.find(b => b.id === id); if (!blk) return; blk.done = !blk.done; if (liEl) liEl.classList.toggle('af', blk.done); laatsteTekst = serialize(docModel); verfijnBasis = laatsteTekst; updateVoortgang(); syncNaarTeam(); }
 
     // ── Sleep-begrenzing ──────────────────────────────────────────────────────
     function sectieVanId(id) { let idx = docModel.findIndex(b => b.id === id); if (idx < 0) return null; while (idx >= 0 && docModel[idx].kind !== 'h2') idx--; return idx >= 0 ? docModel[idx].id : null; }
@@ -2252,6 +2405,30 @@
       ex.addEventListener('input', e => { const ta = e.target.closest('#extra-notities'); if (ta && laatsteMeta) laatsteMeta.aantekeningen = ta.value; });
       ex.addEventListener('change', e => { const inp = e.target.closest('#pg-input'); if (inp && inp.files && inp.files[0]) verwerkPlattegrond(inp.files[0]); });
       ex.addEventListener('click', e => { const v = e.target.closest('[data-pg-verwijder]'); if (v) { e.preventDefault(); if (laatsteMeta) delete laatsteMeta.plattegrond; renderExtras(); } });
+    })();
+
+    // Losse besturingsbalk: springmenu, alles in-/uitklappen, compacte weergave.
+    (function () {
+      const bar = document.getElementById('db-toolbar'), db = document.getElementById('db');
+      if (!bar || !db) return;
+      bar.addEventListener('click', e => {
+        const spring = e.target.closest('[data-spring]');
+        if (spring) { e.preventDefault(); const id = +spring.getAttribute('data-spring'); dichteSecties.delete(id); const el = db.querySelector('.sec[data-drag="' + id + '"]'); if (el) { el.classList.remove('dicht'); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } return; }
+        const allesin = e.target.closest('[data-allesin]');
+        if (allesin) { e.preventDefault(); const h2s = docModel.filter(b => b.kind === 'h2').map(b => b.id); const alleDicht = h2s.length > 0 && h2s.every(id => dichteSecties.has(id)); if (alleDicht) dichteSecties.clear(); else h2s.forEach(id => dichteSecties.add(id)); herteken(); return; }
+        const comp = e.target.closest('[data-compact]');
+        if (comp) { e.preventDefault(); compactAan = !compactAan; db.classList.toggle('compact', compactAan); renderToolbar(); return; }
+      });
+    })();
+
+    // Terug naar boven: verschijnt zodra je een stuk naar beneden bent gescrold.
+    (function () {
+      const knop = document.getElementById('naar-boven');
+      if (!knop) return;
+      const toon = () => knop.classList.toggle('zichtbaar', window.scrollY > 500);
+      window.addEventListener('scroll', toon, { passive: true });
+      knop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+      toon();
     })();
 
     // Takenlijst-download (knop zit in #db-taken).

@@ -168,7 +168,20 @@
       // kaart/stacking-context er half overheen tekenen.
       document.body.appendChild(pop);
 
-      var basis = parse(input.value) || new Date();
+      // Zonder gekozen datum openen we op vandaag, TENZIJ het veld een vaste
+      // startmaand suggereert (bijv. Sinterklaas -> december): dan openen we in die
+      // maand, in het eerstvolgende jaar waarin die maand nog moet komen.
+      var basis = parse(input.value);
+      if (!basis) {
+        var sm = parseInt(input.getAttribute("data-startmaand") || "", 10);
+        if (sm >= 1 && sm <= 12) {
+          var nu = new Date(), jaar = nu.getFullYear();
+          if (sm - 1 < nu.getMonth()) jaar++;
+          basis = new Date(jaar, sm - 1, 1);
+        } else {
+          basis = new Date();
+        }
+      }
       var maand = new Date(basis.getFullYear(), basis.getMonth(), 1);
 
       // Reeks-slepen: van indrukken tot loslaten kleuren we het bereik live in.
