@@ -659,7 +659,7 @@
       woorden: ["baby", "pony", "hobby", "lolly", "party", "puppy", "teddy", "jury", "bunny", "rugby"] },
     // Tremawoord (Staal): een trema (deelteken) markeert een nieuwe lettergreep (ruïne, egoïst).
     { naam: "woorden met een trema (deelteken, zoals ruïne, egoïst)", bank: "trema",
-      regel: "Een trema (twee puntjes, ¨) zet je op de tweede van twee klinkers om te laten zien dat daar een nieuwe klank begint, zodat je ze niet als één klank leest. Dat doe je binnen één woord: ideeën, knieën, patiënt, ruïne.",
+      regel: "Een trema (twee puntjes, ¨) zet je op een klinker om te laten zien dat daar een nieuwe klank begint, zodat je twee klinkers die elkaar raken niet als één klank leest: ideeën, patiënt, ruïne. Het trema staat altijd binnen één woord.",
       test: /trema\s*-?woord|\btrema\b|deelteken|puntjes op de/,
       woorden: ["ideeën", "knieën", "tweeën", "drieën", "poëzie", "reünie", "egoïst", "naïef", "ruïne", "maïs"] },
     // Koppelteken bij botsende klinkers: bij het samenvoegen van twee HELE woorden botsen

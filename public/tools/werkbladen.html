@@ -539,6 +539,8 @@
         ];
         lijnen.push('- WISSEL DE WERKVORMEN AF — gebruik NIET elke keer dezelfde opzet. Bouw dit werkblad met een frisse mix uit BIJVOORBEELD deze werkvormen: ' + kiesN(spellingVormen, 4).join('; ') + '. Val niet terug op alleen invullen + sorteren; pak deze keer ook eens een puzzelvorm (woordzoeker, kruiswoord of anagram) als die past.');
         lijnen.push('- SPREID DE DOELWOORDEN over de opdrachten: gebruik in elke opdracht ZOVEEL MOGELIJK ANDERE woorden. Herhaal dezelfde doelwoorden NIET in meerdere opdrachten (bijvoorbeeld de sorteerwoorden óók in de woordzoeker of het kruiswoord). Zo oefent het kind meer verschillende woorden en oogt het werkblad rijker.');
+        lijnen.push('- MEERDERE CATEGORIEEN MENGEN MAG en is juist mooi: een opdracht (woordzoeker, sorteren, anagram, zinnen) mag woorden uit ÁLLE geoefende categorieën van vandaag bevatten. MAAR: de instructie mag dan GEEN losse categorie claimen die niet voor alle woorden geldt. Schrijf dus NIET "alle woorden horen bij de tussen-e-regel" als er ook trema- of koppelteken-woorden in staan; hou de instructie dan algemeen (bijv. "Zoek de woorden").');
+        lijnen.push('- LETTERROOSTER (woordzoeker, kruiswoord) = ALLEEN kale letters. Zet er GEEN woorden met een trema (ë/ï), accent (é) of koppelteken (-) in: in een rooster verdwijnt dat teken (patiënt → PATIENT, zee-eend → ZEEEEND) — dat is een FOUT woordbeeld én je oefent de regel niet. Oefen trema/accent/koppelteken juist in invullen, sorteren, anagram of samenstellen, waar het teken zichtbaar is en het kind het zélf schrijft.');
       }
 
       lijnen.push('\nGeef nu UITSLUITEND de JSON van het werkblad terug.');
@@ -822,6 +824,10 @@
         var unie = [], gezien = {};
         banken.forEach(function (b) { b.woorden.forEach(function (x) { if (!gezien[x.toLowerCase()]) { gezien[x.toLowerCase()] = 1; unie.push(x); } }); });
         function inUnie(w) { return !!gezien[String(w).toLowerCase()]; }
+        // Een letterrooster (woordzoeker/kruiswoord) kan alleen kale letters tonen — geen trema
+        // (ë), accent (é) of koppelteken (-). Zulke woorden zouden hun kenmerk verliezen
+        // ("PATIENT" i.p.v. patiënt = een FOUT woordbeeld) en de regel juist niet oefenen.
+        function markVrij(w) { return /^[a-z]+$/i.test(String(w)); }
         // Kenmerkletters van de geoefende regels (c, x, sch, ei ...) + apostrof voor
         // 's-meervoud. Waarmee we bij zoek-de-fout kunnen toetsen of de fout wel over de
         // geoefende regel gaat (en niet over een werkwoord of een andere regel).
@@ -876,6 +882,12 @@
             });
           } else if (blk.type === 'woordzoeker') {
             blk.woorden = herstel(blk.woorden, function (w) { return w; }, function (w) { return w.toUpperCase(); }, inUnie, unie);
+            // Alleen mark-vrije woorden in het rooster (zie markVrij); trema/accent/koppelteken
+            // horen in de schrijf-opdrachten. De instructie claimt geen categorie (woorden mogen
+            // uit ALLE geoefende categorieën komen — dat mag en is juist mooi).
+            var unieGrid = unie.filter(markVrij);
+            blk.woorden = blk.woorden.filter(function (w) { return markVrij(w) && inUnie(w); });
+            blk.opdracht = 'Zoek de woorden in het raster. Ze staan horizontaal of verticaal.';
             // Woordzoeker mag voller — meer woorden kosten nauwelijks extra ruimte, dus mik op ~12.
             // MAAR waak over AFWISSELING: de AI kiest vaak bijna-identieke, rijmende woorden
             // (zaaien/paaien/draaien/maaien). Sta per woordeinde (laatste 4 letters) hooguit 2 toe,
@@ -889,7 +901,7 @@
               wzHeeft[lw] = 1; wzStaart[st] = (wzStaart[st] || 0) + 1; wzSchoon.push(w);
             });
             blk.woorden = wzSchoon;
-            var wzExtra = unie.filter(function (w) { return !wzHeeft[w.toLowerCase()]; });
+            var wzExtra = unieGrid.filter(function (w) { return !wzHeeft[w.toLowerCase()]; });
             for (var wzi = wzExtra.length - 1; wzi > 0; wzi--) { var wzj = Math.floor(Math.random() * (wzi + 1)); var wzt = wzExtra[wzi]; wzExtra[wzi] = wzExtra[wzj]; wzExtra[wzj] = wzt; }
             for (var wzPass = 0; wzPass < 2 && blk.woorden.length < wzDoel; wzPass++) {
               for (var wzx = 0; wzx < wzExtra.length && blk.woorden.length < wzDoel; wzx++) {
@@ -903,6 +915,10 @@
             }
           } else if (blk.type === 'anagram') {
             blk.woorden = herstel(blk.woorden, function (w) { return (w && w.woord != null) ? w.woord : w; }, function (w) { return { woord: w }; }, inUnie, unie);
+            // Instructie mag geen categorie claimen (woorden mogen uit alle geoefende categorieën
+            // komen). Bewaar wél de "onderstreepte letters"-uitleg als die er was.
+            var aOnd = /onderstreep/i.test(String(blk.opdracht || ''));
+            blk.opdracht = 'Zet de door elkaar gegooide letters in de goede volgorde en schrijf elk woord goed op.' + (aOnd ? ' De onderstreepte letters staan al op de goede plek.' : '');
           } else if (blk.type === 'geheimschrift') {
             // Losse woordenlijst → net als woordzoeker: ongeldige woorden vervangen door bankwoorden.
             blk.woorden = herstel(blk.woorden, function (w) { return w; }, function (w) { return w.toUpperCase(); }, inUnie, unie);
