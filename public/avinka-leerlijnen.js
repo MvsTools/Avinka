@@ -930,7 +930,7 @@
           if (woorden.length < 8) woorden = cat.woorden.slice();
           else if (cat.kopOnly) woorden = kop(woorden); // standaard: hele bank; kopOnly → alleen de kop
         } else woorden = cat.woorden.slice();
-        return { naam: cat.naam, key: cat.bank || cat.naam, woorden: woorden, feat: SPELLING_FEAT[cat.bank] || null };
+        return { naam: cat.naam, key: cat.bank || cat.naam, woorden: woorden, feat: SPELLING_FEAT[cat.bank] || null, regel: regelVan(cat) };
       });
     },
     verwerkingen: function (vak, groep, n) {

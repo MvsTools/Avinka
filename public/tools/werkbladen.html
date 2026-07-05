@@ -523,7 +523,7 @@
         lijnen.push('- TRANSFORMATIE-CATEGORIEEN (meervoud, verkleinwoord, langer maken voor d/t, f→v, s→z, trappen van vergelijking): gebruik BIJ VOORKEUR de vorm "grondwoord → ___" (voor="auto → ", antwoord="auto\'s", na=""), NIET het gevormde woord in een losse zin proppen. Veel meervouds-/verkleinvormen klinken gek of fout in een zin ("twee kilo\'s appels" is geen goed Nederlands). Dus liever: "boom → ___" (antwoord: boompje), "hond → ___" (antwoord: honden).');
         lijnen.push('- Vraag de spellingregel NIET terug, tenzij er expliciet een opdracht is als "schrijf de regel op".');
         lijnen.push('- Alle oefenwoorden zijn bestaande Nederlandse woorden op het niveau van ' + inv.groep + '.');
-        lijnen.push('- VOORBEELDEN IN DE UITLEG: gebruik je een uitleg-/regelblok (type "tekst") met voorbeeldwoorden, controleer dan dat ELK voorbeeld de geoefende regel ÉCHT bevat (een voorbeeld bij "de c die klinkt als /s/" moet echt een c vóór e, i of y hebben; "fiets" heeft geen c en is dus fout). Staat er hierboven een verplichte woordenbank, kies je voorbeelden dan óók uit die lijst en verzin er geen eigen woorden bij.');
+        lijnen.push('- HET UITLEG-/REGELBLOK WORDT DOOR HET SYSTEEM INGEVULD met de juiste, gecureerde spellingregel — schrijf ZELF GEEN regeluitleg of "zo werkt de regel"-tekst (die wordt toch automatisch vervangen door de correcte versie). Richt je helemaal op goede, gevarieerde OEFENOPDRACHTEN. (Een leestekst mag natuurlijk wel, als het onderwerp daarom vraagt.)');
         // Werkvormen ROTEREN zodat niet elk werkblad dezelfde opzet krijgt.
         var spellingVormen = [
           'invullen waarbij ALLEEN de moeilijke letter(s) ontbreken (het woord staat verder heel)',
@@ -1077,6 +1077,25 @@
             if (vm.length) blk.vragen = vm;
           }
         });
+        // UITLEG-BLOK: de tool zet ZELF de gecureerde regel neer. De AI schreef de regel
+        // telkens opnieuw (en telkens fout, bv. trema "op de tweede klinker"). Nu vervangen we
+        // de tekst van het eerste uitleg-blok door onze correcte regel(s); is er geen, dan
+        // zetten we er één bovenaan. Zo staat er ALTIJD de juiste uitleg.
+        var regels = banken.map(function (b) { return b.regel; }).filter(Boolean);
+        if (regels.length) {
+          var uitlegTekst = regels.join('\n\n');
+          var uitlegKop = regels.length > 1 ? 'De spellingregels' : 'De spellingregel';
+          // Haal een eventueel door de AI geschreven regel-blok weg (herkenbaar aan een
+          // regel-kop óf een korte uitleg-tekst); een echte leestekst (lang, thema-kop)
+          // blijft staan. Daarna zetten we ONZE correcte regel bovenaan.
+          wb.blokken = (wb.blokken || []).filter(function (b) {
+            if (!b || b.type !== 'tekst') return true;
+            var regelKop = /regel|spelling|uitleg/i.test(String(b.kop || ''));
+            var korteUitleg = String(b.tekst || '').length < 600;
+            return !(regelKop || korteUitleg);
+          });
+          wb.blokken.unshift({ type: 'tekst', kop: uitlegKop, tekst: uitlegTekst });
+        }
       } catch (e) { /* fail-safe */ }
     }
 
