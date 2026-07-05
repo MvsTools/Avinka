@@ -688,9 +688,9 @@
   var SPELLING_FEAT = {
     kilo_ie: /i/, c_als_s: /c/, c_als_k: /c/, tie: /ties?$/, isch: /isch$/, x: /x/,
     th: /th/, ch_sj: /ch/, eau: /eau/, accent_e: /[éèê]/, eer_oor_eur: /eer|oor|eur/,
-    aai: /aai/, ooi: /ooi/, oei: /oei/, eeuw_ieuw: /eeuw|ieuw/, ei_ij: /(^|[^o])ei|ij/, au_ou: /au|ou/,
+    aai: /aai/, ooi: /ooi/, oei: /oei/, eeuw_ieuw: /eeuw|ieuw/, ei_ij: /(?<!o)ei|ij/, au_ou: /au|ou/,
     cht: /cht/, ng: /ng/, nk: /nk/, sch: /sch/, y_grieks: /y/, y_eind: /y$/, trema: /[ëïöü]/,
-    koppelteken: /-/, route: /ou/, oir: /oire?$/, uw: /uw/
+    koppelteken: /-/, route: /ou/, oir: /oir/, uw: /uw/, achtervoegsel: /ig$|lijk$/
   };
 
   // Curated uitleg (kindtaal) per bank-id — zodat het uitleg-blokje ALTIJD een correcte

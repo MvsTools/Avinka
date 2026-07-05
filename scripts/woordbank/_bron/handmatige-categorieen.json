@@ -11,6 +11,12 @@
       "introGroep": 5,
       "woorden": [["bagage",5],["bandage",5],["beige",5],["collage",5],["etage",5],["garage",5],["handbagage",5],["horloge",5],["massage",5],["passage",5],["plantage",5],["ravage",5],["rouge",5],["stage",5],["tatoeage",5],["vitrage",5],["camouflage",6],["college",6],["etalage",6],["genre",6],["gilet",6],["lekkage",6],["logeren",6],["montage",6],["passagier",6],["percentage",6],["reportage",6],["sabotage",6],["slijtage",6],["spionage",6],["voltage",6],["wattage",6],["personage",7]]
     },
+    "ch_sj": {
+      "_let_op": "Vervangt de auto-bank (die alle ch-woorden pakte, ook de gewone /g/-klank zoals toch/lachen). Alleen de Franse /sj/-ch.",
+      "label": "de ch die klinkt als /sj/ (zoals chef, machine)",
+      "introGroep": 6,
+      "woorden": [["chef",6],["machine",6],["douche",6],["chocolade",6],["chips",6],["chic",6],["champignon",6],["chalet",6],["parachute",7],["brochure",7],["charmant",7],["chauffeur",7],["machinist",7],["cheque",7],["quiche",7],["chagrijn",7],["chimpansee",7]]
+    },
     "uw": {
       "label": "woorden met uw (je hoort /uu/, je schrijft u)",
       "introGroep": 3,
