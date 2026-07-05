@@ -64,7 +64,7 @@
       ".avinka-dp-nav{border:none;background:none;cursor:pointer;border-radius:8px;padding:3px 8px;font-size:17px;color:var(--muted,#8a8398);transition:.15s;}" +
       ".avinka-dp-nav:hover{background:var(--cream,#f3efe6);color:var(--ink,#2a2540);}" +
       ".avinka-dp-wk{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;font-weight:600;color:var(--muted,#a8a2b4);margin-top:8px;}" +
-      ".avinka-dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:2px;user-select:none;}" +
+      ".avinka-dp-grid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:30px;gap:2px;margin-top:2px;user-select:none;}" +
       ".avinka-dp-grid button{height:30px;border:none;background:none;border-radius:9px;font:inherit;font-size:13px;color:var(--ink,#2a2540);cursor:pointer;transition:.12s;}" +
       ".avinka-dp-grid button:hover{background:var(--cream,#f3efe6);}" +
       ".avinka-dp-grid button.vandaag{background:rgba(47,158,110,.14);color:var(--accent2,#2f9e6e);font-weight:700;}" +
@@ -168,7 +168,20 @@
       // kaart/stacking-context er half overheen tekenen.
       document.body.appendChild(pop);
 
-      var basis = parse(input.value) || new Date();
+      // Zonder gekozen datum openen we op vandaag, TENZIJ het veld een vaste
+      // startmaand suggereert (bijv. Sinterklaas -> december): dan openen we in die
+      // maand, in het eerstvolgende jaar waarin die maand nog moet komen.
+      var basis = parse(input.value);
+      if (!basis) {
+        var sm = parseInt(input.getAttribute("data-startmaand") || "", 10);
+        if (sm >= 1 && sm <= 12) {
+          var nu = new Date(), jaar = nu.getFullYear();
+          if (sm - 1 < nu.getMonth()) jaar++;
+          basis = new Date(jaar, sm - 1, 1);
+        } else {
+          basis = new Date();
+        }
+      }
       var maand = new Date(basis.getFullYear(), basis.getMonth(), 1);
 
       // Reeks-slepen: van indrukken tot loslaten kleuren we het bereik live in.
@@ -224,6 +237,9 @@
           var kl = cls ? ' class="' + cls + '"' : "";
           dagen += '<button type="button" data-iso="' + di + '"' + kl + ">" + d + "</button>";
         }
+        // Altijd tot 6 volle rijen (42 cellen) aanvullen zodat de kalender per maand
+        // even hoog blijft en de vorige/volgende-pijltjes niet verspringen.
+        for (var vul = start + aantal; vul < 42; vul++) dagen += "<span></span>";
         var maandTitel = maand.toLocaleDateString("nl-NL", { month: "long", year: "numeric" });
         pop.innerHTML =
           '<div class="avinka-dp-snel">' +
