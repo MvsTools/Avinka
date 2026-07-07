@@ -363,7 +363,18 @@
       zoekdefout: false,
       // Puzzels & speels
       sudoku: true, geheimschrift: true, doolhof: true, bingo: true,
-      verbinddepunten: false // nog NIET getest → wordt niet aangeboden
+      verbinddepunten: false, // nog NIET getest → wordt niet aangeboden
+      // ── Nieuwe spelling-werkvormen (batch 7-7) — ALLE nog op false: gebouwd +
+      //    zichtbaar in de preview onder "Niet getest", maar nog niet in de tool.
+      //    Zet er pas eentje op true nadat de eigenaar 'm heeft goedgekeurd.
+      meervoud: false, verkleinwoord: false, verledentijd: false, voltooiddeelwoord: false,
+      verlengen: false, trappen: false, grondwoord: false, samenstellen: false, woordfamilie: false,
+      pyramide: false, woordtrap: false, woordslang: false, verstopt: false, letterslinger: false,
+      alfabetiseren: false, klanktellen: false, klinkers: false, klankgroepen: false,
+      woordinwoord: false, woordwaarde: false, woordwaardespel: false, lettertegels: false,
+      oddoneout: false, regelbenoemen: false, dictee: false, zinsdictee: false,
+      kijkdekschrijf: false, overschrijf: false, definitie: false, woordraadsel: false,
+      verhaal: false, juistezin: false, keuzebord: false, tictactoe: false
     };
 
     // ── Systeem-prompt: het JSON-contract + de regels ────────────────────────
@@ -417,7 +428,42 @@
         '- {"type":"romeins","opdracht":"...","spec":{"aantal":6,"max":50,"richting":"mix"}} — Romeinse cijfers omzetten; het systeem maakt ze + antwoorden.',
         '- {"type":"automatiseer","opdracht":"...","spec":{"bewerking":"mix","max":10,"aantal":20}} — automatiseer-sprint (veel kale sommen op tijd); het systeem maakt ze + antwoorden.',
         '- {"type":"teken","opdracht":"...","hoogte":120} — een kader om iets te tekenen.',
-        '- {"type":"reflectie","vraag":"..."} — afsluitende reflectie met smileys.'
+        '- {"type":"reflectie","vraag":"..."} — afsluitende reflectie met smileys.',
+        // ── Nieuwe spelling-werkvormen (worden pas in de prompt gezet als hun type in GETESTE_MODULES true is) ──
+        '- {"type":"meervoud","opdracht":"...","woorden":[{"op":"huis","antwoord":"huizen"}]} — grondwoord → meervoud. Geef bij "op" het grondwoord en bij "antwoord" het juiste meervoud.',
+        '- {"type":"verkleinwoord","opdracht":"...","woorden":[{"op":"boom","antwoord":"boompje"}]} — grondwoord → verkleinwoord.',
+        '- {"type":"verledentijd","opdracht":"...","woorden":[{"op":"lopen","antwoord":"liep"}]} — hele werkwoord → verleden tijd (ik-vorm).',
+        '- {"type":"voltooiddeelwoord","opdracht":"...","woorden":[{"op":"maken","antwoord":"gemaakt"}]} — hele werkwoord → voltooid deelwoord.',
+        '- {"type":"verlengen","opdracht":"...","woorden":[{"op":"hond","antwoord":"honden"}]} — verlengingsregel (d/t): grondwoord → langer gemaakt, zodat je de laatste medeklinker hoort.',
+        '- {"type":"trappen","opdracht":"...","woorden":[{"woord":"groot","antwoord":["groter","grootst"]}]} — trappen van vergelijking: geef vergrotend + overtreffend.',
+        '- {"type":"grondwoord","opdracht":"...","woorden":[{"op":"fietsen","antwoord":"fiets"}]} — geef een afgeleide/vervoegde vorm; het kind schrijft het grondwoord.',
+        '- {"type":"samenstellen","opdracht":"...","woorden":[{"op":"kast + deur","antwoord":"kastdeur"}]} — twee losse woorden → één samenstelling. Zet bij "op" de twee delen met " + ".',
+        '- {"type":"woordfamilie","opdracht":"...","woorden":[{"op":"werk","antwoord":["werken","werker","bewerken"],"aantal":3}]} — bij een grondwoord meerdere woorden uit dezelfde familie schrijven.',
+        '- {"type":"pyramide","opdracht":"...","woorden":["bank","stoel"]} — het kind bouwt elk woord letter voor letter op (het systeem maakt de pyramide + antwoorden).',
+        '- {"type":"woordtrap","opdracht":"...","rijen":[{"woord":"kat","hint":"huisdier dat miauwt"},{"woord":"kar","hint":"een wagen om te trekken"}]} — woordladder: elk volgend woord verschilt ÉÉN letter van het vorige; geef een korte hint per trede. Alle woorden even lang.',
+        '- {"type":"woordslang","opdracht":"...","woorden":["appel","lepel","luipaard"]} — kettingwoorden: de LAATSTE letter van een woord is de EERSTE van het volgende. Controleer dat de ketting echt klopt.',
+        '- {"type":"verstopt","opdracht":"...","woorden":["boom","stoel","raam"]} — het systeem plakt de woorden aan elkaar tot één letterstrook; het kind zoekt de losse woorden.',
+        '- {"type":"letterslinger","opdracht":"...","woorden":["maan","raket","ster"]} — zoals verstopt, maar als één doorlopende slinger.',
+        '- {"type":"alfabetiseren","opdracht":"...","woorden":["banaan","appel","citroen","druif"]} — het systeem husselt ze; het kind zet ze op alfabetische volgorde.',
+        '- {"type":"klanktellen","opdracht":"...","woorden":[{"woord":"bank","klanken":["b","a","n","k"]}]} — één klank per hokje; geef de klankopbouw (losse klanken/klankgroepen) mee.',
+        '- {"type":"klinkers","opdracht":"...","woorden":["fiets","boom","tafel"]} — het kind zet een rondje om de klinkers (het systeem kent de klinkers).',
+        '- {"type":"klankgroepen","opdracht":"...","woorden":[{"woord":"bomen","delen":["bo","men"],"soorten":["open","gesloten"]}]} — verdeel in klankgroepen en geef per klankgroep open of gesloten.',
+        '- {"type":"woordinwoord","opdracht":"...","woorden":[{"woord":"bankstel","verstopt":["bank","stel"]}]} — welke kleine bestaande woorden zitten er in het grote woord.',
+        '- {"type":"woordwaarde","opdracht":"...","woorden":["appel","boom","school"]} — elke letter is punten waard (a=1 … z=26); het systeem rekent de juiste totalen uit.',
+        '- {"type":"woordwaardespel","opdracht":"...","woorden":["appel","boom","school","fiets"]} — als woordwaarde, maar met de vraag welk woord het meeste waard is.',
+        '- {"type":"lettertegels","opdracht":"...","woorden":["tafel","stoel","raam"]} — het systeem husselt de letters tot losse tegels; het kind bouwt het woord in de hokjes.',
+        '- {"type":"oddoneout","opdracht":"...","rijen":[{"woorden":["boom","stoel","fiets","huis"],"fout":2}]} — welk woord hoort er niet bij (fout = index van de vreemde eend); de andere delen een spellingkenmerk.',
+        '- {"type":"regelbenoemen","opdracht":"...","regels":["weetwoord","regelwoord"],"woorden":[{"woord":"ei","regel":"weetwoord"}]} — het kind zet een kruisje in de juiste kolom; "regel" = naam uit de regels-lijst of de index.',
+        '- {"type":"dictee","opdracht":"...","woorden":["fiets","school","meisje"]} — woorddictee: het kind schrijft blanco regels; de woorden staan alleen op het antwoordblad (voor de leerkracht om voor te lezen).',
+        '- {"type":"zinsdictee","opdracht":"...","zinnen":["De vrolijke meisjes fietsen naar school."]} — zinsdictee: blanco schrijfregels; de zinnen staan op het antwoordblad.',
+        '- {"type":"kijkdekschrijf","opdracht":"...","woorden":["ballon","tijger","meisje"]} — kijk, dek af, schrijf uit het hoofd (twee kolommen om te schrijven).',
+        '- {"type":"overschrijf","opdracht":"...","woorden":["schaats","huisje","koning"]} — het woord staat er goed; het kind schrijft het netjes twee keer over (inprenting/handschrift).',
+        '- {"type":"definitie","opdracht":"...","woorden":[{"woord":"telescoop","betekenis":"een kijkbuis om ver weg te kijken"}]} — het kind schrijft zelf een uitleg; de betekenis staat als model op het antwoordblad.',
+        '- {"type":"woordraadsel","opdracht":"...","items":[{"omschrijving":"rond hemellichaam dat \'s nachts schijnt","antwoord":"maan"}]} — omschrijving → het kind schrijft het woord ZELF (geen keuze, geen fout woordbeeld).',
+        '- {"type":"verhaal","opdracht":"...","woorden":["raket","planeet","ster"],"regels":6} — het kind schrijft een kort verhaal met alle doelwoorden erin.',
+        '- {"type":"juistezin","opdracht":"...","items":[{"woord":"hij","a":"Hij loopt naar huis.","b":"Hem loopt naar huis.","goed":0}]} — kies de zin waarin het woord goed is gebruikt; BEIDE zinnen zijn correct GESPELD (het verschil zit in gebruik/betekenis, nooit in een spelfout).',
+        '- {"type":"keuzebord","opdracht":"...","opties":["Schrijf 3 woorden 2× over","Zet 3 woorden op alfabet","Maak een zin met 2 woorden","..."]} — 3×3 keuzebord met korte mini-opdrachten (differentiatie).',
+        '- {"type":"tictactoe","opdracht":"...","woorden":["fiets","school","meisje","tijger","ballon","koning","schaats","huisje","raket"]} — 3×3 rooster met 9 woorden; het kind kiest een rij van drie en schrijft die goed over.'
       ].filter(function (regel) {
         var m = regel.match(/"type":"(\w+)"/);
         return !m || GETESTE_MODULES[m[1]] === true;
