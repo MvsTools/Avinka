@@ -604,6 +604,15 @@
     </div>
 
     <div class="vr">
+      <label class="vr-label">Wat wil je maken?</label>
+      <div class="persp-seg" role="group" aria-label="Analysemodus">
+        <button type="button" class="persp-opt on" data-modus="groep" onclick="iepZetModus('groep')">Groepsanalyse</button>
+        <button type="button" class="persp-opt" data-modus="individueel" onclick="iepZetModus('individueel')">Analyse per leerling</button>
+      </div>
+      <div id="iep-leerlingkeuze" style="display:none;margin-top:14px;"></div>
+    </div>
+
+    <div class="vr">
       <label class="vr-label">Groep <span class="vr-req">*</span></label>
       <select class="iep-native" id="ctx-groep" onchange="handleContextField(this)" aria-label="Groep">
         <option value="">— kies —</option>
@@ -653,10 +662,12 @@
     </div>
 
     <style id="persp-stijl">
-      .persp-seg{display:inline-flex;gap:6px;flex-wrap:wrap;background:var(--warm,#f4f0e9);border-radius:12px;padding:4px;}
-      .persp-opt{font:inherit;font-size:13.5px;font-weight:600;border:none;background:transparent;color:var(--muted,#6b6357);padding:8px 14px;border-radius:9px;cursor:pointer;transition:background .15s,color .15s,box-shadow .15s;}
-      .persp-opt.on{background:#fff;color:var(--ink,#1a1a2e);box-shadow:0 2px 8px rgba(26,22,46,.10);}
-      .persp-hint{font-size:12.5px;color:var(--muted,#6b6357);margin-top:7px;line-height:1.5;}
+      /* Zelfde look als de .seg-knoppen elders in de tool: cream-baan, wit/groen actief. */
+      .persp-seg{display:inline-flex;background:var(--cream);border:1px solid var(--line-strong);border-radius:13px;padding:4px;gap:3px;flex-wrap:wrap;}
+      .persp-opt{font:inherit;font-size:13.5px;font-weight:600;border:none;background:transparent;color:var(--muted2);padding:8px 16px;border-radius:10px;cursor:pointer;transition:.14s;}
+      .persp-opt:hover{color:var(--ink2);}
+      .persp-opt.on{background:#fff;color:var(--accent);font-weight:700;box-shadow:0 3px 9px rgba(34,28,58,0.10);}
+      .persp-hint{font-size:12.5px;color:var(--muted2);margin-top:7px;line-height:1.5;}
     </style>
     <div class="vr">
       <label class="vr-label">Voor wie schrijf je deze analyse?</label>
@@ -664,16 +675,15 @@
         <button type="button" class="persp-opt on" data-perspectief="zelf" onclick="zetPerspectief('zelf')">Voor mezelf</button>
         <button type="button" class="persp-opt" data-perspectief="overdracht" onclick="zetPerspectief('overdracht')">Voor de volgende leerkracht</button>
       </div>
-      <div class="persp-hint">De analyse wordt vanuit jezelf geschreven (ik-vorm), voor je eigen gebruik.</div>
     </div>
 
-    <div class="vr">
+    <div class="vr" id="vr-uitstroom" style="display:none;">
       <label class="vr-label">Uitstroomindicatie</label>
-      <label style="display:inline-flex;align-items:flex-start;gap:9px;cursor:pointer;font-size:14px;line-height:1.45;color:var(--ink);max-width:640px;">
-        <input type="checkbox" id="ctx-vo" onchange="voAanzetten=this.checked" style="width:17px;height:17px;margin-top:2px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">
-        <span>Voeg onderin een VO-uitstroomindicatie per leerling toe (alleen bij E6, M7, E7, B8 en Doorstroomtoets). Puur op de huidige data en streng bedoeld: een indicatie, geen advies.</span>
+      <label style="display:inline-flex;align-items:center;gap:9px;cursor:pointer;font-size:14px;line-height:1.45;color:var(--ink);max-width:640px;">
+        <input type="checkbox" id="ctx-vo" onchange="voAanzetten=this.checked" style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">
+        <span>Voeg een uitstroomindicatie per leerling toe.</span>
       </label>
-      <div class="persp-hint">Standaard uit. Zet 'm aan als je het lijstje bij deze analyse wilt.</div>
+      <div class="persp-hint">Een grove VO-richting op basis van de huidige toetsdata.</div>
     </div>
 
     <div class="vr">
@@ -688,7 +698,7 @@
   </div>
 
   <!-- KAART 3: EIGEN LEERROUTE -->
-  <div class="kaart t-rose">
+  <div class="kaart t-rose" id="kaart-eigenleerroute">
     <div class="kaart-kop">
       <span class="kaart-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H14a4 4 0 0 0 4-4V8.5"/></svg></span>
       <div class="kaart-titel">Eigen leerroute<span class="opt-pill">Optioneel</span></div>
@@ -910,7 +920,6 @@
           <button type="button" class="persp-opt on" data-perspectief="zelf" onclick="zetPerspectief('zelf')">Voor mezelf</button>
           <button type="button" class="persp-opt" data-perspectief="overdracht" onclick="zetPerspectief('overdracht')">Voor de volgende leerkracht</button>
         </div>
-        <div class="persp-hint">De analyse wordt vanuit jezelf geschreven (ik-vorm), voor je eigen gebruik.</div>
       </div>
 
       <div class="vr">
@@ -1053,13 +1062,12 @@ function zetPerspectief(v) {
   synchroniseerPerspectiefUI();
 }
 function synchroniseerPerspectiefUI() {
-  document.querySelectorAll('.persp-opt').forEach(function (el) {
+  // Alleen de actieve knop markeren. NIET de .persp-hint-elementen overschrijven:
+  // die class wordt breder gebruikt (modus-uitleg, uitstroom-hint, max-regel) en die
+  // teksten moeten blijven staan.
+  document.querySelectorAll('.persp-opt[data-perspectief]').forEach(function (el) {
     el.classList.toggle('on', el.getAttribute('data-perspectief') === ctxPerspectief);
   });
-  var hint = ctxPerspectief === 'overdracht'
-    ? 'De analyse wordt neutraal geschreven, als overdracht voor de leerkracht die de groep na de zomer krijgt.'
-    : 'De analyse wordt vanuit jezelf geschreven (ik-vorm), voor je eigen gebruik.';
-  document.querySelectorAll('.persp-hint').forEach(function (el) { el.textContent = hint; });
 }
 // Dit blok komt in overdracht-modus vooraan ELKE prose-systeemprompt (via callClaude),
 // zodat álle paden (schoolformulier, eigen template, cito) in één keer neutraal schrijven.
@@ -1216,6 +1224,9 @@ function bandNiveauSuffix(l) {
 const IEP_VO_MEETMOMENTEN = ['E6', 'M7', 'E7', 'B8', 'Doorstroomtoets'];
 const VO_WEGING = { rekenen: 0.45, lezen: 0.30, taalverzorging: 0.25 };
 let voAanzetten = false; // uitstroomindicatie: standaard UIT; de leerkracht zet 'm aan met het vinkje
+let iepModus = 'groep';              // 'groep' (hele groep) of 'individueel' (rapport per leerling)
+let iepGeselecteerdeLeerlingen = null; // Set van volledige leerlingnamen die individueel geanalyseerd worden
+const IEP_INDIV_MAX = 10;            // max aantal kinderen per individuele ronde (daarboven: doe een groepsanalyse)
 // De IEP-toets heeft per meetmoment een PLAFOND (max haalbare ontwikkelscore). Vóór groep 8
 // ligt dat onder de 80 (2F/1S), dus met vaste absolute grenzen zou niemand de hoogste banden
 // kunnen halen. Daarom: de 1F-ondergrens (60) blijft absoluut, maar de banden daarboven
@@ -1363,6 +1374,7 @@ function handleExcel(input) {
       vulEigenLeerroute();
       iepVulContextUitExcel(file.name); // groep/meetmoment/aantal automatisch voorvullen waar mogelijk
       checkReady();
+      if (iepModus === 'individueel') iepBouwLeerlingkeuze(); // aanvinklijst vullen met de zojuist ingelezen namen
     } catch(err) { showError('Kan Excel niet lezen: ' + err.message); }
   };
   reader.readAsArrayBuffer(file);
@@ -1940,6 +1952,165 @@ function buildIepData() {
   return data;
 }
 
+// ════════════════════════════════════════════════════════════
+// INDIVIDUELE ANALYSE — modus-keuze + leerlingselectie (UI)
+// De groepsweg blijft de standaard. Kiest de leerkracht "Analyse per leerling",
+// dan verschijnt een aanvinklijst met de kinderen uit de upload; per aangevinkt
+// kind komt er een eigen pagina in het rapport (zie genereerIndividueleAnalyse).
+// ════════════════════════════════════════════════════════════
+
+let iepKlasReady = false; // zorgt dat de lijst één keer opnieuw bouwt zodra de klasnamen geladen zijn
+
+// Naam-koppeling met het dashboard: de namen in de IEP-export zijn niet altijd netjes
+// (rare hoofdletters, "Yu tong" i.p.v. "Yutong"). We koppelen elke export-naam aan de
+// voornamen uit de klas (dashboard) en tonen de klas-schrijfwijze. Puur client-side —
+// er gaat hierover niets naar de AI (zie avinka-masking.js). Alleen bij een ZEKERE,
+// unieke match gebruiken we de klasnaam; anders vallen we terug op de export-voornaam.
+function iepNorm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[^a-z0-9]/g, ''); } // NFD + strip = accent/spatie/streepje-ongevoelig
+function iepKoppelNaam(exportNaam) {
+  // 1) Bestaande koppeling: klasnaam = de leidende woorden van de export-naam
+  //    ("Sam Reints Bok" -> klas kent "Sam"). Gebruikt avinkaKlasNamen (dashboard).
+  const uitKlas = voornaamUitKlas(exportNaam);
+  if (uitKlas) return uitKlas;
+  // 2) Extra: spatie-/accent-ongevoelige match (bv. "Yu tong" in de export -> "Yutong" in de klas).
+  let klas = (avinkaKlasNamen && avinkaKlasNamen.length) ? avinkaKlasNamen : [];
+  if (!klas.length) { try { klas = (window.avinkaMask && window.avinkaMask.namen && window.avinkaMask.namen()) || []; } catch (e) { klas = []; } }
+  if (!klas.length) return null;
+  const vExport = iepNorm(voornaamVan(exportNaam)), vHeel = iepNorm(exportNaam);
+  if (!vExport && !vHeel) return null;
+  const treffers = [...new Set(klas
+    .filter(k => { const kv = iepNorm(voornaamVan(k)); return kv && (kv === vExport || iepNorm(k) === vHeel); })
+    .map(k => voornaamVan(k)))];
+  return treffers.length === 1 ? treffers[0] : null; // alleen bij één ondubbelzinnige match
+}
+
+// Alle leerlingnamen uit de upload (Groepsresultaten + vak-tabbladen), ontdubbeld op
+// volledige naam. Weergave = de klasnaam uit het dashboard als die zeker matcht, anders
+// de export-voornaam; bij dubbele voornamen de volledige naam ter onderscheid.
+function iepLeerlingNamen() {
+  if (!excelRaw || !Object.keys(excelRaw).length) return [];
+  const map = new Map(); // volledige naam -> { naam, voornaam }
+  const voegToe = ruw => {
+    const n = (ruw || '').trim();
+    if (n && !/gemiddelde/i.test(n) && n.toLowerCase() !== 'leerling' && !map.has(n)) map.set(n, { naam: n, voornaam: voornaamVan(n) });
+  };
+  if (excelRaw['Groepsresultaten']) {
+    const rows = parseCSVtext(excelRaw['Groepsresultaten']);
+    for (let r = 2; r < rows.length; r++) voegToe(rows[r] && rows[r][0]);
+  }
+  ['Rekenen', 'Taalverzorging', 'Lezen'].forEach(sheet => {
+    if (!excelRaw[sheet]) return;
+    parseVakSheet(parseCSVtext(excelRaw[sheet])).forEach(b => b.leerlingen.forEach(l => voegToe(l.naam)));
+  });
+  const lijst = [...map.values()];
+  // Bij dubbele voornamen: toon de volledige naam zodat je ze uit elkaar houdt.
+  const telVoornaam = {};
+  lijst.forEach(x => { telVoornaam[x.voornaam.toLowerCase()] = (telVoornaam[x.voornaam.toLowerCase()] || 0) + 1; });
+  lijst.forEach(x => {
+    x.koppel = iepKoppelNaam(x.naam); // klasnaam uit dashboard (of null)
+    if (telVoornaam[x.voornaam.toLowerCase()] > 1) x.weergave = x.naam; // dubbele voornaam -> volledige naam
+    else x.weergave = x.koppel || x.voornaam;
+  });
+  return lijst.sort((a, b) => a.weergave.localeCompare(b.weergave, 'nl'));
+}
+
+// Wissel tussen groeps- en individuele modus; toon/verberg de aanvinklijst.
+function iepZetModus(m) {
+  iepModus = m;
+  document.querySelectorAll('.persp-seg [data-modus]').forEach(b => b.classList.toggle('on', b.dataset.modus === m));
+  const keuze = document.getElementById('iep-leerlingkeuze');
+  const elrKaart = document.getElementById('kaart-eigenleerroute');
+  if (m === 'individueel') {
+    iepBouwLeerlingkeuze();
+    keuze.style.display = '';
+    if (elrKaart) elrKaart.style.display = 'none'; // eigen leerroute slaat per leerling nergens op
+    // Klasnamen laden async; zodra ze binnen zijn de lijst één keer verversen (betere namen).
+    if (window.avinkaMask && !iepKlasReady) { iepKlasReady = true; window.avinkaMask.ready.then(() => { if (iepModus === 'individueel') iepBouwLeerlingkeuze(); }).catch(() => {}); }
+  } else {
+    keuze.style.display = 'none';
+    if (elrKaart) elrKaart.style.display = '';
+  }
+  iepUpdateKnopLabel();
+}
+
+// Bouw de aanvinklijst met leerlingen (standaard allemaal aangevinkt).
+function iepBouwLeerlingkeuze() {
+  const box = document.getElementById('iep-leerlingkeuze');
+  if (!box) return;
+  const lln = iepLeerlingNamen();
+  if (!lln.length) {
+    iepGeselecteerdeLeerlingen = new Set();
+    box.innerHTML = '<div class="persp-hint" style="margin-top:0;">Upload eerst je IEP-export; daarna verschijnen hier de namen om aan te vinken.</div>';
+    iepUpdateKnopLabel();
+    return;
+  }
+  // Standaard alles geselecteerd, maar alleen als het er niet meer dan de max zijn.
+  // Bij een grotere klas start de lijst leeg, zodat je bewust maximaal 10 kinderen kiest.
+  const bestaat = new Set(lln.map(x => x.naam));
+  if (!iepGeselecteerdeLeerlingen) iepGeselecteerdeLeerlingen = new Set(lln.length <= IEP_INDIV_MAX ? lln.map(x => x.naam) : []);
+  else iepGeselecteerdeLeerlingen = new Set([...iepGeselecteerdeLeerlingen].filter(n => bestaat.has(n)).slice(0, IEP_INDIV_MAX));
+
+  const chip = x => {
+    const aan = iepGeselecteerdeLeerlingen.has(x.naam);
+    // Naam via data-attribuut (browser decodeert 'm terug), zodat apostrofs/quotes veilig zijn.
+    return `<label class="iep-ll-chip${aan ? ' on' : ''}" title="${escapeHtml(x.naam)}">`
+      + `<input type="checkbox" ${aan ? 'checked' : ''} data-naam="${escapeHtml(x.naam)}" onchange="iepToggleLeerling(this)">`
+      + `<span>${escapeHtml(x.weergave)}</span></label>`;
+  };
+  box.innerHTML =
+    `<style>
+      .iep-ll-bar{margin-bottom:10px;}
+      .iep-ll-bar .telling{font-size:13px;color:var(--muted2);font-weight:600;}
+      .iep-ll-grid{display:flex;flex-wrap:wrap;gap:8px;}
+      .iep-ll-chip{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;background:#fff;border:1.5px solid var(--line-strong);border-radius:11px;padding:7px 12px;cursor:pointer;transition:.15s;user-select:none;}
+      .iep-ll-chip:hover{border-color:var(--accent);}
+      .iep-ll-chip.on{border-color:var(--accent);background:var(--violet-soft);}
+      .iep-ll-chip input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;margin:0;}
+    </style>`
+    + `<div class="iep-ll-bar"><span class="telling" id="iep-ll-telling"></span></div>`
+    + `<div class="iep-ll-grid">${lln.map(chip).join('')}</div>`;
+  iepUpdateTelling();
+  iepUpdateKnopLabel();
+}
+
+function iepToggleLeerling(el) {
+  const naam = el.dataset.naam;
+  if (!iepGeselecteerdeLeerlingen) iepGeselecteerdeLeerlingen = new Set();
+  if (el.checked) {
+    // Cap: niet meer dan de max aanvinken. Bij overschrijding het vinkje terugdraaien.
+    if (iepGeselecteerdeLeerlingen.size >= IEP_INDIV_MAX && !iepGeselecteerdeLeerlingen.has(naam)) {
+      el.checked = false;
+      showError(`Je kunt maximaal ${IEP_INDIV_MAX} kinderen tegelijk individueel analyseren. Vink er eerst een af, of kies een groepsanalyse.`);
+      return;
+    }
+    iepGeselecteerdeLeerlingen.add(naam);
+  } else {
+    iepGeselecteerdeLeerlingen.delete(naam);
+  }
+  el.closest('.iep-ll-chip').classList.toggle('on', el.checked);
+  iepUpdateTelling();
+  iepUpdateKnopLabel();
+}
+
+function iepUpdateTelling() {
+  const el = document.getElementById('iep-ll-telling');
+  if (!el) return;
+  const n = iepGeselecteerdeLeerlingen ? iepGeselecteerdeLeerlingen.size : 0;
+  el.textContent = `${n} van ${IEP_INDIV_MAX} gekozen`;
+}
+
+// Knoplabel meebewegen met de modus (en met het aantal gekozen kinderen).
+function iepUpdateKnopLabel() {
+  const span = document.querySelector('#btn-analyse span');
+  if (!span) return;
+  if (iepModus === 'individueel') {
+    const n = iepGeselecteerdeLeerlingen ? iepGeselecteerdeLeerlingen.size : 0;
+    span.textContent = n ? `Maak ${n} leerlingrapport${n === 1 ? '' : 'en'}` : 'Maak leerlingrapporten';
+  } else {
+    span.textContent = 'Analyseer toetsgegevens';
+  }
+}
+
 // Parse de bijzonderheden op uitsluitingen: leerlingen die op een eigen leerroute
 // zitten of expliciet niet meegeteld moeten worden. Koppelt uitsluit-intentie aan
 // bekende leerlingnamen die in dezelfde zin/regel voorkomen.
@@ -2440,7 +2611,21 @@ function handleContextField(el) {
   ctxStreefdoel = (sd >= 1 && sd <= 100) ? sd : null;
   const s1s = parseInt(document.getElementById('ctx-streef-1s').value, 10);
   ctxStreef1S = (s1s >= 1 && s1s <= 100) ? s1s : null;
+  iepUpdateUitstroomZichtbaar();
   checkReady();
+}
+// De uitstroomindicatie is alleen zinvol vanaf E6; toon de optie alleen bij die meetmomenten
+// (E6/M7/E7/B8/Doorstroomtoets), of ze nu uit de upload komen of handmatig gekozen zijn.
+function iepUpdateUitstroomZichtbaar() {
+  const blok = document.getElementById('vr-uitstroom');
+  if (!blok) return;
+  const mag = IEP_VO_MEETMOMENTEN.indexOf((ctxMeetmoment || '').trim()) !== -1;
+  blok.style.display = mag ? '' : 'none';
+  if (!mag) { // verborgen -> keuze terugzetten zodat er geen stille 'aan' blijft hangen
+    const cb = document.getElementById('ctx-vo');
+    if (cb) cb.checked = false;
+    voAanzetten = false;
+  }
 }
 function checkReady() {
   // Eigen template is optioneel: de knop activeert met Excel + API-sleutel + groepsgegevens.
@@ -3940,6 +4125,358 @@ async function etplBouwDocxBlob(cats, teksten) {
 }
 
 // ════════════════════════════════════════════════════════════
+// INDIVIDUELE ANALYSE — rapport per leerling (één pagina per kind)
+// Aparte weg naast de groepsanalyse. Hergebruikt dezelfde geparste data
+// (iepData) en de kruisprofielen (etplCategoriseer), maar bouwt per gekozen
+// leerling een eigen pagina: waar het kind staat, hoe het zich verhoudt tot de
+// groep en waar het uitvalt. Namen blijven gemaskeerd naar de AI (via callClaude).
+// ════════════════════════════════════════════════════════════
+
+// Bouw per geselecteerde leerling een compleet profiel uit de al berekende data.
+function bouwLeerlingProfielen(cats) {
+  const VAKKEN = ['rekenen', 'taalverzorging', 'lezen'];
+  const actieve = VAKKEN.filter(vk => iepData.vakken && iepData.vakken[vk]);
+  const sel = iepGeselecteerdeLeerlingen || new Set();
+  const voData = berekenVOIndicatie(); // null als het meetmoment niet in aanmerking komt
+
+  // Groepsgemiddelde ontwikkelscore per vak (alleen referentietoets, niet-uitgesloten).
+  const groepGem = {};
+  actieve.forEach(vk => {
+    const rs = iepData.vakken[vk].alleLeerlingen
+      .filter(x => !x.excluded && isReferentieToets(x.variant) && typeof x.score === 'number')
+      .map(x => x.score);
+    groepGem[vk] = rs.length ? Math.round(rs.reduce((a, b) => a + b, 0) / rs.length) : null;
+  });
+
+  const uit = [];
+  [...sel].forEach(volledigeNaam => {
+    const perVak = [];
+    let weergaveNaam = volledigeNaam, voornaam = voornaamVan(volledigeNaam);
+    actieve.forEach(vk => {
+      const v = iepData.vakken[vk];
+      const rijen = v.alleLeerlingen.filter(l => l.naam === volledigeNaam && !l.excluded);
+      if (!rijen.length) return;
+      // Beste rij: referentietoets met score > numerieke score > eerste rij.
+      const l = rijen.find(x => isReferentieToets(x.variant) && typeof x.score === 'number')
+        || rijen.find(x => typeof x.score === 'number') || rijen[0];
+      if (l.weergaveNaam) { weergaveNaam = l.weergaveNaam; voornaam = l.voornaam || voornaam; }
+      const cellen = v.scoreverdeling.cellen;
+      const bandKey = ['hoogste', 'drempel', 'onder1f', 'opweg'].find(k => cellen[k].includes(l)) || null;
+      const bl = bandLabels(ctxMeetmoment, vk);
+      const bandTekst = bandKey
+        ? ({ hoogste: bl.hoogste, drempel: bl.drempel, onder1f: bl.onder1fLang || bl.onder1f, opweg: bl.opwegLang || bl.opweg }[bandKey])
+        : (isGeenResultaat(l) ? 'Geen resultaat (te moeilijk)' : '—');
+      const terug = !isReferentieToets(l.variant);
+      const dom = etplELDomeinen(l.domeinScores);
+      const gg = terug ? null : groepGem[vk];
+      perVak.push({
+        vakKey: vk, label: VAK_LABELS[vk],
+        score: (typeof l.score === 'number') ? l.score : null,
+        niveau: l.niveau || '', variant: l.variant || '',
+        teruggetoetst: terug, geenResultaat: isGeenResultaat(l),
+        bandKey, bandLabel: bandTekst, drempel: v.scoreverdeling.drempel,
+        groepGem: gg, verschil: (gg != null && typeof l.score === 'number' && !terug) ? (l.score - gg) : null,
+        zwak: dom.zwak.slice(0, 3), sterk: dom.sterk.slice(0, 2),
+        contextKaal: l.contextKaal || null,
+        achterstand: (cats.dl != null && typeof l.dle === 'number') ? Math.round(cats.dl - l.dle) : null
+      });
+    });
+    if (!perVak.length) return; // geen analyseerbare data voor dit kind -> overslaan
+
+    // Kruisprofielen (match op weergavenaam, consistent met etplCategoriseer).
+    const wn = weergaveNaam, kr = cats.kruis, prof = [];
+    if (kr.bredeZorg.includes(wn)) prof.push('Onder de drempel op alle drie de kernvakken; brede basisondersteuning werkt hier beter dan losse domeingroepjes');
+    else if (kr.tweeVakken.includes(wn)) {
+      if (kr.taligZwakRekensterk.includes(wn)) prof.push('Onder de drempel op twee vakken: sterk in rekenen, maar zwak op de talige vakken');
+      else if (kr.rekenzwakSterkerLezen.includes(wn)) prof.push('Onder de drempel op twee vakken: lezen is een steunpunt, rekenen en taalverzorging nog niet op niveau');
+      else prof.push('Onder de drempel op twee kernvakken');
+    } else {
+      Object.entries(kr.eenZorgvak).forEach(([vak, namen]) => { if (namen.includes(wn)) prof.push('Eén zorgvak: ' + vak + ' (op de andere vakken op niveau, dus gerichte hulp volstaat)'); });
+    }
+    if (kr.kopgroep.includes(wn)) prof.push('Sterke kopgroep: op of boven de drempel op alle kernvakken; bied verdieping en uitdaging');
+    if (kr.doorwerkendLees.includes(wn)) prof.push('Doorwerkend leesprofiel: moeite met contextsommen én met opzoeken bij lezen');
+    if (kr.teruggetoetstMeervoudig.includes(wn)) prof.push('Op meerdere vakken op een lager niveau getoetst; het juiste niveau verdient een aanvullende analyse');
+
+    let vo = null;
+    if (voData) {
+      const a = voData.advies.find(x => x.naam === wn);
+      if (a) vo = { richting: a.richting, gewogen: a.gewogen };
+      else if (voData.geenAdvies.find(g => g.naam === wn)) vo = { geen: true };
+    }
+
+    // toonNaam = klasnaam uit dashboard als die zeker matcht, anders de export-weergavenaam.
+    // De matching hierboven blijft op de export-naam (wn), zodat de kruisprofielen kloppen.
+    uit.push({ naam: volledigeNaam, weergaveNaam: wn, toonNaam: iepKoppelNaam(volledigeNaam) || wn, voornaam, vakken: perVak, profielen: prof, vo });
+  });
+
+  uit.sort((a, b) => a.toonNaam.localeCompare(b.toonNaam, 'nl'));
+  return uit;
+}
+
+// Feitelijke terugvaltekst als de AI overslaat (budget op) of faalt: puur uit de data.
+function iepLeerlingFeiten(ld) {
+  const delen = [];
+  ld.vakken.forEach(v => {
+    if (v.teruggetoetst) { delen.push(`${v.label}: op een lager niveau getoetst (${v.variant || v.niveau || 'aangepaste toets'}).`); return; }
+    if (v.geenResultaat) { delen.push(`${v.label}: geen resultaat, de toets was te moeilijk.`); return; }
+    let z = `${v.label}: ontwikkelscore ${v.score}`;
+    if (v.bandLabel && v.bandLabel !== '—') z += ` (${v.bandLabel.toLowerCase()})`;
+    if (v.verschil != null) z += `, ${v.verschil > 0 ? v.verschil + ' boven' : (v.verschil < 0 ? (-v.verschil) + ' onder' : 'gelijk aan')} het groepsgemiddelde`;
+    delen.push(z + '.');
+  });
+  return delen.join(' ');
+}
+
+// AI-tekst per leerling: duiding ("waar staat het kind") + aandachtspunten. JSON-uitvoer.
+function iepLeerlingSysteem() {
+  return `Je bent een ervaren leerkracht in het basisonderwijs die de toetsresultaten van ÉÉN leerling beschrijft op basis van VOORBEREKENDE cijfers. Je rekent zelf niets uit en verzint geen getallen, domeinen of namen.
+
+Noem de leerling nooit bij naam; schrijf "deze leerling". Anonieme codes (LL-01, ...) die je toevallig tegenkomt gebruik je niet.
+
+Schrijf in gewone spreektaal, vanuit jezelf als leerkracht ("Ik zie...", "Deze leerling..."). Wees eerlijk over waar het kind uitvalt, maar benoem net zo goed wat sterk gaat. Een band als "op weg naar 1F", "op weg naar <periode>" of "lager" betekent ACHTERSTAND, niet "bijna goed"; een leerling die onder het groepsgemiddelde zit maar de drempelwaarde haalt, zit op niveau. Gebruik de bandnamen en cijfers exact zoals gegeven; verzin er niets bij. Gebruik GEEN gedachtestreepje (— of –); schrijf met gewone komma's, punten of "want". Geen AI-taal, geen wollige inleiding, begin direct.
+
+Antwoord UITSLUITEND met geldige JSON, zonder tekst eromheen: {"duiding": "...", "aandacht": "..."} — "duiding" = 3 tot 4 zinnen over waar de leerling staat en hoe dat zich verhoudt tot de groep; "aandacht" = 2 tot 3 zinnen met concrete aandachtspunten en kansen, als suggestie.`;
+}
+
+function iepLeerlingPrompt(ld) {
+  let s = `GROEP: ${ctxGroep} · MEETMOMENT: ${ctxMeetmoment}\nHet gaat over ÉÉN leerling. Noem geen naam.\n\nPER VAK:\n`;
+  ld.vakken.forEach(v => {
+    if (v.teruggetoetst) { s += `- ${v.label}: op een lager niveau getoetst (${v.variant || v.niveau}). Ligt op een andere schaal, dus niet met het groepsgemiddelde te vergelijken.\n`; return; }
+    if (v.geenResultaat) { s += `- ${v.label}: geen resultaat, de toets was te moeilijk; moet lager teruggetoetst worden.\n`; return; }
+    s += `- ${v.label}: ontwikkelscore ${v.score}`;
+    if (v.drempel != null) s += `, drempelwaarde ${v.drempel}`;
+    if (v.groepGem != null) s += `, groepsgemiddelde ${v.groepGem}`;
+    s += `. Positie: ${v.bandLabel || '—'}.`;
+    if (v.verschil != null) s += ` Dat is ${v.verschil > 0 ? v.verschil + ' punten boven' : (v.verschil < 0 ? (-v.verschil) + ' punten onder' : 'gelijk aan')} het groepsgemiddelde.`;
+    if (v.zwak && v.zwak.length) s += ` Valt uit op: ${v.zwak.map(d => `${d.domein} (${d.pct}%)`).join(', ')}.`;
+    if (v.sterk && v.sterk.length) s += ` Sterk op: ${v.sterk.map(d => `${d.domein} (${d.pct}%)`).join(', ')}.`;
+    if (v.contextKaal && v.contextKaal.context != null && v.contextKaal.kaal != null) s += ` Contextsommen ${Math.round(v.contextKaal.context * 100)}% vs. kale sommen ${Math.round(v.contextKaal.kaal * 100)}%.`;
+    if (v.achterstand != null && v.achterstand >= 1) s += ` Achterstand ~${v.achterstand} maanden.`;
+    s += `\n`;
+  });
+  if (ld.profielen && ld.profielen.length) s += `\nBEELD OVER DE VAKKEN HEEN: ${ld.profielen.join('; ')}.\n`;
+  if (ld.vo && !ld.vo.geen) s += `\nUITSTROOMINDICATIE (huidige data, streng bedoeld, geen advies): richting ${ld.vo.richting}, gewogen ontwikkelscore ${ld.vo.gewogen}.\n`;
+  s += `\nSchrijf nu de "duiding" en "aandacht" voor deze leerling. Gebruik uitsluitend de gegeven cijfers.`;
+  return s;
+}
+
+async function iepSchrijfLeerlingTekst(ld) {
+  try {
+    const raw = await callClaude('claude-sonnet-4-6', iepLeerlingSysteem(), iepLeerlingPrompt(ld), 700);
+    const j = extractJSON(raw) || {};
+    return { duiding: schoonStijl((j.duiding || '').trim()), aandacht: schoonStijl((j.aandacht || '').trim()) };
+  } catch (e) { return null; }
+}
+
+// Bouwt het Word-document met één pagina per leerling. Zelfstandige helpers (closures),
+// in dezelfde stijl als etplBouwDocxBlob, zodat er geen naamconflicten ontstaan.
+async function iepBouwLeerlingDocxBlob(leerlingen, teksten) {
+  teksten = teksten || {};
+  const INK = '1A1A2E', ACCENT = 'C8553D', TEAL = '3F6F63', MUTED = '6B6357';
+  const HEADFILL = 'EDE7DD', LIGHT = 'FAF7F2';
+  const CW = 9026;
+  const xe = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  function R(text, o) { o = o || {};
+    let rpr = '<w:rFonts w:ascii="Arial" w:hAnsi="Arial"/>';
+    if (o.bold) rpr += '<w:b/>'; if (o.italic) rpr += '<w:i/>';
+    rpr += `<w:color w:val="${o.color || INK}"/><w:sz w:val="${o.size || 21}"/>`;
+    return `<w:r><w:rPr>${rpr}</w:rPr><w:t xml:space="preserve">${xe(text)}</w:t></w:r>`; }
+  function P(runsXml, o) { o = o || {};
+    let ppr = '';
+    if (o.pageBreak) ppr += '<w:pageBreakBefore/>';
+    if (o.numId) ppr += `<w:numPr><w:ilvl w:val="0"/><w:numId w:val="${o.numId}"/></w:numPr>`;
+    if (o.bottom) ppr += `<w:pBdr><w:bottom w:val="single" w:sz="${o.bottom}" w:space="4" w:color="${o.bottomColor || ACCENT}"/></w:pBdr>`;
+    const sb = o.before == null ? 40 : o.before, sa = o.after == null ? 100 : o.after;
+    ppr += `<w:spacing w:before="${sb}" w:after="${sa}" w:line="264" w:lineRule="auto"/>`;
+    if (o.ind) ppr += `<w:ind w:left="${o.ind}"/>`;
+    return `<w:p><w:pPr>${ppr}</w:pPr>${runsXml}</w:p>`; }
+  const H1 = (t, brk) => P(R(t, { bold: true, size: 32 }), { pageBreak: brk, before: brk ? 0 : 120, after: 40, bottom: 10 });
+  const QL = t => P(R(t, { bold: true, size: 21 }), { before: 150, after: 30 });
+  const body = (x, o) => P(x, Object.assign({ size: 21, after: 60 }, o || {}));
+  const bullet = x => P(x, { numId: 1, after: 50 });
+  const placeholder = t => P(R(t, { italic: true, size: 20, color: ACCENT }), { before: 30, after: 60 });
+  const noteLine = t => P(R(t, { italic: true, size: 17, color: MUTED }), { before: 60 });
+  const cell = (paras, w, fill) => `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${fill ? `<w:shd w:val="clear" w:color="auto" w:fill="${fill}"/>` : ''}<w:tcMar><w:top w:w="70"/><w:left w:w="110"/><w:bottom w:w="70"/><w:right w:w="110"/></w:tcMar></w:tcPr>${paras || '<w:p/>'}</w:tc>`;
+  const tblBorders = `<w:tblBorders>${['top','left','bottom','right','insideH','insideV'].map(s => `<w:${s} w:val="single" w:sz="4" w:space="0" w:color="D8D0C2"/>`).join('')}</w:tblBorders>`;
+  function table(colWidths, rows) {
+    const total = colWidths.reduce((a, b) => a + b, 0);
+    const grid = colWidths.map(w => `<w:gridCol w:w="${w}"/>`).join('');
+    const trs = rows.map(r => `<w:tr>${r.map(c => cell(c.p, c.w, c.fill)).join('')}</w:tr>`).join('');
+    return `<w:tbl><w:tblPr><w:tblW w:w="${total}" w:type="dxa"/>${tblBorders}<w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>${grid}</w:tblGrid>${trs}</w:tbl>` + P('', { after: 60 });
+  }
+
+  function leerlingSectie(ld, idx) {
+    const K = [];
+    K.push(H1(ld.toonNaam || ld.weergaveNaam, idx > 0));
+    K.push(P(R((ctxGroep || '—') + ' · meetmoment ' + (ctxMeetmoment || '—') + ' · IEP (Bureau ICE) · ' + new Date().toLocaleDateString('nl-NL'), { italic: true, size: 19, color: MUTED }), { after: 40 }));
+    K.push(P(R('Indicatie op basis van de toetsdata. ', { bold: true, size: 18, color: ACCENT }) + R('Alle cijfers komen uit de IEP-export en de IEP-normtabellen; de leerkracht blijft eindverantwoordelijk.', { size: 18, color: MUTED }), { after: 100 }));
+
+    // Tabel per vak
+    const ws = [1700, 1300, 1300, 2126, 1300, 1300];
+    const hd = ['Vakgebied', 'Ontw.score', 'Niveau', 'Positie', 'Groepsgem.', 't.o.v. groep'];
+    const rows = [hd.map((h, i) => ({ p: P(R(h, { bold: true, size: 17 })), w: ws[i], fill: HEADFILL }))];
+    ld.vakken.forEach(v => {
+      const scoreTxt = v.geenResultaat || v.score == null ? '—' : String(v.score);
+      const niveauTxt = v.teruggetoetst ? (v.variant || v.niveau || '—') : (v.niveau || '—');
+      const posTxt = v.bandLabel || '—';
+      const ggTxt = (v.teruggetoetst || v.groepGem == null) ? '—' : String(v.groepGem);
+      const versTxt = v.verschil == null ? '—' : (v.verschil > 0 ? '+' + v.verschil : (v.verschil < 0 ? String(v.verschil) : 'gelijk'));
+      rows.push([
+        { p: P(R(v.label, { bold: true, size: 18, color: TEAL })), w: ws[0], fill: LIGHT },
+        { p: P(R(scoreTxt, { size: 18 })), w: ws[1] },
+        { p: P(R(niveauTxt, { size: 18 })), w: ws[2] },
+        { p: P(R(posTxt, { size: 18 })), w: ws[3] },
+        { p: P(R(ggTxt, { size: 18 })), w: ws[4] },
+        { p: P(R(versTxt, { size: 18, color: v.verschil != null && v.verschil < 0 ? ACCENT : INK })), w: ws[5] }
+      ]);
+    });
+    K.push(table(ws, rows));
+
+    const t = teksten[ld.naam] || null;
+    K.push(QL('Waar staat deze leerling?'));
+    K.push((t && t.duiding) ? body(R(t.duiding, { size: 21 })) : body(R(iepLeerlingFeiten(ld), { size: 21 })));
+
+    K.push(QL('Sterke kanten en waar het uitvalt'));
+    let anyDom = false;
+    ld.vakken.forEach(v => {
+      if (v.teruggetoetst || v.geenResultaat) return;
+      const parts = [];
+      if (v.zwak && v.zwak.length) parts.push('valt uit op ' + v.zwak.map(d => d.domein + ' (' + d.pct + '%)').join(', '));
+      if (v.sterk && v.sterk.length) parts.push('sterk op ' + v.sterk.map(d => d.domein + ' (' + d.pct + '%)').join(', '));
+      if (v.contextKaal && v.contextKaal.context != null && v.contextKaal.kaal != null) {
+        const c = Math.round(v.contextKaal.context * 100), k = Math.round(v.contextKaal.kaal * 100);
+        if (Math.abs(c - k) >= 15) parts.push(c < k ? 'moeite met contextsommen (' + c + '%) t.o.v. kale sommen (' + k + '%)' : 'moeite met kale sommen (' + k + '%) t.o.v. contextsommen (' + c + '%)');
+      }
+      if (parts.length) { anyDom = true; K.push(bullet(R(v.label + ': ', { bold: true, size: 20 }) + R(parts.join('; ') + '.', { size: 20 }))); }
+    });
+    if (!anyDom) K.push(body(R('Geen scherpe uitschieters in de onderdelen; het beeld is gelijkmatig over de domeinen.', { size: 20, color: MUTED })));
+
+    K.push(QL('Aandachtspunten en kansen'));
+    K.push((t && t.aandacht) ? body(R(t.aandacht, { size: 21 })) : placeholder('(kon niet automatisch worden geschreven — controleer de API-sleutel of vul zelf aan)'));
+
+    if (ld.profielen && ld.profielen.length) {
+      K.push(QL('Beeld over de vakken heen'));
+      ld.profielen.forEach(pf => K.push(bullet(R(pf + '.', { size: 20 }))));
+    }
+
+    if (ld.vo) {
+      K.push(QL('Uitstroomindicatie op basis van de huidige data'));
+      if (ld.vo.geen) {
+        K.push(body(R('Geen indicatie mogelijk: een kernvak ontbreekt of is buiten beschouwing gelaten.', { size: 20, color: MUTED })));
+      } else {
+        K.push(body(R('Richting: ', { bold: true, size: 21 }) + R(ld.vo.richting, { size: 21 }) + R('  (gewogen ontwikkelscore ' + ld.vo.gewogen + ').', { size: 20, color: MUTED })));
+        K.push(noteLine('Indicatie, geen advies. Puur op de huidige toetsscores, zonder groeiverwachting; de schoolstandaard en de leerkracht bepalen het echte advies.'));
+      }
+    }
+    return K.join('');
+  }
+
+  function buildDocumentXml() {
+    const K = [];
+    leerlingen.forEach((ld, i) => { K.push(leerlingSectie(ld, i)); });
+    const sect = '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr>';
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + K.join('') + sect + '</w:body></w:document>';
+  }
+
+  const docXml = buildDocumentXml();
+  const parts = {
+    '[Content_Types].xml': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/></Types>',
+    '_rels/.rels': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>',
+    'word/_rels/document.xml.rels': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/></Relationships>',
+    'word/styles.xml': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:sz w:val="21"/><w:szCs w:val="21"/></w:rPr></w:rPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>',
+    'word/numbering.xml': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="460" w:hanging="240"/></w:pPr><w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol" w:hint="default"/><w:color w:val="' + ACCENT + '"/></w:rPr></w:lvl></w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>',
+    'word/document.xml': docXml
+  };
+  const zip = new JSZip();
+  Object.entries(parts).forEach(([k, v]) => zip.file(k, v));
+  return zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+}
+
+// Orkestreert de individuele analyse: profielen -> AI per kind -> document -> download.
+async function genereerIndividueleAnalyse() {
+  const wacht = ms => new Promise(r => setTimeout(r, ms));
+
+  // Onzekere namen eerst laten bevestigen (ze komen als kop in het document).
+  if (naamCorrecties.some(c => !c.auto)) {
+    document.getElementById('loading-box').classList.remove('visible');
+    toonNaamModal();
+    await new Promise(res => { etplNaamResolve = res; });
+    document.getElementById('loading-box').classList.add('visible');
+  }
+  etplPasNamenToe();
+
+  if (!iepGeselecteerdeLeerlingen || !iepGeselecteerdeLeerlingen.size) {
+    document.getElementById('loading-box').classList.remove('visible');
+    document.getElementById('btn-analyse').disabled = false;
+    showError('Kies eerst minstens één leerling om te analyseren.');
+    return;
+  }
+  if (iepGeselecteerdeLeerlingen.size > IEP_INDIV_MAX) {
+    document.getElementById('loading-box').classList.remove('visible');
+    document.getElementById('btn-analyse').disabled = false;
+    showError(`Maximaal ${IEP_INDIV_MAX} kinderen per individuele ronde. Vink er een paar af of kies een groepsanalyse.`);
+    return;
+  }
+
+  setupProgress(['Toetsgegevens inlezen', 'Leerlingprofielen samenstellen', 'AI schrijft per leerling', 'Leerlingrapport opmaken']);
+  setProg(0, 'active'); setSub('Scores en niveaus per leerling verzamelen…'); await wacht(300); setProg(0, 'done');
+
+  let leerlingen, teksten = {}, blob;
+  try {
+    setProg(1, 'active'); setSub('Per kind de positie t.o.v. de groep bepalen…');
+    if (window.avinkaMask) { try { await window.avinkaMask.ready; } catch (e) {} } // klasnamen voor nette koppen
+    const cats = etplCategoriseer(); window.__etplCats = cats;
+    leerlingen = bouwLeerlingProfielen(cats);
+    await wacht(200); setProg(1, 'done');
+    if (!leerlingen.length) throw new Error('Geen analyseerbare toetsdata voor de gekozen leerlingen.');
+
+    setProg(2, 'active');
+    etplHerbouwNameMap();
+    let i = 0;
+    for (const ld of leerlingen) {
+      i++;
+      setSub(`De AI schrijft rapport ${i} van ${leerlingen.length}…`);
+      if (budgetOp()) { kostenCapBereikt = true; teksten[ld.naam] = null; continue; }
+      teksten[ld.naam] = await iepSchrijfLeerlingTekst(ld);
+    }
+    setProg(2, 'done');
+
+    setProg(3, 'active'); setSub('Leerlingrapport opmaken…');
+    blob = await iepBouwLeerlingDocxBlob(leerlingen, teksten); setProg(3, 'done'); setSub('');
+  } catch (e) {
+    document.getElementById('loading-box').classList.remove('visible');
+    document.getElementById('btn-analyse').disabled = false;
+    showError('Het opbouwen van de leerlingrapporten gaf een fout: ' + e.message);
+    return;
+  }
+
+  document.getElementById('loading-box').classList.remove('visible');
+  // De schooltemplate-knoppen horen bij deze weg niet; verberg ze.
+  document.getElementById('btn-download').style.display = 'none';
+  const diagBtn = document.querySelector('#result-box button[onclick="downloadDiagnose()"]');
+  if (diagBtn) diagBtn.style.display = 'none';
+
+  document.getElementById('result-subtitle').textContent = `Leerlingrapport — ${leerlingen.length} leerling${leerlingen.length === 1 ? '' : 'en'}`;
+  const w = document.getElementById('result-warnings');
+  const extra = kostenCapBereikt
+    ? '<div style="font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:6px;">Bij een deel van de leerlingen is de AI-tekst overgeslagen om de kosten te beperken; daar staan de feiten uit de data. Je kunt die stukjes zelf aanvullen.</div>' : '';
+  try {
+    const url = URL.createObjectURL(blob);
+    const bestand = `Leerlingrapport_${(ctxGroep || '').replace(/\s/g, '')}_${ctxMeetmoment || ''}_${new Date().toISOString().slice(0, 10)}.docx`;
+    const dl = `<a class="btn-analyse" style="text-decoration:none;margin-bottom:12px;" href="${url}" download="${escapeHtml(bestand)}"><span>⬇</span><span>Download leerlingrapport</span></a>`;
+    const note = `<div style="font-size:12.5px;color:var(--muted);line-height:1.55;">Eén pagina per kind. Controleer de tekst altijd even vóór gebruik.</div>`;
+    w.innerHTML = dl + note + extra;
+  } catch (e) {
+    w.innerHTML = '<strong>De rapporten zijn gebouwd, maar de downloadlink gaf een fout.</strong><br>' + escapeHtml(e.message);
+  }
+  w.classList.add('visible');
+  document.getElementById('result-box').classList.add('visible');
+  markStepDone('step2', 'step3');
+  meldAnalyseGedaan();
+}
+
+// ════════════════════════════════════════════════════════════
 // EIGEN TOETSWIJS-TEMPLATE — nieuwe weg (geen schooltemplate geüpload)
 // iepData is op dit punt al berekend en is template-onafhankelijk. Deze functie
 // raakt de bestaande schooltemplate-weg niet aan; ze is volledig op zichzelf staand.
@@ -4047,6 +4584,16 @@ async function startAnalyse() {
     // Bouwt alleen bijzData op voor de schooltemplate-weg; er gaat niets naar de AI.
     setSub('Eigen-leerroute-keuzes toepassen…');
     await verwerkBijzonderheden();
+
+    // ════════════════════════════════════════════════════════════
+    // VERTAKKING — individuele analyse (rapport per leerling)
+    // Gaat vóór de template-vertakking: in deze modus maken we altijd ons eigen
+    // leerlingrapport (een schooltemplate is voor de groep, niet per kind).
+    // ════════════════════════════════════════════════════════════
+    if (iepModus === 'individueel') {
+      await genereerIndividueleAnalyse();
+      return;
+    }
 
     // ════════════════════════════════════════════════════════════
     // VERTAKKING — eigen Toetsanalyse-template of geüpload schooltemplate
