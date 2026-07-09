@@ -1858,7 +1858,7 @@
     h += '<div class="wb-invul-lijst">';
     arr(b.woorden).forEach(function (w, i) {
       var woord = (w && w.woord != null ? w.woord : w), delen = (w && w.delen) || [];
-      h += '<div class="wb-invul-rij"><span class="wb-rij-nr">' + (i + 1) + ".</span><span>" + woordKolom(woord, maxL) + "&nbsp;→&nbsp; " +
+      h += '<div class="wb-invul-rij"><span class="wb-rij-nr">' + (i + 1) + ".</span><span>" + woordKolom(woord, maxL) +
         (ant && delen.length ? '<span class="wb-ant">' + delen.map(esc).join(" - ") + "</span>" : lijn(150)) + "</span></div>";
     });
     h += "</div>";
@@ -1872,7 +1872,7 @@
     h += '<div class="wb-invul-lijst">';
     arr(b.woorden).forEach(function (w, i) {
       var woord = (w && w.woord != null ? w.woord : w), rijm = (w && w.rijm) || [];
-      h += '<div class="wb-invul-rij"><span class="wb-rij-nr">' + (i + 1) + ".</span><span>" + woordKolom(woord, maxL) + "&nbsp;→&nbsp; " +
+      h += '<div class="wb-invul-rij"><span class="wb-rij-nr">' + (i + 1) + ".</span><span>" + woordKolom(woord, maxL) +
         (ant && rijm.length ? '<span class="wb-ant">' + rijm.slice(0, 3).map(esc).join(", ") + "</span>" : lijn(150)) + "</span></div>";
     });
     h += "</div>";
@@ -2119,21 +2119,28 @@
   // Eén letterhokje (leeg op het vraagblad, gevuld op het antwoordblad).
   function letterHok(ch, ant) { return '<span class="wb-lhok">' + (ant ? esc(ch) : "") + "</span>"; }
 
-  // Vaste woordkolom: het lángste woord in de lijst bepaalt de breedte, zodat het
-  // pijltje/schrijflijntje bij ELKE rij op precies dezelfde hoogte begint (geen
-  // verspringen van links naar rechts). Geen vaste px → nooit een onnodig groot gat.
+  // Het lángste woord in de lijst bepaalt de referentiebreedte, zodat het
+  // schrijflijntje bij ELKE rij op dezelfde x begint (geen verspringen).
   function maxWoordLengte(woorden, pick) {
     var m = 0;
     arr(woorden).forEach(function (w) { var t = String((pick ? pick(w) : woordTekst(w)) || ""); if (t.length > m) m = t.length; });
     return m;
   }
-  function woordKolom(tekst, chars, klas) {
-    return '<span class="wb-wkol' + (klas ? " " + klas : "") + '" style="min-width:' + (Math.max(2, chars) + 1) + 'ch">' + esc(tekst) + "</span>";
+  // innerHtml links uitgelijnd, opgevuld tot 'chars' tekens breed. Zo begint het
+  // schrijflijntje erna bij ELKE rij op dezelfde x (de referentie = langste woord).
+  // Plus Jakarta is proportioneel → een 'ch' is iets breder dan een gemiddelde
+  // letter, dus het langste woord loopt nooit over de referentie (altijd uitgelijnd).
+  function refKolom(innerHtml, chars, klas) {
+    return '<span class="wb-wkol' + (klas ? " " + klas : "") + '" style="min-width:' + Math.max(2, chars) + 'ch">' + innerHtml + "</span>";
+  }
+  // Woord in het referentieblok + één vaste spatie → lijntje op de referentie.
+  // (Geen pijltje meer: dat voegde niets toe.)
+  function woordKolom(woord, chars, klas) {
+    return refKolom(esc(woord), chars, klas) + "&nbsp; ";
   }
 
-  // ── Woordvorm: "grondwoord → ___" (meervoud, verkleinwoord, ww-tijden, enz.) ──
+  // ── Woordvorm: "grondwoord ___" (meervoud, verkleinwoord, ww-tijden, enz.) ──
   function rWoordvorm(b, nr, ant) {
-    var pijl = b.pijl || "→";
     var maxL = maxWoordLengte(b.woorden, function (w) { return w && typeof w === "object" ? (w.op != null ? w.op : (w.voor != null ? w.voor : w.woord)) : w; });
     var h = opdrachtKop(nr, b.opdracht || "Schrijf de juiste vorm van het woord.", b.em);
     h += '<div class="wb-invul-lijst">';
@@ -2143,7 +2150,7 @@
       var rechts;
       if (ant) rechts = '<span class="wb-ant">' + antw.filter(Boolean).map(esc).join(", ") + "</span>";
       else { var n = Math.max(1, (w && w.aantal) || antw.length || 1); rechts = ""; for (var k = 0; k < n; k++) rechts += lijn(n > 1 ? 110 : 150) + " "; }
-      h += '<div class="wb-invul-rij"><span class="wb-rij-nr">' + (i + 1) + ".</span><span>" + woordKolom(op, maxL) + "&nbsp;" + esc(pijl) + "&nbsp; " + rechts + "</span></div>";
+      h += '<div class="wb-invul-rij"><span class="wb-rij-nr">' + (i + 1) + ".</span><span>" + woordKolom(op, maxL) + rechts + "</span></div>";
     });
     h += "</div>";
     return '<div class="wb-blok">' + h + "</div>";
@@ -2278,7 +2285,7 @@
       var mid = ant
         ? delen.map(function (d, di) { return '<span class="wb-ant">' + esc(d) + '</span><span class="wb-kg-tag">(' + ((soorten[di] || "?")[0]) + ")</span>"; }).join(' <span class="wb-kg-scheid">-</span> ')
         : lijn(200);
-      h += '<div class="wb-invul-rij"><span class="wb-rij-nr">' + (i + 1) + ".</span><span>" + woordKolom(woord, maxL) + "&nbsp;→&nbsp; " + mid + "</span></div>";
+      h += '<div class="wb-invul-rij"><span class="wb-rij-nr">' + (i + 1) + ".</span><span>" + woordKolom(woord, maxL) + mid + "</span></div>";
     });
     h += "</div>";
     return '<div class="wb-blok">' + h + "</div>";
@@ -2291,7 +2298,7 @@
     h += '<div class="wb-invul-lijst">';
     arr(b.woorden).forEach(function (w, i) {
       var woord = w && typeof w === "object" ? w.woord : w, kl = (w && (w.verstopt || w.klein)) || [];
-      h += '<div class="wb-wiw-rij"><span class="wb-rij-nr">' + (i + 1) + '.</span><b>' + woordKolom(woord, maxL, "wb-wiw-w") + "</b>" + (ant ? '<span class="wb-ant" style="margin-left:10px">' + kl.map(esc).join(", ") + "</span>" : lijn(200)) + "</div>";
+      h += '<div class="wb-wiw-rij"><span class="wb-rij-nr">' + (i + 1) + '.</span>' + refKolom('<b class="wb-wiw-w">' + esc(woord) + "</b>", maxL) + "&nbsp; " + (ant ? '<span class="wb-ant">' + kl.map(esc).join(", ") + "</span>" : lijn(200)) + "</div>";
     });
     h += "</div>";
     return '<div class="wb-blok">' + h + "</div>";
@@ -2308,7 +2315,7 @@
     h += '<div class="wb-invul-lijst">';
     arr(b.woorden).forEach(function (w, i) {
       var woord = woordTekst(w), val = woordWaarde(woord);
-      h += '<div class="wb-invul-rij"><span class="wb-rij-nr">' + (i + 1) + ".</span><span><b>" + woordKolom(woord, maxL) + "</b>&nbsp;=&nbsp; " + (ant ? '<span class="wb-ant">' + val + "</span>" : lijn(70)) + " punten</span></div>";
+      h += '<div class="wb-invul-rij"><span class="wb-rij-nr">' + (i + 1) + ".</span><span>" + refKolom("<b>" + esc(woord) + "</b>&nbsp;=", maxL + 2) + "&nbsp; " + (ant ? '<span class="wb-ant">' + val + "</span>" : lijn(70)) + " punten</span></div>";
     });
     h += "</div>";
     if (spel && ant) h += '<div class="wb-ant-note">Meeste waard: <b>' + esc(bestW) + "</b> (" + beste + " punten).</div>";
@@ -2650,7 +2657,7 @@
       ".wb-kop-em{margin-left:auto;font-size:20px}",
       // Invullijnen
       ".wb-lijn{display:inline-block;border-bottom:2px solid var(--wb-ink);height:1.05em;vertical-align:bottom;margin:0 2px}",
-      ".wb-wkol{display:inline-block}", // vaste woordkolom → pijl/lijntje lijnt uit
+      ".wb-wkol{display:inline-block}", // referentiekolom → schrijflijntjes lijnen uit
 
       ".wb-ant{border-bottom-color:var(--wb-accent);color:var(--wb-accent);font-weight:800;text-align:center;padding:0 4px}",
       // Leestekst
