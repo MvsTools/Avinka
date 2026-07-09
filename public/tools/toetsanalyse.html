@@ -1681,7 +1681,19 @@ function parseVakSheet(rows) {
       // analyseren we als ze er zijn. De losse hoofddomein-kolommen laten we dan weg (hun cijfer
       // is het gemiddelde van de subdomeinen) — die dienen alleen nog als label. Zijn er geen
       // subdomeinen, dan gebruiken we de hoofddomeinen zelf.
-      (subDom.length ? subDom : mainDom).forEach(d => domeinen.push(d));
+      // Dedup: sommige IEP-exports zetten dezelfde categorie er dubbel in als aparte kolommen
+      // (bv. "Werkwoordspelling" én "Categorie werkwoordspelling"). Normaliseer de naam (strip
+      // het "Categorie(ën) [van]"-voorvoegsel) en houd er één — de schoonste (kortste) naam.
+      const _normDom = s => String(s || '').toLowerCase()
+        .replace(/^categorie(?:ë|e)?n?\s+(?:van\s+)?/i, '')
+        .replace(/[^a-zà-ÿ0-9]+/g, ' ').trim();
+      const _domSeen = new Map();
+      (subDom.length ? subDom : mainDom).forEach(d => {
+        const key = _normDom(d.naam);
+        if (!key) { domeinen.push(d); return; }
+        if (!_domSeen.has(key)) { _domSeen.set(key, domeinen.length); domeinen.push(d); }
+        else { const idx = _domSeen.get(key); if (d.naam.length < domeinen[idx].naam.length) domeinen[idx] = d; }
+      });
       const domeinHierarchie = {};
       domeinen.forEach(d => { domeinHierarchie[d.naam] = d.hoofddomein || null; });
       const leerlingen = [];
@@ -3765,9 +3777,12 @@ function etplTipsPrompt(klassikaalItems, groepItems) {
 
 // ── Leerlingen op eigen leerlijn: per uitgesloten leerling de eigen toetsdata beschrijven ──
 // Sorteert de domeinscores van één leerling in sterk (>=80%) en zwak (<65%).
-function etplELDomeinen(domeinScores) {
+// onbetrouwbaar (optioneel) = Set met domeinnamen die op te weinig vragen (1-2) rusten;
+// die tellen niet als sterk of zwak, zodat 1 fout op een 2-vragen-domein geen "fanatiek
+// trainen"-advies oplevert. Zelfde grens als de groepsanalyse (betrouwbaarheidVanVragen).
+function etplELDomeinen(domeinScores, onbetrouwbaar) {
   const arr = Object.entries(domeinScores || {})
-    .filter(([, f]) => typeof f === 'number')
+    .filter(([d, f]) => typeof f === 'number' && !(onbetrouwbaar && onbetrouwbaar.has(d)))
     .map(([d, f]) => ({ domein: d, pct: Math.round(f * 100) }));
   return {
     zwak: arr.filter(x => x.pct < 65).sort((a, b) => a.pct - b.pct),
@@ -4202,7 +4217,9 @@ function bouwLeerlingProfielen(cats) {
         ? ({ hoogste: bl.hoogste, drempel: bl.drempel, onder1f: bl.onder1fLang || bl.onder1f, opweg: bl.opwegLang || bl.opweg }[bandKey])
         : (isGeenResultaat(l) ? 'Geen resultaat (te moeilijk)' : '—');
       const terug = !isReferentieToets(l.variant);
-      const dom = etplELDomeinen(l.domeinScores);
+      // Domeinen op 1-2 vragen (onbetrouwbaar) niet als sterk/zwak meenemen — net als de groepsanalyse.
+      const onbetrouwbaarDom = new Set((v.domeinAnalyse || []).filter(d => d.betrouwbaar === 'onbetrouwbaar').map(d => d.domein));
+      const dom = etplELDomeinen(l.domeinScores, onbetrouwbaarDom);
       const gg = terug ? null : groepGem[vk];
       perVak.push({
         vakKey: vk, label: VAK_LABELS[vk],
@@ -4326,8 +4343,8 @@ async function iepBouwLeerlingDocxBlob(leerlingen, teksten) {
     ppr += `<w:spacing w:before="${sb}" w:after="${sa}" w:line="264" w:lineRule="auto"/>`;
     if (o.ind) ppr += `<w:ind w:left="${o.ind}"/>`;
     return `<w:p><w:pPr>${ppr}</w:pPr>${runsXml}</w:p>`; }
-  const H1 = (t, brk) => P(R(t, { bold: true, size: 32 }), { pageBreak: brk, before: brk ? 0 : 120, after: 40, bottom: 10 });
-  const QL = t => P(R(t, { bold: true, size: 21 }), { before: 150, after: 30 });
+  const H1 = (t, brk) => P(R(t, { bold: true, size: 32 }), { pageBreak: brk, before: brk ? 0 : 70, after: 30, bottom: 10 });
+  const QL = t => P(R(t, { bold: true, size: 21 }), { before: 90, after: 24 });
   const body = (x, o) => P(x, Object.assign({ size: 21, after: 60 }, o || {}));
   const bullet = x => P(x, { numId: 1, after: 50 });
   const placeholder = t => P(R(t, { italic: true, size: 20, color: ACCENT }), { before: 30, after: 60 });
@@ -4410,7 +4427,7 @@ async function iepBouwLeerlingDocxBlob(leerlingen, teksten) {
   function buildDocumentXml() {
     const K = [];
     leerlingen.forEach((ld, i) => { K.push(leerlingSectie(ld, i)); });
-    const sect = '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr>';
+    const sect = '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1080" w:right="1300" w:bottom="1080" w:left="1300" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr>';
     return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + K.join('') + sect + '</w:body></w:document>';
   }
 
@@ -6342,7 +6359,19 @@ function citoParseDetailanalyse(tekst, woorden) {
     if (/^(goed|fout|domein|categorie|onderdeel|score|niveau)$/i.test(naam)) continue; // koprij overslaan
     domeinen.push({ domein: naam, goed: pcts[0].val, fout: pcts[1].val });
   }
-  return { groepsniveau, meetmoment: meta.meetmoment, domeinen };
+  // Dedup: dezelfde categorie kan dubbel in de PDF staan (bv. "Werkwoordspelling" én
+  // "Categorie werkwoordspelling"). Normaliseer en houd er één (de schoonste naam).
+  const _normDom = s => String(s || '').toLowerCase()
+    .replace(/^categorie(?:ë|e)?n?\s+(?:van\s+)?/i, '')
+    .replace(/[^a-zà-ÿ0-9]+/g, ' ').trim();
+  const _seen = new Map(), _uniek = [];
+  for (const d of domeinen) {
+    const key = _normDom(d.domein);
+    if (!key) { _uniek.push(d); continue; }
+    if (!_seen.has(key)) { _seen.set(key, _uniek.length); _uniek.push(d); }
+    else { const idx = _seen.get(key); if (d.domein.length < _uniek[idx].domein.length) _uniek[idx] = d; }
+  }
+  return { groepsniveau, meetmoment: meta.meetmoment, domeinen: _uniek };
 }
 
 // ════════════════════════════════════════════════════════════════════════
