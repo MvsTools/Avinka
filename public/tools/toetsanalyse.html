@@ -377,7 +377,7 @@
   .iepui .uitleg-link-arrow{ font-weight:700; }
   /* bèta-knopje + uitleg-link op één regel, met ruimte ertussen */
   .iepui .tpl-row { display:flex; align-items:center; justify-content:space-between; gap:14px 28px; flex-wrap:wrap; margin-top:14px; }
-  .iepui .tpl-row .tpl-toggle, .iepui .tpl-row .uitleg-link { margin-top:0; margin-left:0; }
+  .iepui .tpl-row .tpl-toggle, .iepui .tpl-row .uitleg-link { margin:0; }
 
   /* veld-rij */
   .iepui .vr { padding:14px 0; border-top:1px solid var(--line); }
@@ -604,6 +604,15 @@
     </div>
 
     <div class="vr">
+      <label class="vr-label">Wat wil je maken?</label>
+      <div class="persp-seg" role="group" aria-label="Analysemodus">
+        <button type="button" class="persp-opt on" data-modus="groep" onclick="iepZetModus('groep')">Groepsanalyse</button>
+        <button type="button" class="persp-opt" data-modus="individueel" onclick="iepZetModus('individueel')">Analyse per leerling</button>
+      </div>
+      <div id="iep-leerlingkeuze" style="display:none;margin-top:14px;"></div>
+    </div>
+
+    <div class="vr">
       <label class="vr-label">Groep <span class="vr-req">*</span></label>
       <select class="iep-native" id="ctx-groep" onchange="handleContextField(this)" aria-label="Groep">
         <option value="">— kies —</option>
@@ -653,10 +662,12 @@
     </div>
 
     <style id="persp-stijl">
-      .persp-seg{display:inline-flex;gap:6px;flex-wrap:wrap;background:var(--warm,#f4f0e9);border-radius:12px;padding:4px;}
-      .persp-opt{font:inherit;font-size:13.5px;font-weight:600;border:none;background:transparent;color:var(--muted,#6b6357);padding:8px 14px;border-radius:9px;cursor:pointer;transition:background .15s,color .15s,box-shadow .15s;}
-      .persp-opt.on{background:#fff;color:var(--ink,#1a1a2e);box-shadow:0 2px 8px rgba(26,22,46,.10);}
-      .persp-hint{font-size:12.5px;color:var(--muted,#6b6357);margin-top:7px;line-height:1.5;}
+      /* Zelfde look als de .seg-knoppen elders in de tool: cream-baan, wit/groen actief. */
+      .persp-seg{display:inline-flex;background:var(--cream);border:1px solid var(--line-strong);border-radius:13px;padding:4px;gap:3px;flex-wrap:wrap;}
+      .persp-opt{font:inherit;font-size:13.5px;font-weight:600;border:none;background:transparent;color:var(--muted2);padding:8px 16px;border-radius:10px;cursor:pointer;transition:.14s;}
+      .persp-opt:hover{color:var(--ink2);}
+      .persp-opt.on{background:#fff;color:var(--accent);font-weight:700;box-shadow:0 3px 9px rgba(34,28,58,0.10);}
+      .persp-hint{font-size:12.5px;color:var(--muted2);margin-top:7px;line-height:1.5;}
     </style>
     <div class="vr">
       <label class="vr-label">Voor wie schrijf je deze analyse?</label>
@@ -664,16 +675,15 @@
         <button type="button" class="persp-opt on" data-perspectief="zelf" onclick="zetPerspectief('zelf')">Voor mezelf</button>
         <button type="button" class="persp-opt" data-perspectief="overdracht" onclick="zetPerspectief('overdracht')">Voor de volgende leerkracht</button>
       </div>
-      <div class="persp-hint">De analyse wordt vanuit jezelf geschreven (ik-vorm), voor je eigen gebruik.</div>
     </div>
 
-    <div class="vr">
+    <div class="vr" id="vr-uitstroom" style="display:none;">
       <label class="vr-label">Uitstroomindicatie</label>
-      <label style="display:inline-flex;align-items:flex-start;gap:9px;cursor:pointer;font-size:14px;line-height:1.45;color:var(--ink);max-width:640px;">
-        <input type="checkbox" id="ctx-vo" onchange="voAanzetten=this.checked" style="width:17px;height:17px;margin-top:2px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">
-        <span>Voeg onderin een VO-uitstroomindicatie per leerling toe (alleen bij E6, M7, E7, B8 en Doorstroomtoets). Puur op de huidige data en streng bedoeld: een indicatie, geen advies.</span>
+      <label style="display:inline-flex;align-items:center;gap:9px;cursor:pointer;font-size:14px;line-height:1.45;color:var(--ink);max-width:640px;">
+        <input type="checkbox" id="ctx-vo" onchange="voAanzetten=this.checked" style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">
+        <span>Voeg een uitstroomindicatie per leerling toe.</span>
       </label>
-      <div class="persp-hint">Standaard uit. Zet 'm aan als je het lijstje bij deze analyse wilt.</div>
+      <div class="persp-hint">Een grove VO-richting op basis van de huidige toetsdata.</div>
     </div>
 
     <div class="vr">
@@ -688,7 +698,7 @@
   </div>
 
   <!-- KAART 3: EIGEN LEERROUTE -->
-  <div class="kaart t-rose">
+  <div class="kaart t-rose" id="kaart-eigenleerroute">
     <div class="kaart-kop">
       <span class="kaart-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H14a4 4 0 0 0 4-4V8.5"/></svg></span>
       <div class="kaart-titel">Eigen leerroute<span class="opt-pill">Optioneel</span></div>
@@ -873,8 +883,34 @@
       </div>
 
       <div class="vr">
-        <label class="vr-label" for="cito-ctx-groep">Groep</label>
-        <input type="text" class="txt" id="cito-ctx-groep" placeholder="bijv. 6B">
+        <label class="vr-label">Wat wil je maken?</label>
+        <div class="persp-seg" role="group" aria-label="Analysemodus">
+          <button type="button" class="persp-opt on" data-citomodus="groep" onclick="citoZetModus('groep')">Groepsanalyse</button>
+          <button type="button" class="persp-opt" data-citomodus="profiel" onclick="citoZetModus('profiel')">Analyse per kind</button>
+        </div>
+        <div class="persp-hint" id="cito-modus-hint" style="display:none;"></div>
+        <div id="cito-leerlingkeuze" style="display:none;margin-top:14px;"></div>
+      </div>
+
+      <div class="vr">
+        <label class="vr-label">Groep</label>
+        <select class="iep-native" id="cito-ctx-groep" onchange="citoGroepGewijzigd(this)" aria-label="Groep">
+          <option value="">— kies —</option>
+          <option value="Groep 3">Groep 3</option>
+          <option value="Groep 4">Groep 4</option>
+          <option value="Groep 5">Groep 5</option>
+          <option value="Groep 6">Groep 6</option>
+          <option value="Groep 7">Groep 7</option>
+          <option value="Groep 8">Groep 8</option>
+        </select>
+        <div class="seg" role="group" aria-label="Kies groep">
+          <span onclick="citoPickGroep(this,'Groep 3')">3</span>
+          <span onclick="citoPickGroep(this,'Groep 4')">4</span>
+          <span onclick="citoPickGroep(this,'Groep 5')">5</span>
+          <span onclick="citoPickGroep(this,'Groep 6')">6</span>
+          <span onclick="citoPickGroep(this,'Groep 7')">7</span>
+          <span onclick="citoPickGroep(this,'Groep 8')">8</span>
+        </div>
       </div>
 
       <div class="vr">
@@ -886,7 +922,7 @@
           <option value="M5">M5</option><option value="E5">E5</option>
           <option value="M6">M6</option><option value="E6">E6</option>
           <option value="M7">M7</option><option value="E7">E7</option>
-          <option value="B8">B8</option><option value="M8">M8</option>
+          <option value="B8">B8</option><option value="Doorstroomtoets">Doorstroomtoets</option>
         </select>
         <div class="chips" role="group" aria-label="Kies meetmoment">
           <span class="chip" onclick="citoPick('cito-ctx-meetmoment',this,'M3')">M3</span>
@@ -900,7 +936,7 @@
           <span class="chip" onclick="citoPick('cito-ctx-meetmoment',this,'M7')">M7</span>
           <span class="chip" onclick="citoPick('cito-ctx-meetmoment',this,'E7')">E7</span>
           <span class="chip" onclick="citoPick('cito-ctx-meetmoment',this,'B8')">B8</span>
-          <span class="chip" onclick="citoPick('cito-ctx-meetmoment',this,'M8')">M8</span>
+          <span class="chip" onclick="citoPick('cito-ctx-meetmoment',this,'Doorstroomtoets')">Doorstroomtoets</span>
         </div>
       </div>
 
@@ -910,7 +946,6 @@
           <button type="button" class="persp-opt on" data-perspectief="zelf" onclick="zetPerspectief('zelf')">Voor mezelf</button>
           <button type="button" class="persp-opt" data-perspectief="overdracht" onclick="zetPerspectief('overdracht')">Voor de volgende leerkracht</button>
         </div>
-        <div class="persp-hint">De analyse wordt vanuit jezelf geschreven (ik-vorm), voor je eigen gebruik.</div>
       </div>
 
       <div class="vr">
@@ -923,7 +958,6 @@
         </div>
       </div>
 
-      <div class="tpl-note" style="margin-top:6px;">Automatisch uit je PDF's gehaald. Pas aan als de detectie ernaast zit.</div>
     </div>
 
     <!-- KAART 3: EIGEN LEERROUTE -->
@@ -950,13 +984,6 @@
         <input class="num" type="number" id="cito-streef-1s" min="1" max="100" placeholder="30"><span>% op 1S (streefniveau)</span>
       </div>
     </div>
-  </div>
-
-  <!-- Keuzemenu: verschijnt alleen als er zowel groepsdata als leerlingprofiel(en) zijn. -->
-  <div id="cito-genkeuze" style="display:none;margin:14px 0;">
-    <div class="field-label" style="margin-bottom:8px;">Wat wil je genereren?</div>
-    <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:14px;margin-bottom:6px;line-height:1.45;"><input type="radio" name="cito-genmode" value="groep" checked onchange="citoZetGenMode('groep')" style="margin-top:3px;"> <span><b>Groepsdocument</b> — de volledige groepsanalyse</span></label>
-    <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:14px;line-height:1.45;"><input type="radio" name="cito-genmode" value="profiel" onchange="citoZetGenMode('profiel')" style="margin-top:3px;"> <span><b>Individueel leerlingrapport</b> — voor de geüploade leerling(en)</span></label>
   </div>
 
   <button class="btn-analyse" id="cito-btn-go" onclick="citoStart()" disabled>
@@ -1053,13 +1080,12 @@ function zetPerspectief(v) {
   synchroniseerPerspectiefUI();
 }
 function synchroniseerPerspectiefUI() {
-  document.querySelectorAll('.persp-opt').forEach(function (el) {
+  // Alleen de actieve knop markeren. NIET de .persp-hint-elementen overschrijven:
+  // die class wordt breder gebruikt (modus-uitleg, uitstroom-hint, max-regel) en die
+  // teksten moeten blijven staan.
+  document.querySelectorAll('.persp-opt[data-perspectief]').forEach(function (el) {
     el.classList.toggle('on', el.getAttribute('data-perspectief') === ctxPerspectief);
   });
-  var hint = ctxPerspectief === 'overdracht'
-    ? 'De analyse wordt neutraal geschreven, als overdracht voor de leerkracht die de groep na de zomer krijgt.'
-    : 'De analyse wordt vanuit jezelf geschreven (ik-vorm), voor je eigen gebruik.';
-  document.querySelectorAll('.persp-hint').forEach(function (el) { el.textContent = hint; });
 }
 // Dit blok komt in overdracht-modus vooraan ELKE prose-systeemprompt (via callClaude),
 // zodat álle paden (schoolformulier, eigen template, cito) in één keer neutraal schrijven.
@@ -1216,6 +1242,10 @@ function bandNiveauSuffix(l) {
 const IEP_VO_MEETMOMENTEN = ['E6', 'M7', 'E7', 'B8', 'Doorstroomtoets'];
 const VO_WEGING = { rekenen: 0.45, lezen: 0.30, taalverzorging: 0.25 };
 let voAanzetten = false; // uitstroomindicatie: standaard UIT; de leerkracht zet 'm aan met het vinkje
+let iepModus = 'groep';              // 'groep' (hele groep) of 'individueel' (rapport per leerling)
+let iepGeselecteerdeLeerlingen = null; // Set van volledige leerlingnamen die individueel geanalyseerd worden
+let iepGegenereerd = false;          // true na een geslaagde analyse: knop uit tot de gebruiker iets wijzigt
+const IEP_INDIV_MAX = 10;            // max aantal kinderen per individuele ronde (daarboven: doe een groepsanalyse)
 // De IEP-toets heeft per meetmoment een PLAFOND (max haalbare ontwikkelscore). Vóór groep 8
 // ligt dat onder de 80 (2F/1S), dus met vaste absolute grenzen zou niemand de hoogste banden
 // kunnen halen. Daarom: de 1F-ondergrens (60) blijft absoluut, maar de banden daarboven
@@ -1350,6 +1380,7 @@ function showApiStatus(msg) {
 // ════════════════════════════════════════════════════════════
 function handleExcel(input) {
   const file = input.files[0]; if (!file) return;
+  iepGegenereerd = false; // nieuwe upload: na de generatie weer opnieuw kunnen analyseren
   const ext = file.name.split('.').pop().toLowerCase();
   if (!['xlsx','xls'].includes(ext)) { showError('Upload een IEP Excel-export (.xlsx).'); input.value=''; return; }
   document.getElementById('filename-excel').textContent = file.name;
@@ -1363,6 +1394,7 @@ function handleExcel(input) {
       vulEigenLeerroute();
       iepVulContextUitExcel(file.name); // groep/meetmoment/aantal automatisch voorvullen waar mogelijk
       checkReady();
+      if (iepModus === 'individueel') iepBouwLeerlingkeuze(); // aanvinklijst vullen met de zojuist ingelezen namen
     } catch(err) { showError('Kan Excel niet lezen: ' + err.message); }
   };
   reader.readAsArrayBuffer(file);
@@ -1649,7 +1681,19 @@ function parseVakSheet(rows) {
       // analyseren we als ze er zijn. De losse hoofddomein-kolommen laten we dan weg (hun cijfer
       // is het gemiddelde van de subdomeinen) — die dienen alleen nog als label. Zijn er geen
       // subdomeinen, dan gebruiken we de hoofddomeinen zelf.
-      (subDom.length ? subDom : mainDom).forEach(d => domeinen.push(d));
+      // Dedup: sommige IEP-exports zetten dezelfde categorie er dubbel in als aparte kolommen
+      // (bv. "Werkwoordspelling" én "Categorie werkwoordspelling"). Normaliseer de naam (strip
+      // het "Categorie(ën) [van]"-voorvoegsel) en houd er één — de schoonste (kortste) naam.
+      const _normDom = s => String(s || '').toLowerCase()
+        .replace(/^categorie(?:ë|e)?n?\s+(?:van\s+)?/i, '')
+        .replace(/[^a-zà-ÿ0-9]+/g, ' ').trim();
+      const _domSeen = new Map();
+      (subDom.length ? subDom : mainDom).forEach(d => {
+        const key = _normDom(d.naam);
+        if (!key) { domeinen.push(d); return; }
+        if (!_domSeen.has(key)) { _domSeen.set(key, domeinen.length); domeinen.push(d); }
+        else { const idx = _domSeen.get(key); if (d.naam.length < domeinen[idx].naam.length) domeinen[idx] = d; }
+      });
       const domeinHierarchie = {};
       domeinen.forEach(d => { domeinHierarchie[d.naam] = d.hoofddomein || null; });
       const leerlingen = [];
@@ -1938,6 +1982,177 @@ function buildIepData() {
   }));
 
   return data;
+}
+
+// ════════════════════════════════════════════════════════════
+// INDIVIDUELE ANALYSE — modus-keuze + leerlingselectie (UI)
+// De groepsweg blijft de standaard. Kiest de leerkracht "Analyse per leerling",
+// dan verschijnt een aanvinklijst met de kinderen uit de upload; per aangevinkt
+// kind komt er een eigen pagina in het rapport (zie genereerIndividueleAnalyse).
+// ════════════════════════════════════════════════════════════
+
+let iepKlasReady = false; // zorgt dat de lijst één keer opnieuw bouwt zodra de klasnamen geladen zijn
+
+// Naam-koppeling met het dashboard: de namen in de IEP-export zijn niet altijd netjes
+// (rare hoofdletters, "Yu tong" i.p.v. "Yutong"). We koppelen elke export-naam aan de
+// voornamen uit de klas (dashboard) en tonen de klas-schrijfwijze. Puur client-side —
+// er gaat hierover niets naar de AI (zie avinka-masking.js). Alleen bij een ZEKERE,
+// unieke match gebruiken we de klasnaam; anders vallen we terug op de export-voornaam.
+function iepNorm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[^a-z0-9]/g, ''); } // NFD + strip = accent/spatie/streepje-ongevoelig
+function iepKoppelNaam(exportNaam) {
+  // 1) Bestaande koppeling: klasnaam = de leidende woorden van de export-naam
+  //    ("Sam Reints Bok" -> klas kent "Sam"). Gebruikt avinkaKlasNamen (dashboard).
+  const uitKlas = voornaamUitKlas(exportNaam);
+  if (uitKlas) return uitKlas;
+  // 2) Extra: spatie-/accent-ongevoelige match (bv. "Yu tong" in de export -> "Yutong" in de klas).
+  let klas = (avinkaKlasNamen && avinkaKlasNamen.length) ? avinkaKlasNamen : [];
+  if (!klas.length) { try { klas = (window.avinkaMask && window.avinkaMask.namen && window.avinkaMask.namen()) || []; } catch (e) { klas = []; } }
+  if (!klas.length) return null;
+  const vExport = iepNorm(voornaamVan(exportNaam)), vHeel = iepNorm(exportNaam);
+  if (!vExport && !vHeel) return null;
+  const treffers = [...new Set(klas
+    .filter(k => { const kv = iepNorm(voornaamVan(k)); return kv && (kv === vExport || iepNorm(k) === vHeel); })
+    .map(k => voornaamVan(k)))];
+  return treffers.length === 1 ? treffers[0] : null; // alleen bij één ondubbelzinnige match
+}
+
+// Alle leerlingnamen uit de upload (Groepsresultaten + vak-tabbladen), ontdubbeld op
+// volledige naam. Weergave = de klasnaam uit het dashboard als die zeker matcht, anders
+// de export-voornaam; bij dubbele voornamen de volledige naam ter onderscheid.
+function iepLeerlingNamen() {
+  if (!excelRaw || !Object.keys(excelRaw).length) return [];
+  const map = new Map(); // volledige naam -> { naam, voornaam }
+  const voegToe = ruw => {
+    const n = (ruw || '').trim();
+    if (n && !/gemiddelde/i.test(n) && n.toLowerCase() !== 'leerling' && !map.has(n)) map.set(n, { naam: n, voornaam: voornaamVan(n) });
+  };
+  if (excelRaw['Groepsresultaten']) {
+    const rows = parseCSVtext(excelRaw['Groepsresultaten']);
+    for (let r = 2; r < rows.length; r++) voegToe(rows[r] && rows[r][0]);
+  }
+  ['Rekenen', 'Taalverzorging', 'Lezen'].forEach(sheet => {
+    if (!excelRaw[sheet]) return;
+    parseVakSheet(parseCSVtext(excelRaw[sheet])).forEach(b => b.leerlingen.forEach(l => voegToe(l.naam)));
+  });
+  const lijst = [...map.values()];
+  // Bij dubbele voornamen onderscheiden we met de eerste letter van de achternaam
+  // (Sanne B., Sanne V.). Is die letter óók gelijk (of ontbreekt-ie), dan de volledige naam.
+  const telVoornaam = {};
+  lijst.forEach(x => { telVoornaam[x.voornaam.toLowerCase()] = (telVoornaam[x.voornaam.toLowerCase()] || 0) + 1; });
+  lijst.forEach(x => x.koppel = iepKoppelNaam(x.naam)); // klasnaam uit dashboard (of null)
+  lijst.forEach(x => {
+    const basis = x.koppel || x.voornaam;
+    if (telVoornaam[x.voornaam.toLowerCase()] <= 1) { x.weergave = basis; return; }
+    const naamgenoten = lijst.filter(y => y.voornaam.toLowerCase() === x.voornaam.toLowerCase());
+    const init = achternaamInitiaal(x.naam, x.voornaam);
+    const initBotst = naamgenoten.filter(y => achternaamInitiaal(y.naam, y.voornaam) === init).length > 1;
+    x.weergave = (init && !initBotst) ? `${basis} ${init}.` : x.naam; // botst/ontbreekt -> volledige naam
+  });
+  return lijst.sort((a, b) => a.weergave.localeCompare(b.weergave, 'nl'));
+}
+
+// Wissel tussen groeps- en individuele modus; toon/verberg de aanvinklijst.
+function iepZetModus(m) {
+  iepModus = m;
+  iepGegenereerd = false;
+  document.querySelectorAll('.persp-seg [data-modus]').forEach(b => b.classList.toggle('on', b.dataset.modus === m));
+  const keuze = document.getElementById('iep-leerlingkeuze');
+  const elrKaart = document.getElementById('kaart-eigenleerroute');
+  if (m === 'individueel') {
+    iepBouwLeerlingkeuze();
+    keuze.style.display = '';
+    if (elrKaart) elrKaart.style.display = 'none'; // eigen leerroute slaat per leerling nergens op
+    // Klasnamen laden async; zodra ze binnen zijn de lijst één keer verversen (betere namen).
+    if (window.avinkaMask && !iepKlasReady) { iepKlasReady = true; window.avinkaMask.ready.then(() => { if (iepModus === 'individueel') iepBouwLeerlingkeuze(); }).catch(() => {}); }
+  } else {
+    keuze.style.display = 'none';
+    if (elrKaart) elrKaart.style.display = '';
+  }
+  iepUpdateKnopLabel();
+  checkReady(); // knop weer vrijgeven na een eerdere generatie zodra de modus wijzigt
+}
+
+// Bouw de aanvinklijst met leerlingen (standaard allemaal aangevinkt).
+function iepBouwLeerlingkeuze() {
+  const box = document.getElementById('iep-leerlingkeuze');
+  if (!box) return;
+  const lln = iepLeerlingNamen();
+  if (!lln.length) {
+    iepGeselecteerdeLeerlingen = new Set();
+    box.innerHTML = '<div class="persp-hint" style="margin-top:0;">Upload eerst je IEP-export; daarna verschijnen hier de namen om aan te vinken.</div>';
+    iepUpdateKnopLabel();
+    return;
+  }
+  // Standaard alles geselecteerd, maar alleen als het er niet meer dan de max zijn.
+  // Bij een grotere klas start de lijst leeg, zodat je bewust maximaal 10 kinderen kiest.
+  const bestaat = new Set(lln.map(x => x.naam));
+  if (!iepGeselecteerdeLeerlingen) iepGeselecteerdeLeerlingen = new Set(lln.length <= IEP_INDIV_MAX ? lln.map(x => x.naam) : []);
+  else iepGeselecteerdeLeerlingen = new Set([...iepGeselecteerdeLeerlingen].filter(n => bestaat.has(n)).slice(0, IEP_INDIV_MAX));
+
+  const chip = x => {
+    const aan = iepGeselecteerdeLeerlingen.has(x.naam);
+    // Naam via data-attribuut (browser decodeert 'm terug), zodat apostrofs/quotes veilig zijn.
+    return `<label class="iep-ll-chip${aan ? ' on' : ''}" title="${escapeHtml(x.naam)}">`
+      + `<input type="checkbox" ${aan ? 'checked' : ''} data-naam="${escapeHtml(x.naam)}" onchange="iepToggleLeerling(this)">`
+      + `<span data-text="${escapeHtml(x.weergave)}">${escapeHtml(x.weergave)}</span></label>`;
+  };
+  box.innerHTML =
+    `<style>
+      .iep-ll-bar{margin-bottom:12px;}
+      .iep-ll-bar .telling{font-size:12.5px;color:var(--muted2);font-weight:600;}
+      .iep-ll-grid{display:flex;flex-wrap:wrap;gap:9px;}
+      .iep-ll-chip{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:400;color:var(--ink);background:var(--cream);border:1.5px solid var(--line-strong);border-radius:12px;padding:8px 13px;cursor:pointer;transition:border-color .15s,background .15s,box-shadow .15s;user-select:none;}
+      .iep-ll-chip:hover{border-color:var(--accent);}
+      .iep-ll-chip.on{border-color:var(--accent);background:var(--violet-soft);color:var(--accent);font-weight:700;box-shadow:0 4px 12px rgba(47,158,110,0.12);}
+      .iep-ll-chip input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;margin:0;}
+      /* Reserveer de vet-breedte zodat het aanvinken (font-weight 700) de kaart niet breder maakt en de rij niet verspringt. */
+      .iep-ll-chip span{display:inline-flex;flex-direction:column;}
+      .iep-ll-chip span::after{content:attr(data-text);font-weight:700;height:0;overflow:hidden;visibility:hidden;pointer-events:none;}
+    </style>`
+    + `<div class="iep-ll-bar"><span class="telling" id="iep-ll-telling"></span></div>`
+    + `<div class="iep-ll-grid">${lln.map(chip).join('')}</div>`;
+  iepUpdateTelling();
+  iepUpdateKnopLabel();
+}
+
+function iepToggleLeerling(el) {
+  const naam = el.dataset.naam;
+  iepGegenereerd = false;
+  if (!iepGeselecteerdeLeerlingen) iepGeselecteerdeLeerlingen = new Set();
+  if (el.checked) {
+    // Cap: niet meer dan de max aanvinken. Bij overschrijding het vinkje terugdraaien.
+    if (iepGeselecteerdeLeerlingen.size >= IEP_INDIV_MAX && !iepGeselecteerdeLeerlingen.has(naam)) {
+      el.checked = false;
+      showError(`Je kunt maximaal ${IEP_INDIV_MAX} kinderen tegelijk individueel analyseren. Vink er eerst een af, of kies een groepsanalyse.`);
+      return;
+    }
+    iepGeselecteerdeLeerlingen.add(naam);
+  } else {
+    iepGeselecteerdeLeerlingen.delete(naam);
+  }
+  el.closest('.iep-ll-chip').classList.toggle('on', el.checked);
+  iepUpdateTelling();
+  iepUpdateKnopLabel();
+  checkReady(); // knop weer vrijgeven na een eerdere generatie zodra de selectie wijzigt
+}
+
+function iepUpdateTelling() {
+  const el = document.getElementById('iep-ll-telling');
+  if (!el) return;
+  const n = iepGeselecteerdeLeerlingen ? iepGeselecteerdeLeerlingen.size : 0;
+  el.textContent = `${n} van ${IEP_INDIV_MAX} gekozen`;
+}
+
+// Knoplabel meebewegen met de modus (en met het aantal gekozen kinderen).
+function iepUpdateKnopLabel() {
+  const span = document.querySelector('#btn-analyse span');
+  if (!span) return;
+  if (iepModus === 'individueel') {
+    const n = iepGeselecteerdeLeerlingen ? iepGeselecteerdeLeerlingen.size : 0;
+    span.textContent = n ? `Maak ${n} leerlingrapport${n === 1 ? '' : 'en'}` : 'Maak leerlingrapporten';
+  } else {
+    span.textContent = 'Analyseer toetsgegevens';
+  }
 }
 
 // Parse de bijzonderheden op uitsluitingen: leerlingen die op een eigen leerroute
@@ -2430,6 +2645,7 @@ function parseTemplate() {
 // CONTEXT & READY
 // ════════════════════════════════════════════════════════════
 function handleContextField(el) {
+  iepGegenereerd = false;
   el.classList.toggle('filled', !!el.value);
   ctxGroep = document.getElementById('ctx-groep').value;
   ctxMeetmoment = document.getElementById('ctx-meetmoment').value;
@@ -2440,14 +2656,30 @@ function handleContextField(el) {
   ctxStreefdoel = (sd >= 1 && sd <= 100) ? sd : null;
   const s1s = parseInt(document.getElementById('ctx-streef-1s').value, 10);
   ctxStreef1S = (s1s >= 1 && s1s <= 100) ? s1s : null;
+  iepUpdateUitstroomZichtbaar();
   checkReady();
+}
+// De uitstroomindicatie is alleen zinvol vanaf E6; toon de optie alleen bij die meetmomenten
+// (E6/M7/E7/B8/Doorstroomtoets), of ze nu uit de upload komen of handmatig gekozen zijn.
+function iepUpdateUitstroomZichtbaar() {
+  const blok = document.getElementById('vr-uitstroom');
+  if (!blok) return;
+  const mag = IEP_VO_MEETMOMENTEN.indexOf((ctxMeetmoment || '').trim()) !== -1;
+  blok.style.display = mag ? '' : 'none';
+  if (!mag) { // verborgen -> keuze terugzetten zodat er geen stille 'aan' blijft hangen
+    const cb = document.getElementById('ctx-vo');
+    if (cb) cb.checked = false;
+    voAanzetten = false;
+  }
 }
 function checkReady() {
   // Eigen template is optioneel: de knop activeert met Excel + API-sleutel + groepsgegevens.
   // Is er wél een template geüpload, dan loopt straks de bestaande schooltemplate-weg.
   const ready = Object.keys(excelRaw).length > 0 &&
     apiKey.startsWith('sk-ant-') && ctxGroep && ctxMeetmoment && ctxAantal;
-  document.getElementById('btn-analyse').disabled = !ready;
+  const b = document.getElementById('btn-analyse');
+  b.style.display = iepGegenereerd ? 'none' : ''; // na een analyse verdwijnt de knop tot je iets wijzigt
+  b.disabled = !ready || iepGegenereerd;
 }
 function showError(msg) {
   const el = document.getElementById('error-box');
@@ -3545,9 +3777,12 @@ function etplTipsPrompt(klassikaalItems, groepItems) {
 
 // ── Leerlingen op eigen leerlijn: per uitgesloten leerling de eigen toetsdata beschrijven ──
 // Sorteert de domeinscores van één leerling in sterk (>=80%) en zwak (<65%).
-function etplELDomeinen(domeinScores) {
+// onbetrouwbaar (optioneel) = Set met domeinnamen die op te weinig vragen (1-2) rusten;
+// die tellen niet als sterk of zwak, zodat 1 fout op een 2-vragen-domein geen "fanatiek
+// trainen"-advies oplevert. Zelfde grens als de groepsanalyse (betrouwbaarheidVanVragen).
+function etplELDomeinen(domeinScores, onbetrouwbaar) {
   const arr = Object.entries(domeinScores || {})
-    .filter(([, f]) => typeof f === 'number')
+    .filter(([d, f]) => typeof f === 'number' && !(onbetrouwbaar && onbetrouwbaar.has(d)))
     .map(([d, f]) => ({ domein: d, pct: Math.round(f * 100) }));
   return {
     zwak: arr.filter(x => x.pct < 65).sort((a, b) => a.pct - b.pct),
@@ -3940,6 +4175,356 @@ async function etplBouwDocxBlob(cats, teksten) {
 }
 
 // ════════════════════════════════════════════════════════════
+// INDIVIDUELE ANALYSE — rapport per leerling (één pagina per kind)
+// Aparte weg naast de groepsanalyse. Hergebruikt dezelfde geparste data
+// (iepData) en de kruisprofielen (etplCategoriseer), maar bouwt per gekozen
+// leerling een eigen pagina: waar het kind staat, hoe het zich verhoudt tot de
+// groep en waar het uitvalt. Namen blijven gemaskeerd naar de AI (via callClaude).
+// ════════════════════════════════════════════════════════════
+
+// Bouw per geselecteerde leerling een compleet profiel uit de al berekende data.
+function bouwLeerlingProfielen(cats) {
+  const VAKKEN = ['rekenen', 'taalverzorging', 'lezen'];
+  const actieve = VAKKEN.filter(vk => iepData.vakken && iepData.vakken[vk]);
+  const sel = iepGeselecteerdeLeerlingen || new Set();
+  const voData = berekenVOIndicatie(); // null als het meetmoment niet in aanmerking komt
+
+  // Groepsgemiddelde ontwikkelscore per vak (alleen referentietoets, niet-uitgesloten).
+  const groepGem = {};
+  actieve.forEach(vk => {
+    const rs = iepData.vakken[vk].alleLeerlingen
+      .filter(x => !x.excluded && isReferentieToets(x.variant) && typeof x.score === 'number')
+      .map(x => x.score);
+    groepGem[vk] = rs.length ? Math.round(rs.reduce((a, b) => a + b, 0) / rs.length) : null;
+  });
+
+  const uit = [];
+  [...sel].forEach(volledigeNaam => {
+    const perVak = [];
+    let weergaveNaam = volledigeNaam, voornaam = voornaamVan(volledigeNaam);
+    actieve.forEach(vk => {
+      const v = iepData.vakken[vk];
+      const rijen = v.alleLeerlingen.filter(l => l.naam === volledigeNaam && !l.excluded);
+      if (!rijen.length) return;
+      // Beste rij: referentietoets met score > numerieke score > eerste rij.
+      const l = rijen.find(x => isReferentieToets(x.variant) && typeof x.score === 'number')
+        || rijen.find(x => typeof x.score === 'number') || rijen[0];
+      if (l.weergaveNaam) { weergaveNaam = l.weergaveNaam; voornaam = l.voornaam || voornaam; }
+      const cellen = v.scoreverdeling.cellen;
+      const bandKey = ['hoogste', 'drempel', 'onder1f', 'opweg'].find(k => cellen[k].includes(l)) || null;
+      const bl = bandLabels(ctxMeetmoment, vk);
+      const bandTekst = bandKey
+        ? ({ hoogste: bl.hoogste, drempel: bl.drempel, onder1f: bl.onder1fLang || bl.onder1f, opweg: bl.opwegLang || bl.opweg }[bandKey])
+        : (isGeenResultaat(l) ? 'Geen resultaat (te moeilijk)' : '—');
+      const terug = !isReferentieToets(l.variant);
+      // Domeinen op 1-2 vragen (onbetrouwbaar) niet als sterk/zwak meenemen — net als de groepsanalyse.
+      const onbetrouwbaarDom = new Set((v.domeinAnalyse || []).filter(d => d.betrouwbaar === 'onbetrouwbaar').map(d => d.domein));
+      const dom = etplELDomeinen(l.domeinScores, onbetrouwbaarDom);
+      const gg = terug ? null : groepGem[vk];
+      perVak.push({
+        vakKey: vk, label: VAK_LABELS[vk],
+        score: (typeof l.score === 'number') ? l.score : null,
+        niveau: l.niveau || '', variant: l.variant || '',
+        teruggetoetst: terug, geenResultaat: isGeenResultaat(l),
+        bandKey, bandLabel: bandTekst, drempel: v.scoreverdeling.drempel,
+        groepGem: gg, verschil: (gg != null && typeof l.score === 'number' && !terug) ? (l.score - gg) : null,
+        zwak: dom.zwak.slice(0, 3), sterk: dom.sterk.slice(0, 2),
+        contextKaal: l.contextKaal || null,
+        achterstand: (cats.dl != null && typeof l.dle === 'number') ? Math.round(cats.dl - l.dle) : null
+      });
+    });
+    if (!perVak.length) return; // geen analyseerbare data voor dit kind -> overslaan
+
+    // Kruisprofielen (match op weergavenaam, consistent met etplCategoriseer).
+    const wn = weergaveNaam, kr = cats.kruis, prof = [];
+    if (kr.bredeZorg.includes(wn)) prof.push('Onder de drempel op alle drie de kernvakken; brede basisondersteuning werkt hier beter dan losse domeingroepjes');
+    else if (kr.tweeVakken.includes(wn)) {
+      if (kr.taligZwakRekensterk.includes(wn)) prof.push('Onder de drempel op twee vakken: sterk in rekenen, maar zwak op de talige vakken');
+      else if (kr.rekenzwakSterkerLezen.includes(wn)) prof.push('Onder de drempel op twee vakken: lezen is een steunpunt, rekenen en taalverzorging nog niet op niveau');
+      else prof.push('Onder de drempel op twee kernvakken');
+    } else {
+      Object.entries(kr.eenZorgvak).forEach(([vak, namen]) => { if (namen.includes(wn)) prof.push('Eén zorgvak: ' + vak + ' (op de andere vakken op niveau, dus gerichte hulp volstaat)'); });
+    }
+    if (kr.kopgroep.includes(wn)) prof.push('Sterke kopgroep: op of boven de drempel op alle kernvakken; bied verdieping en uitdaging');
+    if (kr.doorwerkendLees.includes(wn)) prof.push('Doorwerkend leesprofiel: moeite met contextsommen én met opzoeken bij lezen');
+    if (kr.teruggetoetstMeervoudig.includes(wn)) prof.push('Op meerdere vakken op een lager niveau getoetst; het juiste niveau verdient een aanvullende analyse');
+
+    let vo = null;
+    if (voData) {
+      const a = voData.advies.find(x => x.naam === wn);
+      if (a) vo = { richting: a.richting, gewogen: a.gewogen };
+      else if (voData.geenAdvies.find(g => g.naam === wn)) vo = { geen: true };
+    }
+
+    // toonNaam = klasnaam uit dashboard als die zeker matcht, anders de export-weergavenaam.
+    // De matching hierboven blijft op de export-naam (wn), zodat de kruisprofielen kloppen.
+    uit.push({ naam: volledigeNaam, weergaveNaam: wn, toonNaam: iepKoppelNaam(volledigeNaam) || wn, voornaam, vakken: perVak, profielen: prof, vo });
+  });
+
+  uit.sort((a, b) => a.toonNaam.localeCompare(b.toonNaam, 'nl'));
+  return uit;
+}
+
+// Feitelijke terugvaltekst als de AI overslaat (budget op) of faalt: puur uit de data.
+function iepLeerlingFeiten(ld) {
+  const delen = [];
+  ld.vakken.forEach(v => {
+    if (v.teruggetoetst) { delen.push(`${v.label}: op een lager niveau getoetst (${v.variant || v.niveau || 'aangepaste toets'}).`); return; }
+    if (v.geenResultaat) { delen.push(`${v.label}: geen resultaat, de toets was te moeilijk.`); return; }
+    let z = `${v.label}: ontwikkelscore ${v.score}`;
+    if (v.bandLabel && v.bandLabel !== '—') z += ` (${v.bandLabel.toLowerCase()})`;
+    if (v.verschil != null) z += `, ${v.verschil > 0 ? v.verschil + ' boven' : (v.verschil < 0 ? (-v.verschil) + ' onder' : 'gelijk aan')} het groepsgemiddelde`;
+    delen.push(z + '.');
+  });
+  return delen.join(' ');
+}
+
+// AI-tekst per leerling: duiding ("waar staat het kind") + aandachtspunten. JSON-uitvoer.
+function iepLeerlingSysteem() {
+  return `Je bent een ervaren leerkracht in het basisonderwijs die de toetsresultaten van ÉÉN leerling beschrijft op basis van VOORBEREKENDE cijfers. Je rekent zelf niets uit en verzint geen getallen, domeinen of namen.
+
+Noem de leerling nooit bij naam; schrijf "deze leerling". Anonieme codes (LL-01, ...) die je toevallig tegenkomt gebruik je niet.
+
+Schrijf in gewone spreektaal, vanuit jezelf als leerkracht ("Ik zie...", "Deze leerling..."). Wees eerlijk over waar het kind uitvalt, maar benoem net zo goed wat sterk gaat. Een band als "op weg naar 1F", "op weg naar <periode>" of "lager" betekent ACHTERSTAND, niet "bijna goed"; een leerling die onder het groepsgemiddelde zit maar de drempelwaarde haalt, zit op niveau. Gebruik de bandnamen en cijfers exact zoals gegeven; verzin er niets bij. Gebruik GEEN gedachtestreepje (— of –); schrijf met gewone komma's, punten of "want". Geen AI-taal, geen wollige inleiding, begin direct.
+
+Antwoord UITSLUITEND met geldige JSON, zonder tekst eromheen: {"duiding": "...", "aandacht": "..."} — "duiding" = 3 tot 4 zinnen over waar de leerling staat en hoe dat zich verhoudt tot de groep; "aandacht" = 2 tot 3 zinnen met concrete aandachtspunten en kansen, als suggestie.`;
+}
+
+function iepLeerlingPrompt(ld) {
+  let s = `GROEP: ${ctxGroep} · MEETMOMENT: ${ctxMeetmoment}\nHet gaat over ÉÉN leerling. Noem geen naam.\n\nPER VAK:\n`;
+  ld.vakken.forEach(v => {
+    if (v.teruggetoetst) { s += `- ${v.label}: op een lager niveau getoetst (${v.variant || v.niveau}). Ligt op een andere schaal, dus niet met het groepsgemiddelde te vergelijken.\n`; return; }
+    if (v.geenResultaat) { s += `- ${v.label}: geen resultaat, de toets was te moeilijk; moet lager teruggetoetst worden.\n`; return; }
+    s += `- ${v.label}: ontwikkelscore ${v.score}`;
+    if (v.drempel != null) s += `, drempelwaarde ${v.drempel}`;
+    if (v.groepGem != null) s += `, groepsgemiddelde ${v.groepGem}`;
+    s += `. Positie: ${v.bandLabel || '—'}.`;
+    if (v.verschil != null) s += ` Dat is ${v.verschil > 0 ? v.verschil + ' punten boven' : (v.verschil < 0 ? (-v.verschil) + ' punten onder' : 'gelijk aan')} het groepsgemiddelde.`;
+    if (v.zwak && v.zwak.length) s += ` Valt uit op: ${v.zwak.map(d => `${d.domein} (${d.pct}%)`).join(', ')}.`;
+    if (v.sterk && v.sterk.length) s += ` Sterk op: ${v.sterk.map(d => `${d.domein} (${d.pct}%)`).join(', ')}.`;
+    if (v.contextKaal && v.contextKaal.context != null && v.contextKaal.kaal != null) s += ` Contextsommen ${Math.round(v.contextKaal.context * 100)}% vs. kale sommen ${Math.round(v.contextKaal.kaal * 100)}%.`;
+    if (v.achterstand != null && v.achterstand >= 1) s += ` Achterstand ~${v.achterstand} maanden.`;
+    s += `\n`;
+  });
+  if (ld.profielen && ld.profielen.length) s += `\nBEELD OVER DE VAKKEN HEEN: ${ld.profielen.join('; ')}.\n`;
+  if (ld.vo && !ld.vo.geen) s += `\nUITSTROOMINDICATIE (huidige data, streng bedoeld, geen advies): richting ${ld.vo.richting}, gewogen ontwikkelscore ${ld.vo.gewogen}.\n`;
+  s += `\nSchrijf nu de "duiding" en "aandacht" voor deze leerling. Gebruik uitsluitend de gegeven cijfers.`;
+  return s;
+}
+
+async function iepSchrijfLeerlingTekst(ld) {
+  try {
+    const raw = await callClaude('claude-sonnet-4-6', iepLeerlingSysteem(), iepLeerlingPrompt(ld), 700);
+    const j = extractJSON(raw) || {};
+    return { duiding: schoonStijl((j.duiding || '').trim()), aandacht: schoonStijl((j.aandacht || '').trim()) };
+  } catch (e) { return null; }
+}
+
+// Bouwt het Word-document met één pagina per leerling. Zelfstandige helpers (closures),
+// in dezelfde stijl als etplBouwDocxBlob, zodat er geen naamconflicten ontstaan.
+async function iepBouwLeerlingDocxBlob(leerlingen, teksten) {
+  teksten = teksten || {};
+  const INK = '1A1A2E', ACCENT = 'C8553D', TEAL = '3F6F63', MUTED = '6B6357';
+  const HEADFILL = 'EDE7DD', LIGHT = 'FAF7F2';
+  const CW = 9026;
+  const xe = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  function R(text, o) { o = o || {};
+    let rpr = '<w:rFonts w:ascii="Arial" w:hAnsi="Arial"/>';
+    if (o.bold) rpr += '<w:b/>'; if (o.italic) rpr += '<w:i/>';
+    rpr += `<w:color w:val="${o.color || INK}"/><w:sz w:val="${o.size || 21}"/>`;
+    return `<w:r><w:rPr>${rpr}</w:rPr><w:t xml:space="preserve">${xe(text)}</w:t></w:r>`; }
+  function P(runsXml, o) { o = o || {};
+    let ppr = '';
+    if (o.pageBreak) ppr += '<w:pageBreakBefore/>';
+    if (o.numId) ppr += `<w:numPr><w:ilvl w:val="0"/><w:numId w:val="${o.numId}"/></w:numPr>`;
+    if (o.bottom) ppr += `<w:pBdr><w:bottom w:val="single" w:sz="${o.bottom}" w:space="4" w:color="${o.bottomColor || ACCENT}"/></w:pBdr>`;
+    const sb = o.before == null ? 40 : o.before, sa = o.after == null ? 100 : o.after;
+    ppr += `<w:spacing w:before="${sb}" w:after="${sa}" w:line="264" w:lineRule="auto"/>`;
+    if (o.ind) ppr += `<w:ind w:left="${o.ind}"/>`;
+    return `<w:p><w:pPr>${ppr}</w:pPr>${runsXml}</w:p>`; }
+  const H1 = (t, brk) => P(R(t, { bold: true, size: 32 }), { pageBreak: brk, before: brk ? 0 : 70, after: 30, bottom: 10 });
+  const QL = t => P(R(t, { bold: true, size: 21 }), { before: 90, after: 24 });
+  const body = (x, o) => P(x, Object.assign({ size: 21, after: 60 }, o || {}));
+  const bullet = x => P(x, { numId: 1, after: 50 });
+  const placeholder = t => P(R(t, { italic: true, size: 20, color: ACCENT }), { before: 30, after: 60 });
+  const noteLine = t => P(R(t, { italic: true, size: 17, color: MUTED }), { before: 60 });
+  const cell = (paras, w, fill) => `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${fill ? `<w:shd w:val="clear" w:color="auto" w:fill="${fill}"/>` : ''}<w:tcMar><w:top w:w="70"/><w:left w:w="110"/><w:bottom w:w="70"/><w:right w:w="110"/></w:tcMar></w:tcPr>${paras || '<w:p/>'}</w:tc>`;
+  const tblBorders = `<w:tblBorders>${['top','left','bottom','right','insideH','insideV'].map(s => `<w:${s} w:val="single" w:sz="4" w:space="0" w:color="D8D0C2"/>`).join('')}</w:tblBorders>`;
+  function table(colWidths, rows) {
+    const total = colWidths.reduce((a, b) => a + b, 0);
+    const grid = colWidths.map(w => `<w:gridCol w:w="${w}"/>`).join('');
+    const trs = rows.map(r => `<w:tr>${r.map(c => cell(c.p, c.w, c.fill)).join('')}</w:tr>`).join('');
+    return `<w:tbl><w:tblPr><w:tblW w:w="${total}" w:type="dxa"/>${tblBorders}<w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>${grid}</w:tblGrid>${trs}</w:tbl>` + P('', { after: 60 });
+  }
+
+  function leerlingSectie(ld, idx) {
+    const K = [];
+    K.push(H1(ld.toonNaam || ld.weergaveNaam, idx > 0));
+    K.push(P(R((ctxGroep || '—') + ' · meetmoment ' + (ctxMeetmoment || '—') + ' · IEP (Bureau ICE) · ' + new Date().toLocaleDateString('nl-NL'), { italic: true, size: 19, color: MUTED }), { after: 40 }));
+    K.push(P(R('Indicatie op basis van de toetsdata. ', { bold: true, size: 18, color: ACCENT }) + R('Alle cijfers komen uit de IEP-export en de IEP-normtabellen; de leerkracht blijft eindverantwoordelijk.', { size: 18, color: MUTED }), { after: 100 }));
+
+    // Tabel per vak
+    const ws = [1700, 1300, 1300, 2126, 1300, 1300];
+    const hd = ['Vakgebied', 'Ontw.score', 'Niveau', 'Positie', 'Groepsgem.', 't.o.v. groep'];
+    const rows = [hd.map((h, i) => ({ p: P(R(h, { bold: true, size: 17 })), w: ws[i], fill: HEADFILL }))];
+    ld.vakken.forEach(v => {
+      const scoreTxt = v.geenResultaat || v.score == null ? '—' : String(v.score);
+      const niveauTxt = v.teruggetoetst ? (v.variant || v.niveau || '—') : (v.niveau || '—');
+      const posTxt = v.bandLabel || '—';
+      const ggTxt = (v.teruggetoetst || v.groepGem == null) ? '—' : String(v.groepGem);
+      const versTxt = v.verschil == null ? '—' : (v.verschil > 0 ? '+' + v.verschil : (v.verschil < 0 ? String(v.verschil) : 'gelijk'));
+      rows.push([
+        { p: P(R(v.label, { bold: true, size: 18, color: TEAL })), w: ws[0], fill: LIGHT },
+        { p: P(R(scoreTxt, { size: 18 })), w: ws[1] },
+        { p: P(R(niveauTxt, { size: 18 })), w: ws[2] },
+        { p: P(R(posTxt, { size: 18 })), w: ws[3] },
+        { p: P(R(ggTxt, { size: 18 })), w: ws[4] },
+        { p: P(R(versTxt, { size: 18, color: v.verschil != null && v.verschil < 0 ? ACCENT : INK })), w: ws[5] }
+      ]);
+    });
+    K.push(table(ws, rows));
+
+    const t = teksten[ld.naam] || null;
+    K.push(QL('Waar staat deze leerling?'));
+    K.push((t && t.duiding) ? body(R(t.duiding, { size: 21 })) : body(R(iepLeerlingFeiten(ld), { size: 21 })));
+
+    K.push(QL('Sterke kanten en waar het uitvalt'));
+    let anyDom = false;
+    ld.vakken.forEach(v => {
+      if (v.teruggetoetst || v.geenResultaat) return;
+      const parts = [];
+      if (v.zwak && v.zwak.length) parts.push('valt uit op ' + v.zwak.map(d => d.domein + ' (' + d.pct + '%)').join(', '));
+      if (v.sterk && v.sterk.length) parts.push('sterk op ' + v.sterk.map(d => d.domein + ' (' + d.pct + '%)').join(', '));
+      if (v.contextKaal && v.contextKaal.context != null && v.contextKaal.kaal != null) {
+        const c = Math.round(v.contextKaal.context * 100), k = Math.round(v.contextKaal.kaal * 100);
+        if (Math.abs(c - k) >= 15) parts.push(c < k ? 'moeite met contextsommen (' + c + '%) t.o.v. kale sommen (' + k + '%)' : 'moeite met kale sommen (' + k + '%) t.o.v. contextsommen (' + c + '%)');
+      }
+      if (parts.length) { anyDom = true; K.push(bullet(R(v.label + ': ', { bold: true, size: 20 }) + R(parts.join('; ') + '.', { size: 20 }))); }
+    });
+    if (!anyDom) K.push(body(R('Geen scherpe uitschieters in de onderdelen; het beeld is gelijkmatig over de domeinen.', { size: 20, color: MUTED })));
+
+    K.push(QL('Aandachtspunten en kansen'));
+    K.push((t && t.aandacht) ? body(R(t.aandacht, { size: 21 })) : placeholder('(kon niet automatisch worden geschreven — controleer de API-sleutel of vul zelf aan)'));
+
+    if (ld.profielen && ld.profielen.length) {
+      K.push(QL('Beeld over de vakken heen'));
+      ld.profielen.forEach(pf => K.push(bullet(R(pf + '.', { size: 20 }))));
+    }
+
+    if (ld.vo) {
+      K.push(QL('Uitstroomindicatie op basis van de huidige data'));
+      if (ld.vo.geen) {
+        K.push(body(R('Geen indicatie mogelijk: een kernvak ontbreekt of is buiten beschouwing gelaten.', { size: 20, color: MUTED })));
+      } else {
+        K.push(body(R('Richting: ', { bold: true, size: 21 }) + R(ld.vo.richting, { size: 21 }) + R('  (gewogen ontwikkelscore ' + ld.vo.gewogen + ').', { size: 20, color: MUTED })));
+        K.push(noteLine('Indicatie, geen advies. Puur op de huidige toetsscores, zonder groeiverwachting; de schoolstandaard en de leerkracht bepalen het echte advies.'));
+      }
+    }
+    return K.join('');
+  }
+
+  function buildDocumentXml() {
+    const K = [];
+    leerlingen.forEach((ld, i) => { K.push(leerlingSectie(ld, i)); });
+    const sect = '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1080" w:right="1300" w:bottom="1080" w:left="1300" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr>';
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + K.join('') + sect + '</w:body></w:document>';
+  }
+
+  const docXml = buildDocumentXml();
+  const parts = {
+    '[Content_Types].xml': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/></Types>',
+    '_rels/.rels': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>',
+    'word/_rels/document.xml.rels': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/></Relationships>',
+    'word/styles.xml': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:sz w:val="21"/><w:szCs w:val="21"/></w:rPr></w:rPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>',
+    'word/numbering.xml': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="460" w:hanging="240"/></w:pPr><w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol" w:hint="default"/><w:color w:val="' + ACCENT + '"/></w:rPr></w:lvl></w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>',
+    'word/document.xml': docXml
+  };
+  const zip = new JSZip();
+  Object.entries(parts).forEach(([k, v]) => zip.file(k, v));
+  return zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+}
+
+// Orkestreert de individuele analyse: profielen -> AI per kind -> document -> download.
+async function genereerIndividueleAnalyse() {
+  const wacht = ms => new Promise(r => setTimeout(r, ms));
+
+  // Onzekere namen eerst laten bevestigen (ze komen als kop in het document).
+  if (naamCorrecties.some(c => !c.auto)) {
+    document.getElementById('loading-box').classList.remove('visible');
+    toonNaamModal();
+    await new Promise(res => { etplNaamResolve = res; });
+    document.getElementById('loading-box').classList.add('visible');
+  }
+  etplPasNamenToe();
+
+  if (!iepGeselecteerdeLeerlingen || !iepGeselecteerdeLeerlingen.size) {
+    document.getElementById('loading-box').classList.remove('visible');
+    document.getElementById('btn-analyse').disabled = false;
+    showError('Kies eerst minstens één leerling om te analyseren.');
+    return;
+  }
+  if (iepGeselecteerdeLeerlingen.size > IEP_INDIV_MAX) {
+    document.getElementById('loading-box').classList.remove('visible');
+    document.getElementById('btn-analyse').disabled = false;
+    showError(`Maximaal ${IEP_INDIV_MAX} kinderen per individuele ronde. Vink er een paar af of kies een groepsanalyse.`);
+    return;
+  }
+
+  setupProgress(['Toetsgegevens inlezen', 'Leerlingprofielen samenstellen', 'AI schrijft de rapporten', 'Leerlingrapport opmaken']);
+  setProg(0, 'active'); setSub('Scores en niveaus per leerling verzamelen…'); await wacht(300); setProg(0, 'done');
+
+  let leerlingen, teksten = {}, blob;
+  try {
+    setProg(1, 'active'); setSub('Per kind de positie t.o.v. de groep bepalen…');
+    if (window.avinkaMask) { try { await window.avinkaMask.ready; } catch (e) {} } // klasnamen voor nette koppen
+    const cats = etplCategoriseer(); window.__etplCats = cats;
+    leerlingen = bouwLeerlingProfielen(cats);
+    await wacht(200); setProg(1, 'done');
+    if (!leerlingen.length) throw new Error('Geen analyseerbare toetsdata voor de gekozen leerlingen.');
+
+    setProg(2, 'active'); setSub('De AI schrijft de rapporten…');
+    etplHerbouwNameMap();
+    for (const ld of leerlingen) {
+      if (budgetOp()) { kostenCapBereikt = true; teksten[ld.naam] = null; continue; }
+      teksten[ld.naam] = await iepSchrijfLeerlingTekst(ld);
+    }
+    setProg(2, 'done');
+
+    setProg(3, 'active'); setSub('Leerlingrapport opmaken…');
+    blob = await iepBouwLeerlingDocxBlob(leerlingen, teksten); setProg(3, 'done'); setSub('');
+  } catch (e) {
+    document.getElementById('loading-box').classList.remove('visible');
+    document.getElementById('btn-analyse').disabled = false;
+    showError('Het opbouwen van de leerlingrapporten gaf een fout: ' + e.message);
+    return;
+  }
+
+  document.getElementById('loading-box').classList.remove('visible');
+  // De schooltemplate-knoppen horen bij deze weg niet; verberg ze.
+  document.getElementById('btn-download').style.display = 'none';
+  const diagBtn = document.querySelector('#result-box button[onclick="downloadDiagnose()"]');
+  if (diagBtn) diagBtn.style.display = 'none';
+
+  document.getElementById('result-subtitle').textContent = `Leerlingrapport — ${leerlingen.length} leerling${leerlingen.length === 1 ? '' : 'en'}`;
+  const w = document.getElementById('result-warnings');
+  const extra = kostenCapBereikt
+    ? '<div style="font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:6px;">Bij een deel van de leerlingen is de AI-tekst overgeslagen om de kosten te beperken; daar staan de feiten uit de data. Je kunt die stukjes zelf aanvullen.</div>' : '';
+  try {
+    const url = URL.createObjectURL(blob);
+    const bestand = `Leerlingrapport_${(ctxGroep || '').replace(/\s/g, '')}_${ctxMeetmoment || ''}_${new Date().toISOString().slice(0, 10)}.docx`;
+    const dl = `<a class="btn-analyse" style="text-decoration:none;margin-bottom:12px;" href="${url}" download="${escapeHtml(bestand)}"><span>⬇</span><span>Download leerlingrapport</span></a>`;
+    w.innerHTML = dl + extra;
+  } catch (e) {
+    w.innerHTML = '<strong>De rapporten zijn gebouwd, maar de downloadlink gaf een fout.</strong><br>' + escapeHtml(e.message);
+  }
+  w.classList.add('visible');
+  document.getElementById('result-box').classList.add('visible');
+  markStepDone('step2', 'step3');
+  meldAnalyseGedaan();
+}
+
+// ════════════════════════════════════════════════════════════
 // EIGEN TOETSWIJS-TEMPLATE — nieuwe weg (geen schooltemplate geüpload)
 // iepData is op dit punt al berekend en is template-onafhankelijk. Deze functie
 // raakt de bestaande schooltemplate-weg niet aan; ze is volledig op zichzelf staand.
@@ -3989,8 +4574,7 @@ async function genereerEigenTemplate() {
     const url = URL.createObjectURL(blob);
     const bestand = `Toetsanalyse_${(ctxGroep || '').replace(/\s/g, '')}_${ctxMeetmoment || ''}_${new Date().toISOString().slice(0, 10)}.docx`;
     const dl = `<a class="btn-analyse" style="text-decoration:none;margin-bottom:12px;" href="${url}" download="${escapeHtml(bestand)}"><span>⬇</span><span>Download Toetsanalyse-document</span></a>`;
-    const note = `<div style="font-size:12.5px;color:var(--muted);line-height:1.55;">Controleer de tekst altijd even vóór gebruik.</div>`;
-    w.innerHTML = dl + note;
+    w.innerHTML = dl;
   } catch (e) {
     w.innerHTML = '<strong>Het document is gebouwd, maar de downloadlink gaf een fout.</strong><br>' + escapeHtml(e.message);
   }
@@ -4004,14 +4588,23 @@ async function genereerEigenTemplate() {
 // Omvang = leerlingen × analyseerbare vakken (de hoeveelheid geduide data).
 function analyseItems() {
   try {
-    var leerlingen = (iepData && iepData.groepsoverzicht && iepData.groepsoverzicht.length) || 0;
     var vakken = (iepData && iepData.vakken) ? Object.keys(iepData.vakken).length : 0;
+    // Individuele analyse: de omvang = de gekozen kinderen (niet de hele groep), zodat de
+    // tijdwinst meeschaalt met 1 t/m 10 leerlingen. Groepsanalyse: de hele groep.
+    var leerlingen = (iepModus === 'individueel' && iepGeselecteerdeLeerlingen)
+      ? iepGeselecteerdeLeerlingen.size
+      : ((iepData && iepData.groepsoverzicht && iepData.groepsoverzicht.length) || 0);
     var n = leerlingen * vakken;
     return n > 0 ? n : leerlingen;
   } catch (e) { return 0; }
 }
 function meldAnalyseGedaan() {
-  if (typeof avinkaTel === 'function') avinkaTel('analyse', { items: analyseItems() });
+  iepGegenereerd = true; // geslaagde analyse: knop weg tot de gebruiker iets wijzigt
+  const b = document.getElementById('btn-analyse'); if (b) b.style.display = 'none';
+  // Individuele analyse telt als 'leerlingrapport' (eigen tijdwinst-profiel); de
+  // groepsanalyse blijft 'analyse'. analyseItems() levert al de juiste omvang per modus.
+  const type = (iepModus === 'individueel') ? 'leerlingrapport' : 'analyse';
+  if (typeof avinkaTel === 'function') avinkaTel(type, { items: analyseItems() });
 }
 
 async function startAnalyse() {
@@ -4047,6 +4640,16 @@ async function startAnalyse() {
     // Bouwt alleen bijzData op voor de schooltemplate-weg; er gaat niets naar de AI.
     setSub('Eigen-leerroute-keuzes toepassen…');
     await verwerkBijzonderheden();
+
+    // ════════════════════════════════════════════════════════════
+    // VERTAKKING — individuele analyse (rapport per leerling)
+    // Gaat vóór de template-vertakking: in deze modus maken we altijd ons eigen
+    // leerlingrapport (een schooltemplate is voor de groep, niet per kind).
+    // ════════════════════════════════════════════════════════════
+    if (iepModus === 'individueel') {
+      await genereerIndividueleAnalyse();
+      return;
+    }
 
     // ════════════════════════════════════════════════════════════
     // VERTAKKING — eigen Toetsanalyse-template of geüpload schooltemplate
@@ -5756,7 +6359,19 @@ function citoParseDetailanalyse(tekst, woorden) {
     if (/^(goed|fout|domein|categorie|onderdeel|score|niveau)$/i.test(naam)) continue; // koprij overslaan
     domeinen.push({ domein: naam, goed: pcts[0].val, fout: pcts[1].val });
   }
-  return { groepsniveau, meetmoment: meta.meetmoment, domeinen };
+  // Dedup: dezelfde categorie kan dubbel in de PDF staan (bv. "Werkwoordspelling" én
+  // "Categorie werkwoordspelling"). Normaliseer en houd er één (de schoonste naam).
+  const _normDom = s => String(s || '').toLowerCase()
+    .replace(/^categorie(?:ë|e)?n?\s+(?:van\s+)?/i, '')
+    .replace(/[^a-zà-ÿ0-9]+/g, ' ').trim();
+  const _seen = new Map(), _uniek = [];
+  for (const d of domeinen) {
+    const key = _normDom(d.domein);
+    if (!key) { _uniek.push(d); continue; }
+    if (!_seen.has(key)) { _seen.set(key, _uniek.length); _uniek.push(d); }
+    else { const idx = _seen.get(key); if (d.domein.length < _uniek[idx].domein.length) _uniek[idx] = d; }
+  }
+  return { groepsniveau, meetmoment: meta.meetmoment, domeinen: _uniek };
 }
 
 // ════════════════════════════════════════════════════════════════════════
@@ -6338,6 +6953,26 @@ function citoDuidingPrompt(vk, p, cats, ctx) {
   s += `\nSchrijf nu de duiding voor ${p.label}.`;
   return s;
 }
+// ── AI-duiding bij "Welke onderdelen en categorieën vallen op?" (per vak, Cito) ──
+// Spiegel van etplDomeinSysteem/etplDomeinPrompt, maar in Cito-termen (% fout i.p.v. % goed).
+function citoDomeinSysteem() {
+  return `Je bent een ervaren leerkracht in het basisonderwijs die de toetsresultaten van de eigen groep beschrijft. Je schrijft een korte duiding over de ONDERDELEN (domeinen/categorieën) binnen ÉÉN vakgebied: welke onderdelen vallen op, waar valt de groep uit en wat gaat juist goed. Je rekent zelf niets uit en verzint geen getallen, domeinen of namen.
+
+De onderdelen krijg je voorgekauwd met het percentage fouten (hoger = zwakker). Gebruik de onderdeelnamen en percentages exact zoals gegeven; verzin er geen bij.
+
+Schrijf 2 tot 4 zinnen in gewone spreektaal, vanuit jezelf als leerkracht ("Ik zie..."). Benoem welke onderdelen het zwakst zijn (met hun percentage fout) en of ze aandacht vragen. Een onderdeel met weinig fouten mag je noemen als het juist goed gaat. Liggen de percentages dicht bij elkaar of rust een onderdeel op te weinig vragen, zeg dat dan eerlijk. Gebruik GEEN gedachtestreepje (— of –); schrijf met gewone komma's, punten of "want". Geen AI-taal, geen wollige inleiding, begin direct en herhaal de vraag niet.`;
+}
+function citoDomeinPrompt(vk, p) {
+  let s = `VAK: ${p.label}\n\n`;
+  if (p.zwakDomeinen && p.zwakDomeinen.length) {
+    s += `ONDERDELEN met de meeste fouten (% fout, hoog naar laag):\n`;
+    p.zwakDomeinen.forEach(d => { s += `- ${d.domein}: ${d.fout}% fout\n`; });
+  } else {
+    s += `(geen detailanalyse per onderdeel beschikbaar voor dit vak)\n`;
+  }
+  s += `\nSchrijf nu de korte duiding over de onderdelen van ${p.label}.`;
+  return s;
+}
 function citoTipsSysteem() {
   return 'Je bent een ervaren leerkracht in het basisonderwijs. Je schrijft korte, concrete, klasgerichte tips: hoe je een zwak onderdeel of een instructiegroepje praktisch zou kunnen aanpakken. Eén tip per item, 1 à 2 zinnen, als suggestie ("Je zou kunnen…", "Pak … aan met…"), haalbaar in de klas (EDI, korte dagelijkse oefenmomenten, een instructiegroep, gericht oefenen, differentiatie). GEEN schoolbrede afspraken, geen IB/RT-overleg, geen managementtaal, GEEN gedachtestreepje. Verzin geen cijfers of namen.\n\nAntwoord UITSLUITEND met geldige JSON, zonder tekst eromheen: {"tips": {"1": "…", "2": "…"}} met voor elk genummerd item precies één tip.';
 }
@@ -6350,12 +6985,17 @@ function citoTipsPrompt(klassikaalItems, groepItems) {
 // Genereert {duiding:{vk}, klassikaal:[], groepjes:[]} voor het Cito-document.
 async function citoSchrijfTeksten(cats, ctx) {
   citoVerzamelNamenVoorMasking(); // namen -> codes vóór elke AI-aanroep
-  const teksten = { duiding: {}, klassikaal: [], groepjes: [] };
+  const teksten = { duiding: {}, domein: {}, klassikaal: [], groepjes: [] };
   for (const vk of cats.meta.vakken) {
     try {
       const raw = await callClaude('claude-sonnet-4-6', citoDuidingSysteem(), citoDuidingPrompt(vk, cats.perVak[vk], cats, ctx), 600);
       teksten.duiding[vk] = schoonStijl((raw || '').trim());
     } catch (e) { teksten.duiding[vk] = ''; }
+    if (budgetOp()) continue; // kostencap: onderdeel-duiding overslaan, valt terug op de feitenregel
+    try {
+      const raw = await callClaude('claude-sonnet-4-6', citoDomeinSysteem(), citoDomeinPrompt(vk, cats.perVak[vk]), 500);
+      teksten.domein[vk] = schoonStijl((raw || '').trim());
+    } catch (e) { teksten.domein[vk] = ''; }
   }
   const klassikaalItems = [];
   cats.meta.vakken.forEach(vk => { const p = cats.perVak[vk]; (p.zwakDomeinen || []).filter(d => d.fout >= 50).slice(0, 2).forEach(d => klassikaalItems.push({ label: p.label, domein: d.domein, pct: d.fout })); });
@@ -6511,11 +7151,14 @@ async function citoBouwDocxBlob(cats, teksten, ctx) {
       if (duid) duid.split(/\n+/).forEach(par => { if (par.trim()) K.push(body(R(par.trim(), { size: 21 }))); });
       else K.push(placeholder('(duiding kon niet worden gegenereerd — controleer of je bent ingelogd / online)'));
 
-      // Welke onderdelen en categorieën vallen op? — de zwakste domeinen uit de detailanalyse.
+      // Welke onderdelen en categorieën vallen op? — AI-duiding (lopende tekst), met de
+      // zwakste domeinen uit de detailanalyse als gedempte feitenregel eronder (zoals IEP).
       K.push(QL('Welke onderdelen en categorieën vallen op?'));
+      const domTekst = (teksten.domein && teksten.domein[vk]) ? teksten.domein[vk] : '';
+      if (domTekst) domTekst.split(/\n+/).forEach(par => { if (par.trim()) K.push(body(R(par.trim(), { size: 21 }))); });
       if (p.zwakDomeinen && p.zwakDomeinen.length) {
-        K.push(body(R('Onderdelen met de meeste fouten: ', { size: 21 }) + R(p.zwakDomeinen.map(d => d.domein + ' (' + d.fout + '% fout)').join(', '), { size: 21, bold: true }) + R('.', { size: 21 })));
-      } else {
+        K.push(body(R('Onderdelen met de meeste fouten: ', { size: 20, color: MUTED }) + R(p.zwakDomeinen.map(d => d.domein + ' (' + d.fout + '% fout)').join(', '), { size: 20, color: MUTED }) + R('.', { size: 20, color: MUTED })));
+      } else if (!domTekst) {
         K.push(body(R('Geen detailanalyse beschikbaar voor dit vak. Upload de detail-PDF per vak voor de scores per onderdeel.', { size: 21, color: MUTED })));
       }
       // Onderdeel-trend t.o.v. het vorige meetmoment (alleen opvallende verschuivingen, ≥10% fout).
@@ -6637,8 +7280,107 @@ async function citoBouwDocxBlob(cats, teksten, ctx) {
 // ════════════════════════════════════════════════════════════════════════
 const CITO_PROFIEL_DREMPEL = 6;
 let citoProfielen = [];
+let citoGeselecteerdeLeerlingen = null; // namen die per kind uit het groepsoverzicht geanalyseerd worden
+let citoGegenereerd = false; // true na een geslaagde generatie: knop uit tot de gebruiker iets wijzigt
 let citoGenMode = 'groep'; // bij zowel groepsdata als profielen: 'groep' of 'profiel'
-function citoZetGenMode(m) { citoGenMode = m; citoUpdateGoButton(); }
+// Modus-schakelaar bovenaan kaart 2 (zelfde look als IEP). "Analyse per kind" werkt bij Cito
+// net als bij IEP: is er een groepsoverzicht, dan verschijnt een aanvinklijst met kinderen die
+// uit dat overzicht komen. Losse leerlingprofiel-PDF's blijven óók werken (rijkere bron).
+function citoZetModus(m) {
+  citoGenMode = m;
+  citoGegenereerd = false;
+  document.querySelectorAll('.iepui [data-citomodus]').forEach(b => b.classList.toggle('on', b.dataset.citomodus === m));
+  const hint = document.getElementById('cito-modus-hint');
+  const keuze = document.getElementById('cito-leerlingkeuze');
+  const nProfiel = (citoProfielen && citoProfielen.length) || 0;
+  const heeftGroep = !!(citoData && citoData.vakken && Object.keys(citoData.vakken).length);
+  if (m !== 'profiel') {
+    if (hint) hint.style.display = 'none';
+    if (keuze) keuze.style.display = 'none';
+    citoUpdateGoButton();
+    return;
+  }
+  if (nProfiel) {
+    // Losse profiel-PDF's zijn de rijkste bron en bepalen de rapporten; geen aanvinklijst nodig.
+    if (keuze) keuze.style.display = 'none';
+    if (hint) {
+      hint.style.display = '';
+      hint.textContent = nProfiel + ' leerlingprofiel' + (nProfiel > 1 ? 'en' : '') + ' herkend. Bij "Genereren" maak ik ' + (nProfiel > 1 ? 'per kind een rapport.' : 'een rapport voor dit kind.');
+    }
+  } else if (heeftGroep) {
+    // Kinderen uit het groepsoverzicht: aanvinklijst, zoals IEP.
+    if (keuze) { citoBouwLeerlingkeuze(); keuze.style.display = ''; }
+    if (hint) { hint.style.display = ''; hint.textContent = 'Vink de kinderen aan die je een rapport wilt geven (max ' + IEP_INDIV_MAX + ').'; }
+  } else {
+    // Nog niets ingelezen: vraag om upload.
+    if (keuze) keuze.style.display = 'none';
+    if (hint) { hint.style.display = ''; hint.textContent = 'Upload het Cito-groepsoverzicht (dan kies je hier de kinderen) of losse leerlingprofiel-PDF’s.'; }
+  }
+  citoUpdateGoButton();
+}
+function citoZetGenMode(m) { citoZetModus(m); } // achterwaartse compatibiliteit
+
+// ── Kindkeuze uit het groepsoverzicht (zelfde look/gedrag als IEP) ──
+function citoLeerlingNamen() {
+  if (!citoData || !citoData.vakken) return [];
+  const map = new Map();
+  for (const vk in citoData.vakken) (citoData.vakken[vk].perLeerling || []).forEach(l => {
+    if (l.naam && !map.has(l.naam)) map.set(l.naam, { naam: l.naam, voornaam: l.voornaam || voornaamVan(l.naam), weergave: l.weergaveNaam || l.voornaam || l.naam });
+  });
+  return [...map.values()].sort((a, b) => a.weergave.localeCompare(b.weergave, 'nl'));
+}
+function citoBouwLeerlingkeuze() {
+  const box = document.getElementById('cito-leerlingkeuze'); if (!box) return;
+  const lln = citoLeerlingNamen();
+  if (!lln.length) { citoGeselecteerdeLeerlingen = new Set(); box.innerHTML = ''; return; }
+  const bestaat = new Set(lln.map(x => x.naam));
+  // Standaard alles aangevinkt, maar alleen als het er niet meer dan de max zijn.
+  if (!citoGeselecteerdeLeerlingen) citoGeselecteerdeLeerlingen = new Set(lln.length <= IEP_INDIV_MAX ? lln.map(x => x.naam) : []);
+  else citoGeselecteerdeLeerlingen = new Set([...citoGeselecteerdeLeerlingen].filter(n => bestaat.has(n)).slice(0, IEP_INDIV_MAX));
+  const chip = x => {
+    const aan = citoGeselecteerdeLeerlingen.has(x.naam);
+    return `<label class="iep-ll-chip${aan ? ' on' : ''}" title="${escapeHtmlC(x.naam)}">`
+      + `<input type="checkbox" ${aan ? 'checked' : ''} data-naam="${escapeHtmlC(x.naam)}" onchange="citoToggleLeerling(this)">`
+      + `<span data-text="${escapeHtmlC(x.weergave)}">${escapeHtmlC(x.weergave)}</span></label>`;
+  };
+  box.innerHTML =
+    `<style>
+      .iep-ll-bar{margin-bottom:12px;}
+      .iep-ll-bar .telling{font-size:12.5px;color:var(--muted2);font-weight:600;}
+      .iep-ll-grid{display:flex;flex-wrap:wrap;gap:9px;}
+      .iep-ll-chip{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:400;color:var(--ink);background:var(--cream);border:1.5px solid var(--line-strong);border-radius:12px;padding:8px 13px;cursor:pointer;transition:border-color .15s,background .15s,box-shadow .15s;user-select:none;}
+      .iep-ll-chip:hover{border-color:var(--accent);}
+      .iep-ll-chip.on{border-color:var(--accent);background:var(--violet-soft);color:var(--accent);font-weight:700;box-shadow:0 4px 12px rgba(47,158,110,0.12);}
+      .iep-ll-chip input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;margin:0;}
+      /* Reserveer de vet-breedte zodat het aanvinken (font-weight 700) de kaart niet breder maakt en de rij niet verspringt. */
+      .iep-ll-chip span{display:inline-flex;flex-direction:column;}
+      .iep-ll-chip span::after{content:attr(data-text);font-weight:700;height:0;overflow:hidden;visibility:hidden;pointer-events:none;}
+    </style>`
+    + `<div class="iep-ll-bar"><span class="telling" id="cito-ll-telling"></span></div>`
+    + `<div class="iep-ll-grid">${lln.map(chip).join('')}</div>`;
+  citoUpdateTelling();
+}
+function citoToggleLeerling(el) {
+  const naam = el.dataset.naam;
+  citoGegenereerd = false;
+  if (!citoGeselecteerdeLeerlingen) citoGeselecteerdeLeerlingen = new Set();
+  if (el.checked) {
+    if (citoGeselecteerdeLeerlingen.size >= IEP_INDIV_MAX && !citoGeselecteerdeLeerlingen.has(naam)) {
+      el.checked = false;
+      citoShowError(`Je kunt maximaal ${IEP_INDIV_MAX} kinderen tegelijk per kind analyseren. Vink er eerst een af, of kies een groepsanalyse.`);
+      return;
+    }
+    citoGeselecteerdeLeerlingen.add(naam);
+  } else citoGeselecteerdeLeerlingen.delete(naam);
+  el.closest('.iep-ll-chip').classList.toggle('on', el.checked);
+  citoUpdateTelling();
+  citoUpdateGoButton();
+}
+function citoUpdateTelling() {
+  const el = document.getElementById('cito-ll-telling'); if (!el) return;
+  const n = citoGeselecteerdeLeerlingen ? citoGeselecteerdeLeerlingen.size : 0;
+  el.textContent = `${n} van ${IEP_INDIV_MAX} gekozen`;
+}
 
 function citoNaamTokens(s) { return String(s || '').toLowerCase().replace(/[^a-zà-ÿ\s]/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean); }
 function citoNamenMatchen(a, b) {
@@ -6786,17 +7528,36 @@ async function citoBouwLeerlingDocxBlob(leerlingen, ctx, teksten, modus) {
   return zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
 }
 
-// Orchestratie: leerlingrapport(en) genereren uit de geüploade profielen.
+// Orchestratie: leerlingrapport(en) genereren uit de geüploade profiel-PDF's (rijkste bron).
 async function citoGenereerProfielen() {
   citoClearError();
   if (!citoProfielen || !citoProfielen.length) { citoShowError('Geen leerlingprofiel herkend.'); return; }
+  const leerlingen = citoProfielen.map(p => citoLeerlingData(p, citoData));
+  const extra = new Set();
+  citoProfielen.forEach(p => { if (p.leerling) { extra.add(p.leerling); extra.add(voornaamVan(p.leerling)); } });
+  return citoGenereerLeerlingrapporten(leerlingen, extra);
+}
+
+// Orchestratie: leerlingrapport(en) per kind uit het groepsoverzicht (zoals IEP; geen losse PDF's nodig).
+async function citoGenereerUitGroep() {
+  citoClearError();
+  const sel = citoGeselecteerdeLeerlingen ? [...citoGeselecteerdeLeerlingen] : [];
+  if (!sel.length) { citoShowError('Kies eerst één of meer kinderen om te analyseren.'); return; }
+  if (!citoData) { citoShowError('Geen groepsoverzicht ingelezen.'); return; }
+  const leerlingen = sel.map(naam => citoLeerlingData({ leerling: naam, perVak: {}, groep: citoData.groep, meetmoment: citoData.meetmoment }, citoData));
+  return citoGenereerLeerlingrapporten(leerlingen, new Set(sel));
+}
+
+// Gedeelde motor: bouwt de Word-rapporten voor een lijst leerling-data-objecten.
+// extraNamen = extra te maskeren namen (profielnamen); de groepsnamen worden altijd toegevoegd.
+async function citoGenereerLeerlingrapporten(leerlingen, extraNamen) {
   const btn = document.getElementById('cito-btn-go'); if (btn) btn.disabled = true;
   const res = document.getElementById('cito-eigen-result'); if (res) res.innerHTML = '';
   const loading = document.getElementById('cito-eigen-loading');
   const groepData = citoData; // rijkste bron indien aanwezig
-  const leerlingen = citoProfielen.map(p => citoLeerlingData(p, groepData));
   const groepsModus = leerlingen.length > CITO_PROFIEL_DREMPEL;
-  citoSetupProgress(groepsModus ? ['Profielen inlezen', 'Groepsprofiel opmaken'] : ['Profielen inlezen', 'AI schrijft de duiding', 'Rapport opmaken']);
+  // Voortgang met nette fase-beschrijvingen (zoals de groepsanalyse); geen leerlingnamen.
+  citoSetupProgress(groepsModus ? ['Gegevens inlezen', 'Groepsprofiel opmaken'] : ['Gegevens inlezen', 'AI schrijft de rapporten', 'Rapport opmaken']);
   if (loading) loading.classList.add('visible');
   const ctx = { groep: (leerlingen[0] && leerlingen[0].groep) || '', meetmoment: (leerlingen[0] && leerlingen[0].meetmoment) || '' };
   try {
@@ -6804,11 +7565,10 @@ async function citoGenereerProfielen() {
     const hasKey = apiKey && apiKey.startsWith('sk-ant-');
     let teksten = {};
     if (!groepsModus) {
-      citoSetProg(1, 'active'); citoSetSub(hasKey ? 'De AI schrijft de duiding per leerling…' : 'Gegevens samenstellen…');
+      citoSetProg(1, 'active'); citoSetSub(hasKey ? 'De AI schrijft de rapporten…' : 'Gegevens samenstellen…');
       if (hasKey) {
-        // namen maskeren vóór de AI: profielnamen + groepsnamen
-        const namen = new Set();
-        citoProfielen.forEach(p => { if (p.leerling) { namen.add(p.leerling); namen.add(voornaamVan(p.leerling)); } });
+        // namen maskeren vóór de AI: meegegeven namen + alle groepsnamen
+        const namen = new Set(extraNamen || []);
         if (groepData && groepData.vakken) for (const vk in groepData.vakken) (groepData.vakken[vk].perLeerling || []).forEach(l => { if (l.naam) namen.add(l.naam); });
         buildNameMap([...namen]);
         for (const ld of leerlingen) teksten[ld.naam] = await citoSchrijfLeerlingTekst(ld);
@@ -6825,14 +7585,18 @@ async function citoGenereerProfielen() {
     const naamDeel = groepsModus ? 'groepsprofiel' : (leerlingen.length === 1 ? (leerlingen[0].voornaam || 'leerling') : leerlingen.length + 'leerlingen');
     const bestand = `Toetsanalyse_Cito_${naamDeel}_${ctx.meetmoment || ''}_${new Date().toISOString().slice(0, 10)}.docx`;
     const note = groepsModus
-      ? leerlingen.length + ' profielen → één groepsprofiel (functioneringsniveau per vak). Controleer de gegevens vóór gebruik.'
-      : 'Leerlingrapport' + (leerlingen.length > 1 ? 'en (één per leerling)' : '') + '. De cijfers komen uit de Cito-export; controleer de tekst vóór gebruik.';
+      ? leerlingen.length + ' leerlingen → één groepsprofiel (functioneringsniveau per vak).'
+      : 'Leerlingrapport' + (leerlingen.length > 1 ? 'en (één per leerling)' : '') + '. De cijfers komen uit de Cito-export.';
     if (res) res.innerHTML = `<a class="btn-analyse" style="text-decoration:none;margin-top:10px;" href="${url}" download="${escapeHtmlC(bestand)}"><span>⬇</span><span>Download ${groepsModus ? 'groepsprofiel' : 'leerlingrapport' + (leerlingen.length > 1 ? 'en' : '')}</span></a>` +
       `<div style="font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.55;">${escapeHtmlC(note)}</div>`;
+    citoGegenereerd = true; // klaar: knop blijft uit tot de gebruiker iets wijzigt
+    // Tijdwinst: omvang = som van kind×vak (zoals IEP), telt mee als 'leerlingrapport'.
+    const items = leerlingen.reduce((n, l) => n + ((l.vakken && l.vakken.length) || 0), 0);
+    if (typeof avinkaTel === 'function') avinkaTel('leerlingrapport', { items: items });
   } catch (e) {
     if (loading) loading.classList.remove('visible');
     if (res) res.innerHTML = '<div class="error-box visible">Kon het rapport niet bouwen: ' + escapeHtmlC(e.message) + '</div>';
-  } finally { if (btn) btn.disabled = false; }
+  } finally { citoUpdateGoButton(); }
 }
 
 // ════════════════════════════════════════════════════════════════════════
@@ -6872,6 +7636,7 @@ async function citoHandlePdfs(fileList){
 }
 
 function citoUpdateChecklist(){
+  citoGegenereerd = false; // nieuwe/gewijzigde upload: knop weer vrijgeven na de generatie
   const ul = document.getElementById('cito-checklist');
   const meta = document.getElementById('cito-meta');
   ul.style.display = citoBestanden.length ? 'flex' : 'none';
@@ -6904,8 +7669,7 @@ function citoUpdateChecklist(){
   // Bouwen zodra er een uitleesbare PDF is; lukt het niet, dan netjes resetten.
   const gebouwd = citoBestanden.some(b => b.woorden && b.woorden.length) ? citoLeesGegevens() : false;
   if (!gebouwd) {
-    citoData = null; citoProfielen = [];
-    const k = document.getElementById('cito-genkeuze'); if (k) k.style.display = 'none';
+    citoData = null; citoProfielen = []; citoGeselecteerdeLeerlingen = null;
     const opt = document.getElementById('cito-eigen-opties'); if (opt) opt.style.display = 'none';
     const add = document.getElementById('cito-elr-add'); if (add) add.disabled = true;
     const er = document.getElementById('cito-elr-rows'); if (er) er.innerHTML = '';
@@ -6923,14 +7687,26 @@ function citoUpdateGoButton(){
   const btn = document.getElementById('cito-btn-go'); if (!btn) return;
   const lbl = document.getElementById('cito-btn-go-label');
   const heeftProfiel = citoProfielen && citoProfielen.length;
-  const beide = citoData && heeftProfiel;
-  btn.disabled = !(citoData || heeftProfiel);
   const profielLabel = () => citoProfielen.length > CITO_PROFIEL_DREMPEL ? 'Genereer groepsprofiel' : (citoProfielen.length > 1 ? 'Genereer leerlingrapporten' : 'Genereer leerlingrapport');
+  const nSel = citoGeselecteerdeLeerlingen ? citoGeselecteerdeLeerlingen.size : 0;
   let txt = 'Genereer Toetsanalyse-document';
-  if (citoFormulieren && citoFormulieren.length) txt = 'Vul mijn groepsplan(nen) in';
-  else if (beide) txt = (citoGenMode === 'profiel') ? profielLabel() : 'Genereer Toetsanalyse-document';
-  else if (heeftProfiel) txt = profielLabel();
-  else if (citoData) txt = 'Genereer Toetsanalyse-document';
+  let enabled = !!(citoData || heeftProfiel);
+  if (citoFormulieren && citoFormulieren.length) {
+    txt = 'Vul mijn groepsplan(nen) in';
+  } else if (citoGenMode === 'profiel') {
+    if (heeftProfiel) txt = profielLabel();                       // losse leerling-PDF's (rijkste bron)
+    else if (citoData) {                                          // per kind uit het groepsoverzicht
+      txt = nSel ? ('Maak ' + nSel + ' leerlingrapport' + (nSel === 1 ? '' : 'en')) : 'Kies eerst kinderen hierboven';
+      enabled = nSel > 0;
+    }
+  } else if (citoData) {
+    txt = 'Genereer Toetsanalyse-document';
+  } else if (heeftProfiel) {
+    txt = profielLabel();
+  }
+  if (citoGegenereerd) enabled = false; // al gegenereerd: pas weer aan na een wijziging
+  btn.style.display = citoGegenereerd ? 'none' : ''; // knop verdwijnt na de generatie tot je iets wijzigt
+  btn.disabled = !enabled;
   if (lbl) lbl.textContent = txt;
 }
 
@@ -6957,7 +7733,7 @@ function citoToonProfielBevestiging(){
 function citoToonInleesBevestiging(waarschuwingen){
   citoMarkStep('cito-step1','cito-step2'); citoMarkStep('cito-step2','cito-step3');
   // Groepsgegevens-velden voorvullen — alleen als ze nog leeg zijn (handmatige correcties blijven staan).
-  const gE = document.getElementById('cito-ctx-groep'); if (gE && citoData.groep && (!gE.value.trim() || gE.dataset.vanKlas === '1')) { gE.value = citoData.groep; gE.removeAttribute('data-van-klas'); }
+  const gE = document.getElementById('cito-ctx-groep'); if (gE && citoData.groep && (!gE.value || gE.dataset.vanKlas === '1')) citoZetGroep(citoData.groep, false);
   const mE = document.getElementById('cito-ctx-meetmoment'); if (mE && citoData.meetmoment && (!mE.value || mE.dataset.vanKlas === '1')) { mE.value = citoData.meetmoment; mE.removeAttribute('data-van-klas'); }
   const aE = document.getElementById('cito-ctx-aantal'); if (aE && citoData.aantal && (!aE.value || aE.dataset.vanKlas === '1')) { aE.value = citoData.aantal; aE.removeAttribute('data-van-klas'); }
   if (typeof syncCitoWidgets === 'function') syncCitoWidgets();
@@ -6980,20 +7756,16 @@ function citoLeesGegevens(){
   // Groepsdata bewaren als die er is — als basis voor de groepsanalyse én om individuele rapporten te verrijken.
   citoData = (res.data && Object.keys(res.data.vakken).length) ? res.data : null;
   if (citoData) citoLaatsteParse = { parsed: res.merged.overzicht, details: res.merged.details, autoMm: res.merged.autoMm || 'M6' };
-  const beide = citoData && citoProfielen.length;
-  const keuze = document.getElementById('cito-genkeuze'); if (keuze) keuze.style.display = beide ? '' : 'none';
-
-  if (beide) {
-    // Zowel groepsdata als profiel(en): toon de groepsbevestiging; het keuzemenu (de bolletjes)
-    // laat de gebruiker kiezen tussen groepsdocument en individueel rapport.
-    citoGenMode = (document.querySelector('input[name=cito-genmode]:checked') || {}).value || 'groep';
+  // Groepsdata aanwezig (met of zonder profielen): toon de groepsopties. De modus-schakelaar
+  // bovenaan kaart 2 laat kiezen tussen groepsanalyse en analyse per kind (dat laatste alleen
+  // zinvol als er ook leerlingprofielen zijn herkend).
+  if (citoData) {
     citoToonInleesBevestiging(res.merged.waarschuwingen);
+    citoZetModus(citoGenMode); // schakelaar + hint bijwerken nu we weten of er profielen zijn
     return true;
   }
   // Alleen leerlingprofiel(en) -> individuele weg (stap 4).
   if (citoProfielen.length) { citoToonProfielBevestiging(); return true; }
-  // Alleen groepsdata -> groepsanalyse.
-  if (citoData) { citoToonInleesBevestiging(res.merged.waarschuwingen); return true; }
   // Terugval: de bewezen oude weg voor het Groepsoverzicht Totaal met Romeinse niveaus.
   const overzicht = citoBestanden.find(b => b.type==='overzicht');
   if (!overzicht) return false;
@@ -7011,6 +7783,7 @@ function citoLeesGegevens(){
 // Meetmoment handmatig aangepast: herbouw de normkoppeling met het nieuwe meetmoment
 // (groei-oordeel, landelijke groei, achterstand en 1F/1S hangen ervan af).
 function citoMeetmomentGewijzigd(sel){
+  citoGegenereerd = false;
   const mm = sel.value;
   bepaalPerspectiefStandaard(mm); // E-toets -> standaard 'overdracht', tenzij handmatig gekozen
   if (!mm || !citoLaatsteParse) return;
@@ -7032,6 +7805,8 @@ async function citoStart(){
   if (!citoData && !(citoProfielen && citoProfielen.length)) { if (!citoLeesGegevens()) return; }
   if (citoFormulieren && citoFormulieren.length) return citoStartFormulier();
   const heeftProfiel = citoProfielen && citoProfielen.length;
+  // Analyse per kind zonder losse profiel-PDF's: rapporten uit het groepsoverzicht.
+  if (citoGenMode === 'profiel' && !heeftProfiel && citoData) return citoGenereerUitGroep();
   if (citoData && heeftProfiel) return (citoGenMode === 'profiel') ? citoGenereerProfielen() : citoGenereerEigen();
   if (heeftProfiel) return citoGenereerProfielen();
   return citoGenereerEigen();
@@ -7085,9 +7860,7 @@ async function citoPrefillKlas() {
   if (!namen.length) return;
   const naam = String((data && data.naam) || '').trim();
   const gveld = document.getElementById('cito-ctx-groep');
-  if (gveld && !gveld.value.trim() && /[1-8]/.test(naam)) { gveld.value = naam; gveld.dataset.vanKlas = '1'; }
-  // Zodra de leerkracht zelf in het groep-veld typt, telt dat als eigen keuze.
-  if (gveld && !gveld._vanKlasGekoppeld) { gveld._vanKlasGekoppeld = true; gveld.addEventListener('input', function () { gveld.removeAttribute('data-van-klas'); }); }
+  if (gveld && !gveld.value && /[3-8]/.test(naam)) citoZetGroep(naam, true);
   const aveld = document.getElementById('cito-ctx-aantal');
   if (aveld && !aveld.value) { aveld.value = String(namen.length); aveld.dataset.vanKlas = '1'; }
   if (typeof syncCitoWidgets === 'function') syncCitoWidgets();
@@ -7193,15 +7966,19 @@ async function citoGenereerEigen() {
     const url = URL.createObjectURL(blob);
     const bestand = `Toetsanalyse_Cito_${String(ctx.groep || '').replace(/\s/g, '')}_${ctx.meetmoment || ''}_${new Date().toISOString().slice(0, 10)}.docx`;
     const note = hasKey
-      ? 'De cijfers, niveaus en clusters komen uit je Cito-export; de duiding en tips zijn door de AI geschreven (met gemaskeerde namen). Controleer de tekst vóór gebruik.'
+      ? 'De cijfers, niveaus en clusters komen uit je Cito-export; de duiding en tips zijn door de AI geschreven (met gemaskeerde namen).'
       : 'De cijfers, niveaus en clusters komen volledig uit je Cito-export. Wil je ook de geschreven duiding en tips? Vul dan hieronder bij "Groepsplan invullen" je API-sleutel in en genereer opnieuw.';
     res.innerHTML = `<a class="btn-analyse" style="text-decoration:none;margin-top:10px;" href="${url}" download="${escapeHtmlC(bestand)}"><span>⬇</span><span>Download Toetsanalyse-Cito-document</span></a>` +
       `<div style="font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.55;">${note}</div>`;
     citoMarkStep('cito-step3', 'cito-step4');
+    citoGegenereerd = true; // klaar: knop blijft uit tot de gebruiker iets wijzigt
+    // Tijdwinst: groepsanalyse = hele groep × vakken (zoals IEP), telt mee als 'analyse'.
+    const _vakN = citoData && citoData.vakken ? Object.keys(citoData.vakken).length : 0;
+    if (typeof avinkaTel === 'function') avinkaTel('analyse', { items: (citoData && citoData.aantal ? citoData.aantal : 0) * _vakN });
   } catch (e) {
     if (loading) loading.classList.remove('visible');
     res.innerHTML = '<div class="error-box visible">Kon het document niet bouwen: ' + escapeHtmlC(e.message) + '</div>';
-  } finally { if (btn) btn.disabled = false; }
+  } finally { citoUpdateGoButton(); }
 }
 
 
@@ -8540,6 +9317,11 @@ async function citoStartFormulier() {
   if (btn) btn.disabled = false;
   citoToonFormulierResultaat(results);
   citoMarkStep('cito-step3','cito-step4'); citoMarkStep('cito-step4');
+  // Tijdwinst: ingevulde groepsplannen tellen als 'analyse' (omvang = formulieren × leerlingen).
+  if (results.length) {
+    const _n = (citoData && citoData.aantal) ? citoData.aantal : 0;
+    if (typeof avinkaTel === 'function') avinkaTel('analyse', { items: results.length * _n });
+  }
 }
 
 function citoToonFormulierResultaat(results) {
@@ -8712,6 +9494,32 @@ function citoPick(selectId, el, val) {
   el.classList.add('on');
   if (typeof citoMeetmomentGewijzigd === 'function') citoMeetmomentGewijzigd(sel);
 }
+// Groep-widget (zelfde look als IEP: select + klik-cijfers). Cito-groepen kunnen een letter
+// of combinatie hebben (6B, 6/7); we normaliseren naar het leerjaarnummer 3–8.
+function citoGroepChip(num) {
+  var sel = document.getElementById('cito-ctx-groep'); if (!sel) return;
+  var seg = sel.parentElement.querySelector('.seg'); if (!seg) return;
+  seg.querySelectorAll('span').forEach(function(s){ s.classList.toggle('on', s.textContent.trim() === num); });
+}
+function citoGroepGewijzigd(sel) { // eigen keuze via de select of een klik-cijfer
+  citoGegenereerd = false;
+  sel.removeAttribute('data-van-klas');
+  citoGroepChip((sel.value.match(/[3-8]/) || [])[0]);
+  if (typeof window.citoAutoMeetmoment === 'function') window.citoAutoMeetmoment();
+}
+function citoPickGroep(el, val) {
+  var sel = document.getElementById('cito-ctx-groep'); if (!sel) return;
+  sel.value = val; citoGroepGewijzigd(sel);
+}
+// Voorinvullen uit de PDF of de dashboard-klas: normaliseer naar "Groep N" en licht het cijfer op.
+function citoZetGroep(raw, vanKlas) {
+  var sel = document.getElementById('cito-ctx-groep'); if (!sel) return false;
+  var m = String(raw || '').match(/[3-8]/); if (!m) return false;
+  sel.value = 'Groep ' + m[0];
+  if (vanKlas) sel.dataset.vanKlas = '1'; else sel.removeAttribute('data-van-klas');
+  citoGroepChip(m[0]);
+  return true;
+}
 function citoStapAantal(d) {
   var inp = document.getElementById('cito-ctx-aantal'); if (!inp) return;
   var n = parseInt(inp.value, 10); if (isNaN(n)) n = 0;
@@ -8726,6 +9534,8 @@ function syncCitoWidgets() {
   if (m && chipWrap) chipWrap.querySelectorAll('.chip').forEach(function(c){ c.classList.toggle('on', m.value === c.textContent.trim()); });
   var a = document.getElementById('cito-ctx-aantal'), av = document.getElementById('cito-aantal-val');
   if (a && av) av.textContent = a.value ? a.value : '—';
+  var g = document.getElementById('cito-ctx-groep');
+  if (g && typeof citoGroepChip === 'function') citoGroepChip((g.value.match(/[3-8]/) || [])[0]);
 }
 function citoToonTemplate() {
   var w = document.getElementById('cito-tplWrap'), t = document.getElementById('cito-tplToggle');
@@ -8785,7 +9595,7 @@ document.addEventListener('keydown', function(e){ if (e.key === 'Escape') { clos
       window.iepPrefillKlas=function(){ var p=origIepPre.apply(this,arguments); Promise.resolve(p).then(function(){ window.iepAutoMeetmoment(); }); return p; };
     }
 
-    // Cito: groep is een vrij tekstveld; voorinvullen bij typen en uit de klas.
+    // Cito: groep is een keuzelijst (IEP-stijl); auto-meetmoment volgt de gekozen groep.
     var origCitoPick=window.citoPick;
     window.citoPick=function(selectId){
       var r=origCitoPick.apply(this,arguments);
@@ -8798,7 +9608,7 @@ document.addEventListener('keydown', function(e){ if (e.key === 'Escape') { clos
       window.citoPrefillKlas=function(){ var p=origCitoPre.apply(this,arguments); Promise.resolve(p).then(function(){ window.citoAutoMeetmoment(); }); return p; };
     }
     var cg=document.getElementById('cito-ctx-groep');
-    if(cg) cg.addEventListener('input', function(){ window.citoAutoMeetmoment(); });
+    if(cg) cg.addEventListener('change', function(){ window.citoAutoMeetmoment(); });
   }
   if(document.readyState!=='loading') init(); else document.addEventListener('DOMContentLoaded', init);
 })();
