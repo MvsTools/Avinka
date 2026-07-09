@@ -363,7 +363,6 @@
       zoekdefout: false,
       // Puzzels & speels
       sudoku: true, geheimschrift: true, doolhof: true, bingo: true,
-      verbinddepunten: false, // nog NIET getest → wordt niet aangeboden
       // ── Nieuwe spelling-werkvormen (batch 7-7) — ALLE nog op false: gebouwd +
       //    zichtbaar in de preview onder "Niet getest", maar nog niet in de tool.
       //    Zet er pas eentje op true nadat de eigenaar 'm heeft goedgekeurd.
@@ -413,7 +412,6 @@
         '- {"type":"synant","opdracht":"...","soort":"synoniem","paren":[["groot","reusachtig"]]} — synoniemen (soort:"synoniem") of antoniemen (soort:"antoniem") koppelen.',
         '- {"type":"lidwoord","opdracht":"...","woorden":[{"woord":"tafel","lidwoord":"de"}]} — de/het kiezen; geef het juiste lidwoord mee.',
         '- {"type":"zoekdefout","opdracht":"...","zinnen":[{"zin":"ik loopt naar huis","correct":"ik loop naar huis"}]} — fout zoeken en verbeteren; geef de zin met precies één fout én de correcte zin.',
-        '- {"type":"verbinddepunten","opdracht":"...","spec":{"vorm":"ster"}} — verbind de punten (vorm: ster/huis/boot/vis/hart/boom/vlieger/diamant/ijsje/raket/auto/ballon/kroon/pijl; laat "vorm" wég voor een willekeurige vorm, of kies er een die bij het thema past); leuke afsluiter.',
         '- {"type":"bingo","opdracht":"...","spec":{"soort":"getallen","grootte":4}} — bingokaart (soort getallen of woorden, dan ook "woorden":[...]).',
         '- {"type":"cijferplus","opdracht":"...","spec":{"aantal":8,"max":1000}} — cijferend OPTELLEN onder elkaar (met onthoud-hokjes). Aantal naar lengte: kort 4, middel 6, lang 8. Kalibreer "max" op de groep: onderbouw ~100, middenbouw ~1000, bovenbouw tot 10000.',
         '- {"type":"cijfermin","opdracht":"...","spec":{"aantal":8,"max":1000}} — cijferend AFTREKKEN onder elkaar. Aantal naar lengte: kort 4, middel 6, lang 8. "max" op de groep (bovenbouw tot 10000).',

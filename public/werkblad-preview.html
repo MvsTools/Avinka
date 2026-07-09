@@ -159,14 +159,6 @@
         [43, "sudoku", "Sudoku (werk schaalt met lengte: kort 4×4 · middel 6×6 · lang 9×9)", [{ type: "sudoku", spec: { grootte: 4 } }]],
         [44, "geheimschrift", "Geheimschrift kraken", [{ type: "geheimschrift", opdracht: "Kraak de code.", woorden: ["MAAN", "RAKET", "STER"] }]],
         [45, "doolhof", "Doolhof", [{ type: "doolhof", spec: { grootte: 10 } }]],
-        [46, "verbinddepunten", "Verbind de punten (14 vormen + willekeurig gespiegeld — hieronder alle vormen om te keuren)", [
-          { type: "verbinddepunten", spec: { vorm: "ster" } }, { type: "verbinddepunten", spec: { vorm: "huis" } },
-          { type: "verbinddepunten", spec: { vorm: "boot" } }, { type: "verbinddepunten", spec: { vorm: "vis" } },
-          { type: "verbinddepunten", spec: { vorm: "hart" } }, { type: "verbinddepunten", spec: { vorm: "boom" } },
-          { type: "verbinddepunten", spec: { vorm: "vlieger" } }, { type: "verbinddepunten", spec: { vorm: "diamant" } },
-          { type: "verbinddepunten", spec: { vorm: "ijsje" } }, { type: "verbinddepunten", spec: { vorm: "raket" } },
-          { type: "verbinddepunten", spec: { vorm: "auto" } }, { type: "verbinddepunten", spec: { vorm: "ballon" } },
-          { type: "verbinddepunten", spec: { vorm: "kroon" } }, { type: "verbinddepunten", spec: { vorm: "pijl" } }]],
         [47, "bingo", "Bingokaart", [{ type: "bingo", spec: { soort: "getallen", grootte: 4 } }]]
       ]],
       ["Spelling — nieuw (in test)", "🆕", "batch nieuwe spelling-werkvormen — code regelt de structuur, de AI levert alleen woorden", [
@@ -271,7 +263,7 @@
     // Goedgekeurde (geteste) types. Verplaats hier nummers naartoe zodra ze klaar zijn.
     var GETEST = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 47];
     function isGetest(n) { return GETEST.indexOf(n) !== -1; }
-    function telTab(g) { var n = 0, num = 0; CATS.forEach(function (c) { c[3].forEach(function () { num++; if (isGetest(num) === g) n++; }); }); return n; }
+    function telTab(g) { var n = 0; CATS.forEach(function (c) { c[3].forEach(function (t) { if (isGetest(t[0]) === g) n++; }); }); return n; }
     // Cache het gegenereerde (genormaliseerde) blok per type+index+lengte, zodat
     // het vraag- en antwoordblad EXACT dezelfde sommen tonen (geen hergeneratie bij toggle).
     var blokCache = {};
@@ -281,14 +273,13 @@
       return blokCache[key];
     }
     function bouw() {
-      var W = window.avinkaWerkblad, html = "", getoond = 0, nummer = 0;
+      var W = window.avinkaWerkblad, html = "", getoond = 0;
       CATS.forEach(function (cat) {
         var rows = "";
         cat[3].forEach(function (t) {
-          nummer++;
-          if (isGetest(nummer) !== (tab === "getest")) return;
+          var num = t[0]; // vast nummer uit de data (robuust als een type wordt verwijderd → schoon gat)
+          if (isGetest(num) !== (tab === "getest")) return;
           getoond++;
-          var num = nummer;
           rows += '<div class="tegel"><div class="tegel-kop"><span class="num">' + num + '</span><b>' + t[2] + '</b><span class="key">' + t[1] + '</span></div><div class="tegel-body">';
           t[3].forEach(function (blok, bi) { rows += W.blok(gecached(num, bi, blok), { antwoorden: antw }); });
           rows += "</div></div>";
