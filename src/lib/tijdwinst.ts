@@ -53,6 +53,12 @@ const CFG: Record<string, Cfg> = {
     basis: 25, perItem: 1.3, max: 180, vast: 120,
     label: "Toetsanalyses gedaan", kort: "Analyses", icon: "📊", kleur: "#2f9e6e",
   },
+  // Analyse per leerling (rapport per kind): kleine basis, bescheiden gewicht per kind×vak,
+  // zodat de tijdwinst meeschaalt met het aantal kinderen én vakgebieden — maar nooit overdreven.
+  leerlingrapport: {
+    basis: 2, perItem: 2, max: 90, vast: 15,
+    label: "Leerlingrapporten gemaakt", kort: "Leerlingrapport", icon: "🧒", kleur: "#8b5cf6",
+  },
   gesprek: {
     basis: 3, perWoord: 0.06, max: 45, vast: 20,
     label: "Oudergesprekken uitgewerkt", kort: "Gesprekken", icon: "🗣️", kleur: "#0ea5e9",
