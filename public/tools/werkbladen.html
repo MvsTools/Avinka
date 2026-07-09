@@ -376,10 +376,50 @@
       verhaal: false, juistezin: false, keuzebord: false, tictactoe: false
     };
 
+    // ── Vak-scheiding: welk opdrachttype hoort bij welk vak? ──────────────────
+    // Kernprincipe "de code bewaakt": een puur REKEN-type mag nooit op een
+    // spellingblad belanden en andersom. Alleen de vak-SPECIFIEKE types staan
+    // hier; alles wat NIET in de lijst staat is 'neutraal' (generieke motoren en
+    // speel-puzzels: tekst, meerkeuze, invul, open, koppelen, categoriseren,
+    // waar/niet-waar, woordzoeker, kruiswoord, anagram, zin bouwen, geheimschrift,
+    // doolhof, bingo, teken, reflectie) en mag bij ELK vak — zodat een woordzoeker
+    // of kruiswoord met topografie- of spellingwoorden overal kan. (Sudoku staat
+    // NIET in dat rijtje: puur getallen, voegt niets toe op een taal/spellingblad.)
+    var VAK_TYPES = {
+      // Rekenen-only
+      sommen: 'rekenen', cijferplus: 'rekenen', cijfermin: 'rekenen', cijferkeer: 'rekenen',
+      ontbrekend: 'rekenen', getallenlijn: 'rekenen', rekenmuurtje: 'rekenen', getalhuis: 'rekenen',
+      vergelijken: 'rekenen', tafelkaart: 'rekenen', maalrooster: 'rekenen', reeks: 'rekenen',
+      buurgetallen: 'rekenen', ordenen: 'rekenen', plaatswaarde: 'rekenen', getalwoord: 'rekenen',
+      afronden: 'rekenen', romeins: 'rekenen', automatiseer: 'rekenen', breuken: 'rekenen',
+      kleuropsom: 'rekenen', klok: 'rekenen', geld: 'rekenen', staafdiagram: 'rekenen', sudoku: 'rekenen',
+      // Taal/spelling-only (huidige + de nieuwe spelling-batch)
+      lettergrepen: 'taal', rijmwoorden: 'taal', synant: 'taal', lidwoord: 'taal', zoekdefout: 'taal',
+      meervoud: 'taal', verkleinwoord: 'taal', verledentijd: 'taal', voltooiddeelwoord: 'taal',
+      verlengen: 'taal', trappen: 'taal', grondwoord: 'taal', samenstellen: 'taal', woordfamilie: 'taal',
+      pyramide: 'taal', woordtrap: 'taal', woordslang: 'taal', verstopt: 'taal', letterslinger: 'taal',
+      alfabetiseren: 'taal', klanktellen: 'taal', klinkers: 'taal', klankgroepen: 'taal',
+      woordinwoord: 'taal', woordwaarde: 'taal', woordwaardespel: 'taal', lettertegels: 'taal',
+      oddoneout: 'taal', regelbenoemen: 'taal', dictee: 'taal', zinsdictee: 'taal',
+      kijkdekschrijf: 'taal', overschrijf: 'taal', definitie: 'taal', woordraadsel: 'taal',
+      verhaal: 'taal', juistezin: 'taal', keuzebord: 'taal', tictactoe: 'taal'
+    };
+    // Mag dit type bij dit vak? Neutraal = altijd; rekenen = alleen Rekenen;
+    // taal = alleen Spelling/Taal. Onbekend/leeg vak → niet inperken (veilig).
+    function typeMagBijVak(type, vak) {
+      var cat = VAK_TYPES[type] || 'neutraal';
+      if (cat === 'neutraal' || !vak) return true;
+      if (cat === 'rekenen') return /rekenen/i.test(vak);
+      if (cat === 'taal') return /spelling|taal/i.test(vak);
+      return true;
+    }
+
     // ── Systeem-prompt: het JSON-contract + de regels ────────────────────────
-    function bouwSysteem() {
-      // Alle blok-types met beschrijving. Ongeteste types worden er automatisch
-      // uitgefilterd op basis van GETESTE_MODULES (regels zonder "type" blijven staan).
+    function bouwSysteem(vak) {
+      // Alle blok-types met beschrijving. Ongeteste types (GETESTE_MODULES) én
+      // types die niet bij dit vak horen (typeMagBijVak) worden er automatisch
+      // uitgefilterd, zodat de AI ze niet eens áángeboden krijgt (regels zonder
+      // "type" blijven staan).
       var blokTypes = [
         '- {"type":"tekst","kop":"optioneel","tekst":"uitleg of een leestekst (alinea\'s gescheiden met lege regel)"} — uitleg of leestekst.',
         '- {"type":"meerkeuze","opdracht":"...","vragen":[{"vraag":"...","opties":["a","b","c"],"goed":0}]} — goed = index van het juiste antwoord. De leerling kruist het goede antwoord aan; formuleer de opdracht zo (bijvoorbeeld "Kruis het goede antwoord aan").',
@@ -464,7 +504,8 @@
         '- {"type":"tictactoe","opdracht":"...","woorden":["fiets","school","meisje","tijger","ballon","koning","schaats","huisje","raket"]} — 3×3 rooster met 9 woorden; het kind kiest een rij van drie en schrijft die goed over.'
       ].filter(function (regel) {
         var m = regel.match(/"type":"(\w+)"/);
-        return !m || GETESTE_MODULES[m[1]] === true;
+        if (!m) return true;
+        return GETESTE_MODULES[m[1]] === true && typeMagBijVak(m[1], vak);
       });
       return [
         'Je bent een ervaren leerkracht en ontwerper van werkbladen voor het Nederlandse basisonderwijs. Je maakt werkbladen die er gelikt en uitnodigend uitzien en didactisch sterk zijn, ver boven een snel werkblad uit een chatbot.',
@@ -601,7 +642,7 @@
     }
 
     // ── JSON robuust uit het antwoord halen ──────────────────────────────────
-    function parseWb(ruw) {
+    function parseWb(ruw, vak) {
       let t = (ruw || '').replace(/```json|```/g, '').trim();
       t = latiniseer(t);                       // Cyrillische lookalikes -> Latijn
       t = t.replace(/\*\*(.+?)\*\*/g, '$1');    // markdown-nadruk (**woord**) rendert niet -> platte tekst
@@ -615,10 +656,11 @@
         catch (e2) { throw new Error('Het werkblad kon niet worden gelezen. Probeer het opnieuw.'); }
       }
       if (!obj || !Array.isArray(obj.blokken)) throw new Error('Het werkblad was niet compleet. Probeer het opnieuw.');
-      // Veiligheidsnet: laat ALLEEN geteste/aangeboden modules door. Zo verdwijnt een per
-      // ongeluk gegenereerde niet-aangeboden module (zoals zoek-de-fout) meteen, ook al noemt
-      // de prompt hem niet meer.
-      obj.blokken = obj.blokken.filter(function (b) { return b && b.type && GETESTE_MODULES[b.type] === true; });
+      // Veiligheidsnet: laat ALLEEN geteste/aangeboden modules door die ook bij dit
+      // vak horen. Zo verdwijnt een per ongeluk gegenereerde niet-aangeboden module
+      // (zoals zoek-de-fout) én een verkeerd-vak-blok (een rekenmodule op een
+      // spellingblad of andersom) meteen, ook al noemt de prompt hem niet meer.
+      obj.blokken = obj.blokken.filter(function (b) { return b && b.type && GETESTE_MODULES[b.type] === true && typeMagBijVak(b.type, vak); });
       if (!obj.blokken.length) throw new Error('Het werkblad was niet compleet. Probeer het opnieuw.');
       return obj;
     }
@@ -685,8 +727,8 @@
       try {
         let user = bouwOpdracht(inv);
         if (andereVersie) user += '\n\nMaak een DUIDELIJK ANDERE versie dan eerder: andere opdrachten en andere bloktypes, zelfde onderwerp en niveau.';
-        const ruw = await callClaude(bouwSysteem(), user, 4800);
-        const wb = parseWb(ruw);
+        const ruw = await callClaude(bouwSysteem(inv.vak), user, 4800);
+        const wb = parseWb(ruw, inv.vak);
         dwingStructuurAf(wb, inv.aantal); // precies N opdrachten + hoogstens één rooster-puzzel
 
         wb.vak = inv.vak; wb.groep = inv.groep;
@@ -1293,8 +1335,8 @@
         const user = 'Hieronder staat een bestaand werkblad als JSON. Pas ALLEEN het volgende aan en laat de rest precies zoals het is:\n' +
           verfijnWensen.map((w, i) => (i + 1) + '. ' + w).join('\n') +
           '\n\nHOUD dezelfde JSON-structuur en regels aan. Geef het volledige, aangepaste werkblad terug als UITSLUITEND geldige JSON.\n\n=== HUIDIG WERKBLAD ===\n' + huidig;
-        const ruw = await callClaude(bouwSysteem(), user, 4800);
-        const wb = parseWb(ruw);
+        const ruw = await callClaude(bouwSysteem(laatsteWb.vak), user, 4800);
+        const wb = parseWb(ruw, laatsteWb.vak);
         wb.vak = laatsteWb.vak; wb.groep = laatsteWb.groep; wb.thema = laatsteWb.thema;
         window.avinkaWerkblad.normaliseer(wb);
         laatsteWb = wb;
