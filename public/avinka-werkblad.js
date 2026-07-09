@@ -868,30 +868,6 @@
     }).filter(Boolean);
   }
 
-  // Verbind de punten: vaste vormen (genummerde punten → omtrek).
-  var STIP_VORMEN = {
-    ster: [[50, 6], [60, 38], [94, 38], [66, 58], [77, 92], [50, 72], [23, 92], [34, 58], [6, 38], [40, 38]],
-    huis: [[18, 52], [18, 92], [82, 92], [82, 52], [94, 52], [50, 14], [6, 52]],
-    boot: [[8, 66], [92, 66], [78, 90], [22, 90]],
-    vis: [[8, 50], [38, 30], [70, 36], [92, 18], [88, 50], [92, 82], [70, 64], [38, 70]],
-    hart: [[50, 88], [30, 68], [16, 50], [16, 36], [26, 24], [40, 26], [50, 38], [60, 26], [74, 24], [84, 36], [84, 50], [70, 68]],
-    boom: [[44, 90], [44, 70], [26, 70], [50, 22], [74, 70], [56, 70], [56, 90]],
-    vlieger: [[50, 8], [80, 42], [50, 92], [20, 42]],
-    diamant: [[28, 22], [72, 22], [92, 44], [50, 92], [8, 44]],
-    ijsje: [[50, 94], [34, 54], [30, 42], [38, 30], [50, 26], [62, 30], [70, 42], [66, 54]],
-    raket: [[50, 8], [62, 30], [62, 64], [74, 84], [58, 76], [50, 88], [42, 76], [26, 84], [38, 64], [38, 30]],
-    auto: [[10, 72], [10, 60], [26, 60], [38, 44], [64, 44], [76, 60], [90, 60], [90, 72]],
-    ballon: [[50, 84], [38, 70], [26, 58], [22, 42], [30, 26], [44, 18], [56, 18], [70, 26], [78, 42], [74, 58], [62, 70]],
-    kroon: [[14, 78], [20, 34], [38, 58], [50, 28], [62, 58], [80, 34], [86, 78]],
-    pijl: [[8, 42], [54, 42], [54, 26], [92, 50], [54, 74], [54, 58], [8, 58]]
-  };
-  function genStippen(spec) {
-    spec = spec || {};
-    var keys = Object.keys(STIP_VORMEN), naam = spec.vorm && STIP_VORMEN[spec.vorm] ? spec.vorm : keys[randInt(0, keys.length - 1)];
-    var punten = STIP_VORMEN[naam];
-    if (randInt(0, 1)) punten = punten.map(function (p) { return [100 - p[0], p[1]]; }); // willekeurig horizontaal spiegelen = extra variatie
-    return { naam: naam, punten: punten };
-  }
 
   // Bingokaart: rooster met getallen of woorden.
   function genBingo(spec) {
@@ -1218,7 +1194,6 @@
       if (b.type === "geheimschrift" && !b._geheim) b._geheim = genGeheim(b.woorden);
       if (b.type === "anagram" && !b._hussel) b._hussel = genHussel(b.woorden);
       if (b.type === "zinbouwen" && !b._zin) b._zin = genZin(b.zinnen);
-      if (b.type === "verbinddepunten" && !b._stip) b._stip = genStippen(b.spec || b);
       if (b.type === "bingo" && !b._bingo) b._bingo = genBingo(b.spec || b);
       if ((b.type === "cijferend" || b.type === "cijferplus" || b.type === "cijfermin" || b.type === "cijferkeer") && !b._cijfer) {
         var cijOp = { cijferplus: "+", cijfermin: "-", cijferkeer: "×" }[b.type];
@@ -1878,11 +1853,12 @@
   }
 
   function rLettergrepen(b, nr, ant) {
+    var maxL = maxWoordLengte(b.woorden, function (w) { return w && w.woord != null ? w.woord : w; });
     var h = opdrachtKop(nr, b.opdracht || "Verdeel de woorden in lettergrepen (klap mee).", b.em);
     h += '<div class="wb-invul-lijst">';
     arr(b.woorden).forEach(function (w, i) {
       var woord = (w && w.woord != null ? w.woord : w), delen = (w && w.delen) || [];
-      h += '<div class="wb-invul-rij"><span class="wb-rij-nr">' + (i + 1) + ".</span><span>" + esc(woord) + " &nbsp;→&nbsp; " +
+      h += '<div class="wb-invul-rij"><span class="wb-rij-nr">' + (i + 1) + ".</span><span>" + woordKolom(woord, maxL) +
         (ant && delen.length ? '<span class="wb-ant">' + delen.map(esc).join(" - ") + "</span>" : lijn(150)) + "</span></div>";
     });
     h += "</div>";
@@ -1892,10 +1868,11 @@
   function rRijm(b, nr, ant) {
     var h = opdrachtKop(nr, b.opdracht || "Schrijf bij elk woord een woord dat erop rijmt.", b.em);
     if (ant) h += '<div class="wb-ant-note">Dit zijn voorbeelden. Andere goede rijmwoorden mogen ook.</div>';
+    var maxL = maxWoordLengte(b.woorden, function (w) { return w && w.woord != null ? w.woord : w; });
     h += '<div class="wb-invul-lijst">';
     arr(b.woorden).forEach(function (w, i) {
       var woord = (w && w.woord != null ? w.woord : w), rijm = (w && w.rijm) || [];
-      h += '<div class="wb-invul-rij"><span class="wb-rij-nr">' + (i + 1) + ".</span><span>" + esc(woord) + " &nbsp;→&nbsp; " +
+      h += '<div class="wb-invul-rij"><span class="wb-rij-nr">' + (i + 1) + ".</span><span>" + woordKolom(woord, maxL) +
         (ant && rijm.length ? '<span class="wb-ant">' + rijm.slice(0, 3).map(esc).join(", ") + "</span>" : lijn(150)) + "</span></div>";
     });
     h += "</div>";
@@ -1928,22 +1905,6 @@
       h += '<div class="wb-open-vraag"><div class="wb-vraag-t">' + (i + 1) + ". " + esc(zin) + "</div>" +
         (ant ? '<div class="wb-ant-blok">' + esc(correct) + "</div>" : '<div class="wb-schrijfregel" style="margin-top:24px"></div>') + "</div>";
     });
-    return '<div class="wb-blok">' + h + "</div>";
-  }
-
-  function rStippen(b, nr, ant) {
-    var P = b._stip || genStippen(b.spec || b), pts = P.punten;
-    var h = opdrachtKop(nr, b.opdracht || ("Verbind de punten van 1 naar " + pts.length + "."), b.em);
-    var svg = '<svg class="wb-vdp" viewBox="-6 -6 112 112">';
-    if (ant) {
-      svg += '<polygon points="' + pts.map(function (p) { return p[0] + "," + p[1]; }).join(" ") + '" class="wb-stip-lijn"/>';
-    }
-    pts.forEach(function (p, i) {
-      svg += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="2.2" fill="var(--wb-ink)"/>';
-      svg += '<text x="' + (p[0] + 4) + '" y="' + (p[1] + 1) + '" class="wb-stip-nr">' + (i + 1) + "</text>";
-    });
-    svg += "</svg>";
-    h += '<div class="wb-stip-wrap">' + svg + "</div>";
     return '<div class="wb-blok">' + h + "</div>";
   }
 
@@ -2146,6 +2107,379 @@
     return '<div class="wb-blok">' + h + "</div>";
   }
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // NIEUWE SPELLING-WERKVORMEN (batch — staan in de tool op GETESTE_MODULES:false
+  // tot ze gekeurd zijn). KERNPRINCIPE: de CODE bewaakt de structuur, de AI levert
+  // alleen kale woorden/zinnen. GEEN enkele renderer toont een fout gespeld woord.
+  // ══════════════════════════════════════════════════════════════════════════
+
+  var KLINKERS = "aeiouáàäâéèëêíìïîóòöôúùûüy";
+  function isKlinker(ch) { return KLINKERS.indexOf(String(ch).toLowerCase()) !== -1; }
+  function woordTekst(w) { return String(w && w.woord != null ? w.woord : w).trim(); }
+  // Eén letterhokje (leeg op het vraagblad, gevuld op het antwoordblad).
+  function letterHok(ch, ant) { return '<span class="wb-lhok">' + (ant ? esc(ch) : "") + "</span>"; }
+
+  // Het lángste woord in de lijst bepaalt de referentiebreedte, zodat het
+  // schrijflijntje bij ELKE rij op dezelfde x begint (geen verspringen).
+  function maxWoordLengte(woorden, pick) {
+    var m = 0;
+    arr(woorden).forEach(function (w) { var t = String((pick ? pick(w) : woordTekst(w)) || ""); if (t.length > m) m = t.length; });
+    return m;
+  }
+  // innerHtml links uitgelijnd, opgevuld tot 'chars' tekens breed. Zo begint het
+  // schrijflijntje erna bij ELKE rij op dezelfde x (de referentie = langste woord).
+  // Plus Jakarta is proportioneel → een 'ch' is iets breder dan een gemiddelde
+  // letter, dus het langste woord loopt nooit over de referentie (altijd uitgelijnd).
+  function refKolom(innerHtml, chars, klas) {
+    return '<span class="wb-wkol' + (klas ? " " + klas : "") + '" style="min-width:' + Math.max(2, chars) + 'ch">' + innerHtml + "</span>";
+  }
+  // Woord in het referentieblok + één vaste spatie → lijntje op de referentie.
+  // (Geen pijltje meer: dat voegde niets toe.)
+  function woordKolom(woord, chars, klas) {
+    return refKolom(esc(woord), chars, klas) + "&nbsp; ";
+  }
+
+  // ── Woordvorm: "grondwoord ___" (meervoud, verkleinwoord, ww-tijden, enz.) ──
+  function rWoordvorm(b, nr, ant) {
+    var maxL = maxWoordLengte(b.woorden, function (w) { return w && typeof w === "object" ? (w.op != null ? w.op : (w.voor != null ? w.voor : w.woord)) : w; });
+    var h = opdrachtKop(nr, b.opdracht || "Schrijf de juiste vorm van het woord.", b.em);
+    h += '<div class="wb-invul-lijst">';
+    arr(b.woorden).forEach(function (w, i) {
+      var op = w && typeof w === "object" ? (w.op != null ? w.op : (w.voor != null ? w.voor : w.woord)) : w;
+      var antw = w && typeof w === "object" ? (Array.isArray(w.antwoord) ? w.antwoord : [w.antwoord != null ? w.antwoord : w.goed]) : [""];
+      var rechts;
+      if (ant) rechts = '<span class="wb-ant">' + antw.filter(Boolean).map(esc).join(", ") + "</span>";
+      else { var n = Math.max(1, (w && w.aantal) || antw.length || 1); rechts = ""; for (var k = 0; k < n; k++) rechts += lijn(n > 1 ? 110 : 150) + " "; }
+      h += '<div class="wb-invul-rij"><span class="wb-rij-nr">' + (i + 1) + ".</span><span>" + woordKolom(op, maxL) + rechts + "</span></div>";
+    });
+    h += "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Trappen van vergelijking (3 kolommen) ────────────────────────────────────
+  function rTrappen(b, nr, ant) {
+    var h = opdrachtKop(nr, b.opdracht || "Vul de trappen van vergelijking in.", b.em);
+    h += '<div class="wb-trap"><div class="wb-trap-rij wb-trap-head"><span>woord</span><span>vergrotend</span><span>overtreffend</span></div>';
+    arr(b.woorden).forEach(function (w, i) {
+      var woord = w && typeof w === "object" ? w.woord : (Array.isArray(w) ? w[0] : w);
+      var a = (w && w.antwoord) || [w && w.groter, w && w.grootst];
+      function cel(v) { return ant ? '<span class="wb-ant">' + esc(v || "") + "</span>" : lijn(110); }
+      h += '<div class="wb-trap-rij"><span><b>' + esc(woord) + "</b></span><span>" + cel(a[0]) + "</span><span>" + cel(a[1]) + "</span></div>";
+    });
+    h += "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Pyramidewoord: letter voor letter opbouwen ───────────────────────────────
+  function rPyramide(b, nr, ant) {
+    var h = opdrachtKop(nr, b.opdracht || "Bouw het woord op. Schrijf op elke regel één letter meer.", b.em);
+    h += '<div class="wb-pyr-lijst">';
+    arr(b.woorden).forEach(function (w) {
+      var woord = woordTekst(w).toUpperCase(); if (!woord) return;
+      h += '<div class="wb-pyr"><div class="wb-pyr-doel">' + esc(woord) + "</div>";
+      for (var i = 1; i <= woord.length; i++) {
+        h += '<div class="wb-pyr-rij">';
+        for (var k = 0; k < i; k++) h += letterHok(woord[k], ant);
+        h += "</div>";
+      }
+      h += "</div>";
+    });
+    h += "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Woordtrap: telkens één letter veranderen ─────────────────────────────────
+  function rWoordtrap(b, nr, ant) {
+    var h = opdrachtKop(nr, b.opdracht || "Woordtrap: verander telkens één letter en maak een nieuw woord.", b.em);
+    var rijen = arr(b.rijen).length ? arr(b.rijen) : arr(b.woorden).map(function (w) { return { woord: w }; });
+    h += '<div class="wb-ladder">';
+    rijen.forEach(function (r, i) {
+      var woord = woordTekst(r.woord != null ? r.woord : r).toUpperCase();
+      var geef = (i === 0) || ant; // eerste trede als voorbeeld
+      var boxes = "";
+      for (var k = 0; k < woord.length; k++) boxes += letterHok(woord[k], geef);
+      h += '<div class="wb-ladder-rij"><span class="wb-ladder-boxes">' + boxes + "</span>" + (r.hint ? '<span class="wb-ladder-hint">' + esc(r.hint) + "</span>" : "") + "</div>";
+    });
+    h += "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Woordslang: laatste letter = eerste letter van het volgende woord ─────────
+  function rWoordslang(b, nr, ant) {
+    var h = opdrachtKop(nr, b.opdracht || "Woordslang: de laatste letter van een woord is de eerste van het volgende.", b.em);
+    var lijst = arr(b.woorden).map(woordTekst).filter(Boolean);
+    h += '<div class="wb-slang">';
+    lijst.forEach(function (woord, i) {
+      var cell = (i === 0 || ant) ? "<b>" + esc(woord) + "</b>" : "<b>" + esc(woord[0]) + "</b>" + lijn(70);
+      h += '<span class="wb-slang-cel">' + cell + "</span>";
+      if (i < lijst.length - 1) h += '<span class="wb-slang-pijl">→</span>';
+    });
+    h += "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Verstopte woorden / letterslinger: woorden in een letterstrook ───────────
+  function rVerstopt(b, nr, ant) {
+    var h = opdrachtKop(nr, b.opdracht || "Zoek de verstopte woorden en schrijf ze goed op.", b.em);
+    var lijst = arr(b.woorden).map(woordTekst).filter(Boolean);
+    var strook = ant
+      ? lijst.map(function (w) { return esc(w.toUpperCase()); }).join('<span class="wb-verstopt-scheid">·</span>')
+      : esc(lijst.join("").toUpperCase());
+    h += '<div class="wb-verstopt-strip">' + strook + "</div>";
+    h += '<div class="wb-invul-lijst">';
+    lijst.forEach(function (w, i) {
+      h += '<div class="wb-invul-rij"><span class="wb-rij-nr">' + (i + 1) + ".</span><span>" + (ant ? '<span class="wb-ant">' + esc(w) + "</span>" : lijn(150)) + "</span></div>";
+    });
+    h += "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Alfabetiseren ────────────────────────────────────────────────────────────
+  function rAlfabet(b, nr, ant) {
+    var h = opdrachtKop(nr, b.opdracht || "Zet de woorden op alfabetische volgorde.", b.em);
+    var lijst = arr(b.woorden).map(woordTekst).filter(Boolean);
+    var gesorteerd = lijst.slice().sort(function (a, c) { a = a.toLowerCase(); c = c.toLowerCase(); return a < c ? -1 : a > c ? 1 : 0; });
+    if (!ant) h += '<div class="wb-woordbank"><span class="wb-bank-l">Woorden:</span> ' + shuffle(lijst.slice()).map(function (w) { return '<span class="wb-chip">' + esc(w) + "</span>"; }).join(" ") + "</div>";
+    h += '<div class="wb-invul-lijst">';
+    gesorteerd.forEach(function (w, i) {
+      h += '<div class="wb-invul-rij"><span class="wb-rij-nr">' + (i + 1) + ".</span><span>" + (ant ? '<span class="wb-ant">' + esc(w) + "</span>" : lijn(180)) + "</span></div>";
+    });
+    h += "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Klankkast: één klank per hokje ───────────────────────────────────────────
+  function rKlankkast(b, nr, ant) {
+    var h = opdrachtKop(nr, b.opdracht || "Schrijf elke klank in een apart hokje.", b.em);
+    h += '<div class="wb-klank-lijst">';
+    arr(b.woorden).forEach(function (w, i) {
+      var woord = w && typeof w === "object" ? w.woord : w;
+      var klanken = Array.isArray(w && w.klanken) ? w.klanken : (typeof (w && w.klanken) === "number" ? new Array(w.klanken).fill("") : String(woord).split(""));
+      var boxes = ""; klanken.forEach(function (k) { boxes += letterHok(k, ant); });
+      h += '<div class="wb-klank-rij"><span class="wb-rij-nr">' + (i + 1) + '.</span><b class="wb-klank-w">' + esc(woord) + '</b><span class="wb-klank-boxes">' + boxes + "</span></div>";
+    });
+    h += "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Klinkers markeren ────────────────────────────────────────────────────────
+  function rKlinkers(b, nr, ant) {
+    var h = opdrachtKop(nr, b.opdracht || "Zet een rondje om alle klinkers (a, e, i, o, u).", b.em);
+    h += '<div class="wb-klink-lijst">';
+    arr(b.woorden).forEach(function (w, i) {
+      var woord = woordTekst(w), letters = "";
+      for (var k = 0; k < woord.length; k++) { var ch = woord[k]; letters += '<span class="wb-klink-l' + (ant && isKlinker(ch) ? " wb-klink-mark" : "") + '">' + esc(ch) + "</span>"; }
+      h += '<div class="wb-klink-rij"><span class="wb-rij-nr">' + (i + 1) + '.</span><span class="wb-klink-w">' + letters + "</span></div>";
+    });
+    h += "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Klankgroepen splitsen + open/gesloten ────────────────────────────────────
+  function rKlankgroep(b, nr, ant) {
+    var maxL = maxWoordLengte(b.woorden, function (w) { return w && typeof w === "object" ? w.woord : w; });
+    var h = opdrachtKop(nr, b.opdracht || "Verdeel in klankgroepen. Is elke klankgroep open of gesloten? (o / g)", b.em);
+    h += '<div class="wb-invul-lijst">';
+    arr(b.woorden).forEach(function (w, i) {
+      var woord = w && typeof w === "object" ? w.woord : w, delen = (w && w.delen) || [], soorten = (w && w.soorten) || [];
+      var mid = ant
+        ? delen.map(function (d, di) { return '<span class="wb-ant">' + esc(d) + '</span><span class="wb-kg-tag">(' + ((soorten[di] || "?")[0]) + ")</span>"; }).join(' <span class="wb-kg-scheid">-</span> ')
+        : lijn(200);
+      h += '<div class="wb-invul-rij"><span class="wb-rij-nr">' + (i + 1) + ".</span><span>" + woordKolom(woord, maxL) + mid + "</span></div>";
+    });
+    h += "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Woord-in-woord: kleine woorden in een groot woord ────────────────────────
+  function rWoordInWoord(b, nr, ant) {
+    var maxL = maxWoordLengte(b.woorden, function (w) { return w && typeof w === "object" ? w.woord : w; });
+    var h = opdrachtKop(nr, b.opdracht || "Welke kleine woorden zitten er in het grote woord? Schrijf ze op.", b.em);
+    h += '<div class="wb-invul-lijst">';
+    arr(b.woorden).forEach(function (w, i) {
+      var woord = w && typeof w === "object" ? w.woord : w, kl = (w && (w.verstopt || w.klein)) || [];
+      h += '<div class="wb-wiw-rij"><span class="wb-rij-nr">' + (i + 1) + '.</span>' + refKolom('<b class="wb-wiw-w">' + esc(woord) + "</b>", maxL) + "&nbsp; " + (ant ? '<span class="wb-ant">' + kl.map(esc).join(", ") + "</span>" : lijn(200)) + "</div>";
+    });
+    h += "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Woordwaarde: letterpunten optellen (a=1 … z=26) ──────────────────────────
+  function woordWaarde(woord) { var s = 0, w = String(woord).toLowerCase(); for (var i = 0; i < w.length; i++) { var c = w.charCodeAt(i) - 96; if (c >= 1 && c <= 26) s += c; } return s; }
+  function rWoordwaarde(b, nr, ant) {
+    var spel = b.type === "woordwaardespel" || b.spel;
+    var h = opdrachtKop(nr, b.opdracht || (spel ? "Reken de woordwaarde uit. Welk woord is het meeste waard?" : "Elke letter is punten waard (a=1, b=2 … z=26). Reken de woordwaarde uit."), b.em);
+    var beste = -1, bestW = "";
+    arr(b.woorden).forEach(function (w) { var v = woordWaarde(woordTekst(w)); if (v > beste) { beste = v; bestW = woordTekst(w); } });
+    var maxL = maxWoordLengte(b.woorden);
+    h += '<div class="wb-invul-lijst">';
+    arr(b.woorden).forEach(function (w, i) {
+      var woord = woordTekst(w), val = woordWaarde(woord);
+      h += '<div class="wb-invul-rij"><span class="wb-rij-nr">' + (i + 1) + ".</span><span>" + refKolom("<b>" + esc(woord) + "</b>&nbsp;=", maxL + 2) + "&nbsp; " + (ant ? '<span class="wb-ant">' + val + "</span>" : lijn(70)) + " punten</span></div>";
+    });
+    h += "</div>";
+    if (spel && ant) h += '<div class="wb-ant-note">Meeste waard: <b>' + esc(bestW) + "</b> (" + beste + " punten).</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Lettertegels: woord bouwen uit een letterpool ────────────────────────────
+  function rLettertegels(b, nr, ant) {
+    var h = opdrachtKop(nr, b.opdracht || "Maak met de lettertegels het goede woord.", b.em);
+    h += '<div class="wb-tegel-lijst">';
+    arr(b.woorden).forEach(function (w, i) {
+      var woord = woordTekst(w).toUpperCase(); if (!woord) return;
+      var tegels = shuffle(woord.split("")).map(function (l) { return '<span class="wb-ltegel">' + esc(l) + "</span>"; }).join(" ");
+      var boxes = ""; for (var k = 0; k < woord.length; k++) boxes += letterHok(woord[k], ant);
+      h += '<div class="wb-tegel-rij"><span class="wb-rij-nr">' + (i + 1) + '.</span><span class="wb-tegel-pool">' + tegels + '</span><span class="wb-tegel-pijl">→</span><span class="wb-tegel-boxes">' + boxes + "</span></div>";
+    });
+    h += "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Welke hoort er niet bij (odd one out) ────────────────────────────────────
+  function rOddOneOut(b, nr, ant) {
+    var h = opdrachtKop(nr, b.opdracht || "Streep in elke rij het woord door dat er niet bij hoort.", b.em);
+    h += '<div class="wb-odd-lijst">';
+    arr(b.rijen).forEach(function (r, i) {
+      var woorden = r.woorden || r.items || [], fout = r.fout != null ? r.fout : r.goed;
+      h += '<div class="wb-odd-rij"><span class="wb-rij-nr">' + (i + 1) + ".</span>" +
+        woorden.map(function (w, wi) { return '<span class="wb-odd-w' + (ant && wi === fout ? " wb-odd-mark" : "") + '">' + esc(w) + "</span>"; }).join("") + "</div>";
+    });
+    h += "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Regel/categorie benoemen (kruisje in de juiste kolom) ────────────────────
+  function rRegelbenoemen(b, nr, ant) {
+    var regels = arr(b.regels); if (!regels.length) regels = ["ja", "nee"];
+    var h = opdrachtKop(nr, b.opdracht || "Bij welke soort hoort elk woord? Zet een kruisje.", b.em);
+    h += '<div class="wb-regel-tabel" style="--rb-kol:' + regels.length + '">';
+    h += '<div class="wb-regel-rij wb-regel-head"><span></span>' + regels.map(function (r) { return "<span>" + esc(r) + "</span>"; }).join("") + "</div>";
+    arr(b.woorden).forEach(function (w, i) {
+      var woord = w && typeof w === "object" ? w.woord : w, goedR = w && (w.regel != null ? w.regel : w.goed);
+      h += '<div class="wb-regel-rij"><span class="wb-regel-w">' + (i + 1) + ". " + esc(woord) + "</span>" +
+        regels.map(function (r, ri) { var g = ant && (goedR === r || goedR === ri); return '<span class="wb-vak' + (g ? " wb-goed" : "") + '">' + (g ? "✓" : "") + "</span>"; }).join("") + "</div>";
+    });
+    h += "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Woorddictee (blanco regels; woorden staan op het antwoordblad) ───────────
+  function rDictee(b, nr, ant) {
+    var h = opdrachtKop(nr, b.opdracht || "Woorddictee: schrijf het woord dat wordt voorgelezen.", b.em);
+    h += '<div class="wb-dictee-lijst">';
+    arr(b.woorden).map(woordTekst).filter(Boolean).forEach(function (w, i) {
+      h += '<div class="wb-dictee-rij"><span class="wb-rij-nr">' + (i + 1) + ".</span>" + (ant ? '<span class="wb-ant">' + esc(w) + "</span>" : lijn(200)) + "</div>";
+    });
+    h += "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Zinsdictee ───────────────────────────────────────────────────────────────
+  function rZinsdictee(b, nr, ant) {
+    var h = opdrachtKop(nr, b.opdracht || "Zinsdictee: schrijf de zin die wordt voorgelezen.", b.em);
+    arr(b.zinnen).forEach(function (z, i) {
+      var zin = String(z && z.zin != null ? z.zin : z).trim();
+      h += '<div class="wb-zinsd"><div class="wb-zinsd-nr">' + (i + 1) + ".</div>";
+      h += ant ? '<div class="wb-ant-blok">' + esc(zin) + "</div>" : '<div class="wb-schrijfregels"><div class="wb-schrijfregel"></div><div class="wb-schrijfregel"></div></div>';
+      h += "</div>";
+    });
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Kijk – dek af – schrijf ──────────────────────────────────────────────────
+  function rKijkDek(b, nr, ant) {
+    var h = opdrachtKop(nr, b.opdracht || "Kijk goed – dek af – schrijf uit je hoofd – kijk na.", b.em);
+    h += '<div class="wb-kdk"><div class="wb-kdk-rij wb-kdk-head"><span>Kijk</span><span>Schrijf</span><span>Schrijf nog eens</span></div>';
+    arr(b.woorden).map(woordTekst).filter(Boolean).forEach(function (woord) {
+      var cel = ant ? '<span class="wb-ant">' + esc(woord) + "</span>" : lijn(120);
+      h += '<div class="wb-kdk-rij"><span class="wb-kdk-w">' + esc(woord) + "</span><span>" + cel + "</span><span>" + cel + "</span></div>";
+    });
+    h += "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Overschrijven (inprenting) ───────────────────────────────────────────────
+  function rOverschrijf(b, nr, ant) {
+    var h = opdrachtKop(nr, b.opdracht || "Schrijf elk woord netjes twee keer over.", b.em);
+    h += '<div class="wb-over-lijst">';
+    arr(b.woorden).map(woordTekst).filter(Boolean).forEach(function (woord, i) {
+      var lijnen = ant ? '<span class="wb-ant">' + esc(woord) + '</span> <span class="wb-ant">' + esc(woord) + "</span>" : lijn(120) + " " + lijn(120);
+      h += '<div class="wb-over-rij"><span class="wb-rij-nr">' + (i + 1) + '.</span><b class="wb-over-w">' + esc(woord) + '</b><span class="wb-over-lijnen">' + lijnen + "</span></div>";
+    });
+    h += "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Definitie schrijven (open) ───────────────────────────────────────────────
+  function rDefinitie(b, nr, ant) {
+    var h = opdrachtKop(nr, b.opdracht || "Schrijf zelf op wat elk woord betekent.", b.em);
+    arr(b.woorden).forEach(function (w, i) {
+      var woord = w && typeof w === "object" ? w.woord : w, bet = (w && (w.betekenis || w.antwoord)) || "";
+      h += '<div class="wb-open-vraag"><div class="wb-vraag-t">' + (i + 1) + ". " + esc(woord) + "</div>";
+      h += ant ? '<div class="wb-ant-blok">' + esc(bet) + "</div>" : '<div class="wb-schrijfregels"><div class="wb-schrijfregel"></div></div>';
+      h += "</div>";
+    });
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Woordraadsel: omschrijving → kind schrijft het woord zelf ────────────────
+  function rWoordraadsel(b, nr, ant) {
+    var h = opdrachtKop(nr, b.opdracht || "Lees de omschrijving en schrijf het goede woord op.", b.em);
+    var items = arr(b.items).length ? arr(b.items) : arr(b.woorden);
+    h += '<div class="wb-invul-lijst">';
+    items.forEach(function (it, i) {
+      var om = it.omschrijving != null ? it.omschrijving : it.vraag, antw = it.antwoord != null ? it.antwoord : it.woord;
+      h += '<div class="wb-raadsel-rij"><span class="wb-rij-nr">' + (i + 1) + '.</span><span class="wb-raadsel-om">' + esc(om) + "</span>" + (ant ? '<span class="wb-ant" style="margin-left:8px">' + esc(antw) + "</span>" : lijn(140)) + "</div>";
+    });
+    h += "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Verhaaltje met doelwoorden ───────────────────────────────────────────────
+  function rVerhaal(b, nr, ant) {
+    var h = opdrachtKop(nr, b.opdracht || "Schrijf een kort verhaal. Gebruik alle woorden hieronder.", b.em);
+    var lijst = arr(b.woorden).map(woordTekst).filter(Boolean);
+    h += '<div class="wb-woordbank"><span class="wb-bank-l">Gebruik:</span> ' + lijst.map(function (w) { return '<span class="wb-chip">' + esc(w) + "</span>"; }).join(" ") + "</div>";
+    if (ant) h += '<div class="wb-ant-note">Eigen verhaal — nakijken op de woorden en de spelling.</div>';
+    var regels = Math.max(3, Math.min(10, b.regels || 6));
+    h += '<div class="wb-schrijfregels">';
+    for (var k = 0; k < regels; k++) h += '<div class="wb-schrijfregel"></div>';
+    h += "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Woord in de juiste zin (A of B — beide zinnen correct gespeld) ───────────
+  function rJuisteZin(b, nr, ant) {
+    var h = opdrachtKop(nr, b.opdracht || "In welke zin is het woord goed gebruikt? Kies A of B.", b.em);
+    arr(b.items).forEach(function (it, i) {
+      var goed = it.goed != null ? it.goed : 0;
+      h += '<div class="wb-jz"><div class="wb-vraag-t">' + (i + 1) + ". " + (it.woord ? "<b>" + esc(it.woord) + "</b>" : "") + "</div>";
+      [it.a, it.b].forEach(function (zin, li) {
+        var g = ant && goed === li;
+        h += '<div class="wb-jz-opt"><span class="wb-bubble' + (g ? " wb-lid-goed" : "") + '">' + (li === 0 ? "A" : "B") + "</span> <span>" + esc(zin) + "</span></div>";
+      });
+      h += "</div>";
+    });
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Keuzebord (3×3 mini-opdrachten) ──────────────────────────────────────────
+  function rKeuzebord(b, nr, ant) {
+    var h = opdrachtKop(nr, b.opdracht || "Kies zelf drie opdrachten op een rij (net als boter-kaas-en-eieren).", b.em);
+    var opties = arr(b.opties).slice(0, 9); while (opties.length < 9) opties.push("");
+    h += '<div class="wb-bord">' + opties.map(function (o) { return '<div class="wb-bord-vak">' + esc(o) + "</div>"; }).join("") + "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  // ── Tic-tac-toe met woorden (rij van drie goed overschrijven) ────────────────
+  function rTicTacToe(b, nr, ant) {
+    var h = opdrachtKop(nr, b.opdracht || "Kies een rij van drie. Schrijf elk woord van die rij goed over.", b.em);
+    var woorden = arr(b.woorden).map(woordTekst).slice(0, 9); while (woorden.length < 9) woorden.push("");
+    h += '<div class="wb-bord wb-ttt">' + woorden.map(function (w) { return '<div class="wb-bord-vak"><b>' + esc(w) + '</b><span class="wb-ttt-lijn"></span></div>'; }).join("") + "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
   // Render één blok (kiest de juiste renderer).
   function renderBlok(b, nr, ant) {
     switch (b.type) {
@@ -2180,7 +2514,6 @@
       case "synant": return rSynant(b, nr, ant);
       case "lidwoord": return rLidwoord(b, nr, ant);
       case "zoekdefout": return rZoekFout(b, nr, ant);
-      case "verbinddepunten": return rStippen(b, nr, ant);
       case "bingo": return rBingo(b, nr);
       case "cijferend": case "cijferplus": case "cijfermin": case "cijferkeer": return rCijferend(b, nr, ant);
       case "ontbrekend": return rOntbrekend(b, nr, ant);
@@ -2194,6 +2527,33 @@
       case "automatiseer": return rSprint(b, nr, ant);
       case "teken": return rTeken(b, nr, ant);
       case "reflectie": return rReflectie(b, ant);
+      // ── Nieuwe spelling-werkvormen (batch, nog op GETESTE_MODULES:false) ──
+      case "meervoud": case "verkleinwoord": case "verledentijd": case "voltooiddeelwoord":
+      case "verlengen": case "grondwoord": case "samenstellen": case "woordfamilie": return rWoordvorm(b, nr, ant);
+      case "trappen": return rTrappen(b, nr, ant);
+      case "pyramide": return rPyramide(b, nr, ant);
+      case "woordtrap": return rWoordtrap(b, nr, ant);
+      case "woordslang": return rWoordslang(b, nr, ant);
+      case "verstopt": case "letterslinger": return rVerstopt(b, nr, ant);
+      case "alfabetiseren": return rAlfabet(b, nr, ant);
+      case "klanktellen": return rKlankkast(b, nr, ant);
+      case "klinkers": return rKlinkers(b, nr, ant);
+      case "klankgroepen": return rKlankgroep(b, nr, ant);
+      case "woordinwoord": return rWoordInWoord(b, nr, ant);
+      case "woordwaarde": case "woordwaardespel": return rWoordwaarde(b, nr, ant);
+      case "lettertegels": return rLettertegels(b, nr, ant);
+      case "oddoneout": return rOddOneOut(b, nr, ant);
+      case "regelbenoemen": return rRegelbenoemen(b, nr, ant);
+      case "dictee": return rDictee(b, nr, ant);
+      case "zinsdictee": return rZinsdictee(b, nr, ant);
+      case "kijkdekschrijf": return rKijkDek(b, nr, ant);
+      case "overschrijf": return rOverschrijf(b, nr, ant);
+      case "definitie": return rDefinitie(b, nr, ant);
+      case "woordraadsel": return rWoordraadsel(b, nr, ant);
+      case "verhaal": return rVerhaal(b, nr, ant);
+      case "juistezin": return rJuisteZin(b, nr, ant);
+      case "keuzebord": return rKeuzebord(b, nr, ant);
+      case "tictactoe": return rTicTacToe(b, nr, ant);
       default: return "";
     }
   }
@@ -2297,6 +2657,8 @@
       ".wb-kop-em{margin-left:auto;font-size:20px}",
       // Invullijnen
       ".wb-lijn{display:inline-block;border-bottom:2px solid var(--wb-ink);height:1.05em;vertical-align:bottom;margin:0 2px}",
+      ".wb-wkol{display:inline-block}", // referentiekolom → schrijflijntjes lijnen uit
+
       ".wb-ant{border-bottom-color:var(--wb-accent);color:var(--wb-accent);font-weight:800;text-align:center;padding:0 4px}",
       // Leestekst
       ".wb-leesblok{background:var(--wb-soft);border-radius:12px;padding:14px 16px;border:1px solid rgba(34,28,58,.06)}",
@@ -2496,11 +2858,6 @@
       ".wb-lidw-rij{display:flex;align-items:center;gap:8px;font-size:15px;margin-bottom:9px;break-inside:avoid;-webkit-column-break-inside:avoid}",
       ".wb-lidw-w{font-weight:600}",
       ".wb-bubble.wb-lid-goed{border:2.5px solid var(--wb-accent);color:var(--wb-accent);background:var(--wb-soft)}",
-      // Verbind de punten
-      ".wb-stip-wrap{display:flex;justify-content:center}",
-      ".wb-vdp{width:100%;max-width:300px;height:auto;color:var(--wb-ink)}",
-      ".wb-stip-lijn{fill:var(--wb-soft);stroke:var(--wb-accent);stroke-width:1.5}",
-      ".wb-stip-nr{font-size:7px;font-weight:800;fill:var(--wb-accent);font-family:var(--wb-font)}",
       // Bingo
       ".wb-bingo{border-collapse:collapse;margin:0 auto}",
       ".wb-bingo td{width:58px;height:46px;border:2px solid var(--wb-ink);text-align:center;font-weight:700;font-size:15px;padding:2px}",
@@ -2543,6 +2900,90 @@
       ".wb-maal td.wb-ant{color:var(--wb-accent)}",
       // Sprint
       ".wb-sprint-score{margin-top:12px;font-weight:800;font-size:15px;text-align:center;background:var(--wb-soft);border-radius:10px;padding:9px}",
+      // ── Nieuwe spelling-werkvormen ──
+      ".wb-lhok{display:inline-flex;align-items:center;justify-content:center;width:26px;height:30px;border:1.5px solid var(--wb-ink);border-radius:5px;margin:0 2px 2px 0;font-weight:800;font-size:16px;color:var(--wb-accent);text-transform:uppercase;vertical-align:middle}",
+      // Trappen van vergelijking
+      ".wb-trap{display:grid;gap:6px}",
+      ".wb-trap-rij{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;align-items:center;font-size:15px}",
+      ".wb-trap-head{font-weight:800;color:var(--wb-accent);font-size:12.5px;text-transform:uppercase;letter-spacing:.4px}",
+      // Pyramide
+      ".wb-pyr-lijst{display:flex;flex-wrap:wrap;gap:18px 30px}",
+      ".wb-pyr{display:flex;flex-direction:column;align-items:flex-start;gap:3px}",
+      ".wb-pyr-doel{font-weight:800;color:var(--wb-accent);font-size:15px;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}",
+      ".wb-pyr-rij{display:flex}",
+      // Woordtrap (ladder)
+      ".wb-ladder{display:flex;flex-direction:column;gap:6px}",
+      ".wb-ladder-rij{display:flex;align-items:center;gap:12px}",
+      ".wb-ladder-hint{font-size:13.5px;color:var(--wb-ink);opacity:.75}",
+      // Woordslang
+      ".wb-slang{display:flex;flex-wrap:wrap;align-items:center;gap:6px 4px;font-size:16px}",
+      ".wb-slang-cel{display:inline-flex;align-items:center;background:var(--wb-soft);border-radius:8px;padding:5px 10px;font-weight:700}",
+      ".wb-slang-pijl{color:var(--wb-accent);font-weight:800}",
+      // Verstopte woorden
+      ".wb-verstopt-strip{font-weight:800;font-size:20px;letter-spacing:3px;background:var(--wb-soft);border-radius:10px;padding:12px 14px;margin-bottom:12px;word-break:break-all;text-align:center;color:var(--wb-ink)}",
+      ".wb-verstopt-scheid{color:var(--wb-accent);margin:0 3px}",
+      // Klankkast
+      ".wb-klank-lijst{display:flex;flex-direction:column;gap:9px}",
+      ".wb-klank-rij{display:flex;align-items:center;gap:12px}",
+      ".wb-klank-w{min-width:110px;font-size:16px}",
+      ".wb-klank-boxes{display:flex}",
+      // Klinkers markeren
+      ".wb-klink-lijst{display:flex;flex-wrap:wrap;gap:10px 26px}",
+      ".wb-klink-rij{display:flex;align-items:center;gap:8px}",
+      ".wb-klink-w{font-size:19px;font-weight:700;letter-spacing:2px}",
+      ".wb-klink-l{display:inline-block;padding:0 1px}",
+      ".wb-klink-mark{color:var(--wb-accent);border:2px solid var(--wb-accent);border-radius:50%;padding:0 3px;font-weight:800}",
+      // Klankgroepen
+      ".wb-kg-tag{color:var(--wb-accent);font-weight:800;font-size:12.5px;margin-left:2px}",
+      ".wb-kg-scheid{color:var(--wb-ink);opacity:.5;margin:0 3px}",
+      // Woord-in-woord
+      ".wb-wiw-rij{display:flex;align-items:center;gap:12px;margin:0 0 9px}",
+      ".wb-wiw-w{font-size:18px;color:var(--wb-accent);letter-spacing:1px}",
+      // Lettertegels
+      ".wb-tegel-lijst{display:flex;flex-direction:column;gap:12px}",
+      ".wb-tegel-rij{display:flex;align-items:center;gap:8px;flex-wrap:wrap}",
+      ".wb-tegel-pool{display:flex;gap:5px}",
+      ".wb-ltegel{display:inline-flex;align-items:center;justify-content:center;width:28px;height:32px;background:var(--wb-accent);color:#fff;border-radius:6px;font-weight:800;font-size:16px}",
+      ".wb-tegel-pijl{color:var(--wb-accent);font-weight:800;font-size:18px;margin:0 4px}",
+      ".wb-tegel-boxes{display:flex}",
+      // Odd one out
+      ".wb-odd-lijst{display:flex;flex-direction:column;gap:10px}",
+      ".wb-odd-rij{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}",
+      ".wb-odd-w{font-size:15.5px;font-weight:600;padding:4px 12px;border:1.5px solid rgba(34,28,58,.16);border-radius:10px;background:#fff}",
+      ".wb-odd-mark{border-color:var(--wb-accent);color:var(--wb-accent);text-decoration:line-through;font-weight:800}",
+      // Regel benoemen (tabel)
+      ".wb-regel-tabel{display:grid;gap:5px}",
+      ".wb-regel-rij{display:grid;grid-template-columns:1fr repeat(var(--rb-kol,2),56px);align-items:center;gap:8px;font-size:14.5px}",
+      ".wb-regel-head{font-weight:800;color:var(--wb-accent);font-size:12px;text-transform:uppercase;letter-spacing:.3px}",
+      ".wb-regel-head span{text-align:center}",
+      ".wb-regel-w{font-weight:600}",
+      ".wb-regel-rij>.wb-vak{justify-self:center}",
+      // Dictee
+      ".wb-dictee-lijst{display:grid;grid-template-columns:1fr 1fr;gap:12px 30px}",
+      ".wb-dictee-rij{display:flex;align-items:baseline;gap:8px}",
+      // Zinsdictee
+      ".wb-zinsd{margin:0 0 12px}.wb-zinsd-nr{font-weight:800;color:var(--wb-accent);font-size:13px;margin-bottom:4px}",
+      // Kijk-dek-schrijf
+      ".wb-kdk{display:grid;gap:6px}",
+      ".wb-kdk-rij{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:center}",
+      ".wb-kdk-head{font-weight:800;color:var(--wb-accent);font-size:12px;text-transform:uppercase;letter-spacing:.3px}",
+      ".wb-kdk-w{font-weight:700;font-size:16px}",
+      // Overschrijven
+      ".wb-over-lijst{display:flex;flex-direction:column;gap:12px}",
+      ".wb-over-rij{display:flex;align-items:center;gap:12px;flex-wrap:wrap}",
+      ".wb-over-w{font-size:17px;min-width:110px}",
+      ".wb-over-lijnen{display:flex;gap:10px;flex:1}",
+      // Woordraadsel
+      ".wb-raadsel-rij{display:flex;align-items:baseline;gap:8px;margin:0 0 9px}",
+      ".wb-raadsel-om{flex:1;font-size:14.5px}",
+      // Juiste zin
+      ".wb-jz{margin:0 0 13px}",
+      ".wb-jz-opt{display:flex;align-items:flex-start;gap:8px;font-size:14.5px;margin:5px 0}",
+      // Keuzebord / tic-tac-toe
+      ".wb-bord{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:520px}",
+      ".wb-bord-vak{border:1.5px solid rgba(34,28,58,.2);border-radius:10px;min-height:64px;padding:8px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:13.5px;gap:6px;background:#fff}",
+      ".wb-ttt .wb-bord-vak b{font-size:16px}",
+      ".wb-ttt-lijn{display:block;width:80%;border-bottom:2px dotted rgba(34,28,58,.35);height:1px}",
       // Voet
       ".wb-voet{display:flex;align-items:center;justify-content:space-between;padding:10px 24px 14px;font-size:11px;color:var(--wb-accent);font-weight:700;border-top:1px solid var(--wb-soft)}",
       ".wb-voet-mas{font-size:16px}",
