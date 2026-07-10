@@ -368,7 +368,7 @@
       //    Zet er pas eentje op true nadat de eigenaar 'm heeft goedgekeurd.
       meervoud: false, verkleinwoord: false, verledentijd: false, voltooiddeelwoord: false,
       verlengen: false, trappen: false, grondwoord: false, samenstellen: false, woordfamilie: false,
-      pyramide: false, woordtrap: false, woordslang: false, verstopt: false, letterslinger: false,
+      pyramide: false, woordtrap: false, woordslang: false, verstopt: false,
       alfabetiseren: false, klanktellen: false, klinkers: false, klankgroepen: false,
       woordinwoord: false, woordwaarde: false, woordwaardespel: false, lettertegels: false,
       oddoneout: false, regelbenoemen: false, dictee: false, zinsdictee: false,
@@ -397,7 +397,7 @@
       lettergrepen: 'taal', rijmwoorden: 'taal', synant: 'taal', lidwoord: 'taal', zoekdefout: 'taal',
       meervoud: 'taal', verkleinwoord: 'taal', verledentijd: 'taal', voltooiddeelwoord: 'taal',
       verlengen: 'taal', trappen: 'taal', grondwoord: 'taal', samenstellen: 'taal', woordfamilie: 'taal',
-      pyramide: 'taal', woordtrap: 'taal', woordslang: 'taal', verstopt: 'taal', letterslinger: 'taal',
+      pyramide: 'taal', woordtrap: 'taal', woordslang: 'taal', verstopt: 'taal',
       alfabetiseren: 'taal', klanktellen: 'taal', klinkers: 'taal', klankgroepen: 'taal',
       woordinwoord: 'taal', woordwaarde: 'taal', woordwaardespel: 'taal', lettertegels: 'taal',
       oddoneout: 'taal', regelbenoemen: 'taal', dictee: 'taal', zinsdictee: 'taal',
@@ -480,8 +480,7 @@
         '- {"type":"pyramide","opdracht":"...","woorden":["bank","stoel"]} — het kind bouwt elk woord letter voor letter op (het systeem maakt de pyramide + antwoorden).',
         '- {"type":"woordtrap","opdracht":"...","rijen":[{"woord":"kat","hint":"huisdier dat miauwt"},{"woord":"kar","hint":"een wagen om te trekken"}]} — woordladder: elk volgend woord verschilt ÉÉN letter van het vorige; geef een korte hint per trede. Alle woorden even lang.',
         '- {"type":"woordslang","opdracht":"...","woorden":["appel","lepel","luipaard"]} — kettingwoorden: de LAATSTE letter van een woord is de EERSTE van het volgende. Controleer dat de ketting echt klopt.',
-        '- {"type":"verstopt","opdracht":"...","woorden":["boom","stoel","raam"]} — het systeem plakt de woorden aan elkaar tot één letterstrook; het kind zoekt de losse woorden.',
-        '- {"type":"letterslinger","opdracht":"...","woorden":["maan","raket","ster"]} — zoals verstopt, maar als één doorlopende slinger.',
+        '- {"type":"verstopt","opdracht":"...","woorden":["boom","stoel","raam"]} — het systeem verstopt de woorden in één letterstrook met opvulletters ertussen; het kind zoekt de losse woorden.',
         '- {"type":"alfabetiseren","opdracht":"...","woorden":["banaan","appel","citroen","druif"]} — het systeem husselt ze; het kind zet ze op alfabetische volgorde.',
         '- {"type":"klanktellen","opdracht":"...","woorden":[{"woord":"bank","klanken":["b","a","n","k"]}]} — één klank per hokje; geef de klankopbouw (losse klanken/klankgroepen) mee.',
         '- {"type":"klinkers","opdracht":"...","woorden":["fiets","boom","tafel"]} — het kind zet een rondje om de klinkers (het systeem kent de klinkers).',
@@ -791,11 +790,27 @@
     }
 
     // Harde MAX op het aantal items per opdracht. De AI overschrijdt de prompt-richtlijn
-    // soms fors (14 anagrammen, 18 sorteerwoorden); 10 is genoeg om te oefenen en te vullen.
+    // soms fors (14 anagrammen, 18 sorteerwoorden); een cap houdt één opdracht kort genoeg.
+    // De max is gekozen op hoeveel VERTICALE ruimte één item kost:
+    //  ~10 = compacte lijst (2 kolommen of korte regel)   ~8 = één brede regel per item
+    //  ~5-6 = veel ruimte per item (schrijfregels/meerregelig)   9 = vast 3×3-rooster.
     // Rooster-puzzels (woordzoeker/kruiswoord) vallen hier NIET onder — die mogen voller.
     var MAX_ITEMS = {
+      // Bestaand (compacte vraag-/lijst-types)
       anagram: 10, meerkeuze: 10, waarnietwaar: 10, zinbouwen: 10, lettergrepen: 10,
-      rijmwoorden: 10, lidwoord: 10, synant: 10, invul: 10, open: 8
+      rijmwoorden: 10, lidwoord: 10, synant: 10, invul: 10, open: 8, zoekdefout: 6,
+      // Woordvorm-lijsten (2 kolommen, 1 regel per item)
+      meervoud: 10, verkleinwoord: 10, verledentijd: 10, voltooiddeelwoord: 10,
+      verlengen: 10, grondwoord: 10, samenstellen: 10, woordfamilie: 6,
+      // Overige spelling-lijsten
+      klankgroepen: 10, woordinwoord: 10, woordwaarde: 10, woordwaardespel: 10,
+      alfabetiseren: 10, dictee: 10, klinkers: 10, regelbenoemen: 10, klanktellen: 8,
+      verstopt: 8, woordraadsel: 8, trappen: 8, lettertegels: 8, oddoneout: 8,
+      kijkdekschrijf: 8, overschrijf: 8, woordtrap: 8, woordslang: 8,
+      // Veel verticale ruimte per item (schrijfregels / meerregelig)
+      definitie: 6, pyramide: 6, verhaal: 8, zinsdictee: 5, juistezin: 5,
+      // Vaste 3×3-roosters
+      keuzebord: 9, tictactoe: 9
     };
     function capOpdrachtItems(wb) {
       try {
@@ -812,7 +827,7 @@
             return;
           }
           var max = MAX_ITEMS[b.type]; if (!max) return;
-          var arr = b.vragen || b.items || b.stellingen || b.zinnen || b.woorden || b.paren;
+          var arr = b.vragen || b.items || b.stellingen || b.zinnen || b.woorden || b.paren || b.rijen || b.opties;
           if (Array.isArray(arr) && arr.length > max) arr.length = max;
         });
       } catch (e) { /* fail-safe */ }
