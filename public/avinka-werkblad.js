@@ -2218,13 +2218,30 @@
     return '<div class="wb-blok">' + h + "</div>";
   }
 
-  // ── Verstopte woorden / letterslinger: woorden in een letterstrook ───────────
+  // ── Verstopte woorden: doelwoorden in een letterstrook met opvulletters ──────
+  // De code verstopt de woorden ECHT (opvulletters ertussen), zodat ze niet zomaar
+  // achter elkaar te lezen zijn. Op het antwoordblad kleuren we de doelwoorden.
+  function verstoptVul() {
+    var pool = "BCDFGHKLMNPRSTVWZ", n = 1 + Math.floor(Math.random() * 2), s = "";
+    for (var i = 0; i < n; i++) s += pool.charAt(Math.floor(Math.random() * pool.length));
+    return s;
+  }
   function rVerstopt(b, nr, ant) {
     var h = opdrachtKop(nr, b.opdracht || "Zoek de verstopte woorden en schrijf ze goed op.", b.em);
     var lijst = arr(b.woorden).map(woordTekst).filter(Boolean);
-    var strook = ant
-      ? lijst.map(function (w) { return esc(w.toUpperCase()); }).join('<span class="wb-verstopt-scheid">·</span>')
-      : esc(lijst.join("").toUpperCase());
+    // Bouw de strook als segmenten: opvulling · doelwoord · opvulling · doelwoord …
+    var segs = [{ vul: true, t: verstoptVul() }];
+    lijst.forEach(function (w, i) {
+      if (i > 0) segs.push({ vul: true, t: verstoptVul() });
+      segs.push({ vul: false, t: w.toUpperCase() });
+    });
+    segs.push({ vul: true, t: verstoptVul() });
+    var strook = segs.map(function (s) {
+      // Vraagblad: alle letters gelijk (niets verraadt de woorden).
+      // Antwoordblad: doelwoorden gemarkeerd, opvulletters gewoon.
+      if (ant && !s.vul) return '<span class="wb-verstopt-doel">' + esc(s.t) + "</span>";
+      return esc(s.t);
+    }).join("");
     h += '<div class="wb-verstopt-strip">' + strook + "</div>";
     h += '<div class="wb-invul-lijst">';
     lijst.forEach(function (w, i) {
@@ -2534,7 +2551,7 @@
       case "pyramide": return rPyramide(b, nr, ant);
       case "woordtrap": return rWoordtrap(b, nr, ant);
       case "woordslang": return rWoordslang(b, nr, ant);
-      case "verstopt": case "letterslinger": return rVerstopt(b, nr, ant);
+      case "verstopt": return rVerstopt(b, nr, ant);
       case "alfabetiseren": return rAlfabet(b, nr, ant);
       case "klanktellen": return rKlankkast(b, nr, ant);
       case "klinkers": return rKlinkers(b, nr, ant);
@@ -2921,7 +2938,7 @@
       ".wb-slang-pijl{color:var(--wb-accent);font-weight:800}",
       // Verstopte woorden
       ".wb-verstopt-strip{font-weight:800;font-size:20px;letter-spacing:3px;background:var(--wb-soft);border-radius:10px;padding:12px 14px;margin-bottom:12px;word-break:break-all;text-align:center;color:var(--wb-ink)}",
-      ".wb-verstopt-scheid{color:var(--wb-accent);margin:0 3px}",
+      ".wb-verstopt-doel{color:var(--wb-accent);background:var(--wb-soft);border-radius:4px;padding:0 2px}",
       // Klankkast
       ".wb-klank-lijst{display:flex;flex-direction:column;gap:9px}",
       ".wb-klank-rij{display:flex;align-items:center;gap:12px}",
@@ -2952,10 +2969,10 @@
       ".wb-odd-w{font-size:15.5px;font-weight:600;padding:4px 12px;border:1.5px solid rgba(34,28,58,.16);border-radius:10px;background:#fff}",
       ".wb-odd-mark{border-color:var(--wb-accent);color:var(--wb-accent);text-decoration:line-through;font-weight:800}",
       // Regel benoemen (tabel)
-      ".wb-regel-tabel{display:grid;gap:5px}",
-      ".wb-regel-rij{display:grid;grid-template-columns:1fr repeat(var(--rb-kol,2),56px);align-items:center;gap:8px;font-size:14.5px}",
+      ".wb-regel-tabel{display:grid;grid-template-columns:minmax(0,1fr) repeat(var(--rb-kol,2),minmax(64px,max-content));column-gap:8px;row-gap:5px;align-items:center}",
+      ".wb-regel-rij{display:contents;font-size:14.5px}",
       ".wb-regel-head{font-weight:800;color:var(--wb-accent);font-size:12px;text-transform:uppercase;letter-spacing:.3px}",
-      ".wb-regel-head span{text-align:center}",
+      ".wb-regel-head span{text-align:center;white-space:nowrap;padding:0 6px}",
       ".wb-regel-w{font-weight:600}",
       ".wb-regel-rij>.wb-vak{justify-self:center}",
       // Dictee
@@ -2974,7 +2991,7 @@
       ".wb-over-w{font-size:17px;min-width:110px}",
       ".wb-over-lijnen{display:flex;gap:10px;flex:1}",
       // Woordraadsel
-      ".wb-raadsel-rij{display:flex;align-items:baseline;gap:8px;margin:0 0 9px}",
+      ".wb-raadsel-rij{display:flex;align-items:baseline;gap:8px;margin:0 0 9px;break-inside:avoid;-webkit-column-break-inside:avoid}",
       ".wb-raadsel-om{flex:1;font-size:14.5px}",
       // Juiste zin
       ".wb-jz{margin:0 0 13px}",
@@ -2982,8 +2999,9 @@
       // Keuzebord / tic-tac-toe
       ".wb-bord{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:520px}",
       ".wb-bord-vak{border:1.5px solid rgba(34,28,58,.2);border-radius:10px;min-height:64px;padding:8px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:13.5px;gap:6px;background:#fff}",
+      ".wb-ttt .wb-bord-vak{min-height:86px;justify-content:flex-start;padding-top:12px;gap:10px}",
       ".wb-ttt .wb-bord-vak b{font-size:16px}",
-      ".wb-ttt-lijn{display:block;width:80%;border-bottom:2px dotted rgba(34,28,58,.35);height:1px}",
+      ".wb-ttt-lijn{display:block;width:80%;border-bottom:2px dotted rgba(34,28,58,.35);height:1.4em}",
       // Voet
       ".wb-voet{display:flex;align-items:center;justify-content:space-between;padding:10px 24px 14px;font-size:11px;color:var(--wb-accent);font-weight:700;border-top:1px solid var(--wb-soft)}",
       ".wb-voet-mas{font-size:16px}",
