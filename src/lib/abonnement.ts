@@ -34,14 +34,23 @@ export type Plan = {
 };
 
 // ── Credits per pakket ────────────────────────────────────────────────────
-// DE BRON. Zowel de pakketkaartjes hieronder als het verbruiksplafond
-// (lib/ai-limiet.ts) lezen hieruit, zodat de getallen nooit uit elkaar lopen.
-// Ter ijking: een zware rapportmaand meet ongeveer 60 credits.
+// DIT IS GEEN VERKOOPARGUMENT. Het staat bewust NIET op de pakketkaartjes.
+//
+// Het is een slot tegen misbruik en tegen het delen van accounts, verder
+// niets. De pakketten verschillen op wat je krijgt (aantal tools, kwaliteit
+// van het AI-model, aantal groepen, voorrang), niet op hoeveel je mag maken.
+// Ook Compleet moet ruim genoeg zijn voor dagelijks gebruik.
+//
+// De aantallen zijn daarom hoog gezet: een zware maand meet ongeveer 60, en
+// zelfs intensief dagelijks gebruik blijft ver onder deze grenzen. Wie er wél
+// overheen gaat, deelt zijn account of laat iets automatisch draaien.
+// Elke grens blijft onder de opbrengst van het pakket, zodat misbruik nooit
+// geld kost (Start €5,99 / Compleet €9,99 / Pro €16,99).
 export const CREDITS_PER_PLAN: Record<PlanId | "proef", number> = {
-  start: 80,
-  compleet: 140,
-  pro: 240,
-  proef: 80,
+  start: 100,
+  compleet: 180,
+  pro: 300,
+  proef: 100,
 };
 
 export const PLANNEN: Plan[] = [
@@ -57,7 +66,6 @@ export const PLANNEN: Plan[] = [
     // over de prijs, niet over de hoeveelheid, en zijn dus altijd waar.
     voordelen: [
       "Eén tool naar keuze",
-      `${CREDITS_PER_PLAN.start} credits per maand`,
       "Je klas bewaard",
       "Namen blijven op je eigen apparaat",
     ],
@@ -71,7 +79,6 @@ export const PLANNEN: Plan[] = [
     toegang: "alle",
     voordelen: [
       "Alles van Start",
-      `${CREDITS_PER_PLAN.compleet} credits per maand`,
       "Alle tools, zonder bijbetalen",
       "Meerdere groepen beheren",
       "Alles bewaren en ordenen in Bestanden",
@@ -86,7 +93,6 @@ export const PLANNEN: Plan[] = [
     toegang: "alle",
     voordelen: [
       "Alles van Compleet",
-      `${CREDITS_PER_PLAN.pro} credits per maand`,
       "Het sterkste AI-model voor de meest genuanceerde teksten",
       "Voorrang als het druk is",
       "Als eerste toegang tot nieuwe tools",
