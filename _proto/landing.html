@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Avinka — landingspagina-prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet" />
+<style>
+  :root{ --ink:#221c3a; --cream:#fbf6ee; --warm:#e9e1d2; --accent:#2f9e6e; --accent2:#25855a; --muted:#6b6880; --card:#fff; --line:#eadfce; }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:'Plus Jakarta Sans',sans-serif;color:var(--ink);background:var(--cream);overflow-x:hidden}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+  section{position:relative;z-index:1}
+  h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;letter-spacing:-.4px;line-height:1.05}
+  h1 em,h2 em{font-style:italic;color:var(--accent)}
+  a{color:inherit;text-decoration:none}
+  .btn{border:none;background:var(--accent);color:#fff;font:inherit;font-weight:700;font-size:16px;padding:15px 28px;border-radius:14px;cursor:pointer;box-shadow:0 12px 24px rgba(47,158,110,.28);transition:transform .14s,filter .14s;display:inline-flex;align-items:center;gap:9px}
+  .btn:hover{transform:translateY(-2px);filter:brightness(1.05)}
+  .btn.groot{font-size:17px;padding:17px 32px}
+  .btn.wit{background:#fff;color:var(--accent2);box-shadow:0 12px 24px rgba(0,0,0,.12)}
+  .ghost{background:none;border:none;font:inherit;font-weight:700;font-size:15px;color:var(--ink);cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+  /* aurora */
+  .aura{position:fixed;inset:0;z-index:0;pointer-events:none;filter:blur(70px);opacity:.5}
+  .aura i{position:absolute;border-radius:50%}
+  .aura .a{width:460px;height:460px;background:#bfe6cf;top:-140px;right:-90px;animation:zweef 16s ease-in-out infinite}
+  .aura .b{width:380px;height:380px;background:#fbe3c7;top:520px;left:-120px;animation:zweef 20s ease-in-out infinite reverse}
+  @keyframes zweef{0%,100%{transform:translate(0,0)}50%{transform:translate(34px,44px)}}
+  /* nav */
+  header{position:sticky;top:0;z-index:30;background:rgba(251,246,238,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav{display:flex;align-items:center;gap:14px;padding:14px 0}
+  .logo{display:flex;align-items:center;gap:11px;font-family:'Fraunces',serif;font-size:20px;font-weight:700}
+  .logo .mk{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;box-shadow:0 6px 14px rgba(47,158,110,.35)}
+  .nav .links{margin-left:auto;display:flex;align-items:center;gap:26px;font-weight:600;font-size:14.5px;color:var(--muted)}
+  .nav .links a:hover{color:var(--ink)}
+  .nav .btn{padding:11px 20px;font-size:14.5px}
+  @media(max-width:720px){ .nav .links a:not(.knop-a){display:none} .nav .btn{padding:10px 16px;font-size:14px} }
+  /* hero */
+  .hero{padding:56px 0 40px}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+  @media(max-width:900px){ .hero-grid{grid-template-columns:1fr;gap:34px} .hero{padding:38px 0 26px} }
+  .eyebrow{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:12.5px;color:var(--accent2);background:#e7f4ed;padding:7px 14px;border-radius:999px;margin-bottom:18px}
+  .hero h1{font-size:clamp(36px,5.4vw,58px);margin:0 0 18px}
+  .hero .lead{font-size:clamp(16px,2vw,18.5px);line-height:1.55;color:#4a4560;max-width:460px;margin:0 0 28px}
+  .cta{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .bewijs{display:flex;align-items:center;gap:14px;margin-top:24px;font-size:13px;color:var(--muted);font-weight:600;flex-wrap:wrap}
+  .sterren{color:#e6a817;letter-spacing:2px;font-size:15px}
+  /* demo card */
+  .demo-wrap{animation:zweefkaart 6s ease-in-out infinite}
+  @keyframes zweefkaart{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  .demo{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:0 30px 66px rgba(34,28,58,.16);overflow:hidden}
+  .demo-bar{display:flex;align-items:center;gap:7px;padding:13px 16px;background:#f6f1e8;border-bottom:1px solid var(--line)}
+  .demo-bar i{width:11px;height:11px;border-radius:50%;background:#e0d7c7}
+  .demo-bar span{margin-left:8px;font-size:12px;color:var(--muted);font-weight:600}
+  .demo-in{padding:18px}
+  .veldrij{display:flex;gap:9px;margin-bottom:14px}
+  .veld{flex:1;border:1.5px solid var(--line);border-radius:11px;padding:12px 13px;font-size:14px;font-weight:600;background:#fdfbf7;min-height:44px}
+  .veld .cursor{display:inline-block;width:2px;height:16px;background:var(--accent);vertical-align:-3px;animation:knip 1s step-end infinite}
+  @keyframes knip{50%{opacity:0}}
+  .genknop{background:var(--accent);color:#fff;border:none;border-radius:11px;font:inherit;font-weight:700;font-size:13.5px;padding:0 16px;white-space:nowrap}
+  .genknop.puls{animation:puls .7s ease}
+  @keyframes puls{50%{transform:scale(.94);filter:brightness(1.1)}}
+  .blad{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;position:relative}
+  .blad-band{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;padding:12px 16px;font-weight:700;transform:scaleY(0);transform-origin:top;transition:transform .35s ease}
+  .blad.bouw .blad-band{transform:scaleY(1)}
+  .blad-body{padding:8px 16px 18px}
+  .regel{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed #eee6d8;opacity:0;transform:translateY(8px)}
+  .regel:last-child{border-bottom:none}
+  .blad.bouw .regel{animation:inrij .4s ease forwards}
+  .blad.bouw .regel:nth-child(1){animation-delay:.3s}.blad.bouw .regel:nth-child(2){animation-delay:.48s}
+  .blad.bouw .regel:nth-child(3){animation-delay:.66s}.blad.bouw .regel:nth-child(4){animation-delay:.84s}
+  @keyframes inrij{to{opacity:1;transform:none}}
+  .regel .n{width:24px;height:24px;border-radius:7px;background:var(--ink);color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .regel .lijn{height:9px;border-radius:6px;background:#eee6d8;flex:1}
+  .regel .lijn.kort{max-width:120px}
+  .klaar{position:absolute;right:14px;bottom:14px;display:flex;align-items:center;gap:7px;background:#e7f4ed;color:var(--accent2);font-weight:800;font-size:13px;padding:8px 14px;border-radius:999px;box-shadow:0 8px 18px rgba(47,158,110,.2);opacity:0;transform:scale(.6)}
+  .blad.klaar-aan .klaar{animation:pop .5s cubic-bezier(.2,1.4,.4,1) forwards}
+  @keyframes pop{to{opacity:1;transform:none}}
+  .tijd{display:flex;align-items:center;gap:11px;margin-top:15px;font-weight:700;font-size:13.5px}
+  .tijd .oud{color:#b9b2a4;text-decoration:line-through}
+  .tijd .nieuw{color:var(--accent2);background:#e7f4ed;padding:5px 12px;border-radius:999px}
+  /* reveal */
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+  .reveal.in{opacity:1;transform:none}
+  /* secties */
+  .kop-mid{text-align:center;max-width:620px;margin:0 auto 40px}
+  .kop-mid h2{font-size:clamp(28px,4vw,40px);margin:0 0 12px}
+  .kop-mid p{color:var(--muted);font-size:16.5px;line-height:1.55;margin:0}
+  .band{padding:70px 0}
+  @media(max-width:720px){.band{padding:48px 0}}
+  .band.zacht{background:linear-gradient(#fff,#fdf9f1);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  /* stappen */
+  .stappen{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  @media(max-width:760px){.stappen{grid-template-columns:1fr;gap:16px}}
+  .stap{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:26px 24px;box-shadow:0 8px 22px rgba(34,28,58,.05)}
+  .stap .num{width:40px;height:40px;border-radius:12px;background:#e7f4ed;color:var(--accent2);font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+  .stap h3{font-size:19px;margin:0 0 8px}
+  .stap p{color:var(--muted);font-size:14.5px;line-height:1.55;margin:0}
+  /* tools */
+  .tools{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  @media(max-width:860px){.tools{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.tools{grid-template-columns:1fr}}
+  .tool{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px;transition:transform .16s,box-shadow .16s;cursor:default}
+  .tool:hover{transform:translateY(-4px);box-shadow:0 20px 40px rgba(34,28,58,.12)}
+  .tool .ic{width:52px;height:52px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:25px;color:#fff;margin-bottom:16px}
+  .tool h3{font-size:19px;margin:0 0 7px}
+  .tool p{color:var(--muted);font-size:14px;line-height:1.5;margin:0}
+  /* testimonial */
+  .quote{display:grid;grid-template-columns:1.4fr 1fr;gap:40px;align-items:center}
+  @media(max-width:820px){.quote{grid-template-columns:1fr;gap:26px}}
+  .quote blockquote{font-family:'Fraunces',serif;font-size:clamp(22px,3vw,30px);line-height:1.3;margin:0 0 22px;font-weight:500}
+  .quote .wie{display:flex;align-items:center;gap:13px}
+  .quote .av{width:54px;height:54px;border-radius:50%;overflow:hidden;box-shadow:0 6px 14px rgba(34,28,58,.14)}
+  .quote .wie b{display:block;font-size:15px}.quote .wie span{font-size:13px;color:var(--muted)}
+  .statkaart{background:linear-gradient(150deg,var(--accent),var(--accent2));color:#fff;border-radius:24px;padding:34px;text-align:center;box-shadow:0 24px 50px rgba(47,158,110,.32)}
+  .statkaart .groot{font-family:'Fraunces',serif;font-size:52px;line-height:1;font-weight:700}
+  .statkaart .sub{opacity:.92;font-weight:600;margin-top:8px;font-size:15px}
+  .statkaart .rij{display:flex;justify-content:center;gap:26px;margin-top:22px;font-size:13px;font-weight:600;opacity:.95}
+  /* CTA band */
+  .cta-band{background:var(--ink);color:#fff;border-radius:28px;padding:56px 40px;text-align:center;position:relative;overflow:hidden}
+  .cta-band h2{font-size:clamp(28px,4vw,42px);margin:0 0 14px;color:#fff}
+  .cta-band h2 em{color:#8fe3bd}
+  .cta-band p{opacity:.85;font-size:16.5px;margin:0 0 26px}
+  @media(max-width:600px){.cta-band{padding:40px 22px}}
+  /* footer */
+  footer{padding:40px 0 60px;color:var(--muted);font-size:14px}
+  .foot{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .foot .logo{font-size:17px}.foot .sp{flex:1}
+  .foot a{font-weight:600}.foot a:hover{color:var(--ink)}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important} .reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="aura"><i class="a"></i><i class="b"></i></div>
+
+<header>
+  <div class="wrap nav">
+    <div class="logo"><span class="mk">✓</span> Avinka</div>
+    <nav class="links">
+      <a href="#tools">Tools</a>
+      <a href="#hoe">Hoe het werkt</a>
+      <a href="#prijs">Prijzen</a>
+      <a href="#" class="knop-a" style="color:var(--ink)">Inloggen</a>
+    </nav>
+    <button class="btn">Probeer gratis</button>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero"><div class="wrap hero-grid">
+  <div>
+    <div class="eyebrow">✓ van leerkracht, voor leerkrachten</div>
+    <h1>Win elke week <em>2 uur</em> terug</h1>
+    <p class="lead">Typ een onderwerp — Avinka maakt er een compleet, printklaar werkblad, rapport of les van. Didactisch kloppend, in jouw stijl. In minuten, niet in uren.</p>
+    <div class="cta">
+      <button class="btn groot">Probeer 7 dagen gratis</button>
+      <button class="ghost">▶ Bekijk hoe het werkt</button>
+    </div>
+    <div class="bewijs"><span class="sterren">★★★★★</span> geliefd bij leerkrachten &nbsp;·&nbsp; geen creditcard nodig</div>
+  </div>
+  <div class="demo-wrap">
+    <div class="demo">
+      <div class="demo-bar"><i></i><i></i><i></i><span>Avinka · Werkbladen</span></div>
+      <div class="demo-in">
+        <div class="veldrij">
+          <div class="veld" id="veld"><span class="cursor"></span></div>
+          <button class="genknop" id="gen">Maak werkblad</button>
+        </div>
+        <div class="blad" id="blad">
+          <div class="blad-band" id="titel">Werkblad</div>
+          <div class="blad-body">
+            <div class="regel"><span class="n">1</span><span class="lijn"></span></div>
+            <div class="regel"><span class="n">2</span><span class="lijn kort"></span></div>
+            <div class="regel"><span class="n">3</span><span class="lijn"></span></div>
+            <div class="regel"><span class="n">4</span><span class="lijn kort"></span></div>
+          </div>
+          <div class="klaar">✓ Klaar!</div>
+        </div>
+        <div class="tijd"><span class="oud">⏱ 2 uur</span> → <span class="nieuw">⚡ 4 minuten</span></div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- HOE HET WERKT -->
+<section class="band zacht" id="hoe"><div class="wrap">
+  <div class="kop-mid reveal"><h2>Zo simpel is het</h2><p>Geen ingewikkelde knoppen. Jij zegt wat je nodig hebt, Avinka regelt de rest.</p></div>
+  <div class="stappen">
+    <div class="stap reveal"><div class="num">1</div><h3>Kies je tool & onderwerp</h3><p>Werkblad, rapport, ouderbrief of les — typ waar het over gaat en voor welke groep.</p></div>
+    <div class="stap reveal"><div class="num">2</div><h3>Avinka maakt het</h3><p>Didactisch kloppend en printklaar, in jouw toon. De code bewaakt de kwaliteit.</p></div>
+    <div class="stap reveal"><div class="num">3</div><h3>Printen of opslaan</h3><p>Klaar in minuten. Jij houdt tijd over voor waar het echt om gaat: je klas.</p></div>
+  </div>
+</div></section>
+
+<!-- TOOLS -->
+<section class="band" id="tools"><div class="wrap">
+  <div class="kop-mid reveal"><h2>Alles voor je klas, <em>in minuten</em></h2><p>Zes tools die samenwerken. Eén abonnement, jouw hele week lichter.</p></div>
+  <div class="tools">
+    <div class="tool reveal"><div class="ic" style="background:#0ea5e9">📊</div><h3>Toetsanalyse</h3><p>Zie in één oogopslag wie extra hulp nodig heeft — met een helder plan per leerling.</p></div>
+    <div class="tool reveal"><div class="ic" style="background:#8b5cf6">📝</div><h3>Rapporten</h3><p>Warme, persoonlijke rapporten die klinken als jij. Nooit meer uren zwoegen.</p></div>
+    <div class="tool reveal"><div class="ic" style="background:#f43f5e">💬</div><h3>Oudercontact</h3><p>Brieven, nieuwsbrieven en berichten aan ouders — vriendelijk en zo klaar.</p></div>
+    <div class="tool reveal"><div class="ic" style="background:#f59e0b">🪑</div><h3>Plattegrond</h3><p>De perfecte klasopstelling, zonder eindeloos gepuzzel met naamkaartjes.</p></div>
+    <div class="tool reveal"><div class="ic" style="background:#14b8a6">🎯</div><h3>Lesontwerp</h3><p>Een complete les uit één leerdoel — met differentiatie, klaar om te geven.</p></div>
+    <div class="tool reveal"><div class="ic" style="background:#10b981">✏️</div><h3>Werkbladen</h3><p>Printklare, mooie werkbladen uit elk onderwerp. Sommen en puzzels kloppen altijd.</p></div>
+  </div>
+</div></section>
+
+<!-- TESTIMONIAL + STAT -->
+<section class="band zacht"><div class="wrap quote">
+  <div class="reveal">
+    <blockquote>“Ik was elke week úren kwijt aan voorbereiding. Met Avinka heb ik die tijd terug — en de kwaliteit is beter dan wat ik zelf in elkaar flanste.”</blockquote>
+    <div class="wie"><div class="av" id="av-marit"></div><div><b>Juf Marit</b><span>groep 5 · al 2 jaar leerkracht met Avinka</span></div></div>
+  </div>
+  <div class="statkaart reveal">
+    <div class="groot">2 uur</div>
+    <div class="sub">gemiddeld per week terug</div>
+    <div class="rij"><span>✓ printklaar</span><span>✓ in jouw stijl</span></div>
+  </div>
+</div></section>
+
+<!-- CTA -->
+<section class="band" id="prijs"><div class="wrap">
+  <div class="cta-band reveal">
+    <h2>Klaar om <em>2 uur per week</em> terug te winnen?</h2>
+    <p>Probeer Avinka 7 dagen gratis. Geen creditcard, geen gedoe.</p>
+    <button class="btn wit groot">Probeer gratis</button>
+  </div>
+</div></section>
+
+<footer><div class="wrap foot">
+  <div class="logo"><span class="mk">✓</span> Avinka</div>
+  <span class="sp"></span>
+  <a href="#">Privacy</a><a href="#">Voorwaarden</a><a href="#">Contact</a>
+  <span style="width:100%;margin-top:10px;color:#b9b3a6">van leerkracht, voor leerkrachten · © 2026 Avinka</span>
+</div></footer>
+
+<script>
+  // Hero-animatie
+  const ONDERWERPEN = ["ruimtevaart", "de herfst", "breuken groep 6", "dieren in de winter"];
+  const veld=document.getElementById("veld"), gen=document.getElementById("gen"), blad=document.getElementById("blad"), titel=document.getElementById("titel");
+  const cursor='<span class="cursor"></span>'; let i=0; const wacht=ms=>new Promise(r=>setTimeout(r,ms));
+  async function typ(t){ veld.innerHTML=cursor; for(let k=0;k<t.length;k++){ veld.innerHTML=t.slice(0,k+1)+cursor; await wacht(68);} }
+  async function ronde(){
+    const o=ONDERWERPEN[i%ONDERWERPEN.length]; i++;
+    blad.classList.remove("bouw","klaar-aan"); veld.innerHTML=cursor; await wacht(480);
+    await typ(o); await wacht(340);
+    gen.classList.add("puls"); titel.textContent="Werkblad · "+o.charAt(0).toUpperCase()+o.slice(1);
+    await wacht(440); gen.classList.remove("puls");
+    blad.classList.add("bouw"); await wacht(1350); blad.classList.add("klaar-aan"); await wacht(2600);
+    veld.style.transition=blad.style.transition="opacity .4s"; veld.style.opacity=blad.style.opacity="0"; await wacht(420);
+    veld.style.opacity=blad.style.opacity="1"; veld.style.transition=blad.style.transition=""; ronde();
+  }
+  // Kleine avatar voor de quote
+  document.getElementById("av-marit").innerHTML =
+    '<svg viewBox="0 0 100 100" width="100%" height="100%"><rect width="100" height="100" fill="#fdeaf2"/>'
+    +'<path d="M18,100 C18,72 82,72 82,100 Z" fill="#e0568b"/><rect x="44" y="57" width="12" height="13" rx="4" fill="#f3caa2"/>'
+    +'<circle cx="50" cy="46" r="20" fill="#f3caa2"/><path d="M29,47 C29,27 71,27 71,47 C71,36 62,31 50,31 C38,31 29,36 29,47 Z" fill="#6b4a2f"/>'
+    +'<circle cx="43" cy="47.5" r="2.3" fill="#2b2440"/><circle cx="57" cy="47.5" r="2.3" fill="#2b2440"/>'
+    +'<path d="M44.5,54 Q50,58.5 55.5,54" stroke="#2b2440" stroke-width="2.1" fill="none" stroke-linecap="round"/></svg>';
+  // Scroll-reveal
+  const io=new IntersectionObserver((es)=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target);} }),{threshold:.16});
+  document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
+  const reduce=window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+  if(!reduce) ronde(); else { veld.textContent="ruimtevaart"; blad.classList.add("bouw","klaar-aan"); titel.textContent="Werkblad · Ruimtevaart"; }
+</script>
+</body>
+</html>

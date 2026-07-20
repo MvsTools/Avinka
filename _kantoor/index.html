@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Het Avinka-hoofdkantoor</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#221c3a; --cream:#fbf6ee; --warm:#e9e1d2; --accent:#2f9e6e; --accent2:#25855a;
+    --muted:#6b6880; --card:#fff; --line:#eadfce;
+    --klant:#e0568b; --techniek:#3b82f6; --geld:#d9891f;
+    --shadow:0 12px 34px rgba(34,28,58,.10); --shadow-s:0 6px 16px rgba(34,28,58,.08);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:'Plus Jakarta Sans',sans-serif;color:var(--ink);min-height:100vh;
+    background:radial-gradient(1200px 620px at 82% -12%,#eef6f0 0,transparent 55%),var(--cream)}
+  /* Topbar */
+  .top{position:sticky;top:0;z-index:20;background:rgba(251,246,238,.86);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);padding:13px 26px;display:flex;align-items:center;gap:16px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand .mark{width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 7px 16px rgba(47,158,110,.36)}
+  .brand h1{font-family:'Fraunces',serif;font-size:19px;margin:0;letter-spacing:-.2px}
+  .brand h1 em{font-style:italic;color:var(--accent)}
+  .brand p{margin:0;font-size:12px;color:var(--muted)}
+  .chips{margin-left:auto;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .chip{display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--line);border-radius:999px;
+    padding:7px 13px;font-size:12.5px;font-weight:700;cursor:pointer;transition:transform .15s,box-shadow .15s;color:var(--ink)}
+  .chip:hover{transform:translateY(-1px);box-shadow:var(--shadow-s)}
+  .chip .dot{width:8px;height:8px;border-radius:50%}
+  .klok{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:600;font-size:12.5px;padding-left:2px}
+  main{max-width:1140px;margin:0 auto;padding:24px 20px 90px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)}
+  .card-h{display:flex;align-items:center;gap:11px;padding:16px 21px;border-bottom:1px solid var(--line)}
+  .card-h h2{font-family:'Fraunces',serif;font-size:17px;margin:0}
+  .card-h .ic{width:31px;height:31px;border-radius:10px;background:#eef6f0;color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px}
+  .card-h .telbadge{margin-left:auto;font-size:12px;font-weight:800;color:var(--accent);background:#eef6f0;border-radius:999px;padding:4px 11px}
+  /* Hoofdkantoor-vloer */
+  .kantoor{padding:20px 22px 24px;background:
+    radial-gradient(400px 200px at 15% 10%,#fff7,transparent),
+    linear-gradient(#00000008 1px,transparent 1px),linear-gradient(90deg,#00000008 1px,transparent 1px),
+    linear-gradient(165deg,#fdfaf4,#f5efe4);background-size:auto,38px 38px,38px 38px,100%;border-radius:0 0 22px 22px;position:relative;overflow:hidden}
+  .deco{position:absolute;font-size:24px;opacity:.5;user-select:none}
+  .afd{margin:0 0 20px}
+  .afd:last-child{margin-bottom:4px}
+  .afd-kop{display:flex;align-items:center;gap:9px;margin:0 0 11px;padding-left:2px}
+  .afd-kop .badge{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff}
+  .afd-kop b{font-family:'Fraunces',serif;font-size:15px}
+  .afd-kop span{font-size:12px;color:var(--muted)}
+  .afd-kop .lijn{flex:1;height:1px;background:var(--line)}
+  .desks{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:14px}
+  .desk{position:relative;background:var(--card);border:1px solid var(--line);border-radius:17px;padding:15px 13px 0;
+    text-align:center;cursor:pointer;transition:transform .18s,box-shadow .18s;overflow:hidden}
+  .desk:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(34,28,58,.14)}
+  .medaille{width:70px;height:70px;margin:3px auto 9px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:33px;position:relative;overflow:hidden;box-shadow:inset 0 0 0 3px #fff, 0 6px 14px rgba(34,28,58,.12)}
+  .medaille svg{position:absolute;inset:0;width:100%;height:100%}
+  .medaille .led{position:absolute;right:3px;bottom:3px;width:15px;height:15px;border-radius:50%;border:3px solid #fff;background:#c9c6d2}
+  .desk.actief .medaille{animation:puls 1.5s ease-in-out infinite}
+  .desk.actief .medaille .led{background:var(--accent)} .desk.wachtrij .medaille .led{background:var(--geld)}
+  .desk.rust .medaille .led{background:var(--accent)}
+  @keyframes puls{0%,100%{box-shadow:inset 0 0 0 3px #fff,0 0 0 0 rgba(47,158,110,.4)}50%{box-shadow:inset 0 0 0 3px #fff,0 0 0 9px rgba(47,158,110,0)}}
+  .desk.actief .medaille>span{animation:wieg 1.1s ease-in-out infinite;display:inline-block}
+  @keyframes wieg{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+  .naamplaat{font-weight:800;font-size:15px;letter-spacing:-.2px}
+  .naamplaat b{font-weight:800} .titel{font-size:11.5px;color:var(--muted);font-weight:600}
+  .status{margin:9px 0;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;padding:5px 11px;border-radius:999px;background:#f0ece3;color:#8a8698}
+  .status.on{background:#eef6f0;color:var(--accent)} .status.q{background:#fbeed3;color:var(--geld)}
+  .bureau{height:11px;margin:0 -13px;background:linear-gradient(#d8b389,#c99c73)}
+  .desk.soon{opacity:.66} .desk.soon .medaille{filter:saturate(.55)}
+  .soon-lint{position:absolute;top:11px;right:-32px;transform:rotate(38deg);background:var(--ink);color:#fff;font-size:9.5px;font-weight:800;padding:3px 36px;letter-spacing:.5px}
+  /* Kolommen */
+  .grid{display:grid;grid-template-columns:1.5fr 1fr;gap:20px;margin-top:20px}
+  @media(max-width:880px){.grid{grid-template-columns:1fr}.chips .verberg{display:none}}
+  .stack{display:flex;flex-direction:column;gap:20px}
+  .mods{padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:540px){.mods{grid-template-columns:1fr}}
+  .mod{display:flex;align-items:center;gap:11px;padding:11px 12px;border:1px solid var(--line);border-radius:14px;
+    background:#fdfbf7;cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .15s}
+  .mod:hover{transform:translateY(-2px);box-shadow:var(--shadow-s);border-color:#cfe6da}
+  .mod .num{flex-shrink:0;width:34px;height:34px;border-radius:10px;background:var(--ink);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center}
+  .mod .naam{font-weight:700;font-size:13.5px;line-height:1.2}
+  .mod .bron{font-size:10.5px;color:var(--muted);margin-top:2px}
+  .mod .pijl{margin-left:auto;color:#cdbfa8;font-size:18px}
+  .leeg{padding:26px;text-align:center;color:var(--muted);font-size:13.5px}
+  .lijst{padding:10px 16px 16px}
+  .opdr{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .opdr:last-child{border-bottom:none}
+  .opdr .bol{width:34px;height:34px;border-radius:10px;background:#eef6f0;display:flex;align-items:center;justify-content:center;font-size:17px}
+  .opdr .t{font-weight:700;font-size:13px}.opdr .s{font-size:11px;color:var(--geld);font-weight:700}
+  .log{padding:6px 18px 14px;max-height:290px;overflow:auto}
+  .log-r{display:flex;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:12.5px}
+  .log-r:last-child{border-bottom:none}
+  .log-r .lt{color:#4a4560}.log-r .lz{margin-left:auto;color:#b9b3c1;font-variant-numeric:tabular-nums;font-size:11px;white-space:nowrap}
+  .btn{border:none;background:var(--accent);color:#fff;font:inherit;font-weight:700;font-size:13.5px;padding:11px 18px;border-radius:13px;cursor:pointer;transition:filter .15s,transform .1s;display:inline-flex;align-items:center;gap:8px}
+  .btn:hover{filter:brightness(1.06)} .btn:active{transform:scale(.98)} .btn.blok{width:100%;justify-content:center}
+  select{font:inherit;font-weight:600;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;background:#fff;width:100%;color:var(--ink)}
+  label.veld{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:0 0 6px}
+  /* Drawer + modal + toast */
+  .scrim{position:fixed;inset:0;background:rgba(34,28,58,.34);opacity:0;pointer-events:none;transition:opacity .25s;z-index:40}
+  .scrim.aan{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;right:0;height:100%;width:390px;max-width:92vw;background:var(--card);z-index:50;
+    box-shadow:-16px 0 50px rgba(34,28,58,.22);transform:translateX(102%);transition:transform .3s cubic-bezier(.3,.8,.3,1);display:flex;flex-direction:column}
+  .drawer.aan{transform:none}
+  .drawer .kop{padding:26px 22px 22px;text-align:center;position:relative;color:#fff}
+  .drawer .kop .x{position:absolute;top:14px;right:14px;border:none;background:rgba(255,255,255,.25);color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:15px}
+  .drawer .kop .av{width:80px;height:80px;margin:0 auto;border-radius:50%;overflow:hidden;background:rgba(255,255,255,.9);box-shadow:0 8px 20px rgba(0,0,0,.18)}
+  .drawer .kop .av svg{width:100%;height:100%;display:block}
+  .drawer .kop h3{font-family:'Fraunces',serif;margin:12px 0 1px;font-size:22px}
+  .drawer .kop .r{opacity:.92;font-size:13px;font-weight:600}
+  .drawer .body{padding:20px 22px;overflow:auto;flex:1}
+  .drawer .rol{color:var(--muted);font-size:13.5px;line-height:1.55;margin:0 0 16px}
+  .pill{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:12.5px;padding:7px 14px;border-radius:999px;background:#f0ece3;color:#8a8698;margin-bottom:16px}
+  .pill.on{background:#eef6f0;color:var(--accent)} .pill.q{background:#fbeed3;color:var(--geld)}
+  .afd-tag{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;margin-left:8px;color:#fff}
+  .modal{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .2s}
+  .modal.aan{opacity:1;pointer-events:auto}
+  .modal .box{background:var(--card);border-radius:22px;max-width:520px;width:100%;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(34,28,58,.4);transform:translateY(10px);transition:transform .2s}
+  .modal.aan .box{transform:none}
+  .modal .mh{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line)}
+  .modal .mh .num{width:34px;height:34px;border-radius:10px;background:var(--ink);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center}
+  .modal .mh h3{margin:0;font-size:15px;font-family:'Fraunces',serif}.modal .mh .mc{font-size:11.5px;color:var(--muted)}
+  .modal .mh .x{margin-left:auto;border:none;background:#f0ece3;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:15px}
+  .modal .prev{padding:18px;overflow:auto;background:#f5efe4;text-align:center;min-height:200px}
+  .modal .prev img{max-width:100%;border-radius:12px;box-shadow:0 8px 24px rgba(34,28,58,.14);border:1px solid var(--line)}
+  .spinner{margin:44px auto;width:34px;height:34px;border:4px solid #e2ddd2;border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .modal .mf{padding:14px 20px;border-top:1px solid var(--line)}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:14px;font-size:13.5px;font-weight:600;opacity:0;transition:.25s;z-index:80;box-shadow:0 12px 30px rgba(0,0,0,.25)}
+  .toast.aan{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="brand">
+    <div class="mark">✓</div>
+    <div><h1>Het <em>Avinka</em>-hoofdkantoor</h1><p>Jouw medewerkers · jij bent de baas</p></div>
+  </div>
+  <div class="views" style="display:flex;gap:4px;background:#f0ece3;border-radius:999px;padding:4px;margin-left:24px">
+    <button id="vb-kantoor" onclick="toonView('kantoor')" style="border:none;font:inherit;font-weight:700;font-size:13px;padding:8px 16px;border-radius:999px;cursor:pointer;background:#fff;color:var(--ink);box-shadow:0 1px 3px #0002">🏢 Kantoor</button>
+    <button id="vb-werkbladen" onclick="toonView('werkbladen')" style="border:none;font:inherit;font-weight:700;font-size:13px;padding:8px 16px;border-radius:999px;cursor:pointer;background:transparent;color:var(--muted)">📄 Werkbladen</button>
+  </div>
+  <div class="chips">
+    <div class="chip" onclick="scrollNaar('akkoord')"><span class="dot" style="background:var(--geld)"></span>Wacht op akkoord <b id="c-wacht">0</b></div>
+    <div class="chip verberg"><span class="dot" style="background:var(--accent)"></span>In dienst <b id="c-team">2</b></div>
+    <div class="chip verberg"><span class="dot" style="background:var(--techniek)"></span>Afdelingen <b>4</b></div>
+    <div class="klok" id="klok">--:--</div>
+  </div>
+</div>
+
+<main id="view-kantoor">
+  <div class="card">
+    <div class="card-h"><span class="ic">🏢</span><h2>De kantoorvloer</h2><span class="telbadge">klik op een medewerker</span></div>
+    <div class="kantoor" id="kantoor">
+      <span class="deco" style="top:12px;right:20px">🪴</span>
+      <span class="deco" style="bottom:14px;left:18px">☕</span>
+      <div id="afdelingen"></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card" id="akkoord">
+      <div class="card-h"><span class="ic">🗂️</span><h2>Wacht op jouw akkoord</h2><span class="telbadge" id="keur-badge">0</span></div>
+      <div id="mods" class="mods"></div>
+    </div>
+    <div class="stack">
+      <div class="card">
+        <div class="card-h"><span class="ic">📋</span><h2>Lopende opdrachten</h2></div>
+        <div class="lijst" id="opdrachten"></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="ic">📜</span><h2>Activiteit</h2></div>
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="view-werkbladen" style="display:none">
+  <div style="max-width:1140px;margin:0 auto;padding:16px 20px 6px;display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px;flex-wrap:wrap">
+    <span>📄 <b style="color:var(--ink)">Werkbladen-testomgeving</b> — alle vraagvormen, lengtes (kort/middel/lang) en antwoorden op één plek.</span>
+    <button onclick="var f=document.getElementById('wb-frame');f.src=f.src" style="margin-left:auto;border:none;background:#f0ece3;color:var(--ink);font:inherit;font-weight:700;font-size:12.5px;padding:8px 14px;border-radius:999px;cursor:pointer">↻ Vernieuwen</button>
+    <a href="/werkblad-preview.html" target="_blank" style="font-weight:700;color:var(--accent);text-decoration:none">Nieuw tabblad ↗</a>
+  </div>
+  <iframe id="wb-frame" src="/werkblad-preview.html" style="width:100%;height:calc(100vh - 150px);border:none;display:block;background:#f1eee8"></iframe>
+</div>
+
+<div class="scrim" id="scrim" onclick="sluitAlles()"></div>
+<aside class="drawer" id="drawer"><div id="drawer-in"></div></aside>
+<div class="modal" id="modal">
+  <div class="box">
+    <div class="mh"><span class="num" id="m-num"></span><div><h3 id="m-naam"></h3><div class="mc" id="m-cat"></div></div><button class="x" onclick="sluitModal()">✕</button></div>
+    <div class="prev" id="m-prev"></div>
+    <div class="mf">
+      <textarea id="m-feedback" placeholder="Feedback voor Bram? (bijv. 'maak groter', 'andere woorden', 'te vaag')" style="width:100%;min-height:58px;resize:vertical;border:1.5px solid var(--line);border-radius:11px;padding:10px 12px;font:inherit;font-size:13.5px;margin-bottom:10px;color:var(--ink)"></textarea>
+      <div style="display:flex;gap:10px">
+        <button class="btn" id="m-fb" style="flex:1;background:#f0ece3;color:var(--ink)">↩ Stuur naar Bram</button>
+        <button class="btn" id="m-keur" style="flex:1">✓ Goedkeuren</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+  const AFD = {
+    product:  { naam:"Product",    ic:"🛠️", tag:"bouwt & bewaakt de tools",     kleur:"#2f9e6e", grad:"linear-gradient(135deg,#eafaf1,#c9ecd8)" },
+    klant:    { naam:"Klant",      ic:"💬", tag:"houdt leerkrachten blij",       kleur:"#e0568b", grad:"linear-gradient(135deg,#fdeaf2,#f6cfe0)" },
+    techniek: { naam:"Techniek",   ic:"🛡️", tag:"houdt alles online & veilig",  kleur:"#3b82f6", grad:"linear-gradient(135deg,#e8f0fe,#cfe0fb)" },
+    geld:     { naam:"Financiën",  ic:"📊", tag:"bewaakt het geld",              kleur:"#d9891f", grad:"linear-gradient(135deg,#fdf1dc,#f7ddb0)" },
+  };
+  const TEAM = [
+    { id:"bram", naam:"Bram", titel:"de Bouwer",      af:"product",  ic:"👷", key:"bouwer",      indienst:true,  av2:{skin:"#f0c49b", stijl:"helm"},                    rol:"Verzint en bouwt nieuwe modules en tools. Zijn specialiteit nu: werkbladen." },
+    { id:"kees", naam:"Kees", titel:"de Keurmeester", af:"product",  ic:"🔍", key:"keurmeester", indienst:true,  av2:{skin:"#eab98a", hair:"#4a3b30", stijl:"short", bril:true}, rol:"Controleert álles wat gebouwd wordt: grootte, uitlijning, spelling en kapotte onderdelen. Gratis, zonder AI." },
+    { id:"puck", naam:"Puck", titel:"de Postbode",    af:"klant",    ic:"📬", indienst:false, av2:{skin:"#f3caa2", hair:"#7a4a28", stijl:"staart"},        rol:"Leest binnenkomende mail en zet nette concept-antwoorden klaar. Jij klikt op verzenden." },
+    { id:"loes", naam:"Loes", titel:"de Luisteraar",  af:"klant",    ic:"🎧", indienst:false, av2:{skin:"#8a5a3c", hair:"#241a15", stijl:"krul", koptel:true}, rol:"Bundelt alle klantfeedback tot heldere ideeën en zet ze op de bouwlijst." },
+    { id:"wies", naam:"Wies", titel:"de Wachter",     af:"techniek", ic:"🛡️", indienst:false, av2:{skin:"#f0c49b", hair:"#e6c25a", stijl:"short"},        rol:"Bewaakt of alles online, snel en veilig blijft. Slaat 's nachts alarm bij problemen." },
+    { id:"bo",   naam:"Bo",   titel:"de Boekhouder",  af:"geld",     ic:"🧮", indienst:false, av2:{skin:"#d9a06b", hair:"#3a2f2a", stijl:"kaal", bril:true},  rol:"Houdt btw, facturen en marge in de gaten en zet de cijfers klaar voor de accountant." },
+  ];
+  // Geïllustreerde avatar (SVG) — karakter op de afdelingskleur; per persoon eigen haar/skin/bril.
+  function avatarSVG(c){
+    const t=c.av2||{}, skin=t.skin||"#f0c49b", hair=t.hair||"#3a2f2a", shirt=AFD[c.af].kleur, oog="#2b2440";
+    let h="";
+    if(t.stijl==="helm") h=`<path d="M30,44 A20,20 0 0,1 70,44 Z" fill="#f4b93e"/><rect x="27" y="41.5" width="46" height="5" rx="2.5" fill="#e0a92f"/><rect x="47" y="24" width="6" height="7" rx="2" fill="#e0a92f"/>`;
+    else if(t.stijl==="short") h=`<path d="M30,46 C30,27 70,27 70,46 C70,37 63,31 50,31 C37,31 30,37 30,46 Z" fill="${hair}"/>`;
+    else if(t.stijl==="staart") h=`<circle cx="71" cy="48" r="7.5" fill="${hair}"/><path d="M30,47 C30,28 70,28 70,47 C70,36 62,31 50,31 C38,31 30,36 30,47 Z" fill="${hair}"/>`;
+    else if(t.stijl==="krul") h=`<g fill="${hair}"><circle cx="35" cy="35" r="8.5"/><circle cx="45" cy="30" r="9"/><circle cx="56" cy="30" r="9"/><circle cx="66" cy="37" r="8"/></g>`;
+    // kaal → geen haar
+    const bril = t.bril?`<g fill="none" stroke="${oog}" stroke-width="1.8"><circle cx="43" cy="47" r="5.5"/><circle cx="57" cy="47" r="5.5"/><line x1="48.5" y1="47" x2="51.5" y2="47"/></g>`:"";
+    const kop = t.koptel?`<path d="M30,47 A20,20 0 0,1 70,47" fill="none" stroke="${oog}" stroke-width="3"/><rect x="25" y="45" width="7" height="12" rx="3" fill="${oog}"/><rect x="68" y="45" width="7" height="12" rx="3" fill="${oog}"/>`:"";
+    return `<svg viewBox="0 0 100 100" width="100%" height="100%"><path d="M18,100 C18,71 82,71 82,100 Z" fill="${shirt}"/>`
+      +`<rect x="44" y="57" width="12" height="13" rx="4" fill="${skin}"/><circle cx="50" cy="46" r="20" fill="${skin}"/>`
+      +h+`<circle cx="43" cy="47.5" r="2.3" fill="${oog}"/><circle cx="57" cy="47.5" r="2.3" fill="${oog}"/>`
+      +`<path d="M44.5,54 Q50,58.5 55.5,54" stroke="${oog}" stroke-width="2.1" fill="none" stroke-linecap="round"/>`+bril+kop+`</svg>`;
+  }
+  const ST = { rust:"Beschikbaar", wachtrij:"In de wachtrij", bouwt:"Aan het bouwen…", keurt:"Aan het keuren…", klaar:"Klaar ✓" };
+  let DATA = { status:{}, opdrachten:[], wachtOpKeuring:[], log:[], getestAantal:0 };
+  const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const el = id => document.getElementById(id);
+  function toast(t){ const e=el("toast"); e.textContent=t; e.classList.add("aan"); clearTimeout(e._t); e._t=setTimeout(()=>e.classList.remove("aan"),2400); }
+  function scrollNaar(id){ el(id).scrollIntoView({behavior:"smooth",block:"start"}); }
+  const tijd = iso => { try{ return new Date(iso).toLocaleTimeString("nl-NL",{hour:"2-digit",minute:"2-digit"}); }catch{ return ""; } };
+  const statusVan = c => c.indienst ? ((DATA.status||{})[c.key] || "rust") : null;
+
+  async function laad(){
+    try{ DATA = await (await fetch("/api/status")).json(); }catch{ return; }
+    el("c-wacht").textContent = DATA.wachtOpKeuring.length;
+    el("keur-badge").textContent = DATA.wachtOpKeuring.length;
+    el("c-team").textContent = TEAM.filter(t=>t.indienst).length;
+    tekenVloer(); tekenAkkoord(); tekenOpdrachten(); tekenLog();
+    if(drawerOpen) vulDrawer(drawerOpen);
+  }
+  function tekenVloer(){
+    el("afdelingen").innerHTML = Object.keys(AFD).map(aid=>{
+      const a = AFD[aid], leden = TEAM.filter(t=>t.af===aid);
+      const desks = leden.map(c=>{
+        const st = statusVan(c), actief = st==="bouwt"||st==="keurt", q = st==="wachtrij";
+        const cls = st==="rust"?"rust":actief?"actief":q?"wachtrij":"";
+        const stCls = st==="rust"?"on":q?"q":actief?"on":"";
+        return `<div class="desk ${cls} ${c.indienst?"":"soon"}" onclick="openMedewerker('${c.id}')">
+          ${c.indienst?"":'<div class="soon-lint">inwerken</div>'}
+          <div class="medaille" style="background:${a.grad}">${avatarSVG(c)}<i class="led"></i></div>
+          <div class="naamplaat"><b>${c.naam}</b></div><div class="titel">${c.titel}</div>
+          ${c.indienst?`<div class="status ${stCls}">${ST[st]||st}</div>`:'<div class="status">🔒 nog niet in dienst</div>'}
+          <div class="bureau"></div></div>`;
+      }).join("");
+      return `<div class="afd"><div class="afd-kop"><span class="badge" style="background:${a.kleur}">${a.ic}</span>
+        <b>${a.naam}</b><span>· ${a.tag}</span><span class="lijn"></span></div>
+        <div class="desks">${desks}</div></div>`;
+    }).join("");
+  }
+  function tekenAkkoord(){
+    const w = DATA.wachtOpKeuring;
+    el("mods").innerHTML = w.length ? w.map(m=>
+      `<div class="mod" onclick="openModule(${m.num})"><span class="num">${m.num}</span>
+        <div><div class="naam">${esc(m.naam)}</div><div class="bron">🛠️ Product · werkblad</div></div>
+        <span class="pijl">›</span></div>`).join("")
+      : '<div class="leeg" style="grid-column:1/-1">Niets te doen — alles is goedgekeurd. 🎉</div>';
+  }
+  function tekenOpdrachten(){
+    const o = DATA.opdrachten;
+    el("opdrachten").innerHTML = o.length ? o.map(x=> x.type==="revisie"
+      ? `<div class="opdr"><span class="bol">↩</span><div style="flex:1"><div class="t">Bram verbetert #${x.num}</div><div class="s">${esc(x.feedback||"feedback verwerken")}</div></div></div>`
+      : `<div class="opdr"><span class="bol">👷</span><div style="flex:1"><div class="t">Bram bouwt: ${esc(x.label||x.categorie)}${x.onderwerp?" · "+esc(x.onderwerp):""}</div><div class="s">${x.wens?esc(x.wens):"in de wachtrij"}</div></div></div>`).join("")
+      : '<div class="leeg">Geen lopende opdrachten. Klik op een medewerker om er één te geven.</div>';
+  }
+  function tekenLog(){
+    el("log").innerHTML = DATA.log.length ? DATA.log.map(r=>
+      `<div class="log-r"><span>${r.ic||"•"}</span><span class="lt">${esc(r.tekst)}</span><span class="lz">${tijd(r.t)}</span></div>`).join("")
+      : '<div class="leeg">Nog geen activiteit vandaag.</div>';
+  }
+
+  let drawerOpen = null;
+  function openMedewerker(id){ drawerOpen=id; vulDrawer(id); el("drawer").classList.add("aan"); el("scrim").classList.add("aan"); }
+  function vulDrawer(id){
+    const c = TEAM.find(x=>x.id===id); if(!c) return;
+    const a = AFD[c.af], st = statusVan(c), stCls = st==="rust"?"on":st==="wachtrij"?"q":st?"on":"";
+    let acties = "";
+    if(!c.indienst){
+      acties = `<p class="rol">${c.naam} is er al, maar nog aan het inwerken. Zodra we ${c.titel}'s motor koppelen (${c.af==="product"?"Claude Code":"straks via Cowork"}), gaat ${c.naam} hier echt aan het werk.</p>`;
+    } else if(id==="bram"){
+      acties = `<div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">🖥️ Brams werkplek</div>
+        <div style="background:#1c1930;border-radius:14px;padding:15px 15px 16px;font-family:ui-monospace,Menlo,Consolas,monospace;box-shadow:inset 0 0 0 1px #322c4a">
+          <div style="color:#8fe3bd;font-size:12px;margin-bottom:14px">bram@avinka <span style="color:#7a739a">~ nieuwe opdracht instellen</span></div>
+          <div style="color:#b9b2d6;font-size:11px;letter-spacing:.4px;margin-bottom:5px">VAK</div>
+          <select id="d-cat" style="width:100%;background:#2a2640;color:#fff;border:1px solid #3a3560;border-radius:10px;padding:10px;font:inherit;font-size:13px;margin-bottom:13px">
+            <option value="spelling">Taal &amp; spelling</option><option value="rekenen">Rekenen</option><option value="universeel">Universeel</option><option value="puzzel">Puzzels &amp; speels</option>
+          </select>
+          <div style="color:#b9b2d6;font-size:11px;letter-spacing:.4px;margin-bottom:5px">WAAR MOET HET OVER GAAN? <span style="color:#7a739a">(optioneel)</span></div>
+          <input id="d-onderwerp" placeholder="bijv. de herfst · groep 5" style="width:100%;background:#2a2640;color:#fff;border:1px solid #3a3560;border-radius:10px;padding:10px;font:inherit;font-size:13px;margin-bottom:13px" />
+          <div style="color:#b9b2d6;font-size:11px;letter-spacing:.4px;margin-bottom:5px">EXTRA WENS <span style="color:#7a739a">(optioneel)</span></div>
+          <input id="d-wens" placeholder="bijv. met een woordzoeker erin" style="width:100%;background:#2a2640;color:#fff;border:1px solid #3a3560;border-radius:10px;padding:10px;font:inherit;font-size:13px" />
+        </div>
+        <button class="btn blok" style="margin-top:13px" onclick="stuurBouwer()">▶ Stuur Bram aan het werk</button>
+        <p class="rol" style="margin-top:14px">De opdracht komt in Brams wachtrij. Claude voert 'm dan uit; het resultaat verschijnt vanzelf onder <b>Wacht op jouw akkoord</b>.</p>`;
+    } else if(id==="kees"){
+      acties = `<div class="pill on">✓ ${DATA.getestAantal} modules getest</div>
+        <p class="rol">Kees controleert elke nieuwe module automatisch — gratis, zonder AI. Jij ziet alleen wat aandacht nodig heeft.</p>`;
+    }
+    el("drawer-in").innerHTML = `
+      <div class="kop" style="background:linear-gradient(150deg,${a.kleur},${a.kleur}dd)">
+        <button class="x" onclick="sluitAlles()">✕</button>
+        <div class="av" style="background:${a.grad}">${avatarSVG(c)}</div><h3>${c.naam}</h3>
+        <div class="r">${c.titel} <span class="afd-tag" style="background:rgba(255,255,255,.25)">${a.ic} ${a.naam}</span></div>
+      </div>
+      <div class="body">
+        <div class="pill ${stCls}">${c.indienst?(ST[st]||st):"🔒 nog niet in dienst"}</div>
+        <p class="rol">${c.rol}</p>
+        ${acties}
+      </div>`;
+  }
+  async function stuurBouwer(){
+    const categorie = el("d-cat").value;
+    const onderwerp = (el("d-onderwerp") && el("d-onderwerp").value || "").trim();
+    const wens = (el("d-wens") && el("d-wens").value || "").trim();
+    await fetch("/api/opdracht",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({categorie,onderwerp,wens})});
+    toast("Bram is gebrieft en aan het werk 🚀"); sluitAlles(); laad();
+  }
+
+  let modalNum=null, modalNaam="";
+  function openModule(num){
+    const m = DATA.wachtOpKeuring.find(x=>x.num===num); if(!m) return;
+    modalNum=num; modalNaam=m.naam;
+    el("m-num").textContent=num; el("m-naam").textContent=m.naam; el("m-cat").textContent="🛠️ Product · werkblad";
+    el("m-feedback").value="";
+    el("m-prev").innerHTML='<div class="spinner"></div>';
+    const img = new Image();
+    img.onload = ()=>{ el("m-prev").innerHTML=""; el("m-prev").appendChild(img); };
+    img.onerror = ()=>{ el("m-prev").innerHTML='<div class="leeg">Kon de module niet renderen.</div>'; };
+    img.src = "/api/preview/"+num+"?t="+Date.now();
+    el("modal").classList.add("aan"); el("scrim").classList.add("aan");
+  }
+  el("m-keur").onclick = async ()=>{
+    await fetch("/api/keur",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({num:modalNum,naam:modalNaam})});
+    toast("Goedgekeurd: #"+modalNum+" → getest ✓"); sluitModal(); sluitAlles(); laad();
+  };
+  el("m-fb").onclick = async ()=>{
+    const feedback = (el("m-feedback").value||"").trim();
+    if(!feedback){ toast("Typ eerst je feedback voor Bram ✍️"); return; }
+    await fetch("/api/feedback",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({num:modalNum,naam:modalNaam,feedback})});
+    toast("Feedback naar Bram gestuurd ↩"); sluitModal(); sluitAlles(); laad();
+  };
+  function sluitModal(){ el("modal").classList.remove("aan"); if(!drawerOpen) el("scrim").classList.remove("aan"); }
+  function sluitAlles(){ drawerOpen=null; el("drawer").classList.remove("aan"); el("modal").classList.remove("aan"); el("scrim").classList.remove("aan"); }
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape") sluitAlles(); });
+
+  function toonView(v){
+    el("view-kantoor").style.display = v==="werkbladen" ? "none" : "";
+    el("view-werkbladen").style.display = v==="werkbladen" ? "block" : "none";
+    var aan = el("vb-"+v), uit = el("vb-"+(v==="kantoor"?"werkbladen":"kantoor"));
+    aan.style.background="#fff"; aan.style.color="var(--ink)"; aan.style.boxShadow="0 1px 3px #0002";
+    uit.style.background="transparent"; uit.style.color="var(--muted)"; uit.style.boxShadow="none";
+    if(v==="werkbladen"){ var f=el("wb-frame"); f.src=f.src; } // ververs zodat Brams wijzigingen zichtbaar zijn
+  }
+  function klok(){ el("klok").textContent = new Date().toLocaleTimeString("nl-NL",{hour:"2-digit",minute:"2-digit"}); }
+  klok(); setInterval(klok,10000);
+  laad(); setInterval(laad,3000);
+</script>
+</body>
+</html>
