@@ -33,6 +33,26 @@ export type Plan = {
   voordelen: string[];
 };
 
+// ── Credits per pakket ────────────────────────────────────────────────────
+// DIT IS GEEN VERKOOPARGUMENT. Het staat bewust NIET op de pakketkaartjes.
+//
+// Het is een slot tegen misbruik en tegen het delen van accounts, verder
+// niets. De pakketten verschillen op wat je krijgt (aantal tools, kwaliteit
+// van het AI-model, aantal groepen, voorrang), niet op hoeveel je mag maken.
+// Ook Compleet moet ruim genoeg zijn voor dagelijks gebruik.
+//
+// De aantallen zijn daarom hoog gezet: een zware maand meet ongeveer 60, en
+// zelfs intensief dagelijks gebruik blijft ver onder deze grenzen. Wie er wél
+// overheen gaat, deelt zijn account of laat iets automatisch draaien.
+// Elke grens blijft onder de opbrengst van het pakket, zodat misbruik nooit
+// geld kost (Start €5,99 / Compleet €9,99 / Pro €16,99).
+export const CREDITS_PER_PLAN: Record<PlanId | "proef", number> = {
+  start: 100,
+  compleet: 180,
+  pro: 300,
+  proef: 100,
+};
+
 export const PLANNEN: Plan[] = [
   {
     id: "start",
@@ -40,9 +60,12 @@ export const PLANNEN: Plan[] = [
     prijsMaand: 5.99,
     tagline: "Voor wie er één tool uit wil halen",
     toegang: "keuze",
+    // LET OP: hier stond "Onbeperkt gebruik". Dat is eruit gehaald toen het
+    // AI-verbruiksplafond kwam (zie lib/ai-limiet.ts) — je kunt geen grens
+    // hanteren en tegelijk onbeperkt beloven. De vervangende voordelen gaan
+    // over de prijs, niet over de hoeveelheid, en zijn dus altijd waar.
     voordelen: [
       "Eén tool naar keuze",
-      "Onbeperkt gebruik",
       "Je klas bewaard",
       "Namen blijven op je eigen apparaat",
     ],
@@ -56,10 +79,10 @@ export const PLANNEN: Plan[] = [
     toegang: "alle",
     voordelen: [
       "Alles van Start",
-      "Alle tools, onbeperkt",
+      "Toegang tot alle tools",
       "Meerdere groepen beheren",
       "Alles bewaren en ordenen in Bestanden",
-      "Een sterk AI-model voor betere teksten",
+      "Een sterker AI-model voor betere teksten",
     ],
   },
   {

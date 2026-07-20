@@ -112,8 +112,21 @@ export default function VoorwaardenPage() {
           <li>de tools niet misbruikt, niet probeert te omzeilen of overmatig te belasten;</li>
           <li>de tools niet gebruikt om er een concurrerende dienst of een eigen AI-model mee te bouwen of te trainen;</li>
           <li>geen onrechtmatige, beledigende of schadelijke inhoud genereert of verspreidt;</li>
-          <li>geen account aanmaakt met valse gegevens of meerdere accounts om regels of beloningen te omzeilen.</li>
+          <li>geen account aanmaakt met valse gegevens of meerdere accounts om regels of beloningen te omzeilen;</li>
+          <li>je account niet deelt met collega&rsquo;s. Een abonnement is persoonlijk en bedoeld voor jouw eigen groep.</li>
         </ul>
+        <p>
+          <strong>Eerlijk gebruik van de AI-functies.</strong> Het schrijven van teksten
+          door AI kost ons per keer geld. Om te voorkomen dat accounts worden gedeeld of
+          dat het gebruik ontspoort, geldt er een redelijkheidsgrens per account per
+          kalendermaand. Die grens is ruim gekozen: normaal gebruik door één leerkracht
+          loopt er niet tegenaan, ook niet in een drukke rapportperiode. Je actuele stand
+          zie je altijd terug in je instellingen, onder &ldquo;Verbruik&rdquo;. Kom je
+          toch aan de grens, dan zie je dat in de tool en kun je wachten tot de volgende
+          maand, extra ruimte bijkopen of overstappen naar een ruimer abonnement. We
+          passen deze grens niet met terugwerkende kracht aan in jouw nadeel binnen een
+          lopende maand.
+        </p>
         <p>
           Bij ernstig of herhaald misbruik kunnen we een account beperken of beëindigen.
         </p>

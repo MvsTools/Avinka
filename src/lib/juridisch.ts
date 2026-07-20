@@ -6,8 +6,8 @@
 // de vastgelegde versie nooit uit elkaar.
 
 export const VOORWAARDEN = {
-  versie: "2026-06-20", // machine-versie die we vastleggen bij akkoord
-  weergave: "20 juni 2026", // datum die op de pagina staat
+  versie: "2026-07-20", // machine-versie die we vastleggen bij akkoord
+  weergave: "20 juli 2026", // datum die op de pagina staat
 };
 
 export const PRIVACY = {
@@ -20,5 +20,7 @@ export const PRIVACY = {
 // leerkracht in de her-akkoord-pop-up. Laat leeg als er (nog) niets inhoudelijks
 // is veranderd; de pop-up toont dan alleen de nette vraag om opnieuw akkoord te gaan.
 export const WIJZIGING_SAMENVATTING: string[] = [
-  // "We hebben verduidelijkt hoe lang we technische logs bewaren.",
+  "We hebben opgeschreven dat een abonnement persoonlijk is en niet bedoeld is om met collega's te delen.",
+  "Er geldt voortaan een redelijkheidsgrens voor het gebruik van de AI-functies. Die is ruim: normaal gebruik loopt er niet tegenaan, ook niet in een drukke rapportperiode.",
+  "Je ziet je actuele stand terug in je instellingen, onder “Verbruik”.",
 ];

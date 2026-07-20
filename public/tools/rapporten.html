@@ -482,6 +482,7 @@
 </style>
   <link rel="stylesheet" href="/avinka-huisstijl.css">
   <script src="/avinka-dialog.js"></script>
+  <script src="/avinka-budget.js"></script>
   <script src="/avinka-privacy.js"></script>
   <script src="/avinka-masking.js"></script>
   <script src="/avinka-voorkeuren.js"></script>
@@ -1491,6 +1492,7 @@ async function callClaude(model, system, userContent, maxTokens) {
     let msg = 'API-fout (' + resp.status + ')';
     try { const e = await resp.json(); msg = e.error?.message || msg; } catch(_) {}
     if (resp.status === 401) msg = 'API-sleutel ongeldig of verlopen.';
+    if (resp.status === 402) { if (window.avinkaBudget) avinkaBudget.toonLimiet(msg); throw new Error(msg); }
     if (resp.status === 429) msg = 'API-limiet bereikt. Probeer het over even opnieuw.';
     if (resp.status === 529) msg = 'Claude is tijdelijk overbelast. Probeer het zo opnieuw.';
     throw new Error(msg);
@@ -1659,6 +1661,8 @@ function bouwLeerlingPrompt(l) {
 // GENEREREN
 // ════════════════════════════════════════════════════════════
 async function genereerVerhaal() {
+  // Vooraf: genoeg AI-credits voor dit rapport? (avinka-budget.js)
+  if (window.avinkaBudget && !(await window.avinkaBudget.genoegVoor('rapporten'))) return;
   const l = huidige();
   const err = document.getElementById('err-leerling');
   err.classList.remove('visible');

@@ -8,6 +8,13 @@ import {
   modelVoor,
 } from "@/lib/abonnement";
 import { aanbiederVoor } from "@/lib/ai-providers";
+import {
+  beginVanDezeMaand,
+  limietMelding,
+  limietVoor,
+  verbruikInCredits,
+  type VerbruikRij,
+} from "@/lib/ai-limiet";
 
 // De beveiligde AI-route van het platform. Vervangt de oude Netlify-proxy:
 // - controleert dat de gebruiker is INGELOGD (vervangt het wachtwoordscherm);
@@ -31,6 +38,53 @@ export async function POST(request: NextRequest) {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  // 1b) KOSTENPLAFOND. Telt op wat dit account deze kalendermaand aan AI heeft
+  //     verbruikt en stopt boven de grens van het pakket (zie lib/ai-limiet.ts).
+  //     Drie bewuste keuzes:
+  //     - Geldt OOK als betalingen nog niet live zijn: in de testfase betaalt
+  //       de eigenaar de rekening, dus juist dán is een rem nodig.
+  //     - Admins zijn vrijgesteld, anders loopt de eigenaar bij het bouwen en
+  //       testen zelf tegen zijn eigen plafond aan.
+  //     - Gaat de telling om wat voor reden dan ook mis, dan laten we de
+  //       aanvraag DOOR. Een betalende leerkracht mag nooit stilvallen door
+  //       een hapering in onze eigen boekhouding.
+  try {
+    const { data: adminRow } = await supabase
+      .from("admins")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!adminRow) {
+      const { data: abonRij } = await supabase
+        .from("instellingen")
+        .select(ABON_COLS)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      const limiet = limietVoor(mapAbonnementRow(abonRij as AbonnementRow | null));
+
+      const { data: verbruik } = await supabase
+        .from("ai_verbruik")
+        .select(
+          "model, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens",
+        )
+        .eq("user_id", user.id)
+        .gte("created_at", beginVanDezeMaand());
+
+      if (verbruik && verbruikInCredits(verbruik as VerbruikRij[]) >= limiet) {
+        // Bewust GEEN 429: de tools vertalen die status zelf naar "het is even
+        // druk", en dat zou hier een onjuiste boodschap zijn. Met 402 tonen ze
+        // de tekst hieronder letterlijk.
+        return NextResponse.json(
+          { error: { type: "limiet_bereikt", message: limietMelding(limiet) } },
+          { status: 402 },
+        );
+      }
+    }
+  } catch {
+    /* telling mislukt → doorlaten, nooit een gebruiker blokkeren op een fout */
   }
 
   // 2) Het verzoek inlezen.
