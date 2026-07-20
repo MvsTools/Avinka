@@ -138,6 +138,10 @@
     <div class="mark">✓</div>
     <div><h1>Het <em>Avinka</em>-hoofdkantoor</h1><p>Jouw medewerkers · jij bent de baas</p></div>
   </div>
+  <div class="views" style="display:flex;gap:4px;background:#f0ece3;border-radius:999px;padding:4px;margin-left:24px">
+    <button id="vb-kantoor" onclick="toonView('kantoor')" style="border:none;font:inherit;font-weight:700;font-size:13px;padding:8px 16px;border-radius:999px;cursor:pointer;background:#fff;color:var(--ink);box-shadow:0 1px 3px #0002">🏢 Kantoor</button>
+    <button id="vb-werkbladen" onclick="toonView('werkbladen')" style="border:none;font:inherit;font-weight:700;font-size:13px;padding:8px 16px;border-radius:999px;cursor:pointer;background:transparent;color:var(--muted)">📄 Werkbladen</button>
+  </div>
   <div class="chips">
     <div class="chip" onclick="scrollNaar('akkoord')"><span class="dot" style="background:var(--geld)"></span>Wacht op akkoord <b id="c-wacht">0</b></div>
     <div class="chip verberg"><span class="dot" style="background:var(--accent)"></span>In dienst <b id="c-team">2</b></div>
@@ -146,7 +150,7 @@
   </div>
 </div>
 
-<main>
+<main id="view-kantoor">
   <div class="card">
     <div class="card-h"><span class="ic">🏢</span><h2>De kantoorvloer</h2><span class="telbadge">klik op een medewerker</span></div>
     <div class="kantoor" id="kantoor">
@@ -174,13 +178,28 @@
   </div>
 </main>
 
+<div id="view-werkbladen" style="display:none">
+  <div style="max-width:1140px;margin:0 auto;padding:16px 20px 6px;display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px;flex-wrap:wrap">
+    <span>📄 <b style="color:var(--ink)">Werkbladen-testomgeving</b> — alle vraagvormen, lengtes (kort/middel/lang) en antwoorden op één plek.</span>
+    <button onclick="var f=document.getElementById('wb-frame');f.src=f.src" style="margin-left:auto;border:none;background:#f0ece3;color:var(--ink);font:inherit;font-weight:700;font-size:12.5px;padding:8px 14px;border-radius:999px;cursor:pointer">↻ Vernieuwen</button>
+    <a href="/werkblad-preview.html" target="_blank" style="font-weight:700;color:var(--accent);text-decoration:none">Nieuw tabblad ↗</a>
+  </div>
+  <iframe id="wb-frame" src="/werkblad-preview.html" style="width:100%;height:calc(100vh - 150px);border:none;display:block;background:#f1eee8"></iframe>
+</div>
+
 <div class="scrim" id="scrim" onclick="sluitAlles()"></div>
 <aside class="drawer" id="drawer"><div id="drawer-in"></div></aside>
 <div class="modal" id="modal">
   <div class="box">
     <div class="mh"><span class="num" id="m-num"></span><div><h3 id="m-naam"></h3><div class="mc" id="m-cat"></div></div><button class="x" onclick="sluitModal()">✕</button></div>
     <div class="prev" id="m-prev"></div>
-    <div class="mf"><button class="btn blok" id="m-keur">✓ Goedkeuren → getest</button></div>
+    <div class="mf">
+      <textarea id="m-feedback" placeholder="Feedback voor Bram? (bijv. 'maak groter', 'andere woorden', 'te vaag')" style="width:100%;min-height:58px;resize:vertical;border:1.5px solid var(--line);border-radius:11px;padding:10px 12px;font:inherit;font-size:13.5px;margin-bottom:10px;color:var(--ink)"></textarea>
+      <div style="display:flex;gap:10px">
+        <button class="btn" id="m-fb" style="flex:1;background:#f0ece3;color:var(--ink)">↩ Stuur naar Bram</button>
+        <button class="btn" id="m-keur" style="flex:1">✓ Goedkeuren</button>
+      </div>
+    </div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -262,8 +281,9 @@
   }
   function tekenOpdrachten(){
     const o = DATA.opdrachten;
-    el("opdrachten").innerHTML = o.length ? o.map(x=>
-      `<div class="opdr"><span class="bol">👷</span><div style="flex:1"><div class="t">Bram bouwt: ${esc(x.label||x.categorie)}</div><div class="s">in de wachtrij</div></div></div>`).join("")
+    el("opdrachten").innerHTML = o.length ? o.map(x=> x.type==="revisie"
+      ? `<div class="opdr"><span class="bol">↩</span><div style="flex:1"><div class="t">Bram verbetert #${x.num}</div><div class="s">${esc(x.feedback||"feedback verwerken")}</div></div></div>`
+      : `<div class="opdr"><span class="bol">👷</span><div style="flex:1"><div class="t">Bram bouwt: ${esc(x.label||x.categorie)}${x.onderwerp?" · "+esc(x.onderwerp):""}</div><div class="s">${x.wens?esc(x.wens):"in de wachtrij"}</div></div></div>`).join("")
       : '<div class="leeg">Geen lopende opdrachten. Klik op een medewerker om er één te geven.</div>';
   }
   function tekenLog(){
@@ -281,11 +301,20 @@
     if(!c.indienst){
       acties = `<p class="rol">${c.naam} is er al, maar nog aan het inwerken. Zodra we ${c.titel}'s motor koppelen (${c.af==="product"?"Claude Code":"straks via Cowork"}), gaat ${c.naam} hier echt aan het werk.</p>`;
     } else if(id==="bram"){
-      acties = `<label class="veld">Wat moet Bram maken?</label>
-        <select id="d-cat"><option value="spelling">Werkblad · Taal & spelling</option><option value="rekenen">Werkblad · Rekenen</option><option value="universeel">Werkblad · Universeel</option><option value="puzzel">Werkblad · Puzzels & speels</option></select>
-        <div style="height:12px"></div>
-        <button class="btn blok" onclick="stuurBouwer()">🚀 Stuur Bram aan het werk</button>
-        <p class="rol" style="margin-top:14px">De opdracht komt in de wachtrij. In deze fase voert Claude 'm samen met jou uit; het resultaat verschijnt daarna vanzelf onder <b>Wacht op jouw akkoord</b>.</p>`;
+      acties = `<div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">🖥️ Brams werkplek</div>
+        <div style="background:#1c1930;border-radius:14px;padding:15px 15px 16px;font-family:ui-monospace,Menlo,Consolas,monospace;box-shadow:inset 0 0 0 1px #322c4a">
+          <div style="color:#8fe3bd;font-size:12px;margin-bottom:14px">bram@avinka <span style="color:#7a739a">~ nieuwe opdracht instellen</span></div>
+          <div style="color:#b9b2d6;font-size:11px;letter-spacing:.4px;margin-bottom:5px">VAK</div>
+          <select id="d-cat" style="width:100%;background:#2a2640;color:#fff;border:1px solid #3a3560;border-radius:10px;padding:10px;font:inherit;font-size:13px;margin-bottom:13px">
+            <option value="spelling">Taal &amp; spelling</option><option value="rekenen">Rekenen</option><option value="universeel">Universeel</option><option value="puzzel">Puzzels &amp; speels</option>
+          </select>
+          <div style="color:#b9b2d6;font-size:11px;letter-spacing:.4px;margin-bottom:5px">WAAR MOET HET OVER GAAN? <span style="color:#7a739a">(optioneel)</span></div>
+          <input id="d-onderwerp" placeholder="bijv. de herfst · groep 5" style="width:100%;background:#2a2640;color:#fff;border:1px solid #3a3560;border-radius:10px;padding:10px;font:inherit;font-size:13px;margin-bottom:13px" />
+          <div style="color:#b9b2d6;font-size:11px;letter-spacing:.4px;margin-bottom:5px">EXTRA WENS <span style="color:#7a739a">(optioneel)</span></div>
+          <input id="d-wens" placeholder="bijv. met een woordzoeker erin" style="width:100%;background:#2a2640;color:#fff;border:1px solid #3a3560;border-radius:10px;padding:10px;font:inherit;font-size:13px" />
+        </div>
+        <button class="btn blok" style="margin-top:13px" onclick="stuurBouwer()">▶ Stuur Bram aan het werk</button>
+        <p class="rol" style="margin-top:14px">De opdracht komt in Brams wachtrij. Claude voert 'm dan uit; het resultaat verschijnt vanzelf onder <b>Wacht op jouw akkoord</b>.</p>`;
     } else if(id==="kees"){
       acties = `<div class="pill on">✓ ${DATA.getestAantal} modules getest</div>
         <p class="rol">Kees controleert elke nieuwe module automatisch — gratis, zonder AI. Jij ziet alleen wat aandacht nodig heeft.</p>`;
@@ -304,8 +333,10 @@
   }
   async function stuurBouwer(){
     const categorie = el("d-cat").value;
-    await fetch("/api/opdracht",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({categorie})});
-    toast("Bram heeft een opdracht 🚀"); sluitAlles(); laad();
+    const onderwerp = (el("d-onderwerp") && el("d-onderwerp").value || "").trim();
+    const wens = (el("d-wens") && el("d-wens").value || "").trim();
+    await fetch("/api/opdracht",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({categorie,onderwerp,wens})});
+    toast("Bram is gebrieft en aan het werk 🚀"); sluitAlles(); laad();
   }
 
   let modalNum=null, modalNaam="";
@@ -313,6 +344,7 @@
     const m = DATA.wachtOpKeuring.find(x=>x.num===num); if(!m) return;
     modalNum=num; modalNaam=m.naam;
     el("m-num").textContent=num; el("m-naam").textContent=m.naam; el("m-cat").textContent="🛠️ Product · werkblad";
+    el("m-feedback").value="";
     el("m-prev").innerHTML='<div class="spinner"></div>';
     const img = new Image();
     img.onload = ()=>{ el("m-prev").innerHTML=""; el("m-prev").appendChild(img); };
@@ -324,10 +356,24 @@
     await fetch("/api/keur",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({num:modalNum,naam:modalNaam})});
     toast("Goedgekeurd: #"+modalNum+" → getest ✓"); sluitModal(); sluitAlles(); laad();
   };
+  el("m-fb").onclick = async ()=>{
+    const feedback = (el("m-feedback").value||"").trim();
+    if(!feedback){ toast("Typ eerst je feedback voor Bram ✍️"); return; }
+    await fetch("/api/feedback",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({num:modalNum,naam:modalNaam,feedback})});
+    toast("Feedback naar Bram gestuurd ↩"); sluitModal(); sluitAlles(); laad();
+  };
   function sluitModal(){ el("modal").classList.remove("aan"); if(!drawerOpen) el("scrim").classList.remove("aan"); }
   function sluitAlles(){ drawerOpen=null; el("drawer").classList.remove("aan"); el("modal").classList.remove("aan"); el("scrim").classList.remove("aan"); }
   document.addEventListener("keydown",e=>{ if(e.key==="Escape") sluitAlles(); });
 
+  function toonView(v){
+    el("view-kantoor").style.display = v==="werkbladen" ? "none" : "";
+    el("view-werkbladen").style.display = v==="werkbladen" ? "block" : "none";
+    var aan = el("vb-"+v), uit = el("vb-"+(v==="kantoor"?"werkbladen":"kantoor"));
+    aan.style.background="#fff"; aan.style.color="var(--ink)"; aan.style.boxShadow="0 1px 3px #0002";
+    uit.style.background="transparent"; uit.style.color="var(--muted)"; uit.style.boxShadow="none";
+    if(v==="werkbladen"){ var f=el("wb-frame"); f.src=f.src; } // ververs zodat Brams wijzigingen zichtbaar zijn
+  }
   function klok(){ el("klok").textContent = new Date().toLocaleTimeString("nl-NL",{hour:"2-digit",minute:"2-digit"}); }
   klok(); setInterval(klok,10000);
   laad(); setInterval(laad,3000);

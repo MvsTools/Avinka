@@ -8,9 +8,9 @@
    Ships NOOIT mee naar Vercel (losse map, eigen server, geen deel van de app).
    ─────────────────────────────────────────────────────────────────────────── */
 import { createServer } from "node:http";
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { dirname, join, extname } from "node:path";
 import { chromium } from "playwright";
 
 const HIER = dirname(fileURLToPath(import.meta.url));
@@ -18,6 +18,8 @@ const ROOT = join(HIER, "..");
 const PREVIEW = join(ROOT, "public", "werkblad-preview.html");
 const STAAT = join(HIER, "staat.json");
 const PORT = 4321;
+const PUB = join(ROOT, "public");
+const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".svg": "image/svg+xml", ".webp": "image/webp", ".ico": "image/x-icon" };
 
 const LEEG = { status: { bouwer: "rust", keurmeester: "rust" }, opdrachten: [], log: [] };
 const leesStaat = () => (existsSync(STAAT) ? { ...LEEG, ...JSON.parse(readFileSync(STAAT, "utf8")) } : structuredClone(LEEG));
@@ -109,9 +111,17 @@ createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/opdracht") {
       const b = await body(req), staat = leesStaat();
       const label = CAT_LABEL[b.categorie] || "Universeel";
-      staat.opdrachten.push({ id: Date.now(), collega: "bouwer", categorie: b.categorie || "universeel", label, status: "wachtrij" });
+      staat.opdrachten.push({ id: Date.now(), collega: "bouwer", categorie: b.categorie || "universeel", label, onderwerp: (b.onderwerp || "").trim(), wens: (b.wens || "").trim(), status: "wachtrij" });
       staat.status.bouwer = "wachtrij";
-      logRegel(staat, `Je gaf de Bouwer een opdracht: ${label}`, "🧑‍💻");
+      logRegel(staat, `Je briefte Bram: ${label}${b.onderwerp ? " · " + b.onderwerp : ""}`, "🧑‍💻");
+      schrijfStaat(staat);
+      return json(res, { ok: true });
+    }
+    if (req.method === "POST" && url.pathname === "/api/feedback") {
+      const b = await body(req), staat = leesStaat();
+      staat.opdrachten.push({ id: Date.now(), collega: "bouwer", type: "revisie", num: b.num, naam: b.naam || "", feedback: (b.feedback || "").trim(), status: "wachtrij" });
+      staat.status.bouwer = "wachtrij";
+      logRegel(staat, `Feedback op #${b.num} naar Bram: "${(b.feedback || "").slice(0, 60)}"`, "↩");
       schrijfStaat(staat);
       return json(res, { ok: true });
     }
@@ -130,6 +140,14 @@ createServer(async (req, res) => {
       const png = await renderModule(parseInt(mprev[1]));
       res.writeHead(200, { "content-type": "image/png", "cache-control": "no-store" });
       return res.end(png);
+    }
+    // Statische bestanden uit public/ (voor de ingesloten werkblad-preview + avinka-werkblad.js)
+    if (req.method === "GET") {
+      const f = join(PUB, url.pathname.replace(/^\/+/, ""));
+      if (f.startsWith(PUB) && existsSync(f) && statSync(f).isFile()) {
+        res.writeHead(200, { "content-type": MIME[extname(f)] || "application/octet-stream" });
+        return res.end(readFileSync(f));
+      }
     }
     json(res, { error: "niet gevonden" }, 404);
   } catch (e) { json(res, { error: String((e && e.message) || e) }, 500); }
