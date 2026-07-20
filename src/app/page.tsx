@@ -7,6 +7,7 @@ import { signout } from "@/app/auth/actions";
 import Prijzen from "@/components/Prijzen";
 import Footer from "@/components/Footer";
 import Logo from "@/components/Logo";
+import HeroFlow from "@/components/HeroFlow";
 import { PROEF_DAGEN, heeftBetaaldAbonnement } from "@/lib/abonnement";
 import { getAbonnementServer } from "@/lib/abonnement-server";
 
@@ -194,64 +195,6 @@ const faq = [
   },
 ];
 
-/* ── Kleine bouwstenen ─────────────────────────────────────────────────── */
-
-
-// De product-illustratie in de hero: een nagebootst app-venster met mini-grafiek.
-function AppMock() {
-  const balken = [60, 85, 45, 95, 70];
-  return (
-    <div className="relative">
-      {/* zwevende badges */}
-      <div className="absolute -left-4 -top-4 z-10 rotate-[-6deg] rounded-2xl bg-white px-4 py-2 text-sm font-bold text-ink shadow-lg ring-1 ring-black/5">
-        ⏱️ +2 uur
-      </div>
-      <div className="absolute -bottom-4 -right-3 z-10 max-w-[14rem] rotate-[5deg] rounded-2xl bg-white px-4 py-2 text-sm font-bold leading-snug text-ink shadow-lg ring-1 ring-black/5">
-        Van een leerkracht, voor leerkrachten
-      </div>
-
-      <div className="overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5">
-        {/* vensterbalk */}
-        <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-4 py-3">
-          <span className="h-3 w-3 rounded-full bg-rose-400" />
-          <span className="h-3 w-3 rounded-full bg-amber-400" />
-          <span className="h-3 w-3 rounded-full bg-emerald-400" />
-          <span className="ml-3 rounded-md bg-white px-3 py-1 text-xs font-semibold text-slate-500 ring-1 ring-slate-200">
-            Toetsanalyse · Groep 5
-          </span>
-        </div>
-        {/* inhoud */}
-        <div className="p-6">
-          <p className="text-sm font-semibold text-slate-400">Overzicht rekenen</p>
-          <div className="mt-3 grid grid-cols-3 gap-3">
-            <div className="rounded-xl bg-sky-50 p-3">
-              <p className="text-2xl font-extrabold text-sky-600">82%</p>
-              <p className="text-xs text-slate-500">gemiddeld</p>
-            </div>
-            <div className="rounded-xl bg-emerald-50 p-3">
-              <p className="text-2xl font-extrabold text-emerald-600">18</p>
-              <p className="text-xs text-slate-500">op niveau</p>
-            </div>
-            <div className="rounded-xl bg-amber-50 p-3">
-              <p className="text-2xl font-extrabold text-amber-600">4</p>
-              <p className="text-xs text-slate-500">aandacht</p>
-            </div>
-          </div>
-          <div className="mt-5 flex h-28 items-end gap-3 rounded-xl bg-slate-50 p-4">
-            {balken.map((h, i) => (
-              <div
-                key={i}
-                className="flex-1 rounded-t-lg bg-gradient-to-t from-brand to-emerald-400"
-                style={{ height: `${h}%` }}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ── De pagina ─────────────────────────────────────────────────────────── */
 
 export default async function Home({
@@ -389,7 +332,7 @@ export default async function Home({
             </div>
 
             <div className="lg:pl-6">
-              <AppMock />
+              <HeroFlow />
             </div>
           </div>
         </section>
