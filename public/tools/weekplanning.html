@@ -241,25 +241,23 @@
 
       /* ── Staande invulpagina per dag (zwart-wit, met schrijfregels) ── */
       #print-dagen { display:block; }
-      /* Elke dag vult precies één staande pagina; de schrijfvakken rekken mee zodat
-         de ruimte netjes wordt opgevuld — hoe minder lessen, hoe meer schrijfruimte. */
-      .print-dag { page: staand; break-before: page; page-break-before: always; color:#1c1c1c; font-family:inherit;
-                   display:flex; flex-direction:column; min-height:263mm; box-sizing:border-box; }
-      .pd-kop { flex:none; display:flex; justify-content:space-between; align-items:baseline; border-bottom:2px solid #222; padding-bottom:7px; margin-bottom:12px; }
+      .print-dag { page: staand; break-before: page; page-break-before: always; color:#1c1c1c; font-family:inherit; }
+      .pd-kop { display:flex; justify-content:space-between; align-items:baseline; border-bottom:2px solid #222; padding-bottom:6px; margin-bottom:9px; }
       .pd-kop h2 { font-size:23px; margin:0; }
       .pd-meta { font-size:12px; color:#333; }
       .pd-lijn { display:inline-block; width:120px; border-bottom:1px solid #333; }
-      .pd-lijst { flex:1 1 auto; display:flex; flex-direction:column; gap:8px; }
-      .pd-les { flex:1 1 auto; display:flex; flex-direction:column; border:1px solid #b8b8b8; border-radius:7px; padding:9px 11px 11px; break-inside:avoid; }
-      .pd-regel { flex:none; display:flex; gap:12px; align-items:baseline; font-weight:700; font-size:13.5px; margin-bottom:11px; }
+      .pd-lijst { display:flex; flex-direction:column; gap:6px; }
+      .pd-les { border:1px solid #b8b8b8; border-radius:7px; padding:7px 11px 9px; break-inside:avoid; }
+      .pd-regel { display:flex; gap:12px; align-items:baseline; font-weight:700; font-size:13.5px; margin-bottom:9px; }
       .pd-tijd { min-width:96px; color:#333; font-variant-numeric:tabular-nums; }
       .pd-naam { flex:1; }
-      /* schrijfregels van 26px; het vak rekt mee, dus meer ruimte op rustige dagen */
-      .pd-invul { flex:1 1 auto; min-height:52px; background-image:repeating-linear-gradient(to bottom, transparent 0, transparent 25px, #cfcfcf 25px, #cfcfcf 26px); }
-      .pd-invul.groot { flex:none; min-height:78px; }
-      .pd-vast { flex:none; display:flex; gap:12px; font-size:11.5px; color:#777; padding:1px 9px; }
+      /* Vaste schrijfhoogte = exact 3 regels van 24px, zodat er nooit een losse lege
+         band onder de laatste lijn overblijft. Duidelijke gap via de marge hierboven. */
+      .pd-invul { height:72px; background-image:repeating-linear-gradient(to bottom, transparent 0, transparent 23px, #cfcfcf 23px, #cfcfcf 24px); }
+      .pd-invul.groot { height:72px; }
+      .pd-vast { display:flex; gap:12px; font-size:11.5px; color:#777; padding:1px 9px; }
       .pd-vast .pd-tijd { min-width:96px; }
-      .pd-notitie { flex:none; display:flex; flex-direction:column; margin-top:14px; break-inside:avoid; }
+      .pd-notitie { margin-top:10px; break-inside:avoid; }
       .pd-label { display:block; font-size:12px; font-weight:700; color:#333; margin-bottom:5px; }
     }
   </style>
