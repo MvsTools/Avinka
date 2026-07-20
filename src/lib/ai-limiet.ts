@@ -27,11 +27,14 @@ import { proefLoopt } from "@/lib/abonnement";
 // noodrem tegen ontsporende kosten, en NIET meer de rem op accountdelen —
 // drie leerkrachten samen halen de Compleet-grens niet. Delen moet dus komen
 // van de klaslimiet per pakket (nog te bouwen), niet van deze credits.
+// Elke grens ligt bewust ONDER de opbrengst van dat pakket (Start €5,99,
+// Compleet €9,99, Pro €16,99), zodat één ontspoorde gebruiker je nooit geld
+// kost. Ter ijking: een zware rapportmaand meet ongeveer 60 credits.
 export const MAAND_LIMIET: Record<PlanId | "proef", number> = {
-  start: 7.5, //  150 credits
-  compleet: 20, //  400 credits
-  pro: 50, // 1000 credits
-  proef: 7.5, //  150 credits
+  start: 4, //  80 credits — op €5,99
+  compleet: 7, // 140 credits — op €9,99
+  pro: 12, // 240 credits — op €16,99
+  proef: 4, //  80 credits
 };
 
 // ── Credits: wat de gebruiker ziet ────────────────────────────────────────
@@ -146,12 +149,13 @@ export function beginVanDezeMaand(nu: Date = new Date()): string {
 
 // De melding die de gebruiker te zien krijgt. De tools tonen deze tekst
 // letterlijk, dus schrijf hem menselijk en met een uitweg erin.
-export function limietMelding(limiet: number): string {
+// Bewust ZONDER bedragen of aantallen: het plafond draait op de achtergrond
+// en een normale gebruiker komt er nooit. Wie deze tekst wél ziet, heeft meer
+// aan een vervolgstap dan aan een getal.
+export function limietMelding(_limiet?: number): string {
   return (
-    "Je hebt deze maand het maximum aan AI-gebruik bereikt " +
-    "(ongeveer €" +
-    limiet.toFixed(2).replace(".", ",") +
-    "). Volgende maand kun je weer verder. " +
-    "Heb je meer nodig, of klopt dit niet? Neem even contact op, dan kijken we mee."
+    "Je hebt deze maand veel van de tools gebruikt en bent aan je maandtegoed toe. " +
+    "Aan het begin van de nieuwe maand kun je gewoon weer verder. " +
+    "Wil je eerder verder? Kijk bij je abonnement, of neem even contact op."
   );
 }

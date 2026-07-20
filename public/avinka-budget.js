@@ -51,18 +51,18 @@
     return Promise.resolve();
   }
 
-  function tekstVoorTekort(tool, nodig, resterend) {
-    var wat = tool === "toetsanalyse" ? "een volledige analyse" : "een volledige run";
+  // Bewust ZONDER aantallen. Het plafond draait op de achtergrond en een
+  // leerkracht met een eigen account komt er nooit; wie deze tekst wél ziet,
+  // heeft meer aan een vervolgstap dan aan een getal.
+  function tekstVoorTekort(tool) {
+    var wat = tool === "toetsanalyse" ? "een hele analyse" : "dit nog een keer";
     return (
-      "Je hebt niet genoeg AI-credits meer voor " +
+      "Je hebt deze maand veel van de tools gebruikt, en er is niet genoeg " +
+      "tegoed meer over om " +
       wat +
-      ". Je hebt er nog " +
-      resterend +
-      " over en hiervoor zijn er ongeveer " +
-      nodig +
-      " nodig.\n\n" +
-      "Op de 1e van de nieuwe maand staat je tegoed er weer op. " +
-      "Heb je eerder meer nodig, of klopt dit niet? Neem even contact op, dan kijken we mee."
+      " te doen.\n\n" +
+      "Aan het begin van de nieuwe maand kun je gewoon weer verder. Wil je " +
+      "eerder verder? Kijk bij je abonnement, of neem even contact op."
     );
   }
 
@@ -87,9 +87,11 @@
             ? nodigOverride
             : (d.schatting && d.schatting[tool]) || 3;
         if (d.resterend >= nodig) return true;
-        return popup(tekstVoorTekort(tool, nodig, d.resterend)).then(function () {
-          return false;
-        });
+        return popup(tekstVoorTekort(tool), "Je maandtegoed is bijna op").then(
+          function () {
+            return false;
+          },
+        );
       });
     },
 

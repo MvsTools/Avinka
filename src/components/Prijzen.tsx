@@ -13,7 +13,7 @@ export default function Prijzen() {
   return (
     <section id="prijzen" className="mx-auto w-full max-w-6xl px-6 pt-12 pb-24">
       <h2 className="text-center text-4xl font-black tracking-tight text-ink">
-        Eén vast bedrag. Onbeperkt gebruik.
+        Eén vast bedrag. Geen verrassingen.
       </h2>
       <p className="mx-auto mt-4 max-w-xl text-center text-lg text-ink/60">
         Je begint met {PROEF_DAGEN} dagen gratis proberen, zonder betaalgegevens.

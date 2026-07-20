@@ -40,9 +40,13 @@ export const PLANNEN: Plan[] = [
     prijsMaand: 5.99,
     tagline: "Voor wie er één tool uit wil halen",
     toegang: "keuze",
+    // LET OP: hier stond "Onbeperkt gebruik". Dat is eruit gehaald toen het
+    // AI-verbruiksplafond kwam (zie lib/ai-limiet.ts) — je kunt geen grens
+    // hanteren en tegelijk onbeperkt beloven. De vervangende voordelen gaan
+    // over de prijs, niet over de hoeveelheid, en zijn dus altijd waar.
     voordelen: [
       "Eén tool naar keuze",
-      "Onbeperkt gebruik",
+      "Eén vast bedrag per maand",
       "Je klas bewaard",
       "Namen blijven op je eigen apparaat",
     ],
@@ -56,7 +60,7 @@ export const PLANNEN: Plan[] = [
     toegang: "alle",
     voordelen: [
       "Alles van Start",
-      "Alle tools, onbeperkt",
+      "Alle tools, zonder bijbetalen",
       "Meerdere groepen beheren",
       "Alles bewaren en ordenen in Bestanden",
       "Een sterk AI-model voor betere teksten",
