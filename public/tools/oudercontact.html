@@ -447,6 +447,7 @@
   <link rel="stylesheet" href="/avinka-dropdown.css">
   <link rel="stylesheet" href="/avinka-groep.css">
   <script src="/avinka-dialog.js"></script>
+  <script src="/avinka-budget.js"></script>
   <script src="/avinka-privacy.js"></script>
   <script src="/avinka-datum.js"></script>
   <script src="/avinka-masking.js"></script>
@@ -2176,6 +2177,7 @@ async function callClaude(model, system, userContent, maxTokens, tools, knownNam
     let msg = 'API-fout (' + resp.status + ')';
     try { const e = await resp.json(); msg = e.error?.message || msg; } catch(_) {}
     if (resp.status === 401) msg = 'API-sleutel ongeldig of verlopen.';
+    if (resp.status === 402) { if (window.avinkaBudget) avinkaBudget.toonLimiet(msg); throw new Error(msg); }
     if (resp.status === 429) msg = 'API-limiet bereikt. Probeer het over even opnieuw.';
     if (resp.status === 529) msg = 'Claude is tijdelijk overbelast. Probeer het zo opnieuw.';
     throw new Error(msg);
@@ -2301,6 +2303,8 @@ function laatZienBezig(tekst) {
 function verbergBezig() { document.getElementById('loading-box').classList.remove('visible'); }
 
 async function genereer() {
+      // Vooraf: genoeg AI-credits voor een hele run? (avinka-budget.js)
+      if (window.avinkaBudget && !(await window.avinkaBudget.genoegVoor('oudercontact'))) return;
   const err = document.getElementById('err-week');
   err.classList.remove('visible');
   if (!week.kopjes.some(k => k.waarde.trim())) {

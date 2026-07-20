@@ -38,6 +38,7 @@
 
   <!-- Gedeelde platform-scripts (verwijder wat je niet gebruikt) -->
   <script src="/avinka-dialog.js"></script>
+  <script src="/avinka-budget.js"></script>
   <script src="/avinka-privacy.js"></script>
   <script src="/avinka-masking.js"></script>
   <script src="/avinka-voorkeuren.js"></script>
@@ -126,6 +127,7 @@
       if (!resp.ok) {
         let msg = 'Er ging iets mis (' + resp.status + ').';
         try { const e = await resp.json(); msg = e.error?.message || msg; } catch (_) {}
+        if (resp.status === 402) { if (window.avinkaBudget) avinkaBudget.toonLimiet(msg); throw new Error(msg); }
         if (resp.status === 429) msg = 'Het is even druk. Probeer het zo opnieuw.';
         if (resp.status === 529) msg = 'Claude is tijdelijk overbelast. Probeer het zo opnieuw.';
         throw new Error(msg);
@@ -137,6 +139,8 @@
 
     // ── Het hoofdactie ──────────────────────────────────────────────────────
     async function genereer() {
+      // Vooraf: genoeg AI-credits voor een hele run? (avinka-budget.js)
+      if (window.avinkaBudget && !(await window.avinkaBudget.genoegVoor('nieuwetool'))) return;
       const knop = document.getElementById('btn-genereer');
       const fout = document.getElementById('err');
       fout.textContent = '';

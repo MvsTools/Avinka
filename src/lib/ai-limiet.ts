@@ -30,6 +30,39 @@ export const MAAND_LIMIET: Record<PlanId | "proef", number> = {
   proef: 5,
 };
 
+// ── Credits: wat de gebruiker ziet ────────────────────────────────────────
+// Naar buiten toe praten we over "credits", niet over euro's. Twee redenen:
+// een leerkracht hoeft onze inkoopprijs niet te kennen, en zo kunnen we de
+// euro-waarde bijstellen zonder dat het getal op het scherm verspringt.
+// 20 credits = €1, dus: Start en proef 100 credits, Compleet en Pro 160.
+export const CREDITS_PER_EURO = 20;
+
+export function naarCredits(euro: number): number {
+  return Math.round(euro * CREDITS_PER_EURO);
+}
+
+// ── Wat kost één volledige actie, in credits? ─────────────────────────────
+// Ruwe schatting op basis van gemeten verbruik (juli 2026), bewust aan de
+// ruime kant. Dit is ALLEEN voor de controle vooraf: "heb je genoeg voor een
+// hele run?" Zo valt niemand halverwege een analyse stil. De echte afrekening
+// gaat altijd op werkelijk verbruik.
+// Let op: de eenheid is "één run zoals de gebruiker die start". Bij
+// Toetsanalyse is dat een hele analyse (tien tot vijftien AI-aanroepen), bij
+// Rapporten één rapport voor één kind.
+export const KOSTEN_SCHATTING: Record<string, number> = {
+  toetsanalyse: 10,
+  rapporten: 2,
+  werkbladen: 3,
+  lesontwerp: 3,
+  draaiboek: 5,
+  oudercontact: 2,
+};
+
+export function schattingVoor(tool: string | null): number {
+  if (!tool) return 3;
+  return KOSTEN_SCHATTING[tool] ?? 3;
+}
+
 // ── Tarieven per model, in dollar per miljoen tokens ──────────────────────
 // Bron: de officiële prijslijst. Let op: dit zijn DOLLARS; de omrekening naar
 // euro gebeurt onderaan. Nieuw model erbij? Hier een regel toevoegen.

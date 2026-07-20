@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import VoorkeurenForm from "@/components/dashboard/VoorkeurenForm";
 import AccountBeheer from "@/components/dashboard/AccountBeheer";
+import AiCredits from "@/components/dashboard/AiCredits";
 
 export default async function InstellingenPage() {
   const supabase = await createClient();
@@ -20,6 +21,8 @@ export default async function InstellingenPage() {
       </div>
 
       <VoorkeurenForm />
+
+      <AiCredits />
 
       {/* Account — eenvoudig en helder. */}
       <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-sm sm:p-7">
