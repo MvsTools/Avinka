@@ -79,7 +79,7 @@ export const PLANNEN: Plan[] = [
     toegang: "alle",
     voordelen: [
       "Alles van Start",
-      "Alle tools, zonder bijbetalen",
+      "Toegang tot alle tools",
       "Meerdere groepen beheren",
       "Alles bewaren en ordenen in Bestanden",
       "Een sterker AI-model voor betere teksten",
