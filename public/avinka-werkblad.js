@@ -2315,7 +2315,7 @@
     h += '<div class="wb-invul-lijst">';
     arr(b.woorden).forEach(function (w, i) {
       var woord = w && typeof w === "object" ? w.woord : w, kl = (w && (w.verstopt || w.klein)) || [];
-      h += '<div class="wb-wiw-rij"><span class="wb-rij-nr">' + (i + 1) + '.</span>' + refKolom('<b class="wb-wiw-w">' + esc(woord) + "</b>", maxL) + "&nbsp; " + (ant ? '<span class="wb-ant">' + kl.map(esc).join(", ") + "</span>" : lijn(200)) + "</div>";
+      h += '<div class="wb-wiw-rij"><span class="wb-rij-nr">' + (i + 1) + '.</span>' + refKolom('<b class="wb-wiw-w">' + esc(woord) + "</b>", maxL) + "&nbsp; " + (ant ? '<span class="wb-ant">' + kl.map(esc).join(", ") + "</span>" : '<span class="wb-lijn" style="flex:1;min-width:80px"></span>') + "</div>";
     });
     h += "</div>";
     return '<div class="wb-blok">' + h + "</div>";
@@ -2498,6 +2498,21 @@
   }
 
   // Render één blok (kiest de juiste renderer).
+  // Verhaal ordenen: lees door-elkaar-gehusselde zinnen en zet ze op volgorde
+  // (leesbegrip + volgorde). Data: { zinnen:[{zin, volgorde}] } — de array-volgorde
+  // is de husselvolgorde op het blad; 'volgorde' is het juiste nummer (antwoordblad).
+  function rVerhaalOrdenen(b, nr, ant) {
+    var h = opdrachtKop(nr, b.opdracht || "Lees de zinnen. Zet ze in de goede volgorde: schrijf het nummer in het hokje.", b.em);
+    h += '<div class="wb-vord">';
+    arr(b.zinnen).forEach(function (z) {
+      var zin = z && typeof z === "object" ? z.zin : z;
+      var v = z && z.volgorde;
+      h += '<div class="wb-vord-rij"><span class="wb-vord-vak' + (ant ? " wb-ant" : "") + '">' + (ant && v != null ? v : "") + '</span><span class="wb-vord-zin">' + esc(zin) + "</span></div>";
+    });
+    h += "</div>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
   function renderBlok(b, nr, ant) {
     switch (b.type) {
       case "tekst": return rTekst(b);
@@ -2557,6 +2572,7 @@
       case "klinkers": return rKlinkers(b, nr, ant);
       case "klankgroepen": return rKlankgroep(b, nr, ant);
       case "woordinwoord": return rWoordInWoord(b, nr, ant);
+      case "verhaalordenen": return rVerhaalOrdenen(b, nr, ant);
       case "woordwaarde": case "woordwaardespel": return rWoordwaarde(b, nr, ant);
       case "lettertegels": return rLettertegels(b, nr, ant);
       case "oddoneout": return rOddOneOut(b, nr, ant);
@@ -2956,6 +2972,12 @@
       // Woord-in-woord
       ".wb-wiw-rij{display:flex;align-items:center;gap:12px;margin:0 0 9px}",
       ".wb-wiw-w{font-size:18px;color:var(--wb-accent);letter-spacing:1px}",
+      // Verhaal ordenen (zinsvolgorde)
+      ".wb-vord{display:flex;flex-direction:column;gap:10px}",
+      ".wb-vord-rij{display:flex;align-items:flex-start;gap:12px;font-size:15px;break-inside:avoid}",
+      ".wb-vord-vak{flex-shrink:0;width:30px;height:30px;border:2px solid var(--wb-accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--wb-accent);background:#fff}",
+      ".wb-vord-vak.wb-ant{background:var(--wb-soft)}",
+      ".wb-vord-zin{padding-top:4px;line-height:1.5}",
       // Lettertegels
       ".wb-tegel-lijst{display:flex;flex-direction:column;gap:12px}",
       ".wb-tegel-rij{display:flex;align-items:center;gap:8px;flex-wrap:wrap}",
