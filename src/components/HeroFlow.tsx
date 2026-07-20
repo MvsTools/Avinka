@@ -18,14 +18,24 @@ const AMBER = "#c07a1a";
 
 type Taak = { slug: string; label: string; sub: string; tool: string; emoji: string; kleur: string; zacht: string; min: number; bdur: number };
 const TAKEN: Taak[] = [
-  { slug: "rapporten", label: "5 rapporten schrijven", sub: "groep 5", tool: "Rapporten", emoji: "📝", kleur: "#8b5cf6", zacht: "#ede9fe", min: 35, bdur: 3800 },
-  { slug: "toetsanalyse", label: "Toetsen analyseren", sub: "IEP rekenen · groep 5", tool: "Toetsanalyse", emoji: "📊", kleur: "#0284c7", zacht: "#e0f2fe", min: 45, bdur: 4200 },
-  { slug: "lesontwerp", label: "Les voorbereiden", sub: "breuken · groep 5", tool: "Lesontwerp", emoji: "📓", kleur: "#0d9488", zacht: "#ccfbf1", min: 40, bdur: 3800 },
+  { slug: "rapporten", label: "5 rapporten schrijven", sub: "groep 5", tool: "Rapporten", emoji: "📝", kleur: "#8b5cf6", zacht: "#ede9fe", min: 35, bdur: 6600 },
+  { slug: "toetsanalyse", label: "Toetsen analyseren", sub: "IEP rekenen · groep 5", tool: "Toetsanalyse", emoji: "📊", kleur: "#0284c7", zacht: "#e0f2fe", min: 45, bdur: 5800 },
+  { slug: "lesontwerp", label: "Les voorbereiden", sub: "breuken · groep 5", tool: "Lesontwerp", emoji: "📓", kleur: "#0d9488", zacht: "#ccfbf1", min: 40, bdur: 6200 },
 ];
 
 const RAPPORT =
   "Sofie heeft zich de afgelopen periode mooi ontwikkeld. Ze werkt geconcentreerd en zelfstandig, en durft steeds vaker een vraag te stellen als ze er even niet uitkomt. Bij rekenen groeit haar zelfvertrouwen zichtbaar; ze pakt nu ook lastigere sommen aan. In de klas is Sofie een fijne, behulpzame klasgenoot.";
-const EDI: string[] = ["Voorkennis", "Instructie · ik", "Inoefenen · wij", "Zelfstandig · jij", "Afsluiting"];
+const EDI: string[] = [
+  "Voorkennis activeren",
+  "Lesdoel",
+  "Instructie (ik)",
+  "Begeleide inoefening (wij)",
+  "Coöperatief (jullie)",
+  "Zelfstandig (jij)",
+  "Kleine lesafsluiting",
+  "Verwerking",
+  "Grote lesafsluiting",
+];
 
 const DOMEINEN = [
   { naam: "Getallen", pct: 78, status: "op niveau", kleur: GREEN },
@@ -45,17 +55,21 @@ const WP = {
   build: { x: 0.86, y: 60 },
   akkoord: { x: 0.82, y: 286 },
   checkbox: (i: number) => ({ x: 0.08, y: PAD + rowMidY(i) }),
+  clock: { x: 0.86, y: 34 },
+  ontdek: { x: 0.5, y: 236 },
+  endPark: { x: 0.85, y: 300 },
 };
 
-type Seg = { kind: "intro" | "toTask" | "build" | "toAkkoord" | "back" | "end"; i: number; dur: number; wp: { x: number; y: number }; click: boolean };
-const SEGS: Seg[] = [{ kind: "intro", i: -1, dur: 2600, wp: WP.park, click: false }];
+type Seg = { kind: "intro" | "toTask" | "build" | "toAkkoord" | "back" | "toClock" | "end"; i: number; dur: number; wp: { x: number; y: number }; click: boolean };
+const SEGS: Seg[] = [{ kind: "intro", i: -1, dur: 3000, wp: WP.park, click: false }];
 for (let i = 0; i < TAKEN.length; i++) {
-  SEGS.push({ kind: "toTask", i, dur: 1500, wp: WP.taskOpen(i), click: true });
+  SEGS.push({ kind: "toTask", i, dur: 1100, wp: WP.taskOpen(i), click: true });
   SEGS.push({ kind: "build", i, dur: TAKEN[i].bdur, wp: WP.build, click: false });
-  SEGS.push({ kind: "toAkkoord", i, dur: 1500, wp: WP.akkoord, click: true });
-  SEGS.push({ kind: "back", i, dur: 2500, wp: WP.checkbox(i), click: true });
+  SEGS.push({ kind: "toAkkoord", i, dur: 1300, wp: WP.akkoord, click: true });
+  SEGS.push({ kind: "back", i, dur: 2600, wp: WP.checkbox(i), click: true });
 }
-SEGS.push({ kind: "end", i: -1, dur: 4200, wp: WP.park, click: false });
+SEGS.push({ kind: "toClock", i: -1, dur: 1300, wp: WP.clock, click: true });
+SEGS.push({ kind: "end", i: -1, dur: 3900, wp: WP.ontdek, click: false });
 const STARTS: number[] = [];
 let _a = 0;
 for (const s of SEGS) { STARTS.push(_a); _a += s.dur; }
@@ -86,26 +100,53 @@ export default function HeroFlow() {
   let si = 0;
   for (let k = 0; k < SEGS.length; k++) if (t >= STARTS[k]) si = k;
   const seg = SEGS[si];
-  const local = clamp((t - STARTS[si]) / seg.dur);
+  const into = t - STARTS[si];
+  const local = clamp(into / seg.dur);
   const prevWp = si > 0 ? SEGS[si - 1].wp : WP.park;
 
-  const clickAt = seg.kind === "back" ? 0.5 : 0.86;
-  const arr = smooth(Math.min(1, local / (clickAt - 0.16)));
-  const cx = lerp(prevWp.x, seg.wp.x, arr);
-  const cy = lerp(prevWp.y, seg.wp.y, arr);
-  const cStart = clickAt - 0.05;
-  const clickP = seg.click ? clamp((local - cStart) / 0.2) : 0;
-  const pressed = seg.click && local > cStart && local < clickAt + 0.07;
+  // Cursor beweegt met vaste snelheid (tijd-gebaseerd) en blijft daarna staan.
+  // Langere segmenten geven dus méér leestijd, zónder dat de muis trager beweegt.
+  const MOVE = 650;
+  const END_MOVE = 1900; // eindscherm: cursor zit eerst búiten de knop, beweegt dán
+  const ONTDEK_CLICK = END_MOVE + MOVE; // en klikt meteen bij aankomst
+
+  // Cursorpositie. Op het eindscherm: klok → buiten de knop (wachten) → Ontdek Avinka.
+  let cx: number;
+  let cy: number;
+  if (seg.kind === "end") {
+    if (into < MOVE) { const m = smooth(into / MOVE); cx = lerp(WP.clock.x, WP.endPark.x, m); cy = lerp(WP.clock.y, WP.endPark.y, m); }
+    else if (into < END_MOVE) { cx = WP.endPark.x; cy = WP.endPark.y; }
+    else { const m = smooth(clamp((into - END_MOVE) / MOVE, 0, 1)); cx = lerp(WP.endPark.x, WP.ontdek.x, m); cy = lerp(WP.endPark.y, WP.ontdek.y, m); }
+  } else {
+    const arr = smooth(clamp(into / MOVE, 0, 1));
+    cx = lerp(prevWp.x, seg.wp.x, arr);
+    cy = lerp(prevWp.y, seg.wp.y, arr);
+  }
+
+  // Klik-timing. Afstrepen: meteen na aankomst. Openen/sluiten: pal op de grens.
+  // Eindscherm: op "Ontdek Avinka" bij aankomst.
+  let clickP = 0;
+  let pressed = false;
+  if (seg.kind === "end") {
+    clickP = clamp((into - ONTDEK_CLICK) / 320);
+    pressed = into > ONTDEK_CLICK + 40 && into < ONTDEK_CLICK + 320;
+  } else if (seg.click) {
+    const klikEind = seg.kind === "toTask" || seg.kind === "toAkkoord" || seg.kind === "toClock";
+    const cs = klikEind ? seg.dur - 360 : MOVE;
+    clickP = clamp((into - cs) / (klikEind ? 360 : 420));
+    pressed = into > cs + 50 && (klikEind ? into < seg.dur - 20 : into < cs + 340);
+  }
 
   const opTool = seg.kind === "build" || seg.kind === "toAkkoord";
   const isEnd = seg.kind === "end";
-  const build = seg.kind === "build" ? local : seg.kind === "toAkkoord" ? 1 : 0;
+  const build = seg.kind === "build" ? clamp((into - 300) / 5200) : seg.kind === "toAkkoord" ? 1 : 0;
+  const endExit = isEnd ? smooth((into - (ONTDEK_CLICK + 100)) / 900) : 0; // wegzweven ná de Ontdek-klik
 
   const checkAmt = (i: number) => {
     const bi = 1 + i * 4 + 3;
-    const at = STARTS[bi] + SEGS[bi].dur * 0.47; // gelijk met de klik
+    const at = STARTS[bi] + MOVE + 120; // net na de klik op de checkbox
     if (t < at) return 0;
-    return smooth((t - at) / 240);
+    return smooth((t - at) / 260);
   };
   const totaalMin = Math.round(TAKEN.reduce((s, taak, i) => s + clamp(checkAmt(i)) * taak.min, 0));
 
@@ -129,14 +170,14 @@ export default function HeroFlow() {
         <div className="relative overflow-hidden" style={{ height: H }}>
           <div key={screenKey} className="screen absolute inset-0 p-5">
             {isEnd ? (
-              <Finale min={totaalMin} />
+              <Finale min={totaalMin} exit={endExit} ontdekPress={seg.kind === "end" && pressed} />
             ) : opTool ? (
               <Tool taak={TAKEN[seg.i]} build={build} pressAkkoord={seg.kind === "toAkkoord" && pressed} />
             ) : (
-              <Lijst introRow={introRow} checkAmt={checkAmt} totaalMin={totaalMin} />
+              <Lijst introRow={introRow} checkAmt={checkAmt} totaalMin={totaalMin} clockPress={seg.kind === "toClock" && pressed} introFade={seg.kind === "intro" ? smooth(clamp(into / 750, 0, 1)) : 1} />
             )}
           </div>
-          {!isEnd && <Cursor xPct={cx} y={cy} pressed={pressed} clickP={clickP} />}
+          {(!isEnd || endExit < 0.12) && <Cursor xPct={cx} y={cy} pressed={pressed} clickP={clickP} />}
         </div>
       </div>
     </div>
@@ -156,14 +197,14 @@ function Cursor({ xPct, y, pressed, clickP }: { xPct: number; y: number; pressed
   );
 }
 
-function Lijst({ introRow, checkAmt, totaalMin }: { introRow: (i: number) => number; checkAmt: (i: number) => number; totaalMin: number }) {
+function Lijst({ introRow, checkAmt, totaalMin, clockPress, introFade = 1 }: { introRow: (i: number) => number; checkAmt: (i: number) => number; totaalMin: number; clockPress?: boolean; introFade?: number }) {
   return (
-    <div className="relative h-full">
+    <div className="relative h-full" style={{ opacity: introFade }}>
       <div className="flex items-start justify-between">
         <p className="font-display text-lg font-extrabold" style={{ color: INK }}>Te doen<span className="ml-2 text-sm font-semibold" style={{ color: MUTED }}>deze week</span></p>
         <div className="flex items-center gap-1.5">
           <span className="flex items-center gap-1 rounded-full bg-orange-50 px-2 py-1 text-xs font-bold text-orange-600">🔥 5</span>
-          <span className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-extrabold tabular-nums" style={{ background: totaalMin > 0 ? GREEN_SOFT : "#f0eadf", color: totaalMin > 0 ? GREEN_DARK : MUTED, transition: "background .3s" }}>
+          <span className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-extrabold tabular-nums" style={{ background: totaalMin > 0 ? GREEN_SOFT : "#f0eadf", color: totaalMin > 0 ? GREEN_DARK : MUTED, transform: `scale(${clockPress ? 0.94 : 1})`, boxShadow: clockPress ? `0 0 0 3px ${GREEN_SOFT}` : "none", transition: "background .3s, transform .12s" }}>
             ⏱️ {tijdLabel(totaalMin)}
           </span>
         </div>
@@ -218,17 +259,17 @@ function Tool({ taak, build, pressAkkoord }: { taak: Taak; build: number; pressA
 
         {taak.slug === "lesontwerp" && (
           <div>
-            <div className="flex items-center justify-between" style={{ opacity: smooth(build / 0.14) }}>
-              <p className="text-[13px] font-bold" style={{ color: INK }}>Leerdoel · <span style={{ color: MUTED }}>breuken ordenen</span></p>
-              <span className="rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white" style={{ background: taak.kleur }}>EDI</span>
+            <div className="mb-2 flex items-center gap-2" style={{ opacity: smooth(build / 0.14) }}>
+              <span className="rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white" style={{ background: taak.kleur }}>EDI-opbouw</span>
+              <span className="text-[11.5px] font-semibold" style={{ color: MUTED }}>breuken vergelijken</span>
             </div>
-            <div className="mt-3 space-y-2.5">
+            <div className="space-y-1">
               {EDI.map((fase, i) => {
-                const r = smooth((build - 0.16 - i * 0.12) / 0.14);
+                const r = smooth((build - 0.08 - i * 0.065) / 0.1);
                 return (
-                  <div key={fase} className="flex items-center gap-3" style={{ opacity: r, transform: `translateX(${(1 - r) * 10}px)` }}>
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: taak.kleur }}>{i + 1}</span>
-                    <span className="text-[14.5px] font-semibold" style={{ color: INK }}>{fase}</span>
+                  <div key={fase} className="flex items-center gap-2.5" style={{ opacity: r, transform: `translateX(${(1 - r) * 8}px)` }}>
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10.5px] font-extrabold text-white" style={{ background: taak.kleur }}>{i + 1}</span>
+                    <span className="text-[13px] font-semibold" style={{ color: INK }}>{fase}</span>
                   </div>
                 );
               })}
@@ -271,14 +312,14 @@ function Tool({ taak, build, pressAkkoord }: { taak: Taak; build: number; pressA
   );
 }
 
-function Finale({ min }: { min: number }) {
+function Finale({ min, exit, ontdekPress }: { min: number; exit: number; ontdekPress?: boolean }) {
   return (
-    <div className="finale flex h-full flex-col items-center justify-center text-center">
+    <div className="finale flex h-full flex-col items-center justify-center text-center" style={{ transform: `translateY(${-70 * exit}px)`, opacity: 1 - exit }}>
       <Logo vol className="h-16 w-auto" />
       <p className="mt-5 flex items-center gap-2 rounded-full px-4 py-2 text-base font-extrabold" style={{ background: GREEN_SOFT, color: GREEN_DARK }}>
         ⏱️ {tijdLabel(min)} bespaard deze week
       </p>
-      <span className="mt-5 rounded-2xl px-6 py-3 text-[15px] font-bold text-white shadow-lg" style={{ background: GREEN, boxShadow: "0 12px 26px -8px rgba(47,158,110,.55)" }}>
+      <span className="mt-5 rounded-2xl px-6 py-3 text-[15px] font-bold text-white" style={{ background: GREEN, boxShadow: ontdekPress ? "none" : "0 12px 26px -8px rgba(47,158,110,.55)", transform: `scale(${ontdekPress ? 0.95 : 1})`, transition: "transform .12s" }}>
         Ontdek Avinka →
       </span>
     </div>
@@ -286,7 +327,7 @@ function Finale({ min }: { min: number }) {
 }
 
 const CSS = `
-.screen { animation: scrIn .4s ease both; }
+.screen { animation: scrIn .14s ease both; }
 @keyframes scrIn { from { opacity: 0; } to { opacity: 1; } }
 .finale > * { animation: revUp .5s ease both; }
 .finale > *:nth-child(2) { animation-delay: .12s; }
