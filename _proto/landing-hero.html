@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Avinka — hero-prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet" />
+<style>
+  :root{ --ink:#221c3a; --cream:#fbf6ee; --accent:#2f9e6e; --accent2:#25855a; --muted:#6b6880; --card:#fff; --line:#eadfce; }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:'Plus Jakarta Sans',sans-serif;color:var(--ink);min-height:100vh;overflow-x:hidden;
+    background:var(--cream);position:relative}
+  /* zachte, bewegende aurora-achtergrond (subtiel, geen 3D) */
+  .aura{position:fixed;inset:0;z-index:0;pointer-events:none;filter:blur(60px);opacity:.5}
+  .aura i{position:absolute;border-radius:50%}
+  .aura .a{width:420px;height:420px;background:#bfe6cf;top:-120px;right:-80px;animation:zweef 14s ease-in-out infinite}
+  .aura .b{width:360px;height:360px;background:#fbe3c7;bottom:-140px;left:-100px;animation:zweef 18s ease-in-out infinite reverse}
+  @keyframes zweef{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,40px)}}
+  .wrap{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:34px 22px}
+  nav{display:flex;align-items:center;gap:12px;margin-bottom:40px}
+  nav .mark{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;box-shadow:0 6px 14px rgba(47,158,110,.35)}
+  nav b{font-family:'Fraunces',serif;font-size:19px}
+  nav .sp{flex:1}
+  nav a{font-weight:600;font-size:14px;color:var(--muted);text-decoration:none}
+  .hero{display:grid;grid-template-columns:1.05fr 1fr;gap:44px;align-items:center}
+  @media(max-width:840px){.hero{grid-template-columns:1fr;gap:30px}}
+  .fade{opacity:0;transform:translateY(16px);animation:op .7s ease forwards}
+  .fade.d1{animation-delay:.05s}.fade.d2{animation-delay:.18s}.fade.d3{animation-delay:.32s}.fade.d4{animation-delay:.46s}
+  @keyframes op{to{opacity:1;transform:none}}
+  .eyebrow{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:12.5px;color:var(--accent2);
+    background:#e7f4ed;padding:6px 13px;border-radius:999px;margin-bottom:16px}
+  h1{font-family:'Fraunces',serif;font-size:clamp(34px,5vw,52px);line-height:1.04;letter-spacing:-.5px;margin:0 0 16px;font-weight:600}
+  h1 em{font-style:italic;color:var(--accent)}
+  .lead{font-size:17.5px;line-height:1.55;color:#4a4560;max-width:440px;margin:0 0 26px}
+  .cta{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .btn{border:none;background:var(--accent);color:#fff;font:inherit;font-weight:700;font-size:15.5px;padding:14px 26px;border-radius:14px;cursor:pointer;box-shadow:0 10px 22px rgba(47,158,110,.28);transition:transform .12s,filter .12s}
+  .btn:hover{transform:translateY(-2px);filter:brightness(1.05)}
+  .btn2{background:none;border:none;font:inherit;font-weight:700;font-size:15px;color:var(--ink);cursor:pointer;display:inline-flex;gap:7px;align-items:center}
+  .bewijs{display:flex;align-items:center;gap:16px;margin-top:22px;font-size:13px;color:var(--muted);font-weight:600}
+  .sterren{color:#e6a817;letter-spacing:2px}
+  /* De live-demo (het wow-stuk) */
+  .demo{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:0 26px 60px rgba(34,28,58,.14);overflow:hidden}
+  .demo-bar{display:flex;align-items:center;gap:7px;padding:12px 16px;background:#f6f1e8;border-bottom:1px solid var(--line)}
+  .demo-bar i{width:11px;height:11px;border-radius:50%;background:#e0d7c7}
+  .demo-bar span{margin-left:8px;font-size:12px;color:var(--muted);font-weight:600}
+  .demo-in{padding:18px}
+  .veldrij{display:flex;gap:9px;align-items:center;margin-bottom:14px}
+  .veld{flex:1;border:1.5px solid var(--line);border-radius:11px;padding:11px 13px;font-size:14px;font-weight:600;background:#fdfbf7;min-height:42px}
+  .veld .cursor{display:inline-block;width:2px;height:16px;background:var(--accent);vertical-align:-3px;animation:knip 1s step-end infinite}
+  @keyframes knip{50%{opacity:0}}
+  .genknop{background:var(--accent);color:#fff;border:none;border-radius:11px;font:inherit;font-weight:700;font-size:13.5px;padding:11px 16px;white-space:nowrap}
+  .genknop.puls{animation:puls .7s ease}
+  @keyframes puls{50%{transform:scale(.94);filter:brightness(1.1)}}
+  .blad{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;position:relative}
+  .blad-band{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;padding:12px 16px;display:flex;align-items:center;gap:9px;font-weight:700;transform:scaleY(0);transform-origin:top;transition:transform .35s ease}
+  .blad-band .ster{font-size:17px}
+  .blad.bouw .blad-band{transform:scaleY(1)}
+  .blad-body{padding:8px 16px 16px}
+  .regel{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed #eee6d8;opacity:0;transform:translateY(8px)}
+  .regel:last-child{border-bottom:none}
+  .blad.bouw .regel{animation:inrij .4s ease forwards}
+  .blad.bouw .regel:nth-child(1){animation-delay:.30s}.blad.bouw .regel:nth-child(2){animation-delay:.48s}
+  .blad.bouw .regel:nth-child(3){animation-delay:.66s}.blad.bouw .regel:nth-child(4){animation-delay:.84s}
+  @keyframes inrij{to{opacity:1;transform:none}}
+  .regel .n{width:24px;height:24px;border-radius:7px;background:var(--ink);color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .regel .lijn{height:9px;border-radius:6px;background:#eee6d8;flex:1}
+  .regel .lijn.kort{max-width:120px}
+  .klaar{position:absolute;right:14px;bottom:14px;display:flex;align-items:center;gap:8px;background:#e7f4ed;color:var(--accent2);
+    font-weight:800;font-size:13px;padding:8px 14px;border-radius:999px;box-shadow:0 8px 18px rgba(47,158,110,.2);
+    opacity:0;transform:scale(.6)}
+  .blad.klaar-aan .klaar{animation:pop .5s cubic-bezier(.2,1.4,.4,1) forwards}
+  @keyframes pop{to{opacity:1;transform:none}}
+  .tijd{display:flex;align-items:center;gap:12px;margin-top:16px;font-weight:700;font-size:14px}
+  .tijd .oud{color:#b9b2a4;text-decoration:line-through}
+  .tijd .nieuw{color:var(--accent2);background:#e7f4ed;padding:5px 12px;border-radius:999px}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;opacity:1!important;transform:none!important}}
+</style>
+</head>
+<body>
+<div class="aura"><i class="a"></i><i class="b"></i></div>
+<div class="wrap">
+  <nav class="fade d1">
+    <div class="mark">✓</div><b>Avinka</b>
+    <span class="sp"></span>
+    <a href="#">Inloggen</a>
+  </nav>
+
+  <section class="hero">
+    <div>
+      <div class="eyebrow fade d1">✓ van leerkracht, voor leerkrachten</div>
+      <h1 class="fade d2">Win elke week <em>2 uur</em> terug</h1>
+      <p class="lead fade d3">Typ een onderwerp. Avinka maakt er een compleet, printklaar werkblad van — in minuten, niet in uren.</p>
+      <div class="cta fade d4">
+        <button class="btn">Probeer gratis</button>
+        <button class="btn2">▶ Bekijk hoe het werkt</button>
+      </div>
+      <div class="bewijs fade d4"><span class="sterren">★★★★★</span> geliefd bij leerkrachten · geen creditcard nodig</div>
+    </div>
+
+    <div class="fade d3">
+      <div class="demo">
+        <div class="demo-bar"><i></i><i></i><i></i><span>Avinka · Werkbladen</span></div>
+        <div class="demo-in">
+          <div class="veldrij">
+            <div class="veld" id="veld"><span class="cursor"></span></div>
+            <button class="genknop" id="gen">Maak werkblad</button>
+          </div>
+          <div class="blad" id="blad">
+            <div class="blad-band"><span class="ster">⭐</span> <span id="titel">Werkblad</span></div>
+            <div class="blad-body">
+              <div class="regel"><span class="n">1</span><span class="lijn"></span></div>
+              <div class="regel"><span class="n">2</span><span class="lijn kort"></span></div>
+              <div class="regel"><span class="n">3</span><span class="lijn"></span></div>
+              <div class="regel"><span class="n">4</span><span class="lijn kort"></span></div>
+            </div>
+            <div class="klaar">✓ Klaar!</div>
+          </div>
+          <div class="tijd"><span class="oud">⏱ 2 uur</span> → <span class="nieuw">⚡ 4 minuten</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  const ONDERWERPEN = ["ruimtevaart", "de herfst", "breuken groep 6", "dieren in de winter"];
+  const veld = document.getElementById("veld"), gen = document.getElementById("gen"),
+        blad = document.getElementById("blad"), titel = document.getElementById("titel");
+  const cursor = '<span class="cursor"></span>';
+  let i = 0;
+  const wacht = ms => new Promise(r => setTimeout(r, ms));
+
+  async function typ(tekst){
+    veld.innerHTML = cursor;
+    for(let k=0;k<tekst.length;k++){ veld.innerHTML = tekst.slice(0,k+1) + cursor; await wacht(70); }
+  }
+  async function ronde(){
+    const ond = ONDERWERPEN[i % ONDERWERPEN.length]; i++;
+    blad.classList.remove("bouw","klaar-aan");
+    veld.innerHTML = cursor;
+    await wacht(500);
+    await typ(ond);                 // onderwerp tikt zich in
+    await wacht(350);
+    gen.classList.add("puls");      // knop 'ingedrukt'
+    titel.textContent = "Werkblad · " + ond.charAt(0).toUpperCase() + ond.slice(1);
+    await wacht(450); gen.classList.remove("puls");
+    blad.classList.add("bouw");     // werkblad bouwt zich op (rijen komen binnen)
+    await wacht(1350);
+    blad.classList.add("klaar-aan");// ✓ Klaar! popt
+    await wacht(2600);              // even laten zien
+    veld.style.transition="opacity .4s"; blad.style.transition="opacity .4s";
+    veld.style.opacity=blad.style.opacity="0"; await wacht(420);
+    veld.style.opacity=blad.style.opacity="1"; veld.style.transition=blad.style.transition="";
+    ronde();
+  }
+  const reduce = window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+  if(!reduce) ronde(); else { veld.textContent="ruimtevaart"; blad.classList.add("bouw","klaar-aan"); titel.textContent="Werkblad · Ruimtevaart"; }
+</script>
+</body>
+</html>
