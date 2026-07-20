@@ -46,7 +46,7 @@ export const PLANNEN: Plan[] = [
     // over de prijs, niet over de hoeveelheid, en zijn dus altijd waar.
     voordelen: [
       "Eén tool naar keuze",
-      "Eén vast bedrag per maand",
+      "Ruimte voor je eigen groep",
       "Je klas bewaard",
       "Namen blijven op je eigen apparaat",
     ],
@@ -63,7 +63,7 @@ export const PLANNEN: Plan[] = [
       "Alle tools, zonder bijbetalen",
       "Meerdere groepen beheren",
       "Alles bewaren en ordenen in Bestanden",
-      "Een sterk AI-model voor betere teksten",
+      "Een sterker AI-model en meer ruimte om te maken",
     ],
   },
   {
@@ -74,7 +74,7 @@ export const PLANNEN: Plan[] = [
     toegang: "alle",
     voordelen: [
       "Alles van Compleet",
-      "Het sterkste AI-model voor de meest genuanceerde teksten",
+      "Het sterkste AI-model en de meeste ruimte, ook in de rapportperiode",
       "Voorrang als het druk is",
       "Als eerste toegang tot nieuwe tools",
     ],
