@@ -20,11 +20,10 @@ Noem in 1 regel: concept + aesthetic family + font-paar + accentkleur. Kun je da
 6. Heb een concept dat de hele pagina draagt (magazine, terminal, product-tour, verhaal).
 7. Details: focus states, echte copy (geen lorem, geen placeholder-quotes), optische uitlijning.
 
-## Referenties (VUL JE 2-3 FAVORIETEN IN — dit is de knop voor 'uniek')
-- linear.app — restraint, type-hierarchie
-- vercel.com — hoog-contrast minimalisme, bold type
-- family.co — speelse motion, karakter
-- JOUW: <link 1> · <link 2> · <link 3>
+## Referenties (de knop voor 'uniek')
+- family.co — speelse motion, warme gradients, karakter
+- superlist.com — eigen karakter + product-in-beweging (to-do-thema, past 1-op-1)
+- duolingo.com — vooral voor de scroll-interacties/animaties lager op de pagina
 
 ## Stack
 Next.js (App Router) + TypeScript, Tailwind, shadcn/ui, Framer Motion, GSAP. Gebruik de 21st.dev Magic MCP voor componenten.
