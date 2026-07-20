@@ -123,32 +123,33 @@ export default async function AiCredits() {
             Credits resetten op {resetTekst}.
           </p>
 
-          {bijnaOp && (
+          {/* Pas bij 100 procent. Daaronder is er niets aan de hand en hoeft
+              niemand aan upgraden herinnerd te worden. */}
+          {op && (
             <div className="mt-5 rounded-2xl bg-cream p-4">
-              <p className="text-sm font-semibold text-ink">
-                {op ? "Je credits zijn op" : "Je credits raken op"}
-              </p>
+              <p className="text-sm font-semibold text-ink">Je credits zijn op</p>
               <p className="mt-1 text-sm text-ink/65">
+                Op {resetTekst} staan ze er weer op. Wil je eerder verder, dan
+                kun je credits bijkopen
                 {hoger
-                  ? `${hoger.naam} geeft je ${planCredits(hoger.id)} credits per maand.`
-                  : "Je zit al op het ruimste pakket."}{" "}
-                Je kunt ook eenmalig credits bijkopen.
+                  ? ` of overstappen naar ${hoger.naam}, met ${planCredits(hoger.id)} credits per maand.`
+                  : "."}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
+                <Link
+                  href="/dashboard/abonnement#credits"
+                  className="rounded-xl bg-[#25855a] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95"
+                >
+                  Credits bijkopen
+                </Link>
                 {hoger && (
                   <Link
                     href="/dashboard/abonnement"
-                    className="rounded-xl bg-[#25855a] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95"
+                    className="rounded-xl border border-black/10 px-4 py-2 text-sm font-semibold text-ink/70 transition hover:border-black/20 hover:text-ink"
                   >
                     Bekijk {hoger.naam}
                   </Link>
                 )}
-                <span
-                  className="rounded-xl border border-black/10 px-4 py-2 text-sm font-semibold text-ink/40"
-                  title="Beschikbaar zodra betalingen live staan"
-                >
-                  Credits bijkopen — binnenkort
-                </span>
               </div>
             </div>
           )}
