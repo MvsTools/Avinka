@@ -217,22 +217,46 @@
 
     @media (max-width:560px){ .wrap{padding:20px 12px 80px;} h1{font-size:27px;} }
 
-    /* ── Printen: alleen het weekrooster, groot en helder op een liggende A4 ── */
+    /* Invulbare dagpagina's staan alleen in de print, niet op het scherm. */
+    #print-dagen { display:none; }
+
+    /* ── Printen: liggend weekoverzicht + per dag een staande invulpagina ── */
     @media print {
-      @page { size: A4 landscape; margin: 8mm; }
+      @page liggend { size: A4 landscape; margin: 8mm; }
+      @page staand  { size: A4 portrait;  margin: 12mm; }
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       body { background:#fff; }
       .wrap { max-width:none; margin:0; padding:0; }
-      /* alle schermbediening weg — alleen de titel + het raster blijven */
+      /* alle schermbediening weg — alleen de titel + het raster blijven op pagina 1 */
       .topbar, #setup-scherm, .rooster-acties, .vakpalet, .hint, .foot { display:none !important; }
+      .rooster-top, .grid-kaart { page: liggend; }
       .rooster-top { margin:0 0 6px; }
       #rooster-titel { font-size:20px; }
       .grid-kaart { border:none; box-shadow:none; padding:0; overflow:hidden;
                     width:var(--print-breedte, auto); height:var(--print-hoogte, auto); }
-      /* het raster naar één pagina schalen (maat berekend in printen()) */
+      /* het raster naar één liggende pagina schalen (maat berekend in printen()) */
       #grid { transform:scale(var(--print-schaal, 1)); transform-origin:top left; }
       .blok::before, .blok::after { display:none !important; }   /* rek-hintjes weg */
       .nu-lijn { display:none !important; }
+
+      /* ── Staande invulpagina per dag (zwart-wit, met schrijfregels) ── */
+      #print-dagen { display:block; }
+      .print-dag { page: staand; break-before: page; page-break-before: always; color:#1c1c1c; font-family:inherit; }
+      .pd-kop { display:flex; justify-content:space-between; align-items:baseline; border-bottom:2px solid #222; padding-bottom:7px; margin-bottom:12px; }
+      .pd-kop h2 { font-size:23px; margin:0; }
+      .pd-meta { font-size:12px; color:#333; }
+      .pd-lijn { display:inline-block; width:120px; border-bottom:1px solid #333; }
+      .pd-lijst { display:flex; flex-direction:column; gap:7px; }
+      .pd-les { border:1px solid #b8b8b8; border-radius:7px; padding:7px 9px; break-inside:avoid; }
+      .pd-regel { display:flex; gap:12px; align-items:baseline; font-weight:700; font-size:13.5px; margin-bottom:5px; }
+      .pd-tijd { min-width:96px; color:#333; font-variant-numeric:tabular-nums; }
+      .pd-naam { flex:1; }
+      .pd-invul { height:46px; background-image:repeating-linear-gradient(to bottom, transparent 0, transparent 22px, #cfcfcf 22px, #cfcfcf 23px); }
+      .pd-invul.groot { height:82px; }
+      .pd-vast { display:flex; gap:12px; font-size:11.5px; color:#777; padding:1px 9px; }
+      .pd-vast .pd-tijd { min-width:96px; }
+      .pd-notitie { margin-top:14px; break-inside:avoid; }
+      .pd-label { display:block; font-size:12px; font-weight:700; color:#333; margin-bottom:5px; }
     }
   </style>
 </head>
@@ -356,6 +380,8 @@
     <div class="grid-kaart">
       <div class="grid" id="grid"></div>
     </div>
+    <!-- Alleen zichtbaar bij printen: per schooldag een staande, invulbare pagina. -->
+    <div id="print-dagen" aria-hidden="true"></div>
     <p class="hint">Deze planning staat op dit apparaat bewaard. Straks kun je 'm ook koppelen aan je takenlijst en je gesprekken inplannen.</p>
   </div>
 
@@ -1251,17 +1277,53 @@ function bewaar(){ try { localStorage.setItem(BEWAAR_SLEUTEL, JSON.stringify(sta
 function laad(){ try { const s=localStorage.getItem(BEWAAR_SLEUTEL); if(s){ const o=JSON.parse(s); if(o&&o.setup&&o.blokken) return o; } } catch(_){} return null; }
 
 /* ── Print ──────────────────────────────────────────────────────────── */
-function printen(){
+function printen(){ window.print(); }
+
+// Alles klaarzetten vlak vóór het printen. Via 'beforeprint' zodat ook browser-Ctrl+P
+// (niet alleen onze knop) een net document oplevert.
+function bereidPrintVoor() {
+  if (!state.setup || els('rooster-scherm').style.display !== 'block') return;
+  // 1) liggend weekoverzicht passend schalen
   const grid = els('grid');
   const gw = grid.scrollWidth, gh = grid.scrollHeight;      // natuurlijke maat van het raster
-  // printbaar gebied van een liggende A4 (px @96dpi, ~8mm marge), titel-hoogte eraf
-  const paginaW = 1040, paginaH = 690;
-  const schaal = Math.min(paginaW/gw, paginaH/gh, 1.4);      // passend maken, niet overdreven vergroten
+  const paginaW = 1040, paginaH = 690;                      // printbaar gebied liggende A4 (px @96dpi), titel eraf
+  const schaal = Math.min(paginaW/gw, paginaH/gh, 1.4);     // passend maken, niet overdreven vergroten
   const r = document.documentElement.style;
   r.setProperty('--print-schaal', schaal);
   r.setProperty('--print-breedte', Math.ceil(gw*schaal)+'px');
   r.setProperty('--print-hoogte', Math.ceil(gh*schaal)+'px');
-  window.print();
+  // 2) per schooldag een staande, invulbare pagina
+  bouwPrintDagen();
+}
+window.addEventListener('beforeprint', bereidPrintVoor);
+
+// Bouwt per dag een invulblad: tijd + vak + schrijfregels, plus een notitieveld.
+// Bewust zwart-wit (geen vakkleuren) zodat het een net, invulbaar werkdocument is.
+function bouwPrintDagen() {
+  const host = els('print-dagen'); if (!host || !state.setup) return;
+  const su = state.setup;
+  host.innerHTML = '';
+  su.dagen.forEach(dagId => {
+    const d = DAGEN.find(x => x.id === dagId);
+    const blokken = state.blokken.filter(b => b.dag === dagId).sort((a,b) => a.start - b.start);
+    let rijen = '';
+    blokken.forEach(b => {
+      const tijd = minStr(b.start) + '–' + minStr(b.start + b.duur);
+      const naam = (b.naam || VAK(b.vak).naam);
+      if (b.type === 'vast') {
+        rijen += '<div class="pd-vast"><span class="pd-tijd">'+tijd+'</span><span>'+naam+'</span></div>';
+      } else {
+        rijen += '<div class="pd-les"><div class="pd-regel"><span class="pd-tijd">'+tijd+'</span><span class="pd-naam">'+naam+'</span></div><div class="pd-invul"></div></div>';
+      }
+    });
+    const sec = document.createElement('section');
+    sec.className = 'print-dag';
+    sec.innerHTML =
+      '<div class="pd-kop"><h2>'+d.naam+'</h2><div class="pd-meta">Groep '+su.groep+' &nbsp;·&nbsp; Datum: <span class="pd-lijn"></span></div></div>' +
+      '<div class="pd-lijst">'+rijen+'</div>' +
+      '<div class="pd-notitie"><span class="pd-label">Bijzonderheden / huiswerk</span><div class="pd-invul groot"></div></div>';
+    host.appendChild(sec);
+  });
 }
 
 /* ── Knoppen ────────────────────────────────────────────────────────── */
