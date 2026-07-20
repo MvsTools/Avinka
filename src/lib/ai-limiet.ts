@@ -19,15 +19,19 @@ import { proefLoopt } from "@/lib/abonnement";
 
 // ── De grens per pakket, in euro per kalendermaand ────────────────────────
 // Gekozen op basis van echt gemeten verbruik (juli 2026): een leerkracht komt
-// in een zware rapportmaand rond de €3 uit, in een gewone maand rond de €1.
-// Deze grenzen raakt een normale gebruiker dus nooit; drie leerkrachten die
-// één account delen lopen er wél tegenaan. Zie ook de prijzen in
-// abonnement.ts — een grens mag nooit boven de opbrengst van het pakket uit.
+// in een zware rapportmaand rond de €3 uit (60 credits), in een gewone maand
+// rond de €1. Geen enkele echte gebruiker komt dus in de buurt.
+//
+// De pakketten lopen bewust ver uiteen, zodat Pro ook op de meter voelt als
+// meer. LET OP wat dat betekent: met deze ruimte is dit plafond vooral een
+// noodrem tegen ontsporende kosten, en NIET meer de rem op accountdelen —
+// drie leerkrachten samen halen de Compleet-grens niet. Delen moet dus komen
+// van de klaslimiet per pakket (nog te bouwen), niet van deze credits.
 export const MAAND_LIMIET: Record<PlanId | "proef", number> = {
-  start: 5,
-  compleet: 8,
-  pro: 8,
-  proef: 5,
+  start: 7.5, //  150 credits
+  compleet: 20, //  400 credits
+  pro: 50, // 1000 credits
+  proef: 7.5, //  150 credits
 };
 
 // ── Credits: wat de gebruiker ziet ────────────────────────────────────────
