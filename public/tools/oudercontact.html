@@ -374,6 +374,10 @@
   .gesp-afspr-del:hover { opacity: 1; color: var(--ink); }
   .gesp-afspr-add { margin-top: 4px; background: none; border: 1.5px dashed var(--warm); color: var(--ink); border-radius: 8px; padding: 7px 12px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: border-color 0.2s; }
   .gesp-afspr-add:hover { border-color: var(--accent2); }
+  .gesp-afspr-todo { flex: none; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; background: var(--card); border: 1.5px solid var(--accent2); color: var(--accent2); border-radius: 999px; padding: 6px 11px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12.5px; font-weight: 700; cursor: pointer; transition: background 0.15s, color 0.15s; }
+  .gesp-afspr-todo:hover { background: var(--accent2); color: #fff; }
+  .gesp-afspr-todo.klaar { border-color: var(--line); background: var(--brand-soft); color: var(--muted); cursor: default; }
+  .gesp-afspr-todo.klaar:hover { background: var(--brand-soft); color: var(--muted); }
   .gesp-reset { display: block; margin: 18px auto 0; background: none; border: none; color: var(--muted); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; cursor: pointer; text-decoration: underline; opacity: 0.7; transition: opacity 0.15s, color 0.15s; }
   .gesp-reset:hover { opacity: 1; color: var(--ink); }
   .tag-input { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-height: 120px; align-content: flex-start; border: 1.5px solid var(--line-strong); background: var(--cream); border-radius: 14px; padding: 13px 15px; cursor: text; transition: border-color 0.2s; }
@@ -3444,39 +3448,86 @@ function gespCheckGevoelig(el) {
   const heeftContact = /\b[\w.+-]+@[\w-]+\.[\w.-]+\b/.test(v) || /\b\d{4}\s?[A-Za-z]{2}\b/.test(v) || /\+?\d[\d\s-]{7,}\d/.test(v);
   note.classList.toggle('visible', GEVOELIG_RE.test(v) || heeftContact);
 }
+// Afspraken zijn objecten { tekst, lk, taak }. lk = leerkracht-actie (krijgt een
+// to-do-knop); taak = staat al op de to-do-lijst. Oude opgeslagen gesprekken hebben
+// nog platte strings — die normaliseren we hier naar objecten (lk standaard false).
+function gespAfsObjs(k) {
+  if (!k) return [];
+  if (!Array.isArray(k.afspraken)) k.afspraken = [];
+  k.afspraken = k.afspraken.map(a => (a && typeof a === 'object')
+    ? { tekst: String(a.tekst || ''), lk: !!a.lk, taak: !!a.taak }
+    : { tekst: String(a == null ? '' : a), lk: false, taak: false });
+  return k.afspraken;
+}
 function gespRenderAfspraken() {
   const k = gespHuidige();
   const lijst = document.getElementById('gesp-afspraken-lijst');
   if (!lijst) return;
-  if (!k.afspraken || !Array.isArray(k.afspraken)) k.afspraken = [];
+  const afs = gespAfsObjs(k);
   lijst.innerHTML = '';
-  k.afspraken.forEach((a, i) => {
+  afs.forEach((a, i) => {
     const rij = document.createElement('div');
     rij.className = 'gesp-afspr-rij';
+    let todo = '';
+    if (a.lk && a.tekst.trim()) {
+      todo = a.taak
+        ? '<span class="gesp-afspr-todo klaar" title="Deze afspraak staat op je to-do-lijst">✓ Op je to-do-lijst</span>'
+        : '<button class="gesp-afspr-todo" title="Zet deze afspraak op je persoonlijke to-do-lijst" onclick="gespZetOpTodo(' + i + ', this)">+ Op je to-do-lijst</button>';
+    }
     rij.innerHTML = '<span class="gesp-afspr-bullet">•</span>' +
-      '<input class="gesp-afspr-in" value="' + escapeHtml(a) + '" oninput="gespAfspraakEdit(' + i + ', this.value)">' +
+      '<input class="gesp-afspr-in" value="' + escapeHtml(a.tekst) + '" oninput="gespAfspraakEdit(' + i + ', this.value)">' +
+      todo +
       '<button class="gesp-afspr-del" title="Afspraak weghalen" onclick="gespAfspraakVerwijder(' + i + ')">×</button>';
     lijst.appendChild(rij);
   });
 }
 function gespAfspraakEdit(i, val) {
   const k = gespHuidige();
-  if (k && k.afspraken) k.afspraken[i] = val;
+  const afs = gespAfsObjs(k);
+  if (afs[i]) { afs[i].tekst = val; afs[i].taak = false; }   // tekst gewijzigd → opnieuw toe te voegen
 }
 function gespAfspraakVerwijder(i) {
   const k = gespHuidige();
-  if (!k || !k.afspraken) return;
-  k.afspraken.splice(i, 1);
+  if (!k) return;
+  gespAfsObjs(k).splice(i, 1);
   gespRenderAfspraken();
 }
 function gespAfspraakToevoegen() {
   const k = gespHuidige();
   if (!k) return;
-  if (!Array.isArray(k.afspraken)) k.afspraken = [];
-  k.afspraken.push('');
+  // Handmatig toegevoegde afspraken zijn doorgaans eigen vervolgacties → lk = true,
+  // zodat de to-do-knop verschijnt (verschijnt pas zodra er tekst staat).
+  gespAfsObjs(k).push({ tekst: '', lk: true, taak: false });
   gespRenderAfspraken();
   const inputs = document.querySelectorAll('#gesp-afspraken-lijst .gesp-afspr-in');
   if (inputs.length) inputs[inputs.length - 1].focus();
+}
+async function gespZetOpTodo(i, btn) {
+  const k = gespHuidige();
+  const afs = gespAfsObjs(k);
+  const a = afs[i];
+  if (!a || !a.tekst.trim() || a.taak) return;
+  const naam = (k.naam || '').trim();
+  let tekst = a.tekst.trim();
+  if (naam && !new RegExp('\\b' + naam.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i').test(tekst)) {
+    tekst += ' voor ' + naam;   // koppel de leerling eraan, tenzij de naam er al in staat
+  }
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    const r = await fetch('/api/taken', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ tekst: tekst })
+    });
+    if (!r.ok) throw new Error('mislukt');
+    a.taak = true;
+    gespRenderAfspraken();
+    if (typeof avinkaAfgevinkt === 'function') avinkaAfgevinkt('Toegevoegd aan je to-do-lijst');
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = '+ Op je to-do-lijst'; }
+    if (typeof avinkaMelding === 'function') avinkaMelding('Toevoegen aan je to-do-lijst lukte niet. Log je opnieuw in en probeer het nog eens.');
+    else alert('Toevoegen aan je to-do-lijst lukte niet. Probeer het nog eens.');
+  }
 }
 function gespRenderMeta() {
   const k = gespHuidige() || {};
@@ -3498,7 +3549,8 @@ function gespBouwSysteemprompt() {
   p += '━━━ ZO WERK JE (in één antwoord) ━━━\n';
   p += '1) Eerst een kort kladblok tussen <denk> en </denk>: wat is de kern en welke opbouw past. Dit komt NIET in het verslag.\n';
   p += '2) Daarna het verslag tussen <verslag> en </verslag>.\n';
-  p += '3) Daarna de afspraken tussen <afspraken> en </afspraken>: elke afspraak op een eigen regel, kort en concreet. Haal de afspraken uit wat er besproken is (wat gaan de ouders, het kind of de leerkracht doen). Verzin geen afspraken; zijn er geen, laat dan <afspraken></afspraken> leeg.\n\n';
+  p += '3) Daarna de afspraken tussen <afspraken> en </afspraken>: elke afspraak op een eigen regel, kort en concreet. Haal de afspraken uit wat er besproken is (wat gaan de ouders, het kind of de leerkracht doen). Verzin geen afspraken; zijn er geen, laat dan <afspraken></afspraken> leeg.\n';
+  p += '   Markeer een afspraak die een actie van de LEERKRACHT zelf is — iets dat de leerkracht nog moet regelen, maken, opzoeken, aanvragen, meegeven, mailen of nakomen — door de regel te beginnen met "[lk] ". Afspraken die een actie van de ouders of het kind zijn (bijvoorbeeld "gaat thuis meer lezen") krijgen GEEN markering. Voorbeeld: "[lk] Huiswerkboekje rekenen maken" wél, "Kind gaat thuis meer oefenen met tafels" niet.\n\n';
   p += '━━━ GEBRUIK ALLEEN DE FEITEN — VERZIN NIETS ━━━\n';
   p += 'Gebruik uitsluitend wat de leerkracht heeft ingevuld. Verzin geen gebeurtenis, observatie, oordeel, datum, naam of detail erbij. Bij twijfel: laat het weg.\n\n';
   p += '━━━ NIETS WEGLATEN ━━━\n';
@@ -3528,10 +3580,15 @@ function gespParse(ruw) {
   let afspraken = [];
   const am = (ruw || '').match(/<afspraken>([\s\S]*?)<\/afspraken>/i);
   if (am) {
-    afspraken = am[1].split(/\n+/).map(s => s.replace(/^\s*[-•*\d.)]+\s*/, '').trim())
-      .filter(Boolean).filter(s => !/^(geen|n\.?v\.?t\.?|niet van toepassing)\b/i.test(s));
+    afspraken = am[1].split(/\n+/).map(s => {
+      let t = s.replace(/^\s*[-•*\d.)]+\s*/, '').trim();   // eerst een eventueel opsommingsteken weg
+      let lk = false;
+      const m = t.match(/^\[\s*lk\s*\]\s*/i);               // dan de [lk]-markering van de AI
+      if (m) { lk = true; t = t.slice(m[0].length).trim(); }
+      return { tekst: t, lk: lk };
+    }).filter(o => o.tekst).filter(o => !/^(geen|n\.?v\.?t\.?|niet van toepassing)\b/i.test(o.tekst));
   }
-  return { verslag: uitnVermenselijk(verslag), afspraken: afspraken.map(a => uitnVermenselijk(a)) };
+  return { verslag: uitnVermenselijk(verslag), afspraken: afspraken.map(a => ({ tekst: uitnVermenselijk(a.tekst), lk: a.lk, taak: false })) };
 }
 function gespBouwUserContent() {
   const k = gespHuidige() || {};
@@ -3570,14 +3627,14 @@ async function gespGenereer() {
     const ruw = await callClaude(MODEL, gespBouwSysteemprompt(), gespBouwUserContent(), 1500, null, gespBekendeNamen());
     const parsed = gespParse(ruw);
     k.verslag = parsed.verslag;
-    k.afspraken = parsed.afspraken;   // array van strings
+    k.afspraken = parsed.afspraken;   // array van { tekst, lk, taak }
     k.status = 'klaar';
     gespSetResultaat(k.verslag);
     gespRenderMeta();
     gespRenderAfspraken();
     document.getElementById('gesp-result-box').classList.add('visible');
     setStap(3);
-    if (typeof avinkaTel === 'function') avinkaTel('gesprek', { woorden: avinkaWoorden((k.verslag || '') + ' ' + ((k.afspraken || []).join(' '))) });
+    if (typeof avinkaTel === 'function') avinkaTel('gesprek', { woorden: avinkaWoorden((k.verslag || '') + ' ' + gespAfsObjs(k).map(a => a.tekst).join(' ')) });
     document.getElementById('gesp-result-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) {
     err.textContent = 'Er ging iets mis: ' + e.message;
@@ -3664,7 +3721,7 @@ function gespAssembleer(k) {
   if (gesp.aanleiding && gesp.aanleiding.trim()) lines.push('Aanleiding: ' + gesp.aanleiding.trim());
   let out = lines.join('\n');
   out += (out ? '\n\n' : '') + 'Inhoud:\n' + (k.verslag || '').trim();
-  const afs = (Array.isArray(k.afspraken) ? k.afspraken : []).map(s => String(s).trim()).filter(Boolean);
+  const afs = gespAfsObjs(k).map(a => a.tekst.trim()).filter(Boolean);
   if (afs.length) out += '\n\nAfspraken:\n' + afs.map(a => '• ' + a).join('\n');
   return out.trim();
 }
@@ -3720,7 +3777,7 @@ function gespDocXml() {
     body += gdLeeg();
     body += gdKopP('Inhoud');
     gdAlineas(k.verslag).forEach(a => { body += gdP(a, null); });
-    const afs = (Array.isArray(k.afspraken) ? k.afspraken : []).map(s => String(s).trim()).filter(Boolean);
+    const afs = gespAfsObjs(k).map(a => a.tekst.trim()).filter(Boolean);
     if (afs.length) {
       body += gdLeeg();
       body += gdKopP('Afspraken');

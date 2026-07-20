@@ -28,7 +28,21 @@ export default function TakenView() {
   const invoerRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    getTaken().then(setTaken);
+    getTaken().then((ts) => {
+      // Wekelijkse taken die méér dan een week te laat zijn: gemiste weken overslaan,
+      // zodat er niet meerdere keren "Te laat" van dezelfde taak op de lijst blijft staan.
+      const gecorrigeerd = ts.map((t) => {
+        if (t.wekelijks && t.deadline && dagenTot(t.deadline) <= -7) {
+          const nieuw = collapseWekelijks(t.deadline);
+          if (nieuw !== t.deadline) {
+            setTaakDeadline(t.id, nieuw);
+            return { ...t, deadline: nieuw };
+          }
+        }
+        return t;
+      });
+      setTaken(gecorrigeerd);
+    });
   }, []);
 
   async function voegToe(e: React.FormEvent) {
@@ -42,11 +56,10 @@ export default function TakenView() {
   }
 
   function toggle(taak: Taak) {
-    // Wekelijkse taak afvinken = niet "klaar", maar een week vooruit plannen.
+    // Wekelijkse taak afvinken = niet "klaar", maar doorschuiven naar de
+    // eerstvolgende keer in de toekomst (één klik, ook bij achterstand).
     if (taak.wekelijks && !taak.gedaan) {
-      const basis = taak.deadline ? new Date(taak.deadline + "T00:00:00") : new Date();
-      basis.setDate(basis.getDate() + 7);
-      const nieuw = isoDate(basis);
+      const nieuw = volgendeWekelijkse(taak.deadline);
       setTaken((ts) => (ts ?? []).map((t) => (t.id === taak.id ? { ...t, deadline: nieuw } : t)));
       setTaakDeadline(taak.id, nieuw);
       // korte groene flits als bevestiging
@@ -366,6 +379,26 @@ function dagenTot(iso: string): number {
   const vandaag = new Date();
   vandaag.setHours(0, 0, 0, 0);
   return Math.round((new Date(iso + "T00:00:00").getTime() - vandaag.getTime()) / 86400000);
+}
+
+// Wekelijkse taak die méér dan een week te laat is: sla de gemiste weken over,
+// zodat er hooguit dé keer van deze week overblijft (max 6 dagen te laat) en het
+// niet opstapelt. Zelfde weekdag; blijft deze week zichtbaar als "Te laat".
+function collapseWekelijks(iso: string): string {
+  const d = new Date(iso + "T00:00:00");
+  while (dagenTot(isoDate(d)) <= -7) d.setDate(d.getDate() + 7);
+  return isoDate(d);
+}
+
+// De eerstvolgende keer ná vandaag (voor het afvinken van een wekelijkse taak):
+// minstens één week vooruit, en dan door tot de datum in de toekomst ligt — zo
+// hoef je nooit meerdere keren te klikken om achterstand weg te werken.
+function volgendeWekelijkse(iso: string | null): string {
+  const d = iso ? new Date(iso + "T00:00:00") : new Date();
+  do {
+    d.setDate(d.getDate() + 7);
+  } while (dagenTot(isoDate(d)) <= 0);
+  return isoDate(d);
 }
 
 // Eerste letter een hoofdletter geven (ook al typte je 'm niet zelf).
