@@ -38,6 +38,8 @@
   .icon-btn:disabled { opacity:.3; cursor:default; }
   .icon-btn.accent { color:var(--accent2); }
   .btn { font-family:'Plus Jakarta Sans'; font-size:13px; font-weight:500; border:1.5px solid var(--warm); background:var(--cream); color:var(--ink); padding:8px 13px; border-radius:10px; cursor:pointer; transition:all .15s; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+  .btn.accent { border-color:var(--accent2); color:var(--accent2); font-weight:700; }
+  .btn.accent:hover { background:var(--accent2); color:#fff; }
   .btn:hover { border-color:var(--accent2); }
   .menu-link { display:inline-flex; align-items:center; gap:6px; font-family:'Plus Jakarta Sans'; font-size:13px; font-weight:500; color:var(--ink); text-decoration:none; border:1.5px solid var(--warm); background:var(--cream); padding:7px 12px; border-radius:10px; transition:all .15s; flex-shrink:0; white-space:nowrap; }
   .menu-link:hover { border-color:var(--accent2); color:var(--accent2); }
@@ -430,15 +432,12 @@
     <button class="icon-btn" id="redoBtn" title="Opnieuw (Ctrl+Shift+Z)" disabled>↷</button>
     <span class="hdr-sep"></span>
     <button class="icon-btn accent" id="aiBtn" title="✨ Slim plaatsen: wensen, sociogram en automatisch verdelen">✨</button>
-    <button class="icon-btn" id="openBtn" title="Openen (.json)">📂</button>
-    <button class="icon-btn" id="saveBtn" title="Opslaan als bestand (.json)">💾</button>
-    <button class="icon-btn accent" id="printBtn" title="Print / PDF">🖨</button>
     <span class="hdr-sep"></span>
+    <button class="btn accent" id="printBtn" title="Print op papier of sla op als PDF (liggend A4)">🖨 Print / PDF</button>
     <button class="btn" id="cloudBtn" title="Bewaar deze plattegrond in je account (Bestanden)">☁ Bewaar in mijn bestanden</button>
     <span class="hdr-sep"></span>
     <button class="icon-btn" id="hulpBtn" title="Sneltoetsen">⌨</button>
   </div>
-  <input type="file" id="fileInput" class="hidden-file" accept=".json,application/json">
 </header>
 
 <div class="werk">
@@ -1019,7 +1018,7 @@ function startDrag(e,o,elem,clickCb){
   selected=o.id; document.querySelectorAll('.obj').forEach(x=>x.classList.toggle('sel',x.dataset.id===o.id));
   const sx=e.clientX,sy=e.clientY,ox=o.x,oy=o.y; const tgt=e.currentTarget; let moved=false, lastX=sx, lastY=sy; tgt.setPointerCapture(e.pointerId);
   const move=ev=>{ lastX=ev.clientX; lastY=ev.clientY; const ddx=(ev.clientX-sx)/Z,ddy=(ev.clientY-sy)/Z; if(!moved && Math.hypot(ddx*Z,ddy*Z)<4) return; if(!moved){moved=true; dragging=true; showTrash();}
-    let nx=clamp(ox+ddx,0,FIELD_W-elem.offsetWidth), ny=clamp(oy+ddy,0,FIELD_H-elem.offsetHeight);
+    const gr=veldGrenzen(o); let nx=clamp(ox+ddx,gr.minx,gr.maxx), ny=clamp(oy+ddy,gr.miny,gr.maxy);
     const onTrash=overTrash(ev.clientX,ev.clientY); armTrash(onTrash);
     clearSnapVis(); o._snap=null;
     const snap=(!onTrash&&o.desks)?snapFor(o,nx,ny):null;
@@ -1049,14 +1048,6 @@ canvasEl.addEventListener('click',e=>{ if(e.target===canvasEl||e.target.classLis
 canvasEl.addEventListener('dragover',e=>e.preventDefault());
 canvasEl.addEventListener('drop',e=>{ const d=e.dataTransfer.getData('text/plain'); if(!d)return; const r=canvasEl.getBoundingClientRect(); const lx=(e.clientX-r.left)/Z, ly=(e.clientY-r.top)/Z;
   if(d.startsWith('meubel:')){ e.preventDefault(); voegMeubel(d.slice(7),lx,ly); } });
-
-/* ---- opslaan/openen/print ---- */
-function opslaan(){ const data={versie:14,titel:document.getElementById('titel').value,students:state.students,objects:state.objects,groups:state.groups,regels:state.regels,_seq:seq};
-  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const a=document.createElement('a');
-  const naam=(data.titel||'plattegrond').replace(/[^\w\- ]+/g,'').trim()||'plattegrond'; a.href=URL.createObjectURL(blob); a.download=naam+'.json'; a.click(); URL.revokeObjectURL(a.href); }
-function openen(file){ const r=new FileReader(); r.onload=()=>{ try{ const d=JSON.parse(r.result);
-  state.students=d.students||[]; state.objects=d.objects||[]; state.groups=d.groups||[]; state.regels=d.regels||[]; actieveGroep=null; seq=d._seq||(seq+20); if(d.titel)document.getElementById('titel').value=d.titel; armed=null;selected=null;render(); zoomFit();
-} catch(_){ avinkaAlert('Dit bestand kon niet geopend worden. Is het een Plattegrond-bestand (.json)?'); } }; r.readAsText(file); }
 
 /* ---- koppeling met "Mijn bestanden" (account) ---- */
 let huidigBestandId = null;
@@ -1093,6 +1084,15 @@ function objAABB(o){ let bw,bh; if(o.desks){ const f=footprint(o); bw=f.cols*C; 
   const sx=o.sx||1, sy=o.sy||1, w=bw*sx, h=bh*sy; const cx=o.x+bw/2, cy=o.y+bh/2;
   const r=(o.rot||0)*RAD, c=Math.abs(Math.cos(r)), s=Math.abs(Math.sin(r)); const hw=(w*c+h*s)/2, hh=(w*s+h*c)/2;
   return {x0:cx-hw,y0:cy-hh,x1:cx+hw,y1:cy+hh}; }
+/* Toegestane bereik voor o.x/o.y zodat het ZICHTBARE (gedraaide/geschaalde)
+   silhouet net binnen het raster past — niet het bredere basisvak. Zo kan een
+   gedraaide kast wél vlak tegen de wand. Voor een niet-gedraaid, niet-geschaald
+   meubel is dit exact [0, FIELD-basisbreedte]: identiek aan vroeger, dus het
+   gewone slepen verandert niet. Gebruikt dezelfde maat als objAABB hierboven. */
+function veldGrenzen(o){ let bw,bh; if(o.desks){ const f=footprint(o); bw=f.cols*C; bh=f.rows*C; } else { const m=MEUBELS[o.mtype]; bw=m.w; bh=m.h; }
+  const sx=o.sx||1, sy=o.sy||1, w=bw*sx, h=bh*sy;
+  const r=(o.rot||0)*RAD, c=Math.abs(Math.cos(r)), s=Math.abs(Math.sin(r)); const hw=(w*c+h*s)/2, hh=(w*s+h*c)/2;
+  return { minx:hw-bw/2, maxx:FIELD_W-hw-bw/2, miny:hh-bh/2, maxy:FIELD_H-hh-bh/2 }; }
 function printPlattegrond(){
   document.getElementById('print-titel').textContent=document.getElementById('titel').value; selected=null;armed=null;render();
   const saveT=canvasEl.style.transform, saveW=canvasEl.style.width, saveH=canvasEl.style.height, saveOv=canvasEl.style.overflow,
@@ -1198,9 +1198,6 @@ document.getElementById('shuffleBtn').addEventListener('click',husselOpnieuw);
 document.getElementById('groepTrigger').addEventListener('click',()=>{ const fly=document.getElementById('groepFlyout'); openGroepFlyout(!fly.classList.contains('open')); });
 document.getElementById('groepClose').addEventListener('click',()=>openGroepFlyout(false));
 document.getElementById('groepAdd').addEventListener('click',e=>{ e.stopPropagation(); openGroepFlyout(true); voegGroep(); });
-document.getElementById('saveBtn').addEventListener('click',opslaan);
-document.getElementById('openBtn').addEventListener('click',()=>document.getElementById('fileInput').click());
-document.getElementById('fileInput').addEventListener('change',e=>{ if(e.target.files[0])openen(e.target.files[0]); e.target.value=''; });
 document.getElementById('printBtn').addEventListener('click',printPlattegrond);
 document.getElementById('cloudBtn').addEventListener('click',bewaarInBestanden);
 /* ===================== SLIM PLAATSEN ===================== */
@@ -1701,7 +1698,7 @@ const SNELTOETSEN='Sneltoetsen\n\n'+
  '+ / −  : in-/uitzoomen   ·   0 : passend\n'+
  'Esc : selectie opheffen\n'+
  'Ctrl/Cmd + Z : ongedaan maken   ·   Ctrl/Cmd + Shift + Z : opnieuw\n'+
- 'Ctrl/Cmd + S : opslaan';
+ 'Ctrl/Cmd + S : print / opslaan als PDF';
 document.getElementById('hulpBtn').addEventListener('click',()=>avinkaAlert(SNELTOETSEN));
 document.getElementById('undoBtn').addEventListener('click',undo);
 document.getElementById('redoBtn').addEventListener('click',redo);
@@ -1709,7 +1706,7 @@ function objSize(o){ if(o.desks){const f=footprint(o);return {w:f.cols*C,h:f.row
 document.addEventListener('keydown',e=>{
   const t=e.target; if(t && (t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable)) return;
   const k=e.key;
-  if((e.ctrlKey||e.metaKey)&&(k==='s'||k==='S')){ e.preventDefault(); opslaan(); return; }
+  if((e.ctrlKey||e.metaKey)&&(k==='s'||k==='S')){ e.preventDefault(); printPlattegrond(); return; }
   if((e.ctrlKey||e.metaKey)&&(k==='z'||k==='Z')){ e.preventDefault(); if(e.shiftKey)redo(); else undo(); return; }
   if((e.ctrlKey||e.metaKey)&&(k==='y'||k==='Y')){ e.preventDefault(); redo(); return; }
   if(k==='Escape'){ if(document.getElementById('analyseModal').classList.contains('open')){ sluitAnalyse(); return; } if(document.getElementById('slimModal').classList.contains('open')){ sluitSlim(); return; } selected=null; armed=null; actieveGroep=null; openGroepFlyout(false); render(); return; }
@@ -1721,9 +1718,9 @@ document.addEventListener('keydown',e=>{
   if(k==='r'||k==='R'){ roteer90(o.id); return; }
   if(k==='d'||k==='D'){ dupliceer(o.id); return; }
   if(k==='u'||k==='U'){ if(o.desks&&o.desks.length>1)splitGroup(o); return; }
-  if(k.indexOf('Arrow')===0){ e.preventDefault(); const s=e.shiftKey?24:8, sz=objSize(o);
+  if(k.indexOf('Arrow')===0){ e.preventDefault(); const s=e.shiftKey?24:8, gr=veldGrenzen(o);
     if(k==='ArrowLeft')o.x-=s; else if(k==='ArrowRight')o.x+=s; else if(k==='ArrowUp')o.y-=s; else if(k==='ArrowDown')o.y+=s;
-    o.x=clamp(o.x,0,FIELD_W-sz.w); o.y=clamp(o.y,0,FIELD_H-sz.h); render(); }
+    o.x=clamp(o.x,gr.minx,gr.maxx); o.y=clamp(o.y,gr.miny,gr.maxy); render(); }
 });
 
 render();
