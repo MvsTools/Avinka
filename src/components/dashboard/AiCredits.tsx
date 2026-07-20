@@ -71,9 +71,6 @@ export default async function AiCredits() {
     day: "numeric",
     month: "long",
   });
-  const dagenTot = Math.ceil(
-    (reset.getTime() - nu.getTime()) / (1000 * 60 * 60 * 24),
-  );
 
   const bijnaOp = procent >= DREMPEL_VERVOLGSTAP;
   const op = resterend === 0;
@@ -123,9 +120,7 @@ export default async function AiCredits() {
           </div>
 
           <p className="mt-3 text-sm text-ink/60">
-            Nog {resterend} credits over. Op {resetTekst} staan je{" "}
-            {limiet} credits er weer op
-            {dagenTot <= 31 ? `, over ${dagenTot} ${dagenTot === 1 ? "dag" : "dagen"}` : ""}.
+            Credits resetten op {resetTekst}.
           </p>
 
           {bijnaOp && (
