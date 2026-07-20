@@ -14,10 +14,10 @@
 //  Grenzen bijstellen? Alleen de tabel MAAND_LIMIET hieronder aanpassen.
 // ════════════════════════════════════════════════════════════════════════
 
-import type { Abonnement, PlanId } from "@/lib/abonnement";
-import { proefLoopt } from "@/lib/abonnement";
+import type { Abonnement } from "@/lib/abonnement";
+import { CREDITS_PER_PLAN, proefLoopt } from "@/lib/abonnement";
 
-// ── De grens per pakket, in euro per kalendermaand ────────────────────────
+// ── De grens per pakket ───────────────────────────────────────────────────
 // Gekozen op basis van echt gemeten verbruik (juli 2026): een leerkracht komt
 // in een zware rapportmaand rond de €3 uit (60 credits), in een gewone maand
 // rond de €1. Geen enkele echte gebruiker komt dus in de buurt.
@@ -27,15 +27,13 @@ import { proefLoopt } from "@/lib/abonnement";
 // noodrem tegen ontsporende kosten, en NIET meer de rem op accountdelen —
 // drie leerkrachten samen halen de Compleet-grens niet. Delen moet dus komen
 // van de klaslimiet per pakket (nog te bouwen), niet van deze credits.
-// Elke grens ligt bewust ONDER de opbrengst van dat pakket (Start €5,99,
-// Compleet €9,99, Pro €16,99), zodat één ontspoorde gebruiker je nooit geld
-// kost. Ter ijking: een zware rapportmaand meet ongeveer 60 credits.
-export const MAAND_LIMIET: Record<PlanId | "proef", number> = {
-  start: 4, //  80 credits — op €5,99
-  compleet: 7, // 140 credits — op €9,99
-  pro: 12, // 240 credits — op €16,99
-  proef: 4, //  80 credits
-};
+// Het aantal credits per pakket staat in abonnement.ts (CREDITS_PER_PLAN),
+// want dat is óók wat er op de pakketkaartjes staat. Eén bron, dus de
+// verkooptekst en de echte grens kunnen niet uit elkaar lopen.
+//
+// Bij de gekozen aantallen ligt de inkoopwaarde onder de opbrengst van het
+// pakket (Start €5,99, Compleet €9,99, Pro €16,99), zodat één ontspoorde
+// gebruiker nooit geld kost.
 
 // ── Credits: wat de gebruiker ziet ────────────────────────────────────────
 // Naar buiten toe praten we over "credits", niet over euro's. Twee redenen:
@@ -133,13 +131,18 @@ export function kostenVanRijen(rijen: VerbruikRij[]): number {
   return rijen.reduce((som, r) => som + kostenVanRij(r), 0);
 }
 
-// ── Welke grens geldt voor deze gebruiker? ────────────────────────────────
+// ── Welke grens geldt voor deze gebruiker, in CREDITS? ────────────────────
 // Bewust ONAFHANKELIJK van BETALINGEN_LIVE: ook tijdens de testfase moet er
 // een rem staan, want dan betaalt de eigenaar de AI-kosten zelf.
 export function limietVoor(ab: Abonnement, nu: Date = new Date()): number {
-  if (proefLoopt(ab, nu)) return MAAND_LIMIET.proef;
-  if (ab.plan) return MAAND_LIMIET[ab.plan];
-  return MAAND_LIMIET.proef;
+  if (proefLoopt(ab, nu)) return CREDITS_PER_PLAN.proef;
+  if (ab.plan) return CREDITS_PER_PLAN[ab.plan];
+  return CREDITS_PER_PLAN.proef;
+}
+
+// Wat heeft deze gebruiker deze maand verbruikt, in credits?
+export function verbruikInCredits(rijen: VerbruikRij[]): number {
+  return naarCredits(kostenVanRijen(rijen));
 }
 
 // Het begin van de huidige kalendermaand, als ISO-tekst voor de query.

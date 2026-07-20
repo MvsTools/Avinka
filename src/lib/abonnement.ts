@@ -33,6 +33,17 @@ export type Plan = {
   voordelen: string[];
 };
 
+// ── Credits per pakket ────────────────────────────────────────────────────
+// DE BRON. Zowel de pakketkaartjes hieronder als het verbruiksplafond
+// (lib/ai-limiet.ts) lezen hieruit, zodat de getallen nooit uit elkaar lopen.
+// Ter ijking: een zware rapportmaand meet ongeveer 60 credits.
+export const CREDITS_PER_PLAN: Record<PlanId | "proef", number> = {
+  start: 80,
+  compleet: 140,
+  pro: 240,
+  proef: 80,
+};
+
 export const PLANNEN: Plan[] = [
   {
     id: "start",
@@ -46,7 +57,7 @@ export const PLANNEN: Plan[] = [
     // over de prijs, niet over de hoeveelheid, en zijn dus altijd waar.
     voordelen: [
       "Eén tool naar keuze",
-      "Ruimte voor je eigen groep",
+      `${CREDITS_PER_PLAN.start} credits per maand`,
       "Je klas bewaard",
       "Namen blijven op je eigen apparaat",
     ],
@@ -60,10 +71,11 @@ export const PLANNEN: Plan[] = [
     toegang: "alle",
     voordelen: [
       "Alles van Start",
+      `${CREDITS_PER_PLAN.compleet} credits per maand`,
       "Alle tools, zonder bijbetalen",
       "Meerdere groepen beheren",
       "Alles bewaren en ordenen in Bestanden",
-      "Een sterker AI-model en meer ruimte om te maken",
+      "Een sterker AI-model voor betere teksten",
     ],
   },
   {
@@ -74,7 +86,8 @@ export const PLANNEN: Plan[] = [
     toegang: "alle",
     voordelen: [
       "Alles van Compleet",
-      "Het sterkste AI-model en de meeste ruimte, ook in de rapportperiode",
+      `${CREDITS_PER_PLAN.pro} credits per maand`,
+      "Het sterkste AI-model voor de meest genuanceerde teksten",
       "Voorrang als het druk is",
       "Als eerste toegang tot nieuwe tools",
     ],

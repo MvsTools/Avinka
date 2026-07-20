@@ -10,9 +10,9 @@ import {
 import { aanbiederVoor } from "@/lib/ai-providers";
 import {
   beginVanDezeMaand,
-  kostenVanRijen,
   limietMelding,
   limietVoor,
+  verbruikInCredits,
   type VerbruikRij,
 } from "@/lib/ai-limiet";
 
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
         .eq("user_id", user.id)
         .gte("created_at", beginVanDezeMaand());
 
-      if (verbruik && kostenVanRijen(verbruik as VerbruikRij[]) >= limiet) {
+      if (verbruik && verbruikInCredits(verbruik as VerbruikRij[]) >= limiet) {
         // Bewust GEEN 429: de tools vertalen die status zelf naar "het is even
         // druk", en dat zou hier een onjuiste boodschap zijn. Met 402 tonen ze
         // de tekst hieronder letterlijk.

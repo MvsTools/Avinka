@@ -4,9 +4,8 @@ import { ABON_COLS, type AbonnementRow, mapAbonnementRow } from "@/lib/abonnemen
 import {
   beginVanDezeMaand,
   KOSTEN_SCHATTING,
-  kostenVanRijen,
   limietVoor,
-  naarCredits,
+  verbruikInCredits,
   type VerbruikRij,
 } from "@/lib/ai-limiet";
 
@@ -46,7 +45,7 @@ export async function GET() {
     .select(ABON_COLS)
     .eq("user_id", user.id)
     .maybeSingle();
-  const limietEuro = limietVoor(mapAbonnementRow(abonRij as AbonnementRow | null));
+  const limiet = limietVoor(mapAbonnementRow(abonRij as AbonnementRow | null));
 
   const { data: verbruik } = await supabase
     .from("ai_verbruik")
@@ -56,10 +55,10 @@ export async function GET() {
     .eq("user_id", user.id)
     .gte("created_at", beginVanDezeMaand());
 
-  const gebruiktEuro = kostenVanRijen((verbruik ?? []) as VerbruikRij[]);
-
-  const limiet = naarCredits(limietEuro);
-  const gebruikt = Math.min(naarCredits(gebruiktEuro), limiet);
+  const gebruikt = Math.min(
+    verbruikInCredits((verbruik ?? []) as VerbruikRij[]),
+    limiet,
+  );
 
   return NextResponse.json({
     onbeperkt: false,
