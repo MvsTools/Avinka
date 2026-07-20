@@ -216,6 +216,24 @@
     .foot { margin-top:34px; text-align:center; color:var(--muted); font-size:12.5px; }
 
     @media (max-width:560px){ .wrap{padding:20px 12px 80px;} h1{font-size:27px;} }
+
+    /* ── Printen: alleen het weekrooster, groot en helder op een liggende A4 ── */
+    @media print {
+      @page { size: A4 landscape; margin: 8mm; }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body { background:#fff; }
+      .wrap { max-width:none; margin:0; padding:0; }
+      /* alle schermbediening weg — alleen de titel + het raster blijven */
+      .topbar, #setup-scherm, .rooster-acties, .vakpalet, .hint, .foot { display:none !important; }
+      .rooster-top { margin:0 0 6px; }
+      #rooster-titel { font-size:20px; }
+      .grid-kaart { border:none; box-shadow:none; padding:0; overflow:hidden;
+                    width:var(--print-breedte, auto); height:var(--print-hoogte, auto); }
+      /* het raster naar één pagina schalen (maat berekend in printen()) */
+      #grid { transform:scale(var(--print-schaal, 1)); transform-origin:top left; }
+      .blok::before, .blok::after { display:none !important; }   /* rek-hintjes weg */
+      .nu-lijn { display:none !important; }
+    }
   </style>
 </head>
 <body>
@@ -1233,7 +1251,18 @@ function bewaar(){ try { localStorage.setItem(BEWAAR_SLEUTEL, JSON.stringify(sta
 function laad(){ try { const s=localStorage.getItem(BEWAAR_SLEUTEL); if(s){ const o=JSON.parse(s); if(o&&o.setup&&o.blokken) return o; } } catch(_){} return null; }
 
 /* ── Print ──────────────────────────────────────────────────────────── */
-function printen(){ window.print(); }
+function printen(){
+  const grid = els('grid');
+  const gw = grid.scrollWidth, gh = grid.scrollHeight;      // natuurlijke maat van het raster
+  // printbaar gebied van een liggende A4 (px @96dpi, ~8mm marge), titel-hoogte eraf
+  const paginaW = 1040, paginaH = 690;
+  const schaal = Math.min(paginaW/gw, paginaH/gh, 1.4);      // passend maken, niet overdreven vergroten
+  const r = document.documentElement.style;
+  r.setProperty('--print-schaal', schaal);
+  r.setProperty('--print-breedte', Math.ceil(gw*schaal)+'px');
+  r.setProperty('--print-hoogte', Math.ceil(gh*schaal)+'px');
+  window.print();
+}
 
 /* ── Knoppen ────────────────────────────────────────────────────────── */
 els('btn-genereer').onclick = genereer;
