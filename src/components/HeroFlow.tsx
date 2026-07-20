@@ -18,15 +18,14 @@ const AMBER = "#c07a1a";
 
 type Taak = { slug: string; label: string; sub: string; tool: string; emoji: string; kleur: string; zacht: string; min: number; bdur: number };
 const TAKEN: Taak[] = [
-  { slug: "rapporten", label: "Rapport schrijven", sub: "Sofie · groep 5", tool: "Rapporten", emoji: "📝", kleur: "#8b5cf6", zacht: "#ede9fe", min: 25, bdur: 3800 },
+  { slug: "rapporten", label: "5 rapporten schrijven", sub: "groep 5", tool: "Rapporten", emoji: "📝", kleur: "#8b5cf6", zacht: "#ede9fe", min: 35, bdur: 3800 },
   { slug: "toetsanalyse", label: "Toetsen analyseren", sub: "IEP rekenen · groep 5", tool: "Toetsanalyse", emoji: "📊", kleur: "#0284c7", zacht: "#e0f2fe", min: 45, bdur: 4200 },
-  { slug: "oudercontact", label: "Ouderbericht sturen", sub: "ouders van Tom", tool: "Oudercontact", emoji: "✉️", kleur: "#f43f5e", zacht: "#ffe4e6", min: 20, bdur: 3800 },
+  { slug: "lesontwerp", label: "Les voorbereiden", sub: "breuken · groep 5", tool: "Lesontwerp", emoji: "📓", kleur: "#0d9488", zacht: "#ccfbf1", min: 40, bdur: 3800 },
 ];
 
 const RAPPORT =
-  "Sofie heeft zich dit blok knap ontwikkeld. Ze werkt zelfstandig, durft steeds vaker vragen te stellen en helpt klasgenoten graag. Bij rekenen groeit haar zelfvertrouwen zichtbaar.";
-const OUDER =
-  "Beste ouders van Tom, wat fijn dat we elkaar spraken. Zoals afgesproken oefent Tom thuis de komende weken nog even met de tafels van 6 en 7 — een paar minuten per dag is genoeg. Fijne week!";
+  "Sofie heeft zich de afgelopen periode mooi ontwikkeld. Ze werkt geconcentreerd en zelfstandig, en durft steeds vaker een vraag te stellen als ze er even niet uitkomt. Bij rekenen groeit haar zelfvertrouwen zichtbaar; ze pakt nu ook lastigere sommen aan. In de klas is Sofie een fijne, behulpzame klasgenoot.";
+const EDI: string[] = ["Voorkennis", "Instructie · ik", "Inoefenen · wij", "Zelfstandig · jij", "Afsluiting"];
 
 const DOMEINEN = [
   { naam: "Getallen", pct: 78, status: "op niveau", kleur: GREEN },
@@ -196,6 +195,7 @@ function Lijst({ introRow, checkAmt, totaalMin }: { introRow: (i: number) => num
 function Tool({ taak, build, pressAkkoord }: { taak: Taak; build: number; pressAkkoord: boolean }) {
   const tijdOp = smooth((build - 0.5) / 0.2);
   const isToets = taak.slug === "toetsanalyse";
+  const gestructureerd = isToets || taak.slug === "lesontwerp";
   return (
     <div className="relative flex h-full flex-col">
       <div className="flex shrink-0 items-center justify-between">
@@ -205,7 +205,7 @@ function Tool({ taak, build, pressAkkoord }: { taak: Taak; build: number; pressA
         <span className="rounded-full px-2.5 py-1 text-xs font-extrabold" style={{ background: GREEN_SOFT, color: GREEN_DARK, opacity: tijdOp }}>⏱ ~{taak.min} min bespaard</span>
       </div>
 
-      <div className={"flex flex-1 flex-col " + (isToets ? "justify-start pt-3" : "justify-center")}>
+      <div className={"flex flex-1 flex-col " + (gestructureerd ? "justify-start pt-3" : "justify-center")}>
         {taak.slug === "rapporten" && (
           <div className="rounded-2xl p-4" style={{ background: taak.zacht }}>
             <span className="mb-1.5 block text-xs font-bold" style={{ color: MUTED }}>Rapport · Sofie</span>
@@ -216,13 +216,23 @@ function Tool({ taak, build, pressAkkoord }: { taak: Taak; build: number; pressA
           </div>
         )}
 
-        {taak.slug === "oudercontact" && (
-          <div className="rounded-2xl rounded-bl-md p-4" style={{ background: taak.zacht }}>
-            <span className="mb-1.5 block text-xs font-bold" style={{ color: MUTED }}>Ouderbericht · ouders van Tom</span>
-            <p className="text-[15px] leading-[1.65]" style={{ color: INK }}>
-              {OUDER.slice(0, Math.floor(clamp(build / 0.8) * OUDER.length))}
-              <span style={{ color: taak.kleur, opacity: build < 0.8 ? 1 : 0 }}>▏</span>
-            </p>
+        {taak.slug === "lesontwerp" && (
+          <div>
+            <div className="flex items-center justify-between" style={{ opacity: smooth(build / 0.14) }}>
+              <p className="text-[13px] font-bold" style={{ color: INK }}>Leerdoel · <span style={{ color: MUTED }}>breuken ordenen</span></p>
+              <span className="rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white" style={{ background: taak.kleur }}>EDI</span>
+            </div>
+            <div className="mt-3 space-y-2.5">
+              {EDI.map((fase, i) => {
+                const r = smooth((build - 0.16 - i * 0.12) / 0.14);
+                return (
+                  <div key={fase} className="flex items-center gap-3" style={{ opacity: r, transform: `translateX(${(1 - r) * 10}px)` }}>
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: taak.kleur }}>{i + 1}</span>
+                    <span className="text-[14.5px] font-semibold" style={{ color: INK }}>{fase}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
