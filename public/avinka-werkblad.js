@@ -2210,7 +2210,11 @@
     var lijst = arr(b.woorden).map(woordTekst).filter(Boolean);
     h += '<div class="wb-slang">';
     lijst.forEach(function (woord, i) {
-      var cell = (i === 0 || ant) ? "<b>" + esc(woord) + "</b>" : "<b>" + esc(woord[0]) + "</b>" + lijn(70);
+      var cell;
+      if (i === 0) cell = "<b>" + esc(woord) + "</b>";                                  // gegeven startwoord
+      else if (ant) cell = '<span class="wb-ant">eigen invulling</span>';               // meerdere antwoorden mogelijk → niet één juist
+      else if (i === 1) cell = "<b>" + esc(lijst[0].slice(-1)) + "</b>" + lijn(70);      // beginletter volgt nog uit het startwoord
+      else cell = lijn(90);                                                              // vanaf woord 3: beginletter onbekend (hangt af van eigen keuze)
       h += '<span class="wb-slang-cel">' + cell + "</span>";
       if (i < lijst.length - 1) h += '<span class="wb-slang-pijl">→</span>';
     });
