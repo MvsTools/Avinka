@@ -62,37 +62,73 @@ const PIJNPUNTEN = [
 ];
 
 /* De tool-galerij: per tool één kunstkaart (Stripe-achtig, maar in onze
-   eigen beeldtaal) met één harde regel eronder. Nieuwe tool = kaart erbij. */
+   eigen beeldtaal) met één harde regel eronder. Nieuwe tool = kaart erbij.
+   `min` telt mee in de afvink-teller onder de rij; `licht` bepaalt of de
+   naam op de kaart een donker plaatje nodig heeft. */
 const KAARTEN = [
   {
     id: "rapporten",
     naam: "Rapporten",
     zin: "Rapportteksten die klinken alsof jij ze schreef.",
     winst: "± 35 min per week terug.",
+    min: 35,
+    licht: false,
   },
   {
     id: "toetsanalyse",
     naam: "Toetsanalyse",
     zin: "Zie in één oogopslag wie extra aandacht nodig heeft.",
     winst: "± 45 min per week terug.",
+    min: 45,
+    licht: false,
   },
   {
     id: "oudercontact",
     naam: "Oudercontact",
     zin: "Weekberichten en oudergesprekken zonder leeg scherm.",
     winst: "± 15 min per week terug.",
+    min: 15,
+    licht: false,
   },
   {
     id: "lesontwerp",
     naam: "Lesontwerp",
     zin: "Van één leerdoel naar een complete les met differentiatie.",
     winst: "± 25 min per week terug.",
+    min: 25,
+    licht: true,
   },
   {
     id: "plattegrond",
     naam: "Plattegrond",
     zin: "De klasopstelling puzzelt zichzelf uit, jouw wensen voorop.",
     winst: "Scheelt een avond puzzelen.",
+    min: 0,
+    licht: false,
+  },
+  {
+    id: "werkbladen",
+    naam: "Werkbladen",
+    zin: "Printbare werkbladen die precies bij je les passen.",
+    winst: "± 20 min per week terug.",
+    min: 20,
+    licht: false,
+  },
+  {
+    id: "draaiboek",
+    naam: "Draaiboek",
+    zin: "Elk schoolevenement compleet uitgedacht, tot de taakverdeling aan toe.",
+    winst: "Scheelt een avond per evenement.",
+    min: 0,
+    licht: true,
+  },
+  {
+    id: "weekplanning",
+    naam: "Weekplanning",
+    zin: "Je hele week in één helder rooster, gekoppeld aan je tools.",
+    winst: "± 15 min per week terug.",
+    min: 15,
+    licht: false,
   },
 ];
 
@@ -524,7 +560,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
     );
     reveals.forEach((r) => io.observe(r));
 
-    /* De optelsom telt naar 120 minuten. */
+    /* De optelsom telt naar 155 minuten. */
     const teller = el.querySelector<HTMLElement>("[data-teller]");
     let raf = 0;
     if (teller) {
@@ -533,7 +569,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           if (!entries.some((e) => e.isIntersecting)) return;
           ioTel.disconnect();
           if (reduced) {
-            teller.textContent = "120";
+            teller.textContent = "155";
             return;
           }
           const t0 = performance.now();
@@ -541,7 +577,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           const tick = (t: number) => {
             const p = Math.min(1, (t - t0) / duur);
             const eased = 1 - Math.pow(1 - p, 4);
-            teller.textContent = String(Math.round(eased * 120));
+            teller.textContent = String(Math.round(eased * 155));
             if (p < 1) raf = requestAnimationFrame(tick);
           };
           raf = requestAnimationFrame(tick);
@@ -1029,7 +1065,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                   Dit staat er voor je klaar
                 </h2>
                 <p className="mt-4 text-lg text-ink/60">
-                  Vijf tools, en er komen er steeds meer bij. Schuif er op je gemak
+                  Acht tools, en er komen er steeds meer bij. Schuif er op je gemak
                   doorheen.
                 </p>
               </div>
@@ -1041,7 +1077,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           <div className="relative mx-auto w-full max-w-5xl px-6 pb-24">
             {/* De optelsom */}
             <div data-reveal className="mt-16 rounded-[2rem] bg-sand px-6 py-10 text-center">
-              <p className="text-lg font-bold text-ink/70">35 + 45 + 15 + 25 minuten…</p>
+              <p className="text-lg font-bold text-ink/70">35 + 45 + 15 + 25 + 20 + 15 minuten…</p>
               <p className="mt-3 font-display text-3xl font-black tracking-tight text-ink sm:text-4xl">
                 samen{" "}
                 <span className="text-brand">
@@ -1053,7 +1089,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                 per week
               </p>
               <p className="mt-3 text-lg font-semibold text-ink/60">
-                Dat zijn je twee uur. Elke week weer.
+                Ruim twee uur. Elke week weer.
               </p>
             </div>
           </div>
@@ -1286,19 +1322,58 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
    Zoals de klantkaarten van Stripe, maar in de Avinka-beeldtaal: elk
    kaartbeeld is een eigen kleine wereld met échte inhoud (een rapportzin,
    een berichtje van thuis, een klasopstelling), geen interface-namaak.
-   De bezoeker heeft de regie: slepen, scrollen of de pijltjes. ─────────── */
+   De bezoeker heeft de regie: slepen, scrollen of de pijltjes. Onder de
+   rij vinkt elke bekeken tool zichzelf af en telt de weekwinst op. ─────── */
 function ToolRail() {
   const rail = useRef<HTMLDivElement>(null);
   const greep = useRef({ actief: false, startX: 0, startScroll: 0 });
   const [kanTerug, setKanTerug] = useState(false);
   const [kanVerder, setKanVerder] = useState(true);
+  const [gezien, setGezien] = useState<boolean[]>(() => KAARTEN.map(() => false));
+  const [wakker, setWakker] = useState(false);
 
   const bijScroll = () => {
     const el = rail.current;
     if (!el) return;
     setKanTerug(el.scrollLeft > 8);
     setKanVerder(el.scrollLeft < el.scrollWidth - el.clientWidth - 8);
+
+    /* Elke kaart die één keer volledig in beeld was, blijft afgevinkt. */
+    const rand = el.getBoundingClientRect();
+    const kaarten = el.querySelectorAll<HTMLElement>("[data-kaart]");
+    setGezien((oud) => {
+      let anders = false;
+      const nieuw = oud.slice();
+      kaarten.forEach((kaart, i) => {
+        if (nieuw[i]) return;
+        const r = kaart.getBoundingClientRect();
+        if (r.left >= rand.left - 12 && r.right <= rand.right + 12) {
+          nieuw[i] = true;
+          anders = true;
+        }
+      });
+      return anders ? nieuw : oud;
+    });
   };
+
+  /* De teller begint pas te lopen als de rij echt in beeld is. */
+  useEffect(() => {
+    const el = rail.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting) return;
+        io.disconnect();
+        setWakker(true);
+      },
+      { threshold: 0.3 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  useEffect(() => {
+    if (wakker) bijScroll();
+  }, [wakker]);
 
   const stap = (richting: number) => {
     const el = rail.current;
@@ -1323,6 +1398,9 @@ function ToolRail() {
     greep.current.actief = false;
     rail.current?.classList.remove("sleept");
   };
+
+  const totaal = KAARTEN.reduce((som, k, i) => som + (gezien[i] ? k.min : 0), 0);
+  const aantalGezien = gezien.filter(Boolean).length;
 
   /* Zelfde kantlijn als de rest van de pagina (max-w-5xl + px-6). */
   const kantlijn = "max(1.5rem, calc(50% - 32rem + 1.5rem))";
@@ -1359,26 +1437,28 @@ function ToolRail() {
         {KAARTEN.map((k, i) => (
           <figure
             key={k.id}
+            data-kaart
             className="rail-kaart w-[18.5rem] shrink-0 snap-start select-none sm:w-[21rem]"
             style={{ "--i": i } as CSSProperties}
           >
             <div className="relative aspect-[4/5] overflow-hidden rounded-3xl shadow-lg ring-1 ring-black/10 transition-transform duration-300 hover:-translate-y-1.5">
               <KaartBeeld soort={k.id} />
               <div className="kaart-grain pointer-events-none absolute inset-0" aria-hidden />
-              <p
-                className={`absolute bottom-4 left-4 flex items-center gap-2 font-display text-lg font-black tracking-tight ${
-                  k.id === "lesontwerp" ? "text-ink" : "text-white"
-                }`}
-              >
-                <span
-                  className={`flex h-6 w-6 items-center justify-center rounded-full ${
-                    k.id === "lesontwerp" ? "bg-ink text-cream" : "bg-white/95 text-brand-dark"
-                  }`}
-                >
-                  <Vink className="h-3.5 w-3.5" dik={4} />
-                </span>
-                {k.naam}
-              </p>
+              {k.licht ? (
+                <p className="absolute bottom-4 left-4 flex items-center gap-2 rounded-full bg-ink py-1.5 pl-1.5 pr-4 font-display text-lg font-black tracking-tight text-cream shadow-md">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-brand-dark">
+                    <Vink className="h-3.5 w-3.5" dik={4} />
+                  </span>
+                  {k.naam}
+                </p>
+              ) : (
+                <p className="absolute bottom-4 left-4 flex items-center gap-2 font-display text-lg font-black tracking-tight text-white">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-brand-dark">
+                    <Vink className="h-3.5 w-3.5" dik={4} />
+                  </span>
+                  {k.naam}
+                </p>
+              )}
             </div>
             <figcaption className="mt-4 pr-2 text-sm leading-6 text-ink/70">
               {k.zin}{" "}
@@ -1387,69 +1467,111 @@ function ToolRail() {
           </figure>
         ))}
 
-        {/* De volgende die eraan komt schuift alvast aan. */}
+        {/* En de rij groeit gewoon door. */}
         <figure
           className="rail-kaart w-[18.5rem] shrink-0 snap-start select-none sm:w-[21rem]"
           style={{ "--i": KAARTEN.length } as CSSProperties}
         >
-          <div className="flex aspect-[4/5] flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-ink/15 bg-sand/60">
+          <div className="flex aspect-[4/5] flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-ink/15 bg-sand/60 px-8 text-center">
             <span className="rounded-full bg-brand-soft px-3.5 py-1.5 text-sm font-bold text-brand-dark">
-              binnenkort ✨
+              en dit is pas het begin ✨
             </span>
-            <p className="font-display text-2xl font-black tracking-tight text-ink/70">Werkbladen</p>
+            <p className="font-display text-2xl font-black tracking-tight text-ink/70">
+              Er komt steeds meer bij
+            </p>
           </div>
           <figcaption className="mt-4 pr-2 text-sm leading-6 text-ink/60">
-            Mooie, printbare werkbladen bij je les. De volgende tool die eraan komt.
+            Het platform groeit met je mee: nieuwe tools schuiven hier gewoon aan.
           </figcaption>
         </figure>
       </div>
 
-      {/* De pijltjes, op de kolomlijn van de pagina. */}
-      <div className="mx-auto flex w-full max-w-5xl justify-end gap-2 px-6 pt-4">
-        <button
-          type="button"
-          onClick={() => stap(-1)}
-          disabled={!kanTerug}
-          aria-label="Vorige tools"
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink shadow-sm ring-1 ring-black/10 transition hover:-translate-y-0.5 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-5 w-5" aria-hidden>
-            <path d="M14.5 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          onClick={() => stap(1)}
-          disabled={!kanVerder}
-          aria-label="Volgende tools"
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink shadow-sm ring-1 ring-black/10 transition hover:-translate-y-0.5 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-5 w-5" aria-hidden>
-            <path d="M9.5 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+      {/* De afvinkrij: bekeken tools worden afgevinkt, de weekwinst telt op. */}
+      <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-4 px-6 pt-4">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5" aria-hidden>
+            {KAARTEN.map((k, i) => (
+              <span
+                key={k.id}
+                title={k.naam}
+                className={`flex h-6 w-6 items-center justify-center rounded-full transition-colors duration-300 ${
+                  gezien[i] ? "bg-brand text-white" : "bg-white ring-1 ring-ink/15"
+                }`}
+              >
+                {gezien[i] && <Vink className="vinkpop h-3 w-3" dik={4} />}
+              </span>
+            ))}
+          </div>
+          {totaal > 0 && (
+            <p className="text-sm font-bold text-ink/70">
+              <span className="sr-only">{aantalGezien} van de {KAARTEN.length} tools bekeken, </span>
+              samen al{" "}
+              <span key={totaal} className="telpop inline-block tabular-nums text-brand-dark">
+                ± {totaal} min
+              </span>{" "}
+              per week
+            </p>
+          )}
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => stap(-1)}
+            disabled={!kanTerug}
+            aria-label="Vorige tools"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink shadow-sm ring-1 ring-black/10 transition hover:-translate-y-0.5 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-5 w-5" aria-hidden>
+              <path d="M14.5 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={() => stap(1)}
+            disabled={!kanVerder}
+            aria-label="Volgende tools"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink shadow-sm ring-1 ring-black/10 transition hover:-translate-y-0.5 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-5 w-5" aria-hidden>
+              <path d="M9.5 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-/* Een tafelgroepje van vier voor de plattegrond-kaart. */
-function Tafelgroep({ accent = -1, className = "" }: { accent?: number; className?: string }) {
+/* Een tafelgroepje van vier voor de plattegrond-kaart, met leerlingnamen. */
+function Tafelgroep({
+  namen = [null, null, null, null],
+  accent = -1,
+  className = "",
+}: {
+  namen?: (string | null)[];
+  accent?: number;
+  className?: string;
+}) {
   return (
     <div className={`grid grid-cols-2 gap-1.5 ${className}`} aria-hidden>
       {[0, 1, 2, 3].map((i) => (
         <span
           key={i}
-          className={`h-7 w-10 rounded-lg ${
-            i === accent ? "bg-accent shadow-[0_0_0_3px_rgba(245,158,11,0.35)]" : "bg-cream/85"
+          className={`flex h-8 w-14 items-center justify-center rounded-lg text-xs font-bold ${
+            i === accent
+              ? "bg-accent text-ink shadow-[0_0_0_3px_rgba(245,158,11,0.35)]"
+              : "bg-cream/85 text-ink/80"
           }`}
-        />
+        >
+          {namen[i]}
+        </span>
       ))}
     </div>
   );
 }
 
-/* ── De kaartbeelden: vijf kleine werelden in de merktaal. ─────────────── */
+/* ── De kaartbeelden: acht kleine werelden in de merktaal. ─────────────── */
 function KaartBeeld({ soort }: { soort: string }) {
   if (soort === "rapporten")
     return (
@@ -1472,9 +1594,6 @@ function KaartBeeld({ soort }: { soort: string }) {
           className="absolute right-4 top-[58%] h-20 w-20 -rotate-6 text-brand drop-shadow-lg"
           dik={2.4}
         />
-        <p className="font-hand absolute left-6 top-5 -rotate-3 text-xl text-cream/90">
-          precies mijn toon
-        </p>
       </div>
     );
 
@@ -1482,20 +1601,37 @@ function KaartBeeld({ soort }: { soort: string }) {
     return (
       <div className="absolute inset-0 bg-brand-dark">
         <div className="absolute -left-16 -top-20 h-64 w-64 rounded-full bg-white/15 blur-3xl" aria-hidden />
-        {/* de klas als skyline; de twee laagste lichten amber op */}
-        <div className="absolute inset-x-6 bottom-16 flex h-[46%] items-end gap-[5px]" aria-hidden>
-          {[34, 52, 44, 68, 38, 80, 56, 22, 62, 74, 46, 58, 88, 28, 66, 50].map((h, i) => (
-            <div
-              key={i}
-              className={`flex-1 rounded-full ${i === 7 || i === 13 ? "bg-accent" : "bg-white"}`}
-              style={{ height: `${h}%`, opacity: i === 7 || i === 13 ? 1 : 0.25 + (h / 100) * 0.45 }}
-            />
+        <p className="font-hand absolute right-5 top-5 rotate-2 text-xl text-white">
+          groep 5 · M-toets
+        </p>
+        {/* per domein één balk, zoals in het echte groepsbeeld */}
+        <div className="absolute inset-x-6 top-[22%] space-y-[1.15rem]" aria-hidden>
+          {[
+            { naam: "Getallen", breed: 78, aandacht: false },
+            { naam: "Verhoudingen", breed: 64, aandacht: false },
+            { naam: "Meten en meetkunde", breed: 36, aandacht: true },
+            { naam: "Verbanden", breed: 70, aandacht: false },
+          ].map((d) => (
+            <div key={d.naam}>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-bold text-white">{d.naam}</span>
+                {d.aandacht && (
+                  <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-bold text-ink">
+                    valt op
+                  </span>
+                )}
+              </div>
+              <div className="mt-1.5 h-2.5 rounded-full bg-white/15">
+                <div
+                  className={`h-full rounded-full ${d.aandacht ? "bg-accent" : "bg-white/85"}`}
+                  style={{ width: `${d.breed}%` }}
+                />
+              </div>
+            </div>
           ))}
         </div>
-        <p className="font-hand absolute right-6 top-7 rotate-2 text-right text-xl leading-6 text-white">
-          deze twee even
-          <br />
-          extra oefenen ↘
+        <p className="absolute inset-x-6 bottom-16 text-sm font-bold leading-6 text-white">
+          Sofie en Yassin kunnen extra oefenen bij meten.
         </p>
       </div>
     );
@@ -1527,52 +1663,154 @@ function KaartBeeld({ soort }: { soort: string }) {
       <div className="absolute inset-0 bg-cream">
         <div className="bg-grid absolute inset-0 opacity-70" aria-hidden />
         <div className="absolute -left-16 top-1/4 h-56 w-56 rounded-full bg-brand/15 blur-3xl" aria-hidden />
-        {/* het pad van leerdoel naar les */}
+        {/* de route van start naar afsluiting */}
         <svg viewBox="0 0 336 420" fill="none" className="absolute inset-0 h-full w-full" aria-hidden>
           <path
-            d="M70 92 C 240 110, 100 190, 170 225 S 270 320, 235 356"
+            d="M66 52 C 250 62, 260 100, 180 122 C 95 145, 82 175, 168 196 C 255 217, 258 248, 172 268 C 90 288, 92 320, 168 338"
             stroke="#2f9e6e"
             strokeWidth="3"
             strokeLinecap="round"
             strokeDasharray="1 11"
           />
         </svg>
-        <p className="absolute left-6 top-10 -rotate-2 rounded-lg bg-ink px-3 py-1.5 font-display text-sm font-bold text-cream shadow-md">
-          Leerdoel: breuken vergelijken
+        <p className="absolute left-6 top-8 -rotate-2 rounded-full bg-white px-3 py-1.5 text-sm font-bold text-ink shadow-md ring-1 ring-black/5">
+          Start
         </p>
-        <p className="absolute left-[28%] top-[40%] rotate-1 rounded-full bg-white px-3 py-1.5 text-sm font-bold text-ink shadow-md ring-1 ring-black/5">
-          Start · 10 min
+        <p className="absolute right-7 top-[22%] rotate-1 rounded-full bg-white px-3 py-1.5 text-sm font-bold text-ink shadow-md ring-1 ring-black/5">
+          Doel: breuken vergelijken
         </p>
-        <p className="absolute right-7 top-[55%] -rotate-1 rounded-full bg-white px-3 py-1.5 text-sm font-bold text-ink shadow-md ring-1 ring-black/5">
-          Kern · 25 min
+        <p className="absolute left-7 top-[40%] -rotate-1 rounded-full bg-white px-3 py-1.5 text-sm font-bold text-ink shadow-md ring-1 ring-black/5">
+          Instructie
         </p>
-        <p className="absolute bottom-[22%] left-[22%] rotate-2 rounded-full bg-brand px-3 py-1.5 text-sm font-bold text-white shadow-md">
+        <p className="absolute right-8 top-[57%] rotate-2 rounded-full bg-white px-3 py-1.5 text-sm font-bold text-ink shadow-md ring-1 ring-black/5">
+          Verwerking
+        </p>
+        <p className="absolute bottom-[19%] left-[24%] -rotate-2 rounded-full bg-brand px-3 py-1.5 text-sm font-bold text-white shadow-md">
           Afsluiting ✓
         </p>
       </div>
     );
 
-  /* plattegrond */
+  if (soort === "plattegrond")
+    return (
+      <div className="absolute inset-0 bg-ink">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, rgba(251,246,238,0.07) 1px, transparent 1px), linear-gradient(to bottom, rgba(251,246,238,0.07) 1px, transparent 1px)",
+            backgroundSize: "26px 26px",
+          }}
+          aria-hidden
+        />
+        <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand/20 blur-3xl" aria-hidden />
+        {/* het bord */}
+        <div className="absolute left-1/2 top-7 h-2 w-28 -translate-x-1/2 rounded-full bg-cream/60" aria-hidden />
+        {/* de tafelgroepjes, met een paar namen erin */}
+        <Tafelgroep className="absolute left-7 top-[19%] -rotate-3" namen={[null, "Sofie", null, null]} />
+        <Tafelgroep
+          className="absolute right-6 top-[31%] rotate-2"
+          accent={2}
+          namen={[null, null, "Yassin", null]}
+        />
+        <Tafelgroep className="absolute left-[26%] top-[54%] rotate-1" namen={["Mila", null, null, null]} />
+      </div>
+    );
+
+  if (soort === "werkbladen")
+    return (
+      <div className="absolute inset-0 bg-brand">
+        <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/20 blur-3xl" aria-hidden />
+        {/* het werkblad zelf */}
+        <div className="absolute left-1/2 top-[46%] w-[80%] -translate-x-1/2 -translate-y-1/2 rotate-2 rounded-xl bg-white p-5 shadow-2xl">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-ink/40">
+            Werkblad · spelling
+          </p>
+          <p className="mt-3 text-sm font-bold text-ink">1. Vul in: ei of ij?</p>
+          <p className="mt-1 text-sm leading-6 text-ink/75">
+            De kon<span className="font-bold text-brand-dark">ij</span>nen zitten in de w
+            <span className="mx-0.5 inline-block w-6 border-b-2 border-ink/30 align-middle" aria-hidden />
+            de.
+          </p>
+          <p className="mt-3 text-sm font-bold text-ink">2. Zoek de woorden</p>
+          <div className="mt-1.5 grid w-fit grid-cols-4 gap-1" aria-hidden>
+            {["R", "E", "I", "S", "B", "K", "IJ", "M", "P", "L", "E", "I", "N", "D", "A", "G"].map(
+              (letter, i) => (
+                <span
+                  key={i}
+                  className={`flex h-6 w-6 items-center justify-center rounded text-xs font-bold ${
+                    i < 4 ? "bg-brand-soft text-brand-dark" : "bg-cream text-ink/60"
+                  }`}
+                >
+                  {letter}
+                </span>
+              ),
+            )}
+          </div>
+        </div>
+        <p className="font-hand absolute left-6 top-5 -rotate-2 text-xl text-white">
+          klaar om te printen
+        </p>
+      </div>
+    );
+
+  if (soort === "draaiboek")
+    return (
+      <div className="absolute inset-0 bg-accent-soft">
+        <div className="absolute -left-14 -top-14 h-56 w-56 rounded-full bg-accent/30 blur-3xl" aria-hidden />
+        <p className="absolute left-5 top-6 -rotate-2 rounded-lg bg-ink px-3 py-1.5 font-display text-sm font-bold text-cream shadow-md">
+          Kerstdiner · het draaiboek
+        </p>
+        {/* de tijdlijn van de avond */}
+        <div className="absolute bottom-[26%] left-9 top-[24%] w-0.5 rounded-full bg-ink/15" aria-hidden />
+        {[
+          { tijd: "17:00", wat: "inloop ouders", klaar: true, top: "26%" },
+          { tijd: "17:30", wat: "kerstdiner", klaar: true, top: "42%" },
+          { tijd: "18:15", wat: "optreden groep 5", klaar: false, top: "58%" },
+        ].map((r) => (
+          <div key={r.tijd} className="absolute left-6 flex items-center gap-3" style={{ top: r.top }}>
+            <span
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
+                r.klaar ? "bg-brand text-white" : "bg-white ring-1 ring-ink/15"
+              }`}
+              aria-hidden
+            >
+              {r.klaar && <Vink className="h-3 w-3" dik={4} />}
+            </span>
+            <span className="rounded-full bg-white px-3 py-1.5 text-sm font-bold text-ink shadow-sm">
+              {r.tijd} · {r.wat}
+            </span>
+          </div>
+        ))}
+        <p className="font-hand absolute bottom-16 right-6 -rotate-2 text-xl text-ink/70">
+          iedereen weet wat te doen
+        </p>
+      </div>
+    );
+
+  /* weekplanning */
   return (
-    <div className="absolute inset-0 bg-ink">
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, rgba(251,246,238,0.07) 1px, transparent 1px), linear-gradient(to bottom, rgba(251,246,238,0.07) 1px, transparent 1px)",
-          backgroundSize: "26px 26px",
-        }}
-        aria-hidden
-      />
-      <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand/20 blur-3xl" aria-hidden />
-      {/* het bord */}
-      <div className="absolute left-1/2 top-7 h-2 w-28 -translate-x-1/2 rounded-full bg-cream/60" aria-hidden />
-      {/* de tafelgroepjes */}
-      <Tafelgroep className="absolute left-8 top-[20%] -rotate-3" />
-      <Tafelgroep className="absolute right-8 top-[30%] rotate-2" accent={2} />
-      <Tafelgroep className="absolute left-[30%] top-[52%] rotate-1" />
-      <p className="font-hand absolute bottom-16 right-6 rotate-2 text-xl text-cream/90">
-        Yassin bij het raam ✓
+    <div className="absolute inset-0 bg-brand-dark">
+      <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-white/15 blur-3xl" aria-hidden />
+      {/* de week als vijf kolommen */}
+      <div className="absolute inset-x-6 bottom-[24%] top-[16%] grid grid-cols-5 gap-2" aria-hidden>
+        {[
+          { dag: "ma", blokken: ["h-12 bg-white/85", "h-16 bg-white/40", "h-10 bg-brand-soft/80"] },
+          { dag: "di", blokken: ["h-16 bg-white/40", "h-10 bg-white/85", "h-14 bg-white/40"] },
+          { dag: "wo", blokken: ["h-10 bg-white/85", "h-12 bg-accent", "h-8 bg-white/40"] },
+          { dag: "do", blokken: ["h-14 bg-white/40", "h-16 bg-brand-soft/80", "h-10 bg-white/85"] },
+          { dag: "vr", blokken: ["h-12 bg-white/85", "h-10 bg-white/40"] },
+        ].map((kolom) => (
+          <div key={kolom.dag} className="flex flex-col gap-1.5">
+            <span className="text-center text-xs font-bold text-white/70">{kolom.dag}</span>
+            {kolom.blokken.map((blok, i) => (
+              <span key={i} className={`w-full rounded-lg ${blok}`} />
+            ))}
+          </div>
+        ))}
+      </div>
+      <p className="font-hand absolute bottom-16 right-6 rotate-2 text-xl text-white">
+        vrijdagmiddag lekker leeg
       </p>
     </div>
   );
@@ -1624,6 +1862,14 @@ function StijlBlok() {
         100% { transform: scale(1); opacity: 1; }
       }
       .anim .vinkpop { animation: vinkpop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+      /* De optel-teller onder de galerij veert kort mee bij elke stap. */
+      @keyframes telpop {
+        0% { transform: scale(0.85); }
+        60% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+      }
+      .anim .telpop { animation: telpop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
       /* Slotvinkje tekent zichzelf. */
       .anim [data-reveal] .slotvink path {
