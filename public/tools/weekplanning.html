@@ -178,8 +178,8 @@
     .blok.taak { border:1.5px dashed rgba(34,28,58,.30); box-shadow:none; }
     .blok.taak .b-vak { font-weight:600; }
     /* De zone onder de schooldag: hier plan je je eigen tijd */
-    .naschool-zone { position:absolute; left:0; right:0; border-top:1.5px dashed rgba(34,28,58,.16); background:linear-gradient(rgba(47,158,110,.04), rgba(47,158,110,.012)); pointer-events:none; }
-    .naschool-zone span { position:absolute; top:5px; left:6px; font-size:10.5px; color:var(--muted); background:rgba(255,255,255,.75); border-radius:6px; padding:1px 7px; }
+    .naschool-zone { position:absolute; left:0; right:0; border-top:1.5px dashed rgba(37,133,90,.4); background:linear-gradient(rgba(47,158,110,.055), rgba(47,158,110,.015)); pointer-events:none; }
+    .naschool-zone span { position:absolute; top:6px; left:6px; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; color:var(--accent2); background:rgba(255,255,255,.85); border-radius:6px; padding:2px 7px; }
     /* subtiele hint dat je de onder- en bovenrand kunt vastpakken om korter/langer te maken */
     .blok:not(.vast)::before, .blok:not(.vast)::after { content:''; position:absolute; left:50%; width:22px; height:2px; margin-left:-11px; border-radius:2px; background:currentColor; opacity:0; transition:opacity .12s; pointer-events:none; }
     .blok:not(.vast)::before { top:2px; }
@@ -206,16 +206,20 @@
     .legenda span { display:inline-flex; align-items:center; gap:6px; }
     .legenda .kl { width:11px; height:11px; border-radius:3px; }
     /* Vakkenpalet boven het rooster: sleep een blokje naar het rooster om een les toe te voegen. */
-    .vakpalet { display:flex; flex-wrap:wrap; align-items:center; gap:7px; margin:14px 0 12px; }
-    .palet-label { font-size:12.5px; color:var(--muted); margin-right:4px; }
+    .vakpalet { display:flex; flex-direction:column; gap:10px; margin:14px 0 12px; }
+    .palet-groep { display:flex; flex-wrap:wrap; align-items:center; gap:7px; }
+    .palet-kop { flex-basis:100%; font-size:11px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; margin-bottom:1px; }
+    .palet-naschool { flex-direction:column; align-items:stretch; gap:8px; background:var(--brand-soft); border:1px dashed rgba(37,133,90,.35); border-radius:14px; padding:10px 12px; }
+    .palet-naschool .palet-kop { color:var(--accent2); display:flex; align-items:center; gap:6px; }
+    .palet-naschool .palet-rij { display:flex; flex-wrap:wrap; gap:7px; }
     .palet-chip { border:1px solid rgba(0,0,0,.06); border-radius:999px; padding:6px 13px; font:inherit; font-size:12.5px; font-weight:700; cursor:grab; box-shadow:0 1px 2px rgba(34,28,58,.08); touch-action:none; user-select:none; -webkit-user-select:none; }
     .palet-chip:active { cursor:grabbing; }
-    .palet-chip.taak { border:1.5px dashed rgba(34,28,58,.30); box-shadow:none; font-weight:600; }
-    .palet-scheiding { width:1px; height:22px; background:var(--line-strong); margin:0 6px; align-self:center; }
-    .palet-add { display:inline-flex; align-items:center; gap:6px; margin-left:2px; }
+    .palet-chip.taak { background:#fff; border:1.5px dashed rgba(37,133,90,.4); box-shadow:none; font-weight:600; }
+    .palet-add { display:inline-flex; align-items:center; gap:6px; }
     .palet-add input { border:1px solid var(--line-strong); border-radius:999px; padding:6px 12px; font:inherit; font-size:12.5px; width:130px; }
     .palet-add button { border:1px dashed var(--line-strong); background:none; border-radius:999px; padding:6px 12px; font:inherit; font-size:12.5px; color:var(--ink); cursor:pointer; }
-    .palet-add button:hover { background:var(--brand-soft); }
+    .palet-add button:hover { background:#fff; }
+    .palet-naschool .palet-add button { border-color:rgba(37,133,90,.35); }
     .palet-geest { position:fixed; z-index:60; pointer-events:none; border-radius:999px; padding:6px 13px; font-size:12.5px; font-weight:700; box-shadow:0 8px 20px rgba(34,28,58,.22); opacity:.95; }
     /* Landings-voorbeeld tijdens het slepen uit het palet: ziet eruit als het echte blok,
        met een streepjesrand zodat je ziet dat het nog een voorbeeld is. */
@@ -982,11 +986,12 @@ function tekenGrid() {
       voor.style.top = '0px'; voor.style.height = ((su.dagBegin[dag]-su.begin)*PXMIN)+'px';
       col.appendChild(voor);
     }
-    // de zone ná schooltijd: hier plan je nakijken, voorbereiden, gesprekken
+    // de zone ná schooltijd: hier plan je nakijken, voorbereiden, gesprekken.
+    // Elke kolom krijgt zijn eigen label (schooltijden kunnen per dag verschillen).
     const zone = document.createElement('div'); zone.className='naschool-zone';
     zone.style.top = ((su.dagEind[dag]-su.begin)*PXMIN)+'px';
     zone.style.height = ((asEind-su.dagEind[dag])*PXMIN)+'px';
-    if (dag === dagen[0]) zone.innerHTML = '<span>na schooltijd</span>';
+    zone.innerHTML = '<span>na schooltijd</span>';
     col.appendChild(zone);
     plaatsBlokken(col, dag);
     grid.appendChild(col);
@@ -1039,8 +1044,11 @@ function leeg(cls){ const d=document.createElement('div'); d.className=cls; retu
 function tekenPalet() {
   const p = els('vakpalet'); if (!p || !state.setup) return;
   p.innerHTML = '';
-  const lab = document.createElement('span'); lab.className = 'palet-label'; lab.textContent = 'Sleep een vak naar het rooster:';
-  p.appendChild(lab);
+
+  // Groep 1: de lesdag — vakken die je op het rooster zelf plaatst.
+  const lesGroep = document.createElement('div'); lesGroep.className = 'palet-groep';
+  const lesKop = document.createElement('span'); lesKop.className = 'palet-kop'; lesKop.textContent = 'Tijdens de les — sleep een vak naar het rooster';
+  lesGroep.appendChild(lesKop);
   state.setup.vakken.forEach(v => {
     const kl = VAK(v.id);
     const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'palet-chip';
@@ -1048,25 +1056,32 @@ function tekenPalet() {
     chip.textContent = v.naam;
     chip.title = 'Sleep ' + v.naam + ' naar een dag en tijd';
     sleepChip(chip, v.id);
-    p.appendChild(chip);
+    lesGroep.appendChild(chip);
   });
   const add = document.createElement('span'); add.className = 'palet-add';
   add.innerHTML = '<input type="text" id="palet-nieuw" placeholder="Eigen vak…" maxlength="24"><button type="button" id="palet-nieuw-btn">+ Vak</button>';
-  p.appendChild(add);
+  lesGroep.appendChild(add);
+  p.appendChild(lesGroep);
   els('palet-nieuw-btn').onclick = paletVakToevoegen;
   els('palet-nieuw').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); paletVakToevoegen(); } });
-  // Na schooltijd: je eigen tijd, als gedempte taak-chips (fase 2)
-  p.appendChild(leeg('palet-scheiding'));
-  const tlab = document.createElement('span'); tlab.className = 'palet-label'; tlab.textContent = 'Na schooltijd:';
-  p.appendChild(tlab);
+
+  // Groep 2: ná schooltijd — een eigen, duidelijk afgebakend vakje (zelfde
+  // groene tint als de na-schooltijd-zone in het rooster), zodat meteen
+  // zichtbaar is dat dit iets anders is dan de lesdag.
+  const naGroep = document.createElement('div'); naGroep.className = 'palet-groep palet-naschool';
+  const naKop = document.createElement('span'); naKop.className = 'palet-kop'; naKop.textContent = '🕓 Na schooltijd — jouw eigen tijd';
+  naGroep.appendChild(naKop);
+  const naRij = document.createElement('div'); naRij.className = 'palet-rij';
   TAKEN.forEach(t => {
     const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'palet-chip taak';
-    chip.style.background = t.bg; chip.style.color = t.tx;
+    chip.style.color = t.tx;
     chip.textContent = t.naam;
     chip.title = 'Sleep ' + t.naam + ' naar de ruimte na schooltijd';
     sleepChip(chip, t.id);
-    p.appendChild(chip);
+    naRij.appendChild(chip);
   });
+  naGroep.appendChild(naRij);
+  p.appendChild(naGroep);
 }
 
 // Eigen vak toevoegen vanuit het palet (ook ná genereren) → verschijnt als blokje.
