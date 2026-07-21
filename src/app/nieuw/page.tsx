@@ -1,4 +1,7 @@
+import { existsSync } from "fs";
+import path from "path";
 import type { Metadata } from "next";
+import Footer from "@/components/Footer";
 import Film from "./Film";
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -16,5 +19,15 @@ export const metadata: Metadata = {
 };
 
 export default function NieuwLanding() {
-  return <Film />;
+  // Toont automatisch de foto zodra die in public/ staat; anders een monogram.
+  const fotoBestand = ["michael.jpg", "michael.jpeg", "michael.png", "michael.webp"].find(
+    (f) => existsSync(path.join(process.cwd(), "public", f)),
+  );
+
+  return (
+    <div className="flex flex-1 flex-col">
+      <Film fotoBestand={fotoBestand} />
+      <Footer maxWidth="max-w-5xl" />
+    </div>
+  );
 }
