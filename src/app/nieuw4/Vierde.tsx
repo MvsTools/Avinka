@@ -1338,7 +1338,8 @@ function ToolRail() {
     setKanTerug(el.scrollLeft > 8);
     setKanVerder(el.scrollLeft < el.scrollWidth - el.clientWidth - 8);
 
-    /* Elke kaart die één keer volledig in beeld was, blijft afgevinkt. */
+    /* Het merkmoment: elke kaart die met zijn linkerkant voorbij het zicht
+       is gescrold, vinkt zichzelf af. Eenmaal afgevinkt blijft-ie afgevinkt. */
     const rand = el.getBoundingClientRect();
     const kaarten = el.querySelectorAll<HTMLElement>("[data-kaart]");
     setGezien((oud) => {
@@ -1347,7 +1348,8 @@ function ToolRail() {
       kaarten.forEach((kaart, i) => {
         if (nieuw[i]) return;
         const r = kaart.getBoundingClientRect();
-        if (r.left >= rand.left - 12 && r.right <= rand.right + 12) {
+        // Afgevinkt zodra de kaart grotendeels binnen is (linkerrand voorbij).
+        if (r.left >= rand.left - 12 && r.left <= rand.right - r.width * 0.55) {
           nieuw[i] = true;
           anders = true;
         }
@@ -1356,7 +1358,7 @@ function ToolRail() {
     });
   };
 
-  /* De teller begint pas te lopen als de rij echt in beeld is. */
+  /* Het afvinken start pas als de rij echt in beeld is. */
   useEffect(() => {
     const el = rail.current;
     if (!el) return;
@@ -1398,9 +1400,6 @@ function ToolRail() {
     greep.current.actief = false;
     rail.current?.classList.remove("sleept");
   };
-
-  const totaal = KAARTEN.reduce((som, k, i) => som + (gezien[i] ? k.min : 0), 0);
-  const aantalGezien = gezien.filter(Boolean).length;
 
   /* Zelfde kantlijn als de rest van de pagina (max-w-5xl + px-6). */
   const kantlijn = "max(1.5rem, calc(50% - 32rem + 1.5rem))";
@@ -1444,76 +1443,54 @@ function ToolRail() {
             <div className="relative aspect-[4/5] overflow-hidden rounded-3xl shadow-lg ring-1 ring-black/10 transition-transform duration-300 hover:-translate-y-1.5">
               <KaartBeeld soort={k.id} />
               <div className="kaart-grain pointer-events-none absolute inset-0" aria-hidden />
-              {k.licht ? (
-                <p className="absolute bottom-4 left-4 flex items-center gap-2 rounded-full bg-ink py-1.5 pl-1.5 pr-4 font-display text-lg font-black tracking-tight text-cream shadow-md">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-brand-dark">
-                    <Vink className="h-3.5 w-3.5" dik={4} />
-                  </span>
-                  {k.naam}
-                </p>
-              ) : (
-                <p className="absolute bottom-4 left-4 flex items-center gap-2 font-display text-lg font-black tracking-tight text-white">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-brand-dark">
-                    <Vink className="h-3.5 w-3.5" dik={4} />
-                  </span>
-                  {k.naam}
-                </p>
-              )}
+              <p
+                className={`absolute bottom-4 left-4 flex items-center gap-2 font-display text-lg font-black tracking-tight ${
+                  k.licht
+                    ? "rounded-full bg-ink py-1.5 pl-1.5 pr-4 text-cream shadow-md"
+                    : "text-white"
+                }`}
+              >
+                <span
+                  className={`flex h-6 w-6 items-center justify-center rounded-full transition-colors duration-300 ${
+                    gezien[i] ? "bg-white text-brand-dark" : "bg-white/15 ring-1 ring-white/50"
+                  }`}
+                  aria-hidden
+                >
+                  {gezien[i] && <Vink className="vinkpop h-3.5 w-3.5" dik={4} />}
+                </span>
+                {k.naam}
+              </p>
             </div>
-            <figcaption className="mt-4 pr-2 text-sm leading-6 text-ink/70">
-              {k.zin}{" "}
-              <strong className="whitespace-nowrap font-bold text-ink">{k.winst}</strong>
-            </figcaption>
           </figure>
         ))}
 
-        {/* En de rij groeit gewoon door. */}
+        {/* En de rij groeit gewoon door: de haak naar meer. */}
         <figure
           className="rail-kaart w-[18.5rem] shrink-0 snap-start select-none sm:w-[21rem]"
           style={{ "--i": KAARTEN.length } as CSSProperties}
         >
-          <div className="flex aspect-[4/5] flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-ink/15 bg-sand/60 px-8 text-center">
-            <span className="rounded-full bg-brand-soft px-3.5 py-1.5 text-sm font-bold text-brand-dark">
-              en dit is pas het begin ✨
-            </span>
-            <p className="font-display text-2xl font-black tracking-tight text-ink/70">
-              Er komt steeds meer bij
-            </p>
+          <div className="relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-3xl bg-ink shadow-lg ring-1 ring-black/10">
+            <div className="absolute -right-16 -top-12 h-56 w-56 rounded-full bg-brand/30 blur-3xl" aria-hidden />
+            <div className="absolute -left-20 top-14 h-52 w-52 rounded-full bg-accent/25 blur-3xl" aria-hidden />
+            {/* ghost-kaartjes die net uit beeld liggen: er is meer */}
+            <div className="absolute right-4 top-6 flex gap-2" aria-hidden>
+              <div className="h-24 w-16 rotate-6 rounded-xl bg-white/10 ring-1 ring-white/15" />
+              <div className="h-28 w-20 -rotate-3 rounded-xl bg-white/[0.07] ring-1 ring-white/10" />
+            </div>
+            <div className="relative p-6">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-cream/80 ring-1 ring-white/15">
+                nieuwe tools onderweg ✨
+              </span>
+              <p className="mt-3 font-display text-3xl font-black leading-[1.03] tracking-tight text-cream">
+                En dit is nog maar het begin
+              </p>
+            </div>
           </div>
-          <figcaption className="mt-4 pr-2 text-sm leading-6 text-ink/60">
-            Het platform groeit met je mee: nieuwe tools schuiven hier gewoon aan.
-          </figcaption>
         </figure>
       </div>
 
-      {/* De afvinkrij: bekeken tools worden afgevinkt, de weekwinst telt op. */}
-      <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-4 px-6 pt-4">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5" aria-hidden>
-            {KAARTEN.map((k, i) => (
-              <span
-                key={k.id}
-                title={k.naam}
-                className={`flex h-6 w-6 items-center justify-center rounded-full transition-colors duration-300 ${
-                  gezien[i] ? "bg-brand text-white" : "bg-white ring-1 ring-ink/15"
-                }`}
-              >
-                {gezien[i] && <Vink className="vinkpop h-3 w-3" dik={4} />}
-              </span>
-            ))}
-          </div>
-          {totaal > 0 && (
-            <p className="text-sm font-bold text-ink/70">
-              <span className="sr-only">{aantalGezien} van de {KAARTEN.length} tools bekeken, </span>
-              samen al{" "}
-              <span key={totaal} className="telpop inline-block tabular-nums text-brand-dark">
-                ± {totaal} min
-              </span>{" "}
-              per week
-            </p>
-          )}
-        </div>
-
+      {/* Alleen de navigatie blijft; de kaarten spreken voor zich. */}
+      <div className="mx-auto flex w-full max-w-5xl justify-end px-6 pt-5">
         <div className="flex gap-2">
           <button
             type="button"
@@ -1601,38 +1578,39 @@ function KaartBeeld({ soort }: { soort: string }) {
     return (
       <div className="absolute inset-0 bg-brand-dark">
         <div className="absolute -left-16 -top-20 h-64 w-64 rounded-full bg-white/15 blur-3xl" aria-hidden />
-        <p className="font-hand absolute right-5 top-5 rotate-2 text-xl text-white">
-          groep 5 · M-toets
-        </p>
-        {/* per domein één balk, zoals in het echte groepsbeeld */}
-        <div className="absolute inset-x-6 top-[22%] space-y-[1.15rem]" aria-hidden>
-          {[
-            { naam: "Getallen", breed: 78, aandacht: false },
-            { naam: "Verhoudingen", breed: 64, aandacht: false },
-            { naam: "Meten en meetkunde", breed: 36, aandacht: true },
-            { naam: "Verbanden", breed: 70, aandacht: false },
-          ].map((d) => (
-            <div key={d.naam}>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-bold text-white">{d.naam}</span>
-                {d.aandacht && (
-                  <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-bold text-ink">
-                    valt op
-                  </span>
-                )}
+        {/* Flow-layout: nooit overlap, ook op de kortere mobiele kaart. */}
+        <div className="relative flex h-full flex-col px-6 pb-16 pt-6">
+          <p className="font-hand self-end text-xl text-white">groep 5 · M-toets</p>
+          {/* per domein één balk, zoals in het echte groepsbeeld */}
+          <div className="mt-4 space-y-3" aria-hidden>
+            {[
+              { naam: "Getallen", breed: 78, aandacht: false },
+              { naam: "Verhoudingen", breed: 64, aandacht: false },
+              { naam: "Meten en meetkunde", breed: 36, aandacht: true },
+              { naam: "Verbanden", breed: 70, aandacht: false },
+            ].map((d) => (
+              <div key={d.naam}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-bold text-white">{d.naam}</span>
+                  {d.aandacht && (
+                    <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-bold text-ink">
+                      valt op
+                    </span>
+                  )}
+                </div>
+                <div className="mt-1.5 h-2.5 rounded-full bg-white/15">
+                  <div
+                    className={`h-full rounded-full ${d.aandacht ? "bg-accent" : "bg-white/85"}`}
+                    style={{ width: `${d.breed}%` }}
+                  />
+                </div>
               </div>
-              <div className="mt-1.5 h-2.5 rounded-full bg-white/15">
-                <div
-                  className={`h-full rounded-full ${d.aandacht ? "bg-accent" : "bg-white/85"}`}
-                  style={{ width: `${d.breed}%` }}
-                />
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          <p className="mt-auto pt-4 text-sm font-bold leading-6 text-white">
+            Sofie en Yassin kunnen extra oefenen bij meten.
+          </p>
         </div>
-        <p className="absolute inset-x-6 bottom-16 text-sm font-bold leading-6 text-white">
-          Sofie en Yassin kunnen extra oefenen bij meten.
-        </p>
       </div>
     );
 
@@ -1677,7 +1655,7 @@ function KaartBeeld({ soort }: { soort: string }) {
           Start
         </p>
         <p className="absolute right-7 top-[22%] rotate-1 rounded-full bg-white px-3 py-1.5 text-sm font-bold text-ink shadow-md ring-1 ring-black/5">
-          Doel: breuken vergelijken
+          Lesdoel
         </p>
         <p className="absolute left-7 top-[40%] -rotate-1 rounded-full bg-white px-3 py-1.5 text-sm font-bold text-ink shadow-md ring-1 ring-black/5">
           Instructie
@@ -1727,25 +1705,37 @@ function KaartBeeld({ soort }: { soort: string }) {
             Werkblad · spelling
           </p>
           <p className="mt-3 text-sm font-bold text-ink">1. Vul in: ei of ij?</p>
-          <p className="mt-1 text-sm leading-6 text-ink/75">
-            De kon<span className="font-bold text-brand-dark">ij</span>nen zitten in de w
-            <span className="mx-0.5 inline-block w-6 border-b-2 border-ink/30 align-middle" aria-hidden />
-            de.
+          <p className="mt-1.5 text-sm leading-7 text-ink/80">
+            De kon
+            <span
+              className="mx-0.5 inline-block w-5 border-b-2 border-ink/45 align-[-0.1em]"
+              aria-hidden
+            />
+            nen zitten in het hok.
           </p>
           <p className="mt-3 text-sm font-bold text-ink">2. Zoek de woorden</p>
-          <div className="mt-1.5 grid w-fit grid-cols-4 gap-1" aria-hidden>
-            {["R", "E", "I", "S", "B", "K", "IJ", "M", "P", "L", "E", "I", "N", "D", "A", "G"].map(
-              (letter, i) => (
-                <span
-                  key={i}
-                  className={`flex h-6 w-6 items-center justify-center rounded text-xs font-bold ${
-                    i < 4 ? "bg-brand-soft text-brand-dark" : "bg-cream text-ink/60"
-                  }`}
-                >
-                  {letter}
-                </span>
-              ),
-            )}
+          <div className="mt-1.5 flex items-start gap-3">
+            <div className="grid grid-cols-5 gap-1" aria-hidden>
+              {["H", "O", "K", "R", "E", "D", "A", "G", "B", "S", "T", "E", "I", "L", "M", "P", "R", "E", "I", "S"].map(
+                (letter, i) => (
+                  <span
+                    key={i}
+                    className={`flex h-6 w-6 items-center justify-center rounded text-xs font-bold ${
+                      i <= 2 ? "bg-brand-soft text-brand-dark" : "bg-cream text-ink/55"
+                    }`}
+                  >
+                    {letter}
+                  </span>
+                ),
+              )}
+            </div>
+            <ul className="space-y-1 text-sm font-bold">
+              <li className="flex items-center gap-1 text-ink/40 line-through">
+                <Vink className="h-3 w-3 text-brand" dik={4} /> hok
+              </li>
+              <li className="text-ink/70">reis</li>
+              <li className="text-ink/70">dag</li>
+            </ul>
           </div>
         </div>
         <p className="font-hand absolute left-6 top-5 -rotate-2 text-xl text-white">
@@ -1782,9 +1772,6 @@ function KaartBeeld({ soort }: { soort: string }) {
             </span>
           </div>
         ))}
-        <p className="font-hand absolute bottom-16 right-6 -rotate-2 text-xl text-ink/70">
-          iedereen weet wat te doen
-        </p>
       </div>
     );
 
@@ -1809,9 +1796,6 @@ function KaartBeeld({ soort }: { soort: string }) {
           </div>
         ))}
       </div>
-      <p className="font-hand absolute bottom-16 right-6 rotate-2 text-xl text-white">
-        vrijdagmiddag lekker leeg
-      </p>
     </div>
   );
 }
@@ -1862,14 +1846,6 @@ function StijlBlok() {
         100% { transform: scale(1); opacity: 1; }
       }
       .anim .vinkpop { animation: vinkpop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
-
-      /* De optel-teller onder de galerij veert kort mee bij elke stap. */
-      @keyframes telpop {
-        0% { transform: scale(0.85); }
-        60% { transform: scale(1.1); }
-        100% { transform: scale(1); }
-      }
-      .anim .telpop { animation: telpop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
       /* Slotvinkje tekent zichzelf. */
       .anim [data-reveal] .slotvink path {
