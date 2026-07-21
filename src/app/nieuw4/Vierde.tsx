@@ -171,26 +171,109 @@ function Tegel({
   return (
     <div
       data-tegel={naam}
-      className="relative flex items-center gap-2.5 rounded-2xl border border-black/5 bg-white p-2.5 shadow-sm"
+      className="relative flex flex-col items-center gap-1 rounded-xl border border-black/5 bg-white p-2 text-center shadow-sm"
     >
       <span
         data-tegelvink={naam}
-        className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand text-[10px] font-black text-white shadow-sm"
+        className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand text-[9px] font-black text-white shadow-sm"
         aria-hidden
       >
         ✓
       </span>
       <span
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base text-white shadow-sm ${kleur}`}
+        className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm text-white shadow-sm ${kleur}`}
         aria-hidden
       >
         {emoji}
       </span>
-      <span className="min-w-0">
-        <span className="block truncate text-[11px] font-bold text-ink">{label}</span>
-        <span className="block text-[10px] font-bold text-brand">Openen →</span>
-      </span>
+      <span className="w-full truncate text-[10px] font-bold text-ink">{label}</span>
     </div>
+  );
+}
+
+// Een item in de dashboard-zijbalk, net als het echte DashboardNav.
+// Met `naam` wordt het een vluchtdoel (voor het documenten-venster) met een
+// klein badge-vinkje dat popt zodra er iets landt.
+function MiniNav({
+  label,
+  icon,
+  actief = false,
+  naam,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  actief?: boolean;
+  naam?: string;
+}) {
+  return (
+    <span
+      {...(naam ? { "data-nav": naam } : {})}
+      className={`relative flex items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-semibold ${
+        actief ? "bg-brand text-white shadow-sm shadow-brand/20" : "text-ink/70"
+      }`}
+    >
+      {naam && (
+        <span
+          data-navvink={naam}
+          className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-brand text-[8px] font-black text-white ring-2 ring-white"
+          aria-hidden
+        >
+          ✓
+        </span>
+      )}
+      <span className="shrink-0 [&>svg]:h-3.5 [&>svg]:w-3.5">{icon}</span>
+      <span className="truncate">{label}</span>
+    </span>
+  );
+}
+
+/* Kleine lijn-iconen voor de zijbalk (zelfde stijl als het echte dashboard). */
+function NavHome() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <path d="M3 10.5 12 3l9 7.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5 9.5V20h14V9.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9.5 20v-5h5v5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function NavTaken() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <path d="M3 6.5l1.5 1.5L7.5 5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M3 12.5l1.5 1.5L7.5 11" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M11 7h9M11 13h9M11 19h6" strokeLinecap="round" />
+    </svg>
+  );
+}
+function NavKlas() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <circle cx="9" cy="8" r="3" />
+      <circle cx="17" cy="9" r="2.2" />
+      <path d="M3.5 19a5.5 5.5 0 0 1 11 0" strokeLinecap="round" />
+      <path d="M15 19a4 4 0 0 1 5.5-3.7" strokeLinecap="round" />
+    </svg>
+  );
+}
+function NavTekst() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <path d="M6 3h8l4 4v14H6z" strokeLinejoin="round" />
+      <path d="M14 3v4h4" strokeLinejoin="round" />
+      <path d="M9 12h6M9 16h6" strokeLinecap="round" />
+    </svg>
+  );
+}
+function NavChart() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <path d="M4 20V4" strokeLinecap="round" />
+      <path d="M4 20h16" strokeLinecap="round" />
+      <rect x="7" y="12" width="3" height="5" rx="0.6" />
+      <rect x="12" y="8" width="3" height="9" rx="0.6" />
+      <rect x="17" y="5" width="3" height="12" rx="0.6" />
+    </svg>
   );
 }
 
@@ -245,7 +328,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
       /* ── Beginstanden ── */
       gsap.set(q("[data-venster]"), { autoAlpha: 1 });
       gsap.set(q("[data-tegel]"), { autoAlpha: 0.18, scale: 0.94 });
-      gsap.set(q("[data-tegelvink], [data-taakvink]"), { autoAlpha: 0, scale: 0.5 });
+      gsap.set(q("[data-tegelvink], [data-taakvink], [data-navvink]"), { autoAlpha: 0, scale: 0.5 });
       gsap.set(q("[data-taakrij]"), { autoAlpha: 0, x: 14 });
       gsap.set(q("[data-paneel]"), { autoAlpha: 0, y: 18 });
       gsap.set(q("[data-winstchip], [data-slotwoord]"), { autoAlpha: 0, y: 12 });
@@ -324,8 +407,14 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
       vlucht("draaiboek", '[data-taakrij="5"]', 61);
       vlucht("geel2", '[data-taakrij="3"]', 63.5);
 
-      // De overvolle map hoeft nergens heen: die is gewoon niet meer nodig.
-      tl.to(q('[data-venster="map"]'), { scale: 0.5, autoAlpha: 0, rotation: 0, duration: 6 }, 64);
+      // De overvolle map met documenten vliegt naar Bestanden in de zijbalk;
+      // daar popt een badge-vinkje: al je bestanden staan nu netjes op één plek.
+      const bMap = baan("map", '[data-nav="bestanden"]');
+      if (bMap) {
+        tl.to(bMap.el, { x: bMap.dx, y: bMap.dy, scale: 0.24, rotation: 0, duration: 7 }, 65);
+        tl.to(bMap.el, { autoAlpha: 0, duration: 2 }, 70);
+        tl.to('[data-navvink="bestanden"]', { autoAlpha: 1, scale: 1, duration: 2.5, ease: "back.out(2)" }, 71);
+      }
 
       /* ── 71-81 · de taken worden afgevinkt (het merk-moment) ── */
       [1, 2, 3, 4, 5].forEach((n, i) => {
@@ -621,7 +710,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                   analyseren naar de Toetsanalyse-tegel, rapporten naar de to-do. */}
               <div
                 data-venster="geel1"
-                className="absolute left-[3%] top-[54%] w-36 -rotate-[6deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:left-[3%] sm:top-[22%]"
+                className="absolute left-[3%] top-[54%] w-36 -rotate-[6deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:left-[20%] sm:top-[53%]"
               >
                 oudergesprekken plannen!!
               </div>
@@ -633,7 +722,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
               </div>
               <div
                 data-venster="weektaak"
-                className="absolute hidden w-32 rotate-[4deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:right-[3%] sm:top-[21%] sm:block"
+                className="absolute hidden w-32 rotate-[4deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:right-[14%] sm:top-[30%] sm:block"
               >
                 weektaak maken
               </div>
@@ -650,128 +739,139 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                 draaiboek kerst maken
               </div>
 
-              {/* Melding */}
+              {/* Melding: als wit kaartje, zelfde stijl als de vensters */}
               <div
                 data-venster="melding"
-                className="absolute bottom-[10%] left-[8%] flex w-52 items-center gap-2.5 rounded-xl bg-ink/95 p-3 text-[11px] font-semibold text-cream shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] ring-1 ring-white/10 sm:bottom-[5%] sm:left-auto sm:right-[26%]"
+                className="absolute bottom-[10%] left-[8%] flex w-52 items-center gap-2.5 rounded-2xl bg-white p-3 shadow-[0_24px_60px_-16px_rgba(8,5,20,0.65)] ring-1 ring-black/5 sm:bottom-[6%] sm:left-auto sm:right-[22%]"
               >
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-500 text-[10px] font-black">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-rose-500 text-xs font-black text-white">
                   3
                 </span>
-                nieuwe berichten van ouders
+                <span className="min-w-0">
+                  <span className="block text-[11px] font-bold text-ink">Nieuwe berichten</span>
+                  <span className="block text-[10px] text-slate-500">van ouders groep 5</span>
+                </span>
               </div>
             </div>
           )}
 
-          {/* ── De werkplek waar alles landt: een mini-versie van het echte
-                 dashboard (bovenbalk, welkom, takenstrookje, Jouw tools, tip) ── */}
-          <div data-paneel className="relative z-10 mt-4 w-[min(92vw,44rem)] sm:mt-5">
-            <div className="overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5">
-              {/* mini-bovenbalk */}
-              <div className="flex items-center justify-between border-b border-black/5 bg-white px-4 py-2.5">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/Avinka_wordmerk.png" alt="" className="h-4 w-auto sm:h-5" />
-                <span className="flex items-center gap-2 text-[10px] font-semibold text-ink/50">
-                  Hallo, Sanne
-                  <span className="rounded-lg border border-black/10 px-2 py-1">Uitloggen</span>
-                </span>
-              </div>
-
-              <div className="bg-cream px-4 py-3.5 sm:px-5">
-                {/* welkom-kop, zoals op de echte Start-pagina */}
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-black tracking-tight text-ink sm:text-base">
-                      Welkom terug, Sanne! 👋
-                    </p>
-                    <p className="mt-0.5 text-[11px] text-ink/60">
-                      Je tijd na schooltijd is van jou.
-                    </p>
-                  </div>
-                  <span
-                    data-winstchip
-                    className="shrink-0 rounded-full bg-brand-soft px-2.5 py-1 text-[11px] font-bold text-brand-dark"
-                  >
-                    +2 uur deze week
+          {/* ── De werkplek waar alles landt: een tablet met het Avinka-
+                 dashboard (zijbalk, welkom, takenstrookje, Jouw tools, tip) ── */}
+          <div data-paneel className="relative z-10 mt-3 w-[min(94vw,39rem)] sm:mt-4">
+            {/* tablet-behuizing: alles wordt in dit apparaat opgeruimd */}
+            <div className="rounded-[1.7rem] bg-ink/90 p-2 shadow-[0_34px_80px_-24px_rgba(8,5,20,0.75)] ring-1 ring-white/10">
+              <div className="overflow-hidden rounded-[1.15rem] bg-cream">
+                {/* bovenbalk */}
+                <div className="flex items-center justify-between border-b border-black/5 bg-white px-3 py-1.5">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/Avinka_wordmerk.png" alt="" className="h-3.5 w-auto sm:h-4" />
+                  <span className="flex items-center gap-1.5 text-[9px] font-semibold text-ink/50">
+                    Hallo, Sanne
+                    <span className="rounded-md border border-black/10 px-1.5 py-0.5">Uitloggen</span>
                   </span>
                 </div>
 
-                {/* het takenstrookje (hier landen de geeltjes) */}
-                <div className="mt-3 rounded-2xl bg-white p-3 ring-1 ring-black/5">
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-ink/45">
-                    Vandaag
-                  </p>
-                  <ul className="mt-1.5 grid gap-1.5 text-[11px] font-semibold text-ink/85 sm:grid-cols-3 sm:gap-x-4 sm:gap-y-1.5">
-                    {[
-                      { n: 1, t: "oudergesprekken plannen" },
-                      { n: 2, t: "ouders terugmailen" },
-                      { n: 3, t: "rapporten vóór vrijdag" },
-                      { n: 4, t: "weektaak maken" },
-                      { n: 5, t: "draaiboek kerst" },
-                    ].map((r) => (
-                      <li key={r.n} data-taakrij={r.n} className="flex items-start gap-1.5">
+                <div className="flex">
+                  {/* zijbalk, net als het echte dashboard */}
+                  <nav className="hidden w-[8.5rem] shrink-0 flex-col gap-0.5 border-r border-black/5 bg-white/50 p-2 sm:flex">
+                    <MiniNav label="Start" actief icon={<NavHome />} />
+                    <MiniNav label="Takenlijst" icon={<NavTaken />} />
+                    <MiniNav label="Mijn klas" icon={<NavKlas />} />
+                    <MiniNav label="Bestanden" naam="bestanden" icon={<NavTekst />} />
+                    <MiniNav label="Statistieken" icon={<NavChart />} />
+                  </nav>
+
+                  {/* hoofdvlak */}
+                  <div className="min-w-0 flex-1 px-3 py-3 sm:px-4">
+                    {/* welkom-kop */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-black tracking-tight text-ink">
+                          Welkom terug, Sanne! 👋
+                        </p>
+                        <p className="mt-0.5 text-[10px] text-ink/60">
+                          Je tijd na schooltijd is van jou.
+                        </p>
+                      </div>
+                      <span
+                        data-winstchip
+                        className="shrink-0 rounded-full bg-brand-soft px-2.5 py-1 text-[10px] font-bold text-brand-dark"
+                      >
+                        +2 uur deze week
+                      </span>
+                    </div>
+
+                    {/* takenstrookje (hier landen de geeltjes) */}
+                    <div className="mt-2.5 rounded-xl bg-white p-2.5 ring-1 ring-black/5">
+                      <p className="text-[9px] font-bold uppercase tracking-wide text-ink/45">
+                        Vandaag
+                      </p>
+                      <ul className="mt-1 grid gap-x-3 gap-y-1 text-[10px] font-semibold text-ink/85 sm:grid-cols-2">
+                        {[
+                          { n: 1, t: "oudergesprekken plannen" },
+                          { n: 2, t: "ouders terugmailen" },
+                          { n: 3, t: "rapporten vóór vrijdag" },
+                          { n: 4, t: "weektaak maken" },
+                          { n: 5, t: "draaiboek kerst" },
+                        ].map((r) => (
+                          <li key={r.n} data-taakrij={r.n} className="flex items-start gap-1.5">
+                            <span
+                              data-taakvink={r.n}
+                              className="mt-[1px] flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-brand text-[8px] font-black text-white"
+                              aria-hidden
+                            >
+                              ✓
+                            </span>
+                            <span data-taaktekst={r.n} className="leading-snug">
+                              {r.t}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* jouw tools */}
+                    <p className="mt-2.5 text-[10px] font-bold text-ink">Jouw tools</p>
+                    <div className="mt-1.5 grid grid-cols-3 gap-1.5">
+                      <Tegel naam="toets" label="Toetsanalyse" emoji="📊" kleur="bg-sky-500" />
+                      <Tegel naam="rapporten" label="Rapporten" emoji="📝" kleur="bg-violet-500" />
+                      <Tegel naam="ouder" label="Oudercontact" emoji="✉️" kleur="bg-rose-500" />
+                      <Tegel naam="plattegrond" label="Plattegrond" emoji="🪑" kleur="bg-amber-500" />
+                      <Tegel naam="les" label="Lesontwerp" emoji="📓" kleur="bg-teal-500" />
+                      <div
+                        data-tegel="werkbladen"
+                        className="relative flex flex-col items-center gap-1 rounded-xl border-2 border-dashed border-black/10 bg-white/60 p-2 text-center"
+                      >
                         <span
-                          data-taakvink={r.n}
-                          className="mt-[1px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand text-[9px] font-black text-white"
+                          data-tegelvink="werkbladen"
+                          className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand text-[9px] font-black text-white shadow-sm"
                           aria-hidden
                         >
                           ✓
                         </span>
-                        <span data-taaktekst={r.n} className="leading-snug">
-                          {r.t}
+                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-soft text-sm">
+                          ✨
                         </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                        <span className="w-full truncate text-[10px] font-bold text-ink/60">Werkbladen</span>
+                      </div>
+                    </div>
 
-                {/* jouw tools */}
-                <p className="mt-3.5 text-[11px] font-bold text-ink">Jouw tools</p>
-                <div className="mt-1.5 grid grid-cols-2 gap-2 sm:gap-2.5">
-                  <Tegel naam="toets" label="Toetsanalyse" emoji="📊" kleur="bg-sky-500" />
-                  <Tegel naam="rapporten" label="Rapporten" emoji="📝" kleur="bg-violet-500" />
-                  <Tegel naam="ouder" label="Oudercontact" emoji="✉️" kleur="bg-rose-500" />
-                  <Tegel naam="plattegrond" label="Plattegrond" emoji="🪑" kleur="bg-amber-500" />
-                  <Tegel naam="les" label="Lesontwerp" emoji="📓" kleur="bg-teal-500" />
-                  <div
-                    data-tegel="werkbladen"
-                    className="relative flex items-center gap-2.5 rounded-2xl border-2 border-dashed border-black/10 bg-white/70 p-2.5"
-                  >
-                    <span
-                      data-tegelvink="werkbladen"
-                      className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand text-[10px] font-black text-white shadow-sm"
-                      aria-hidden
-                    >
-                      ✓
-                    </span>
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-soft px-0.5 text-center text-[7px] font-black uppercase leading-tight text-brand-dark">
-                      Binnen kort
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-[11px] font-bold text-ink">
-                        Werkbladen
-                      </span>
-                      <span className="block text-[10px] font-medium text-ink/50">
-                        De volgende tool
-                      </span>
-                    </span>
+                    {/* tip-balk */}
+                    <p className="mt-2.5 rounded-lg bg-brand-soft px-2.5 py-1.5 text-[9px] font-medium text-ink/70">
+                      💡 <span className="font-bold">Tip:</span> de namen van je leerlingen
+                      blijven altijd op je eigen computer.
+                    </p>
                   </div>
                 </div>
-
-                {/* de tip-balk van het echte dashboard */}
-                <p className="mt-3 rounded-xl bg-brand-soft px-3 py-2 text-[10px] font-medium text-ink/70">
-                  💡 <span className="font-bold">Tip:</span> de namen van je leerlingen
-                  blijven altijd op je eigen computer.
-                </p>
               </div>
             </div>
 
             {/* De payoff onder het paneel */}
-            <div data-slotwoord className="mt-4 text-center sm:mt-6">
-              <p className="font-display text-xl font-black tracking-tight text-ink sm:text-3xl">
+            <div data-slotwoord className="mt-3 text-center sm:mt-4">
+              <p className="font-display text-xl font-black tracking-tight text-ink sm:text-2xl">
                 Alles op z&rsquo;n plek.
               </p>
-              <p className="mx-auto mt-1.5 max-w-md text-xs leading-5 text-ink/65 sm:mt-2 sm:text-base sm:leading-7">
+              <p className="mx-auto mt-1 max-w-md text-xs leading-5 text-ink/65 sm:text-sm sm:leading-6">
                 Dit is jouw werkplek. Scroll verder, dan vinken we je twijfels af.
               </p>
             </div>
