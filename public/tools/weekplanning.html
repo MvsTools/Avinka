@@ -1569,11 +1569,20 @@ els('btn-genereer').onclick = genereer;
 els('btn-undo').onclick = undo;
 els('btn-print').onclick = printen;
 els('btn-opnieuw').onclick = async () => {
-  const ja = await (window.avinkaBevestig ? avinkaBevestig('Een nieuw rooster genereren? Je huidige indeling wordt vervangen.', {titel:'Opnieuw genereren', bevestig:'Ja, opnieuw'}) : Promise.resolve(confirm('Opnieuw genereren?')));
+  const ja = await (window.avinkaBevestig ? avinkaBevestig('Een nieuwe mix van je vakken genereren? Je huidige indeling wordt vervangen.', {titel:'Opnieuw genereren', bevestig:'Ja, opnieuw'}) : Promise.resolve(confirm('Opnieuw genereren?')));
   if (!ja) return;
-  vulSetupTerug(state.setup);          // genereren met je éigen instellingen, niet met de defaults
-  els('rooster-scherm').style.display='none'; els('setup-scherm').style.display='block';
-  genereer();
+  // Wizard-status onzichtbaar synchroniseren (genereer() leest daaruit) — het
+  // instellingenscherm zelf blijft dicht, je ziet gewoon je rooster met een
+  // nieuwe mix, zonder eerst weer langs je instellingen te moeten.
+  vulSetupTerug(state.setup);
+  const knop = els('btn-opnieuw');
+  const oudeTekst = knop.textContent;
+  knop.disabled = true; knop.textContent = '✨ Bezig met mixen…';
+  els('fout').textContent = '';
+  await genereer();
+  knop.disabled = false; knop.textContent = oudeTekst;
+  const foutmelding = els('fout').textContent;             // genereer() zet fouten hier neer (onzichtbaar hier)
+  if (foutmelding && window.avinkaAlert) avinkaAlert(foutmelding);
 };
 els('btn-instellingen').onclick = () => { vulSetupTerug(state.setup); els('rooster-scherm').style.display='none'; els('setup-scherm').style.display='block'; toonStap(1); window.scrollTo(0,0); };
 
