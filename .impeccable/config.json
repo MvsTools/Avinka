@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font-size",
+        "value": "*",
+        "files": [
+          "src/app/nieuw3/Werkplek.tsx"
+        ],
+        "createdAt": "2026-07-21T10:32:47.677Z",
+        "reason": "Miniatuur-productmockups in de film (vensters, dashboard-tegels, takenlijstje); zelfde gedocumenteerde uitzondering als de film-landing in DESIGN.md typografie"
+      }
+    ]
+  }
+}
