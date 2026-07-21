@@ -1228,6 +1228,7 @@ function sleepChip(chip, vakId, taak) {
     const su = state.setup, v = VAK(vakId);
     const gridSel = taak ? '#grid-na' : '#grid';
     const startX=e.clientX, startY=e.clientY; let moved=false, geest=null, voorbeeld=null;
+    let laatsteX=e.clientX, laatsteY=e.clientY;
     const kolOnder = (x,y) => {
       const o = document.elementFromPoint(x,y);
       const col = o ? o.closest('.kolom-body') : null;
@@ -1235,13 +1236,13 @@ function sleepChip(chip, vakId, taak) {
     };
     const wegGeest = () => { if (geest) { geest.remove(); geest=null; } };
     const wegVoorbeeld = () => { if (voorbeeld) { voorbeeld.remove(); voorbeeld=null; } };
-    const move = ev => {
-      if (!moved && Math.hypot(ev.clientX-startX, ev.clientY-startY) < 5) return;
+    const positioneer = () => {
+      if (!moved && Math.hypot(laatsteX-startX, laatsteY-startY) < 5) return;
       if (!moved) { moved = true; chip.classList.add('sleep'); }
-      const col = kolOnder(ev.clientX, ev.clientY);
+      const col = kolOnder(laatsteX, laatsteY);
       if (col) {                                             // in het rooster → landings-voorbeeld tonen
         wegGeest();
-        const {dag, start} = dropDoel(su, col, ev.clientY, taak);
+        const {dag, start} = dropDoel(su, col, laatsteY, taak);
         const duur = nieuweDuur(vakId, dag, start) || 10;
         if (!voorbeeld) { voorbeeld = document.createElement('div'); }
         if (voorbeeld.parentElement !== col) col.appendChild(voorbeeld);
@@ -1254,15 +1255,19 @@ function sleepChip(chip, vakId, taak) {
       } else {                                               // buiten het rooster → tegeltje bij de cursor
         wegVoorbeeld();
         if (!geest) { geest = document.createElement('div'); geest.className = 'palet-geest'; geest.textContent = v.naam; geest.style.background = v.bg; geest.style.color = v.tx; document.body.appendChild(geest); }
-        geest.style.left = (ev.clientX + 12) + 'px'; geest.style.top = (ev.clientY + 12) + 'px';
+        geest.style.left = (laatsteX + 12) + 'px'; geest.style.top = (laatsteY + 12) + 'px';
       }
     };
+    const scroller = autoscrollLus(positioneer);
+    const move = ev => { laatsteX=ev.clientX; laatsteY=ev.clientY; scroller.beweeg(ev.clientY); };
     const up = ev => {
       document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up);
-      const col = moved ? kolOnder(ev.clientX, ev.clientY) : null;
+      scroller.stop();
+      laatsteX=ev.clientX; laatsteY=ev.clientY;
+      const col = moved ? kolOnder(laatsteX, laatsteY) : null;
       wegGeest(); wegVoorbeeld(); chip.classList.remove('sleep');
       if (!moved || !col) return;                            // tik zonder slepen, of buiten het rooster losgelaten
-      const {dag, start} = dropDoel(su, col, ev.clientY, isTaak(vakId));
+      const {dag, start} = dropDoel(su, col, laatsteY, taak);
       voegLesToe(dag, start, vakId);
     };
     document.addEventListener('pointermove', move);
@@ -1292,6 +1297,35 @@ function tekenNuLijn() {
 /* ── Slepen + tik-om-te-bewerken ────────────────────────────────────── */
 let zojuistGesleept = false;   // onderdrukt de "leeg-klik"-kiezer na een sleep/rek
 const RAND = 9;                // hoogte (px) van de pak-rand boven- en onderaan een blok
+
+// Autoscroll tijdens het slepen: komt de cursor dicht bij de boven- of onderrand
+// van het scherm, dan scrollt de pagina vanzelf door — anders kun je nooit iets
+// naar een plek buiten beeld slepen (het rooster is vaak langer dan het scherm).
+// `onTick` herberekent de bloktekening voor de LAATST bekende cursorpositie;
+// die wordt zowel bij elke echte pointerbeweging als bij elk scroll-frame
+// aangeroepen, zodat een blok blijft meebewegen terwijl de pagina scrolt.
+function autoscrollLus(onTick) {
+  const RANDZONE = 70, MAXSNELHEID = 16;
+  let laatsteY = null, raf = null;
+  const frame = () => {
+    raf = null;
+    if (laatsteY == null) return;
+    const h = window.innerHeight;
+    let delta = 0;
+    if (laatsteY < RANDZONE) delta = -MAXSNELHEID * (1 - laatsteY / RANDZONE);
+    else if (laatsteY > h - RANDZONE) delta = MAXSNELHEID * (1 - (h - laatsteY) / RANDZONE);
+    if (delta) { window.scrollBy(0, delta); onTick(); raf = requestAnimationFrame(frame); }
+  };
+  return {
+    beweeg(clientY) {
+      laatsteY = clientY;
+      onTick();
+      const dichtbijRand = clientY < RANDZONE || clientY > window.innerHeight - RANDZONE;
+      if (dichtbijRand && !raf) raf = requestAnimationFrame(frame);
+    },
+    stop() { laatsteY = null; if (raf) cancelAnimationFrame(raf); raf = null; },
+  };
+}
 // Eén blok: pak je het midden → verplaatsen (vrij op tijd, overlap mag).
 // Pak je de boven- of onderrand → korter/langer maken in stappen van 5 min.
 function sleepbaar(el, b) {
@@ -1318,13 +1352,15 @@ function startSleep(el, b, e) {
   const gridSel = b.type==='taak' ? '#grid-na' : '#grid';   // blijft binnen zijn EIGEN rooster
   const asBegin = pixelBegin(su, b.type);
   const startX=e.clientX, startY=e.clientY; let moved=false;
+  const startScrollY = window.scrollY;               // voor autoscroll: scroll telt mee als beweging
+  let laatsteX=e.clientX, laatsteY=e.clientY;
   const geest = el.cloneNode(true); geest.classList.add('geest'); geest.style.pointerEvents='none'; el.parentElement.appendChild(geest);
-  const move = ev => {
-    const dx=ev.clientX-startX, dy=ev.clientY-startY;
+  const positioneer = () => {
+    const dx=laatsteX-startX, dy=(laatsteY-startY)+(window.scrollY-startScrollY);
     if (!moved && Math.hypot(dx,dy)<4) return;
     if (!moved) { moved=true; el.classList.add('sleep'); el.style.left='3px'; el.style.right='3px'; el.style.width='auto'; }
     el.style.pointerEvents='none';
-    const onder = document.elementFromPoint(ev.clientX, ev.clientY);
+    const onder = document.elementFromPoint(laatsteX, laatsteY);
     el.style.pointerEvents='';
     const onderCol = onder ? onder.closest('.kolom-body') : null;
     const col = (onderCol && onderCol.closest(gridSel)) ? onderCol : null;
@@ -1338,9 +1374,12 @@ function startSleep(el, b, e) {
     el.style.top=((nieuw-asBegin)*PXMIN)+'px';
     el.querySelector('.b-tijd').textContent = minStr(nieuw)+'–'+minStr(nieuw+b.duur);
   };
+  const scroller = autoscrollLus(positioneer);
+  const move = ev => { laatsteX=ev.clientX; laatsteY=ev.clientY; scroller.beweeg(ev.clientY); };
   const up = () => {
     document.removeEventListener('pointermove', move);
     document.removeEventListener('pointerup', up);
+    scroller.stop();
     geest.remove(); el.classList.remove('sleep'); el.style.pointerEvents='';
     if (!moved) { toonMini(el, b); return; }
     zojuistGesleept = true; setTimeout(() => { zojuistGesleept = false; }, 0);
@@ -1360,10 +1399,12 @@ function startRek(el, b, e, kant) {
   const eindD = b.type==='taak' ? asEindVan(su) : (su.dagEind[b.dag] || su.eind);
   const asBegin = pixelBegin(su, b.type);
   const startY = e.clientY, origStart = b.start, origDuur = b.duur;
+  const startScrollY = window.scrollY;
+  let laatsteY = e.clientY;
   let nStart = origStart, nDuur = origDuur;
   el.classList.add('rek');
-  const move = ev => {
-    const d = Math.round(((ev.clientY - startY)/PXMIN)/SNAP)*SNAP;
+  const positioneer = () => {
+    const d = Math.round((((laatsteY - startY)+(window.scrollY-startScrollY))/PXMIN)/SNAP)*SNAP;
     if (kant==='onder') {
       nDuur = Math.max(10, origDuur + d);
       if (origStart + nDuur > eindD) nDuur = eindD - origStart;
@@ -1375,9 +1416,12 @@ function startRek(el, b, e, kant) {
     el.style.height = Math.max(17, nDuur*PXMIN - 3)+'px';
     el.querySelector('.b-tijd').textContent = minStr(nStart)+'–'+minStr(nStart+nDuur);
   };
+  const scroller = autoscrollLus(positioneer);
+  const move = ev => { laatsteY = ev.clientY; scroller.beweeg(ev.clientY); };
   const up = () => {
     document.removeEventListener('pointermove', move);
     document.removeEventListener('pointerup', up);
+    scroller.stop();
     el.classList.remove('rek');
     zojuistGesleept = true; setTimeout(() => { zojuistGesleept = false; }, 0);
     if (nStart!==origStart || nDuur!==origDuur) { duw(); b.start=nStart; b.duur=nDuur; if (nDuur!==origDuur) onthoudDuur(b.vak, nDuur); bewaar(); }
