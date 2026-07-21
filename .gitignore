@@ -50,4 +50,5 @@ _tmp/
 .playwright-mcp/
 
 # Impeccable live-mode werkbestanden (machine-eigen)
-.impeccable/
+.impeccable/*
+!.impeccable/config.json

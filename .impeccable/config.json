@@ -1,0 +1,35 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-color",
+        "value": "*",
+        "files": [
+          "src/app/nieuw/Film.tsx"
+        ],
+        "createdAt": "2026-07-21T01:23:26.161Z",
+        "reason": "Filmisch scenepalet van de /nieuw-landing; in DESIGN.md gedocumenteerd als bewuste cinematografische uitzondering"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "*",
+        "files": [
+          "src/app/nieuw/Film.tsx"
+        ],
+        "createdAt": "2026-07-21T01:23:26.273Z",
+        "reason": "Miniatuur-productmockups (tablet/telefoon) en mono-datalabels; gedocumenteerd in DESIGN.md typografie"
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "src/app/nieuw/Film.tsx"
+        ],
+        "createdAt": "2026-07-21T01:23:26.384Z",
+        "reason": "Decoratieve afbeeldingen met geldige src en bewust lege alt (correcte toegankelijkheid)"
+      }
+    ]
+  }
+}

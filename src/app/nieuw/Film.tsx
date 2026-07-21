@@ -90,7 +90,8 @@ export default function Film({ fotoBestand }: { fotoBestand?: string }) {
       };
       zetKlok();
 
-      /* ── Vluchtdoelen meten (zodat het op elk schermformaat klopt) ── */
+      /* ── Vluchtdoelen meten. Function-based + invalidateOnRefresh zodat de
+         banen ook na een venster-resize precies op de tablet landen. ── */
       const naarTablet = (el?: Element) => {
         const t = q("[data-tablet]")[0];
         if (!el || !t) return { dx: 420, dy: 180 };
@@ -101,9 +102,10 @@ export default function Film({ fotoBestand }: { fotoBestand?: string }) {
           dy: b.top + b.height / 2 - (a.top + a.height / 2),
         };
       };
-      const dStapel = naarTablet(q("[data-stapel]")[0]);
-      const dToets = naarTablet(q("[data-toets]")[0]);
-      const dLesmap = naarTablet(q("[data-lesmap]")[0]);
+      const stapelEl = q("[data-stapel]")[0];
+      const toetsEl = q("[data-toets]")[0];
+      const lesmapEl = q("[data-lesmap]")[0];
+      const heeftLesmap = !!lesmapEl && getComputedStyle(lesmapEl).display !== "none";
 
       /* ── Beginstanden ── */
       gsap.set(
@@ -121,6 +123,7 @@ export default function Film({ fotoBestand }: { fotoBestand?: string }) {
           start: "top top",
           end: "bottom bottom",
           scrub: 0.9,
+          invalidateOnRefresh: true,
         },
       });
 
@@ -147,40 +150,48 @@ export default function Film({ fotoBestand }: { fotoBestand?: string }) {
         tl.to(
           vel,
           {
-            x: dStapel.dx + (i % 2 === 0 ? 12 : -8),
-            y: dStapel.dy + i * 5,
+            x: () => naarTablet(stapelEl).dx + (i % 2 === 0 ? 12 : -8),
+            y: () => naarTablet(stapelEl).dy + i * 5,
             scale: 0.08,
             rotate: 14 - i * 7,
             autoAlpha: 0,
             duration: 8,
-            ease: "power2.in",
+            ease: "power1.in",
           },
           13.5 + i * 1.8,
         );
       });
-      tl.to(q("[data-pen]"), { x: -520, y: -280, rotate: -74, autoAlpha: 0, duration: 7, ease: "power2.in" }, 18);
+      tl.to(q("[data-pen]"), { x: -520, y: -280, rotate: -74, autoAlpha: 0, duration: 7, ease: "power1.in" }, 18);
       q("[data-tab-rij]").forEach((rij, i) => {
         tl.fromTo(rij, { autoAlpha: 0, y: 7 }, { autoAlpha: 1, y: 0, duration: 2.5 }, 16 + i * 2.2);
       });
-      tl.fromTo(q("[data-tab-check]"), { autoAlpha: 0, scale: 0 }, { autoAlpha: 1, scale: 1, duration: 2.5, ease: "back.out(2.4)" }, 22.5);
+      tl.fromTo(q("[data-tab-check]"), { autoAlpha: 0, scale: 0.5 }, { autoAlpha: 1, scale: 1, duration: 2.5, ease: "back.out(2)" }, 22.5);
       tl.to(q("[data-tab-check]"), { autoAlpha: 0, duration: 2 }, 26);
       tl.fromTo(q("[data-tag1]"), { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 3 }, 22);
       tl.to(q("[data-tag1]"), { autoAlpha: 0, y: -8, duration: 3 }, 27.5);
       tl.to(q("[data-beat1]"), { autoAlpha: 0, y: -36, duration: 4 }, 25);
 
-      /* Tabletscherm wisselt: rapporten → toetsanalyse */
-      tl.to(q("[data-scherm-rapporten]"), { autoAlpha: 0, duration: 2 }, 28);
-      tl.to(q("[data-scherm-toets]"), { autoAlpha: 1, duration: 2 }, 29);
+      /* Tabletscherm wisselt: rapporten → toetsanalyse (strak, geen dubbelbeeld) */
+      tl.to(q("[data-scherm-rapporten]"), { autoAlpha: 0, duration: 1.5 }, 28);
+      tl.to(q("[data-scherm-toets]"), { autoAlpha: 1, duration: 1.5 }, 29.5);
 
       /* ── BEAT 2 · de toetsanalyse (30-44) ── */
       tl.fromTo(q("[data-beat2]"), { autoAlpha: 0, y: 36 }, { autoAlpha: 1, y: 0, duration: 5 }, 31);
       tl.to(
         q("[data-toets]"),
-        { x: dToets.dx, y: dToets.dy, scale: 0.1, rotate: -10, autoAlpha: 0, duration: 8, ease: "power2.in" },
+        {
+          x: () => naarTablet(toetsEl).dx,
+          y: () => naarTablet(toetsEl).dy,
+          scale: 0.1,
+          rotate: -10,
+          autoAlpha: 0,
+          duration: 8,
+          ease: "power1.in",
+        },
         32,
       );
       q("[data-toets-balk]").forEach((balk, i) => {
-        tl.fromTo(balk, { autoAlpha: 0, x: -8 }, { autoAlpha: 1, x: 0, duration: 2.5 }, 35 + i * 1.6);
+        tl.fromTo(balk, { autoAlpha: 0, x: -8 }, { autoAlpha: 1, x: 0, duration: 2.5 }, 33.5 + i * 1.4);
       });
       tl.fromTo(q("[data-tag2]"), { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 3 }, 40);
       tl.to(q("[data-tag2]"), { autoAlpha: 0, y: -8, duration: 3 }, 45);
@@ -193,7 +204,7 @@ export default function Film({ fotoBestand }: { fotoBestand?: string }) {
       tl.fromTo(
         q("[data-priv-schild]"),
         { autoAlpha: 0, x: -46, scale: 0.6 },
-        { autoAlpha: 1, x: 0, scale: 1, duration: 4, ease: "back.out(1.8)" },
+        { autoAlpha: 1, x: 0, scale: 1, duration: 4, ease: "back.out(2)" },
         50.5,
       );
       tl.to(q("[data-priv-naam]"), { autoAlpha: 0, duration: 2 }, 51.5);
@@ -203,8 +214,8 @@ export default function Film({ fotoBestand }: { fotoBestand?: string }) {
       tl.to(q("[data-sluier]"), { autoAlpha: 0, duration: 4 }, 57);
 
       /* Tabletscherm wisselt: toetsanalyse → oudercontact */
-      tl.to(q("[data-scherm-toets]"), { autoAlpha: 0, duration: 2 }, 58.5);
-      tl.to(q("[data-scherm-bericht]"), { autoAlpha: 1, duration: 2 }, 59.5);
+      tl.to(q("[data-scherm-toets]"), { autoAlpha: 0, duration: 1.5 }, 58.5);
+      tl.to(q("[data-scherm-bericht]"), { autoAlpha: 1, duration: 1.5 }, 60);
 
       /* ── BEAT 3 · het oudercontact (60-72) ── */
       tl.fromTo(q("[data-beat3]"), { autoAlpha: 0, y: 36 }, { autoAlpha: 1, y: 0, duration: 5 }, 60.5);
@@ -219,20 +230,28 @@ export default function Film({ fotoBestand }: { fotoBestand?: string }) {
       tl.to(q("[data-beat3]"), { autoAlpha: 0, y: -36, duration: 4 }, 70);
 
       /* Tabletscherm wisselt: oudercontact → lesontwerp */
-      tl.to(q("[data-scherm-bericht]"), { autoAlpha: 0, duration: 2 }, 72.5);
-      tl.to(q("[data-scherm-les]"), { autoAlpha: 1, duration: 2 }, 73.5);
+      tl.to(q("[data-scherm-bericht]"), { autoAlpha: 0, duration: 1.5 }, 72.5);
+      tl.to(q("[data-scherm-les]"), { autoAlpha: 1, duration: 1.5 }, 74);
 
       /* ── BEAT 4 · de les van morgen (74-85) ── */
       tl.fromTo(q("[data-beat4]"), { autoAlpha: 0, y: 36 }, { autoAlpha: 1, y: 0, duration: 5 }, 74.5);
-      if (dLesmap.dx !== 420 || dLesmap.dy !== 180) {
+      if (heeftLesmap) {
         tl.to(
           q("[data-lesmap]"),
-          { x: dLesmap.dx, y: dLesmap.dy, scale: 0.1, rotate: 8, autoAlpha: 0, duration: 8, ease: "power2.in" },
+          {
+            x: () => naarTablet(lesmapEl).dx,
+            y: () => naarTablet(lesmapEl).dy,
+            scale: 0.1,
+            rotate: 8,
+            autoAlpha: 0,
+            duration: 8,
+            ease: "power1.in",
+          },
           75.5,
         );
       }
       q("[data-les-stap]").forEach((stap, i) => {
-        tl.fromTo(stap, { autoAlpha: 0, x: -8 }, { autoAlpha: 1, x: 0, duration: 2 }, 77.5 + i * 1.3);
+        tl.fromTo(stap, { autoAlpha: 0, x: -8 }, { autoAlpha: 1, x: 0, duration: 2 }, 75.5 + i * 1.3);
       });
       tl.fromTo(q("[data-tag4]"), { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 3 }, 82);
       tl.to(q("[data-tag4]"), { autoAlpha: 0, y: -8, duration: 3 }, 86.5);
@@ -465,9 +484,17 @@ export default function Film({ fotoBestand }: { fotoBestand?: string }) {
               <span className="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-cream/55">
                 scroll om de tijd terug te draaien
               </span>
-              <svg viewBox="0 0 24 24" className="h-4 w-4 animate-bounce text-cream/55 motion-reduce:animate-none" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <svg viewBox="0 0 24 24" className="hint-pijl h-4 w-4 text-cream/55" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M6 9l6 6 6-6" />
               </svg>
+              <style>{`
+                .hint-pijl { animation: hintZweef 2.2s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+                @keyframes hintZweef {
+                  0%, 100% { transform: translateY(0); opacity: .55; }
+                  50% { transform: translateY(5px); opacity: 1; }
+                }
+                @media (prefers-reduced-motion: reduce) { .hint-pijl { animation: none; } }
+              `}</style>
             </div>
           </div>
         </div>
@@ -516,7 +543,7 @@ function TekstBlok({
 
 function Klok() {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-cream/15 bg-[#0d0a1c]/70 px-3.5 py-2 backdrop-blur">
+    <div className="flex items-center gap-3 rounded-2xl border border-cream/15 bg-[#0d0a1c]/90 px-3.5 py-2">
       <svg viewBox="0 0 48 48" className="h-9 w-9" aria-hidden>
         <circle cx="24" cy="24" r="22" fill="rgba(251,246,238,0.06)" stroke="rgba(251,246,238,0.35)" strokeWidth="2" />
         {Array.from({ length: 12 }).map((_, i) => (
@@ -1015,7 +1042,7 @@ function DataTag({ data, tekst }: { data: string; tekst: string }) {
   const props = { [data]: "" };
   return (
     <div {...props} className="absolute -bottom-12 left-[30%] z-20 -translate-x-1/2">
-      <span className="flex items-center gap-2 whitespace-nowrap rounded-lg border border-brand/50 bg-[#0d0a1c]/85 px-3 py-2 font-mono text-[11px] font-bold text-cream backdrop-blur">
+      <span className="flex items-center gap-2 whitespace-nowrap rounded-lg border border-brand/50 bg-[#0d0a1c]/95 px-3 py-2 font-mono text-[11px] font-bold text-cream">
         <span className="h-1.5 w-1.5 rounded-full bg-brand" />
         {tekst}
       </span>
