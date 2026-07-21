@@ -423,9 +423,29 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
       naarRow("weektaak", '[data-takenrow="4"]', 74.5);
       naarRow("draaiboek", '[data-takenrow="5"]', 78);
 
-      // Alles binnen: de lijst klapt weer netjes dicht. Alles op z'n plek.
+      // De teller loopt mee op: elke keer dat er een taak landt, telt hij +1.
+      const teller = { v: 0 };
+      tl.to(
+        teller,
+        {
+          v: 5,
+          duration: 20,
+          ease: "none",
+          snap: { v: 1 },
+          onUpdate: () => {
+            const el = q("[data-takencount]")[0];
+            if (el) el.textContent = String(teller.v);
+          },
+        },
+        64,
+      );
+
+      // Alles binnen: de lijst klapt weer netjes dicht. Alles op één plek.
       tl.to(q("[data-takendrop]"), { autoAlpha: 0, scale: 0.96, y: -4, duration: 3 }, 84);
       tl.to(q("[data-chevron]"), { rotation: 0, duration: 3 }, 84);
+
+      // De volle tablet zakt iets omlaag, weg van de kop bovenin.
+      tl.to(q("[data-paneel]"), { y: 26, duration: 8, ease: "power2.out" }, 82);
 
       /* ── 72-92 · avond wordt dag; de belofte blijft staan en kleurt mee ── */
       tl.to(q("[data-avondlaag]"), { opacity: 0, duration: 20, ease: "power1.inOut" }, 72);
@@ -763,8 +783,8 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                  dashboard (zijbalk, welkom, takenstrookje, Jouw tools, tip) ── */}
           <div data-paneel className="relative z-10 mt-3 w-[min(94vw,39rem)] sm:mt-4">
             {/* tablet-behuizing: alles wordt in dit apparaat opgeruimd */}
-            <div className="rounded-[1.7rem] bg-ink/90 p-2 shadow-[0_34px_80px_-24px_rgba(8,5,20,0.75)] ring-1 ring-white/10">
-              <div className="overflow-hidden rounded-[1.15rem] bg-cream">
+            <div className="rounded-[1.4rem] bg-ink/90 p-1 shadow-[0_34px_80px_-24px_rgba(8,5,20,0.75)] ring-1 ring-white/10">
+              <div className="overflow-hidden rounded-[1.05rem] bg-cream">
                 {/* bovenbalk */}
                 <div className="flex items-center justify-between border-b border-black/5 bg-white px-3 py-1.5">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -805,7 +825,9 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                             className="flex items-center gap-1.5 rounded-lg border border-black/5 bg-white px-2 py-1 text-[10px] font-bold text-ink shadow-sm"
                           >
                             <span aria-hidden>📋</span>
-                            <span>5 taken</span>
+                            <span>
+                              <span data-takencount>0</span> taken
+                            </span>
                             <svg
                               data-chevron
                               viewBox="0 0 24 24"
@@ -898,12 +920,13 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
             </div>
 
             {/* De payoff onder het paneel */}
-            <div data-slotwoord className="mt-3 text-center sm:mt-4">
-              <p className="font-display text-xl font-black tracking-tight text-ink sm:text-2xl">
-                Alles op z&rsquo;n plek.
+            <div data-slotwoord className="mt-6 text-center sm:mt-8">
+              <p className="font-display text-2xl font-black tracking-tight text-ink sm:text-3xl">
+                Alles op één plek.
               </p>
-              <p className="mx-auto mt-1 max-w-md text-xs leading-5 text-ink/65 sm:text-sm sm:leading-6">
-                Dit is jouw werkplek. Scroll verder, dan vinken we je twijfels af.
+              <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-ink/70 sm:text-base sm:leading-7">
+                Je tools, je taken en je klas op één rustige werkplek. Zo hou je elke week
+                tijd over voor het echte werk, in plaats van het uitzoekwerk.
               </p>
             </div>
           </div>
