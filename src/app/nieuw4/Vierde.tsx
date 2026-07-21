@@ -7,7 +7,7 @@ import {
   useState,
   useSyncExternalStore,
   type CSSProperties,
-  type KeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
   type SVGProps,
 } from "react";
 import { gsap } from "gsap";
@@ -61,51 +61,38 @@ const PIJNPUNTEN = [
   },
 ];
 
-const TOOLDATA = [
+/* De tool-galerij: per tool één kunstkaart (Stripe-achtig, maar in onze
+   eigen beeldtaal) met één harde regel eronder. Nieuwe tool = kaart erbij. */
+const KAARTEN = [
   {
+    id: "rapporten",
     naam: "Rapporten",
-    winst: "± 35 min per week",
-    tekst:
-      "Warme, persoonlijke rapportteksten die klinken alsof jij ze schreef. Want dat deed je, alleen een stuk sneller.",
-    dot: "bg-violet-500",
-    venster: "Rapporten · groep 5",
-    demo: "rapport",
+    zin: "Rapportteksten die klinken alsof jij ze schreef.",
+    winst: "± 35 min per week terug.",
   },
   {
+    id: "toetsanalyse",
     naam: "Toetsanalyse",
-    winst: "± 45 min per week",
-    tekst:
-      "In één oogopslag zie je hoe je groep ervoor staat en wie wat extra aandacht kan gebruiken. Geen uren meer puzzelen in Excel.",
-    dot: "bg-sky-500",
-    venster: "Toetsanalyse · M-toets",
-    demo: "analyse",
+    zin: "Zie in één oogopslag wie extra aandacht nodig heeft.",
+    winst: "± 45 min per week terug.",
   },
   {
+    id: "oudercontact",
     naam: "Oudercontact",
-    winst: "± 15 min per week",
-    tekst:
-      "Oudergesprekken, weekberichten en ouderberichten, in een paar minuten klaar. Nooit meer staren naar een leeg scherm.",
-    dot: "bg-rose-500",
-    venster: "Oudercontact · weekbericht",
-    demo: "bericht",
+    zin: "Weekberichten en oudergesprekken zonder leeg scherm.",
+    winst: "± 15 min per week terug.",
   },
   {
+    id: "lesontwerp",
     naam: "Lesontwerp",
-    winst: "± 25 min per week",
-    tekst:
-      "Lever een lesdoel aan en krijg een complete, kant-en-klare les terug: met opbouw, bouwstenen en praktische tips. Klaar om voor de klas te gebruiken.",
-    dot: "bg-teal-500",
-    venster: "Lesontwerp · breuken",
-    demo: "les",
+    zin: "Van één leerdoel naar een complete les met differentiatie.",
+    winst: "± 25 min per week terug.",
   },
   {
+    id: "plattegrond",
     naam: "Plattegrond",
-    winst: "scheelt een avond puzzelen",
-    tekst:
-      "Schuif je klasplattegrond in elkaar met een paar klikken. Of laat Avinka slim plaatsen op basis van je sociogram, met jouw wensen altijd als leidend.",
-    dot: "bg-amber-500",
-    venster: "Plattegrond · lokaal groep 5",
-    demo: "plattegrond",
+    zin: "De klasopstelling puzzelt zichzelf uit, jouw wensen voorop.",
+    winst: "Scheelt een avond puzzelen.",
   },
 ];
 
@@ -1032,24 +1019,28 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           </div>
         </section>
 
-        {/* ── 3. De tools, elk met een levend demo-kaartje ── */}
+        {/* ── 3. De tool-galerij: grote kunstkaarten, jij scrolt erdoorheen ── */}
         <section id="tools" className="relative scroll-mt-20 overflow-hidden">
           <div className="pointer-events-none absolute -right-32 top-24 h-96 w-96 rounded-full bg-brand/[0.07] blur-3xl" aria-hidden />
-          <div className="relative mx-auto w-full max-w-5xl px-6 py-24">
-            <div data-reveal className="max-w-2xl">
-              <h2 className="font-display text-4xl font-black tracking-tight [text-wrap:balance]">
-                Dit staat er voor je klaar
-              </h2>
-              <p className="mt-4 text-lg text-ink/60">
-                Het platform groeit met je mee: er komen steeds nieuwe tools bij die
-                je werk lichter maken.
-              </p>
+          <div className="relative pt-24">
+            <div className="mx-auto w-full max-w-5xl px-6">
+              <div data-reveal className="max-w-2xl">
+                <h2 className="font-display text-4xl font-black tracking-tight [text-wrap:balance]">
+                  Dit staat er voor je klaar
+                </h2>
+                <p className="mt-4 text-lg text-ink/60">
+                  Vijf tools, en er komen er steeds meer bij. Schuif er op je gemak
+                  doorheen.
+                </p>
+              </div>
             </div>
 
-            <ToolPodium anim={film} />
+            <ToolRail />
+          </div>
 
+          <div className="relative mx-auto w-full max-w-5xl px-6 pb-24">
             {/* De optelsom */}
-            <div data-reveal className="mt-14 rounded-[2rem] bg-sand px-6 py-10 text-center">
+            <div data-reveal className="mt-16 rounded-[2rem] bg-sand px-6 py-10 text-center">
               <p className="text-lg font-bold text-ink/70">35 + 45 + 15 + 25 minuten…</p>
               <p className="mt-3 font-display text-3xl font-black tracking-tight text-ink sm:text-4xl">
                 samen{" "}
@@ -1291,327 +1282,298 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
   );
 }
 
-/* ── Het tool-podium: één vast toneel, de strip eronder wisselt de show.
-   Schaalt met het aantal tools: de strip wordt breder, de sectie niet hoger.
-   Zonder animatie (reduced/geen JS) staat alles er gewoon; de wissel werkt
-   dan zonder beweging. ─────────────────────────────────────────────────── */
-function ToolPodium({ anim }: { anim: boolean }) {
-  const [actief, setActief] = useState(0);
-  const [auto, setAuto] = useState(true);
-  const [zichtbaar, setZichtbaar] = useState(false);
-  const [hangt, setHangt] = useState(false);
-  const wrap = useRef<HTMLDivElement>(null);
-  const paneel = useRef<HTMLDivElement>(null);
-  const strip = useRef<HTMLDivElement>(null);
-  const tabs = useRef<(HTMLButtonElement | null)[]>([]);
-  const gezien = useRef(false);
+/* ── De tool-galerij: een sleepbare rij kunstkaarten, één per tool.
+   Zoals de klantkaarten van Stripe, maar in de Avinka-beeldtaal: elk
+   kaartbeeld is een eigen kleine wereld met échte inhoud (een rapportzin,
+   een berichtje van thuis, een klasopstelling), geen interface-namaak.
+   De bezoeker heeft de regie: slepen, scrollen of de pijltjes. ─────────── */
+function ToolRail() {
+  const rail = useRef<HTMLDivElement>(null);
+  const greep = useRef({ actief: false, startX: 0, startScroll: 0 });
+  const [kanTerug, setKanTerug] = useState(false);
+  const [kanVerder, setKanVerder] = useState(true);
 
-  const tool = TOOLDATA[actief];
-
-  // Zelf kiezen = de regie overnemen; de autoloop stopt definitief.
-  const kies = (i: number) => {
-    setAuto(false);
-    setActief(i);
-  };
-
-  const opToets = (e: KeyboardEvent<HTMLDivElement>) => {
-    const n = TOOLDATA.length;
-    let doel = -1;
-    if (e.key === "ArrowRight") doel = (actief + 1) % n;
-    else if (e.key === "ArrowLeft") doel = (actief + n - 1) % n;
-    else if (e.key === "Home") doel = 0;
-    else if (e.key === "End") doel = n - 1;
-    if (doel < 0) return;
-    e.preventDefault();
-    kies(doel);
-    tabs.current[doel]?.focus();
-  };
-
-  /* Pas als het podium in beeld is, speelt en wisselt er iets. */
-  useEffect(() => {
-    if (!anim) return;
-    const el = wrap.current;
+  const bijScroll = () => {
+    const el = rail.current;
     if (!el) return;
-    const io = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) gezien.current = true;
-        setZichtbaar(e.isIntersecting);
-      },
-      { threshold: 0.35 },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [anim]);
+    setKanTerug(el.scrollLeft > 8);
+    setKanVerder(el.scrollLeft < el.scrollWidth - el.clientWidth - 8);
+  };
 
-  /* Elke wissel: paneel schuift binnen en de demo speelt opnieuw. */
-  useEffect(() => {
-    if (!anim || !(zichtbaar || gezien.current)) return;
-    const raf = requestAnimationFrame(() => paneel.current?.classList.add("is-in"));
-    // Houd het actieve kaartje in beeld als de strip scrollt (alleen horizontaal).
-    const s = strip.current;
-    const tab = tabs.current[actief];
-    if (s && tab && s.scrollWidth > s.clientWidth) {
-      s.scrollTo({ left: Math.max(0, tab.offsetLeft - 24), behavior: "smooth" });
-    }
-    return () => cancelAnimationFrame(raf);
-  }, [anim, actief, zichtbaar]);
+  const stap = (richting: number) => {
+    const el = rail.current;
+    el?.scrollBy({ left: richting * Math.round(el.clientWidth * 0.75), behavior: "smooth" });
+  };
 
-  /* De autoloop: rustig doorwisselen tot de bezoeker iets aanraakt. */
-  useEffect(() => {
-    if (!anim || !auto || !zichtbaar || hangt) return;
-    const timer = window.setTimeout(() => setActief((a) => (a + 1) % TOOLDATA.length), 6000);
-    return () => clearTimeout(timer);
-  }, [anim, auto, zichtbaar, hangt, actief]);
+  /* Slepen met de muis; aanraakschermen scrollen gewoon native. */
+  const pakVast = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const el = rail.current;
+    if (e.pointerType !== "mouse" || !el) return;
+    greep.current = { actief: true, startX: e.clientX, startScroll: el.scrollLeft };
+    el.setPointerCapture(e.pointerId);
+    el.classList.add("sleept");
+  };
+  const beweeg = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const el = rail.current;
+    if (!greep.current.actief || !el) return;
+    e.preventDefault();
+    el.scrollLeft = greep.current.startScroll - (e.clientX - greep.current.startX);
+  };
+  const laatLos = () => {
+    greep.current.actief = false;
+    rail.current?.classList.remove("sleept");
+  };
 
-  const loopt = anim && auto && zichtbaar && !hangt;
+  /* Zelfde kantlijn als de rest van de pagina (max-w-5xl + px-6). */
+  const kantlijn = "max(1.5rem, calc(50% - 32rem + 1.5rem))";
 
   return (
-    <div
-      ref={wrap}
-      className="mt-12"
-      onMouseEnter={() => setHangt(true)}
-      onMouseLeave={() => setHangt(false)}
-    >
-      {/* Het toneel: een diep-groen kleurvlak waarop de echte tool draait. */}
+    <div className="mt-10">
       <div
-        id="toolpodium-paneel"
-        role="tabpanel"
-        aria-labelledby={`tooltab-${actief}`}
-        className="relative overflow-hidden rounded-[2rem] bg-brand-dark p-7 sm:p-9"
-      >
-        {/* Zacht licht rechtsboven, zoals de lamp in de film. */}
-        <div
-          className="pointer-events-none absolute -right-20 -top-24 h-80 w-80 rounded-full bg-white/10 blur-3xl"
-          aria-hidden
-        />
-        <div
-          key={actief}
-          ref={paneel}
-          data-reveal
-          className="podium-paneel relative grid min-h-[35rem] items-center gap-8 sm:min-h-[30rem] lg:min-h-[24rem] lg:grid-cols-[1fr_1.15fr] lg:gap-12"
-        >
-          <div className="min-w-0">
-            <h3 className="flex items-center gap-3 font-display text-2xl font-black tracking-tight text-white sm:text-3xl">
-              <span
-                className={`h-3.5 w-3.5 rounded-full ring-2 ring-white/25 ${tool.dot}`}
-                aria-hidden
-              />
-              {tool.naam}
-            </h3>
-            <p className="mt-3 leading-8 text-white">{tool.tekst}</p>
-            <p className="mt-4 inline-block rounded-full bg-white px-3.5 py-1.5 text-sm font-bold text-ink/80 shadow-sm">
-              {tool.winst}
-            </p>
-          </div>
-          {/* Het venster loopt op groot scherm iets over de rand: durf. */}
-          <div className="flex min-w-0 justify-center lg:justify-end lg:translate-x-8">
-            <ToolVoorstelling soort={tool.demo} titel={tool.venster} />
-          </div>
-        </div>
-      </div>
-
-      {/* De strip: alle tools op een rij; nieuwe tools schuiven gewoon aan. */}
-      <div
-        ref={strip}
+        ref={rail}
         data-reveal
-        className="podium-strip relative mt-5 flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        role="region"
+        aria-label="De tools van Avinka"
+        tabIndex={0}
+        onScroll={bijScroll}
+        onPointerDown={pakVast}
+        onPointerMove={beweeg}
+        onPointerUp={laatLos}
+        onPointerCancel={laatLos}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowRight") {
+            e.preventDefault();
+            stap(1);
+          } else if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            stap(-1);
+          }
+        }}
+        className="tool-rail flex gap-5 overflow-x-auto pb-2 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink/60 sm:gap-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        style={{
+          paddingLeft: kantlijn,
+          paddingRight: kantlijn,
+          scrollPaddingLeft: kantlijn,
+        }}
       >
-        <div role="tablist" aria-label="Kies een tool" className="flex shrink-0 gap-3" onKeyDown={opToets}>
-          {TOOLDATA.map((t, i) => (
-            <button
-              key={t.naam}
-              ref={(el) => {
-                tabs.current[i] = el;
-              }}
-              type="button"
-              role="tab"
-              id={`tooltab-${i}`}
-              aria-selected={i === actief}
-              aria-controls="toolpodium-paneel"
-              tabIndex={i === actief ? 0 : -1}
-              onClick={() => kies(i)}
-              style={{ "--i": i } as CSSProperties}
-              className={`strip-kaart relative shrink-0 overflow-hidden rounded-2xl px-4 py-3 text-left transition-[translate,box-shadow,background-color] duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink/70 active:scale-[0.98] ${
-                i === actief
-                  ? "bg-brand-soft ring-2 ring-brand/40"
-                  : "bg-white shadow-sm ring-1 ring-black/5 hover:-translate-y-0.5"
-              }`}
-            >
-              <span className="flex items-center gap-2 text-sm font-bold text-ink">
-                <span className={`h-2.5 w-2.5 rounded-full ${t.dot}`} aria-hidden />
-                {t.naam}
-              </span>
-              <span className="mt-1 block text-xs font-semibold text-ink/55">{t.winst}</span>
-              {loopt && i === actief && (
+        {KAARTEN.map((k, i) => (
+          <figure
+            key={k.id}
+            className="rail-kaart w-[18.5rem] shrink-0 snap-start select-none sm:w-[21rem]"
+            style={{ "--i": i } as CSSProperties}
+          >
+            <div className="relative aspect-[4/5] overflow-hidden rounded-3xl shadow-lg ring-1 ring-black/10 transition-transform duration-300 hover:-translate-y-1.5">
+              <KaartBeeld soort={k.id} />
+              <div className="kaart-grain pointer-events-none absolute inset-0" aria-hidden />
+              <p
+                className={`absolute bottom-4 left-4 flex items-center gap-2 font-display text-lg font-black tracking-tight ${
+                  k.id === "lesontwerp" ? "text-ink" : "text-white"
+                }`}
+              >
                 <span
-                  key={actief}
-                  className="strip-voortgang absolute inset-x-0 bottom-0 h-0.5 bg-brand"
-                  aria-hidden
-                />
-              )}
-            </button>
-          ))}
-        </div>
+                  className={`flex h-6 w-6 items-center justify-center rounded-full ${
+                    k.id === "lesontwerp" ? "bg-ink text-cream" : "bg-white/95 text-brand-dark"
+                  }`}
+                >
+                  <Vink className="h-3.5 w-3.5" dik={4} />
+                </span>
+                {k.naam}
+              </p>
+            </div>
+            <figcaption className="mt-4 pr-2 text-sm leading-6 text-ink/70">
+              {k.zin}{" "}
+              <strong className="whitespace-nowrap font-bold text-ink">{k.winst}</strong>
+            </figcaption>
+          </figure>
+        ))}
 
-        {/* De volgende op de roadmap schuift alvast aan. */}
-        <div
-          className="strip-kaart shrink-0 rounded-2xl border-2 border-dashed border-black/10 bg-white/60 px-4 py-3"
-          style={{ "--i": TOOLDATA.length } as CSSProperties}
+        {/* De volgende die eraan komt schuift alvast aan. */}
+        <figure
+          className="rail-kaart w-[18.5rem] shrink-0 snap-start select-none sm:w-[21rem]"
+          style={{ "--i": KAARTEN.length } as CSSProperties}
         >
-          <span className="flex items-center gap-2 text-sm font-bold text-ink/60">
-            Werkbladen
-            <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-bold text-brand-dark">
+          <div className="flex aspect-[4/5] flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-ink/15 bg-sand/60">
+            <span className="rounded-full bg-brand-soft px-3.5 py-1.5 text-sm font-bold text-brand-dark">
               binnenkort ✨
             </span>
-          </span>
-          <span className="mt-1 block text-xs font-semibold text-ink/45">
-            de volgende die eraan komt
-          </span>
-        </div>
+            <p className="font-display text-2xl font-black tracking-tight text-ink/70">Werkbladen</p>
+          </div>
+          <figcaption className="mt-4 pr-2 text-sm leading-6 text-ink/60">
+            Mooie, printbare werkbladen bij je les. De volgende tool die eraan komt.
+          </figcaption>
+        </figure>
+      </div>
+
+      {/* De pijltjes, op de kolomlijn van de pagina. */}
+      <div className="mx-auto flex w-full max-w-5xl justify-end gap-2 px-6 pt-4">
+        <button
+          type="button"
+          onClick={() => stap(-1)}
+          disabled={!kanTerug}
+          aria-label="Vorige tools"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink shadow-sm ring-1 ring-black/10 transition hover:-translate-y-0.5 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-5 w-5" aria-hidden>
+            <path d="M14.5 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          onClick={() => stap(1)}
+          disabled={!kanVerder}
+          aria-label="Volgende tools"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink shadow-sm ring-1 ring-black/10 transition hover:-translate-y-0.5 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-5 w-5" aria-hidden>
+            <path d="M9.5 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
       </div>
     </div>
   );
 }
 
-/* ── De voorstelling: een getrouw tool-venster dat zichzelf bedient.
-   Rapporten is de eerste volledige show (cursor kiest, klikt, de tekst
-   schrijft zichzelf, "Afgevinkt"); de andere tools spelen voorlopig hun
-   bestaande demo in hetzelfde venster. Puur CSS, start bij .is-in. ─────── */
-function ToolVoorstelling({ soort, titel }: { soort: string; titel: string }) {
+/* Een tafelgroepje van vier voor de plattegrond-kaart. */
+function Tafelgroep({ accent = -1, className = "" }: { accent?: number; className?: string }) {
   return (
-    <div className="relative w-full min-w-0 max-w-[27rem] rounded-2xl bg-white shadow-xl ring-1 ring-black/10">
-      {/* Vensterbalk, dezelfde taal als de vensters in de film. */}
-      <div className="flex items-center gap-2.5 rounded-t-2xl border-b border-black/5 bg-cream/80 px-4 py-2.5">
-        <span className="flex gap-1.5" aria-hidden>
-          <span className="h-2.5 w-2.5 rounded-full bg-black/10" />
-          <span className="h-2.5 w-2.5 rounded-full bg-black/10" />
-          <span className="h-2.5 w-2.5 rounded-full bg-black/10" />
-        </span>
-        <span className="text-xs font-bold text-ink/55">{titel}</span>
+    <div className={`grid grid-cols-2 gap-1.5 ${className}`} aria-hidden>
+      {[0, 1, 2, 3].map((i) => (
+        <span
+          key={i}
+          className={`h-7 w-10 rounded-lg ${
+            i === accent ? "bg-accent shadow-[0_0_0_3px_rgba(245,158,11,0.35)]" : "bg-cream/85"
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ── De kaartbeelden: vijf kleine werelden in de merktaal. ─────────────── */
+function KaartBeeld({ soort }: { soort: string }) {
+  if (soort === "rapporten")
+    return (
+      <div className="absolute inset-0 bg-ink">
+        <div className="absolute -right-14 -top-16 h-56 w-56 rounded-full bg-accent/25 blur-3xl" aria-hidden />
+        <div className="absolute -bottom-20 -left-16 h-64 w-64 rounded-full bg-brand/25 blur-3xl" aria-hidden />
+        {/* het vel met de eerste zin */}
+        <div className="absolute left-1/2 top-[45%] w-[80%] -translate-x-1/2 -translate-y-1/2 -rotate-2 rounded-xl bg-cream p-5 shadow-2xl">
+          <p className="font-display text-lg font-black leading-snug text-ink">
+            &ldquo;Sofie liet dit halfjaar een prachtige groei zien&hellip;&rdquo;
+          </p>
+          <div className="mt-4 space-y-2" aria-hidden>
+            <div className="h-1.5 rounded-full bg-ink/10" />
+            <div className="h-1.5 w-5/6 rounded-full bg-ink/10" />
+            <div className="h-1.5 w-11/12 rounded-full bg-ink/10" />
+            <div className="h-1.5 w-3/4 rounded-full bg-ink/10" />
+          </div>
+        </div>
+        <Vink
+          className="absolute right-4 top-[58%] h-20 w-20 -rotate-6 text-brand drop-shadow-lg"
+          dik={2.4}
+        />
+        <p className="font-hand absolute left-6 top-5 -rotate-3 text-xl text-cream/90">
+          precies mijn toon
+        </p>
       </div>
+    );
 
-      {soort === "rapport" && (
-        <div className="relative p-5">
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/40">
-            Leerling
-          </p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <span className="vs-kies inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1.5 text-sm font-bold text-ink ring-1 ring-brand/40">
-              <Vink className="vs-kiesvink h-3.5 w-3.5 text-brand" dik={4} />
-              Sofie
-            </span>
-            <span className="rounded-full bg-white px-3 py-1.5 text-sm font-bold text-ink/45 ring-1 ring-black/10">
-              Yassin
-            </span>
-            <span className="rounded-full bg-white px-3 py-1.5 text-sm font-bold text-ink/45 ring-1 ring-black/10">
-              Mila
-            </span>
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <div className="rounded-xl bg-cream px-3 py-2 text-sm font-semibold text-ink/70 ring-1 ring-black/5">
-              Vak: rekenen
-            </div>
-            <div className="rounded-xl bg-cream px-3 py-2 text-sm font-semibold text-ink/70 ring-1 ring-black/5">
-              Toon: warm
-            </div>
-          </div>
-          <div className="vs-knop mt-4 inline-flex rounded-xl bg-brand px-4 py-2 text-sm font-bold text-white shadow-sm">
-            Schrijf rapport
-          </div>
-          <div className="vs-uit mt-4 overflow-hidden rounded-xl bg-cream/70 p-4 ring-1 ring-black/5">
-            <p className="vs-regel1 whitespace-nowrap text-sm leading-6 text-ink/80">
-              Sofie groeide mooi bij rekenen…
-            </p>
-            <div className="mt-2 space-y-1.5" aria-hidden>
-              <div className="vs-balk h-2 rounded-full bg-brand-soft" style={{ width: "86%" }} />
-              <div className="vs-balk h-2 rounded-full bg-brand-soft" style={{ width: "68%" }} />
-            </div>
-          </div>
-          <div className="vs-toast absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-ink px-3 py-1.5 text-xs font-bold text-white shadow-lg">
-            <Vink className="h-3.5 w-3.5 text-brand" dik={4} />
-            Afgevinkt
-          </div>
-          {/* De cursor die de tool bedient; alleen op grotere schermen. */}
-          <div className="vs-cursor pointer-events-none absolute left-0 top-0 hidden opacity-0 sm:block" aria-hidden>
-            <svg viewBox="0 0 24 24" className="h-5 w-5 drop-shadow-md" fill="white" stroke="#221c3a" strokeWidth="1.5">
-              <path d="M5 3l14 8.5-6.2 1.2L9.5 19z" strokeLinejoin="round" />
-            </svg>
-          </div>
+  if (soort === "toetsanalyse")
+    return (
+      <div className="absolute inset-0 bg-brand-dark">
+        <div className="absolute -left-16 -top-20 h-64 w-64 rounded-full bg-white/15 blur-3xl" aria-hidden />
+        {/* de klas als skyline; de twee laagste lichten amber op */}
+        <div className="absolute inset-x-6 bottom-16 flex h-[46%] items-end gap-[5px]" aria-hidden>
+          {[34, 52, 44, 68, 38, 80, 56, 22, 62, 74, 46, 58, 88, 28, 66, 50].map((h, i) => (
+            <div
+              key={i}
+              className={`flex-1 rounded-full ${i === 7 || i === 13 ? "bg-accent" : "bg-white"}`}
+              style={{ height: `${h}%`, opacity: i === 7 || i === 13 ? 1 : 0.25 + (h / 100) * 0.45 }}
+            />
+          ))}
         </div>
-      )}
+        <p className="font-hand absolute right-6 top-7 rotate-2 text-right text-xl leading-6 text-white">
+          deze twee even
+          <br />
+          extra oefenen ↘
+        </p>
+      </div>
+    );
 
-      {soort === "analyse" && (
-        <div className="p-5">
-          <div className="demo-analyse flex h-24 items-end gap-2" aria-hidden>
-            {[45, 80, 60, 95, 30, 70, 55, 85].map((h, i) => (
-              <div
-                key={i}
-                className="flex-1 rounded-t-md bg-sky-300"
-                style={{ height: `${h}%`, transitionDelay: `${i * 70}ms` }}
-              />
-            ))}
-          </div>
-          <p className="mt-3 text-xs font-semibold text-ink/50">
-            2 leerlingen vallen op: extra aandacht bij meten
+  if (soort === "oudercontact")
+    return (
+      <div className="absolute inset-0 bg-accent">
+        <div className="absolute -bottom-24 -right-20 h-72 w-72 rounded-full bg-white/30 blur-3xl" aria-hidden />
+        <div className="absolute -left-14 -top-14 h-56 w-56 rounded-full bg-ink/10 blur-3xl" aria-hidden />
+        {/* het weekbericht */}
+        <div className="absolute left-5 right-12 top-[22%] -rotate-1 rounded-2xl rounded-bl-md bg-white p-4 shadow-xl">
+          <p className="text-sm font-bold text-ink">Beste ouders, wat een week!</p>
+          <p className="mt-1 text-sm leading-6 text-ink/70">
+            De spreekbeurten waren een feestje, en woensdag…
           </p>
         </div>
-      )}
-
-      {soort === "bericht" && (
-        <div className="p-5">
-          <p className="text-sm leading-6 text-ink/80">
-            Beste ouders, wat een week! We hebben hard gewerkt aan…
-          </p>
-          <div className="demo-bericht mt-3 flex items-center gap-2" aria-hidden>
-            {[0, 1, 2].map((i) => (
-              <span
-                key={i}
-                className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-100 text-rose-500"
-                style={{ transitionDelay: `${i * 120}ms` }}
-              >
-                <Vink className="h-3.5 w-3.5" dik={4} />
-              </span>
-            ))}
-            <span className="text-sm font-semibold text-ink/50">3 berichten klaar</span>
-          </div>
+        {/* het antwoord van thuis */}
+        <div className="absolute bottom-[24%] left-12 right-5 rotate-1 rounded-2xl rounded-br-md bg-ink p-4 shadow-xl">
+          <p className="text-sm leading-6 text-cream">Wat leuk om zo mee te kijken. Dankjewel! ❤️</p>
         </div>
-      )}
+        <p className="font-hand absolute left-6 top-6 -rotate-2 text-xl text-ink/80">
+          vrijdag 16:02 · verstuurd
+        </p>
+      </div>
+    );
 
-      {soort === "les" && (
-        <div className="p-5">
-          <div className="demo-les flex items-center gap-2" aria-hidden>
-            {["Start", "Kern", "Afsluiting"].map((stap, i) => (
-              <span
-                key={stap}
-                className="rounded-full bg-teal-100 px-3 py-1.5 text-sm font-bold text-teal-700"
-                style={{ transitionDelay: `${i * 120}ms` }}
-              >
-                {stap}
-              </span>
-            ))}
-          </div>
-          <p className="mt-3 text-xs font-semibold text-ink/50">
-            Met differentiatie voor je plusgroep
-          </p>
-        </div>
-      )}
+  if (soort === "lesontwerp")
+    return (
+      <div className="absolute inset-0 bg-cream">
+        <div className="bg-grid absolute inset-0 opacity-70" aria-hidden />
+        <div className="absolute -left-16 top-1/4 h-56 w-56 rounded-full bg-brand/15 blur-3xl" aria-hidden />
+        {/* het pad van leerdoel naar les */}
+        <svg viewBox="0 0 336 420" fill="none" className="absolute inset-0 h-full w-full" aria-hidden>
+          <path
+            d="M70 92 C 240 110, 100 190, 170 225 S 270 320, 235 356"
+            stroke="#2f9e6e"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeDasharray="1 11"
+          />
+        </svg>
+        <p className="absolute left-6 top-10 -rotate-2 rounded-lg bg-ink px-3 py-1.5 font-display text-sm font-bold text-cream shadow-md">
+          Leerdoel: breuken vergelijken
+        </p>
+        <p className="absolute left-[28%] top-[40%] rotate-1 rounded-full bg-white px-3 py-1.5 text-sm font-bold text-ink shadow-md ring-1 ring-black/5">
+          Start · 10 min
+        </p>
+        <p className="absolute right-7 top-[55%] -rotate-1 rounded-full bg-white px-3 py-1.5 text-sm font-bold text-ink shadow-md ring-1 ring-black/5">
+          Kern · 25 min
+        </p>
+        <p className="absolute bottom-[22%] left-[22%] rotate-2 rounded-full bg-brand px-3 py-1.5 text-sm font-bold text-white shadow-md">
+          Afsluiting ✓
+        </p>
+      </div>
+    );
 
-      {soort === "plattegrond" && (
-        <div className="p-5">
-          <div className="demo-plattegrond grid grid-cols-5 gap-2" aria-hidden>
-            {Array.from({ length: 15 }).map((_, i) => (
-              <span
-                key={i}
-                className={`h-8 rounded-md ${i === 7 ? "bg-amber-400" : "bg-amber-200/80"}`}
-                style={{ transitionDelay: `${i * 40}ms` }}
-              />
-            ))}
-          </div>
-          <p className="mt-3 text-xs font-semibold text-ink/50">
-            Slim geplaatst op basis van je sociogram
-          </p>
-        </div>
-      )}
+  /* plattegrond */
+  return (
+    <div className="absolute inset-0 bg-ink">
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, rgba(251,246,238,0.07) 1px, transparent 1px), linear-gradient(to bottom, rgba(251,246,238,0.07) 1px, transparent 1px)",
+          backgroundSize: "26px 26px",
+        }}
+        aria-hidden
+      />
+      <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand/20 blur-3xl" aria-hidden />
+      {/* het bord */}
+      <div className="absolute left-1/2 top-7 h-2 w-28 -translate-x-1/2 rounded-full bg-cream/60" aria-hidden />
+      {/* de tafelgroepjes */}
+      <Tafelgroep className="absolute left-8 top-[20%] -rotate-3" />
+      <Tafelgroep className="absolute right-8 top-[30%] rotate-2" accent={2} />
+      <Tafelgroep className="absolute left-[30%] top-[52%] rotate-1" />
+      <p className="font-hand absolute bottom-16 right-6 rotate-2 text-xl text-cream/90">
+        Yassin bij het raam ✓
+      </p>
     </div>
   );
 }
@@ -1631,111 +1593,28 @@ function StijlBlok() {
       }
       .anim [data-reveal].is-in { opacity: 1; transform: none; }
 
-      /* Tool-podium: het paneel schuift van rechts binnen (met blur als
-         gladstrijker); overschrijft de generieke reveal hierboven. */
-      .anim .podium-paneel {
-        transform: none;
-        opacity: 0;
-        translate: 28px 0;
-        filter: blur(6px);
-        transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-          translate 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-          filter 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-      }
-      .anim .podium-paneel.is-in { opacity: 1; translate: 0 0; filter: blur(0); }
+      /* ── De tool-galerij ── */
+      /* Slepen: de rail pakt de muis vast; tijdens het slepen geen snap. */
+      .tool-rail { cursor: grab; scroll-snap-type: x proximity; }
+      .tool-rail.sleept { cursor: grabbing; scroll-snap-type: none; scroll-behavior: auto; }
 
-      /* De strip-kaartjes vliegen één voor één van rechts in.
+      /* De kaarten komen één voor één van rechts binnen.
          Via translate i.p.v. transform, zodat hover-translate blijft werken. */
-      .anim .podium-strip .strip-kaart {
+      .anim .rail-kaart {
         opacity: 0;
-        translate: 56px 0;
-        transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-          translate 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-        transition-delay: calc(var(--i) * 70ms);
+        translate: 72px 0;
+        transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+          translate 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+        transition-delay: calc(var(--i) * 90ms);
       }
-      .anim .podium-strip.is-in .strip-kaart {
-        opacity: 1;
-        translate: 0 0;
-        transition-delay: calc(var(--i) * 70ms), calc(var(--i) * 70ms);
-      }
-      /* Ná het invliegen reageren de kaartjes weer direct (hover/druk). */
-      .anim .podium-strip.is-in .strip-kaart:hover,
-      .anim .podium-strip.is-in .strip-kaart:active {
-        transition-delay: 0ms;
-      }
+      .anim .tool-rail.is-in .rail-kaart { opacity: 1; translate: 0 0; }
 
-      /* ── De Rapporten-voorstelling: het venster bedient zichzelf. ──
-         Tijdlijn (na het binnenschuiven van het paneel):
-         1.5s Sofie gekozen · 2.45s knop klikt · 2.7s uitvoer verschijnt ·
-         2.95s tekst typt zichzelf · ~4.1s balkjes · 4.55s "Afgevinkt". */
-      .anim .vs-kies { filter: grayscale(1) opacity(0.65); }
-      .anim [data-reveal].is-in .vs-kies {
-        animation: vskleur 0.25s ease-out 1.5s forwards;
-      }
-      @keyframes vskleur { to { filter: none; } }
-
-      .anim .vs-kiesvink { opacity: 0; transform: scale(0.5); }
-      .anim [data-reveal].is-in .vs-kiesvink {
-        animation: vspop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) 1.5s forwards;
-      }
-      @keyframes vspop { to { opacity: 1; transform: scale(1); } }
-
-      .anim [data-reveal].is-in .vs-knop { animation: vsklik 0.28s ease-out 2.45s; }
-      @keyframes vsklik {
-        40% { transform: scale(0.95); background-color: var(--color-brand-dark); }
-      }
-
-      .anim .vs-uit { opacity: 0; transform: translateY(10px); }
-      .anim [data-reveal].is-in .vs-uit {
-        animation: vsuit 0.4s cubic-bezier(0.22, 1, 0.36, 1) 2.7s forwards;
-      }
-      @keyframes vsuit { to { opacity: 1; transform: none; } }
-
-      .anim .vs-regel1 { clip-path: inset(0 100% 0 0); }
-      .anim [data-reveal].is-in .vs-regel1 {
-        animation: vstyp 1.1s steps(28) 2.95s forwards;
-      }
-      @keyframes vstyp { to { clip-path: inset(0 -2% 0 0); } }
-
-      .anim .vs-balk {
-        transform: scaleX(0);
-        transform-origin: left;
-        transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) 4.05s;
-      }
-      .anim .vs-balk:nth-child(2) { transition-delay: 4.2s; }
-      .anim [data-reveal].is-in .vs-balk { transform: scaleX(1); }
-
-      .anim .vs-toast { opacity: 0; transform: scale(0.6); }
-      .anim [data-reveal].is-in .vs-toast {
-        animation: vspop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) 4.55s forwards;
-      }
-
-      /* De cursor: komt op, kiest Sofie, klikt de knop, glijdt weg. */
-      .anim [data-reveal].is-in .vs-cursor {
-        animation: vscursor 4.6s cubic-bezier(0.45, 0.05, 0.35, 1) 0.4s forwards;
-      }
-      @keyframes vscursor {
-        0% { opacity: 0; transform: translate(240px, 200px); }
-        8% { opacity: 1; }
-        20% { transform: translate(52px, 50px); }
-        24% { transform: translate(52px, 50px) scale(0.82); }
-        28% { transform: translate(52px, 50px); }
-        42% { transform: translate(78px, 158px); }
-        46% { transform: translate(78px, 158px) scale(0.82); }
-        50% { transform: translate(78px, 158px); }
-        62% { opacity: 1; transform: translate(170px, 205px); }
-        74% { opacity: 0; transform: translate(195px, 215px); }
-        100% { opacity: 0; transform: translate(195px, 215px); }
-      }
-
-      /* Voortgang van de autoloop, onderin het actieve kaartje. */
-      .anim .strip-voortgang {
-        transform-origin: left;
-        transform: scaleX(0);
-        animation: stripvoortgang 6s linear forwards;
-      }
-      @keyframes stripvoortgang {
-        to { transform: scaleX(1); }
+      /* Filmkorrel over de kaartbeelden: maakt de vlakken materiaal. */
+      .kaart-grain {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+        background-size: 160px 160px;
+        mix-blend-mode: overlay;
+        opacity: 0.35;
       }
 
       /* Vink-pop: kort en met karakter, zoals het merk-moment hoort. */
@@ -1771,19 +1650,6 @@ function StijlBlok() {
       .anim .maskeer.is-in .naam-masker { opacity: 1; transform: none; }
       .anim .maskeer .schildje { transform: scale(0.6); opacity: 0; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 1.5s, opacity 0.3s ease 1.5s; }
       .anim .maskeer.is-in .schildje { transform: scale(1); opacity: 1; }
-
-      /* Demo-kaartjes: rustig tot leven zodra de kaart in beeld is. */
-      .anim .demo-rapport div { transform: scaleX(0); transform-origin: left; transition: transform 0.8s cubic-bezier(0.22,1,0.36,1) 0.4s; }
-      .anim [data-reveal].is-in .demo-rapport div { transform: scaleX(1); }
-      .anim .demo-rapport div:nth-child(2) { transition-delay: 0.55s; }
-      .anim .demo-rapport div:nth-child(3) { transition-delay: 0.7s; }
-      .anim .demo-analyse div { transform: scaleY(0); transform-origin: bottom; transition: transform 0.6s cubic-bezier(0.22,1,0.36,1) 0.4s; }
-      .anim [data-reveal].is-in .demo-analyse div { transform: scaleY(1); }
-      .anim .demo-bericht span, .anim .demo-les span { opacity: 0; transform: scale(0.6); transition: opacity 0.3s ease 0.5s, transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.5s; }
-      .anim [data-reveal].is-in .demo-bericht span,
-      .anim [data-reveal].is-in .demo-les span { opacity: 1; transform: scale(1); }
-      .anim .demo-plattegrond span { opacity: 0; transform: scale(0.5); transition: opacity 0.3s ease 0.4s, transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.4s; }
-      .anim [data-reveal].is-in .demo-plattegrond span { opacity: 1; transform: scale(1); }
 
       @media (prefers-reduced-motion: reduce) {
         .anim [data-reveal] { opacity: 1; transform: none; transition: none; }
