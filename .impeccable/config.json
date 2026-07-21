@@ -56,6 +56,33 @@
         ],
         "createdAt": "2026-07-21T10:19:43.614Z",
         "reason": "Handschrift-lettergroottes (Caveat) op het papieren lijstje en miniatuurtekst in de dashboard-mockup; optische maat, bewust buiten de type-ramp"
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "files": [
+          "src/app/nieuw4/Vierde.tsx"
+        ],
+        "createdAt": "2026-07-21T14:08:28.880Z",
+        "reason": "Vink-pop merkmoment (DESIGN.md §5): korte pop met back-easing <300ms; zelfde uitzondering als nieuw2/nieuw3"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "*",
+        "files": [
+          "src/app/nieuw4/Vierde.tsx"
+        ],
+        "createdAt": "2026-07-21T14:08:28.992Z",
+        "reason": "Miniatuurtekst in dashboard-mockup + venster-chrome van de film; optische maat, bewust buiten de type-ramp (idem nieuw2/nieuw3)"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "*",
+        "files": [
+          "src/app/nieuw4/Vierde.tsx"
+        ],
+        "createdAt": "2026-07-21T14:08:29.102Z",
+        "reason": "Filmisch scenepalet (avondlaag #1d1735, lamplicht) van de opruim-film; zelfde cinematografische uitzondering als nieuw3"
       }
     ]
   }
