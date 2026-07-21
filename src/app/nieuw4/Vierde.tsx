@@ -68,7 +68,7 @@ const TOOLDATA = [
     tekst:
       "Warme, persoonlijke rapportteksten die klinken alsof jij ze schreef. Want dat deed je, alleen een stuk sneller.",
     dot: "bg-violet-500",
-    tint: "bg-violet-50",
+    venster: "Rapporten · groep 5",
     demo: "rapport",
   },
   {
@@ -77,7 +77,7 @@ const TOOLDATA = [
     tekst:
       "In één oogopslag zie je hoe je groep ervoor staat en wie wat extra aandacht kan gebruiken. Geen uren meer puzzelen in Excel.",
     dot: "bg-sky-500",
-    tint: "bg-sky-50",
+    venster: "Toetsanalyse · M-toets",
     demo: "analyse",
   },
   {
@@ -86,7 +86,7 @@ const TOOLDATA = [
     tekst:
       "Oudergesprekken, weekberichten en ouderberichten, in een paar minuten klaar. Nooit meer staren naar een leeg scherm.",
     dot: "bg-rose-500",
-    tint: "bg-rose-50",
+    venster: "Oudercontact · weekbericht",
     demo: "bericht",
   },
   {
@@ -95,7 +95,7 @@ const TOOLDATA = [
     tekst:
       "Lever een lesdoel aan en krijg een complete, kant-en-klare les terug: met opbouw, bouwstenen en praktische tips. Klaar om voor de klas te gebruiken.",
     dot: "bg-teal-500",
-    tint: "bg-teal-50",
+    venster: "Lesontwerp · breuken",
     demo: "les",
   },
   {
@@ -104,7 +104,7 @@ const TOOLDATA = [
     tekst:
       "Schuif je klasplattegrond in elkaar met een paar klikken. Of laat Avinka slim plaatsen op basis van je sociogram, met jouw wensen altijd als leidend.",
     dot: "bg-amber-500",
-    tint: "bg-amber-50",
+    venster: "Plattegrond · lokaal groep 5",
     demo: "plattegrond",
   },
 ];
@@ -1372,30 +1372,41 @@ function ToolPodium({ anim }: { anim: boolean }) {
       onMouseEnter={() => setHangt(true)}
       onMouseLeave={() => setHangt(false)}
     >
-      {/* Het toneel: vaste plek, de tint kleurt mee met de gekozen tool. */}
+      {/* Het toneel: een diep-groen kleurvlak waarop de echte tool draait. */}
       <div
         id="toolpodium-paneel"
         role="tabpanel"
         aria-labelledby={`tooltab-${actief}`}
-        className={`rounded-[2rem] p-7 transition-colors duration-500 sm:p-9 ${tool.tint}`}
+        className="relative overflow-hidden rounded-[2rem] bg-brand-dark p-7 sm:p-9"
       >
+        {/* Zacht licht rechtsboven, zoals de lamp in de film. */}
+        <div
+          className="pointer-events-none absolute -right-20 -top-24 h-80 w-80 rounded-full bg-white/10 blur-3xl"
+          aria-hidden
+        />
         <div
           key={actief}
           ref={paneel}
           data-reveal
-          className="podium-paneel grid min-h-[30.5rem] items-center gap-6 sm:min-h-[26rem] lg:min-h-[13rem] lg:grid-cols-2 lg:gap-12"
+          className="podium-paneel relative grid min-h-[35rem] items-center gap-8 sm:min-h-[30rem] lg:min-h-[24rem] lg:grid-cols-[1fr_1.15fr] lg:gap-12"
         >
-          <div>
-            <h3 className="flex items-center gap-3 font-display text-2xl font-black tracking-tight sm:text-3xl">
-              <span className={`h-3.5 w-3.5 rounded-full ${tool.dot}`} aria-hidden />
+          <div className="min-w-0">
+            <h3 className="flex items-center gap-3 font-display text-2xl font-black tracking-tight text-white sm:text-3xl">
+              <span
+                className={`h-3.5 w-3.5 rounded-full ring-2 ring-white/25 ${tool.dot}`}
+                aria-hidden
+              />
               {tool.naam}
             </h3>
-            <p className="mt-3 leading-8 text-ink/75">{tool.tekst}</p>
-            <p className="mt-4 inline-block rounded-full bg-white px-3.5 py-1.5 text-sm font-bold text-ink/70 shadow-sm">
+            <p className="mt-3 leading-8 text-white">{tool.tekst}</p>
+            <p className="mt-4 inline-block rounded-full bg-white px-3.5 py-1.5 text-sm font-bold text-ink/80 shadow-sm">
               {tool.winst}
             </p>
           </div>
-          <DemoKaart soort={tool.demo} />
+          {/* Het venster loopt op groot scherm iets over de rand: durf. */}
+          <div className="flex min-w-0 justify-center lg:justify-end lg:translate-x-8">
+            <ToolVoorstelling soort={tool.demo} titel={tool.venster} />
+          </div>
         </div>
       </div>
 
@@ -1422,7 +1433,7 @@ function ToolPodium({ anim }: { anim: boolean }) {
               style={{ "--i": i } as CSSProperties}
               className={`strip-kaart relative shrink-0 overflow-hidden rounded-2xl px-4 py-3 text-left transition-[translate,box-shadow,background-color] duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink/70 active:scale-[0.98] ${
                 i === actief
-                  ? `${t.tint} ring-2 ring-ink/15`
+                  ? "bg-brand-soft ring-2 ring-brand/40"
                   : "bg-white shadow-sm ring-1 ring-black/5 hover:-translate-y-0.5"
               }`}
             >
@@ -1434,7 +1445,7 @@ function ToolPodium({ anim }: { anim: boolean }) {
               {loopt && i === actief && (
                 <span
                   key={actief}
-                  className={`strip-voortgang absolute inset-x-0 bottom-0 h-0.5 ${t.dot}`}
+                  className="strip-voortgang absolute inset-x-0 bottom-0 h-0.5 bg-brand"
                   aria-hidden
                 />
               )}
@@ -1462,96 +1473,145 @@ function ToolPodium({ anim }: { anim: boolean }) {
   );
 }
 
-/* ── Levende demo-kaartjes bij de tools. Puur CSS, start bij .is-in. ───── */
-function DemoKaart({ soort }: { soort: string }) {
-  if (soort === "rapport")
-    return (
-      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-        <p className="text-xs font-bold text-ink/45">Rapport · Sofie</p>
-        <p className="mt-2 text-sm leading-6 text-ink/80">
-          Sofie heeft dit halfjaar een mooie groei laten zien bij rekenen…
-        </p>
-        <div className="demo-rapport mt-3 space-y-1.5" aria-hidden>
-          <div className="h-2 rounded-full bg-violet-200" style={{ width: "88%" }} />
-          <div className="h-2 rounded-full bg-violet-200" style={{ width: "72%" }} />
-          <div className="h-2 rounded-full bg-violet-200" style={{ width: "80%" }} />
-        </div>
-      </div>
-    );
-  if (soort === "analyse")
-    return (
-      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-        <p className="text-xs font-bold text-ink/45">Groep 5 · M-toets</p>
-        <div className="demo-analyse mt-3 flex h-20 items-end gap-2" aria-hidden>
-          {[45, 80, 60, 95, 30, 70, 55, 85].map((h, i) => (
-            <div
-              key={i}
-              className="flex-1 rounded-t-md bg-sky-300"
-              style={{ height: `${h}%`, transitionDelay: `${i * 70}ms` }}
-            />
-          ))}
-        </div>
-        <p className="mt-2 text-xs font-semibold text-ink/50">
-          2 leerlingen vallen op: extra aandacht bij meten
-        </p>
-      </div>
-    );
-  if (soort === "bericht")
-    return (
-      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-        <p className="text-xs font-bold text-ink/45">Weekbericht · ouders groep 5</p>
-        <p className="mt-2 text-sm leading-6 text-ink/80">
-          Beste ouders, wat een week! We hebben hard gewerkt aan…
-        </p>
-        <div className="demo-bericht mt-3 flex items-center gap-2" aria-hidden>
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-100 text-rose-500"
-              style={{ transitionDelay: `${i * 120}ms` }}
-            >
-              <Vink className="h-3.5 w-3.5" dik={4} />
-            </span>
-          ))}
-          <span className="text-sm font-semibold text-ink/50">3 berichten klaar</span>
-        </div>
-      </div>
-    );
-  if (soort === "plattegrond")
-    return (
-      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-        <p className="text-xs font-bold text-ink/45">Lokaal · groep 5</p>
-        <div className="demo-plattegrond mt-3 grid grid-cols-5 gap-2" aria-hidden>
-          {Array.from({ length: 15 }).map((_, i) => (
-            <span
-              key={i}
-              className={`h-7 rounded-md ${i === 7 ? "bg-amber-400" : "bg-amber-200/80"}`}
-              style={{ transitionDelay: `${i * 40}ms` }}
-            />
-          ))}
-        </div>
-        <p className="mt-2 text-xs font-semibold text-ink/50">
-          Slim geplaatst op basis van je sociogram
-        </p>
-      </div>
-    );
+/* ── De voorstelling: een getrouw tool-venster dat zichzelf bedient.
+   Rapporten is de eerste volledige show (cursor kiest, klikt, de tekst
+   schrijft zichzelf, "Afgevinkt"); de andere tools spelen voorlopig hun
+   bestaande demo in hetzelfde venster. Puur CSS, start bij .is-in. ─────── */
+function ToolVoorstelling({ soort, titel }: { soort: string; titel: string }) {
   return (
-    <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-      <p className="text-xs font-bold text-ink/45">Les · breuken introduceren</p>
-      <div className="demo-les mt-3 flex items-center gap-2" aria-hidden>
-        {["Start", "Kern", "Afsluiting"].map((stap, i) => (
-          <span
-            key={stap}
-            className="rounded-full bg-teal-100 px-3 py-1.5 text-sm font-bold text-teal-700"
-            style={{ transitionDelay: `${i * 120}ms` }}
-          >
-            {stap}
-          </span>
-        ))}
+    <div className="relative w-full min-w-0 max-w-[27rem] rounded-2xl bg-white shadow-xl ring-1 ring-black/10">
+      {/* Vensterbalk, dezelfde taal als de vensters in de film. */}
+      <div className="flex items-center gap-2.5 rounded-t-2xl border-b border-black/5 bg-cream/80 px-4 py-2.5">
+        <span className="flex gap-1.5" aria-hidden>
+          <span className="h-2.5 w-2.5 rounded-full bg-black/10" />
+          <span className="h-2.5 w-2.5 rounded-full bg-black/10" />
+          <span className="h-2.5 w-2.5 rounded-full bg-black/10" />
+        </span>
+        <span className="text-xs font-bold text-ink/55">{titel}</span>
       </div>
-      <p className="mt-2 text-xs font-semibold text-ink/50">
-        Met differentiatie voor je plusgroep
-      </p>
+
+      {soort === "rapport" && (
+        <div className="relative p-5">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/40">
+            Leerling
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <span className="vs-kies inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1.5 text-sm font-bold text-ink ring-1 ring-brand/40">
+              <Vink className="vs-kiesvink h-3.5 w-3.5 text-brand" dik={4} />
+              Sofie
+            </span>
+            <span className="rounded-full bg-white px-3 py-1.5 text-sm font-bold text-ink/45 ring-1 ring-black/10">
+              Yassin
+            </span>
+            <span className="rounded-full bg-white px-3 py-1.5 text-sm font-bold text-ink/45 ring-1 ring-black/10">
+              Mila
+            </span>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="rounded-xl bg-cream px-3 py-2 text-sm font-semibold text-ink/70 ring-1 ring-black/5">
+              Vak: rekenen
+            </div>
+            <div className="rounded-xl bg-cream px-3 py-2 text-sm font-semibold text-ink/70 ring-1 ring-black/5">
+              Toon: warm
+            </div>
+          </div>
+          <div className="vs-knop mt-4 inline-flex rounded-xl bg-brand px-4 py-2 text-sm font-bold text-white shadow-sm">
+            Schrijf rapport
+          </div>
+          <div className="vs-uit mt-4 overflow-hidden rounded-xl bg-cream/70 p-4 ring-1 ring-black/5">
+            <p className="vs-regel1 whitespace-nowrap text-sm leading-6 text-ink/80">
+              Sofie groeide mooi bij rekenen…
+            </p>
+            <div className="mt-2 space-y-1.5" aria-hidden>
+              <div className="vs-balk h-2 rounded-full bg-brand-soft" style={{ width: "86%" }} />
+              <div className="vs-balk h-2 rounded-full bg-brand-soft" style={{ width: "68%" }} />
+            </div>
+          </div>
+          <div className="vs-toast absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-ink px-3 py-1.5 text-xs font-bold text-white shadow-lg">
+            <Vink className="h-3.5 w-3.5 text-brand" dik={4} />
+            Afgevinkt
+          </div>
+          {/* De cursor die de tool bedient; alleen op grotere schermen. */}
+          <div className="vs-cursor pointer-events-none absolute left-0 top-0 hidden opacity-0 sm:block" aria-hidden>
+            <svg viewBox="0 0 24 24" className="h-5 w-5 drop-shadow-md" fill="white" stroke="#221c3a" strokeWidth="1.5">
+              <path d="M5 3l14 8.5-6.2 1.2L9.5 19z" strokeLinejoin="round" />
+            </svg>
+          </div>
+        </div>
+      )}
+
+      {soort === "analyse" && (
+        <div className="p-5">
+          <div className="demo-analyse flex h-24 items-end gap-2" aria-hidden>
+            {[45, 80, 60, 95, 30, 70, 55, 85].map((h, i) => (
+              <div
+                key={i}
+                className="flex-1 rounded-t-md bg-sky-300"
+                style={{ height: `${h}%`, transitionDelay: `${i * 70}ms` }}
+              />
+            ))}
+          </div>
+          <p className="mt-3 text-xs font-semibold text-ink/50">
+            2 leerlingen vallen op: extra aandacht bij meten
+          </p>
+        </div>
+      )}
+
+      {soort === "bericht" && (
+        <div className="p-5">
+          <p className="text-sm leading-6 text-ink/80">
+            Beste ouders, wat een week! We hebben hard gewerkt aan…
+          </p>
+          <div className="demo-bericht mt-3 flex items-center gap-2" aria-hidden>
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-100 text-rose-500"
+                style={{ transitionDelay: `${i * 120}ms` }}
+              >
+                <Vink className="h-3.5 w-3.5" dik={4} />
+              </span>
+            ))}
+            <span className="text-sm font-semibold text-ink/50">3 berichten klaar</span>
+          </div>
+        </div>
+      )}
+
+      {soort === "les" && (
+        <div className="p-5">
+          <div className="demo-les flex items-center gap-2" aria-hidden>
+            {["Start", "Kern", "Afsluiting"].map((stap, i) => (
+              <span
+                key={stap}
+                className="rounded-full bg-teal-100 px-3 py-1.5 text-sm font-bold text-teal-700"
+                style={{ transitionDelay: `${i * 120}ms` }}
+              >
+                {stap}
+              </span>
+            ))}
+          </div>
+          <p className="mt-3 text-xs font-semibold text-ink/50">
+            Met differentiatie voor je plusgroep
+          </p>
+        </div>
+      )}
+
+      {soort === "plattegrond" && (
+        <div className="p-5">
+          <div className="demo-plattegrond grid grid-cols-5 gap-2" aria-hidden>
+            {Array.from({ length: 15 }).map((_, i) => (
+              <span
+                key={i}
+                className={`h-8 rounded-md ${i === 7 ? "bg-amber-400" : "bg-amber-200/80"}`}
+                style={{ transitionDelay: `${i * 40}ms` }}
+              />
+            ))}
+          </div>
+          <p className="mt-3 text-xs font-semibold text-ink/50">
+            Slim geplaatst op basis van je sociogram
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -1602,6 +1662,70 @@ function StijlBlok() {
       .anim .podium-strip.is-in .strip-kaart:hover,
       .anim .podium-strip.is-in .strip-kaart:active {
         transition-delay: 0ms;
+      }
+
+      /* ── De Rapporten-voorstelling: het venster bedient zichzelf. ──
+         Tijdlijn (na het binnenschuiven van het paneel):
+         1.5s Sofie gekozen · 2.45s knop klikt · 2.7s uitvoer verschijnt ·
+         2.95s tekst typt zichzelf · ~4.1s balkjes · 4.55s "Afgevinkt". */
+      .anim .vs-kies { filter: grayscale(1) opacity(0.65); }
+      .anim [data-reveal].is-in .vs-kies {
+        animation: vskleur 0.25s ease-out 1.5s forwards;
+      }
+      @keyframes vskleur { to { filter: none; } }
+
+      .anim .vs-kiesvink { opacity: 0; transform: scale(0.5); }
+      .anim [data-reveal].is-in .vs-kiesvink {
+        animation: vspop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) 1.5s forwards;
+      }
+      @keyframes vspop { to { opacity: 1; transform: scale(1); } }
+
+      .anim [data-reveal].is-in .vs-knop { animation: vsklik 0.28s ease-out 2.45s; }
+      @keyframes vsklik {
+        40% { transform: scale(0.95); background-color: var(--color-brand-dark); }
+      }
+
+      .anim .vs-uit { opacity: 0; transform: translateY(10px); }
+      .anim [data-reveal].is-in .vs-uit {
+        animation: vsuit 0.4s cubic-bezier(0.22, 1, 0.36, 1) 2.7s forwards;
+      }
+      @keyframes vsuit { to { opacity: 1; transform: none; } }
+
+      .anim .vs-regel1 { clip-path: inset(0 100% 0 0); }
+      .anim [data-reveal].is-in .vs-regel1 {
+        animation: vstyp 1.1s steps(28) 2.95s forwards;
+      }
+      @keyframes vstyp { to { clip-path: inset(0 -2% 0 0); } }
+
+      .anim .vs-balk {
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) 4.05s;
+      }
+      .anim .vs-balk:nth-child(2) { transition-delay: 4.2s; }
+      .anim [data-reveal].is-in .vs-balk { transform: scaleX(1); }
+
+      .anim .vs-toast { opacity: 0; transform: scale(0.6); }
+      .anim [data-reveal].is-in .vs-toast {
+        animation: vspop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) 4.55s forwards;
+      }
+
+      /* De cursor: komt op, kiest Sofie, klikt de knop, glijdt weg. */
+      .anim [data-reveal].is-in .vs-cursor {
+        animation: vscursor 4.6s cubic-bezier(0.45, 0.05, 0.35, 1) 0.4s forwards;
+      }
+      @keyframes vscursor {
+        0% { opacity: 0; transform: translate(240px, 200px); }
+        8% { opacity: 1; }
+        20% { transform: translate(52px, 50px); }
+        24% { transform: translate(52px, 50px) scale(0.82); }
+        28% { transform: translate(52px, 50px); }
+        42% { transform: translate(78px, 158px); }
+        46% { transform: translate(78px, 158px) scale(0.82); }
+        50% { transform: translate(78px, 158px); }
+        62% { opacity: 1; transform: translate(170px, 205px); }
+        74% { opacity: 0; transform: translate(195px, 215px); }
+        100% { opacity: 0; transform: translate(195px, 215px); }
       }
 
       /* Voortgang van de autoloop, onderin het actieve kaartje. */
