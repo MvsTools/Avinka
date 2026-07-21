@@ -326,6 +326,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
       // De takenlijst begint dicht; de rijen leeg. Fase 2 klapt hem open.
       gsap.set(q("[data-takendrop]"), { autoAlpha: 0, scale: 0.96, y: -4, transformOrigin: "top center" });
       gsap.set(q("[data-takenrow]"), { autoAlpha: 0, x: 8 });
+      gsap.set(q("[data-logofinale]"), { autoAlpha: 0 });
 
       /* ── Vluchtbaan: van venstermidden naar tegelmidden (gemeten) ── */
       const midden = (el: Element) => {
@@ -445,7 +446,10 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
       tl.to(q("[data-chevron]"), { rotation: 0, duration: 3 }, 84);
 
       // De volle tablet zakt iets omlaag, weg van de kop bovenin.
-      tl.to(q("[data-paneel]"), { y: 26, duration: 8, ease: "power2.out" }, 82);
+      tl.to(q("[data-paneel]"), { y: 10, duration: 8, ease: "power2.out" }, 82);
+
+      // Merk-finale: het volledige logo (van to-do naar gedaan) vult de tablet.
+      tl.to(q("[data-logofinale]"), { autoAlpha: 1, duration: 5, ease: "power2.inOut" }, 89);
 
       /* ── 72-92 · avond wordt dag; de belofte blijft staan en kleurt mee ── */
       tl.to(q("[data-avondlaag]"), { opacity: 0, duration: 20, ease: "power1.inOut" }, 72);
@@ -556,16 +560,6 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
             <img src="/Avinka_logo.png" alt="Avinka" className="h-8 w-auto" />
           </span>
           <nav className="flex items-center gap-2 sm:gap-3">
-            <a
-              data-skiplink
-              href="#verder"
-              className={`whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-semibold transition sm:text-base ${
-                film ? "text-cream/90 hover:text-white" : "text-ink/70 hover:text-ink"
-              } [[data-header].film-klaar_&]:text-ink/70 [[data-header].film-klaar_&]:hover:text-ink`}
-            >
-              <span className="sm:hidden">Overslaan</span>
-              <span className="hidden sm:inline">Liever meteen lezen?</span>
-            </a>
             <Link
               href="/sign-up"
               className="rounded-xl bg-brand px-4 py-2 text-sm font-bold text-white shadow-sm shadow-brand/20 transition hover:bg-brand-dark sm:text-base"
@@ -585,7 +579,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
         <div
           className={
             film
-              ? "sticky top-0 flex h-screen flex-col items-center overflow-hidden px-4 pt-14 sm:pt-16"
+              ? "sticky top-0 flex h-screen flex-col items-center overflow-hidden px-4 pt-12 sm:pt-14"
               : "relative flex flex-col items-center gap-8 overflow-hidden px-4 pb-16 pt-28"
           }
         >
@@ -611,7 +605,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                 film ? "text-cream" : "text-ink"
               }`}
             >
-              Win elke week <span className="text-brand">2 uur</span> terug.
+              Win elke week <span className="text-brand">2 uur</span> terug
             </h1>
           </div>
 
@@ -784,13 +778,12 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           <div data-paneel className="relative z-10 mt-3 w-[min(94vw,39rem)] sm:mt-4">
             {/* tablet-behuizing: alles wordt in dit apparaat opgeruimd */}
             <div className="rounded-[1.4rem] bg-ink/90 p-1 shadow-[0_34px_80px_-24px_rgba(8,5,20,0.75)] ring-1 ring-white/10">
-              <div className="overflow-hidden rounded-[1.05rem] bg-cream">
+              <div className="relative overflow-hidden rounded-[1.05rem] bg-cream">
                 {/* bovenbalk */}
                 <div className="flex items-center justify-between border-b border-black/5 bg-white px-3 py-1.5">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/Avinka_wordmerk.png" alt="" className="h-3.5 w-auto sm:h-4" />
-                  <span className="flex items-center gap-1.5 text-[9px] font-semibold text-ink/50">
-                    Hallo, Sanne
+                  <span className="text-[9px] font-semibold text-ink/50">
                     <span className="rounded-md border border-black/10 px-1.5 py-0.5">Uitloggen</span>
                   </span>
                 </div>
@@ -811,7 +804,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                     <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
                       <div>
                         <p className="text-sm font-black tracking-tight text-ink">
-                          Welkom terug, Sanne! 👋
+                          Welkom terug! 👋
                         </p>
                         <p className="mt-0.5 text-[10px] text-ink/60">
                           Kies een tool om mee te beginnen.
@@ -916,17 +909,29 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                     </p>
                   </div>
                 </div>
+                {/* Merk-finale: aan het eind vult het volledige logo de tablet */}
+                <div
+                  data-logofinale
+                  className="invisible absolute inset-0 flex items-center justify-center bg-cream opacity-0"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/Avinka_logo.png"
+                    alt="Avinka, van to-do naar gedaan"
+                    className="w-[58%] max-w-[17rem]"
+                  />
+                </div>
               </div>
             </div>
 
             {/* De payoff onder het paneel */}
-            <div data-slotwoord className="mt-6 text-center sm:mt-8">
+            <div data-slotwoord className="mt-3 text-center sm:mt-4">
               <p className="font-display text-2xl font-black tracking-tight text-ink sm:text-3xl">
                 Alles op één plek.
               </p>
-              <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-ink/70 sm:text-base sm:leading-7">
-                Je tools, je taken en je klas op één rustige werkplek. Zo hou je elke week
-                tijd over voor het echte werk, in plaats van het uitzoekwerk.
+              <p className="mx-auto mt-1.5 max-w-md text-sm leading-6 text-ink/70">
+                Je tools, je taken en je klas op één rustige werkplek. Zo win je elke week
+                tijd terug.
               </p>
             </div>
           </div>
