@@ -174,6 +174,12 @@
     .blok.rek { box-shadow:0 8px 20px rgba(34,28,58,.18); z-index:30; }
     .blok.geest { opacity:.28; }
     .blok.bots { outline:2px solid #e0a03a; outline-offset:1px; }
+    /* Na-schooltijd-taken: gedempt en gestippeld, zodat de lessen de hoofdrol houden */
+    .blok.taak { border:1.5px dashed rgba(34,28,58,.30); box-shadow:none; }
+    .blok.taak .b-vak { font-weight:600; }
+    /* De zone onder de schooldag: hier plan je je eigen tijd */
+    .naschool-zone { position:absolute; left:0; right:0; border-top:1.5px dashed rgba(34,28,58,.16); background:linear-gradient(rgba(47,158,110,.04), rgba(47,158,110,.012)); pointer-events:none; }
+    .naschool-zone span { position:absolute; top:5px; left:6px; font-size:10.5px; color:var(--muted); background:rgba(255,255,255,.75); border-radius:6px; padding:1px 7px; }
     /* subtiele hint dat je de onder- en bovenrand kunt vastpakken om korter/langer te maken */
     .blok:not(.vast)::before, .blok:not(.vast)::after { content:''; position:absolute; left:50%; width:22px; height:2px; margin-left:-11px; border-radius:2px; background:currentColor; opacity:0; transition:opacity .12s; pointer-events:none; }
     .blok:not(.vast)::before { top:2px; }
@@ -204,6 +210,8 @@
     .palet-label { font-size:12.5px; color:var(--muted); margin-right:4px; }
     .palet-chip { border:1px solid rgba(0,0,0,.06); border-radius:999px; padding:6px 13px; font:inherit; font-size:12.5px; font-weight:700; cursor:grab; box-shadow:0 1px 2px rgba(34,28,58,.08); touch-action:none; user-select:none; -webkit-user-select:none; }
     .palet-chip:active { cursor:grabbing; }
+    .palet-chip.taak { border:1.5px dashed rgba(34,28,58,.30); box-shadow:none; font-weight:600; }
+    .palet-scheiding { width:1px; height:22px; background:var(--line-strong); margin:0 6px; align-self:center; }
     .palet-add { display:inline-flex; align-items:center; gap:6px; margin-left:2px; }
     .palet-add input { border:1px solid var(--line-strong); border-radius:999px; padding:6px 12px; font:inherit; font-size:12.5px; width:130px; }
     .palet-add button { border:1px dashed var(--line-strong); background:none; border-radius:999px; padding:6px 12px; font:inherit; font-size:12.5px; color:var(--ink); cursor:pointer; }
@@ -257,6 +265,10 @@
       .pd-invul.groot { height:72px; }   /* notitieveld iets ruimer: 3 regels */
       .pd-vast { display:flex; gap:12px; font-size:11.5px; color:#777; padding:1px 9px; }
       .pd-vast .pd-tijd { min-width:96px; }
+      .pd-nasch { margin-top:8px; padding-top:6px; border-top:1px dashed #bbb; break-inside:avoid; }
+      .pd-nasch .pd-rij { display:flex; align-items:flex-end; gap:12px; font-size:11.5px; color:#555; padding:2px 9px; }
+      .pd-nasch .pd-tijd { min-width:96px; }
+      .pd-nasch .pd-rest { flex:1; border-bottom:1px dotted #999; min-height:13px; }
       .pd-notitie { margin-top:10px; break-inside:avoid; }
       .pd-label { display:block; font-size:12px; font-weight:700; color:#333; margin-bottom:5px; }
     }
@@ -369,7 +381,7 @@
     <div class="rooster-top">
       <div>
         <h1 style="font-size:28px" id="rooster-titel">Weekrooster groep 6</h1>
-        <p class="hint" style="margin-top:2px">Sleep een vak vanuit de balk hieronder naar het rooster. Pak de boven- of onderrand van een blok om het korter of langer te maken, of tik erop om het te verwijderen.</p>
+        <p class="hint" style="margin-top:2px">Sleep een vak vanuit de balk hieronder naar het rooster. Pak de boven- of onderrand van een blok om het korter of langer te maken, of tik erop om het te verwijderen. Onder de stippellijn plan je je eigen tijd na schooltijd: nakijken, voorbereiden, gesprekken.</p>
       </div>
       <div class="rooster-acties">
         <button class="btn-zacht" id="btn-undo" title="Laatste wijziging terug">↶ Ongedaan maken</button>
@@ -424,8 +436,25 @@ const VAKKEN = [
   {id:'seo', naam:'Sociaal-emotioneel', bg:'#fdeecb', tx:'#9a7415', perWeek:1, duur:30, zwaar:false, middag:true},
   {id:'verkeer', naam:'Verkeer', bg:'#e2e8ee', tx:'#4a5a6b', perWeek:1, duur:30, zwaar:false, middag:true},
 ];
-const VAK = id => VAKKEN.find(v => v.id === id) || {id, naam:id, bg:'#e4e0d6', tx:'#555'};
+const VAK = id => VAKKEN.find(v => v.id === id) || TAKEN.find(t => t.id === id) || {id, naam:id, bg:'#e4e0d6', tx:'#555'};
 const GYM = {id:'gym', naam:'Gym', bg:'#d3ead9', tx:'#256b3a'};
+
+/* ── Fase 2: de tijd ná schooltijd ──────────────────────────────────────
+   Het onderscheidende van deze planner: nakijken, voorbereiden en
+   oudergesprekken plan je in hetzelfde raster, in de uren na de les.
+   Taken zijn gedempt van kleur en gestippeld, zodat het rooster zelf
+   de hoofdrol houdt. Ze doen niet mee in de AI-generatie. */
+const TAKEN = [
+  {id:'nakijken', naam:'Nakijken', bg:'#edeae0', tx:'#6b6450', taak:true, duur:30},
+  {id:'voorbereiden', naam:'Voorbereiden', bg:'#e5e9e2', tx:'#4f6050', taak:true, duur:30},
+  {id:'oudergesprek', naam:'Oudergesprek', bg:'#f0e5da', tx:'#7a5a3d', taak:true, duur:15},
+  {id:'overleg', naam:'Overleg', bg:'#e2e6ee', tx:'#4a5a75', taak:true, duur:60},
+  {id:'administratie', naam:'Administratie', bg:'#ebe2e9', tx:'#6e4a63', taak:true, duur:30},
+];
+const isTaak = vakId => TAKEN.some(t => t.id === vakId);
+const NASCHOOL_MIN = 3*60;                  // zichtbare tijd na de laatste schooldag
+// Onderkant van de tijd-as: de laatste schooltijd + de na-schooltijd-zone.
+const asEindVan = su => Math.max(...su.dagen.map(d => su.dagEind[d] || su.eind)) + NASCHOOL_MIN;
 
 /* Kleuren voor zelf toegevoegde vakken — de eerstvolgende ongebruikte. */
 const EXTRA_KLEUREN = [
@@ -737,7 +766,13 @@ function demoRooster() {
       cur += duur;
     });
   });
-  return {setup:su, blokken:vaste.concat(les)};
+  // Een paar voorbeeldtaken ná schooltijd, zodat fase 2 meteen te zien is.
+  const taken = [
+    {id:'demo-taak-1', dag:'ma', start:E+15, duur:45, vak:'nakijken', naam:'Nakijken', type:'taak'},
+    {id:'demo-taak-2', dag:'di', start:E+30, duur:60, vak:'voorbereiden', naam:'Voorbereiden', type:'taak'},
+    {id:'demo-taak-3', dag:'do', start:E+45, duur:15, vak:'oudergesprek', naam:'Oudergesprek', type:'taak'},
+  ];
+  return {setup:su, blokken:vaste.concat(les, taken)};
 }
 
 /* ── AI-generatie ───────────────────────────────────────────────────── */
@@ -875,7 +910,10 @@ async function genereer() {
       if (p) { const blok = {id:'les-'+t.i, dag:p.dag, start:p.start, duur:t.duur, vak:t.vak, naam:t.naam, type:'les'}; les.push(blok); bezet.push(blok); }
     });
     if (les.length===0) throw new Error('Er kwam geen bruikbaar rooster uit. Probeer het opnieuw.');
-    state = { setup: su, blokken: vaste.concat(les) };
+    // Je eigen na-schooltijd-taken blijven staan bij opnieuw genereren;
+    // alleen de lessen (en pauze/gym) worden opnieuw ingedeeld.
+    const taken = (state.blokken || []).filter(b => b.type === 'taak');
+    state = { setup: su, blokken: vaste.concat(les, taken), duurVoorkeur: state.duurVoorkeur || {} };
     undoStack = [];
     bewaar();
     toonRooster();
@@ -903,7 +941,8 @@ function tekenGrid() {
   if (!su) return;                     // nog geen rooster → niets te tekenen
   const grid = els('grid');
   const dagen = su.dagen;
-  const hoogte = (su.eind - su.begin) * PXMIN;
+  const asEind = asEindVan(su);              // de as loopt door tot ná schooltijd
+  const hoogte = (asEind - su.begin) * PXMIN;
   grid.style.gridTemplateColumns = '52px repeat('+dagen.length+',1fr)';
   grid.innerHTML = '';
 
@@ -918,7 +957,7 @@ function tekenGrid() {
 
   // tijd-as
   const as = document.createElement('div'); as.className='as'; as.style.height=hoogte+'px'; as.style.position='relative';
-  for (let m = Math.ceil(su.begin/60)*60; m <= su.eind; m+=60) {
+  for (let m = Math.ceil(su.begin/60)*60; m <= asEind; m+=60) {
     const u = document.createElement('div'); u.className='uur'; u.style.top=((m-su.begin)*PXMIN)+'px'; u.textContent=minStr(m); as.appendChild(u);
   }
   grid.appendChild(as);
@@ -931,10 +970,10 @@ function tekenGrid() {
       if (e.target.closest('.blok') || e.target.closest('.blok-mini') || e.target.closest('.vak-kiezer')) return;
       const rect = col.getBoundingClientRect();          // kolomtop = su.begin, dus vanaf su.begin rekenen
       let start = su.begin + Math.round(((e.clientY - rect.top) / PXMIN) / 5) * 5;
-      start = Math.max(su.dagBegin[dag], Math.min(start, su.dagEind[dag] - 15));
+      start = Math.max(su.dagBegin[dag], Math.min(start, asEind - 15));
       toonVakKiezer(col, dag, start);
     });
-    for (let m = Math.ceil(su.begin/60)*60; m <= su.eind; m+=60) {
+    for (let m = Math.ceil(su.begin/60)*60; m <= asEind; m+=60) {
       const l = document.createElement('div'); l.className='uurlijn'; l.style.top=((m-su.begin)*PXMIN)+'px'; col.appendChild(l);
     }
     // arceer de tijd buiten schooltijd van díe dag (voor de begintijd en na de eindtijd)
@@ -943,13 +982,12 @@ function tekenGrid() {
       voor.style.top = '0px'; voor.style.height = ((su.dagBegin[dag]-su.begin)*PXMIN)+'px';
       col.appendChild(voor);
     }
-    if (su.dagEind[dag] < su.eind) {
-      const na = document.createElement('div'); na.className='na-school';
-      na.style.top = ((su.dagEind[dag]-su.begin)*PXMIN)+'px';
-      na.style.height = ((su.eind-su.dagEind[dag])*PXMIN)+'px';
-      na.innerHTML = '<span>vrij</span>';
-      col.appendChild(na);
-    }
+    // de zone ná schooltijd: hier plan je nakijken, voorbereiden, gesprekken
+    const zone = document.createElement('div'); zone.className='naschool-zone';
+    zone.style.top = ((su.dagEind[dag]-su.begin)*PXMIN)+'px';
+    zone.style.height = ((asEind-su.dagEind[dag])*PXMIN)+'px';
+    if (dag === dagen[0]) zone.innerHTML = '<span>na schooltijd</span>';
+    col.appendChild(zone);
     plaatsBlokken(col, dag);
     grid.appendChild(col);
   });
@@ -980,7 +1018,7 @@ function maakBlok(b, kol, n) {
   const el = document.createElement('div');
   const kl = b.type==='vast' ? {bg:'#f3efe6',tx:'#6b6880'} : (b.vak==='gym'?GYM:VAK(b.vak));
   const hoog = Math.max(17, b.duur*PXMIN - 3);
-  el.className = 'blok' + (b.type==='vast'?' vast':'') + (hoog < 36 ? ' klein' : '');
+  el.className = 'blok' + (b.type==='vast'?' vast':'') + (b.type==='taak'?' taak':'') + (hoog < 36 ? ' klein' : '');
   el.style.top = ((b.start - su.begin)*PXMIN)+'px';
   el.style.height = hoog+'px';
   if (n > 1) { el.style.left = 'calc('+(kol*100/n)+'% + 3px)'; el.style.width = 'calc('+(100/n)+'% - 6px)'; el.style.right = 'auto'; }
@@ -1017,6 +1055,18 @@ function tekenPalet() {
   p.appendChild(add);
   els('palet-nieuw-btn').onclick = paletVakToevoegen;
   els('palet-nieuw').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); paletVakToevoegen(); } });
+  // Na schooltijd: je eigen tijd, als gedempte taak-chips (fase 2)
+  p.appendChild(leeg('palet-scheiding'));
+  const tlab = document.createElement('span'); tlab.className = 'palet-label'; tlab.textContent = 'Na schooltijd:';
+  p.appendChild(tlab);
+  TAKEN.forEach(t => {
+    const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'palet-chip taak';
+    chip.style.background = t.bg; chip.style.color = t.tx;
+    chip.textContent = t.naam;
+    chip.title = 'Sleep ' + t.naam + ' naar de ruimte na schooltijd';
+    sleepChip(chip, t.id);
+    p.appendChild(chip);
+  });
 }
 
 // Eigen vak toevoegen vanuit het palet (ook ná genereren) → verschijnt als blokje.
@@ -1041,16 +1091,18 @@ function paletVakToevoegen() {
 function nieuweDuur(vakId, dag, start) {
   const su = state.setup, v = VAK(vakId);
   let duur = (state.duurVoorkeur && state.duurVoorkeur[vakId]) || v.duur || 30;
-  const eindD = su.dagEind[dag] || su.eind;
+  // Lessen blijven binnen de schooldag; taken mogen door tot het einde van de as.
+  const eindD = isTaak(vakId) ? asEindVan(su) : (su.dagEind[dag] || su.eind);
   if (start + duur > eindD) duur = eindD - start;
   duur = Math.floor(duur / 5) * 5;
   return duur >= 10 ? duur : 0;
 }
 // Waar landt het blok als je op deze cursorpositie in een kolom loslaat?
-function dropDoel(su, col, clientY) {
+function dropDoel(su, col, clientY, taak) {
   const dag = col.dataset.dag, rect = col.getBoundingClientRect();
+  const eindD = taak ? asEindVan(su) : (su.dagEind[dag] || su.eind);
   let start = su.begin + Math.round(((clientY - rect.top) / PXMIN) / 5) * 5;
-  start = Math.max(su.dagBegin[dag] || su.begin, Math.min(start, (su.dagEind[dag] || su.eind) - 10));
+  start = Math.max(su.dagBegin[dag] || su.begin, Math.min(start, eindD - 10));
   return { dag, start };
 }
 
@@ -1073,7 +1125,7 @@ function sleepChip(chip, vakId) {
       const col = kolOnder(ev.clientX, ev.clientY);
       if (col) {                                             // in het rooster → landings-voorbeeld tonen
         wegGeest();
-        const {dag, start} = dropDoel(su, col, ev.clientY);
+        const {dag, start} = dropDoel(su, col, ev.clientY, isTaak(vakId));
         const duur = nieuweDuur(vakId, dag, start) || 10;
         if (!voorbeeld) { voorbeeld = document.createElement('div'); }
         if (voorbeeld.parentElement !== col) col.appendChild(voorbeeld);
@@ -1094,7 +1146,7 @@ function sleepChip(chip, vakId) {
       const col = moved ? kolOnder(ev.clientX, ev.clientY) : null;
       wegGeest(); wegVoorbeeld(); chip.classList.remove('sleep');
       if (!moved || !col) return;                            // tik zonder slepen, of buiten het rooster losgelaten
-      const {dag, start} = dropDoel(su, col, ev.clientY);
+      const {dag, start} = dropDoel(su, col, ev.clientY, isTaak(vakId));
       voegLesToe(dag, start, vakId);
     };
     document.addEventListener('pointermove', move);
@@ -1106,7 +1158,7 @@ function tekenNuLijn() {
   document.querySelectorAll('.nu-lijn').forEach(n=>n.remove());
   const nu = new Date(); const dagId = ['zo','ma','di','wo','do','vr','za'][nu.getDay()];
   const su = state.setup; const min = nu.getHours()*60+nu.getMinutes();
-  if (!su.dagen.includes(dagId) || min<su.begin || min>su.eind) return;
+  if (!su.dagen.includes(dagId) || min<su.begin || min>asEindVan(su)) return;
   const col = [...document.querySelectorAll('.kolom-body')].find(c=>c.dataset.dag===dagId);
   if (!col) return;
   const n = document.createElement('div'); n.className='nu-lijn'; n.style.top=((min-su.begin)*PXMIN)+'px'; col.appendChild(n);
@@ -1149,7 +1201,8 @@ function startSleep(el, b, e) {
     el.style.pointerEvents='';
     const col = onder ? onder.closest('.kolom-body') : null;
     const dag = col ? col.dataset.dag : (el._dag || b.dag);
-    const beginD = su.dagBegin[dag] || su.begin, eindD = su.dagEind[dag] || su.eind;
+    const beginD = su.dagBegin[dag] || su.begin;
+    const eindD = b.type==='taak' ? asEindVan(su) : (su.dagEind[dag] || su.eind);
     let nieuw = Math.round((b.start + dy/PXMIN)/SNAP)*SNAP;
     nieuw = Math.max(beginD, Math.min(nieuw, eindD-b.duur));
     el._dag=dag; el._start=nieuw;
@@ -1175,7 +1228,8 @@ function startSleep(el, b, e) {
 // verschuift; bovenrand = begintijd verschuift. Minimaal 10 min, binnen de schooldag.
 function startRek(el, b, e, kant) {
   const su = state.setup;
-  const beginD = su.dagBegin[b.dag] || su.begin, eindD = su.dagEind[b.dag] || su.eind;
+  const beginD = su.dagBegin[b.dag] || su.begin;
+  const eindD = b.type==='taak' ? asEindVan(su) : (su.dagEind[b.dag] || su.eind);
   const startY = e.clientY, origStart = b.start, origDuur = b.duur;
   let nStart = origStart, nDuur = origDuur;
   el.classList.add('rek');
@@ -1211,7 +1265,7 @@ function toonMini(blokEl, b) {
   m.innerHTML = '<button title="Korter">–5</button><button title="Langer">+5</button><button title="Verwijderen">🗑</button>';
   const [kort,lang,weg] = m.querySelectorAll('button');
   kort.onclick = () => { duw(); b.duur=Math.max(10,b.duur-5); onthoudDuur(b.vak, b.duur); bewaar(); tekenGrid(); };
-  lang.onclick = () => { const eindD=state.setup.dagEind[b.dag]||state.setup.eind; if(b.start+b.duur+5<=eindD){ duw(); b.duur+=5; onthoudDuur(b.vak, b.duur); bewaar(); tekenGrid(); } };
+  lang.onclick = () => { const eindD=b.type==='taak'?asEindVan(state.setup):(state.setup.dagEind[b.dag]||state.setup.eind); if(b.start+b.duur+5<=eindD){ duw(); b.duur+=5; onthoudDuur(b.vak, b.duur); bewaar(); tekenGrid(); } };
   weg.onclick = () => { duw(); state.blokken=state.blokken.filter(x=>x.id!==b.id); bewaar(); sluitMini(); tekenGrid(); };
   document.body.appendChild(m);
   const r = blokEl.getBoundingClientRect();
@@ -1228,15 +1282,18 @@ let kiezerEl = null;
 function toonVakKiezer(col, dag, start) {
   sluitKiezer(); sluitMini();
   const su = state.setup;
+  // Ná schooltijd bied je je eigen tijd aan (nakijken, gesprekken); daarbinnen de vakken.
+  const naSchool = start >= (su.dagEind[dag] || su.eind);
   const menu = document.createElement('div'); menu.className = 'vak-kiezer';
   const titel = document.createElement('div'); titel.className = 'vk-titel';
-  titel.innerHTML = '<span>' + DAGEN.find(d=>d.id===dag).naam + ' om ' + minStr(start) + ' — kies een vak</span>';
+  titel.innerHTML = '<span>' + DAGEN.find(d=>d.id===dag).naam + ' om ' + minStr(start) +
+    (naSchool ? ' — plan je eigen tijd' : ' — kies een vak') + '</span>';
   const sluit = document.createElement('button'); sluit.type='button'; sluit.className='vk-sluit'; sluit.textContent='✕'; sluit.title='Sluiten';
   sluit.onclick = sluitKiezer;
   titel.appendChild(sluit);
   menu.appendChild(titel);
   const opts = document.createElement('div'); opts.className = 'vk-opts';
-  su.vakken.forEach(v => {
+  (naSchool ? TAKEN : su.vakken).forEach(v => {
     const kl = VAK(v.id);
     const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'vk-opt';
     btn.innerHTML = '<span class="kl" style="background:'+kl.bg+';box-shadow:inset 0 0 0 1px '+kl.tx+'33"></span>'+v.naam;
@@ -1262,13 +1319,17 @@ function sluitKiezer(){
 }
 function voegLesToe(dag, start, vakId) {
   const su = state.setup; const v = VAK(vakId);
+  const taak = isTaak(vakId);
   const duur = nieuweDuur(vakId, dag, start);                  // onthouden of standaardlengte, binnen de dag
   if (duur < 10) {
-    if (window.avinkaAlert) avinkaAlert('Hier is te weinig ruimte tot het einde van de schooldag. Kies een eerder tijdstip.');
+    if (window.avinkaAlert) avinkaAlert(taak
+      ? 'Hier is te weinig ruimte. Kies een eerder tijdstip.'
+      : 'Hier is te weinig ruimte tot het einde van de schooldag. Kies een eerder tijdstip.');
     return;
   }
   duw();
-  state.blokken.push({id:'les-hand-'+dag+'-'+start+'-'+state.blokken.length, dag, start, duur, vak:vakId, naam:v.naam, type:'les'});
+  state.blokken.push({id:(taak?'taak':'les')+'-hand-'+dag+'-'+start+'-'+state.blokken.length,
+                      dag, start, duur, vak:vakId, naam:v.naam, type:taak?'taak':'les'});
   bewaar(); tekenGrid();
 }
 
@@ -1308,21 +1369,25 @@ function bouwPrintDagen() {
   su.dagen.forEach(dagId => {
     const d = DAGEN.find(x => x.id === dagId);
     const blokken = state.blokken.filter(b => b.dag === dagId).sort((a,b) => a.start - b.start);
-    let rijen = '';
+    let rijen = '', taakRijen = '';
     blokken.forEach(b => {
       const tijd = minStr(b.start) + '–' + minStr(b.start + b.duur);
       const naam = (b.naam || VAK(b.vak).naam);
-      if (b.type === 'vast') {
+      if (b.type === 'taak') {
+        // na-schooltijd: één regel met wat schrijfruimte erachter
+        taakRijen += '<div class="pd-rij"><span class="pd-tijd">'+tijd+'</span><span>'+naam+'</span><span class="pd-rest"></span></div>';
+      } else if (b.type === 'vast') {
         rijen += '<div class="pd-vast"><span class="pd-tijd">'+tijd+'</span><span>'+naam+'</span></div>';
       } else {
         rijen += '<div class="pd-les"><div class="pd-regel"><span class="pd-tijd">'+tijd+'</span><span class="pd-naam">'+naam+'</span></div><div class="pd-invul"></div></div>';
       }
     });
+    const naschool = taakRijen ? '<div class="pd-nasch"><span class="pd-label">Na schooltijd</span>'+taakRijen+'</div>' : '';
     const sec = document.createElement('section');
     sec.className = 'print-dag';
     sec.innerHTML =
       '<div class="pd-kop"><h2>'+d.naam+'</h2><div class="pd-meta">Groep '+su.groep+' &nbsp;·&nbsp; Datum: <span class="pd-lijn"></span></div></div>' +
-      '<div class="pd-lijst">'+rijen+'</div>' +
+      '<div class="pd-lijst">'+rijen+'</div>' + naschool +
       '<div class="pd-notitie"><span class="pd-label">Bijzonderheden / huiswerk</span><div class="pd-invul groot"></div></div>';
     host.appendChild(sec);
   });
@@ -1335,10 +1400,53 @@ els('btn-print').onclick = printen;
 els('btn-opnieuw').onclick = async () => {
   const ja = await (window.avinkaBevestig ? avinkaBevestig('Een nieuw rooster genereren? Je huidige indeling wordt vervangen.', {titel:'Opnieuw genereren', bevestig:'Ja, opnieuw'}) : Promise.resolve(confirm('Opnieuw genereren?')));
   if (!ja) return;
+  vulSetupTerug(state.setup);          // genereren met je éigen instellingen, niet met de defaults
   els('rooster-scherm').style.display='none'; els('setup-scherm').style.display='block';
   genereer();
 };
-els('btn-instellingen').onclick = () => { els('rooster-scherm').style.display='none'; els('setup-scherm').style.display='block'; window.scrollTo(0,0); };
+els('btn-instellingen').onclick = () => { vulSetupTerug(state.setup); els('rooster-scherm').style.display='none'; els('setup-scherm').style.display='block'; toonStap(1); window.scrollTo(0,0); };
+
+/* Zet een bewaarde setup terug in de wizard, zodat "Aanpassen" je éigen
+   instellingen toont in plaats van de standaardwaarden. */
+function vulSetupTerug(su) {
+  if (!su) return;
+  els('groep').value = String(su.groep || 6);
+  // schooltijden per dag
+  Object.keys(dagBegin).forEach(k => delete dagBegin[k]);
+  Object.keys(dagEind).forEach(k => delete dagEind[k]);
+  (su.dagen || []).forEach(d => { dagBegin[d] = su.dagBegin[d]; dagEind[d] = su.dagEind[d]; });
+  const bSet = new Set((su.dagen || []).map(d => su.dagBegin[d]));
+  const eSet = new Set((su.dagen || []).map(d => su.dagEind[d]));
+  alleGelijk = bSet.size <= 1 && eSet.size <= 1;
+  els('chk-gelijk').checked = alleGelijk;
+  if (su.dagen && su.dagen.length) {
+    vulTijden(els('g-begin'), T_BEGIN_VAN, T_BEGIN_TOT, 5, su.dagBegin[su.dagen[0]]);
+    vulTijden(els('g-eind'), T_EIND_VAN, T_EIND_TOT, 5, su.dagEind[su.dagen[0]]);
+  }
+  renderTijden();
+  // pauzes: vaste lijst aan/uit + tijden terugzetten
+  pauzes.forEach(p => {
+    const b = (su.pauzes || []).find(x => x.id === p.id);
+    p.aan = !!b;
+    if (b) { p.begin = b.begin; p.eind = b.eind; }
+  });
+  bouwPauzelijst();
+  // gym
+  gymDagen.clear(); (su.gymDagen || []).forEach(d => gymDagen.add(d));
+  Object.keys(gymTijden).forEach(k => delete gymTijden[k]);
+  Object.entries(su.gymTijden || {}).forEach(([d, t]) => { gymTijden[d] = t; });
+  if (su.gymDuur) els('gym-duur').value = String(su.gymDuur);
+  bouwGymrij(); bouwGymtijden();
+  // vakken (incl. eigen vakken met kleur)
+  herstelVakken(su);
+  gekozenVakken.clear();
+  (su.vakken || []).forEach(v => {
+    const blokken = (v.blokken && v.blokken.length) ? v.blokken.slice() : [45];
+    gekozenVakken.set(v.id, { blokken, gemengd: blokken.some(d => d !== blokken[0]) });
+  });
+  bouwVakwolk(); bouwVaklijst();
+  els('eigen-regels').value = su.eigenRegels || '';
+}
 window.addEventListener('resize', () => { if(state.setup && els('rooster-scherm').style.display==='block') tekenGrid(); });
 document.addEventListener('keydown', e => { if((e.ctrlKey||e.metaKey)&&e.key==='z'){ e.preventDefault(); undo(); } });
 
