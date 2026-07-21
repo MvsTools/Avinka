@@ -212,15 +212,6 @@ function MiniNav({
         actief ? "bg-brand text-white shadow-sm shadow-brand/20" : "text-ink/70"
       }`}
     >
-      {naam && (
-        <span
-          data-navvink={naam}
-          className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-brand text-[8px] font-black text-white ring-2 ring-white"
-          aria-hidden
-        >
-          ✓
-        </span>
-      )}
       <span className="shrink-0 [&>svg]:h-3.5 [&>svg]:w-3.5">{icon}</span>
       <span className="truncate">{label}</span>
     </span>
@@ -328,10 +319,9 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
       /* ── Beginstanden ── */
       gsap.set(q("[data-venster]"), { autoAlpha: 1 });
       gsap.set(q("[data-tegel]"), { autoAlpha: 0.18, scale: 0.94 });
-      gsap.set(q("[data-tegelvink], [data-taakvink], [data-navvink]"), { autoAlpha: 0, scale: 0.5 });
-      gsap.set(q("[data-taakrij]"), { autoAlpha: 0, x: 14 });
+      gsap.set(q("[data-tegelvink]"), { autoAlpha: 0, scale: 0.5 });
       gsap.set(q("[data-paneel]"), { autoAlpha: 0, y: 18 });
-      gsap.set(q("[data-winstchip], [data-slotwoord]"), { autoAlpha: 0, y: 12 });
+      gsap.set(q("[data-slotwoord]"), { autoAlpha: 0, y: 12 });
       gsap.set(q("[data-daglaag]"), { opacity: 0 });
 
       /* ── Vluchtbaan: van venstermidden naar tegelmidden (gemeten) ── */
@@ -394,33 +384,35 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
         }
       };
 
-      vlucht("geel1", '[data-taakrij="1"]', 26);
-      vlucht("weektaak", '[data-taakrij="4"]', 29.5);
+      // Losse reminders (de geeltjes/melding) zweven naar de takenlijst-knop en
+      // worden opgenomen; de teller loopt mee op naar 5 open taken.
+      const naarPill = (naam: string, t: number) => {
+        const b = baan(naam, "[data-takenpill]");
+        if (!b) return;
+        tl.to(b.el, { x: b.dx, y: b.dy, scale: 0.3, rotation: 0, duration: 7 }, t);
+        tl.to(b.el, { autoAlpha: 0, duration: 2 }, t + 4);
+      };
+
+      naarPill("geel1", 26);
+      naarPill("weektaak", 29.5);
       vlucht("word", '[data-tegel="rapporten"]', 31, '[data-tegelvink="rapporten"]');
       vlucht("excel", '[data-tegel="toets"]', 35.5, '[data-tegelvink="toets"]');
       vlucht("toetsanalyse", '[data-tegel="toets"]', 38, '[data-tegelvink="toets"]');
       vlucht("mail", '[data-tegel="ouder"]', 42, '[data-tegelvink="ouder"]');
-      vlucht("melding", '[data-taakrij="2"]', 46);
+      naarPill("melding", 46);
       vlucht("plattegrond", '[data-tegel="plattegrond"]', 49, '[data-tegelvink="plattegrond"]');
       vlucht("les", '[data-tegel="les"]', 53.5, '[data-tegelvink="les"]');
       vlucht("browser", '[data-tegel="werkbladen"]', 58, '[data-tegelvink="werkbladen"]');
-      vlucht("draaiboek", '[data-taakrij="5"]', 61);
-      vlucht("geel2", '[data-taakrij="3"]', 63.5);
+      naarPill("draaiboek", 61);
+      naarPill("geel2", 63.5);
 
-      // De overvolle map met documenten vliegt naar Bestanden in de zijbalk;
-      // daar popt een badge-vinkje: al je bestanden staan nu netjes op één plek.
+      // De overvolle map met documenten vliegt naar Bestanden in de zijbalk en
+      // wordt daar opgenomen: al je bestanden staan nu netjes op één plek.
       const bMap = baan("map", '[data-nav="bestanden"]');
       if (bMap) {
         tl.to(bMap.el, { x: bMap.dx, y: bMap.dy, scale: 0.24, rotation: 0, duration: 7 }, 65);
         tl.to(bMap.el, { autoAlpha: 0, duration: 2 }, 70);
-        tl.to('[data-navvink="bestanden"]', { autoAlpha: 1, scale: 1, duration: 2.5, ease: "back.out(2)" }, 71);
       }
-
-      /* ── 71-81 · de taken worden afgevinkt (het merk-moment) ── */
-      [1, 2, 3, 4, 5].forEach((n, i) => {
-        tl.to(`[data-taakvink="${n}"]`, { autoAlpha: 1, scale: 1, duration: 2, ease: "back.out(2)" }, 71 + i * 2);
-        tl.to(`[data-taaktekst="${n}"]`, { opacity: 0.5, duration: 2 }, 71 + i * 2);
-      });
 
       /* ── 72-92 · avond wordt dag; de belofte blijft staan en kleurt mee ── */
       tl.to(q("[data-avondlaag]"), { opacity: 0, duration: 20, ease: "power1.inOut" }, 72);
@@ -431,8 +423,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
         q("[data-header]")[0]?.classList[st && st.progress > 0.79 ? "add" : "remove"]("film-klaar");
       }, 80);
 
-      /* ── 86-98 · de payoff ── */
-      tl.to(q("[data-winstchip]"), { autoAlpha: 1, y: 0, duration: 4, ease: "back.out(1.6)" }, 86);
+      /* ── 90 · de payoff ── */
       tl.to(q("[data-slotwoord]"), { autoAlpha: 1, y: 0, duration: 6, ease: "power2.out" }, 90);
     },
     { scope: root, dependencies: [film], revertOnUpdate: true },
@@ -783,55 +774,45 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
 
                   {/* hoofdvlak */}
                   <div className="min-w-0 flex-1 px-3 py-3 sm:px-4">
-                    {/* welkom-kop */}
-                    <div className="flex items-start justify-between gap-3">
+                    {/* welkom-kop met takenlijst-knop + streak, net als het echte dashboard */}
+                    <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
                       <div>
                         <p className="text-sm font-black tracking-tight text-ink">
                           Welkom terug, Sanne! 👋
                         </p>
                         <p className="mt-0.5 text-[10px] text-ink/60">
-                          Je tijd na schooltijd is van jou.
+                          Kies een tool om mee te beginnen.
                         </p>
                       </div>
-                      <span
-                        data-winstchip
-                        className="shrink-0 rounded-full bg-brand-soft px-2.5 py-1 text-[10px] font-bold text-brand-dark"
-                      >
-                        +2 uur deze week
-                      </span>
-                    </div>
-
-                    {/* takenstrookje (hier landen de geeltjes) */}
-                    <div className="mt-2.5 rounded-xl bg-white p-2.5 ring-1 ring-black/5">
-                      <p className="text-[9px] font-bold uppercase tracking-wide text-ink/45">
-                        Vandaag
-                      </p>
-                      <ul className="mt-1 grid gap-x-3 gap-y-1 text-[10px] font-semibold text-ink/85 sm:grid-cols-2">
-                        {[
-                          { n: 1, t: "oudergesprekken plannen" },
-                          { n: 2, t: "ouders terugmailen" },
-                          { n: 3, t: "rapporten vóór vrijdag" },
-                          { n: 4, t: "weektaak maken" },
-                          { n: 5, t: "draaiboek kerst" },
-                        ].map((r) => (
-                          <li key={r.n} data-taakrij={r.n} className="flex items-start gap-1.5">
-                            <span
-                              data-taakvink={r.n}
-                              className="mt-[1px] flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-brand text-[8px] font-black text-white"
-                              aria-hidden
-                            >
-                              ✓
-                            </span>
-                            <span data-taaktekst={r.n} className="leading-snug">
-                              {r.t}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        <span
+                          data-takenpill
+                          className="flex items-center gap-1.5 rounded-lg border border-black/5 bg-white px-2 py-1 text-[10px] font-bold text-ink shadow-sm"
+                        >
+                          <span aria-hidden>📋</span>
+                          <span>5 taken</span>
+                        </span>
+                        <span className="flex items-center gap-1 rounded-lg border border-black/5 bg-white px-2 py-1 text-[10px] font-bold text-ink shadow-sm">
+                          <svg viewBox="0 0 24 24" className="h-3.5 w-[13px]" aria-hidden>
+                            <defs>
+                              <linearGradient id="vlam-mini" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#ff3d00" />
+                                <stop offset="45%" stopColor="#ff9100" />
+                                <stop offset="100%" stopColor="#ffd000" />
+                              </linearGradient>
+                            </defs>
+                            <path
+                              d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"
+                              fill="url(#vlam-mini)"
+                            />
+                          </svg>
+                          12 dagen
+                        </span>
+                      </div>
                     </div>
 
                     {/* jouw tools */}
-                    <p className="mt-2.5 text-[10px] font-bold text-ink">Jouw tools</p>
+                    <p className="mt-3 text-[10px] font-bold text-ink">Jouw tools</p>
                     <div className="mt-1.5 grid grid-cols-3 gap-1.5">
                       <Tegel naam="toets" label="Toetsanalyse" emoji="📊" kleur="bg-sky-500" />
                       <Tegel naam="rapporten" label="Rapporten" emoji="📝" kleur="bg-violet-500" />
@@ -891,6 +872,9 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           )}
         </div>
       </section>
+
+      {/* Ademruimte tussen de film en de twijfels, zodat het niet op elkaar plakt */}
+      <div aria-hidden className="bg-cream" style={{ height: film ? "22vh" : "8vh" }} />
 
       {/* ════════════════════════ DE BODY (v2) ════════════════════════ */}
       <main id="verder" className="relative z-10 scroll-mt-16 bg-cream">
