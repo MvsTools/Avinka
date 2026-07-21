@@ -45,3 +45,7 @@ next-env.d.ts
 
 # Tijdelijke werkbestanden (o.a. bronmateriaal, niet committen)
 _tmp/
+
+# Impeccable: alleen de config hoort in git (cache/live niet)
+.impeccable/*
+!.impeccable/config.json
