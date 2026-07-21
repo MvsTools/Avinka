@@ -115,6 +115,18 @@ const FAQ = [
 const PAPIER_NERF =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.4'/%3E%3C/svg%3E\")";
 
+/* Houtnerf: uitgerekte turbulentie = lange streken, zoals echt bureaublad. */
+const HOUT_NERF =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='780' height='220'%3E%3Cfilter id='h'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.006 0.09' numOctaves='4' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 0.85 0 0 0 0 0.62 0.45 0.45 0.45 0 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23h)'/%3E%3C/svg%3E\")";
+
+/* Planknaden + een subtiel toonverschil per plank. */
+const PLANKEN =
+  "repeating-linear-gradient(90deg, rgba(0,0,0,0) 0px, rgba(255,255,255,0.03) 110px, rgba(0,0,0,0) 224px, rgba(0,0,0,0.26) 226px, rgba(0,0,0,0.26) 228px, rgba(255,255,255,0.05) 229px, rgba(0,0,0,0) 231px)";
+
+/* Filmkorrel over het hele beeld. */
+const KORREL =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.5'/%3E%3C/svg%3E\")";
+
 /* ── Kleine bouwstenen ─────────────────────────────────────────────────── */
 
 /* Een getekend vinkje (stroke), voor de hand-vink en de sectiekoppen.
@@ -208,7 +220,7 @@ export default function Lijstjes({ fotoBestand }: { fotoBestand?: string }) {
       gsap.set(beats, { autoAlpha: 0 });
       gsap.set(q("[data-beat-a]"), { autoAlpha: 1 });
       gsap.set(q("[data-pen]"), { autoAlpha: 0, x: 90, y: 120, rotate: 12 });
-      gsap.set(q("[data-daglicht], [data-dagtafel], [data-naad]"), { autoAlpha: 0 });
+      gsap.set(q("[data-daglicht], [data-naad]"), { autoAlpha: 0 });
       const handVink = q<SVGPathElement>("[data-vink-hand] path");
       const popVinks = q("[data-vink-pop]");
       handVink.forEach((p) => gsap.set(p, { strokeDasharray: 1, strokeDashoffset: 1 }));
@@ -229,8 +241,11 @@ export default function Lijstjes({ fotoBestand }: { fotoBestand?: string }) {
       tl.to(q("[data-beat-a]"), { autoAlpha: 0, y: -24, duration: 6 }, 8);
       tl.fromTo(q("[data-beat-b]"), { y: 24 }, { autoAlpha: 1, y: 0, duration: 7 }, 13);
 
-      /* Camera zoomt rustig naar het lijstje. */
+      /* Camera zoomt rustig naar het lijstje; het papier komt nét iets harder
+         dichterbij dan het bureau (diepte), de plant drijft de andere kant op. */
       tl.to(q("[data-scene]"), { scale: 1.22, yPercent: -4, duration: 26, ease: "power1.inOut" }, 14);
+      tl.to(q("[data-paper-par]"), { scale: 1.07, duration: 26, ease: "power1.inOut" }, 14);
+      tl.to(q("[data-bokeh]"), { x: -38, y: 26, duration: 26, ease: "power1.inOut" }, 14);
 
       /* De pen komt op en zet het eerste vinkje, met de hand. */
       tl.to(q("[data-pen]"), { autoAlpha: 1, x: 0, y: 0, rotate: 0, duration: 8 }, 20);
@@ -241,7 +256,8 @@ export default function Lijstjes({ fotoBestand }: { fotoBestand?: string }) {
          Het daglicht komt eerst, zodat de inkt-tekst nooit op donker staat. */
       tl.to(q("[data-beat-b]"), { autoAlpha: 0, y: -24, duration: 5 }, 40);
       tl.to(q("[data-pen]"), { autoAlpha: 0, x: 60, y: -40, duration: 6 }, 41);
-      tl.to(q("[data-daglicht], [data-dagtafel]"), { autoAlpha: 1, duration: 20, ease: "power1.inOut" }, 42);
+      tl.to(q("[data-daglicht]"), { autoAlpha: 1, duration: 20, ease: "power1.inOut" }, 42);
+      tl.to(q("[data-vignet]"), { autoAlpha: 0.35, duration: 20, ease: "power1.inOut" }, 42);
       tl.to(q("[data-naad]"), { autoAlpha: 1, duration: 14, ease: "power1.inOut" }, 68);
       tl.fromTo(q("[data-beat-c]"), { y: 24 }, { autoAlpha: 1, y: 0, duration: 6 }, 49);
 
@@ -373,91 +389,193 @@ export default function Lijstjes({ fotoBestand }: { fotoBestand?: string }) {
         <StilAlternatief />
       ) : (
         <section data-film className="relative h-[340vh]" aria-label="Intro: het lijstje van vanavond">
-          <div className="sticky top-0 h-screen overflow-hidden">
-            {/* Avondlicht: warm, geen nacht. */}
-            <div
-              className="absolute inset-0"
-              style={{
-                background:
-                  "linear-gradient(180deg, #33244a 0%, #55345a 34%, #a05a3f 72%, #c97b3f 100%)",
-              }}
-              aria-hidden
-            />
-            {/* Daglicht schuift eroverheen tijdens de cascade. */}
-            <div
-              data-daglicht
-              className="absolute inset-0"
-              style={{
-                background:
-                  "linear-gradient(180deg, #fbf6ee 0%, #f8efdd 55%, #f4e7c9 100%)",
-              }}
-              aria-hidden
-            />
-
-            {/* De scène: bureau met lijstje. */}
-            <div data-scene className="absolute inset-0 will-change-transform">
-              {/* tafelblad-suggestie onderin (avond) */}
+          <div className="sticky top-0 h-screen overflow-hidden bg-[#20120a]">
+            {/* De scène: een echt bureaublad, recht van boven. */}
+            <div data-scene className="absolute inset-[-6%] will-change-transform">
+              {/* AVOND: donker hout in lamplicht */}
               <div
-                className="absolute inset-x-0 bottom-0 h-[46%]"
-                style={{
-                  background:
-                    "linear-gradient(180deg, rgba(61,35,24,0) 0%, rgba(61,35,24,0.28) 30%, rgba(61,35,24,0.42) 100%)",
-                }}
+                className="absolute inset-0"
+                style={{ background: "linear-gradient(215deg, #59391f 0%, #3a2415 48%, #201103 100%)" }}
                 aria-hidden
               />
-              {/* hetzelfde tafelblad in daglicht: warm zand in plaats van modder */}
               <div
-                data-dagtafel
-                className="absolute inset-x-0 bottom-0 h-[46%]"
+                className="absolute inset-0 opacity-50 mix-blend-overlay"
+                style={{ backgroundImage: HOUT_NERF, backgroundSize: "780px 220px" }}
+                aria-hidden
+              />
+              <div className="absolute inset-0" style={{ background: PLANKEN }} aria-hidden />
+              {/* de warme lichtplas van de bureaulamp, rechtsboven */}
+              <div
+                className="absolute inset-0"
                 style={{
                   background:
-                    "linear-gradient(180deg, rgba(244,236,219,0) 0%, rgba(231,214,180,0.55) 35%, rgba(219,196,152,0.75) 100%)",
+                    "radial-gradient(115% 90% at 76% 8%, rgba(255,200,130,0.62) 0%, rgba(255,175,95,0.3) 34%, rgba(20,10,26,0) 68%)",
                 }}
                 aria-hidden
               />
 
-              {/* het lijstje, iets gedraaid, rechts van het midden */}
-              <div className="absolute left-1/2 top-[46%] w-[19rem] -translate-x-1/2 rotate-[-2.5deg] sm:left-[58%] sm:top-[42%] sm:w-[21rem]">
-                <PapierLijstje afgevinkt={0} film />
-                {/* de groene pen: punt op het eerste vakje, romp naar rechtsonder */}
-                <div data-pen className="absolute left-2 top-11 h-0 w-0">
-                  <svg
-                    viewBox="0 0 120 20"
-                    className="w-36 origin-[6px_10px] rotate-[38deg] drop-shadow-[-8px_12px_10px_rgba(30,15,40,0.35)]"
-                    aria-hidden
+              {/* DAG: hetzelfde bureau, lichter hout en zacht daglicht */}
+              <div data-daglicht className="absolute inset-0" aria-hidden>
+                <div
+                  className="absolute inset-0"
+                  style={{ background: "linear-gradient(215deg, #d4aa76 0%, #bb8f5c 48%, #997043 100%)" }}
+                />
+                <div
+                  className="absolute inset-0 opacity-40 mix-blend-overlay"
+                  style={{ backgroundImage: HOUT_NERF, backgroundSize: "780px 220px" }}
+                />
+                <div className="absolute inset-0" style={{ background: PLANKEN }} />
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      "radial-gradient(130% 100% at 68% 6%, rgba(255,251,238,0.6) 0%, rgba(255,245,216,0.22) 42%, rgba(120,90,60,0) 72%)",
+                  }}
+                />
+              </div>
+
+              {/* telefoon, omgekeerd op het bureau (werk gaat voor) */}
+              <div className="absolute left-[44%] top-[9%] hidden rotate-[8deg] sm:block" aria-hidden>
+                <div className="absolute left-[-22px] top-[18px] h-44 w-[5.5rem] rounded-[1.4rem] bg-[#140a18]/50 blur-md" />
+                <div
+                  className="relative h-44 w-[5.5rem] rounded-[1.4rem] ring-1 ring-white/10"
+                  style={{ background: "linear-gradient(145deg, #322d42 0%, #232032 55%, #1a1726 100%)" }}
+                >
+                  <div className="absolute left-2.5 top-2.5 h-9 w-9 rounded-xl bg-[#151221]">
+                    <div className="absolute left-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-[#312c44] ring-1 ring-black/50" />
+                    <div className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-[#312c44] ring-1 ring-black/50" />
+                    <div className="absolute bottom-1.5 left-1.5 h-2.5 w-2.5 rounded-full bg-[#312c44] ring-1 ring-black/50" />
+                  </div>
+                  <div
+                    className="absolute inset-0 rounded-[1.4rem]"
+                    style={{ background: "linear-gradient(115deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 40%)" }}
+                  />
+                </div>
+              </div>
+
+              {/* het lijstje, iets gedraaid, rechts van het midden (parallaxlaag) */}
+              <div className="absolute left-1/2 top-[46%] w-[19rem] -translate-x-1/2 sm:left-[58%] sm:top-[42%] sm:w-[21rem]">
+                <div data-paper-par className="rotate-[-2.5deg] will-change-transform">
+                  <PapierLijstje afgevinkt={0} film />
+                  {/* de groene pen: punt op het eerste vakje, romp naar rechtsonder */}
+                  <div data-pen className="absolute left-2 top-11 h-0 w-0">
+                    <svg
+                      viewBox="0 0 120 20"
+                      className="w-36 origin-[6px_10px] rotate-[38deg] drop-shadow-[-10px_14px_10px_rgba(20,10,24,0.45)]"
+                      aria-hidden
+                    >
+                      <defs>
+                        <linearGradient id="penromp" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0" stopColor="#43b585" />
+                          <stop offset="0.45" stopColor="#2f9e6e" />
+                          <stop offset="1" stopColor="#1f7a52" />
+                        </linearGradient>
+                      </defs>
+                      <path d="M4 10L20 4.5 20 15.5z" fill="#e7d9b8" />
+                      <path d="M4 10L11 7.6 11 12.4z" fill="#221c3a" />
+                      <rect x="20" y="4" width="74" height="12" rx="6" fill="url(#penromp)" />
+                      <rect x="24" y="5.5" width="62" height="2.2" rx="1.1" fill="#ffffff" opacity="0.28" />
+                      <rect x="88" y="4" width="6" height="12" fill="#1f7a52" />
+                      <rect x="94" y="4.5" width="22" height="11" rx="5.5" fill="#25855a" />
+                      <rect x="97" y="2.8" width="3.2" height="9" rx="1.6" fill="#d8cfae" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* koffie, koud geworden */}
+              <div className="absolute left-[9%] top-[55%] hidden sm:block" aria-hidden>
+                <div className="absolute left-[-28px] top-[18px] h-24 w-24 rounded-full bg-[#140a18]/50 blur-md" />
+                <div
+                  className="relative h-24 w-24 rounded-full"
+                  style={{ background: "radial-gradient(circle at 64% 28%, #f7efe0 0%, #e4d6bd 55%, #c3b08d 100%)" }}
+                >
+                  <div
+                    className="absolute -right-4 top-1/2 h-10 w-9 -translate-y-1/2 rounded-full border-[7px] border-[#e0d2b8]"
+                    style={{ boxShadow: "-6px 8px 10px rgba(20,10,24,0.3)" }}
+                  />
+                  <div
+                    className="absolute inset-[10px] rounded-full"
+                    style={{ background: "radial-gradient(circle at 58% 32%, #6b4226 0%, #472a16 55%, #2c1a0c 100%)" }}
                   >
-                    <path d="M4 10L20 4.5 20 15.5z" fill="#e7d9b8" />
-                    <path d="M4 10L11 7.6 11 12.4z" fill="#221c3a" />
-                    <rect x="20" y="4" width="74" height="12" rx="6" fill="#2f9e6e" />
-                    <rect x="88" y="4" width="6" height="12" fill="#25855a" />
-                    <rect x="94" y="4.5" width="22" height="11" rx="5.5" fill="#25855a" />
-                  </svg>
+                    <div className="absolute left-[18%] top-[13%] h-3 w-9 -rotate-[24deg] rounded-full bg-[#ffdda8]/25 blur-[2px]" />
+                  </div>
                 </div>
               </div>
 
-              {/* koud kopje thee, bovenaanzicht */}
-              <div className="absolute left-[12%] top-[58%] hidden sm:block" aria-hidden>
-                <div className="relative h-20 w-20 rounded-full bg-[#efe6d2] shadow-[-10px_14px_24px_rgba(30,15,40,0.3)]">
-                  <div className="absolute inset-2 rounded-full bg-[#8a5a33]" />
-                  <div className="absolute -right-3 top-7 h-6 w-5 rounded-r-full border-4 border-[#efe6d2]" />
+              {/* rode nakijkpen */}
+              <div className="absolute left-[20%] top-[79%] hidden rotate-[-22deg] sm:block" aria-hidden>
+                <div className="absolute left-[-12px] top-[12px] h-3 w-44 rounded-full bg-[#140a18]/45 blur-[6px]" />
+                <div
+                  className="relative h-3.5 w-44 rounded-full"
+                  style={{ background: "linear-gradient(180deg, #dd6650 0%, #b8402e 55%, #8e2e1e 100%)" }}
+                >
+                  <div className="absolute right-[-11px] top-0 h-3.5 w-4 rounded-r-full bg-[#7c2417]" />
+                  <div className="absolute left-[-8px] top-[4px] h-1.5 w-3 rounded-l-full bg-[#e8e0d0]" />
                 </div>
               </div>
 
-              {/* stapel schriften, bovenaanzicht */}
-              <div className="absolute right-[6%] top-[16%] hidden sm:block" aria-hidden>
+              {/* geel memoblokje */}
+              <div className="absolute right-[14%] top-[72%] hidden rotate-[5deg] sm:block" aria-hidden>
+                <div className="absolute left-[-16px] top-[14px] h-28 w-28 bg-[#140a18]/45 blur-md" />
+                <div className="relative h-28 w-28 bg-[#f3d784]" style={{ backgroundImage: PAPIER_NERF }}>
+                  <p className="font-hand rotate-[-2deg] p-3 text-[1.05rem] font-semibold leading-tight text-ink/75">
+                    morgen: gym, eerste uur!
+                  </p>
+                  <div
+                    className="absolute bottom-0 right-0 h-5 w-5 bg-[#dfbd5e]"
+                    style={{ clipPath: "polygon(0 100%, 100% 0, 100% 100%)" }}
+                  />
+                </div>
+              </div>
+
+              {/* stapel schriften */}
+              <div className="absolute right-[5%] top-[13%] hidden sm:block" aria-hidden>
+                <div className="absolute left-[-24px] top-[20px] h-44 w-36 rounded-md bg-[#140a18]/50 blur-lg" />
                 <div className="absolute rotate-[9deg]">
-                  <div className="h-40 w-32 rounded-md bg-[#b89a3f] shadow-[-10px_14px_22px_rgba(30,15,40,0.3)]" />
+                  <div className="h-40 w-32 rounded-md border-b-4 border-[#93762a] bg-[#b8973e]" />
                 </div>
                 <div className="absolute left-2 top-3 rotate-[3deg]">
-                  <div className="h-40 w-32 rounded-md bg-[#3f6db8] shadow-[-8px_10px_16px_rgba(30,15,40,0.25)]" />
+                  <div className="h-40 w-32 rounded-md border-b-4 border-[#2c4f8a] bg-[#3f6db8]" />
                 </div>
                 <div className="relative left-4 top-6 rotate-[-4deg]">
-                  <div className="h-40 w-32 rounded-md bg-[#b8563f] shadow-[-8px_10px_16px_rgba(30,15,40,0.25)]">
-                    <div className="absolute inset-x-4 top-5 h-10 rounded-sm bg-[#fdfaf2]/85" />
+                  <div className="h-40 w-32 rounded-md border-b-4 border-[#8a3c2a] bg-[#b8563f]">
+                    <div className="absolute inset-x-4 top-5 h-11 rounded-sm bg-[#fdfaf2]/90">
+                      <p className="font-hand px-2 pt-1 text-[1rem] leading-tight text-ink/70">groep 5</p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* scherptediepte: onscherpe plant op de voorgrond, linksboven */}
+            <div
+              data-bokeh
+              className="pointer-events-none absolute -left-16 -top-16 h-80 w-80 opacity-75 blur-[10px]"
+              aria-hidden
+            >
+              <div className="absolute left-6 top-2 h-40 w-16 rotate-[24deg] bg-[#26482b]" style={{ borderRadius: "60% 40% 65% 35%" }} />
+              <div className="absolute left-0 top-16 h-44 w-16 rotate-[64deg] bg-[#1e3d23]" style={{ borderRadius: "55% 45% 60% 40%" }} />
+              <div className="absolute left-16 top-0 h-36 w-14 -rotate-[6deg] bg-[#2d5433]" style={{ borderRadius: "62% 38% 58% 42%" }} />
+            </div>
+
+            {/* vignet: donkere randen, avondsterk, overdag zachter */}
+            <div
+              data-vignet
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background:
+                  "radial-gradient(115% 115% at 50% 42%, rgba(16,8,22,0) 44%, rgba(16,8,22,0.34) 72%, rgba(16,8,22,0.6) 100%)",
+              }}
+              aria-hidden
+            />
+
+            {/* filmkorrel over alles */}
+            <div
+              className="pointer-events-none absolute inset-0 opacity-[0.08] mix-blend-overlay"
+              style={{ backgroundImage: KORREL, backgroundSize: "140px 140px" }}
+              aria-hidden
+            />
 
             {/* ── Tekstbeats: bovenin, nooit over het lijstje. ── */}
             <div className="absolute inset-x-0 top-[4.5rem] z-10 px-6 sm:top-[5.5rem]">
@@ -483,7 +601,7 @@ export default function Lijstjes({ fotoBestand }: { fotoBestand?: string }) {
                   </h1>
                   <p
                     data-beat-c
-                    className="absolute font-display text-4xl font-black leading-[1.05] tracking-tight text-ink sm:text-5xl"
+                    className="absolute font-display text-4xl font-black leading-[1.05] tracking-tight text-ink [text-shadow:0_2px_20px_rgba(251,246,238,0.6)] sm:text-5xl"
                   >
                     Avinka vinkt je taken af.
                     <span className="mt-3 block font-sans text-lg font-semibold text-ink/70 sm:text-xl">
@@ -492,7 +610,7 @@ export default function Lijstjes({ fotoBestand }: { fotoBestand?: string }) {
                   </p>
                   <p
                     data-beat-e
-                    className="absolute font-display text-4xl font-black leading-[1.05] tracking-tight text-ink sm:text-5xl"
+                    className="absolute font-display text-4xl font-black leading-[1.05] tracking-tight text-ink [text-shadow:0_2px_20px_rgba(251,246,238,0.6)] sm:text-5xl"
                   >
                     En jouw twijfels?
                     <span className="mt-3 block font-sans text-lg font-semibold text-ink/70 sm:text-xl">
