@@ -29,6 +29,33 @@
         ],
         "createdAt": "2026-07-21T01:23:26.384Z",
         "reason": "Decoratieve afbeeldingen met geldige src en bewust lege alt (correcte toegankelijkheid)"
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "files": [
+          "src/app/nieuw2/Lijstjes.tsx"
+        ],
+        "createdAt": "2026-07-21T10:19:43.403Z",
+        "reason": "Vink-pop is het merkmoment: DESIGN.md §5 schrijft de korte pop met back-easing (<300ms) expliciet voor; zelfde bewuste uitzondering als de v1-triage"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "*",
+        "files": [
+          "src/app/nieuw2/Lijstjes.tsx"
+        ],
+        "createdAt": "2026-07-21T10:19:43.515Z",
+        "reason": "Filmisch scenepalet (avondlicht/daglicht/bureau-objecten) van de nieuw2-film; zelfde cinematografische uitzondering als src/app/nieuw/Film.tsx"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "*",
+        "files": [
+          "src/app/nieuw2/Lijstjes.tsx"
+        ],
+        "createdAt": "2026-07-21T10:19:43.614Z",
+        "reason": "Handschrift-lettergroottes (Caveat) op het papieren lijstje en miniatuurtekst in de dashboard-mockup; optische maat, bewust buiten de type-ramp"
       }
     ]
   }
