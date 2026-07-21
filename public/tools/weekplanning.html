@@ -940,11 +940,14 @@ async function genereer() {
     // Je eigen na-schooltijd-taken blijven staan bij opnieuw genereren;
     // alleen de lessen (en pauze/gym) worden opnieuw ingedeeld.
     const taken = (state.blokken || []).filter(b => b.type === 'taak');
-    state = { setup: su, blokken: vaste.concat(les, taken), duurVoorkeur: state.duurVoorkeur || {} };
+    // De "afgevinkt"-melding + tijdwinst hoort bij het AANMAKEN van je weekplanning,
+    // niet bij elke keer opnieuw mixen — anders krijg je 'm bij elke klik opnieuw.
+    const eersteKeer = !state.geteld;
+    state = { setup: su, blokken: vaste.concat(les, taken), duurVoorkeur: state.duurVoorkeur || {}, geteld: true };
     undoStack = [];
     bewaar();
     toonRooster();
-    if (typeof avinkaTel==='function') avinkaTel('weekplanning', { items: les.length });
+    if (eersteKeer && typeof avinkaTel==='function') avinkaTel('weekplanning', { items: les.length });
   } catch(e) {
     els('fout').textContent = e.message || 'Er ging iets mis.';
   } finally {
