@@ -311,35 +311,26 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
         }
       };
 
-      // Losse post-its die geen eigen tegel hebben zweven het platform in en
-      // worden opgenomen: naar het paneelmidden, krimpen en oplossen.
-      const absorb = (naam: string, t: number) => {
-        const b = baan(naam, "[data-paneel]");
-        if (!b) return;
-        tl.to(b.el, { x: b.dx, y: b.dy, scale: 0.4, rotation: 0, duration: 7 }, t);
-        tl.to(b.el, { autoAlpha: 0, duration: 2 }, t + 4);
-      };
-
       vlucht("geel1", '[data-taakrij="1"]', 26);
-      absorb("weektaak", 30);
+      vlucht("weektaak", '[data-taakrij="4"]', 29.5);
       vlucht("word", '[data-tegel="rapporten"]', 31, '[data-tegelvink="rapporten"]');
       vlucht("excel", '[data-tegel="toets"]', 35.5, '[data-tegelvink="toets"]');
-      vlucht("mail", '[data-tegel="ouder"]', 40, '[data-tegelvink="ouder"]');
-      vlucht("melding", '[data-taakrij="2"]', 44.5);
-      absorb("toetsanalyse", 46);
+      vlucht("toetsanalyse", '[data-tegel="toets"]', 38, '[data-tegelvink="toets"]');
+      vlucht("mail", '[data-tegel="ouder"]', 42, '[data-tegelvink="ouder"]');
+      vlucht("melding", '[data-taakrij="2"]', 46);
       vlucht("plattegrond", '[data-tegel="plattegrond"]', 49, '[data-tegelvink="plattegrond"]');
       vlucht("les", '[data-tegel="les"]', 53.5, '[data-tegelvink="les"]');
       vlucht("browser", '[data-tegel="werkbladen"]', 58, '[data-tegelvink="werkbladen"]');
-      absorb("draaiboek", 60);
-      vlucht("geel2", '[data-taakrij="3"]', 62.5);
+      vlucht("draaiboek", '[data-taakrij="5"]', 61);
+      vlucht("geel2", '[data-taakrij="3"]', 63.5);
 
       // De overvolle map hoeft nergens heen: die is gewoon niet meer nodig.
       tl.to(q('[data-venster="map"]'), { scale: 0.5, autoAlpha: 0, rotation: 0, duration: 6 }, 64);
 
-      /* ── 71-79 · de taken worden afgevinkt (het merk-moment) ── */
-      [1, 2, 3].forEach((n, i) => {
-        tl.to(`[data-taakvink="${n}"]`, { autoAlpha: 1, scale: 1, duration: 2, ease: "back.out(2)" }, 71 + i * 2.5);
-        tl.to(`[data-taaktekst="${n}"]`, { opacity: 0.5, duration: 2 }, 71 + i * 2.5);
+      /* ── 71-81 · de taken worden afgevinkt (het merk-moment) ── */
+      [1, 2, 3, 4, 5].forEach((n, i) => {
+        tl.to(`[data-taakvink="${n}"]`, { autoAlpha: 1, scale: 1, duration: 2, ease: "back.out(2)" }, 71 + i * 2);
+        tl.to(`[data-taaktekst="${n}"]`, { opacity: 0.5, duration: 2 }, 71 + i * 2);
       });
 
       /* ── 72-92 · avond wordt dag; de belofte blijft staan en kleurt mee ── */
@@ -481,7 +472,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
         <div
           className={
             film
-              ? "sticky top-0 flex h-screen flex-col items-center overflow-hidden pt-20 sm:pt-24"
+              ? "sticky top-0 flex h-screen flex-col items-center overflow-hidden px-4 pt-14 sm:pt-16"
               : "relative flex flex-col items-center gap-8 overflow-hidden px-4 pb-16 pt-28"
           }
         >
@@ -500,10 +491,10 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           </div>
 
           {/* De grote belofte: groots, muisstil, en niets komt eroverheen */}
-          <div data-intro className="relative z-30 mx-auto mt-[4vh] w-[min(94vw,62rem)] text-center">
+          <div data-intro className="relative z-30 mx-auto mt-[1.5vh] w-[min(94vw,62rem)] text-center">
             <h1
               data-belofte
-              className={`font-display text-[clamp(2.6rem,6vw,4.5rem)] font-black leading-[1.04] tracking-tight [text-wrap:balance] ${
+              className={`font-display text-[clamp(2.4rem,5.5vw,4rem)] font-black leading-[1.04] tracking-tight [text-wrap:balance] ${
                 film ? "text-cream" : "text-ink"
               }`}
             >
@@ -518,7 +509,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
               <Venster
                 naam="word"
                 titel="rapport_groep5_DEFINITIEF(3).docx"
-                className="left-[3%] top-[42%] w-56 -rotate-[5deg] sm:left-[3%] sm:top-[40%] sm:w-64"
+                className="left-[3%] top-[42%] w-56 -rotate-[5deg] sm:left-[2%] sm:top-[34%] sm:w-64"
               >
                 <div className="p-3.5">
                   <p className="text-[11px] leading-relaxed text-slate-600">
@@ -534,7 +525,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
               <Venster
                 naam="excel"
                 titel="toetsuitslagen_M-toets.xlsx"
-                className="hidden w-52 rotate-[4deg] sm:right-[3%] sm:top-[40%] sm:block sm:w-60"
+                className="hidden w-52 rotate-[4deg] sm:right-[2%] sm:top-[34%] sm:block sm:w-60"
               >
                 <div className="grid grid-cols-4 gap-px bg-slate-200 p-px text-[9px] text-slate-500">
                   {["", "M5", "E5", "vs", "Yas", "231", "244", "+13", "Nor", "228", "225", "-3", "Mik", "219", "236", "+17"].map(
@@ -624,38 +615,39 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                 </div>
               </Venster>
 
-              {/* Geeltjes: het handmatige werk dat nog rondslingert. geel1 + geel2
-                  landen als taak in het dashboard; de drie nieuwe zweven het
-                  platform in en worden opgenomen (absorb in de tijdlijn). */}
+              {/* Geeltjes: kriskras in de linker- en rechtermarge, midden vrij.
+                  Bij het scrollen vliegen ze naar hun plek in het dashboard:
+                  oudergesprekken/weektaak/draaiboek naar de to-do, toetsen
+                  analyseren naar de Toetsanalyse-tegel, rapporten naar de to-do. */}
               <div
                 data-venster="geel1"
-                className="absolute left-[46%] top-[33%] w-36 -rotate-[7deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:left-[39%] sm:top-[31%]"
+                className="absolute left-[3%] top-[54%] w-36 -rotate-[6deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:left-[3%] sm:top-[22%]"
               >
                 oudergesprekken plannen!!
               </div>
               <div
-                data-venster="weektaak"
-                className="absolute hidden w-32 rotate-[3deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:left-[53%] sm:top-[29%] sm:block"
-              >
-                weektaak maken
-              </div>
-              <div
                 data-venster="toetsanalyse"
-                className="absolute hidden w-32 rotate-[4deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:left-[31%] sm:top-[51%] sm:block"
+                className="absolute hidden w-32 rotate-[3deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:left-[15%] sm:top-[70%] sm:block"
               >
                 toetsen analyseren
               </div>
               <div
-                data-venster="draaiboek"
-                className="absolute hidden w-32 -rotate-[5deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:left-[48%] sm:top-[45%] sm:block"
+                data-venster="weektaak"
+                className="absolute hidden w-32 rotate-[4deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:right-[3%] sm:top-[21%] sm:block"
               >
-                draaiboek kerst maken
+                weektaak maken
               </div>
               <div
                 data-venster="geel2"
-                className="absolute right-[5%] top-[46%] w-32 rotate-[8deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:right-[15%] sm:top-[47%]"
+                className="absolute right-[4%] top-[46%] w-32 rotate-[8deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:right-[19%] sm:top-[49%]"
               >
                 rapporten af vóór vrijdag
+              </div>
+              <div
+                data-venster="draaiboek"
+                className="absolute hidden w-32 -rotate-[4deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:right-[6%] sm:top-[70%] sm:block"
+              >
+                draaiboek kerst maken
               </div>
 
               {/* Melding */}
@@ -673,7 +665,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
 
           {/* ── De werkplek waar alles landt: een mini-versie van het echte
                  dashboard (bovenbalk, welkom, takenstrookje, Jouw tools, tip) ── */}
-          <div data-paneel className="relative z-10 mt-5 w-[min(92vw,44rem)] sm:mt-7">
+          <div data-paneel className="relative z-10 mt-4 w-[min(92vw,44rem)] sm:mt-5">
             <div className="overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5">
               {/* mini-bovenbalk */}
               <div className="flex items-center justify-between border-b border-black/5 bg-white px-4 py-2.5">
@@ -685,7 +677,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                 </span>
               </div>
 
-              <div className="bg-cream px-4 py-4 sm:px-5">
+              <div className="bg-cream px-4 py-3.5 sm:px-5">
                 {/* welkom-kop, zoals op de echte Start-pagina */}
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -709,11 +701,13 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                   <p className="text-[10px] font-bold uppercase tracking-wide text-ink/45">
                     Vandaag
                   </p>
-                  <ul className="mt-1.5 grid gap-1.5 text-[11px] font-semibold text-ink/85 sm:grid-cols-3 sm:gap-2">
+                  <ul className="mt-1.5 grid gap-1.5 text-[11px] font-semibold text-ink/85 sm:grid-cols-3 sm:gap-x-4 sm:gap-y-1.5">
                     {[
                       { n: 1, t: "oudergesprekken plannen" },
                       { n: 2, t: "ouders terugmailen" },
                       { n: 3, t: "rapporten vóór vrijdag" },
+                      { n: 4, t: "weektaak maken" },
+                      { n: 5, t: "draaiboek kerst" },
                     ].map((r) => (
                       <li key={r.n} data-taakrij={r.n} className="flex items-start gap-1.5">
                         <span
