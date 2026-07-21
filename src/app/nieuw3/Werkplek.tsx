@@ -139,33 +139,35 @@ const faq = [
 
 /* ── Kleine bouwstenen voor de film ────────────────────────────────────── */
 
-// Een zwevend "venster" op het rommelige bureaublad.
+// Een zwevend "venster" op het rommelige bureaublad. Bewust rustig getekend:
+// zachte schaduw, dunne rand, één neutraal balkje met de bestandsnaam.
 function Venster({
   naam,
   titel,
   className = "",
-  balkKleur = "bg-slate-100",
   children,
 }: {
   naam: string;
   titel: string;
   className?: string;
-  balkKleur?: string;
   children: React.ReactNode;
 }) {
   return (
     <div
       data-venster={naam}
       className={
-        "absolute overflow-hidden rounded-xl bg-white text-left shadow-[-14px_18px_40px_rgba(8,5,20,0.55)] ring-1 ring-black/10 " +
+        "absolute overflow-hidden rounded-2xl bg-white text-left shadow-[0_24px_60px_-16px_rgba(8,5,20,0.65)] ring-1 ring-white/10 " +
         className
       }
     >
-      <div className={"flex items-center gap-1.5 border-b border-black/5 px-3 py-2 " + balkKleur}>
-        <span className="h-2 w-2 rounded-full bg-rose-400" />
-        <span className="h-2 w-2 rounded-full bg-amber-400" />
-        <span className="h-2 w-2 rounded-full bg-emerald-400" />
-        <span className="ml-2 truncate text-[10px] font-semibold text-slate-500">{titel}</span>
+      <div className="flex items-center gap-2 border-b border-black/[0.06] bg-slate-50/90 px-3.5 py-2">
+        <span className="flex gap-1.5" aria-hidden>
+          <span className="h-2 w-2 rounded-full bg-slate-300" />
+          <span className="h-2 w-2 rounded-full bg-slate-300" />
+        </span>
+        <span className="truncate text-[10px] font-semibold tracking-wide text-slate-400">
+          {titel}
+        </span>
       </div>
       {children}
     </div>
@@ -189,24 +191,23 @@ function Regels({ n, kort = false }: { n: number; kort?: boolean }) {
   );
 }
 
-// Een tegel in het dashboard (de landingsplek van een venster).
+// Een tool-tegel in het mini-dashboard: dezelfde opbouw als de echte tegels
+// op de Start-pagina (wit kaartje, gekleurd icoon-vierkant, naam, "Openen →").
 function Tegel({
   naam,
   label,
   emoji,
   kleur,
-  tint,
 }: {
   naam: string;
   label: string;
   emoji: string;
   kleur: string;
-  tint: string;
 }) {
   return (
     <div
       data-tegel={naam}
-      className={`relative flex flex-col items-start gap-1.5 rounded-2xl p-3 ring-1 ring-black/5 ${tint}`}
+      className="relative flex items-center gap-2.5 rounded-2xl border border-black/5 bg-white p-2.5 shadow-sm"
     >
       <span
         data-tegelvink={naam}
@@ -216,12 +217,15 @@ function Tegel({
         ✓
       </span>
       <span
-        className={`flex h-8 w-8 items-center justify-center rounded-lg text-base text-white shadow-sm ${kleur}`}
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base text-white shadow-sm ${kleur}`}
         aria-hidden
       >
         {emoji}
       </span>
-      <span className="text-xs font-bold text-ink">{label}</span>
+      <span className="min-w-0">
+        <span className="block truncate text-[11px] font-bold text-ink">{label}</span>
+        <span className="block text-[10px] font-bold text-brand">Openen →</span>
+      </span>
     </div>
   );
 }
@@ -256,7 +260,9 @@ export default function Werkplek({ fotoBestand }: { fotoBestand?: string }) {
 
       /* ── Beginstanden ── */
       gsap.set(q("[data-venster]"), { autoAlpha: 1 });
-      gsap.set(q("[data-tegel]"), { autoAlpha: 0, scale: 0.6 });
+      // Tegels beginnen als zachte "spookjes": je ziet de lege plekken die
+      // straks gevuld worden, in plaats van een gapend leeg vlak.
+      gsap.set(q("[data-tegel]"), { autoAlpha: 0.18, scale: 0.94 });
       gsap.set(q("[data-tegelvink], [data-taakvink]"), { autoAlpha: 0, scale: 0.5 });
       gsap.set(q("[data-taakrij]"), { autoAlpha: 0, x: 14 });
       gsap.set(q("[data-paneel]"), { autoAlpha: 0, y: 18 });
@@ -295,10 +301,19 @@ export default function Werkplek({ fotoBestand }: { fotoBestand?: string }) {
       /* ── 0-8 · een tel stilte, dan verdwijnt de hint ── */
       tl.to(q("[data-scrollhint]"), { autoAlpha: 0, duration: 3 }, 3);
 
-      /* ── 6-14 · de lege werkplek schuift onder alles in beeld ── */
-      tl.to(q("[data-paneel]"), { autoAlpha: 1, y: 0, duration: 7 }, 6);
+      /* ── 0-24 · de rommel leeft: alles drijft heel licht ── */
+      q("[data-venster]").forEach((el, i) => {
+        tl.to(
+          el,
+          { y: i % 2 === 0 ? -10 : 8, x: i % 3 === 0 ? 6 : -6, duration: 24, ease: "none" },
+          0,
+        );
+      });
 
-      /* ── 12-58 · opruimen: elk venster vliegt naar zijn plek ── */
+      /* ── 18-26 · de werkplek schuift ónder de rommel in beeld ── */
+      tl.to(q("[data-paneel]"), { autoAlpha: 1, y: 0, duration: 8 }, 18);
+
+      /* ── 26-70 · opruimen: elk venster vliegt naar zijn plek ── */
       const vlucht = (
         naam: string,
         doelSel: string,
@@ -326,41 +341,39 @@ export default function Werkplek({ fotoBestand }: { fotoBestand?: string }) {
         }
       };
 
-      vlucht("geel1", '[data-taakrij="1"]', 12);
-      vlucht("word", '[data-tegel="rapporten"]', 17, '[data-tegelvink="rapporten"]');
-      vlucht("excel", '[data-tegel="toets"]', 22, '[data-tegelvink="toets"]');
-      vlucht("mail", '[data-tegel="ouder"]', 27, '[data-tegelvink="ouder"]');
-      vlucht("melding", '[data-taakrij="2"]', 32);
-      vlucht("plattegrond", '[data-tegel="plattegrond"]', 37, '[data-tegelvink="plattegrond"]');
-      vlucht("les", '[data-tegel="les"]', 42, '[data-tegelvink="les"]');
-      vlucht("browser", '[data-tegel="werkbladen"]', 47, '[data-tegelvink="werkbladen"]');
-      vlucht("geel2", '[data-taakrij="3"]', 52);
+      vlucht("geel1", '[data-taakrij="1"]', 26);
+      vlucht("word", '[data-tegel="rapporten"]', 31, '[data-tegelvink="rapporten"]');
+      vlucht("excel", '[data-tegel="toets"]', 35.5, '[data-tegelvink="toets"]');
+      vlucht("mail", '[data-tegel="ouder"]', 40, '[data-tegelvink="ouder"]');
+      vlucht("melding", '[data-taakrij="2"]', 44.5);
+      vlucht("plattegrond", '[data-tegel="plattegrond"]', 49, '[data-tegelvink="plattegrond"]');
+      vlucht("les", '[data-tegel="les"]', 53.5, '[data-tegelvink="les"]');
+      vlucht("browser", '[data-tegel="werkbladen"]', 58, '[data-tegelvink="werkbladen"]');
+      vlucht("geel2", '[data-taakrij="3"]', 62.5);
 
       // De overvolle map hoeft nergens heen: die is gewoon niet meer nodig.
-      tl.to(q('[data-venster="map"]'), { scale: 0.5, autoAlpha: 0, rotation: 0, duration: 6 }, 50);
+      tl.to(q('[data-venster="map"]'), { scale: 0.5, autoAlpha: 0, rotation: 0, duration: 6 }, 64);
 
-      /* ── 58-66 · de taken worden afgevinkt (het merk-moment) ── */
+      /* ── 71-79 · de taken worden afgevinkt (het merk-moment) ── */
       [1, 2, 3].forEach((n, i) => {
-        tl.to(`[data-taakvink="${n}"]`, { autoAlpha: 1, scale: 1, duration: 2, ease: "back.out(2)" }, 58 + i * 2.5);
-        tl.to(`[data-taaktekst="${n}"]`, { opacity: 0.5, duration: 2 }, 58 + i * 2.5);
+        tl.to(`[data-taakvink="${n}"]`, { autoAlpha: 1, scale: 1, duration: 2, ease: "back.out(2)" }, 71 + i * 2.5);
+        tl.to(`[data-taaktekst="${n}"]`, { opacity: 0.5, duration: 2 }, 71 + i * 2.5);
       });
 
-      /* ── 60-70 · de grote belofte maakt plaats voor het resultaat ── */
-      tl.to(q("[data-intro]"), { autoAlpha: 0, y: -36, duration: 8 }, 60);
-
-      /* ── 64-88 · avond wordt dag ── */
-      tl.to(q("[data-avondlaag]"), { opacity: 0, duration: 22, ease: "power1.inOut" }, 64);
-      tl.to(q("[data-daglaag]"), { opacity: 1, duration: 22, ease: "power1.inOut" }, 64);
+      /* ── 72-92 · avond wordt dag; de belofte blijft staan en kleurt mee ── */
+      tl.to(q("[data-avondlaag]"), { opacity: 0, duration: 20, ease: "power1.inOut" }, 72);
+      tl.to(q("[data-daglaag]"), { opacity: 1, duration: 20, ease: "power1.inOut" }, 72);
+      tl.to(q("[data-belofte]"), { color: "#221c3a", duration: 14, ease: "power1.inOut" }, 74);
       tl.add(() => {
         // Op voortgang gebaseerd (niet toggle), zodat heen en weer scrubben
         // de kopbalk altijd in de juiste stand zet.
         const st = tl.scrollTrigger;
-        q("[data-header]")[0]?.classList[st && st.progress > 0.73 ? "add" : "remove"]("film-klaar");
-      }, 74);
+        q("[data-header]")[0]?.classList[st && st.progress > 0.79 ? "add" : "remove"]("film-klaar");
+      }, 80);
 
-      /* ── 80-96 · de payoff ── */
-      tl.to(q("[data-winstchip]"), { autoAlpha: 1, y: 0, duration: 4, ease: "back.out(1.6)" }, 82);
-      tl.to(q("[data-slotwoord]"), { autoAlpha: 1, y: 0, duration: 6, ease: "power2.out" }, 86);
+      /* ── 86-98 · de payoff ── */
+      tl.to(q("[data-winstchip]"), { autoAlpha: 1, y: 0, duration: 4, ease: "back.out(1.6)" }, 86);
+      tl.to(q("[data-slotwoord]"), { autoAlpha: 1, y: 0, duration: 6, ease: "power2.out" }, 90);
     },
     { scope: root, dependencies: [film], revertOnUpdate: true },
   );
@@ -408,8 +421,8 @@ export default function Werkplek({ fotoBestand }: { fotoBestand?: string }) {
         <div
           className={
             film
-              ? "sticky top-0 flex h-screen flex-col items-center justify-center overflow-hidden"
-              : "relative flex flex-col items-center justify-center gap-8 overflow-hidden px-4 pb-16 pt-28"
+              ? "sticky top-0 flex h-screen flex-col items-center overflow-hidden pt-20 sm:pt-24"
+              : "relative flex flex-col items-center gap-8 overflow-hidden px-4 pb-16 pt-28"
           }
         >
           {/* Lichtlagen: avond onder, dag erboven ingefaded */}
@@ -426,42 +439,26 @@ export default function Werkplek({ fotoBestand }: { fotoBestand?: string }) {
             <div className="bg-dots absolute inset-0 opacity-60" />
           </div>
 
-          {/* De grote belofte, muisstil boven de rommel */}
-          <div
-            data-intro
-            className={
-              film
-                ? "absolute top-[9vh] z-20 mx-auto w-[min(94vw,54rem)] text-center"
-                : "relative z-20 mx-auto w-[min(94vw,54rem)] text-center"
-            }
-          >
+          {/* De grote belofte: groots, muisstil, en niets komt eroverheen */}
+          <div data-intro className="relative z-30 mx-auto mt-[4vh] w-[min(94vw,62rem)] text-center">
             <h1
-              className={`font-display text-[clamp(2.1rem,5.2vw,3.9rem)] font-black leading-[1.05] tracking-tight [text-wrap:balance] ${
+              data-belofte
+              className={`font-display text-[clamp(2.6rem,6vw,4.5rem)] font-black leading-[1.04] tracking-tight [text-wrap:balance] ${
                 film ? "text-cream" : "text-ink"
               }`}
             >
               Win elke week <span className="text-brand">2 uur</span> terug.
             </h1>
-            <p
-              className={`mx-auto mt-4 max-w-xl text-base leading-7 sm:text-lg sm:leading-8 ${
-                film ? "text-cream/75" : "text-ink/70"
-              }`}
-            >
-              Kwart over acht &rsquo;s avonds. Drie documenten die allemaal
-              &lsquo;definitief&rsquo; heten. Een mail die al dagen open staat.
-              {film ? " Scroll maar, dan ruimen we op." : " Avinka ruimt het voor je op."}
-            </p>
           </div>
 
           {/* ── Het rommelige bureaublad (alleen in de film) ── */}
           {film && (
-            <div className="absolute inset-0 z-10" aria-hidden>
+            <div className="absolute inset-0 z-20" aria-hidden>
               {/* Word: het rapport */}
               <Venster
                 naam="word"
                 titel="rapport_groep5_DEFINITIEF(3).docx"
-                className="left-[4%] top-[42%] w-56 -rotate-[5deg] sm:left-[8%] sm:top-[26%] sm:w-64"
-                balkKleur="bg-sky-50"
+                className="left-[3%] top-[34%] w-56 -rotate-[5deg] sm:left-[3%] sm:top-[32%] sm:w-64"
               >
                 <div className="p-3.5">
                   <p className="text-[11px] leading-relaxed text-slate-600">
@@ -477,8 +474,7 @@ export default function Werkplek({ fotoBestand }: { fotoBestand?: string }) {
               <Venster
                 naam="excel"
                 titel="toetsuitslagen_M-toets.xlsx"
-                className="hidden w-52 rotate-[4deg] sm:right-[10%] sm:top-[20%] sm:block sm:w-60"
-                balkKleur="bg-emerald-50"
+                className="hidden w-52 rotate-[4deg] sm:right-[3%] sm:top-[30%] sm:block sm:w-60"
               >
                 <div className="grid grid-cols-4 gap-px bg-slate-200 p-px text-[9px] text-slate-500">
                   {["", "M5", "E5", "vs", "Yas", "231", "244", "+13", "Nor", "228", "225", "-3", "Mik", "219", "236", "+17"].map(
@@ -495,8 +491,7 @@ export default function Werkplek({ fotoBestand }: { fotoBestand?: string }) {
               <Venster
                 naam="mail"
                 titel="Concept · niet verzonden"
-                className="left-[10%] bottom-[20%] w-56 rotate-[2deg] sm:left-[16%] sm:bottom-[16%] sm:w-64"
-                balkKleur="bg-rose-50"
+                className="left-[6%] bottom-[22%] w-56 rotate-[2deg] sm:left-[18%] sm:bottom-[4%] sm:w-64"
               >
                 <div className="p-3.5 text-[11px] text-slate-600">
                   <p className="text-slate-400">Aan: ouders groep 5</p>
@@ -514,8 +509,7 @@ export default function Werkplek({ fotoBestand }: { fotoBestand?: string }) {
               <Venster
                 naam="browser"
                 titel=""
-                className="hidden w-64 rotate-[-3deg] sm:right-[6%] sm:bottom-[14%] sm:block"
-                balkKleur="bg-slate-100"
+                className="hidden w-64 rotate-[-3deg] sm:right-[8%] sm:bottom-[6%] sm:block"
               >
                 <div className="flex gap-1 border-b border-black/5 bg-slate-50 px-2 pt-1.5 text-[9px] text-slate-500">
                   <span className="truncate rounded-t-md bg-white px-2 py-1 ring-1 ring-black/5">werkblad breuken gr5</span>
@@ -534,8 +528,7 @@ export default function Werkplek({ fotoBestand }: { fotoBestand?: string }) {
               <Venster
                 naam="plattegrond"
                 titel="plattegrond_lokaal_v4_ECHT.png"
-                className="hidden w-44 rotate-[6deg] lg:left-[20%] lg:top-[46%] lg:block"
-                balkKleur="bg-amber-50"
+                className="hidden w-44 rotate-[6deg] lg:left-[4%] lg:top-[58%] lg:block"
               >
                 <div className="grid grid-cols-4 gap-1.5 p-3">
                   {Array.from({ length: 8 }).map((_, i) => (
@@ -548,8 +541,7 @@ export default function Werkplek({ fotoBestand }: { fotoBestand?: string }) {
               <Venster
                 naam="les"
                 titel="les_dinsdag_breuken.docx"
-                className="hidden w-48 -rotate-[4deg] lg:right-[26%] lg:top-[58%] lg:block"
-                balkKleur="bg-teal-50"
+                className="hidden w-48 -rotate-[4deg] lg:right-[4%] lg:top-[56%] lg:block"
               >
                 <div className="p-3.5">
                   <p className="text-[10px] font-bold text-slate-500">Lesdoel:</p>
@@ -563,7 +555,7 @@ export default function Werkplek({ fotoBestand }: { fotoBestand?: string }) {
               <Venster
                 naam="map"
                 titel="Mijn documenten (1.243 items)"
-                className="hidden w-40 rotate-[3deg] lg:left-[6%] lg:top-[62%] lg:block"
+                className="hidden w-40 rotate-[3deg] lg:left-[5%] lg:bottom-[5%] lg:block"
               >
                 <div className="grid grid-cols-4 gap-2 p-3">
                   {Array.from({ length: 8 }).map((_, i) => (
@@ -575,13 +567,13 @@ export default function Werkplek({ fotoBestand }: { fotoBestand?: string }) {
               {/* Geeltjes */}
               <div
                 data-venster="geel1"
-                className="absolute left-[45%] top-[60%] w-36 -rotate-[7deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[-10px_14px_28px_rgba(8,5,20,0.5)] sm:left-[36%] sm:top-[66%]"
+                className="absolute left-[50%] top-[34%] w-36 -rotate-[7deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:left-[52%] sm:top-[33%]"
               >
                 oudergesprekken plannen!!
               </div>
               <div
                 data-venster="geel2"
-                className="absolute right-[6%] top-[48%] w-32 rotate-[8deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[-10px_14px_28px_rgba(8,5,20,0.5)] sm:right-[5%] sm:top-[42%]"
+                className="absolute right-[5%] top-[46%] w-32 rotate-[8deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:right-[12%] sm:top-[42%]"
               >
                 rapporten af vóór vrijdag
               </div>
@@ -589,7 +581,7 @@ export default function Werkplek({ fotoBestand }: { fotoBestand?: string }) {
               {/* Melding */}
               <div
                 data-venster="melding"
-                className="absolute bottom-[9%] left-[8%] flex w-52 items-center gap-2.5 rounded-xl bg-ink/95 p-3 text-[11px] font-semibold text-cream shadow-[-10px_14px_28px_rgba(8,5,20,0.5)] ring-1 ring-white/10 sm:bottom-[7%] sm:left-[26%]"
+                className="absolute bottom-[10%] left-[8%] flex w-52 items-center gap-2.5 rounded-xl bg-ink/95 p-3 text-[11px] font-semibold text-cream shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] ring-1 ring-white/10 sm:bottom-[5%] sm:left-auto sm:right-[26%]"
               >
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-500 text-[10px] font-black">
                   3
@@ -599,63 +591,51 @@ export default function Werkplek({ fotoBestand }: { fotoBestand?: string }) {
             </div>
           )}
 
-          {/* ── De werkplek waar alles landt ── */}
-          <div data-paneel className="relative z-[15] w-[min(92vw,40rem)]">
-            <div className="rounded-3xl bg-white p-4 shadow-xl ring-1 ring-black/5 sm:p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand text-sm font-black text-white">
-                    ✓
-                  </span>
-                  <div>
-                    <p className="text-sm font-bold leading-tight text-ink">Jouw werkplek</p>
-                    <p className="text-[11px] leading-tight text-ink/50">alles achter één inlog</p>
-                  </div>
-                </div>
-                <span
-                  data-winstchip
-                  className="rounded-full bg-brand-soft px-3 py-1.5 text-xs font-bold text-brand-dark"
-                >
-                  +2 uur deze week
+          {/* ── De werkplek waar alles landt: een mini-versie van het echte
+                 dashboard (bovenbalk, welkom, takenstrookje, Jouw tools, tip) ── */}
+          <div data-paneel className="relative z-10 mt-5 w-[min(92vw,44rem)] sm:mt-7">
+            <div className="overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5">
+              {/* mini-bovenbalk */}
+              <div className="flex items-center justify-between border-b border-black/5 bg-white px-4 py-2.5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/Avinka_wordmerk.png" alt="" className="h-4 w-auto sm:h-5" />
+                <span className="flex items-center gap-2 text-[10px] font-semibold text-ink/50">
+                  Hallo, Sanne
+                  <span className="rounded-lg border border-black/10 px-2 py-1">Uitloggen</span>
                 </span>
               </div>
 
-              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                {/* Tool-tegels */}
-                <div className="grid flex-1 grid-cols-3 gap-2.5">
-                  <Tegel naam="toets" label="Toetsanalyse" emoji="📊" kleur="bg-sky-500" tint="bg-sky-50" />
-                  <Tegel naam="rapporten" label="Rapporten" emoji="📝" kleur="bg-violet-500" tint="bg-violet-50" />
-                  <Tegel naam="ouder" label="Oudercontact" emoji="✉️" kleur="bg-rose-500" tint="bg-rose-50" />
-                  <Tegel naam="plattegrond" label="Plattegrond" emoji="🪑" kleur="bg-amber-500" tint="bg-amber-50" />
-                  <Tegel naam="les" label="Lesontwerp" emoji="📓" kleur="bg-teal-500" tint="bg-teal-50" />
-                  <div
-                    data-tegel="werkbladen"
-                    className="relative flex flex-col items-start gap-1.5 rounded-2xl border-2 border-dashed border-black/10 bg-white p-3"
-                  >
-                    <span
-                      data-tegelvink="werkbladen"
-                      className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand text-[10px] font-black text-white shadow-sm"
-                      aria-hidden
-                    >
-                      ✓
-                    </span>
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-soft text-[8px] font-black uppercase leading-none text-brand-dark">
-                      snel
-                    </span>
-                    <span className="text-xs font-bold text-ink">Werkbladen</span>
+              <div className="bg-cream px-4 py-4 sm:px-5">
+                {/* welkom-kop, zoals op de echte Start-pagina */}
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-black tracking-tight text-ink sm:text-base">
+                      Welkom terug, Sanne! 👋
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-ink/60">
+                      Je tijd na schooltijd is van jou.
+                    </p>
                   </div>
+                  <span
+                    data-winstchip
+                    className="shrink-0 rounded-full bg-brand-soft px-2.5 py-1 text-[11px] font-bold text-brand-dark"
+                  >
+                    +2 uur deze week
+                  </span>
                 </div>
 
-                {/* Takenlijstje */}
-                <div className="w-full shrink-0 rounded-2xl bg-cream p-3 ring-1 ring-black/5 sm:w-44">
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-ink/45">Vandaag</p>
-                  <ul className="mt-2 space-y-2 text-xs font-semibold text-ink/85">
+                {/* het takenstrookje (hier landen de geeltjes) */}
+                <div className="mt-3 rounded-2xl bg-white p-3 ring-1 ring-black/5">
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-ink/45">
+                    Vandaag
+                  </p>
+                  <ul className="mt-1.5 grid gap-1.5 text-[11px] font-semibold text-ink/85 sm:grid-cols-3 sm:gap-2">
                     {[
                       { n: 1, t: "oudergesprekken plannen" },
                       { n: 2, t: "ouders terugmailen" },
                       { n: 3, t: "rapporten vóór vrijdag" },
                     ].map((r) => (
-                      <li key={r.n} data-taakrij={r.n} className="flex items-start gap-2">
+                      <li key={r.n} data-taakrij={r.n} className="flex items-start gap-1.5">
                         <span
                           data-taakvink={r.n}
                           className="mt-[1px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand text-[9px] font-black text-white"
@@ -670,15 +650,54 @@ export default function Werkplek({ fotoBestand }: { fotoBestand?: string }) {
                     ))}
                   </ul>
                 </div>
+
+                {/* jouw tools */}
+                <p className="mt-3.5 text-[11px] font-bold text-ink">Jouw tools</p>
+                <div className="mt-1.5 grid grid-cols-2 gap-2 sm:gap-2.5">
+                  <Tegel naam="toets" label="Toetsanalyse" emoji="📊" kleur="bg-sky-500" />
+                  <Tegel naam="rapporten" label="Rapporten" emoji="📝" kleur="bg-violet-500" />
+                  <Tegel naam="ouder" label="Oudercontact" emoji="✉️" kleur="bg-rose-500" />
+                  <Tegel naam="plattegrond" label="Plattegrond" emoji="🪑" kleur="bg-amber-500" />
+                  <Tegel naam="les" label="Lesontwerp" emoji="📓" kleur="bg-teal-500" />
+                  <div
+                    data-tegel="werkbladen"
+                    className="relative flex items-center gap-2.5 rounded-2xl border-2 border-dashed border-black/10 bg-white/70 p-2.5"
+                  >
+                    <span
+                      data-tegelvink="werkbladen"
+                      className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand text-[10px] font-black text-white shadow-sm"
+                      aria-hidden
+                    >
+                      ✓
+                    </span>
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-soft px-0.5 text-center text-[7px] font-black uppercase leading-tight text-brand-dark">
+                      Binnen kort
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-[11px] font-bold text-ink">
+                        Werkbladen
+                      </span>
+                      <span className="block text-[10px] font-medium text-ink/50">
+                        De volgende tool
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* de tip-balk van het echte dashboard */}
+                <p className="mt-3 rounded-xl bg-brand-soft px-3 py-2 text-[10px] font-medium text-ink/70">
+                  💡 <span className="font-bold">Tip:</span> de namen van je leerlingen
+                  blijven altijd op je eigen computer.
+                </p>
               </div>
             </div>
 
             {/* De payoff onder het paneel */}
-            <div data-slotwoord className="mt-6 text-center">
-              <p className="font-display text-2xl font-black tracking-tight text-ink sm:text-3xl">
+            <div data-slotwoord className="mt-4 text-center sm:mt-6">
+              <p className="font-display text-xl font-black tracking-tight text-ink sm:text-3xl">
                 Alles op z&rsquo;n plek.
               </p>
-              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-ink/65 sm:text-base">
+              <p className="mx-auto mt-1.5 max-w-md text-xs leading-5 text-ink/65 sm:mt-2 sm:text-base sm:leading-7">
                 Dit is jouw werkplek. Scroll verder, dan laten we zien hoe hij werkt.
               </p>
             </div>
