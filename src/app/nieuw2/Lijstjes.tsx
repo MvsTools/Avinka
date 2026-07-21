@@ -24,14 +24,53 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
    inhoud en boodschap.
    ────────────────────────────────────────────────────────────────────────── */
 
-/* Het papieren lijstje: de taken van vanavond. Herkenning, geen tool-opsomming. */
-const TAKEN = [
-  "rapporten schrijven (groep 5)",
-  "toetsen nakijken + analyse",
-  "ouderberichten beantwoorden",
-  "les van morgen voorbereiden",
-  "werkblad breuken maken",
+/* ── De takenmuur: de lijst die nooit ophoudt ──────────────────────────────
+   De film speelt zich af in UI-land: één taakkaart wordt een muur van
+   honderden taken (overweldiging als beeld), tot Avinka de golf vinkjes
+   erdoorheen trekt en er een kort, behapbaar lijstje overblijft. */
+
+const MUUR_TAKEN = [
+  "Rapporten schrijven",
+  "Toetsen nakijken",
+  "Toetsanalyse maken",
+  "Ouderberichten beantwoorden",
+  "Weekplanning maken",
+  "Werkblad breuken maken",
+  "Oudergesprek voorbereiden",
+  "Observaties verwerken",
+  "Spellingles voorbereiden",
+  "Stukje nieuwsbrief schrijven",
+  "Pluswerk klaarzetten",
+  "Sociogram invullen",
+  "Rapportvergadering voorbereiden",
+  "Kopieën maken",
+  "Toetsrooster checken",
+  "Handelingsplan bijwerken",
+  "Leesniveaus bijwerken",
+  "Schoolreisje regelen (bus!)",
+  "Verjaardagen bijhouden",
+  "Weektaak samenstellen",
+  "Absenties verwerken",
+  "MR-stukken lezen",
+  "Gymles voorbereiden",
+  "Knutselwerk voorbereiden",
+  "Oudergesprekken inplannen",
+  "Groepsplan rekenen",
+  "Leesdossier aanvullen",
+  "Stagiair feedback geven",
+  "Methodetoets klaarleggen",
+  "Klassendienst-rooster maken",
 ];
+const MUUR_META = ["groep 5", "45 min", "groep 7", "20 min", "groep 4", "±1 uur", "10 min"];
+const MUUR_KOLOMMEN = 13;
+const MUUR_RIJEN = 11;
+const KAART_B = 264; // px, breedte van één taakkaart
+const KAART_H = 64;
+const MUUR_GAT = 14;
+const MUUR_BREEDTE = MUUR_KOLOMMEN * KAART_B + (MUUR_KOLOMMEN - 1) * MUUR_GAT;
+const MUUR_HOOGTE = MUUR_RIJEN * KAART_H + (MUUR_RIJEN - 1) * MUUR_GAT;
+/* De kaart in het exacte midden: daar start de film ingezoomd op. */
+const MUUR_MIDDEN = Math.floor(MUUR_RIJEN / 2) * MUUR_KOLOMMEN + Math.floor(MUUR_KOLOMMEN / 2);
 
 /* De vijf twijfels: dit is de informatie-structuur van de pagina. */
 const TWIJFELS = [
@@ -111,22 +150,6 @@ const FAQ = [
   },
 ];
 
-/* Papier-textuur (subtiele nerf) voor het lijstje. */
-const PAPIER_NERF =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.4'/%3E%3C/svg%3E\")";
-
-/* Houtnerf: uitgerekte turbulentie = lange streken, zoals echt bureaublad. */
-const HOUT_NERF =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='780' height='220'%3E%3Cfilter id='h'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.006 0.09' numOctaves='4' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 0.85 0 0 0 0 0.62 0.45 0.45 0.45 0 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23h)'/%3E%3C/svg%3E\")";
-
-/* Planknaden + een subtiel toonverschil per plank. */
-const PLANKEN =
-  "repeating-linear-gradient(90deg, rgba(0,0,0,0) 0px, rgba(255,255,255,0.03) 110px, rgba(0,0,0,0) 224px, rgba(0,0,0,0.26) 226px, rgba(0,0,0,0.26) 228px, rgba(255,255,255,0.05) 229px, rgba(0,0,0,0) 231px)";
-
-/* Filmkorrel over het hele beeld. */
-const KORREL =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.5'/%3E%3C/svg%3E\")";
-
 /* ── Kleine bouwstenen ─────────────────────────────────────────────────── */
 
 /* Een getekend vinkje (stroke), voor de hand-vink en de sectiekoppen.
@@ -150,50 +173,75 @@ function Vink({
   );
 }
 
-/* Het papieren lijstje. In de film half afgevinkt door de tijdlijn;
-   in de reduced-versie en het slot volledig afgevinkt. */
-function PapierLijstje({
-  afgevinkt,
-  film = false,
-  className = "",
+/* Eén taakkaart op de muur. ring = afstand tot het midden (voor de groei),
+   diag = diagonale positie (voor de vinkgolf). */
+function TaakKaart({
+  naam,
+  meta,
+  badge,
+  ring,
+  diag,
 }: {
-  afgevinkt: number; // hoeveel items al gevinkt zijn (statisch)
-  film?: boolean; // true: vinkjes via data-attributen door GSAP bestuurd
-  className?: string;
+  naam: string;
+  meta: string;
+  badge: string | null;
+  ring: number;
+  diag: number;
 }) {
   return (
     <div
-      data-papier
-      className={`relative rounded-md bg-[#fdfaf2] px-6 pb-7 pt-5 shadow-[0_18px_50px_rgba(30,15,40,0.35)] ${className}`}
-      style={{ backgroundImage: PAPIER_NERF }}
+      data-kaart
+      data-ring={ring}
+      data-diag={diag}
+      className="flex h-16 items-center gap-3 rounded-xl bg-white px-4 shadow-sm ring-1 ring-black/5"
     >
-      {/* rood kantlijntje, schoolschrift */}
-      <div className="pointer-events-none absolute inset-y-0 left-10 w-px bg-rose-300/70" aria-hidden />
-      <p className="font-hand pl-6 text-[1.35rem] font-semibold leading-none text-ink/80">
-        vanavond nog:
-      </p>
-      <ul className="mt-3 space-y-2.5">
-        {TAKEN.map((taak, i) => (
-          <li key={taak} className="flex items-center gap-3 pl-1">
-            <span className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-[5px] border-2 border-ink/30 bg-white/60">
-              {film ? (
-                <Vink
-                  className={`h-5 w-5 text-brand ${i === 0 ? "vink-hand" : "vink-pop"}`}
-                  {...(i === 0 ? { "data-vink-hand": true } : { "data-vink-pop": i })}
-                />
-              ) : (
-                i < afgevinkt && <Vink className="h-5 w-5 text-brand" />
-              )}
+      <span className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 border-ink/25 bg-white">
+        <Vink data-mvink data-diag={diag} className="h-[18px] w-[18px] text-brand" dik={4} />
+      </span>
+      <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{naam}</span>
+      {badge ? (
+        <span
+          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${
+            badge === "vandaag!" ? "bg-accent-soft text-amber-700" : "bg-rose-50 text-rose-600"
+          }`}
+        >
+          {badge}
+        </span>
+      ) : (
+        <span className="shrink-0 text-xs font-semibold text-ink/45">{meta}</span>
+      )}
+    </div>
+  );
+}
+
+/* Het kaartje dat overblijft als de muur is afgevinkt: rust. */
+function KlaarKaart() {
+  return (
+    <div className="w-[19.5rem] rounded-2xl bg-white p-5 shadow-[0_24px_60px_rgba(34,28,58,0.16)] ring-1 ring-black/5">
+      <div className="flex items-center justify-between">
+        <p className="font-display text-lg font-black text-ink">Vandaag</p>
+        <span className="rounded-full bg-brand-soft px-2.5 py-1 text-xs font-bold text-brand-dark">
+          alles afgevinkt
+        </span>
+      </div>
+      <ul className="mt-3 space-y-2">
+        {[
+          "Rapporten: 6 voorzetten klaar",
+          "Toetsanalyse groep 5 staat klaar",
+          "3 ouderberichten verstuurd",
+        ].map((regel) => (
+          <li key={regel} className="flex items-center gap-2.5 text-sm font-semibold text-ink/75">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[5px] bg-brand text-white">
+              <Vink className="h-3 w-3" dik={4.5} />
             </span>
-            <span className="font-hand text-[1.3rem] leading-tight text-ink/85">{taak}</span>
+            {regel}
           </li>
         ))}
       </ul>
-      {/* ezelsoor */}
-      <div
-        className="pointer-events-none absolute -bottom-0 right-0 h-7 w-7 rounded-tl-md bg-[#efe6d2] shadow-[-2px_-2px_6px_rgba(30,15,40,0.12)]"
-        aria-hidden
-      />
+      <div className="mt-4 flex items-baseline justify-between border-t border-black/5 pt-3">
+        <span className="text-sm font-semibold text-ink/55">deze week teruggewonnen</span>
+        <span className="font-display text-2xl font-black tabular-nums text-brand-dark">2:00</span>
+      </div>
     </div>
   );
 }
@@ -219,12 +267,29 @@ export default function Lijstjes({ fotoBestand }: { fotoBestand?: string }) {
       const beats = q("[data-beat-a], [data-beat-b], [data-beat-c], [data-beat-d], [data-beat-e]");
       gsap.set(beats, { autoAlpha: 0 });
       gsap.set(q("[data-beat-a]"), { autoAlpha: 1 });
-      gsap.set(q("[data-pen]"), { autoAlpha: 0, x: 90, y: 120, rotate: 12 });
-      gsap.set(q("[data-daglicht], [data-naad]"), { autoAlpha: 0 });
-      const handVink = q<SVGPathElement>("[data-vink-hand] path");
-      const popVinks = q("[data-vink-pop]");
-      handVink.forEach((p) => gsap.set(p, { strokeDasharray: 1, strokeDashoffset: 1 }));
-      gsap.set(popVinks, { autoAlpha: 0, scale: 0.5, transformOrigin: "50% 50%" });
+
+      const muur = q<HTMLElement>("[data-muur]")[0];
+      const kaarten = q<HTMLElement>("[data-kaart]");
+      const vinks = q<HTMLElement>("[data-mvink]");
+      if (!muur) return;
+
+      /* Start ingezoomd op de middelste kaart; eindstand toont de hele muur.
+         Function-based + invalidateOnRefresh zodat resize blijft kloppen. */
+      const startSchaal = () => Math.min(window.innerWidth * 0.62, 400) / KAART_B;
+      const eindSchaal = () =>
+        Math.max(
+          Math.min(window.innerWidth / MUUR_BREEDTE, (window.innerHeight * 0.86) / MUUR_HOOGTE) * 1.04,
+          0.2,
+        );
+
+      gsap.set(muur, { transformOrigin: "50% 50%", force3D: true });
+      kaarten.forEach((k, i) => {
+        if (i !== MUUR_MIDDEN) gsap.set(k, { autoAlpha: 0, scale: 0.9 });
+      });
+      gsap.set(vinks, { autoAlpha: 0, scale: 0.5, transformOrigin: "50% 50%" });
+      gsap.set(q("[data-veeg]"), { xPercent: -180, autoAlpha: 0 });
+      gsap.set(q("[data-klaarwrap]"), { autoAlpha: 0 });
+      gsap.set(q("[data-verweg]"), { autoAlpha: 0, scale: 1.16 });
 
       const tl = gsap.timeline({
         defaults: { ease: "power2.inOut" },
@@ -237,44 +302,68 @@ export default function Lijstjes({ fotoBestand }: { fotoBestand?: string }) {
         },
       });
 
-      /* Beat A → B: herkenning maakt plaats voor de belofte. */
-      tl.to(q("[data-beat-a]"), { autoAlpha: 0, y: -24, duration: 6 }, 8);
-      tl.fromTo(q("[data-beat-b]"), { y: 24 }, { autoAlpha: 1, y: 0, duration: 7 }, 13);
+      /* Eén taak → de belofte van drukte. */
+      tl.to(q("[data-beat-a]"), { autoAlpha: 0, y: -24, duration: 5 }, 7);
+      tl.fromTo(q("[data-beat-b]"), { y: 24 }, { autoAlpha: 1, y: 0, duration: 6 }, 12);
 
-      /* Camera zoomt rustig naar het lijstje; het papier komt nét iets harder
-         dichterbij dan het bureau (diepte), de plant drijft de andere kant op. */
-      tl.to(q("[data-scene]"), { scale: 1.22, yPercent: -4, duration: 26, ease: "power1.inOut" }, 14);
-      tl.to(q("[data-paper-par]"), { scale: 1.07, duration: 26, ease: "power1.inOut" }, 14);
-      tl.to(q("[data-bokeh]"), { x: -38, y: 26, duration: 26, ease: "power1.inOut" }, 14);
-
-      /* De pen komt op en zet het eerste vinkje, met de hand. */
-      tl.to(q("[data-pen]"), { autoAlpha: 1, x: 0, y: 0, rotate: 0, duration: 8 }, 20);
-      handVink.forEach((p) => tl.to(p, { strokeDashoffset: 0, duration: 6, ease: "power1.out" }, 30));
-      tl.to(q("[data-pen]"), { x: 26, y: -10, rotate: -6, duration: 6 }, 30);
-
-      /* Belofte weg, het licht begint al te draaien, Avinka neemt het over.
-         Het daglicht komt eerst, zodat de inkt-tekst nooit op donker staat. */
-      tl.to(q("[data-beat-b]"), { autoAlpha: 0, y: -24, duration: 5 }, 40);
-      tl.to(q("[data-pen]"), { autoAlpha: 0, x: 60, y: -40, duration: 6 }, 41);
-      tl.to(q("[data-daglicht]"), { autoAlpha: 1, duration: 20, ease: "power1.inOut" }, 42);
-      tl.to(q("[data-vignet]"), { autoAlpha: 0.35, duration: 20, ease: "power1.inOut" }, 42);
-      tl.to(q("[data-naad]"), { autoAlpha: 1, duration: 14, ease: "power1.inOut" }, 68);
-      tl.fromTo(q("[data-beat-c]"), { y: 24 }, { autoAlpha: 1, y: 0, duration: 6 }, 49);
-
-      /* De cascade: Avinka vinkt de rest. */
-      popVinks.forEach((v, i) =>
-        tl.to(v, { autoAlpha: 1, scale: 1, duration: 3.5, ease: "back.out(2.2)" }, 54 + i * 4),
+      /* De lijst vermenigvuldigt zich; de camera trekt terug tot de muur.
+         Kaarten verschijnen in ringen rond het midden, met wat jitter. */
+      tl.fromTo(
+        muur,
+        { scale: startSchaal },
+        { scale: eindSchaal, duration: 36, ease: "power2.inOut", immediateRender: true },
+        12,
       );
-      tl.to(q("[data-scene]"), { scale: 1.06, yPercent: 0, duration: 20, ease: "power1.inOut" }, 60);
+      tl.to(muur, { rotateX: 7, duration: 18, ease: "power1.inOut" }, 30);
+      kaarten.forEach((k, i) => {
+        if (i === MUUR_MIDDEN) return;
+        const ring = Number(k.dataset.ring);
+        tl.to(
+          k,
+          { autoAlpha: 1, scale: 1, duration: 3, ease: "power2.out" },
+          13 + ring * 3.6 + (i % 5) * 0.5,
+        );
+      });
 
-      /* Handoff: en jouw twijfels? */
-      tl.to(q("[data-beat-c]"), { autoAlpha: 0, y: -24, duration: 5 }, 72);
-      tl.fromTo(q("[data-beat-e]"), { y: 24 }, { autoAlpha: 1, y: 0, duration: 7 }, 77);
-      tl.to(q("[data-scrollhint]"), { autoAlpha: 0, duration: 4 }, 10).to(
-        q("[data-scrollhint]"),
-        { autoAlpha: 0, duration: 0.1 },
-        99,
+      /* De verre laag komt op terwijl de camera terugtrekt: de lijst is
+         groter dan je scherm, groter dan je scroll. */
+      tl.to(q("[data-verweg]"), { autoAlpha: 0.65, scale: 1, duration: 18, ease: "power1.inOut" }, 22);
+
+      /* Stil moment op de volle muur. */
+      tl.to(q("[data-beat-b]"), { autoAlpha: 0, y: -24, duration: 5 }, 36);
+      tl.fromTo(q("[data-beat-c]"), { y: 24 }, { autoAlpha: 1, y: 0, duration: 5 }, 40);
+      tl.to(q("[data-beat-c]"), { autoAlpha: 0, y: -24, duration: 5 }, 52);
+
+      /* Avinka: de groene veeg en de vinkgolf, diagonaal over de muur. */
+      tl.fromTo(q("[data-beat-d]"), { y: 24 }, { autoAlpha: 1, y: 0, duration: 6 }, 55);
+      tl.to(q("[data-veeg]"), { autoAlpha: 1, duration: 3 }, 55);
+      tl.to(q("[data-veeg]"), { xPercent: 160, duration: 20, ease: "power1.inOut" }, 55);
+      tl.to(q("[data-veeg]"), { autoAlpha: 0, duration: 3 }, 73);
+      vinks.forEach((v) => {
+        const diag = Number(v.dataset.diag ?? 0);
+        tl.to(v, { autoAlpha: 1, scale: 1, duration: 2.5, ease: "back.out(2)" }, 56 + diag * 0.75);
+      });
+      kaarten.forEach((k) => {
+        const diag = Number(k.dataset.diag);
+        tl.to(k, { opacity: 0.55, duration: 2.5, ease: "power1.out" }, 57.5 + diag * 0.75);
+      });
+      tl.to(q("[data-verweg]"), { autoAlpha: 0.2, duration: 16, ease: "power1.inOut" }, 58);
+
+      /* De muur is af: camera duikt terug naar binnen, de muur lost op,
+         en wat overblijft is één kort, behapbaar lijstje. */
+      tl.to(q("[data-beat-d]"), { autoAlpha: 0, y: -24, duration: 4 }, 76);
+      tl.to(muur, { scale: () => eindSchaal() * 2.4, rotateX: 0, autoAlpha: 0, duration: 12, ease: "power2.in" }, 76);
+      tl.to(q("[data-verweg]"), { autoAlpha: 0, duration: 8, ease: "power1.in" }, 76);
+      tl.fromTo(
+        q("[data-klaarwrap]"),
+        { scale: 0.86 },
+        { autoAlpha: 1, scale: 1, duration: 8, ease: "power2.out" },
+        82,
       );
+      tl.fromTo(q("[data-beat-e]"), { y: 24 }, { autoAlpha: 1, y: 0, duration: 6 }, 88);
+
+      /* scrollhint verdwijnt zodra er gescrold wordt */
+      tl.to(q("[data-scrollhint]"), { autoAlpha: 0, duration: 4 }, 8);
     },
     { scope: root, dependencies: [reduced] },
   );
@@ -388,232 +477,132 @@ export default function Lijstjes({ fotoBestand }: { fotoBestand?: string }) {
       {reduced ? (
         <StilAlternatief />
       ) : (
-        <section data-film className="relative h-[340vh]" aria-label="Intro: het lijstje van vanavond">
-          <div className="sticky top-0 h-screen overflow-hidden bg-[#20120a]">
-            {/* De scène: een echt bureaublad, recht van boven. */}
-            <div data-scene className="absolute inset-[-6%] will-change-transform">
-              {/* AVOND: donker hout in lamplicht */}
-              <div
-                className="absolute inset-0"
-                style={{ background: "linear-gradient(215deg, #59391f 0%, #3a2415 48%, #201103 100%)" }}
-                aria-hidden
-              />
-              <div
-                className="absolute inset-0 opacity-50 mix-blend-overlay"
-                style={{ backgroundImage: HOUT_NERF, backgroundSize: "780px 220px" }}
-                aria-hidden
-              />
-              <div className="absolute inset-0" style={{ background: PLANKEN }} aria-hidden />
-              {/* de warme lichtplas van de bureaulamp, rechtsboven */}
-              <div
-                className="absolute inset-0"
-                style={{
-                  background:
-                    "radial-gradient(115% 90% at 76% 8%, rgba(255,200,130,0.62) 0%, rgba(255,175,95,0.3) 34%, rgba(20,10,26,0) 68%)",
-                }}
-                aria-hidden
-              />
-
-              {/* DAG: hetzelfde bureau, lichter hout en zacht daglicht */}
-              <div data-daglicht className="absolute inset-0" aria-hidden>
-                <div
-                  className="absolute inset-0"
-                  style={{ background: "linear-gradient(215deg, #d4aa76 0%, #bb8f5c 48%, #997043 100%)" }}
-                />
-                <div
-                  className="absolute inset-0 opacity-40 mix-blend-overlay"
-                  style={{ backgroundImage: HOUT_NERF, backgroundSize: "780px 220px" }}
-                />
-                <div className="absolute inset-0" style={{ background: PLANKEN }} />
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      "radial-gradient(130% 100% at 68% 6%, rgba(255,251,238,0.6) 0%, rgba(255,245,216,0.22) 42%, rgba(120,90,60,0) 72%)",
-                  }}
-                />
-              </div>
-
-              {/* telefoon, omgekeerd op het bureau (werk gaat voor) */}
-              <div className="absolute left-[44%] top-[9%] hidden rotate-[8deg] sm:block" aria-hidden>
-                <div className="absolute left-[-22px] top-[18px] h-44 w-[5.5rem] rounded-[1.4rem] bg-[#140a18]/50 blur-md" />
-                <div
-                  className="relative h-44 w-[5.5rem] rounded-[1.4rem] ring-1 ring-white/10"
-                  style={{ background: "linear-gradient(145deg, #322d42 0%, #232032 55%, #1a1726 100%)" }}
-                >
-                  <div className="absolute left-2.5 top-2.5 h-9 w-9 rounded-xl bg-[#151221]">
-                    <div className="absolute left-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-[#312c44] ring-1 ring-black/50" />
-                    <div className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-[#312c44] ring-1 ring-black/50" />
-                    <div className="absolute bottom-1.5 left-1.5 h-2.5 w-2.5 rounded-full bg-[#312c44] ring-1 ring-black/50" />
-                  </div>
-                  <div
-                    className="absolute inset-0 rounded-[1.4rem]"
-                    style={{ background: "linear-gradient(115deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 40%)" }}
-                  />
-                </div>
-              </div>
-
-              {/* het lijstje, iets gedraaid, rechts van het midden (parallaxlaag) */}
-              <div className="absolute left-1/2 top-[46%] w-[19rem] -translate-x-1/2 sm:left-[58%] sm:top-[42%] sm:w-[21rem]">
-                <div data-paper-par className="rotate-[-2.5deg] will-change-transform">
-                  <PapierLijstje afgevinkt={0} film />
-                  {/* de groene pen: punt op het eerste vakje, romp naar rechtsonder */}
-                  <div data-pen className="absolute left-2 top-11 h-0 w-0">
-                    <svg
-                      viewBox="0 0 120 20"
-                      className="w-36 origin-[6px_10px] rotate-[38deg] drop-shadow-[-10px_14px_10px_rgba(20,10,24,0.45)]"
-                      aria-hidden
-                    >
-                      <defs>
-                        <linearGradient id="penromp" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0" stopColor="#43b585" />
-                          <stop offset="0.45" stopColor="#2f9e6e" />
-                          <stop offset="1" stopColor="#1f7a52" />
-                        </linearGradient>
-                      </defs>
-                      <path d="M4 10L20 4.5 20 15.5z" fill="#e7d9b8" />
-                      <path d="M4 10L11 7.6 11 12.4z" fill="#221c3a" />
-                      <rect x="20" y="4" width="74" height="12" rx="6" fill="url(#penromp)" />
-                      <rect x="24" y="5.5" width="62" height="2.2" rx="1.1" fill="#ffffff" opacity="0.28" />
-                      <rect x="88" y="4" width="6" height="12" fill="#1f7a52" />
-                      <rect x="94" y="4.5" width="22" height="11" rx="5.5" fill="#25855a" />
-                      <rect x="97" y="2.8" width="3.2" height="9" rx="1.6" fill="#d8cfae" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              {/* koffie, koud geworden */}
-              <div className="absolute left-[9%] top-[55%] hidden sm:block" aria-hidden>
-                <div className="absolute left-[-28px] top-[18px] h-24 w-24 rounded-full bg-[#140a18]/50 blur-md" />
-                <div
-                  className="relative h-24 w-24 rounded-full"
-                  style={{ background: "radial-gradient(circle at 64% 28%, #f7efe0 0%, #e4d6bd 55%, #c3b08d 100%)" }}
-                >
-                  <div
-                    className="absolute -right-4 top-1/2 h-10 w-9 -translate-y-1/2 rounded-full border-[7px] border-[#e0d2b8]"
-                    style={{ boxShadow: "-6px 8px 10px rgba(20,10,24,0.3)" }}
-                  />
-                  <div
-                    className="absolute inset-[10px] rounded-full"
-                    style={{ background: "radial-gradient(circle at 58% 32%, #6b4226 0%, #472a16 55%, #2c1a0c 100%)" }}
-                  >
-                    <div className="absolute left-[18%] top-[13%] h-3 w-9 -rotate-[24deg] rounded-full bg-[#ffdda8]/25 blur-[2px]" />
-                  </div>
-                </div>
-              </div>
-
-              {/* rode nakijkpen */}
-              <div className="absolute left-[20%] top-[79%] hidden rotate-[-22deg] sm:block" aria-hidden>
-                <div className="absolute left-[-12px] top-[12px] h-3 w-44 rounded-full bg-[#140a18]/45 blur-[6px]" />
-                <div
-                  className="relative h-3.5 w-44 rounded-full"
-                  style={{ background: "linear-gradient(180deg, #dd6650 0%, #b8402e 55%, #8e2e1e 100%)" }}
-                >
-                  <div className="absolute right-[-11px] top-0 h-3.5 w-4 rounded-r-full bg-[#7c2417]" />
-                  <div className="absolute left-[-8px] top-[4px] h-1.5 w-3 rounded-l-full bg-[#e8e0d0]" />
-                </div>
-              </div>
-
-              {/* geel memoblokje */}
-              <div className="absolute right-[14%] top-[72%] hidden rotate-[5deg] sm:block" aria-hidden>
-                <div className="absolute left-[-16px] top-[14px] h-28 w-28 bg-[#140a18]/45 blur-md" />
-                <div className="relative h-28 w-28 bg-[#f3d784]" style={{ backgroundImage: PAPIER_NERF }}>
-                  <p className="font-hand rotate-[-2deg] p-3 text-[1.05rem] font-semibold leading-tight text-ink/75">
-                    morgen: gym, eerste uur!
-                  </p>
-                  <div
-                    className="absolute bottom-0 right-0 h-5 w-5 bg-[#dfbd5e]"
-                    style={{ clipPath: "polygon(0 100%, 100% 0, 100% 100%)" }}
-                  />
-                </div>
-              </div>
-
-              {/* stapel schriften */}
-              <div className="absolute right-[5%] top-[13%] hidden sm:block" aria-hidden>
-                <div className="absolute left-[-24px] top-[20px] h-44 w-36 rounded-md bg-[#140a18]/50 blur-lg" />
-                <div className="absolute rotate-[9deg]">
-                  <div className="h-40 w-32 rounded-md border-b-4 border-[#93762a] bg-[#b8973e]" />
-                </div>
-                <div className="absolute left-2 top-3 rotate-[3deg]">
-                  <div className="h-40 w-32 rounded-md border-b-4 border-[#2c4f8a] bg-[#3f6db8]" />
-                </div>
-                <div className="relative left-4 top-6 rotate-[-4deg]">
-                  <div className="h-40 w-32 rounded-md border-b-4 border-[#8a3c2a] bg-[#b8563f]">
-                    <div className="absolute inset-x-4 top-5 h-11 rounded-sm bg-[#fdfaf2]/90">
-                      <p className="font-hand px-2 pt-1 text-[1rem] leading-tight text-ink/70">groep 5</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* scherptediepte: onscherpe plant op de voorgrond, linksboven */}
+        <section data-film className="relative h-[380vh]" aria-label="Intro: de lijst die nooit ophoudt">
+          <p className="sr-only">
+            Eén taak wordt een muur van honderden leerkracht-taken. Avinka trekt er een golf
+            vinkjes doorheen tot er een kort, behapbaar lijstje overblijft: elke week zo&apos;n
+            2 uur terug.
+          </p>
+          <div className="sticky top-0 h-screen overflow-hidden bg-cream">
+            {/* zachte lichtplek achter het podium */}
             <div
-              data-bokeh
-              className="pointer-events-none absolute -left-16 -top-16 h-80 w-80 opacity-75 blur-[10px]"
-              aria-hidden
-            >
-              <div className="absolute left-6 top-2 h-40 w-16 rotate-[24deg] bg-[#26482b]" style={{ borderRadius: "60% 40% 65% 35%" }} />
-              <div className="absolute left-0 top-16 h-44 w-16 rotate-[64deg] bg-[#1e3d23]" style={{ borderRadius: "55% 45% 60% 40%" }} />
-              <div className="absolute left-16 top-0 h-36 w-14 -rotate-[6deg] bg-[#2d5433]" style={{ borderRadius: "62% 38% 58% 42%" }} />
-            </div>
-
-            {/* vignet: donkere randen, avondsterk, overdag zachter */}
-            <div
-              data-vignet
-              className="pointer-events-none absolute inset-0"
+              className="absolute inset-0"
               style={{
                 background:
-                  "radial-gradient(115% 115% at 50% 42%, rgba(16,8,22,0) 44%, rgba(16,8,22,0.34) 72%, rgba(16,8,22,0.6) 100%)",
+                  "radial-gradient(90% 70% at 50% 40%, rgba(255,255,255,0.8) 0%, rgba(251,246,238,0) 62%)",
               }}
               aria-hidden
             />
 
-            {/* filmkorrel over alles */}
+            {/* de verre laag: onscherpe suggestie van nog honderden kaartjes
+                (één div met een getegelde witte vlek + blur = diepte en oneindigheid) */}
             <div
-              className="pointer-events-none absolute inset-0 opacity-[0.08] mix-blend-overlay"
-              style={{ backgroundImage: KORREL, backgroundSize: "140px 140px" }}
+              data-verweg
+              className="pointer-events-none absolute inset-[-10%] blur-[5px]"
+              style={{
+                backgroundColor: "rgba(210,193,161,0.8)",
+                backgroundImage: "linear-gradient(#ffffff, #fbf7ee)",
+                backgroundSize: "112px 34px",
+                backgroundRepeat: "space",
+                maskImage: "radial-gradient(80% 80% at 50% 50%, black 58%, transparent 100%)",
+                WebkitMaskImage: "radial-gradient(80% 80% at 50% 50%, black 58%, transparent 100%)",
+              }}
               aria-hidden
             />
 
-            {/* ── Tekstbeats: bovenin, nooit over het lijstje. ── */}
+            {/* de takenmuur */}
+            <div className="absolute inset-0 flex items-center justify-center" style={{ perspective: "1400px" }}>
+              <div
+                data-muur
+                className="grid shrink-0 will-change-transform"
+                style={{
+                  width: MUUR_BREEDTE,
+                  gridTemplateColumns: `repeat(${MUUR_KOLOMMEN}, ${KAART_B}px)`,
+                  gap: MUUR_GAT,
+                  maskImage: "radial-gradient(74% 74% at 50% 50%, black 55%, transparent 99%)",
+                  WebkitMaskImage: "radial-gradient(74% 74% at 50% 50%, black 55%, transparent 99%)",
+                }}
+                aria-hidden
+              >
+                {Array.from({ length: MUUR_RIJEN * MUUR_KOLOMMEN }, (_, i) => {
+                  const rij = Math.floor(i / MUUR_KOLOMMEN);
+                  const kol = i % MUUR_KOLOMMEN;
+                  const eerste = i === MUUR_MIDDEN;
+                  return (
+                    <TaakKaart
+                      key={i}
+                      naam={eerste ? "Rapporten schrijven" : MUUR_TAKEN[i % MUUR_TAKEN.length]}
+                      meta={eerste ? "groep 5" : MUUR_META[i % MUUR_META.length]}
+                      badge={!eerste && i % 9 === 2 ? "deadline morgen" : !eerste && i % 13 === 5 ? "vandaag!" : null}
+                      ring={Math.max(Math.abs(rij - Math.floor(MUUR_RIJEN / 2)), Math.abs(kol - Math.floor(MUUR_KOLOMMEN / 2)))}
+                      diag={rij + kol}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* de groene veeg die de vinkgolf aankondigt */}
+            <div
+              data-veeg
+              className="pointer-events-none absolute inset-y-[-15%] left-1/2 w-[38vw] rotate-[14deg]"
+              style={{
+                background:
+                  "linear-gradient(90deg, rgba(47,158,110,0) 0%, rgba(47,158,110,0.13) 50%, rgba(47,158,110,0) 100%)",
+              }}
+              aria-hidden
+            />
+
+            {/* wat overblijft: het behapbare lijstje */}
+            <div data-klaarwrap className="absolute inset-0 flex items-center justify-center">
+              <KlaarKaart />
+            </div>
+            {/* ── Tekstbeats: bovenin, boven de muur. ── */}
             <div className="absolute inset-x-0 top-[4.5rem] z-10 px-6 sm:top-[5.5rem]">
               <div className="mx-auto w-full max-w-6xl">
                 <div className="relative min-h-[9.5rem] max-w-xl">
                   <p
                     data-beat-a
-                    className="absolute font-display text-4xl font-black leading-[1.05] tracking-tight text-[#fdf7ec] [text-shadow:0_2px_24px_rgba(30,15,40,0.4)] sm:text-5xl"
+                    className="absolute font-display text-4xl font-black leading-[1.05] tracking-tight text-ink [text-shadow:0_2px_18px_rgba(251,246,238,0.9)] sm:text-5xl"
                   >
-                    Het lijstje van vanavond.
-                    <span className="mt-3 block font-sans text-lg font-semibold text-[#fdf7ec]/85 sm:text-xl">
-                      Herken je het?
+                    Het begint met één taak.
+                    <span className="mt-3 block font-sans text-lg font-semibold text-ink/65 sm:text-xl">
+                      Prima te doen.
                     </span>
                   </p>
                   <h1
                     data-beat-b
-                    className="absolute font-display text-4xl font-black leading-[1.05] tracking-tight text-[#fdf7ec] [text-shadow:0_2px_24px_rgba(30,15,40,0.4)] sm:text-5xl"
+                    className="absolute font-display text-4xl font-black leading-[1.05] tracking-tight text-ink [text-shadow:0_2px_18px_rgba(251,246,238,0.9)] sm:text-5xl"
                   >
-                    Avinka geeft je die avonden terug.
-                    <span className="mt-3 block font-sans text-lg font-semibold text-[#fdf7ec]/85 sm:text-xl">
-                      Elke week zo&apos;n 2 uur. Kijk maar.
+                    Maar de lijst houdt nooit op.
+                    <span className="mt-3 block font-sans text-lg font-semibold text-ink/65 sm:text-xl">
+                      Er komt elke week meer bij dan eraf gaat.
                     </span>
                   </h1>
                   <p
                     data-beat-c
-                    className="absolute font-display text-4xl font-black leading-[1.05] tracking-tight text-ink [text-shadow:0_2px_20px_rgba(251,246,238,0.6)] sm:text-5xl"
+                    className="absolute font-display text-4xl font-black leading-[1.05] tracking-tight text-ink [text-shadow:0_2px_18px_rgba(251,246,238,0.9)] sm:text-5xl"
                   >
-                    Avinka vinkt je taken af.
-                    <span className="mt-3 block font-sans text-lg font-semibold text-ink/70 sm:text-xl">
-                      Jij kijkt na en houdt het laatste woord.
+                    Herken je dit?
+                    <span className="mt-3 block font-sans text-lg font-semibold text-ink/65 sm:text-xl">
+                      Dit is waar je vrije tijd blijft.
+                    </span>
+                  </p>
+                  <p
+                    data-beat-d
+                    className="absolute font-display text-4xl font-black leading-[1.05] tracking-tight text-ink [text-shadow:0_2px_18px_rgba(251,246,238,0.9)] sm:text-5xl"
+                  >
+                    Avinka vinkt met je mee.
+                    <span className="mt-3 block font-sans text-lg font-semibold text-ink/65 sm:text-xl">
+                      Jij kijkt na en houdt het laatste woord. Elke week zo&apos;n 2 uur terug.
                     </span>
                   </p>
                   <p
                     data-beat-e
-                    className="absolute font-display text-4xl font-black leading-[1.05] tracking-tight text-ink [text-shadow:0_2px_20px_rgba(251,246,238,0.6)] sm:text-5xl"
+                    className="absolute font-display text-4xl font-black leading-[1.05] tracking-tight text-ink [text-shadow:0_2px_18px_rgba(251,246,238,0.9)] sm:text-5xl"
                   >
                     En jouw twijfels?
-                    <span className="mt-3 block font-sans text-lg font-semibold text-ink/70 sm:text-xl">
+                    <span className="mt-3 block font-sans text-lg font-semibold text-ink/65 sm:text-xl">
                       Die vinken we hieronder af. Eén voor één.
                     </span>
                   </p>
@@ -621,20 +610,10 @@ export default function Lijstjes({ fotoBestand }: { fotoBestand?: string }) {
               </div>
             </div>
 
-            {/* zachte naad naar de crème-body, komt op met het daglicht */}
-            <div
-              data-naad
-              className="absolute inset-x-0 bottom-0 h-28"
-              style={{
-                background: "linear-gradient(180deg, rgba(251,246,238,0) 0%, #fbf6ee 92%)",
-              }}
-              aria-hidden
-            />
-
             {/* scrollhint */}
             <div
               data-scrollhint
-              className="absolute inset-x-0 bottom-6 z-10 flex flex-col items-center gap-1 text-[#fdf7ec]/90"
+              className="absolute inset-x-0 bottom-6 z-10 flex flex-col items-center gap-1 text-ink/60"
               aria-hidden
             >
               <span className="text-sm font-semibold">Scroll maar rustig</span>
@@ -1080,18 +1059,20 @@ function StilAlternatief() {
     <section className="relative overflow-hidden pt-24" aria-label="Intro">
       <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-6 pb-16 pt-6 lg:grid-cols-2">
         <div>
-          <p className="text-lg font-semibold text-ink/60">Het lijstje van vanavond kent iedereen.</p>
+          <p className="text-lg font-semibold text-ink/60">
+            De takenlijst van een leerkracht houdt nooit op.
+          </p>
           <h1 className="mt-3 font-display text-4xl font-black leading-[1.05] tracking-tight text-ink sm:text-5xl">
-            Avinka geeft je die avonden terug.
+            Avinka maakt hem behapbaar.
           </h1>
           <p className="mt-5 max-w-xl text-lg leading-8 text-ink/70">
-            Elke week zo&apos;n 2 uur minder administratie. Avinka vinkt je taken af,
+            Elke week zo&apos;n 2 uur minder administratie. Avinka vinkt met je mee,
             jij kijkt na en houdt het laatste woord. Hieronder vinken we jouw twijfels
             af, één voor één.
           </p>
         </div>
-        <div className="mx-auto w-[19rem] rotate-[-2deg] sm:w-[21rem]">
-          <PapierLijstje afgevinkt={5} className="!shadow-[0_18px_40px_rgba(34,28,58,0.15)]" />
+        <div className="mx-auto">
+          <KlaarKaart />
         </div>
       </div>
     </section>
