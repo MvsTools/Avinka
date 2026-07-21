@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, useSyncExternalStore, type SVGProps } from "react";
+import { useEffect, useRef, useSyncExternalStore, type SVGProps } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -11,63 +11,93 @@ import { PROEF_DAGEN } from "@/lib/abonnement";
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 /* ──────────────────────────────────────────────────────────────────────────
-   /nieuw4 — "Alles op z'n plek" (film, van v3) + "Jouw twijfels" (body, van v2)
+   /nieuw4 — "Alles op z'n plek"
 
    FILM (bovenin): het overvolle scherm van een leerkracht ruimt zichzelf
-   scrollend op; elk venster vliegt naar zijn plek in het dashboard, avond
-   wordt dag, payoff "Alles op z'n plek".
+   scrollend op; elk venster vliegt naar zijn plek in het tablet-dashboard,
+   avond wordt dag. De finale: vier vertrouwens-chips poppen onder de tablet
+   binnen en dragen je de pagina in.
 
-   BODY (eronder): een sticky twijfelbalk die meevinkt terwijl je de vijf
-   twijfels van de bezoeker leest, elk met een bewegend UI-fragment.
+   BODY (eronder): de volledige inhoud van de landingspagina, positief
+   verteld: wat Avinka is, herkenning, de tools (met bewegende mini-demo's
+   en de optelsom naar 2 uur), privacy, gemak, de maker, prijzen en vragen.
 
    prefers-reduced-motion krijgt een stilstaande, volledige versie.
-   Vanaf hier wordt er stuk voor stuk handmatig bijgeschaafd.
+   Wordt stuk voor stuk handmatig bijgeschaafd.
    ────────────────────────────────────────────────────────────────────────── */
 
-/* ── Body-data (v2): de vijf twijfels = de informatie-structuur ────────── */
+/* ── Inhoud ────────────────────────────────────────────────────────────── */
 
-const TWIJFELS = [
-  { id: "werkplek", kort: "Wat krijg ik?", vraag: "Wat krijg ik precies?" },
-  { id: "tijdwinst", kort: "Tijdwinst", vraag: "Levert het echt tijd op?" },
-  { id: "privacy", kort: "Privacy", vraag: "Is het veilig voor mijn leerlingen?" },
-  { id: "gemak", kort: "Gemak", vraag: "Kan ik dit wel?" },
-  { id: "prijzen", kort: "Prijs", vraag: "Wat kost het, en zit ik ergens aan vast?" },
-] as const;
-
-type TwijfelId = (typeof TWIJFELS)[number]["id"];
-
-const TOOLS = [
-  { naam: "Toetsanalyse", emoji: "📊", kleur: "bg-sky-500", tint: "bg-sky-50" },
-  { naam: "Rapporten", emoji: "📝", kleur: "bg-violet-500", tint: "bg-violet-50" },
-  { naam: "Oudercontact", emoji: "✉️", kleur: "bg-rose-500", tint: "bg-rose-50" },
-  { naam: "Plattegrond", emoji: "🪑", kleur: "bg-amber-500", tint: "bg-amber-50" },
-  { naam: "Lesontwerp", emoji: "📓", kleur: "bg-teal-500", tint: "bg-teal-50" },
+const STRIP = [
+  "🔒 Namen blijven thuis",
+  "🇳🇱 Volledig Nederlands",
+  "💚 Door een leerkracht gemaakt",
+  "✓ Maandelijks opzegbaar",
 ];
 
-const WINSTEN = [
+const PIJNPUNTEN = [
   {
-    taak: "Rapporten schrijven",
-    winst: 35,
-    uitleg: "Jij kent het kind, Avinka schrijft de voorzet in jouw toon.",
+    titel: "Te veel administratie",
+    tekst:
+      "Je wilt er zijn voor je klas, maar raakt steeds meer tijd kwijt aan formulieren, analyses en verslagen.",
+  },
+  {
+    titel: "Alles staat verspreid",
+    tekst:
+      "Voor elke taak weer een andere tool, website of document. Niets komt op één plek samen.",
+  },
+  {
+    titel: "Het werk gaat mee naar huis",
+    tekst:
+      "Avonden en weekenden vullen zich met taken die je eigenlijk allang af had willen hebben.",
+  },
+];
+
+const TOOLDATA = [
+  {
+    naam: "Rapporten",
+    winst: "± 35 min per week",
+    tekst:
+      "Warme, persoonlijke rapportteksten die klinken alsof jij ze schreef. Want dat deed je, alleen een stuk sneller.",
+    dot: "bg-violet-500",
+    tint: "bg-violet-50",
     demo: "rapport",
   },
   {
-    taak: "Toetsen analyseren",
-    winst: 45,
-    uitleg: "Van cijferlijst naar inzicht, zonder avond in Excel.",
+    naam: "Toetsanalyse",
+    winst: "± 45 min per week",
+    tekst:
+      "In één oogopslag zie je hoe je groep ervoor staat en wie wat extra aandacht kan gebruiken. Geen uren meer puzzelen in Excel.",
+    dot: "bg-sky-500",
+    tint: "bg-sky-50",
     demo: "analyse",
   },
   {
-    taak: "Ouderberichten",
-    winst: 15,
-    uitleg: "Vriendelijk, duidelijk en in een paar minuten verstuurd.",
+    naam: "Oudercontact",
+    winst: "± 15 min per week",
+    tekst:
+      "Oudergesprekken, weekberichten en ouderberichten, in een paar minuten klaar. Nooit meer staren naar een leeg scherm.",
+    dot: "bg-rose-500",
+    tint: "bg-rose-50",
     demo: "bericht",
   },
   {
-    taak: "Les voorbereiden",
-    winst: 25,
-    uitleg: "Eén leerdoel erin, een complete les eruit.",
+    naam: "Lesontwerp",
+    winst: "± 25 min per week",
+    tekst:
+      "Lever een lesdoel aan en krijg een complete, kant-en-klare les terug: met opbouw, bouwstenen en praktische tips. Klaar om voor de klas te gebruiken.",
+    dot: "bg-teal-500",
+    tint: "bg-teal-50",
     demo: "les",
+  },
+  {
+    naam: "Plattegrond",
+    winst: "scheelt een avond puzzelen",
+    tekst:
+      "Schuif je klasplattegrond in elkaar met een paar klikken. Of laat Avinka slim plaatsen op basis van je sociogram, met jouw wensen altijd als leidend.",
+    dot: "bg-amber-500",
+    tint: "bg-amber-50",
+    demo: "plattegrond",
   },
 ];
 
@@ -92,6 +122,21 @@ const FAQ = [
     antwoord: `Je probeert Avinka ${PROEF_DAGEN} dagen volledig gratis uit, met toegang tot alle tools. Je hoeft vooraf geen betaalgegevens in te vullen. Bevalt het? Dan kies je daarna zelf een abonnement. Wil je niet verder, dan stopt het vanzelf en betaal je niets.`,
   },
   {
+    vraag: "Welk abonnement past bij mij?",
+    antwoord:
+      "Gebruik je één tool? Dan is Start genoeg. Wil je alle tools en je klassen automatisch koppelen? Dan is Compleet de logische keuze, en die kiezen de meeste leerkrachten. Pro is er voor wie het maximale uit Avinka wil halen.",
+  },
+  {
+    vraag: "Wat is het verschil tussen maandelijks en per schooljaar?",
+    antwoord:
+      "Bij maandelijks betaal je per maand en zeg je op wanneer je wilt. Bij een schooljaar-abonnement betaal je ook gewoon per maand, maar zijn juli en augustus gratis. Je hoeft in de zomer niets stop te zetten en je houdt je klassen en bewaarde werk.",
+  },
+  {
+    vraag: "Kan ik later wisselen of opzeggen?",
+    antwoord:
+      "Het maandabonnement kun je altijd opzeggen, zonder kleine lettertjes. Upgraden naar een groter pakket kan op elk moment. Het schooljaar-abonnement loopt een heel schooljaar; daar staat tegenover dat de zomermaanden gratis zijn.",
+  },
+  {
     vraag: "Werkt het op mijn laptop, Chromebook of tablet?",
     antwoord:
       "Ja. Avinka werkt gewoon in je browser op elk apparaat. Je hoeft niets te installeren: inloggen en beginnen.",
@@ -103,7 +148,7 @@ const FAQ = [
   },
 ];
 
-/* ── Filmbouwstenen (v3) ───────────────────────────────────────────────── */
+/* ── Filmbouwstenen ────────────────────────────────────────────────────── */
 
 // Een zwevend "venster" op het rommelige bureaublad.
 function Venster({
@@ -192,8 +237,6 @@ function Tegel({
 }
 
 // Een item in de dashboard-zijbalk, net als het echte DashboardNav.
-// Met `naam` wordt het een vluchtdoel (voor het documenten-venster) met een
-// klein badge-vinkje dat popt zodra er iets landt.
 function MiniNav({
   label,
   icon,
@@ -268,7 +311,7 @@ function NavChart() {
   );
 }
 
-/* ── Bodybouwsteen (v2): het getekende vinkje ──────────────────────────── */
+/* ── Het getekende vinkje ──────────────────────────────────────────────── */
 
 function Vink({
   className,
@@ -308,9 +351,8 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
     () => null,
   );
   const film = reduced === false;
-  const [klaar, setKlaar] = useState<Set<TwijfelId>>(new Set());
 
-  /* ── De film (v3): rommelig bureaublad → dashboard ── */
+  /* ── De film: rommelig bureaublad → tablet-dashboard ── */
   useGSAP(
     () => {
       if (!film) return;
@@ -321,12 +363,12 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
       gsap.set(q("[data-tegel]"), { autoAlpha: 0.18, scale: 0.94 });
       gsap.set(q("[data-tegelvink]"), { autoAlpha: 0, scale: 0.5 });
       gsap.set(q("[data-paneel]"), { autoAlpha: 0, y: 18 });
-      gsap.set(q("[data-slotwoord]"), { autoAlpha: 0, y: 12 });
       gsap.set(q("[data-daglaag]"), { opacity: 0 });
       // De takenlijst begint dicht; de rijen leeg. Fase 2 klapt hem open.
       gsap.set(q("[data-takendrop]"), { autoAlpha: 0, scale: 0.96, y: -4, transformOrigin: "top center" });
       gsap.set(q("[data-takenrow]"), { autoAlpha: 0, x: 8 });
-      gsap.set(q("[data-logofinale]"), { autoAlpha: 0 });
+      // De vertrouwens-chips van de finale.
+      gsap.set(q("[data-stripchip]"), { autoAlpha: 0, y: 14, scale: 0.9 });
 
       /* ── Vluchtbaan: van venstermidden naar tegelmidden (gemeten) ── */
       const midden = (el: Element) => {
@@ -441,15 +483,12 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
         64,
       );
 
-      // Alles binnen: de lijst klapt weer netjes dicht. Alles op één plek.
+      // Alles binnen: de lijst klapt weer netjes dicht.
       tl.to(q("[data-takendrop]"), { autoAlpha: 0, scale: 0.96, y: -4, duration: 3 }, 84);
       tl.to(q("[data-chevron]"), { rotation: 0, duration: 3 }, 84);
 
       // De volle tablet zakt iets omlaag, weg van de kop bovenin.
       tl.to(q("[data-paneel]"), { y: 10, duration: 8, ease: "power2.out" }, 82);
-
-      // Merk-finale: het volledige logo (van to-do naar gedaan) vult de tablet.
-      tl.to(q("[data-logofinale]"), { autoAlpha: 1, duration: 5, ease: "power2.inOut" }, 89);
 
       /* ── 72-92 · avond wordt dag; de belofte blijft staan en kleurt mee ── */
       tl.to(q("[data-avondlaag]"), { opacity: 0, duration: 20, ease: "power1.inOut" }, 72);
@@ -460,13 +499,15 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
         q("[data-header]")[0]?.classList[st && st.progress > 0.86 ? "add" : "remove"]("film-klaar");
       }, 86);
 
-      /* ── 90 · de payoff ── */
-      tl.to(q("[data-slotwoord]"), { autoAlpha: 1, y: 0, duration: 6, ease: "power2.out" }, 90);
+      /* ── 88-98 · finale: de vier zekerheden poppen één voor één binnen ── */
+      q("[data-stripchip]").forEach((chip, i) => {
+        tl.to(chip, { autoAlpha: 1, y: 0, scale: 1, duration: 3, ease: "back.out(1.8)" }, 88 + i * 2.5);
+      });
     },
     { scope: root, dependencies: [film], revertOnUpdate: true },
   );
 
-  /* ── De body (v2): reveals + twijfels afvinken + teller ── */
+  /* ── De body: reveals + de optelsom-teller ── */
   useEffect(() => {
     if (reduced === null) return;
     const el = root.current;
@@ -488,22 +529,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
     );
     reveals.forEach((r) => io.observe(r));
 
-    /* Sentinels: onderaan elke sectie wordt de twijfel afgevinkt. */
-    const sentinels = el.querySelectorAll<HTMLElement>("[data-sentinel]");
-    const ioSent = new IntersectionObserver(
-      (entries) =>
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            const id = e.target.getAttribute("data-sentinel") as TwijfelId;
-            setKlaar((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
-            ioSent.unobserve(e.target);
-          }
-        }),
-      { rootMargin: "0px 0px -20% 0px" },
-    );
-    sentinels.forEach((s) => ioSent.observe(s));
-
-    /* De teller naar 120 minuten. */
+    /* De optelsom telt naar 120 minuten. */
     const teller = el.querySelector<HTMLElement>("[data-teller]");
     let raf = 0;
     if (teller) {
@@ -532,21 +558,15 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
 
     return () => {
       io.disconnect();
-      ioSent.disconnect();
       cancelAnimationFrame(raf);
     };
   }, [reduced]);
-
-  const naarSectie = (id: TwijfelId) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
-  };
 
   return (
     <div ref={root} className="flex flex-1 flex-col bg-cream text-ink">
       <StijlBlok />
 
-      {/* ── Vaste bovenbalk: logo altijd leesbaar, CTA ook op mobiel,
-             en een uitweg voor wie de film wil overslaan. ── */}
+      {/* ── Vaste bovenbalk ── */}
       <header
         data-header
         className={`fixed inset-x-0 top-0 z-40 transition-colors duration-500 ${
@@ -555,7 +575,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
       >
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <span className="rounded-xl bg-cream/95 px-2.5 py-1.5 shadow-sm ring-1 ring-black/5">
-            {/* Gewone img: de dev-optimizer van next/image laadt traag (zelfde keuze als v1/v2). */}
+            {/* Gewone img: de dev-optimizer van next/image laadt traag. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/Avinka_logo.png" alt="Avinka" className="h-8 w-auto" />
           </span>
@@ -570,7 +590,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
         </div>
       </header>
 
-      {/* ════════════════════════ DE FILM (v3) ════════════════════════ */}
+      {/* ════════════════════════ DE FILM ════════════════════════ */}
       <section
         data-film-scroll
         aria-label="Avinka ruimt je schoolwerk op"
@@ -722,10 +742,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                 </div>
               </Venster>
 
-              {/* Geeltjes: kriskras in de linker- en rechtermarge, midden vrij.
-                  Bij het scrollen vliegen ze naar hun plek in het dashboard:
-                  oudergesprekken/weektaak/draaiboek naar de to-do, toetsen
-                  analyseren naar de Toetsanalyse-tegel, rapporten naar de to-do. */}
+              {/* Geeltjes: kriskras in de linker- en rechtermarge, midden vrij. */}
               <div
                 data-venster="geel1"
                 className="absolute left-[3%] top-[54%] w-36 -rotate-[6deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:left-[20%] sm:top-[53%]"
@@ -773,8 +790,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
             </div>
           )}
 
-          {/* ── De werkplek waar alles landt: een tablet met het Avinka-
-                 dashboard (zijbalk, welkom, takenstrookje, Jouw tools, tip) ── */}
+          {/* ── De werkplek waar alles landt: een tablet met het Avinka-dashboard ── */}
           <div data-paneel className="relative z-10 mt-3 w-[min(94vw,39rem)] sm:mt-4">
             {/* tablet-behuizing: alles wordt in dit apparaat opgeruimd */}
             <div className="rounded-[1.4rem] bg-ink/90 p-1 shadow-[0_34px_80px_-24px_rgba(8,5,20,0.75)] ring-1 ring-white/10">
@@ -800,7 +816,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
 
                   {/* hoofdvlak */}
                   <div className="min-w-0 flex-1 px-3 py-3 sm:px-4">
-                    {/* welkom-kop met takenlijst-knop + streak, net als het echte dashboard */}
+                    {/* welkom-kop met takenlijst-knop + streak */}
                     <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
                       <div>
                         <p className="text-sm font-black tracking-tight text-ink">
@@ -909,30 +925,20 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                     </p>
                   </div>
                 </div>
-                {/* Merk-finale: aan het eind vult het volledige logo de tablet */}
-                <div
-                  data-logofinale
-                  className="invisible absolute inset-0 flex items-center justify-center bg-cream opacity-0"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/Avinka_logo.png"
-                    alt="Avinka, van to-do naar gedaan"
-                    className="w-[58%] max-w-[17rem]"
-                  />
-                </div>
               </div>
             </div>
 
-            {/* De payoff onder het paneel */}
-            <div data-slotwoord className="mt-3 text-center sm:mt-4">
-              <p className="font-display text-2xl font-black tracking-tight text-ink sm:text-3xl">
-                Alles op één plek.
-              </p>
-              <p className="mx-auto mt-1.5 max-w-md text-sm leading-6 text-ink/70">
-                Je tools, je taken en je klas op één rustige werkplek. Zo win je elke week
-                tijd terug.
-              </p>
+            {/* Finale: de vier zekerheden poppen binnen en dragen je de pagina in */}
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2 sm:mt-6">
+              {STRIP.map((s) => (
+                <span
+                  key={s}
+                  data-stripchip
+                  className="rounded-full bg-white px-3.5 py-1.5 text-xs font-bold text-ink/75 shadow-sm ring-1 ring-black/5 sm:text-sm"
+                >
+                  {s}
+                </span>
+              ))}
             </div>
           </div>
 
@@ -951,345 +957,366 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
         </div>
       </section>
 
-      {/* Ademruimte tussen de film en de twijfels, zodat het niet op elkaar plakt */}
-      <div aria-hidden className="bg-cream" style={{ height: film ? "22vh" : "8vh" }} />
+      {/* Ademruimte tussen film en body */}
+      <div aria-hidden className="bg-cream" style={{ height: film ? "14vh" : "6vh" }} />
 
-      {/* ════════════════════════ DE BODY (v2) ════════════════════════ */}
+      {/* ════════════════════════ DE BODY ════════════════════════ */}
       <main id="verder" className="relative z-10 scroll-mt-16 bg-cream">
-        {/* De twijfelbalk: voortgang én navigatie. */}
-        <div className="sticky top-[3.4rem] z-30 border-b border-black/5 bg-cream/90 backdrop-blur sm:top-[3.9rem]">
-          <nav
-            aria-label="De vijf twijfels"
-            className="twijfelnav mx-auto flex w-full max-w-6xl items-center gap-1 overflow-x-auto px-4 py-2 sm:gap-2 sm:px-6"
-          >
-            <span className="mr-1 hidden shrink-0 text-sm font-bold text-ink/50 md:inline">
-              Jouw twijfels:
-            </span>
-            {TWIJFELS.map((t) => {
-              const done = klaar.has(t.id);
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => naarSectie(t.id)}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
-                    done ? "bg-brand-soft text-brand-dark" : "text-ink/60 hover:bg-black/5 hover:text-ink"
-                  }`}
-                >
-                  <span
-                    className={`flex h-[18px] w-[18px] items-center justify-center rounded-[4px] border-2 ${
-                      done ? "border-brand bg-brand text-white" : "border-ink/30 bg-white"
-                    }`}
-                  >
-                    {done && <Vink className="vinkpop h-3 w-3" dik={4} />}
-                  </span>
-                  {t.kort}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* ── 1. Wat krijg ik precies? ── */}
-        <section id="werkplek" className="scroll-mt-28">
-          <div className="mx-auto w-full max-w-6xl px-6 pb-24 pt-16 sm:pt-20">
-            <SectieKop
-              nummer={1}
-              vraag={TWIJFELS[0].vraag}
-              done={klaar.has("werkplek")}
-              antwoord="Je eigen werkplek, met alle AI-tools op één plek."
-            />
-            <div className="mt-10 grid items-start gap-10 lg:grid-cols-[1fr_1.15fr]">
-              <div data-reveal className="max-w-md text-lg leading-8 text-ink/75">
-                <p>
-                  Geen losse websites en documenten meer. Je logt één keer in en alles
-                  staat klaar: je klassen, je tools en je bewaarde werk. Elke tool is
-                  gemaakt voor het echte werk in de klas, niet als technisch speeltje.
-                </p>
-                <p className="mt-4">
-                  En het groeit met je mee. Er komen steeds nieuwe tools bij, zonder
-                  dat je er iets voor hoeft te doen.
-                </p>
-              </div>
-
-              {/* Dashboard-mockup */}
-              <div data-reveal className="relative">
-                <div className="rounded-2xl border border-black/5 bg-white p-3 shadow-[0_24px_60px_rgba(34,28,58,0.12)]">
-                  <div className="flex items-center gap-1.5 px-2 pb-2 pt-1" aria-hidden>
-                    <span className="h-2.5 w-2.5 rounded-full bg-rose-300" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-300" />
-                    <span className="ml-3 h-5 flex-1 rounded-md bg-cream text-center text-[10px] font-semibold leading-5 text-ink/40">
-                      avinka.nl/dashboard
-                    </span>
-                  </div>
-                  <div className="rounded-xl bg-cream p-4 sm:p-5">
-                    <p className="font-display text-xl font-black text-ink">
-                      Goedemiddag! Wat vinken we af?
-                    </p>
-                    <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-                      {TOOLS.map((tool, i) => (
-                        <div
-                          key={tool.naam}
-                          data-reveal
-                          style={{ transitionDelay: `${i * 70}ms` }}
-                          className={`rounded-xl border border-black/5 ${tool.tint} p-3`}
-                        >
-                          <span
-                            className={`flex h-8 w-8 items-center justify-center rounded-lg text-base text-white ${tool.kleur}`}
-                          >
-                            {tool.emoji}
-                          </span>
-                          <p className="mt-2 text-sm font-bold text-ink">{tool.naam}</p>
-                        </div>
-                      ))}
-                      <div
-                        data-reveal
-                        style={{ transitionDelay: "350ms" }}
-                        className="rounded-xl border-2 border-dashed border-black/10 p-3"
-                      >
-                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-soft text-sm">
-                          ✨
-                        </span>
-                        <p className="mt-2 text-sm font-bold text-ink/60">Binnenkort meer</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <p className="mt-3 text-center text-sm font-semibold text-ink/50">
-                  Zo ziet je dashboard eruit: alles op één plek, klaar om af te vinken.
-                </p>
-              </div>
+        {/* ── 1. Wat dit is ── */}
+        <section className="relative overflow-hidden">
+          <div className="pointer-events-none absolute -left-28 top-6 h-80 w-80 rounded-full bg-brand/10 blur-3xl" aria-hidden />
+          <div className="pointer-events-none absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-accent/15 blur-3xl" aria-hidden />
+          <div className="relative mx-auto w-full max-w-3xl px-6 pb-20 pt-8 text-center">
+            <h2 data-reveal className="font-display text-4xl font-black tracking-tight [text-wrap:balance] sm:text-5xl">
+              Eén werkplek voor al je schoolwerk
+            </h2>
+            <p data-reveal className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-ink/70">
+              Avinka vermindert de administratieve werkdruk van leerkrachten met
+              slimme AI-tools. Minder uitzoekwerk, minder typwerk, meer tijd voor
+              lesgeven en persoonlijke aandacht.
+            </p>
+            <div data-reveal className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link
+                href="/sign-up"
+                className="w-full rounded-2xl bg-brand px-8 py-4 text-lg font-bold text-white shadow-lg shadow-brand/25 transition hover:-translate-y-0.5 hover:bg-brand-dark sm:w-auto"
+              >
+                Probeer Avinka gratis
+              </Link>
+              <a
+                href="#tools"
+                className="w-full rounded-2xl border-2 border-ink/10 bg-white px-8 py-4 text-lg font-bold text-ink transition hover:border-ink/20 sm:w-auto"
+              >
+                Bekijk de tools
+              </a>
             </div>
           </div>
-          <div data-sentinel="werkplek" aria-hidden />
         </section>
 
-        {/* ── 2. Levert het echt tijd op? ── */}
-        <section id="tijdwinst" className="scroll-mt-28 border-y border-black/5 bg-white">
-          <div className="mx-auto w-full max-w-6xl px-6 py-20">
-            <SectieKop
-              nummer={2}
-              vraag={TWIJFELS[1].vraag}
-              done={klaar.has("tijdwinst")}
-              antwoord="Reken maar mee. Vier taken, één werkweek."
-            />
-            <div className="mt-10 grid gap-4 sm:grid-cols-2">
-              {WINSTEN.map((w, i) => (
+        {/* ── 2. Herkenning: de brug terug naar de film ── */}
+        <section className="relative border-y border-black/5 bg-white">
+          <div className="mx-auto grid w-full max-w-5xl gap-10 px-6 py-20 lg:grid-cols-[1fr_1.2fr] lg:gap-16">
+            <div data-reveal>
+              <h2 className="font-display text-3xl font-black tracking-tight [text-wrap:balance] sm:text-4xl">
+                Dat scherm van net? Gewoon een dinsdagavond.
+              </h2>
+              <p className="mt-5 text-lg leading-8 text-ink/70">
+                Het hoort bij het werk. Maar het kan{" "}
+                <span className="font-bold text-brand">sneller, slimmer en efficiënter</span>.
+              </p>
+              {/* knipoog naar de film */}
+              <div
+                className="mt-8 hidden w-40 -rotate-3 rounded-sm bg-accent-soft p-3 text-sm font-semibold leading-snug text-ink/75 shadow-md lg:block"
+                aria-hidden
+              >
+                herkenbaar? 😅
+              </div>
+            </div>
+            <ul className="space-y-6 self-center">
+              {PIJNPUNTEN.map((p, i) => (
+                <li key={p.titel} data-reveal style={{ transitionDelay: `${i * 90}ms` }} className="flex gap-4">
+                  <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-accent" aria-hidden />
+                  <p className="leading-7 text-ink/75">
+                    <span className="font-bold text-ink">{p.titel}.</span> {p.tekst}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* ── 3. De tools, elk met een levend demo-kaartje ── */}
+        <section id="tools" className="relative scroll-mt-20 overflow-hidden">
+          <div className="pointer-events-none absolute -right-32 top-24 h-96 w-96 rounded-full bg-brand/[0.07] blur-3xl" aria-hidden />
+          <div className="relative mx-auto w-full max-w-5xl px-6 py-24">
+            <div data-reveal className="max-w-2xl">
+              <h2 className="font-display text-4xl font-black tracking-tight [text-wrap:balance]">
+                Dit staat er voor je klaar
+              </h2>
+              <p className="mt-4 text-lg text-ink/60">
+                Het platform groeit met je mee: er komen steeds nieuwe tools bij die
+                je werk lichter maken.
+              </p>
+            </div>
+
+            <div className="mt-12 space-y-6">
+              {TOOLDATA.map((tool, i) => (
                 <div
-                  key={w.taak}
+                  key={tool.naam}
                   data-reveal
-                  style={{ transitionDelay: `${i * 90}ms` }}
-                  className="flex items-start justify-between gap-4 rounded-2xl border border-black/5 bg-cream p-6"
+                  className={`grid items-center gap-6 rounded-[2rem] p-7 sm:p-9 lg:grid-cols-2 lg:gap-12 ${tool.tint}`}
                 >
-                  <div className="min-w-0">
-                    <h3 className="font-display text-xl font-black text-ink">{w.taak}</h3>
-                    <p className="mt-1.5 leading-7 text-ink/70">{w.uitleg}</p>
-                    <MiniDemo soort={w.demo} />
+                  <div className={i % 2 === 1 ? "lg:order-2" : ""}>
+                    <h3 className="flex items-center gap-3 font-display text-2xl font-black tracking-tight sm:text-3xl">
+                      <span className={`h-3.5 w-3.5 rounded-full ${tool.dot}`} aria-hidden />
+                      {tool.naam}
+                    </h3>
+                    <p className="mt-3 leading-8 text-ink/75">{tool.tekst}</p>
+                    <p className="mt-4 inline-block rounded-full bg-white px-3.5 py-1.5 text-sm font-bold text-ink/70 shadow-sm">
+                      {tool.winst}
+                    </p>
                   </div>
-                  <span className="shrink-0 rounded-full bg-brand-soft px-3 py-1.5 text-sm font-bold tabular-nums text-brand-dark">
-                    +{w.winst} min
-                  </span>
+                  <div className={i % 2 === 1 ? "lg:order-1" : ""}>
+                    <DemoKaart soort={tool.demo} />
+                  </div>
                 </div>
               ))}
+
+              {/* De volgende op de roadmap */}
+              <div
+                data-reveal
+                className="flex flex-wrap items-center justify-between gap-4 rounded-[2rem] border-2 border-dashed border-black/10 bg-white/60 p-7 sm:p-9"
+              >
+                <div>
+                  <h3 className="font-display text-2xl font-black tracking-tight text-ink/70">
+                    Werkbladen
+                  </h3>
+                  <p className="mt-2 leading-7 text-ink/60">
+                    Maak in een paar klikken een passend werkblad bij je les. De
+                    volgende tool die eraan komt.
+                  </p>
+                </div>
+                <span className="rounded-full bg-brand-soft px-4 py-1.5 text-sm font-bold text-brand-dark">
+                  binnenkort ✨
+                </span>
+              </div>
             </div>
-            <div data-reveal className="mt-12 text-center">
-              <p className="font-display text-3xl font-black tracking-tight text-ink sm:text-4xl">
-                Samen{" "}
+
+            {/* De optelsom */}
+            <div data-reveal className="mt-14 rounded-[2rem] bg-sand px-6 py-10 text-center">
+              <p className="text-lg font-bold text-ink/70">35 + 45 + 15 + 25 minuten…</p>
+              <p className="mt-3 font-display text-3xl font-black tracking-tight text-ink sm:text-4xl">
+                samen{" "}
                 <span className="text-brand">
                   <span data-teller className="tabular-nums">
                     0
                   </span>{" "}
                   minuten
                 </span>{" "}
-                per week.
+                per week
               </p>
               <p className="mt-3 text-lg font-semibold text-ink/60">
                 Dat zijn je twee uur. Elke week weer.
               </p>
             </div>
           </div>
-          <div data-sentinel="tijdwinst" aria-hidden />
         </section>
 
-        {/* ── 3. Is het veilig voor mijn leerlingen? ── */}
-        <section id="privacy" className="scroll-mt-28">
-          <div className="mx-auto w-full max-w-6xl px-6 py-20">
-            <SectieKop
-              nummer={3}
-              vraag={TWIJFELS[2].vraag}
-              done={klaar.has("privacy")}
-              antwoord="Ja. Namen van leerlingen blijven thuis."
-            />
-            <div className="mt-10 grid items-center gap-10 lg:grid-cols-2">
-              {/* De maskeer-demo */}
-              <div data-reveal className="maskeer rounded-2xl border border-black/5 bg-white p-6 shadow-sm sm:p-8">
-                <p className="text-sm font-bold text-ink/50">Jij typt:</p>
-                <p className="mt-2 text-xl leading-9 text-ink">
-                  &ldquo;
-                  <span className="relative">
-                    <span className="naam-echt font-bold">Sofie</span>
-                    <span className="naam-masker font-bold text-brand-dark">leerling A</span>
-                  </span>{" "}
-                  heeft hard gewerkt aan haar tafels.&rdquo;
-                </p>
-                <div className="mt-5 flex items-center gap-3 rounded-xl bg-brand-soft p-4">
-                  <svg viewBox="0 0 24 24" className="schildje h-8 w-8 shrink-0 text-brand-dark" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <path d="M12 3l7 3v5c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6l7-3z" />
-                    <path d="M9 12l2 2 4-4" />
-                  </svg>
-                  <p className="text-base font-semibold leading-6 text-brand-dark">
-                    Voordat er iets wordt verstuurd, maakt Avinka de naam op jouw eigen
-                    apparaat onleesbaar. De AI ziet alleen &ldquo;leerling A&rdquo;.
-                  </p>
-                </div>
-              </div>
-              <div data-reveal className="max-w-md text-lg leading-8 text-ink/75">
-                <p>
-                  Privacy is bij Avinka de ruggengraat, geen bijzaak. Namen, plaatsen en
-                  contactgegevens gaan nooit naar de AI. Jouw account staat op beveiligde
-                  servers in Europa.
-                </p>
-                <p className="mt-4">
-                  In je rapport of bericht staat gewoon weer de echte naam. Alleen jij
-                  ziet die, niemand anders.
+        {/* ── 4. Privacy, zichtbaar gemaakt ── */}
+        <section className="relative overflow-hidden bg-ink text-cream">
+          <div className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-brand/20 blur-3xl" aria-hidden />
+          <div className="relative mx-auto grid w-full max-w-5xl items-center gap-12 px-6 py-24 lg:grid-cols-2">
+            <div data-reveal>
+              <h2 className="font-display text-4xl font-black tracking-tight text-white [text-wrap:balance]">
+                Namen blijven thuis
+              </h2>
+              <p className="mt-6 text-lg leading-8 text-cream/80">
+                Privacy is ons belangrijkste uitgangspunt. Namen van leerlingen
+                gaan nooit naar AI: ze worden op je eigen apparaat onleesbaar
+                gemaakt voordat er ook maar iets wordt verstuurd.
+              </p>
+              <p className="mt-4 text-lg leading-8 text-cream/80">
+                Je account staat bovendien op beveiligde servers in Europa.
+                Geen bijzaak, maar de ruggengraat van alles wat we bouwen.
+              </p>
+            </div>
+            {/* De maskeer-demo: Sofie wordt leerling A voor je ogen */}
+            <div data-reveal className="maskeer rounded-2xl bg-white p-6 text-ink shadow-2xl sm:p-8">
+              <p className="text-sm font-bold text-ink/50">Jij typt:</p>
+              <p className="mt-2 text-xl leading-9 text-ink">
+                &ldquo;
+                <span className="relative">
+                  <span className="naam-echt font-bold">Sofie</span>
+                  <span className="naam-masker font-bold text-brand-dark">leerling A</span>
+                </span>{" "}
+                heeft hard gewerkt aan haar tafels.&rdquo;
+              </p>
+              <div className="mt-5 flex items-center gap-3 rounded-xl bg-brand-soft p-4">
+                <svg viewBox="0 0 24 24" className="schildje h-8 w-8 shrink-0 text-brand-dark" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M12 3l7 3v5c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6l7-3z" />
+                  <path d="M9 12l2 2 4-4" />
+                </svg>
+                <p className="text-base font-semibold leading-6 text-brand-dark">
+                  Voordat er iets wordt verstuurd, maakt Avinka de naam op jouw eigen
+                  apparaat onleesbaar. De AI ziet alleen &ldquo;leerling A&rdquo;.
                 </p>
               </div>
             </div>
           </div>
-          <div data-sentinel="privacy" aria-hidden />
         </section>
 
-        {/* ── 4. Kan ik dit wel? ── */}
-        <section id="gemak" className="scroll-mt-28 border-y border-black/5 bg-white">
-          <div className="mx-auto w-full max-w-6xl px-6 py-20">
-            <SectieKop
-              nummer={4}
-              vraag={TWIJFELS[3].vraag}
-              done={klaar.has("gemak")}
-              antwoord="Als je een e-mail kunt sturen, kun je dit."
-            />
-            <div className="mt-10 grid items-start gap-10 lg:grid-cols-2">
-              <div data-reveal className="max-w-md text-lg leading-8 text-ink/75">
-                <p>
-                  Geen handleiding, geen cursus, geen technisch gedoe. Je typt of plakt
-                  wat je hebt, klikt op de knop en leest het resultaat na. Meer is het
-                  niet.
-                </p>
-                <p className="mt-4">
-                  En jij beslist altijd. Avinka schrijft de voorzet, jij past aan wat je
-                  wilt. Niets gaat zonder jou de deur uit.
+        {/* ── 5. De regie blijft bij jou ── */}
+        <section className="mx-auto w-full max-w-5xl px-6 py-24">
+          <div className="grid gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-16">
+            <div data-reveal>
+              <h2 className="font-display text-4xl font-black tracking-tight [text-wrap:balance]">
+                Jij houdt het laatste woord
+              </h2>
+              <p className="mt-6 max-w-xl text-lg leading-8 text-ink/70">
+                Avinka schrijft de voorzet, jij beslist. Niets gaat zonder jou de
+                deur uit. En de cijfers? Die berekent de tool zelf, dus die kloppen
+                altijd. De AI schrijft alleen de tekst eromheen en verzint nooit
+                getallen of feiten.
+              </p>
+            </div>
+            <div className="space-y-6 self-center">
+              <div data-reveal className="flex gap-4">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-xl" aria-hidden>
+                  ✉️
+                </span>
+                <p className="leading-7 text-ink/75">
+                  <span className="font-bold text-ink">Niet ingewikkeld.</span>{" "}
+                  Net zo makkelijk als een mailtje typen. Je hoeft niets te
+                  leren en weet meteen wat je moet doen.
                 </p>
               </div>
-
-              {/* Maker-kaart: van een leerkracht, voor leerkrachten */}
-              <div data-reveal className="rounded-2xl border border-black/5 bg-cream p-7 shadow-sm sm:p-8">
-                <div className="flex items-center gap-4">
-                  <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-soft ring-2 ring-brand/20">
-                    {fotoBestand ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={`/${fotoBestand}`}
-                        alt="Michael van Spanje, leerkracht en maker van Avinka"
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="font-display text-lg font-black text-brand-dark">MvS</span>
-                    )}
-                  </span>
-                  <div>
-                    <p className="font-display text-xl font-black text-ink">
-                      Van een leerkracht, voor leerkrachten
-                    </p>
-                    <p className="text-sm font-semibold text-ink/55">
-                      Michael van Spanje, maker van Avinka
-                    </p>
-                  </div>
-                </div>
-                <p className="mt-5 leading-8 text-ink/75">
-                  &ldquo;Ik sta zelf voor de klas en ik ken dat volle scherm van
-                  dinsdagavond uit mijn hoofd. Daarom bouw ik Avinka: praktische hulp die
-                  direct tijd bespaart en zorgvuldig omgaat met de privacy van je
-                  leerlingen. Goede leerkrachten horen hun tijd te besteden aan
-                  leerlingen, niet aan onnodig papierwerk.&rdquo;
+              <div data-reveal style={{ transitionDelay: "90ms" }} className="flex gap-4">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-xl" aria-hidden>
+                  ✏️
+                </span>
+                <p className="leading-7 text-ink/75">
+                  <span className="font-bold text-ink">Altijd bij te sturen.</span>{" "}
+                  Elke tekst is een voorstel. Aanpassen, inkorten of opnieuw
+                  laten schrijven kan met één klik.
                 </p>
-                <p className="font-hand mt-4 text-2xl text-ink/80">Michael</p>
               </div>
             </div>
           </div>
-          <div data-sentinel="gemak" aria-hidden />
         </section>
 
-        {/* ── 5. Wat kost het? ── */}
-        <section id="prijzen" className="scroll-mt-28">
-          <div className="mx-auto w-full max-w-6xl px-6 pt-20">
-            <SectieKop
-              nummer={5}
-              vraag={TWIJFELS[4].vraag}
-              done={klaar.has("prijzen")}
-              antwoord={`Probeer eerst ${PROEF_DAGEN} dagen gratis, zonder betaalgegevens.`}
-            />
+        {/* ── 6. De maker ── */}
+        <section className="mx-auto w-full max-w-5xl px-6 pb-24">
+          <div data-reveal className="relative overflow-hidden rounded-[2rem] bg-sand px-8 py-14 sm:px-14">
+            <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-accent/15 blur-2xl" aria-hidden />
+            <div className="relative flex flex-col gap-8 sm:flex-row sm:gap-12">
+              <span className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-sm ring-1 ring-black/5">
+                {fotoBestand ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={`/${fotoBestand}`}
+                    alt="Michael van Spanje"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="font-display text-2xl font-black text-brand">MvS</span>
+                )}
+              </span>
+              <div>
+                <h2 className="font-display text-3xl font-black tracking-tight [text-wrap:balance] sm:text-4xl">
+                  Van een leerkracht, voor leerkrachten
+                </h2>
+                <p className="mt-6 text-lg leading-8 text-ink/75">
+                  Ik ben Michael. Net als jij sta ik voor de klas. Ik weet hoeveel
+                  tijd er gaat naar rapporten, analyses en andere administratieve
+                  taken. Daarom ben ik begonnen met het bouwen van slimme
+                  hulpmiddelen die dat werk sneller en eenvoudiger maken. Geen
+                  ingewikkelde technologie, maar praktische tools die direct tijd
+                  besparen en zorgvuldig omgaan met de privacy van je leerlingen.
+                </p>
+                <p className="mt-4 text-lg leading-8 text-ink/75">
+                  Wat begon als een oplossing voor mijn eigen werk, groeide uit tot
+                  een bredere missie. Ik geloof dat leerkrachten veel meer voordeel
+                  kunnen halen uit de mogelijkheden van AI dan nu vaak gebeurt. Niet
+                  omdat ze niet willen, maar omdat de meeste oplossingen te technisch
+                  of te ingewikkeld zijn. Met Avinka wil ik laten zien dat slimmer
+                  werken juist eenvoudig kan zijn.
+                </p>
+                <p className="mt-6 text-lg font-semibold leading-8 text-ink">
+                  Want goede leerkrachten horen hun tijd te besteden aan
+                  leerlingen, niet aan onnodig papierwerk.
+                </p>
+                <p className="font-hand mt-8 text-3xl text-ink/80">Michael</p>
+                <p className="text-sm text-ink/60">Leerkracht &amp; maker van Avinka</p>
+              </div>
+            </div>
           </div>
-          <Prijzen />
-          <div className="mx-auto w-full max-w-3xl px-6 pb-4">
-            <p data-reveal className="text-center text-lg leading-8 text-ink/70">
-              Het maandabonnement zeg je op wanneer je wilt, zonder kleine lettertjes.
-              Kies je per schooljaar, dan zijn juli en augustus gratis.
+        </section>
+
+        {/* ── 7. Eerlijk over ervaringen ── */}
+        <section className="border-y border-black/5 bg-white">
+          <div className="mx-auto w-full max-w-3xl px-6 py-16 text-center">
+            <h2 data-reveal className="font-display text-3xl font-black tracking-tight [text-wrap:balance]">
+              Wat leerkrachten zeggen
+            </h2>
+            <p data-reveal className="mx-auto mt-5 max-w-xl text-lg leading-8 text-ink/70">
+              Deze zomer test een groep leerkrachten Avinka in de praktijk. Hun
+              ervaringen komen hier te staan, in hun eigen woorden. Geen
+              verzonnen quotes, dat beloven we.
             </p>
           </div>
+        </section>
 
-          {/* FAQ */}
-          <div id="vragen" className="mx-auto w-full max-w-3xl scroll-mt-28 px-6 py-16">
-            <h3 className="text-center font-display text-3xl font-black tracking-tight text-ink">
-              Nog een paar eerlijke vragen
-            </h3>
-            <div className="mt-8 space-y-3">
-              {FAQ.map((item) => (
+        {/* ── 8. Prijzen ── */}
+        <Prijzen />
+
+        {/* ── 9. Veelgestelde vragen ── */}
+        <section id="vragen" className="scroll-mt-16 bg-white">
+          <div className="mx-auto w-full max-w-3xl px-6 py-24">
+            <h2 className="text-center font-display text-4xl font-black tracking-tight [text-wrap:balance]">
+              Veelgestelde vragen
+            </h2>
+            <div className="mt-12 space-y-4">
+              {FAQ.slice(0, 4).map((item) => (
                 <details
                   key={item.vraag}
-                  className="group/faq rounded-2xl border border-black/5 bg-white p-5"
+                  className="group/faq rounded-2xl border border-black/5 bg-cream p-6"
                 >
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-lg text-lg font-bold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
                     {item.vraag}
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-dark text-white transition-transform group-open/faq:rotate-45">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-white transition-transform group-open/faq:rotate-45">
                       +
                     </span>
                   </summary>
-                  <p className="mt-3 leading-8 text-ink/70">{item.antwoord}</p>
+                  <p className="mt-4 leading-8 text-ink/70">{item.antwoord}</p>
                 </details>
               ))}
+              <details className="group/more">
+                <summary className="flex cursor-pointer list-none items-center justify-center gap-2 rounded-lg py-2 text-center text-base font-bold text-brand hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
+                  Nog meer veelgestelde vragen
+                  <span className="text-lg transition-transform group-open/more:rotate-180">⌄</span>
+                </summary>
+                <div className="mt-4 space-y-4">
+                  {FAQ.slice(4).map((item) => (
+                    <details
+                      key={item.vraag}
+                      className="group/faq rounded-2xl border border-black/5 bg-cream p-6"
+                    >
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-lg text-lg font-bold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
+                        {item.vraag}
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-white transition-transform group-open/faq:rotate-45">
+                          +
+                        </span>
+                      </summary>
+                      <p className="mt-4 leading-8 text-ink/70">{item.antwoord}</p>
+                    </details>
+                  ))}
+                </div>
+              </details>
             </div>
           </div>
-          <div data-sentinel="prijzen" aria-hidden />
         </section>
 
-        {/* ── Slot: alles afgevinkt ── */}
-        <section className="border-t border-black/5 bg-white">
-          <div className="mx-auto w-full max-w-3xl px-6 py-24 text-center">
-            <div data-reveal className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-brand text-white shadow-lg shadow-brand/25">
-              <Vink className="slotvink h-11 w-11" dik={3.6} />
+        {/* ── 10. Slot ── */}
+        <section className="relative overflow-hidden bg-ink">
+          <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-brand/25 blur-3xl" aria-hidden />
+          <div className="pointer-events-none absolute -bottom-24 -left-20 h-80 w-80 rounded-full bg-accent/15 blur-3xl" aria-hidden />
+          <div className="relative mx-auto w-full max-w-3xl px-6 py-24 text-center">
+            <div data-reveal className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand text-white shadow-lg shadow-brand/30">
+              <Vink className="slotvink h-9 w-9" dik={3.6} />
             </div>
-            <h2 data-reveal className="mt-7 font-display text-4xl font-black tracking-tight text-ink sm:text-5xl">
-              Alles afgevinkt.
+            <h2 data-reveal className="mt-7 font-display text-4xl font-black tracking-tight text-white [text-wrap:balance]">
+              Kom binnen.
             </h2>
-            <p data-reveal className="mx-auto mt-5 max-w-xl text-lg leading-8 text-ink/70">
-              Vijf twijfels, vijf antwoorden. Wat overblijft is het proberen zelf:{" "}
-              {PROEF_DAGEN} dagen gratis, alle tools, geen betaalgegevens vooraf.
+            <p data-reveal className="mx-auto mt-5 max-w-xl text-lg leading-8 text-cream/80">
+              Je werkplek staat klaar. {PROEF_DAGEN} dagen gratis proberen,
+              zonder betaalgegevens vooraf.
             </p>
-            <div data-reveal className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link
-                href="/sign-up"
-                className="w-full rounded-2xl bg-brand-dark px-8 py-4 text-lg font-bold text-white shadow-lg shadow-brand/25 transition hover:-translate-y-0.5 hover:bg-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:w-auto"
-              >
-                Probeer Avinka gratis
-              </Link>
-              <a
-                href="#werkplek"
-                className="w-full rounded-2xl border-2 border-ink/10 bg-white px-8 py-4 text-lg font-bold text-ink transition hover:border-ink/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:w-auto"
-              >
-                Lees nog eens terug
-              </a>
-            </div>
+            <Link
+              href="/sign-up"
+              data-reveal
+              className="mt-9 inline-block rounded-2xl bg-white px-8 py-4 text-lg font-black text-brand-dark shadow-lg transition hover:-translate-y-0.5"
+            >
+              Probeer Avinka gratis
+            </Link>
           </div>
         </section>
       </main>
@@ -1297,89 +1324,96 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
   );
 }
 
-/* ── Sectiekop: het benoemde twijfel-systeem (checkbox + vraag). ───────── */
-function SectieKop({
-  nummer,
-  vraag,
-  antwoord,
-  done,
-}: {
-  nummer: number;
-  vraag: string;
-  antwoord: string;
-  done: boolean;
-}) {
-  return (
-    <div data-reveal className="max-w-3xl">
-      <div className="flex items-start gap-4">
-        <span
-          className={`mt-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border-2 transition-colors sm:mt-3 sm:h-10 sm:w-10 ${
-            done ? "border-brand bg-brand text-white" : "border-ink/25 bg-white text-transparent"
-          }`}
-          aria-hidden
-        >
-          <Vink className={`h-6 w-6 ${done ? "vinkpop" : ""}`} dik={3.6} />
-        </span>
-        <div>
-          <h2 className="font-display text-3xl font-black leading-tight tracking-tight text-ink sm:text-4xl">
-            <span className="sr-only">Twijfel {nummer}: </span>
-            {vraag}
-          </h2>
-          <p className="mt-2.5 text-lg font-semibold text-brand-dark sm:text-xl">{antwoord}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ── Mini-demo's in de tijdwinst-kaartjes. Puur CSS, start bij .is-in. ── */
-function MiniDemo({ soort }: { soort: string }) {
+/* ── Levende demo-kaartjes bij de tools. Puur CSS, start bij .is-in. ───── */
+function DemoKaart({ soort }: { soort: string }) {
   if (soort === "rapport")
     return (
-      <div className="demo-rapport mt-3 space-y-1.5" aria-hidden>
-        <div className="h-2 rounded-full bg-violet-200" style={{ width: "88%" }} />
-        <div className="h-2 rounded-full bg-violet-200" style={{ width: "72%" }} />
-        <div className="h-2 rounded-full bg-violet-200" style={{ width: "80%" }} />
+      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
+        <p className="text-xs font-bold text-ink/45">Rapport · Sofie</p>
+        <p className="mt-2 text-sm leading-6 text-ink/80">
+          Sofie heeft dit halfjaar een mooie groei laten zien bij rekenen…
+        </p>
+        <div className="demo-rapport mt-3 space-y-1.5" aria-hidden>
+          <div className="h-2 rounded-full bg-violet-200" style={{ width: "88%" }} />
+          <div className="h-2 rounded-full bg-violet-200" style={{ width: "72%" }} />
+          <div className="h-2 rounded-full bg-violet-200" style={{ width: "80%" }} />
+        </div>
       </div>
     );
   if (soort === "analyse")
     return (
-      <div className="demo-analyse mt-3 flex h-10 items-end gap-1.5" aria-hidden>
-        {[45, 80, 60, 95, 30, 70].map((h, i) => (
-          <div
-            key={i}
-            className="w-4 rounded-t-sm bg-sky-300"
-            style={{ height: `${h}%`, transitionDelay: `${i * 80}ms` }}
-          />
-        ))}
+      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
+        <p className="text-xs font-bold text-ink/45">Groep 5 · M-toets</p>
+        <div className="demo-analyse mt-3 flex h-20 items-end gap-2" aria-hidden>
+          {[45, 80, 60, 95, 30, 70, 55, 85].map((h, i) => (
+            <div
+              key={i}
+              className="flex-1 rounded-t-md bg-sky-300"
+              style={{ height: `${h}%`, transitionDelay: `${i * 70}ms` }}
+            />
+          ))}
+        </div>
+        <p className="mt-2 text-xs font-semibold text-ink/50">
+          2 leerlingen vallen op: extra aandacht bij meten
+        </p>
       </div>
     );
   if (soort === "bericht")
     return (
-      <div className="demo-bericht mt-3 flex items-center gap-2" aria-hidden>
-        {[0, 1, 2].map((i) => (
-          <span
-            key={i}
-            className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-100 text-rose-500"
-            style={{ transitionDelay: `${i * 120}ms` }}
-          >
-            <Vink className="h-3.5 w-3.5" dik={4} />
-          </span>
-        ))}
-        <span className="text-sm font-semibold text-ink/50">3 berichten klaar</span>
+      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
+        <p className="text-xs font-bold text-ink/45">Weekbericht · ouders groep 5</p>
+        <p className="mt-2 text-sm leading-6 text-ink/80">
+          Beste ouders, wat een week! We hebben hard gewerkt aan…
+        </p>
+        <div className="demo-bericht mt-3 flex items-center gap-2" aria-hidden>
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-100 text-rose-500"
+              style={{ transitionDelay: `${i * 120}ms` }}
+            >
+              <Vink className="h-3.5 w-3.5" dik={4} />
+            </span>
+          ))}
+          <span className="text-sm font-semibold text-ink/50">3 berichten klaar</span>
+        </div>
+      </div>
+    );
+  if (soort === "plattegrond")
+    return (
+      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
+        <p className="text-xs font-bold text-ink/45">Lokaal · groep 5</p>
+        <div className="demo-plattegrond mt-3 grid grid-cols-5 gap-2" aria-hidden>
+          {Array.from({ length: 15 }).map((_, i) => (
+            <span
+              key={i}
+              className={`h-7 rounded-md ${i === 7 ? "bg-amber-400" : "bg-amber-200/80"}`}
+              style={{ transitionDelay: `${i * 40}ms` }}
+            />
+          ))}
+        </div>
+        <p className="mt-2 text-xs font-semibold text-ink/50">
+          Slim geplaatst op basis van je sociogram
+        </p>
       </div>
     );
   return (
-    <div className="demo-les mt-3 flex items-center gap-2" aria-hidden>
-      {["Start", "Kern", "Afsluiting"].map((stap, i) => (
-        <span
-          key={stap}
-          className="rounded-full bg-teal-100 px-2.5 py-1 text-xs font-bold text-teal-700"
-          style={{ transitionDelay: `${i * 120}ms` }}
-        >
-          {stap}
-        </span>
-      ))}
+    <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
+      <p className="text-xs font-bold text-ink/45">Les · breuken introduceren</p>
+      <div className="demo-les mt-3 flex items-center gap-2" aria-hidden>
+        {["Start", "Kern", "Afsluiting"].map((stap, i) => (
+          <span
+            key={stap}
+            className="rounded-full bg-teal-100 px-3 py-1.5 text-sm font-bold text-teal-700"
+            style={{ transitionDelay: `${i * 120}ms` }}
+          >
+            {stap}
+          </span>
+        ))}
+      </div>
+      <p className="mt-2 text-xs font-semibold text-ink/50">
+        Met differentiatie voor je plusgroep
+      </p>
     </div>
   );
 }
@@ -1389,10 +1423,6 @@ function StijlBlok() {
   return (
     <style>{`
       .font-hand { font-family: var(--font-hand), "Segoe Print", cursive; }
-
-      /* Chips-balk: wel scrollen, geen zichtbare balk. */
-      .twijfelnav { scrollbar-width: none; }
-      .twijfelnav::-webkit-scrollbar { display: none; }
 
       /* Reveals: inhoud is standaard zichtbaar; .anim voegt de beweging toe. */
       .anim [data-reveal] {
@@ -1437,7 +1467,7 @@ function StijlBlok() {
       .anim .maskeer .schildje { transform: scale(0.6); opacity: 0; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 1.5s, opacity 0.3s ease 1.5s; }
       .anim .maskeer.is-in .schildje { transform: scale(1); opacity: 1; }
 
-      /* Mini-demo's: rustig tot leven zodra de kaart in beeld is. */
+      /* Demo-kaartjes: rustig tot leven zodra de kaart in beeld is. */
       .anim .demo-rapport div { transform: scaleX(0); transform-origin: left; transition: transform 0.8s cubic-bezier(0.22,1,0.36,1) 0.4s; }
       .anim [data-reveal].is-in .demo-rapport div { transform: scaleX(1); }
       .anim .demo-rapport div:nth-child(2) { transition-delay: 0.55s; }
@@ -1447,6 +1477,8 @@ function StijlBlok() {
       .anim .demo-bericht span, .anim .demo-les span { opacity: 0; transform: scale(0.6); transition: opacity 0.3s ease 0.5s, transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.5s; }
       .anim [data-reveal].is-in .demo-bericht span,
       .anim [data-reveal].is-in .demo-les span { opacity: 1; transform: scale(1); }
+      .anim .demo-plattegrond span { opacity: 0; transform: scale(0.5); transition: opacity 0.3s ease 0.4s, transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.4s; }
+      .anim [data-reveal].is-in .demo-plattegrond span { opacity: 1; transform: scale(1); }
 
       @media (prefers-reduced-motion: reduce) {
         .anim [data-reveal] { opacity: 1; transform: none; transition: none; }
