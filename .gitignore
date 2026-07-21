@@ -48,3 +48,6 @@ _tmp/
 
 # Playwright-MCP debugbestanden
 .playwright-mcp/
+
+# Impeccable live-mode werkbestanden (machine-eigen)
+.impeccable/
