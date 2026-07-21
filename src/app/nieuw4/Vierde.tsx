@@ -311,14 +311,26 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
         }
       };
 
+      // Losse post-its die geen eigen tegel hebben zweven het platform in en
+      // worden opgenomen: naar het paneelmidden, krimpen en oplossen.
+      const absorb = (naam: string, t: number) => {
+        const b = baan(naam, "[data-paneel]");
+        if (!b) return;
+        tl.to(b.el, { x: b.dx, y: b.dy, scale: 0.4, rotation: 0, duration: 7 }, t);
+        tl.to(b.el, { autoAlpha: 0, duration: 2 }, t + 4);
+      };
+
       vlucht("geel1", '[data-taakrij="1"]', 26);
+      absorb("weektaak", 30);
       vlucht("word", '[data-tegel="rapporten"]', 31, '[data-tegelvink="rapporten"]');
       vlucht("excel", '[data-tegel="toets"]', 35.5, '[data-tegelvink="toets"]');
       vlucht("mail", '[data-tegel="ouder"]', 40, '[data-tegelvink="ouder"]');
       vlucht("melding", '[data-taakrij="2"]', 44.5);
+      absorb("toetsanalyse", 46);
       vlucht("plattegrond", '[data-tegel="plattegrond"]', 49, '[data-tegelvink="plattegrond"]');
       vlucht("les", '[data-tegel="les"]', 53.5, '[data-tegelvink="les"]');
       vlucht("browser", '[data-tegel="werkbladen"]', 58, '[data-tegelvink="werkbladen"]');
+      absorb("draaiboek", 60);
       vlucht("geel2", '[data-taakrij="3"]', 62.5);
 
       // De overvolle map hoeft nergens heen: die is gewoon niet meer nodig.
@@ -506,7 +518,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
               <Venster
                 naam="word"
                 titel="rapport_groep5_DEFINITIEF(3).docx"
-                className="left-[3%] top-[34%] w-56 -rotate-[5deg] sm:left-[3%] sm:top-[32%] sm:w-64"
+                className="left-[3%] top-[42%] w-56 -rotate-[5deg] sm:left-[3%] sm:top-[40%] sm:w-64"
               >
                 <div className="p-3.5">
                   <p className="text-[11px] leading-relaxed text-slate-600">
@@ -522,7 +534,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
               <Venster
                 naam="excel"
                 titel="toetsuitslagen_M-toets.xlsx"
-                className="hidden w-52 rotate-[4deg] sm:right-[3%] sm:top-[30%] sm:block sm:w-60"
+                className="hidden w-52 rotate-[4deg] sm:right-[3%] sm:top-[40%] sm:block sm:w-60"
               >
                 <div className="grid grid-cols-4 gap-px bg-slate-200 p-px text-[9px] text-slate-500">
                   {["", "M5", "E5", "vs", "Yas", "231", "244", "+13", "Nor", "228", "225", "-3", "Mik", "219", "236", "+17"].map(
@@ -612,16 +624,36 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                 </div>
               </Venster>
 
-              {/* Geeltjes */}
+              {/* Geeltjes: het handmatige werk dat nog rondslingert. geel1 + geel2
+                  landen als taak in het dashboard; de drie nieuwe zweven het
+                  platform in en worden opgenomen (absorb in de tijdlijn). */}
               <div
                 data-venster="geel1"
-                className="absolute left-[50%] top-[34%] w-36 -rotate-[7deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:left-[52%] sm:top-[33%]"
+                className="absolute left-[46%] top-[33%] w-36 -rotate-[7deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:left-[39%] sm:top-[31%]"
               >
                 oudergesprekken plannen!!
               </div>
               <div
+                data-venster="weektaak"
+                className="absolute hidden w-32 rotate-[3deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:left-[53%] sm:top-[29%] sm:block"
+              >
+                weektaak maken
+              </div>
+              <div
+                data-venster="toetsanalyse"
+                className="absolute hidden w-32 rotate-[4deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:left-[31%] sm:top-[51%] sm:block"
+              >
+                toetsen analyseren
+              </div>
+              <div
+                data-venster="draaiboek"
+                className="absolute hidden w-32 -rotate-[5deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:left-[48%] sm:top-[45%] sm:block"
+              >
+                draaiboek kerst maken
+              </div>
+              <div
                 data-venster="geel2"
-                className="absolute right-[5%] top-[46%] w-32 rotate-[8deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:right-[12%] sm:top-[42%]"
+                className="absolute right-[5%] top-[46%] w-32 rotate-[8deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:right-[15%] sm:top-[47%]"
               >
                 rapporten af vóór vrijdag
               </div>
