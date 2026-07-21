@@ -323,6 +323,9 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
       gsap.set(q("[data-paneel]"), { autoAlpha: 0, y: 18 });
       gsap.set(q("[data-slotwoord]"), { autoAlpha: 0, y: 12 });
       gsap.set(q("[data-daglaag]"), { opacity: 0 });
+      // De takenlijst begint dicht; de rijen leeg. Fase 2 klapt hem open.
+      gsap.set(q("[data-takendrop]"), { autoAlpha: 0, scale: 0.96, y: -4, transformOrigin: "top center" });
+      gsap.set(q("[data-takenrow]"), { autoAlpha: 0, x: 8 });
 
       /* ── Vluchtbaan: van venstermidden naar tegelmidden (gemeten) ── */
       const midden = (el: Element) => {
@@ -384,35 +387,45 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
         }
       };
 
-      // Losse reminders (de geeltjes/melding) zweven naar de takenlijst-knop en
-      // worden opgenomen; de teller loopt mee op naar 5 open taken.
-      const naarPill = (naam: string, t: number) => {
-        const b = baan(naam, "[data-takenpill]");
-        if (!b) return;
-        tl.to(b.el, { x: b.dx, y: b.dy, scale: 0.3, rotation: 0, duration: 7 }, t);
-        tl.to(b.el, { autoAlpha: 0, duration: 2 }, t + 4);
-      };
+      /* ── FASE 1 · eerst alle tools vullen: elk venster vliegt naar zijn tegel ── */
+      vlucht("word", '[data-tegel="rapporten"]', 28, '[data-tegelvink="rapporten"]');
+      vlucht("excel", '[data-tegel="toets"]', 32, '[data-tegelvink="toets"]');
+      vlucht("toetsanalyse", '[data-tegel="toets"]', 35, '[data-tegelvink="toets"]');
+      vlucht("mail", '[data-tegel="ouder"]', 39, '[data-tegelvink="ouder"]');
+      vlucht("plattegrond", '[data-tegel="plattegrond"]', 43, '[data-tegelvink="plattegrond"]');
+      vlucht("les", '[data-tegel="les"]', 47, '[data-tegelvink="les"]');
+      vlucht("browser", '[data-tegel="werkbladen"]', 51, '[data-tegelvink="werkbladen"]');
 
-      naarPill("geel1", 26);
-      naarPill("weektaak", 29.5);
-      vlucht("word", '[data-tegel="rapporten"]', 31, '[data-tegelvink="rapporten"]');
-      vlucht("excel", '[data-tegel="toets"]', 35.5, '[data-tegelvink="toets"]');
-      vlucht("toetsanalyse", '[data-tegel="toets"]', 38, '[data-tegelvink="toets"]');
-      vlucht("mail", '[data-tegel="ouder"]', 42, '[data-tegelvink="ouder"]');
-      naarPill("melding", 46);
-      vlucht("plattegrond", '[data-tegel="plattegrond"]', 49, '[data-tegelvink="plattegrond"]');
-      vlucht("les", '[data-tegel="les"]', 53.5, '[data-tegelvink="les"]');
-      vlucht("browser", '[data-tegel="werkbladen"]', 58, '[data-tegelvink="werkbladen"]');
-      naarPill("draaiboek", 61);
-      naarPill("geel2", 63.5);
-
-      // De overvolle map met documenten vliegt naar Bestanden in de zijbalk en
-      // wordt daar opgenomen: al je bestanden staan nu netjes op één plek.
+      // De documenten-map naar Bestanden in de zijbalk; wordt daar opgenomen.
       const bMap = baan("map", '[data-nav="bestanden"]');
       if (bMap) {
-        tl.to(bMap.el, { x: bMap.dx, y: bMap.dy, scale: 0.24, rotation: 0, duration: 7 }, 65);
-        tl.to(bMap.el, { autoAlpha: 0, duration: 2 }, 70);
+        tl.to(bMap.el, { x: bMap.dx, y: bMap.dy, scale: 0.24, rotation: 0, duration: 6 }, 54);
+        tl.to(bMap.el, { autoAlpha: 0, duration: 2 }, 58);
       }
+
+      /* ── FASE 2 · de takenlijst klapt open; dan zweven de losse reminders er
+             één voor één in en verschijnen als taak in de lijst ── */
+      tl.to(q("[data-takendrop]"), { autoAlpha: 1, scale: 1, y: 0, duration: 4, ease: "power2.out" }, 60);
+      tl.to(q("[data-chevron]"), { rotation: 180, duration: 4 }, 60);
+
+      const naarRow = (naam: string, rowSel: string, t: number) => {
+        const b = baan(naam, rowSel);
+        if (b) {
+          tl.to(b.el, { x: b.dx, y: b.dy, scale: 0.34, rotation: 0, duration: 5 }, t);
+          tl.to(b.el, { autoAlpha: 0, duration: 1.5 }, t + 3.5);
+        }
+        tl.to(rowSel, { autoAlpha: 1, x: 0, duration: 2.2, ease: "power2.out" }, t + 3.5);
+      };
+
+      naarRow("geel1", '[data-takenrow="1"]', 64);
+      naarRow("melding", '[data-takenrow="2"]', 67.5);
+      naarRow("geel2", '[data-takenrow="3"]', 71);
+      naarRow("weektaak", '[data-takenrow="4"]', 74.5);
+      naarRow("draaiboek", '[data-takenrow="5"]', 78);
+
+      // Alles binnen: de lijst klapt weer netjes dicht. Alles op z'n plek.
+      tl.to(q("[data-takendrop]"), { autoAlpha: 0, scale: 0.96, y: -4, duration: 3 }, 84);
+      tl.to(q("[data-chevron]"), { rotation: 0, duration: 3 }, 84);
 
       /* ── 72-92 · avond wordt dag; de belofte blijft staan en kleurt mee ── */
       tl.to(q("[data-avondlaag]"), { opacity: 0, duration: 20, ease: "power1.inOut" }, 72);
@@ -420,8 +433,8 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
       tl.to(q("[data-belofte]"), { color: "#221c3a", duration: 14, ease: "power1.inOut" }, 74);
       tl.add(() => {
         const st = tl.scrollTrigger;
-        q("[data-header]")[0]?.classList[st && st.progress > 0.79 ? "add" : "remove"]("film-klaar");
-      }, 80);
+        q("[data-header]")[0]?.classList[st && st.progress > 0.86 ? "add" : "remove"]("film-klaar");
+      }, 86);
 
       /* ── 90 · de payoff ── */
       tl.to(q("[data-slotwoord]"), { autoAlpha: 1, y: 0, duration: 6, ease: "power2.out" }, 90);
@@ -784,14 +797,51 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                           Kies een tool om mee te beginnen.
                         </p>
                       </div>
-                      <div className="flex shrink-0 items-center gap-1.5">
-                        <span
-                          data-takenpill
-                          className="flex items-center gap-1.5 rounded-lg border border-black/5 bg-white px-2 py-1 text-[10px] font-bold text-ink shadow-sm"
-                        >
-                          <span aria-hidden>📋</span>
-                          <span>5 taken</span>
-                        </span>
+                      <div className="flex shrink-0 items-start gap-1.5">
+                        {/* takenlijst-knop met uitklap-paneel (fase 2) */}
+                        <div className="relative">
+                          <span
+                            data-takenpill
+                            className="flex items-center gap-1.5 rounded-lg border border-black/5 bg-white px-2 py-1 text-[10px] font-bold text-ink shadow-sm"
+                          >
+                            <span aria-hidden>📋</span>
+                            <span>5 taken</span>
+                            <svg
+                              data-chevron
+                              viewBox="0 0 24 24"
+                              className="h-2.5 w-2.5 text-ink/40"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="3"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden
+                            >
+                              <path d="M6 9l6 6 6-6" />
+                            </svg>
+                          </span>
+                          <div
+                            data-takendrop
+                            className="invisible absolute left-0 top-full z-20 mt-1 w-44 rounded-xl border border-black/10 bg-white p-1.5 text-left opacity-0 shadow-xl sm:left-auto sm:right-0"
+                          >
+                            {[
+                              { n: 1, t: "oudergesprekken plannen" },
+                              { n: 2, t: "ouders terugmailen" },
+                              { n: 3, t: "rapporten vóór vrijdag" },
+                              { n: 4, t: "weektaak maken" },
+                              { n: 5, t: "draaiboek kerst" },
+                            ].map((r) => (
+                              <div
+                                key={r.n}
+                                data-takenrow={r.n}
+                                className="flex items-center gap-1.5 rounded-md px-1 py-1 text-[9px] font-semibold text-ink/80"
+                              >
+                                <span className="h-3 w-3 shrink-0 rounded-full border-2 border-black/15" aria-hidden />
+                                <span className="truncate">{r.t}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                         <span className="flex items-center gap-1 rounded-lg border border-black/5 bg-white px-2 py-1 text-[10px] font-bold text-ink shadow-sm">
                           <svg viewBox="0 0 24 24" className="h-3.5 w-[13px]" aria-hidden>
                             <defs>
