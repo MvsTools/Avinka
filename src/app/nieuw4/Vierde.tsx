@@ -1,7 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useSyncExternalStore, type SVGProps } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type CSSProperties,
+  type KeyboardEvent,
+  type SVGProps,
+} from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -1038,48 +1046,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
               </p>
             </div>
 
-            <div className="mt-12 space-y-6">
-              {TOOLDATA.map((tool, i) => (
-                <div
-                  key={tool.naam}
-                  data-reveal
-                  className={`grid items-center gap-6 rounded-[2rem] p-7 sm:p-9 lg:grid-cols-2 lg:gap-12 ${tool.tint}`}
-                >
-                  <div className={i % 2 === 1 ? "lg:order-2" : ""}>
-                    <h3 className="flex items-center gap-3 font-display text-2xl font-black tracking-tight sm:text-3xl">
-                      <span className={`h-3.5 w-3.5 rounded-full ${tool.dot}`} aria-hidden />
-                      {tool.naam}
-                    </h3>
-                    <p className="mt-3 leading-8 text-ink/75">{tool.tekst}</p>
-                    <p className="mt-4 inline-block rounded-full bg-white px-3.5 py-1.5 text-sm font-bold text-ink/70 shadow-sm">
-                      {tool.winst}
-                    </p>
-                  </div>
-                  <div className={i % 2 === 1 ? "lg:order-1" : ""}>
-                    <DemoKaart soort={tool.demo} />
-                  </div>
-                </div>
-              ))}
-
-              {/* De volgende op de roadmap */}
-              <div
-                data-reveal
-                className="flex flex-wrap items-center justify-between gap-4 rounded-[2rem] border-2 border-dashed border-black/10 bg-white/60 p-7 sm:p-9"
-              >
-                <div>
-                  <h3 className="font-display text-2xl font-black tracking-tight text-ink/70">
-                    Werkbladen
-                  </h3>
-                  <p className="mt-2 leading-7 text-ink/60">
-                    Maak in een paar klikken een passend werkblad bij je les. De
-                    volgende tool die eraan komt.
-                  </p>
-                </div>
-                <span className="rounded-full bg-brand-soft px-4 py-1.5 text-sm font-bold text-brand-dark">
-                  binnenkort ✨
-                </span>
-              </div>
-            </div>
+            <ToolPodium anim={film} />
 
             {/* De optelsom */}
             <div data-reveal className="mt-14 rounded-[2rem] bg-sand px-6 py-10 text-center">
@@ -1324,6 +1291,177 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
   );
 }
 
+/* ── Het tool-podium: één vast toneel, de strip eronder wisselt de show.
+   Schaalt met het aantal tools: de strip wordt breder, de sectie niet hoger.
+   Zonder animatie (reduced/geen JS) staat alles er gewoon; de wissel werkt
+   dan zonder beweging. ─────────────────────────────────────────────────── */
+function ToolPodium({ anim }: { anim: boolean }) {
+  const [actief, setActief] = useState(0);
+  const [auto, setAuto] = useState(true);
+  const [zichtbaar, setZichtbaar] = useState(false);
+  const [hangt, setHangt] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+  const paneel = useRef<HTMLDivElement>(null);
+  const strip = useRef<HTMLDivElement>(null);
+  const tabs = useRef<(HTMLButtonElement | null)[]>([]);
+  const gezien = useRef(false);
+
+  const tool = TOOLDATA[actief];
+
+  // Zelf kiezen = de regie overnemen; de autoloop stopt definitief.
+  const kies = (i: number) => {
+    setAuto(false);
+    setActief(i);
+  };
+
+  const opToets = (e: KeyboardEvent<HTMLDivElement>) => {
+    const n = TOOLDATA.length;
+    let doel = -1;
+    if (e.key === "ArrowRight") doel = (actief + 1) % n;
+    else if (e.key === "ArrowLeft") doel = (actief + n - 1) % n;
+    else if (e.key === "Home") doel = 0;
+    else if (e.key === "End") doel = n - 1;
+    if (doel < 0) return;
+    e.preventDefault();
+    kies(doel);
+    tabs.current[doel]?.focus();
+  };
+
+  /* Pas als het podium in beeld is, speelt en wisselt er iets. */
+  useEffect(() => {
+    if (!anim) return;
+    const el = wrap.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) gezien.current = true;
+        setZichtbaar(e.isIntersecting);
+      },
+      { threshold: 0.35 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [anim]);
+
+  /* Elke wissel: paneel schuift binnen en de demo speelt opnieuw. */
+  useEffect(() => {
+    if (!anim || !(zichtbaar || gezien.current)) return;
+    const raf = requestAnimationFrame(() => paneel.current?.classList.add("is-in"));
+    // Houd het actieve kaartje in beeld als de strip scrollt (alleen horizontaal).
+    const s = strip.current;
+    const tab = tabs.current[actief];
+    if (s && tab && s.scrollWidth > s.clientWidth) {
+      s.scrollTo({ left: Math.max(0, tab.offsetLeft - 24), behavior: "smooth" });
+    }
+    return () => cancelAnimationFrame(raf);
+  }, [anim, actief, zichtbaar]);
+
+  /* De autoloop: rustig doorwisselen tot de bezoeker iets aanraakt. */
+  useEffect(() => {
+    if (!anim || !auto || !zichtbaar || hangt) return;
+    const timer = window.setTimeout(() => setActief((a) => (a + 1) % TOOLDATA.length), 6000);
+    return () => clearTimeout(timer);
+  }, [anim, auto, zichtbaar, hangt, actief]);
+
+  const loopt = anim && auto && zichtbaar && !hangt;
+
+  return (
+    <div
+      ref={wrap}
+      className="mt-12"
+      onMouseEnter={() => setHangt(true)}
+      onMouseLeave={() => setHangt(false)}
+    >
+      {/* Het toneel: vaste plek, de tint kleurt mee met de gekozen tool. */}
+      <div
+        id="toolpodium-paneel"
+        role="tabpanel"
+        aria-labelledby={`tooltab-${actief}`}
+        className={`rounded-[2rem] p-7 transition-colors duration-500 sm:p-9 ${tool.tint}`}
+      >
+        <div
+          key={actief}
+          ref={paneel}
+          data-reveal
+          className="podium-paneel grid min-h-[30.5rem] items-center gap-6 sm:min-h-[26rem] lg:min-h-[13rem] lg:grid-cols-2 lg:gap-12"
+        >
+          <div>
+            <h3 className="flex items-center gap-3 font-display text-2xl font-black tracking-tight sm:text-3xl">
+              <span className={`h-3.5 w-3.5 rounded-full ${tool.dot}`} aria-hidden />
+              {tool.naam}
+            </h3>
+            <p className="mt-3 leading-8 text-ink/75">{tool.tekst}</p>
+            <p className="mt-4 inline-block rounded-full bg-white px-3.5 py-1.5 text-sm font-bold text-ink/70 shadow-sm">
+              {tool.winst}
+            </p>
+          </div>
+          <DemoKaart soort={tool.demo} />
+        </div>
+      </div>
+
+      {/* De strip: alle tools op een rij; nieuwe tools schuiven gewoon aan. */}
+      <div
+        ref={strip}
+        data-reveal
+        className="podium-strip relative mt-5 flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        <div role="tablist" aria-label="Kies een tool" className="flex shrink-0 gap-3" onKeyDown={opToets}>
+          {TOOLDATA.map((t, i) => (
+            <button
+              key={t.naam}
+              ref={(el) => {
+                tabs.current[i] = el;
+              }}
+              type="button"
+              role="tab"
+              id={`tooltab-${i}`}
+              aria-selected={i === actief}
+              aria-controls="toolpodium-paneel"
+              tabIndex={i === actief ? 0 : -1}
+              onClick={() => kies(i)}
+              style={{ "--i": i } as CSSProperties}
+              className={`strip-kaart relative shrink-0 overflow-hidden rounded-2xl px-4 py-3 text-left transition-[translate,box-shadow,background-color] duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink/70 active:scale-[0.98] ${
+                i === actief
+                  ? `${t.tint} ring-2 ring-ink/15`
+                  : "bg-white shadow-sm ring-1 ring-black/5 hover:-translate-y-0.5"
+              }`}
+            >
+              <span className="flex items-center gap-2 text-sm font-bold text-ink">
+                <span className={`h-2.5 w-2.5 rounded-full ${t.dot}`} aria-hidden />
+                {t.naam}
+              </span>
+              <span className="mt-1 block text-xs font-semibold text-ink/55">{t.winst}</span>
+              {loopt && i === actief && (
+                <span
+                  key={actief}
+                  className={`strip-voortgang absolute inset-x-0 bottom-0 h-0.5 ${t.dot}`}
+                  aria-hidden
+                />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* De volgende op de roadmap schuift alvast aan. */}
+        <div
+          className="strip-kaart shrink-0 rounded-2xl border-2 border-dashed border-black/10 bg-white/60 px-4 py-3"
+          style={{ "--i": TOOLDATA.length } as CSSProperties}
+        >
+          <span className="flex items-center gap-2 text-sm font-bold text-ink/60">
+            Werkbladen
+            <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-bold text-brand-dark">
+              binnenkort ✨
+            </span>
+          </span>
+          <span className="mt-1 block text-xs font-semibold text-ink/45">
+            de volgende die eraan komt
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Levende demo-kaartjes bij de tools. Puur CSS, start bij .is-in. ───── */
 function DemoKaart({ soort }: { soort: string }) {
   if (soort === "rapport")
@@ -1432,6 +1570,49 @@ function StijlBlok() {
           transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
       }
       .anim [data-reveal].is-in { opacity: 1; transform: none; }
+
+      /* Tool-podium: het paneel schuift van rechts binnen (met blur als
+         gladstrijker); overschrijft de generieke reveal hierboven. */
+      .anim .podium-paneel {
+        transform: none;
+        opacity: 0;
+        translate: 28px 0;
+        filter: blur(6px);
+        transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+          translate 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+          filter 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .anim .podium-paneel.is-in { opacity: 1; translate: 0 0; filter: blur(0); }
+
+      /* De strip-kaartjes vliegen één voor één van rechts in.
+         Via translate i.p.v. transform, zodat hover-translate blijft werken. */
+      .anim .podium-strip .strip-kaart {
+        opacity: 0;
+        translate: 56px 0;
+        transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+          translate 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        transition-delay: calc(var(--i) * 70ms);
+      }
+      .anim .podium-strip.is-in .strip-kaart {
+        opacity: 1;
+        translate: 0 0;
+        transition-delay: calc(var(--i) * 70ms), calc(var(--i) * 70ms);
+      }
+      /* Ná het invliegen reageren de kaartjes weer direct (hover/druk). */
+      .anim .podium-strip.is-in .strip-kaart:hover,
+      .anim .podium-strip.is-in .strip-kaart:active {
+        transition-delay: 0ms;
+      }
+
+      /* Voortgang van de autoloop, onderin het actieve kaartje. */
+      .anim .strip-voortgang {
+        transform-origin: left;
+        transform: scaleX(0);
+        animation: stripvoortgang 6s linear forwards;
+      }
+      @keyframes stripvoortgang {
+        to { transform: scaleX(1); }
+      }
 
       /* Vink-pop: kort en met karakter, zoals het merk-moment hoort. */
       @keyframes vinkpop {
