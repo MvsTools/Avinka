@@ -1216,28 +1216,6 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
    flikkeren bij elke scrollbeweging.
    De bovenste laag is aria-hidden en vangt geen muis: de knoppen eronder
    blijven gewoon de echte knoppen. ─────────────────────────────────────── */
-/* De oneffen boven- en onderrand van de stift: [fractie van de haal, pixels
-   vanaf de rand]. Onregelmatige tussenafstanden, want een hand streept niet
-   in gelijke stappen. De onderrand loopt van rechts naar links. */
-const BOVENRAND: [number, number][] = [
-  [0.11, 5],
-  [0.26, 1],
-  [0.38, 7],
-  [0.55, 2],
-  [0.71, 6],
-  [0.86, 2],
-  [0.95, 5],
-];
-const ONDERRAND: [number, number][] = [
-  [0.93, 6],
-  [0.79, 1],
-  [0.64, 7],
-  [0.5, 2],
-  [0.33, 6],
-  [0.19, 2],
-  [0.08, 5],
-];
-
 function Markeersectie() {
   const sectie = useRef<HTMLElement>(null);
   const haal = useRef<HTMLDivElement>(null);
@@ -1293,22 +1271,15 @@ function Markeersectie() {
         // een paar pixels op en neer, zoals een stift over papier; de punten
         // liggen op fracties van de haal, dus ze blijven altijd binnen wat er
         // al aangestreept is.
-        const maakVorm = (bb: number, extra: number) => {
-          const boven = BOVENRAND.map(([f, y]) => `${bb * f}% ${Math.max(0, y - extra)}px`).join(", ");
-          const onder = ONDERRAND.map(
-            ([f, y]) => `${bb * f}% calc(100% - ${Math.max(0, y - extra)}px)`,
-          ).join(", ");
-          return (
-            `polygon(0 ${Math.max(0, 3 - extra)}px, ${boven}, ${bb}% ${Math.max(0, 1 - extra)}px,` +
-            ` ${bb - 1.3}% 24%, ${bb - 3.1}% 52%, ${bb - 1.8}% 76%,` +
-            ` ${bb - 3.6}% calc(100% - ${Math.max(0, 2 - extra)}px), ${onder},` +
-            ` 0 calc(100% - ${Math.max(0, 4 - extra)}px))`
-          );
-        };
+        // Boven en onder kaarsrecht; alleen de kop van de stift is grillig.
+        const maakVorm = (bb: number) =>
+          `polygon(0 0, ${bb}% 0, ${bb - 1.3}% 24%, ${bb - 3.1}% 52%,` +
+          ` ${bb - 1.8}% 76%, ${bb - 3.6}% 100%, 0 100%)`;
 
-        laag.style.clipPath = maakVorm(b, 0);
-        // De waas is dezelfde vorm, een tikje ruimer: uitgelopen inkt.
-        if (schaduw) schaduw.style.clipPath = maakVorm(b + 0.55, 7);
+        laag.style.clipPath = maakVorm(b);
+        // De waas is dezelfde vorm in een doos die boven en onder tien pixels
+        // ruimer is: uitgelopen inkt langs de randen.
+        if (schaduw) schaduw.style.clipPath = maakVorm(b + 0.55);
       });
     };
 
