@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import {
   useEffect,
   useRef,
   useState,
   useSyncExternalStore,
   type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type SVGProps,
 } from "react";
@@ -71,48 +73,64 @@ const KAARTEN = [
     id: "rapporten",
     naam: "Rapporten",
     zin: "Rapportteksten die klinken alsof jij ze schreef.",
+    uitleg:
+      "Je geeft per leerling een paar steekwoorden en Avinka maakt er lopende rapportteksten van, in jouw toon en op het niveau dat jij kiest. Namen worden op je eigen computer onleesbaar gemaakt voordat er iets wordt verstuurd. Jij leest na en past aan.",
     licht: false,
   },
   {
     id: "toetsanalyse",
     naam: "Toetsanalyse",
     zin: "Zie in één oogopslag wie extra aandacht nodig heeft.",
+    uitleg:
+      "Upload je toetsoverzicht en je krijgt een groepsbeeld terug: welke domeinen opvallen, wie extra oefening kan gebruiken en wat een logische vervolgstap is. De cijfers rekent de tool zelf uit, dus er wordt niets verzonnen.",
     licht: false,
   },
   {
     id: "oudercontact",
     naam: "Oudercontact",
     zin: "Weekberichten en oudergesprekken zonder leeg scherm.",
+    uitleg:
+      "Van weekbericht tot gespreksvoorbereiding: je vertelt wat er speelt en je krijgt een nette tekst terug die je alleen nog hoeft na te lezen. Ook handig voor lastige boodschappen, want de toon kies je zelf.",
     licht: false,
   },
   {
     id: "lesontwerp",
     naam: "Lesontwerp",
     zin: "Van één leerdoel naar een complete les met differentiatie.",
+    uitleg:
+      "Geef een leerdoel op en je krijgt een complete les terug: opbouw, instructie, verwerking en differentiatie naar boven en beneden. Je kiest zelf het lestype, van korte instructie tot een bewegende of coöperatieve les.",
     licht: true,
   },
   {
     id: "plattegrond",
     naam: "Plattegrond",
     zin: "De klasopstelling puzzelt zichzelf uit, jouw wensen voorop.",
+    uitleg:
+      "Je geeft je wensen door, zoals wie beter niet naast elkaar zit en wie vooraan hoort, en de plattegrond puzzelt zichzelf uit. Schuiven mag altijd, want jij kent je klas het best.",
     licht: false,
   },
   {
     id: "werkbladen",
     naam: "Werkbladen",
     zin: "Printbare werkbladen die precies bij je les passen.",
+    uitleg:
+      "Kies een onderwerp en je hebt een printklaar werkblad, van invuloefening tot woordzoeker. De opdrachten worden door de tool zelf opgebouwd, zodat de antwoorden en het woordbeeld altijd kloppen.",
     licht: false,
   },
   {
     id: "draaiboek",
     naam: "Draaiboek",
     zin: "Elk schoolevenement compleet uitgedacht, tot de taakverdeling aan toe.",
+    uitleg:
+      "Van kerstdiner tot schoolreis: je krijgt een compleet draaiboek met tijdlijn, taakverdeling en boodschappenlijst. Klaar om te delen met je collega's.",
     licht: true,
   },
   {
     id: "weekplanning",
     naam: "Weekplanning",
     zin: "Je hele week in één helder rooster, gekoppeld aan je tools.",
+    uitleg:
+      "Zet je vaste momenten neer en Avinka vult je week aan tot een helder rooster, inclusief wat er na schooltijd nog moet gebeuren. Alles blijft versleepbaar.",
     licht: false,
   },
 ];
@@ -1528,8 +1546,166 @@ function RailKop() {
   );
 }
 
-/* De kaarten zelf; `gezien` bepaalt welke vinkjes aan staan. */
-function RailKaarten({ gezien }: { gezien: boolean[] }) {
+/* ── Het open paneel ────────────────────────────────────────────────────
+   Klik je een kaart aan, dan vouwt hij open vanaf zijn eigen plek in de rij:
+   het paneel wordt op zijn eindpositie gerenderd en daarna teruggerekend
+   naar de maten van de kaart (FLIP), waarna één beweging het naar zijn plek
+   brengt. De tekening blijft dus in beeld en groeit mee; het leest als
+   dezelfde kaart die dichterbij komt. De tekst komt een tel later, zodat je
+   eerst de beweging ziet en dan pas leest.
+   Sluiten gaat met Escape, met de knop, of door naast het paneel te klikken;
+   dan speelt dezelfde beweging terug naar de kaart. Bij verminderde beweging
+   verschijnt en verdwijnt het paneel gewoon. ─────────────────────────── */
+function ToolPaneel({
+  kaart,
+  vanaf,
+  opSluiten,
+  reduced,
+}: {
+  kaart: (typeof KAARTEN)[number];
+  vanaf: DOMRect;
+  opSluiten: () => void;
+  reduced: boolean;
+}) {
+  const doek = useRef<HTMLDivElement>(null);
+  const paneel = useRef<HTMLDivElement>(null);
+  const sluiter = useRef<HTMLButtonElement>(null);
+  const bezigMetSluiten = useRef(false);
+
+  // Openen: van de kaartmaten naar de eigen maten, in één beweging.
+  useEffect(() => {
+    const p = paneel.current;
+    const d = doek.current;
+    if (!p || !d) return;
+    sluiter.current?.focus({ preventScroll: true });
+
+    const duur = reduced ? 0 : 620;
+    d.animate([{ opacity: 0 }, { opacity: 1 }], { duration: reduced ? 0 : 260, fill: "both" });
+
+    const naar = p.getBoundingClientRect();
+    const schaalX = vanaf.width / naar.width;
+    const schaalY = vanaf.height / naar.height;
+    p.animate(
+      [
+        {
+          transform: `translate(${vanaf.left - naar.left}px, ${vanaf.top - naar.top}px) scale(${schaalX}, ${schaalY})`,
+          opacity: reduced ? 0 : 1,
+        },
+        { transform: "translate(0, 0) scale(1, 1)", opacity: 1 },
+      ],
+      { duration: duur, easing: "cubic-bezier(0.32, 0.72, 0, 1)", fill: "both" },
+    );
+    return () => {
+      p.getAnimations().forEach((a) => a.cancel());
+    };
+  }, [vanaf, reduced]);
+
+  // Sluiten: dezelfde beweging terug, en pas daarna weghalen.
+  const sluit = () => {
+    const p = paneel.current;
+    const d = doek.current;
+    if (!p || !d || bezigMetSluiten.current) return opSluiten();
+    bezigMetSluiten.current = true;
+    const naar = p.getBoundingClientRect();
+    const duur = reduced ? 120 : 420;
+    d.animate([{ opacity: 1 }, { opacity: 0 }], { duration: duur, fill: "both" });
+    const terug = p.animate(
+      [
+        { transform: "translate(0, 0) scale(1, 1)", opacity: 1 },
+        {
+          transform: `translate(${vanaf.left - naar.left}px, ${vanaf.top - naar.top}px) scale(${vanaf.width / naar.width}, ${vanaf.height / naar.height})`,
+          opacity: reduced ? 0 : 1,
+        },
+      ],
+      { duration: duur, easing: "cubic-bezier(0.32, 0.72, 0, 1)", fill: "both" },
+    );
+    terug.onfinish = opSluiten;
+  };
+
+  useEffect(() => {
+    const opToets = (e: KeyboardEvent) => {
+      if (e.key === "Escape") sluit();
+    };
+    document.addEventListener("keydown", opToets);
+    // Achtergrond niet mee laten scrollen zolang het paneel open staat.
+    const vorige = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", opToets);
+      document.body.style.overflow = vorige;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* In een portal, want de body van de pagina zit in een eigen stapellaag:
+     zonder portal schuift het paneel onder de vaste bovenbalk. */
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
+      <div
+        ref={doek}
+        onClick={sluit}
+        className="absolute inset-0 bg-ink/45 backdrop-blur-[2px]"
+        aria-hidden
+      />
+      <div
+        ref={paneel}
+        role="dialog"
+        aria-modal="true"
+        aria-label={kaart.naam}
+        className="paneel relative z-10 max-h-full w-full max-w-3xl origin-top-left overflow-y-auto rounded-3xl bg-cream shadow-2xl ring-1 ring-black/10"
+      >
+        <div className="grid sm:grid-cols-[0.85fr_1.15fr]">
+          {/* De tekening van de kaart, nu groot. Op een smal scherm platter,
+             anders duwt hij de tekst helemaal onder de vouw. */}
+          <div className="relative aspect-[16/11] overflow-hidden sm:aspect-auto sm:min-h-[22rem]">
+            <KaartBeeld soort={kaart.id} />
+            <div className="kaart-grain pointer-events-none absolute inset-0" aria-hidden />
+          </div>
+
+          <div className="paneel-tekst p-7 sm:p-9">
+            <h3 className="font-display text-3xl font-black tracking-tight sm:text-4xl">
+              {kaart.naam}
+            </h3>
+            <p className="mt-3 text-lg font-semibold leading-8 text-brand-dark">{kaart.zin}</p>
+            <p className="mt-5 leading-8 text-ink/70">{kaart.uitleg}</p>
+            <Link
+              href="/sign-up"
+              className="knop-druk mt-8 inline-block rounded-2xl bg-brand px-6 py-3.5 text-base font-bold text-white shadow-lg shadow-brand/25 transition-[transform,background-color] duration-200 hover:bg-brand-dark"
+            >
+              Probeer Avinka gratis
+            </Link>
+          </div>
+        </div>
+
+        <button
+          ref={sluiter}
+          type="button"
+          onClick={sluit}
+          aria-label="Sluiten"
+          className="knop-druk absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white text-ink shadow-md ring-1 ring-black/10 transition-[transform,background-color] duration-200 hover:bg-cream focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink/60"
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/* De kaarten zelf; `gezien` bepaalt welke vinkjes aan staan, `opOpenen`
+   krijgt de aangeklikte kaart mét zijn positie op het scherm, zodat het
+   paneel vanaf díe plek open kan vouwen. */
+function RailKaarten({
+  gezien,
+  opOpenen,
+  openId,
+}: {
+  gezien: boolean[];
+  opOpenen: (index: number, vanaf: DOMRect, e: ReactMouseEvent) => void;
+  openId: string | null;
+}) {
   return (
     <>
       {KAARTEN.map((k, i) => (
@@ -1539,7 +1715,14 @@ function RailKaarten({ gezien }: { gezien: boolean[] }) {
           className="rail-kaart w-[18.5rem] shrink-0 snap-start select-none sm:w-[21rem]"
           style={{ "--i": i } as CSSProperties}
         >
-          <div className="relative aspect-[4/5] overflow-hidden rounded-3xl shadow-lg ring-1 ring-black/10 transition-transform duration-300 hover:-translate-y-1.5">
+          <button
+            type="button"
+            onClick={(e) => opOpenen(i, e.currentTarget.getBoundingClientRect(), e)}
+            aria-label={`${k.naam}: ${k.zin} Meer lezen.`}
+            className={`kaart-knop group relative block aspect-[4/5] w-full overflow-hidden rounded-3xl text-left shadow-lg ring-1 ring-black/10 transition-[transform,box-shadow,opacity] duration-300 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink/60 ${
+              openId === k.id ? "opacity-0" : ""
+            }`}
+          >
             <KaartBeeld soort={k.id} />
             <div className="kaart-grain pointer-events-none absolute inset-0" aria-hidden />
             <p
@@ -1559,7 +1742,21 @@ function RailKaarten({ gezien }: { gezien: boolean[] }) {
               </span>
               {k.naam}
             </p>
-          </div>
+            {/* Verschijnt bij hover: het duwtje dat zegt dat je kunt klikken.
+               Rechtsonder, tegenover de naam, met een zachte verdonkering
+               eronder zodat het op elke tekening leesbaar blijft. */}
+            <span
+              className="kaart-hint pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-end bg-gradient-to-t from-ink/55 to-transparent p-4 pt-14"
+              aria-hidden
+            >
+              <span className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-ink shadow-md">
+                Bekijk
+                <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 6l6 6-6 6" />
+                </svg>
+              </span>
+            </span>
+          </button>
         </figure>
       ))}
 
@@ -1591,11 +1788,30 @@ function RailKaarten({ gezien }: { gezien: boolean[] }) {
 
 function ToolRail() {
   const rail = useRef<HTMLDivElement>(null);
-  const greep = useRef({ actief: false, startX: 0, startScroll: 0 });
+  const greep = useRef({ actief: false, startX: 0, startScroll: 0, vangt: 0 });
+  // Waar de muis of vinger neerkwam; zo weten we bij de klik of er gesleept is.
+  const neer = useRef({ x: 0, y: 0 });
   const [kanTerug, setKanTerug] = useState(false);
   const [kanVerder, setKanVerder] = useState(true);
   const [gezien, setGezien] = useState<boolean[]>(() => KAARTEN.map(() => false));
   const [wakker, setWakker] = useState(false);
+  const [open, setOpen] = useState<{ index: number; vanaf: DOMRect } | null>(null);
+  const reduced = useSyncExternalStore<boolean | null>(
+    abonneerReduced,
+    () => window.matchMedia(REDUCED_QUERY).matches,
+    () => null,
+  );
+
+  /* Een sleepbeweging mag geen kaart openen. We vergelijken daarom waar de
+     klik viel met waar de muis neerkwam: meer dan een paar pixels verschil is
+     slepen geweest. Een klik via het toetsenbord heeft geen positie
+     (detail 0) en opent altijd. */
+  const opOpenen = (index: number, vanaf: DOMRect, e: ReactMouseEvent) => {
+    const versleept =
+      e.detail !== 0 && Math.hypot(e.clientX - neer.current.x, e.clientY - neer.current.y) > 6;
+    if (versleept) return;
+    setOpen({ index, vanaf });
+  };
 
   const bijScroll = () => {
     const el = rail.current;
@@ -1646,22 +1862,36 @@ function ToolRail() {
     el?.scrollBy({ left: richting * Math.round(el.clientWidth * 0.75), behavior: "smooth" });
   };
 
+  /* Slepen met de muis. Belangrijk: de pointer wordt pas overgenomen zodra er
+     écht gesleept wordt. Doe je dat al bij het indrukken, dan levert de
+     browser de klik af bij de rail in plaats van bij de kaart, en opent er
+     dus nooit iets. */
   const pakVast = (e: ReactPointerEvent<HTMLDivElement>) => {
+    neer.current = { x: e.clientX, y: e.clientY };
     const el = rail.current;
     if (e.pointerType !== "mouse" || !el) return;
-    greep.current = { actief: true, startX: e.clientX, startScroll: el.scrollLeft };
-    el.setPointerCapture(e.pointerId);
-    el.classList.add("sleept");
+    greep.current = { actief: true, startX: e.clientX, startScroll: el.scrollLeft, vangt: 0 };
   };
   const beweeg = (e: ReactPointerEvent<HTMLDivElement>) => {
     const el = rail.current;
     if (!greep.current.actief || !el) return;
+    const verzet = e.clientX - greep.current.startX;
+    if (!greep.current.vangt) {
+      if (Math.abs(verzet) <= 5) return;
+      greep.current.vangt = e.pointerId;
+      el.setPointerCapture(e.pointerId);
+      el.classList.add("sleept");
+    }
     e.preventDefault();
-    el.scrollLeft = greep.current.startScroll - (e.clientX - greep.current.startX);
+    el.scrollLeft = greep.current.startScroll - verzet;
   };
   const laatLos = () => {
-    greep.current.actief = false;
-    rail.current?.classList.remove("sleept");
+    const el = rail.current;
+    if (el && greep.current.vangt && el.hasPointerCapture(greep.current.vangt)) {
+      el.releasePointerCapture(greep.current.vangt);
+    }
+    greep.current = { actief: false, startX: 0, startScroll: 0, vangt: 0 };
+    el?.classList.remove("sleept");
   };
 
   const kantlijn = "max(1.5rem, calc(50% - 32rem + 1.5rem))";
@@ -1693,7 +1923,11 @@ function ToolRail() {
           className="tool-rail flex gap-5 overflow-x-auto pb-2 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink/60 sm:gap-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           style={{ paddingLeft: kantlijn, paddingRight: kantlijn, scrollPaddingLeft: kantlijn }}
         >
-          <RailKaarten gezien={gezien} />
+          <RailKaarten
+            gezien={gezien}
+            opOpenen={opOpenen}
+            openId={open ? KAARTEN[open.index].id : null}
+          />
         </div>
 
         <div className="mx-auto flex w-full max-w-5xl justify-end px-6 pt-5">
@@ -1723,6 +1957,15 @@ function ToolRail() {
           </div>
         </div>
       </div>
+
+      {open && (
+        <ToolPaneel
+          kaart={KAARTEN[open.index]}
+          vanaf={open.vanaf}
+          reduced={reduced === true}
+          opSluiten={() => setOpen(null)}
+        />
+      )}
     </div>
   );
 }
@@ -2099,6 +2342,43 @@ function StijlBlok() {
       /* Knoppen mogen voelen dat je ze indrukt. */
       .knop-druk:active { transform: scale(0.97); }
 
+      /* De kaart komt naar je toe als je erover gaat, en de hint verschijnt.
+         Alleen op echte muisaanwijzers: op touch triggert hover bij tikken. */
+      .kaart-knop { cursor: pointer; }
+      .kaart-hint {
+        opacity: 0;
+        transition: opacity 0.25s ease-out;
+      }
+      .kaart-hint > span {
+        transform: translateY(8px);
+        transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .kaart-knop:hover {
+          transform: scale(1.035) translateY(-6px);
+          box-shadow: 0 22px 45px -20px rgb(34 28 58 / 0.45);
+        }
+        .kaart-knop:hover .kaart-hint { opacity: 1; }
+        .kaart-knop:hover .kaart-hint > span { transform: translateY(0); }
+        .kaart-knop:active { transform: scale(1.005) translateY(-2px); }
+      }
+      .kaart-knop:focus-visible .kaart-hint { opacity: 1; }
+      .kaart-knop:focus-visible .kaart-hint > span { transform: translateY(0); }
+
+      /* De tekst in het paneel komt net na de beweging binnen. */
+      .paneel-tekst > * {
+        opacity: 0;
+        transform: translateY(10px);
+        animation: paneeltekst 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+      }
+      .paneel-tekst > *:nth-child(1) { animation-delay: 0.22s; }
+      .paneel-tekst > *:nth-child(2) { animation-delay: 0.28s; }
+      .paneel-tekst > *:nth-child(3) { animation-delay: 0.34s; }
+      .paneel-tekst > *:nth-child(4) { animation-delay: 0.4s; }
+      @keyframes paneeltekst {
+        to { opacity: 1; transform: translateY(0); }
+      }
+
       /* Slotvinkje tekent zichzelf. */
       .anim [data-reveal] .slotvink path {
         stroke-dasharray: 1;
@@ -2137,6 +2417,10 @@ function StijlBlok() {
 
       @media (prefers-reduced-motion: reduce) {
         .anim [data-reveal] { opacity: 1; transform: none; transition: none; }
+        /* Paneel en kaart-hint gewoon tonen, zonder beweging. */
+        .paneel-tekst > * { opacity: 1; transform: none; animation: none; }
+        .kaart-hint { transition: opacity 0.2s linear; }
+        .kaart-hint > span { transform: none; transition: none; }
       }
     `}</style>
   );
