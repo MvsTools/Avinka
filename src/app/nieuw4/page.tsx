@@ -29,15 +29,29 @@ export const metadata: Metadata = {
     "Al je schoolwerk staat overal en nergens. Avinka brengt het samen op één eigen werkplek en geeft je elke week zo'n 2 uur terug. Namen van leerlingen blijven thuis.",
 };
 
+/* Zoekt een bestand in public/ en geeft de naam terug zodra het er staat.
+   Let op de hoofdletters: Windows kijkt daar niet naar, Linux (de server)
+   wél, dus we proberen beide schrijfwijzen. */
+function zoekBestand(namen: string[]) {
+  return namen.find((f) => existsSync(path.join(process.cwd(), "public", f)));
+}
+
+function zoekAfbeelding(basis: string) {
+  const varianten = ["jpg", "jpeg", "png", "webp"].flatMap((ext) => [
+    `${basis}.${ext}`,
+    `${basis[0].toUpperCase()}${basis.slice(1)}.${ext}`,
+  ]);
+  return zoekBestand(varianten);
+}
+
 export default function Nieuw4Landing() {
-  // Toont automatisch de foto zodra die in public/ staat; anders een monogram.
-  const fotoBestand = ["michael.jpg", "michael.jpeg", "michael.png", "michael.webp"].find(
-    (f) => existsSync(path.join(process.cwd(), "public", f)),
-  );
+  // Beide foto's verschijnen vanzelf zodra ze in public/ staan.
+  const fotoBestand = zoekAfbeelding("michael");
+  const sfeerFoto = zoekAfbeelding("herkenning");
 
   return (
     <div className={`flex flex-1 flex-col ${handschrift.variable}`}>
-      <Vierde fotoBestand={fotoBestand} />
+      <Vierde fotoBestand={fotoBestand} sfeerFoto={sfeerFoto} />
       <Footer maxWidth="max-w-5xl" />
     </div>
   );

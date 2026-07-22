@@ -373,7 +373,13 @@ function abonneerReduced(cb: () => void) {
   return () => mq.removeEventListener("change", cb);
 }
 
-export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
+export default function Vierde({
+  fotoBestand,
+  sfeerFoto,
+}: {
+  fotoBestand?: string;
+  sfeerFoto?: string;
+}) {
   const root = useRef<HTMLDivElement>(null);
   // null op de server (eerste paint), daarna de echte systeemvoorkeur.
   const reduced = useSyncExternalStore<boolean | null>(
@@ -989,17 +995,43 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
               Herken je dit?
             </h2>
 
-            <div className="mt-10 max-w-3xl border-b border-ink/10">
-              {PIJNPUNTEN.map((p, i) => (
-                <p
-                  key={p.titel}
-                  data-reveal
-                  style={{ transitionDelay: `${i * 110}ms` }}
-                  className="border-t border-ink/10 py-7 font-display text-xl leading-[1.5] tracking-tight text-ink/60 [text-wrap:pretty] sm:text-2xl sm:leading-[1.45]"
-                >
-                  <span className="font-black text-ink">{p.titel}.</span> {p.tekst}
-                </p>
-              ))}
+            {/* Staat er een foto in public/ (herkenning.jpg), dan komt die
+               hier naast de regels te staan: één echt beeld doet meer voor de
+               herkenning dan welke tekening ook. Zonder foto blijft de kolom
+               gewoon smal en verandert er niets. */}
+            <div
+              className={`mt-10 ${
+                sfeerFoto ? "grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-start lg:gap-14" : ""
+              }`}
+            >
+              <div className={`border-b border-ink/10 ${sfeerFoto ? "" : "max-w-3xl"}`}>
+                {PIJNPUNTEN.map((p, i) => (
+                  <p
+                    key={p.titel}
+                    data-reveal
+                    style={{ transitionDelay: `${i * 110}ms` }}
+                    className="border-t border-ink/10 py-7 font-display text-xl leading-[1.5] tracking-tight text-ink/60 [text-wrap:pretty] sm:text-2xl sm:leading-[1.45]"
+                  >
+                    <span className="font-black text-ink">{p.titel}.</span> {p.tekst}
+                  </p>
+                ))}
+              </div>
+
+              {sfeerFoto && (
+                <figure data-reveal className="relative lg:sticky lg:top-28">
+                  <div className="relative overflow-hidden rounded-2xl shadow-xl ring-1 ring-black/5">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`/${sfeerFoto}`}
+                      alt="Het werk dat naast de klas doorloopt: nakijkwerk en papieren op een lerarenbureau."
+                      loading="lazy"
+                      decoding="async"
+                      className="aspect-[4/5] w-full object-cover"
+                    />
+                    <div className="kaart-grain pointer-events-none absolute inset-0" aria-hidden />
+                  </div>
+                </figure>
+              )}
             </div>
 
             <Scharnier />
@@ -1271,97 +1303,20 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
    De bovenste laag is aria-hidden en vangt geen muis: de knoppen eronder
    blijven gewoon de echte knoppen. ─────────────────────────────────────── */
 /* ── Het scharnier naar de tools ────────────────────────────────────────
-   Dezelfde stift als bij de werkplek-sectie, nu op zinsniveau: terwijl je
-   naar de zin toe scrolt, strijkt de groene haal over de belofte en klappen
-   de woorden om naar crème. Je leest gewoon door; de markering volgt jouw
-   tempo en loopt niet vooruit. Eenmaal aangestreept blijft het staan. ──── */
-const BELOFTE = ["Maar het kan sneller, slimmer", "en met minder gedoe."];
+   Eerst de erkenning in gedempt inkt, dan de belofte in groen. Bewust
+   zonder markeerstift: die staat al op de sectie hierboven, en twee keer
+   dezelfde truc binnen één scherm is geen taal meer maar een tic. ─────── */
+const BELOFTE = ['Maar het kan sneller, slimmer', 'en met minder gedoe.'];
 
 function Scharnier() {
-  const regel = useRef<HTMLParagraphElement>(null);
-  const banden = useRef<(HTMLSpanElement | null)[]>([]);
-  const reduced = useSyncExternalStore<boolean | null>(
-    abonneerReduced,
-    () => window.matchMedia(REDUCED_QUERY).matches,
-    () => null,
-  );
-
-  useEffect(() => {
-    if (reduced === null) return;
-    const p = regel.current;
-    if (!p) return;
-
-    if (reduced) {
-      banden.current.forEach((b) => b && (b.style.clipPath = "inset(0 0 0 0)"));
-      return;
-    }
-
-    let bezig = false;
-    let ver = 0;
-    const teken = () => {
-      if (bezig) return;
-      bezig = true;
-      requestAnimationFrame(() => {
-        bezig = false;
-        const vh = window.innerHeight;
-        const r = p.getBoundingClientRect();
-        // Begint als de zin onderin verschijnt en is klaar wanneer hij op
-        // leeshoogte staat: je hebt hem dus gelezen terwijl de stift liep.
-        const voortgang = Math.min(1, Math.max(0, (vh * 0.86 - r.top) / (vh * 0.34)));
-        if (voortgang <= ver) {
-          if (ver >= 1) {
-            window.removeEventListener("scroll", teken);
-            window.removeEventListener("resize", teken);
-          }
-          return;
-        }
-        ver = voortgang;
-        // Regel voor regel, met een kleine overlap: de stift gaat aan het
-        // eind van de eerste regel terug naar links en streept door.
-        banden.current.forEach((band, i) => {
-          if (!band) return;
-          const deel = Math.min(1, Math.max(0, (voortgang - i * 0.45) / 0.55));
-          const b = deel * 104;
-          band.style.clipPath = `polygon(0 0, ${b}% 0, ${b - 3}% 100%, 0 100%)`;
-        });
-      });
-    };
-
-    teken();
-    window.addEventListener("scroll", teken, { passive: true });
-    window.addEventListener("resize", teken);
-    return () => {
-      window.removeEventListener("scroll", teken);
-      window.removeEventListener("resize", teken);
-    };
-  }, [reduced]);
-
   return (
-    <p
-      ref={regel}
-      className="mt-14 flex max-w-3xl flex-col items-start font-display text-[clamp(1.375rem,3.1vw,2.25rem)] font-black leading-[1.25] tracking-tight"
-    >
+    <p className="mt-14 flex max-w-3xl flex-col items-start font-display text-[clamp(1.375rem,3.1vw,2.25rem)] font-black leading-[1.25] tracking-tight">
       <span data-reveal className="text-ink/55">
         Het hoort bij het werk.
       </span>
-      {/* Elke regel van de belofte staat er twee keer: eronder in het groen,
-         erop in crème op de groene haal. Zo klapt de kleur perfect om onder
-         de stift, en valt de balk precies om de woorden van díe regel. */}
-      {BELOFTE.map((tekst, i) => (
-        <span key={tekst} className={`relative ${i === 0 ? "mt-3" : "mt-2"}`}>
-          <span className="text-brand-dark">{tekst}</span>
-          <span
-            ref={(el) => {
-              banden.current[i] = el;
-            }}
-            aria-hidden
-            className="absolute -inset-x-2 -inset-y-[3px] rounded-[3px] bg-brand-dark px-2 py-[3px] text-cream"
-            style={{ clipPath: "polygon(0 0, 0 0, 0 100%, 0 100%)" }}
-          >
-            {tekst}
-          </span>
-        </span>
-      ))}
+      <span data-reveal className="mt-3 text-brand-dark" style={{ transitionDelay: '120ms' }}>
+        {BELOFTE.join(' ')}
+      </span>
     </p>
   );
 }
