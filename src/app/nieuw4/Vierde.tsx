@@ -1048,8 +1048,13 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           </div>
         </section>
 
-        {/* ── 3. De tool-galerij: grote kunstkaarten, jij schuift ze zelf ── */}
-        <section id="tools" className="relative overflow-hidden scroll-mt-20">
+        {/* ── 3. De tool-galerij: grote kunstkaarten, jij schuift ze zelf.
+           Eigen ondergrond (zand) zodat het duidelijk een nieuw hoofdstuk is
+           en niet doorloopt uit de herkenning erboven. ── */}
+        <section
+          id="tools"
+          className="relative overflow-hidden border-y border-ink/[0.07] bg-sand scroll-mt-20"
+        >
           <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
             <div className="absolute -right-32 top-24 h-96 w-96 rounded-full bg-brand/[0.07] blur-3xl" />
           </div>
@@ -1059,7 +1064,10 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           <div className="relative mx-auto w-full max-w-5xl px-6 pb-24">
             {/* De payoff: waaróm dit er allemaal staat. Geen rekensom, wel de
                belofte uit de landingspagina zelf. */}
-            <div data-reveal className="mt-16 rounded-[2rem] bg-sand px-6 py-14 text-center sm:px-12">
+            <div
+              data-reveal
+              className="mt-16 rounded-[2rem] bg-white px-6 py-14 text-center shadow-sm ring-1 ring-black/5 sm:px-12"
+            >
               <p className="font-display text-4xl font-black leading-[1.05] tracking-tight text-ink [text-wrap:balance] sm:text-5xl">
                 Minder administratie,{" "}
                 <span className="relative whitespace-nowrap text-brand">
@@ -1071,7 +1079,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                 Veel van dit werk kost tijd, maar vraagt niet je volle aandacht.
                 Dát is wat Avinka overneemt. De rest blijft van jou.
               </p>
-              <p className="mt-8 inline-block rounded-2xl bg-white px-6 py-3 text-lg font-bold text-ink shadow-sm ring-1 ring-black/5">
+              <p className="mt-8 inline-block rounded-2xl bg-sand px-6 py-3 text-lg font-bold text-ink">
                 Meer rust. Minder werkdruk. Meer tijd voor je klas.
               </p>
             </div>
@@ -1501,16 +1509,17 @@ function MarkeerInhoud({ donker = false }: { donker?: boolean }) {
    De bezoeker heeft de regie: zelf slepen, vegen of de pijltjes. Niets
    beweegt uit zichzelf; een bekeken kaart zet wel zijn eigen vinkje. ──── */
 
-/* De kop boven de rij. */
+/* De kop boven de rij. De ondertitel wijst meteen op het slepen: zonder die
+   hint blijft de helft van de kaarten onopgemerkt buiten beeld staan. */
 function RailKop() {
   return (
     <div className="mx-auto w-full max-w-5xl px-6">
       <div data-reveal className="max-w-2xl">
         <h2 className="font-display text-4xl font-black tracking-tight [text-wrap:balance]">
-          Dit staat er voor je klaar
+          Acht tools, één werkplek
         </h2>
         <p className="mt-4 text-lg text-ink/60">
-          Acht tools, en er komen er steeds meer bij.
+          Sleep de rij opzij om ze allemaal te zien. Er komen er steeds meer bij.
         </p>
       </div>
     </div>
