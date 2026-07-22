@@ -843,3 +843,68 @@ create trigger on_auth_user_created_toestemming
   for each row execute function public.registreer_toestemming();
 
 -- Klaar. Je tabellen staan klaar en zijn per gebruiker afgeschermd.
+
+-- ── 16) SCHOOLAGENDA — gekoppelde agenda's en de afspraken eruit ──────────
+-- Een leerkracht plakt de agendalink van school (Parro, Social Schools,
+-- Outlook of Teams, Google) en Avinka leest daar de afspraken uit. Zo'n link
+-- is een sleutel tot die agenda, dus hij staat VERSLEUTELD opgeslagen: de code
+-- versleutelt hem met AVINKA_GEHEIM_SLEUTEL, de database ziet alleen ruis.
+--
+-- AVG: namen van kinderen worden uit de titel gehaald vóór het opslaan
+-- (maskeerNamen in src/lib/agenda-ophalen.ts). Wat overblijft is het soort
+-- afspraak en het tijdstip, en dat mag gewoon.
+
+create table if not exists public.agenda_bronnen (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  naam          text not null,
+  systeem       text not null default 'ics',
+  link_geheim   text not null,
+  modus         text not null default 'alles',
+  kleur         text not null default 'groen',
+  actief        boolean not null default true,
+  laatst_gelukt timestamptz,
+  laatste_fout  text,
+  aantal_items  integer not null default 0,
+  created_at    timestamptz not null default now(),
+  constraint agenda_bronnen_modus_check check (modus in ('alles', 'heledagen')),
+  constraint agenda_bronnen_systeem_check
+    check (systeem in ('parro', 'socialschools', 'outlook', 'google', 'ics'))
+);
+alter table public.agenda_bronnen enable row level security;
+drop policy if exists "eigen agendabronnen" on public.agenda_bronnen;
+create policy "eigen agendabronnen" on public.agenda_bronnen
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.agenda_bronnen to authenticated;
+create index if not exists idx_agenda_bronnen_user on public.agenda_bronnen(user_id);
+
+create table if not exists public.agenda_items (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  bron_id    uuid not null references public.agenda_bronnen(id) on delete cascade,
+  uid        text not null,
+  datum      date not null,
+  tot_datum  date not null,
+  hele_dag   boolean not null default false,
+  begintijd  time,
+  eindtijd   time,
+  titel      text not null,
+  soort      text not null default 'overig',
+  tijdvakken smallint not null default 1,
+  locatie    text,
+  bijgewerkt timestamptz not null default now()
+);
+alter table public.agenda_items enable row level security;
+drop policy if exists "eigen agenda-items" on public.agenda_items;
+create policy "eigen agenda-items" on public.agenda_items
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.agenda_items to authenticated;
+create unique index if not exists idx_agenda_items_uniek
+  on public.agenda_items(bron_id, uid, datum);
+create index if not exists idx_agenda_items_user_datum
+  on public.agenda_items(user_id, datum);
+
+-- De vakantieregio is alleen het vangnet: als jouw schoolagenda de vakanties
+-- zelf bevat, zijn die leidend. Scholen wijken af (een tweede week mei, een
+-- eigen pinkstervakantie), dus de landelijke lijst is nooit de waarheid.
+alter table public.instellingen add column if not exists vakantieregio text;
