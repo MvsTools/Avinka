@@ -1984,7 +1984,16 @@ function ToolRail() {
     return () => io.disconnect();
   }, []);
   useEffect(() => {
-    if (wakker) bijScroll();
+    if (!wakker) return;
+    bijScroll();
+    /* Snap pas aanzetten als de kaarten uitgeschoven zijn. De laatste kaart
+       start met (aantal × 90ms) vertraging en doet er 650ms over; daarna staat
+       alles stil en kan snap geen scrollcorrecties meer veroorzaken. */
+    const klaar = window.setTimeout(
+      () => rail.current?.classList.add("rust"),
+      KAARTEN.length * 90 + 700,
+    );
+    return () => window.clearTimeout(klaar);
   }, [wakker]);
 
   const stap = (richting: number) => {
@@ -2422,8 +2431,14 @@ function StijlBlok() {
       .anim [data-reveal].is-in { opacity: 1; transform: none; }
 
       /* ── De tool-galerij ── */
-      /* Slepen: de rail pakt de muis vast; tijdens het slepen geen snap. */
-      .tool-rail { cursor: grab; scroll-snap-type: x proximity; }
+      /* Slepen: de rail pakt de muis vast; tijdens het slepen geen snap.
+         Snap staat óók uit zolang de kaarten binnenkomen: die schuiven dan
+         met translate, en scroll-snap corrigeert de scrollpositie mee op de
+         bewegende snappunten. Samen met scroll-behavior: smooth zag je de rij
+         daardoor doorschieten en terugveren. Pas als alles stilstaat gaat
+         snap aan. */
+      .tool-rail { cursor: grab; scroll-snap-type: none; overflow-anchor: none; }
+      .tool-rail.rust { scroll-snap-type: x proximity; }
       .tool-rail.sleept { cursor: grabbing; scroll-snap-type: none; scroll-behavior: auto; }
 
       /* De kaarten komen één voor één van rechts binnen — alléén in de
