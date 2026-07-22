@@ -72,6 +72,7 @@ const KAARTEN = [
   {
     id: "rapporten",
     naam: "Rapporten",
+    tijd: "± 10 minuten per rapport",
     zin: "Rapportteksten die klinken alsof jij ze schreef.",
     uitleg:
       "Je geeft per leerling een paar steekwoorden en Avinka maakt er lopende rapportteksten van, in jouw toon en op het niveau dat jij kiest. Jij leest na, past aan en kopieert elk verhaal met één klik naar je eigen systeem.",
@@ -80,14 +81,16 @@ const KAARTEN = [
   {
     id: "toetsanalyse",
     naam: "Toetsanalyse",
-    zin: "Een complete groepsanalyse in twee minuten.",
+    tijd: "± 2 uur per toetsronde",
+    zin: "Zie in één oogopslag wie extra aandacht nodig heeft.",
     uitleg:
-      "Voor IEP en Cito. Avinka leest je hele toetsoverzicht uit en legt alles naast elkaar: hoe je groep ervoor staat, welke domeinen achterblijven, welke leerlingen opvallen en waar klassikale zorgen zitten. Geen kind dat je over het hoofd ziet, geen domein dat je overslaat, ook niet bij de vijfentwintigste leerling op een avond. Wat normaal een avond puzzelen kost, ligt er in twee minuten, geschreven zoals jij het zelf zou opschrijven. Jij vult aan wat alleen jij van deze kinderen weet.",
+      "Voor IEP en Cito. Avinka haalt alle gegevens uit je toetsoverzicht en zet ze om in een analyse zoals jij die zelf zou schrijven: waar je groep staat, welke leerlingen opvallen en welke zorgen klassikaal aandacht vragen. Een stevige basis voor je eigen analyse, die je alleen nog hoeft aan te scherpen.",
     licht: false,
   },
   {
     id: "oudercontact",
     naam: "Oudercontact",
+    tijd: "± 15 minuten per bericht",
     zin: "Weekberichten en oudergesprekken zonder leeg scherm.",
     uitleg:
       "Van weekbericht tot gespreksvoorbereiding: je vertelt wat er speelt en je krijgt een nette tekst terug die je alleen nog hoeft na te lezen. Ook handig voor lastige boodschappen, want de toon kies je zelf.",
@@ -96,6 +99,7 @@ const KAARTEN = [
   {
     id: "lesontwerp",
     naam: "Lesontwerp",
+    tijd: "± 30 minuten per les",
     zin: "Van één leerdoel naar een complete les met differentiatie.",
     uitleg:
       "Geef een leerdoel op en je krijgt een complete les terug: opbouw, instructie, verwerking en differentiatie naar boven en beneden. Je kiest zelf het lestype, van korte instructie tot een bewegende of coöperatieve les.",
@@ -104,6 +108,7 @@ const KAARTEN = [
   {
     id: "plattegrond",
     naam: "Plattegrond",
+    tijd: "± 45 minuten per opstelling",
     zin: "De klasopstelling puzzelt zichzelf uit, jouw wensen voorop.",
     uitleg:
       "Je geeft je wensen door, zoals wie beter niet naast elkaar zit en wie vooraan hoort, en de plattegrond puzzelt zichzelf uit. Schuiven mag altijd, want jij kent je klas het best.",
@@ -112,6 +117,7 @@ const KAARTEN = [
   {
     id: "werkbladen",
     naam: "Werkbladen",
+    tijd: "± 20 minuten per werkblad",
     zin: "Printbare werkbladen die precies bij je les passen.",
     uitleg:
       "Kies een onderwerp en je hebt een printklaar werkblad, van invuloefening tot woordzoeker. De opdrachten worden door de tool zelf opgebouwd, zodat de antwoorden en het woordbeeld altijd kloppen.",
@@ -120,6 +126,7 @@ const KAARTEN = [
   {
     id: "draaiboek",
     naam: "Draaiboek",
+    tijd: "± een avond per evenement",
     zin: "Elk schoolevenement compleet uitgedacht, tot de taakverdeling aan toe.",
     uitleg:
       "Van kerstdiner tot schoolreis: je krijgt een compleet draaiboek met tijdlijn, taakverdeling en boodschappenlijst. Klaar om te delen met je collega's.",
@@ -128,6 +135,7 @@ const KAARTEN = [
   {
     id: "weekplanning",
     naam: "Weekplanning",
+    tijd: "± 30 minuten per week",
     zin: "Je hele week in één helder rooster, gekoppeld aan je tools.",
     uitleg:
       "Zet je vaste momenten neer en Avinka vult je week aan tot een helder rooster, inclusief wat er na schooltijd nog moet gebeuren. Alles blijft versleepbaar.",
@@ -1693,7 +1701,18 @@ function ToolPaneel({
             <h3 className="font-display text-3xl font-black tracking-tight sm:text-4xl">
               {kaart.naam}
             </h3>
-            <p className="mt-3 text-lg font-semibold leading-8 text-brand-dark">{kaart.zin}</p>
+            {/* De tijdwinst per keer: sommige tools gebruik je wekelijks,
+               andere een paar keer per jaar, dus "per week" zou niet kloppen. */}
+            <p className="mt-3">
+              <span className="inline-flex items-center gap-2 rounded-full bg-brand-soft px-3.5 py-1.5 text-sm font-bold text-brand-dark">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden>
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7.5V12l3 2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {kaart.tijd} terug
+              </span>
+            </p>
+            <p className="mt-4 text-lg font-semibold leading-8 text-brand-dark">{kaart.zin}</p>
             <p className="mt-5 leading-8 text-ink/70">{kaart.uitleg}</p>
             <Link
               href="/sign-up"
@@ -2407,6 +2426,7 @@ function StijlBlok() {
       .paneel-tekst > *:nth-child(2) { animation-delay: 0.28s; }
       .paneel-tekst > *:nth-child(3) { animation-delay: 0.34s; }
       .paneel-tekst > *:nth-child(4) { animation-delay: 0.4s; }
+      .paneel-tekst > *:nth-child(5) { animation-delay: 0.46s; }
       @keyframes paneeltekst {
         to { opacity: 1; transform: translateY(0); }
       }
