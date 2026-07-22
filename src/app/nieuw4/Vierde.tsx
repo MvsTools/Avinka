@@ -111,7 +111,7 @@ const KAARTEN = [
     tijd: "± 20 minuten per opstelling",
     zin: "De slimme klassenopstelling.",
     uitleg:
-      "Een plattegrond op basis van jouw wensen, of van een sociogram dat je uploadt. Avinka legt de basis, jij verschuift wat er nog geschoven moet worden. Want jij kent je klas het best.",
+      "Een plattegrond op basis van jouw wensen of van een sociogram dat je uploadt. Avinka legt de basis, jij verschuift waar nodig. Want jij kent je klas het best.",
     licht: false,
   },
   {
