@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 
 /**
  * SCHETS (niet in het dashboard opgenomen, niets geregistreerd, geen database).
@@ -718,12 +718,100 @@ type Uitslag = {
   telling: Telling[];
 };
 
+type Gekoppeld = {
+  id: string;
+  naam: string;
+  systeem: string;
+  modus: string;
+  aantal_items: number;
+  laatst_gelukt: string | null;
+  laatste_fout: string | null;
+};
+
+/** "vandaag om 09:14" of "22 juli om 23:40" */
+function wanneer(iso: string | null): string {
+  if (!iso) return "nog niet opgehaald";
+  const d = new Date(iso);
+  const dag = d.toISOString().slice(0, 10);
+  const tijd = new Intl.DateTimeFormat("nl-NL", {
+    timeZone: "Europe/Amsterdam",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d);
+  const vandaag = new Date().toISOString().slice(0, 10);
+  return dag === vandaag ? `vandaag om ${tijd}` : `${kort(dag)} om ${tijd}`;
+}
+
 function Koppelen() {
   const [open, setOpen] = useState<string | null>("parro");
   const [link, setLink] = useState("");
   const [bezig, setBezig] = useState(false);
   const [uitslag, setUitslag] = useState<Uitslag | null>(null);
   const [fout, setFout] = useState<string | null>(null);
+  const [modus, setModus] = useState<"alles" | "heledagen">("alles");
+  const [opslaan, setOpslaan] = useState(false);
+  const [bronnen, setBronnen] = useState<Gekoppeld[] | null>(null);
+  const [druk, setDruk] = useState<string | null>(null);
+
+  async function haalBronnen() {
+    const antwoord = await fetch("/api/agenda/bronnen");
+    if (antwoord.status === 401) {
+      setBronnen([]);
+      return "niet-ingelogd";
+    }
+    const data = await antwoord.json();
+    setBronnen(data.bronnen ?? []);
+    return "ok";
+  }
+
+  useEffect(() => {
+    haalBronnen();
+  }, []);
+
+  async function koppel(systeem: string, naam: string) {
+    setOpslaan(true);
+    setFout(null);
+    try {
+      const antwoord = await fetch("/api/agenda/bronnen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ link, systeem, naam, modus }),
+      });
+      const data = await antwoord.json();
+      if (antwoord.status === 401) {
+        setFout("Log eerst in, dan kan ik de agenda aan jouw account koppelen.");
+      } else if (!antwoord.ok) {
+        setFout(data.fout || "Koppelen is niet gelukt.");
+      } else {
+        setLink("");
+        setUitslag(null);
+        setOpen(null);
+      }
+      await haalBronnen();
+    } catch {
+      setFout("Koppelen is niet gelukt. Probeer het zo nog eens.");
+    } finally {
+      setOpslaan(false);
+    }
+  }
+
+  async function ververs(id: string) {
+    setDruk(id);
+    await fetch("/api/agenda/ververs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    await haalBronnen();
+    setDruk(null);
+  }
+
+  async function koppelLos(id: string) {
+    setDruk(id);
+    await fetch(`/api/agenda/bronnen?id=${id}`, { method: "DELETE" });
+    await haalBronnen();
+    setDruk(null);
+  }
 
   async function controleer() {
     setBezig(true);
@@ -757,6 +845,63 @@ function Koppelen() {
           scholen staat niet alles op één plek.
         </p>
       </div>
+
+      {/* Wat er al gekoppeld is */}
+      {bronnen && bronnen.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <h3 className="text-lg font-bold text-ink">Je gekoppelde agenda&apos;s</h3>
+          {bronnen.map((br) => (
+            <div
+              key={br.id}
+              className={
+                "flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border bg-white px-5 py-4 shadow-sm " +
+                (br.laatste_fout ? "border-red-200" : "border-black/5")
+              }
+            >
+              <span
+                className={
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl " +
+                  (br.laatste_fout ? "bg-red-50" : "bg-brand-soft")
+                }
+                aria-hidden
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={br.laatste_fout ? "#b91c1c" : "#25855a"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  {br.laatste_fout ? <path d="M12 8v5M12 17h.01" /> : <path d="M4 12.5l5 5 11-11" />}
+                </svg>
+              </span>
+              <span className="min-w-0">
+                <span className="block font-bold text-ink">{br.naam}</span>
+                <span className="block text-sm text-ink/60">
+                  {br.laatste_fout ? (
+                    <span className="text-red-700">{br.laatste_fout}</span>
+                  ) : (
+                    <>
+                      {br.aantal_items} afspraken, bijgewerkt {wanneer(br.laatst_gelukt)}
+                      {br.modus === "heledagen" ? ", alleen hele dagen" : ""}
+                    </>
+                  )}
+                </span>
+              </span>
+              <span className="ml-auto flex gap-2">
+                <button
+                  onClick={() => ververs(br.id)}
+                  disabled={druk === br.id}
+                  className="rounded-xl border border-black/10 px-3.5 py-2 text-sm font-semibold text-ink/70 transition-transform duration-150 hover:text-ink active:scale-[0.97] disabled:opacity-50"
+                >
+                  {druk === br.id ? "Bezig…" : "Ververs"}
+                </button>
+                <button
+                  onClick={() => koppelLos(br.id)}
+                  disabled={druk === br.id}
+                  className="rounded-xl px-3.5 py-2 text-sm font-semibold text-ink/50 transition-colors hover:text-red-700 disabled:opacity-50"
+                >
+                  Loskoppelen
+                </button>
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="overflow-hidden rounded-3xl border border-black/5 bg-white shadow-sm">
         {BRONNEN.map((b, i) => {
@@ -885,17 +1030,41 @@ function Koppelen() {
                           Wat wil je hiervan overnemen?
                         </p>
                         <div className="mt-2 flex flex-wrap gap-2">
-                          <span className="rounded-xl bg-brand-dark px-3.5 py-1.5 text-sm font-semibold text-white">
+                          <button
+                            onClick={() => setModus("alles")}
+                            className={
+                              "rounded-xl px-3.5 py-1.5 text-sm font-semibold transition-transform duration-150 active:scale-[0.97] " +
+                              (modus === "alles"
+                                ? "bg-brand-dark text-white"
+                                : "border border-black/10 bg-white text-ink/70")
+                            }
+                          >
                             Alles ({uitslag.aantal})
-                          </span>
-                          <span className="rounded-xl border border-black/10 bg-white px-3.5 py-1.5 text-sm font-semibold text-ink/70">
+                          </button>
+                          <button
+                            onClick={() => setModus("heledagen")}
+                            className={
+                              "rounded-xl px-3.5 py-1.5 text-sm font-semibold transition-transform duration-150 active:scale-[0.97] " +
+                              (modus === "heledagen"
+                                ? "bg-brand-dark text-white"
+                                : "border border-black/10 bg-white text-ink/70")
+                            }
+                          >
                             Alleen hele dagen ({uitslag.heleDagen})
-                          </span>
+                          </button>
                         </div>
                         <p className="mt-2 text-xs leading-5 text-ink/50">
                           Kies je hele dagen, dan haal je alleen de vrije dagen en vakanties op.
                           Handig voor je persoonlijke agenda, waar ook je tandarts in staat.
                         </p>
+
+                        <button
+                          onClick={() => koppel(b.id, b.naam)}
+                          disabled={opslaan}
+                          className="mt-4 w-full rounded-xl bg-brand-dark px-4 py-3 font-bold text-white transition-transform duration-150 active:scale-[0.99] disabled:opacity-60"
+                        >
+                          {opslaan ? "Bezig met koppelen…" : "Koppel deze agenda aan Avinka"}
+                        </button>
                       </div>
                     )}
                   </div>
