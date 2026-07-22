@@ -45,13 +45,12 @@ function zoekAfbeelding(basis: string) {
 }
 
 export default function Nieuw4Landing() {
-  // Beide foto's verschijnen vanzelf zodra ze in public/ staan.
+  // De makersfoto verschijnt vanzelf zodra die in public/ staat.
   const fotoBestand = zoekAfbeelding("michael");
-  const sfeerFoto = zoekAfbeelding("herkenning");
 
   return (
     <div className={`flex flex-1 flex-col ${handschrift.variable}`}>
-      <Vierde fotoBestand={fotoBestand} sfeerFoto={sfeerFoto} />
+      <Vierde fotoBestand={fotoBestand} />
       <Footer maxWidth="max-w-5xl" />
     </div>
   );

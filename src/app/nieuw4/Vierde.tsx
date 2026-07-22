@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import {
-  Fragment,
   useEffect,
   useRef,
   useState,
@@ -63,51 +62,6 @@ const PIJNPUNTEN = [
       "Taken die je eigenlijk allang af had willen hebben, blijven op de stapel liggen.",
   },
 ];
-
-/* De kop van elk pijnpunt beeldt zijn eigen pijn uit, en valt op z'n plek
-   zodra je de regel leest (de leesband zet .leest):
-   0 · "Te veel administratie" ligt als stapeltje (twee vage kopieën erachter)
-       en zakt bij het lezen in elkaar tot één regel.
-   1 · "Alles staat verspreid": de woorden staan écht verspreid en schuiven
-       bij het lezen samen.
-   2 · "Het schuift steeds door" staat doorgeschoven uit de kantlijn en
-       schuift bij het lezen terug in lijn.
-   Herkennen = op z'n plek vallen; hetzelfde verhaal als de film en de titel
-   van de pagina. Zonder beweging staat alles gewoon netjes. */
-function PijnKop({ index, tekst }: { index: number; tekst: string }) {
-  if (index === 1) {
-    // Elk woord los, zodat ze verspreid kunnen staan.
-    const woorden = tekst.split(" ");
-    return (
-      <span className="kop relative inline-block font-black">
-        {woorden.map((w, wi) => (
-          <Fragment key={w}>
-            {wi > 0 && " "}
-            <span className={`los los-${wi} inline-block`}>
-              {w}
-              {wi === woorden.length - 1 && "."}
-            </span>
-          </Fragment>
-        ))}
-      </span>
-    );
-  }
-  return (
-    <span className="kop relative inline-block font-black">
-      {index === 0 && (
-        <>
-          <span className="stapel stapel-2" aria-hidden>
-            {tekst}.
-          </span>
-          <span className="stapel stapel-1" aria-hidden>
-            {tekst}.
-          </span>
-        </>
-      )}
-      {tekst}.
-    </span>
-  );
-}
 
 /* De tool-galerij: per tool één kunstkaart (Stripe-achtig, maar in onze
    eigen beeldtaal). Nieuwe tool = kaart erbij. `licht` bepaalt of de naam
@@ -419,13 +373,7 @@ function abonneerReduced(cb: () => void) {
   return () => mq.removeEventListener("change", cb);
 }
 
-export default function Vierde({
-  fotoBestand,
-  sfeerFoto,
-}: {
-  fotoBestand?: string;
-  sfeerFoto?: string;
-}) {
+export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
   const root = useRef<HTMLDivElement>(null);
   // null op de server (eerste paint), daarna de echte systeemvoorkeur.
   const reduced = useSyncExternalStore<boolean | null>(
@@ -1048,53 +996,42 @@ export default function Vierde({
           {/* Zelfde linkerlijn als de galerij hieronder: de scharnierzin loopt
              zo recht door in "Dit staat er voor je klaar". */}
           <div className="mx-auto w-full max-w-5xl px-6 pb-4 pt-24 lg:pt-28">
-            <h2
-              data-reveal
-              className="font-display text-[clamp(1.75rem,3vw,2.25rem)] font-black tracking-tight"
-            >
-              Herken je dit?
-            </h2>
+            <div className="grid gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
+              <h2
+                data-reveal
+                className="font-display text-[clamp(1.75rem,3vw,2.25rem)] font-black tracking-tight lg:sticky lg:top-28 lg:self-start"
+              >
+                Herken je dit?
+              </h2>
 
-            {/* Staat er een foto in public/ (herkenning.jpg), dan komt die
-               hier naast de regels te staan: één echt beeld doet meer voor de
-               herkenning dan welke tekening ook. Zonder foto blijft de kolom
-               gewoon smal en verandert er niets. */}
-            <div
-              className={`mt-10 ${
-                sfeerFoto ? "grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-start lg:gap-14" : ""
-              }`}
-            >
-              <div className={`border-b border-ink/10 ${sfeerFoto ? "" : "max-w-3xl"}`}>
-                {PIJNPUNTEN.map((p, i) => (
-                  <p
-                    key={p.titel}
-                    data-reveal
-                    data-leesregel
-                    data-pijn={i}
-                    style={{ transitionDelay: `${i * 110}ms` }}
-                    className="border-t border-ink/10 py-7 font-display text-xl leading-[1.5] tracking-tight [text-wrap:pretty] sm:text-2xl sm:leading-[1.45]"
+            {/* De rijen: kop groot in de displayletter, uitleg in de
+               gewone tekstletter eronder. In de kantlijn een leeg hokje dat
+               zichzelf groen afvinkt zodra je de regel leest: "Herken je
+               dit?" en de pagina vinkt met je mee. */}
+            <div>
+              {PIJNPUNTEN.map((p, i) => (
+                <div
+                  key={p.titel}
+                  data-reveal
+                  data-leesregel
+                  style={{ transitionDelay: `${i * 110}ms` }}
+                  className="relative border-t border-ink/10 py-8 pl-12 sm:pl-14"
+                >
+                  <span
+                    className="absolute left-0 top-[2.3rem] flex h-7 w-7 items-center justify-center rounded-lg ring-2 ring-inset ring-ink/15"
+                    aria-hidden
                   >
-                    <PijnKop index={i} tekst={p.titel} />{" "}
-                    <span className="uitleg">{p.tekst}</span>
-                  </p>
-                ))}
-              </div>
+                    <Vink className="slotvink herkenvink h-[1.15rem] w-[1.15rem] text-brand" dik={3.6} />
+                  </span>
+                  <h3 className="kop font-display text-2xl font-black tracking-tight">
+                    {p.titel}
+                  </h3>
+                  <p className="uitleg mt-2 max-w-xl text-lg leading-8">{p.tekst}</p>
+                </div>
+              ))}
+              <div className="border-t border-ink/10" aria-hidden />
+            </div>
 
-              {sfeerFoto && (
-                <figure data-reveal className="relative lg:sticky lg:top-28">
-                  <div className="relative overflow-hidden rounded-2xl shadow-xl ring-1 ring-black/5">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`/${sfeerFoto}`}
-                      alt="Het werk dat naast de klas doorloopt: nakijkwerk en papieren op een lerarenbureau."
-                      loading="lazy"
-                      decoding="async"
-                      className="aspect-[4/5] w-full object-cover"
-                    />
-                    <div className="kaart-grain pointer-events-none absolute inset-0" aria-hidden />
-                  </div>
-                </figure>
-              )}
             </div>
 
             <Scharnier />
@@ -2121,10 +2058,11 @@ function StijlBlok() {
       }
       .anim .vinkpop { animation: vinkpop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 
-      /* De herkenningsregels: elke kop beeldt zijn eigen pijn uit en valt op
-         z'n plek zodra je de regel leest. Ongelezen = gedempt en licht in de
-         war; gelezen = vol inkt en netjes. Alles transform/opacity, alles
-         omkeerbaar, en zonder .anim staat alles gewoon netjes en leesbaar. */
+      /* De herkenningsregels: de tekst staat stil en netjes. Wat er gebeurt:
+         de regel in de leesband staat op vol inkt, de andere gedempt, en het
+         hokje in de kantlijn vinkt zichzelf groen af zodra je de regel leest.
+         Herken je dit? De pagina vinkt met je mee. Omkeerbaar; zonder .anim
+         staat alles vol en afgevinkt. */
       [data-leesregel] .kop { color: rgb(34 28 58); }
       [data-leesregel] .uitleg { color: rgb(34 28 58 / 0.6); }
       .anim [data-leesregel] .kop,
@@ -2136,41 +2074,6 @@ function StijlBlok() {
       .anim [data-leesregel].leest .kop { color: rgb(34 28 58); }
       .anim [data-leesregel].leest .uitleg { color: rgb(34 28 58 / 0.7); }
 
-      /* 0 · de stapel: twee vage kopieën boven de kop zakken in elkaar. */
-      .stapel {
-        position: absolute;
-        left: 0;
-        top: 0;
-        white-space: nowrap;
-        pointer-events: none;
-        opacity: 0;
-      }
-      .anim [data-pijn="0"] .stapel {
-        transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1),
-          opacity 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-      }
-      .anim [data-pijn="0"] .stapel-1 { transform: translate(4px, -0.34em) rotate(0.5deg); opacity: 0.16; }
-      .anim [data-pijn="0"] .stapel-2 { transform: translate(-3px, -0.68em) rotate(-0.7deg); opacity: 0.08; }
-      .anim [data-pijn="0"].leest .stapel { transform: translate(0, 0) rotate(0deg); opacity: 0; }
-
-      /* 1 · verspreid: de woorden staan uit elkaar en schuiven samen. */
-      .anim [data-pijn="1"] .los {
-        transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-      }
-      .anim [data-pijn="1"] .los-0 { transform: translate(-8px, -3px) rotate(-1.1deg); }
-      .anim [data-pijn="1"] .los-1 { transform: translate(2px, 4px) rotate(0.9deg); }
-      /* het laatste woord verdwaalt omhoog, niet opzij: rechts staat tekst */
-      .anim [data-pijn="1"] .los-2 { transform: translate(1px, -4px) rotate(1.3deg); }
-      .anim [data-pijn="1"].leest .los { transform: none; }
-
-      /* 2 · doorgeschoven: de kop is uit de kantlijn geschoven (naar links,
-         zodat hij nergens overheen valt) en schuift terug in lijn. */
-      .anim [data-pijn="2"] .kop {
-        transition: color 0.55s cubic-bezier(0.23, 1, 0.32, 1),
-          transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-        transform: translateX(-0.55em) rotate(-0.4deg);
-      }
-      .anim [data-pijn="2"].leest .kop { transform: none; }
 
       /* Knoppen mogen voelen dat je ze indrukt. */
       .knop-druk:active { transform: scale(0.97); }
@@ -2183,6 +2086,15 @@ function StijlBlok() {
         transition-delay: var(--vertraag, 0.3s);
       }
       .anim [data-reveal].is-in .slotvink path { stroke-dashoffset: 0; }
+
+      /* Het herken-vinkje wacht niet op .is-in maar op .leest: pas als je de
+         regel echt leest, vinkt het hokje zichzelf af. Deze regels staan ná
+         het generieke slotvink-patroon en winnen dus bij gelijke sterkte. */
+      .anim [data-leesregel].is-in .herkenvink path {
+        stroke-dashoffset: 1;
+        transition: stroke-dashoffset 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.15s;
+      }
+      .anim [data-leesregel].leest .herkenvink path { stroke-dashoffset: 0; }
 
       /* Maskeer-demo: Sofie wordt leerling A zodra de kaart in beeld is.
          Alleen opacity/filter/transform, geen layout-animatie. */
