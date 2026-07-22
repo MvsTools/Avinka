@@ -1055,24 +1055,15 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           </div>
         </section>
 
-        {/* ── 3. De tool-galerij: grote kunstkaarten, jij scrolt erdoorheen ── */}
-        <section id="tools" className="relative scroll-mt-20 overflow-hidden">
-          <div className="pointer-events-none absolute -right-32 top-24 h-96 w-96 rounded-full bg-brand/[0.07] blur-3xl" aria-hidden />
-          <div className="relative pt-24">
-            <div className="mx-auto w-full max-w-5xl px-6">
-              <div data-reveal className="max-w-2xl">
-                <h2 className="font-display text-4xl font-black tracking-tight [text-wrap:balance]">
-                  Dit staat er voor je klaar
-                </h2>
-                <p className="mt-4 text-lg text-ink/60">
-                  Acht tools, en er komen er steeds meer bij. Schuif er op je gemak
-                  doorheen.
-                </p>
-              </div>
-            </div>
-
-            <ToolRail />
+        {/* ── 3. De tool-galerij: grote kunstkaarten, jij scrolt erdoorheen.
+           Géén overflow-hidden op de sectie: dat zou de sticky-pin breken.
+           De gloed clippen we in een eigen laag. ── */}
+        <section id="tools" className="relative scroll-mt-20">
+          <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+            <div className="absolute -right-32 top-24 h-96 w-96 rounded-full bg-brand/[0.07] blur-3xl" />
           </div>
+
+          <ToolRail />
 
           <div className="relative mx-auto w-full max-w-5xl px-6 pb-24">
             {/* De optelsom */}
@@ -1324,7 +1315,227 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
    een berichtje van thuis, een klasopstelling), geen interface-namaak.
    De bezoeker heeft de regie: slepen, scrollen of de pijltjes. Onder de
    rij vinkt elke bekeken tool zichzelf af en telt de weekwinst op. ─────── */
+/* ── De tool-galerij ───────────────────────────────────────────────────
+   Twee smaken van dezelfde kaarten:
+   • Op een ruime desktop met muis en zonder "verminderde beweging": de
+     GEPINDE variant. De sectie plakt kort vast en terwijl je verder naar
+     beneden scrolt schuiven de kaarten vanzelf naar rechts; je ziet de
+     vinkjes aangaan en de teruggewonnen tijd oplopen.
+   • Mobiel, touch of reduced-motion: gewoon zelf slepen/vegen met pijltjes.
+   De kaarten zelf zijn identiek; alleen de aandrijving verschilt. ─────── */
 function ToolRail() {
+  const [gepind, setGepind] = useState(false);
+
+  useEffect(() => {
+    const ruim = window.matchMedia("(min-width: 1024px) and (pointer: fine)");
+    const rustig = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const bepaal = () => setGepind(ruim.matches && !rustig.matches);
+    bepaal();
+    ruim.addEventListener("change", bepaal);
+    rustig.addEventListener("change", bepaal);
+    return () => {
+      ruim.removeEventListener("change", bepaal);
+      rustig.removeEventListener("change", bepaal);
+    };
+  }, []);
+
+  return gepind ? <ToolRailGepind /> : <ToolRailHandmatig />;
+}
+
+/* De kop, in beide varianten gelijk. */
+function RailKop() {
+  return (
+    <div className="mx-auto w-full max-w-5xl px-6">
+      <div data-reveal className="max-w-2xl">
+        <h2 className="font-display text-4xl font-black tracking-tight [text-wrap:balance]">
+          Dit staat er voor je klaar
+        </h2>
+        <p className="mt-4 text-lg text-ink/60">
+          Acht tools, en er komen er steeds meer bij.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* De kaarten zelf; `gezien` bepaalt welke vinkjes aan staan. */
+function RailKaarten({ gezien }: { gezien: boolean[] }) {
+  return (
+    <>
+      {KAARTEN.map((k, i) => (
+        <figure
+          key={k.id}
+          data-kaart
+          className="rail-kaart w-[18.5rem] shrink-0 snap-start select-none sm:w-[21rem]"
+          style={{ "--i": i } as CSSProperties}
+        >
+          <div className="relative aspect-[4/5] overflow-hidden rounded-3xl shadow-lg ring-1 ring-black/10 transition-transform duration-300 hover:-translate-y-1.5">
+            <KaartBeeld soort={k.id} />
+            <div className="kaart-grain pointer-events-none absolute inset-0" aria-hidden />
+            <p
+              className={`absolute bottom-4 left-4 flex items-center gap-2 font-display text-lg font-black tracking-tight ${
+                k.licht
+                  ? "rounded-full bg-ink py-1.5 pl-1.5 pr-4 text-cream shadow-md"
+                  : "text-white"
+              }`}
+            >
+              <span
+                className={`flex h-6 w-6 items-center justify-center rounded-full transition-colors duration-300 ${
+                  gezien[i] ? "bg-white text-brand-dark" : "bg-white/15 ring-1 ring-white/50"
+                }`}
+                aria-hidden
+              >
+                {gezien[i] && <Vink className="vinkpop h-3.5 w-3.5" dik={4} />}
+              </span>
+              {k.naam}
+            </p>
+          </div>
+        </figure>
+      ))}
+
+      {/* En de rij groeit gewoon door: de haak naar meer. */}
+      <figure
+        className="rail-kaart w-[18.5rem] shrink-0 snap-start select-none sm:w-[21rem]"
+        style={{ "--i": KAARTEN.length } as CSSProperties}
+      >
+        <div className="relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-3xl bg-ink shadow-lg ring-1 ring-black/10">
+          <div className="absolute -right-16 -top-12 h-56 w-56 rounded-full bg-brand/30 blur-3xl" aria-hidden />
+          <div className="absolute -left-20 top-14 h-52 w-52 rounded-full bg-accent/25 blur-3xl" aria-hidden />
+          <div className="absolute right-4 top-6 flex gap-2" aria-hidden>
+            <div className="h-24 w-16 rotate-6 rounded-xl bg-white/10 ring-1 ring-white/15" />
+            <div className="h-28 w-20 -rotate-3 rounded-xl bg-white/[0.07] ring-1 ring-white/10" />
+          </div>
+          <div className="relative p-6">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-cream/80 ring-1 ring-white/15">
+              nieuwe tools onderweg ✨
+            </span>
+            <p className="mt-3 font-display text-3xl font-black leading-[1.03] tracking-tight text-cream">
+              En dit is nog maar het begin
+            </p>
+          </div>
+        </div>
+      </figure>
+    </>
+  );
+}
+
+/* Het lint met tijdwinst: telt de teruggewonnen minuten op terwijl je scrolt. */
+function TijdLint({ gezien, minuten }: { gezien: boolean[]; minuten: number }) {
+  const aantal = gezien.filter(Boolean).length;
+  return (
+    <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-center gap-x-4 gap-y-2 px-6 text-center">
+      <span className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-ink shadow-sm ring-1 ring-black/5">
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand text-white">
+          <Vink className="h-3 w-3" dik={4} />
+        </span>
+        {aantal} {aantal === 1 ? "tool" : "tools"} bekeken
+      </span>
+      <span className="font-display text-2xl font-black tracking-tight text-ink sm:text-3xl">
+        <span className="tabular-nums text-brand">+{minuten} min</span> deze week terug
+      </span>
+    </div>
+  );
+}
+
+/* ── Gepinde variant: scrollen = kaarten schuiven, tijd loopt op. ─────── */
+function ToolRailGepind() {
+  const spoor = useRef<HTMLDivElement>(null);
+  const lint = useRef<HTMLDivElement>(null);
+  const gezienRef = useRef<boolean[]>(KAARTEN.map(() => false));
+  const [gezien, setGezien] = useState<boolean[]>(() => KAARTEN.map(() => false));
+  const minRef = useRef(0);
+  const [minuten, setMinuten] = useState(0);
+  const tweenRef = useRef(0);
+
+  // De teller telt soepel naar het nieuwe doel, nooit met sprongen.
+  const naarMinuten = (doel: number) => {
+    if (doel === minRef.current) return;
+    cancelAnimationFrame(tweenRef.current);
+    const van = minRef.current;
+    const t0 = performance.now();
+    const stap = (t: number) => {
+      const p = Math.min(1, (t - t0) / 500);
+      const e = 1 - Math.pow(1 - p, 3);
+      const v = Math.round(van + (doel - van) * e);
+      minRef.current = v;
+      setMinuten(v);
+      if (p < 1) tweenRef.current = requestAnimationFrame(stap);
+    };
+    tweenRef.current = requestAnimationFrame(stap);
+  };
+
+  useEffect(() => {
+    const trk = spoor.current;
+    const strook = lint.current;
+    if (!trk || !strook) return;
+    let bezig = false;
+
+    const opScroll = () => {
+      if (bezig) return;
+      bezig = true;
+      requestAnimationFrame(() => {
+        bezig = false;
+        const vh = window.innerHeight;
+        const rect = trk.getBoundingClientRect();
+        const reisbaar = rect.height - vh;
+        if (reisbaar <= 0) return;
+        const voortgang = Math.min(1, Math.max(0, -rect.top / reisbaar));
+        const maxX = Math.max(0, strook.scrollWidth - strook.clientWidth);
+        strook.style.transform = `translate3d(${-voortgang * maxX}px, 0, 0)`;
+
+        // Afvinken: zodra een kaart met zijn linkerrand voorbij ~42% is, en
+        // aan het einde van de pin sowieso alles (de laatste kaart wordt door
+        // de teaser-kaart anders nooit ver genoeg naar links geduwd).
+        const drempel = window.innerWidth * 0.42;
+        const bijnaKlaar = voortgang >= 0.995;
+        const kaarten = strook.querySelectorAll<HTMLElement>("[data-kaart]");
+        let anders = false;
+        kaarten.forEach((kaart, i) => {
+          if (gezienRef.current[i]) return;
+          if (bijnaKlaar || kaart.getBoundingClientRect().left <= drempel) {
+            gezienRef.current[i] = true;
+            anders = true;
+          }
+        });
+        if (anders) {
+          const kopie = gezienRef.current.slice();
+          setGezien(kopie);
+          naarMinuten(KAARTEN.reduce((s, k, i) => s + (kopie[i] ? k.min : 0), 0));
+        }
+      });
+    };
+
+    opScroll();
+    window.addEventListener("scroll", opScroll, { passive: true });
+    window.addEventListener("resize", opScroll);
+    return () => {
+      window.removeEventListener("scroll", opScroll);
+      window.removeEventListener("resize", opScroll);
+      cancelAnimationFrame(tweenRef.current);
+    };
+  }, []);
+
+  const kantlijn = "max(1.5rem, calc(50% - 32rem + 1.5rem))";
+
+  return (
+    <div ref={spoor} className="relative h-[240vh]">
+      <div className="sticky top-0 flex h-[100svh] flex-col justify-center gap-8 overflow-hidden py-10">
+        <RailKop />
+        <div
+          ref={lint}
+          className="flex gap-6 will-change-transform"
+          style={{ paddingLeft: kantlijn, paddingRight: kantlijn }}
+        >
+          <RailKaarten gezien={gezien} />
+        </div>
+        <TijdLint gezien={gezien} minuten={minuten} />
+      </div>
+    </div>
+  );
+}
+
+/* ── Handmatige variant: zelf slepen, vegen of pijltjes. ───────────────── */
+function ToolRailHandmatig() {
   const rail = useRef<HTMLDivElement>(null);
   const greep = useRef({ actief: false, startX: 0, startScroll: 0 });
   const [kanTerug, setKanTerug] = useState(false);
@@ -1338,8 +1549,6 @@ function ToolRail() {
     setKanTerug(el.scrollLeft > 8);
     setKanVerder(el.scrollLeft < el.scrollWidth - el.clientWidth - 8);
 
-    /* Het merkmoment: elke kaart die met zijn linkerkant voorbij het zicht
-       is gescrold, vinkt zichzelf af. Eenmaal afgevinkt blijft-ie afgevinkt. */
     const rand = el.getBoundingClientRect();
     const kaarten = el.querySelectorAll<HTMLElement>("[data-kaart]");
     setGezien((oud) => {
@@ -1348,7 +1557,6 @@ function ToolRail() {
       kaarten.forEach((kaart, i) => {
         if (nieuw[i]) return;
         const r = kaart.getBoundingClientRect();
-        // Afgevinkt zodra de kaart grotendeels binnen is (linkerrand voorbij).
         if (r.left >= rand.left - 12 && r.left <= rand.right - r.width * 0.55) {
           nieuw[i] = true;
           anders = true;
@@ -1358,7 +1566,6 @@ function ToolRail() {
     });
   };
 
-  /* Het afvinken start pas als de rij echt in beeld is. */
   useEffect(() => {
     const el = rail.current;
     if (!el) return;
@@ -1382,7 +1589,6 @@ function ToolRail() {
     el?.scrollBy({ left: richting * Math.round(el.clientWidth * 0.75), behavior: "smooth" });
   };
 
-  /* Slepen met de muis; aanraakschermen scrollen gewoon native. */
   const pakVast = (e: ReactPointerEvent<HTMLDivElement>) => {
     const el = rail.current;
     if (e.pointerType !== "mouse" || !el) return;
@@ -1401,119 +1607,63 @@ function ToolRail() {
     rail.current?.classList.remove("sleept");
   };
 
-  /* Zelfde kantlijn als de rest van de pagina (max-w-5xl + px-6). */
   const kantlijn = "max(1.5rem, calc(50% - 32rem + 1.5rem))";
 
   return (
-    <div className="mt-10">
-      <div
-        ref={rail}
-        data-reveal
-        role="region"
-        aria-label="De tools van Avinka"
-        tabIndex={0}
-        onScroll={bijScroll}
-        onPointerDown={pakVast}
-        onPointerMove={beweeg}
-        onPointerUp={laatLos}
-        onPointerCancel={laatLos}
-        onKeyDown={(e) => {
-          if (e.key === "ArrowRight") {
-            e.preventDefault();
-            stap(1);
-          } else if (e.key === "ArrowLeft") {
-            e.preventDefault();
-            stap(-1);
-          }
-        }}
-        className="tool-rail flex gap-5 overflow-x-auto pb-2 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink/60 sm:gap-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        style={{
-          paddingLeft: kantlijn,
-          paddingRight: kantlijn,
-          scrollPaddingLeft: kantlijn,
-        }}
-      >
-        {KAARTEN.map((k, i) => (
-          <figure
-            key={k.id}
-            data-kaart
-            className="rail-kaart w-[18.5rem] shrink-0 snap-start select-none sm:w-[21rem]"
-            style={{ "--i": i } as CSSProperties}
-          >
-            <div className="relative aspect-[4/5] overflow-hidden rounded-3xl shadow-lg ring-1 ring-black/10 transition-transform duration-300 hover:-translate-y-1.5">
-              <KaartBeeld soort={k.id} />
-              <div className="kaart-grain pointer-events-none absolute inset-0" aria-hidden />
-              <p
-                className={`absolute bottom-4 left-4 flex items-center gap-2 font-display text-lg font-black tracking-tight ${
-                  k.licht
-                    ? "rounded-full bg-ink py-1.5 pl-1.5 pr-4 text-cream shadow-md"
-                    : "text-white"
-                }`}
-              >
-                <span
-                  className={`flex h-6 w-6 items-center justify-center rounded-full transition-colors duration-300 ${
-                    gezien[i] ? "bg-white text-brand-dark" : "bg-white/15 ring-1 ring-white/50"
-                  }`}
-                  aria-hidden
-                >
-                  {gezien[i] && <Vink className="vinkpop h-3.5 w-3.5" dik={4} />}
-                </span>
-                {k.naam}
-              </p>
-            </div>
-          </figure>
-        ))}
-
-        {/* En de rij groeit gewoon door: de haak naar meer. */}
-        <figure
-          className="rail-kaart w-[18.5rem] shrink-0 snap-start select-none sm:w-[21rem]"
-          style={{ "--i": KAARTEN.length } as CSSProperties}
+    <div className="pt-24">
+      <RailKop />
+      <div className="mt-10">
+        <div
+          ref={rail}
+          data-reveal
+          role="region"
+          aria-label="De tools van Avinka"
+          tabIndex={0}
+          onScroll={bijScroll}
+          onPointerDown={pakVast}
+          onPointerMove={beweeg}
+          onPointerUp={laatLos}
+          onPointerCancel={laatLos}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowRight") {
+              e.preventDefault();
+              stap(1);
+            } else if (e.key === "ArrowLeft") {
+              e.preventDefault();
+              stap(-1);
+            }
+          }}
+          className="tool-rail flex gap-5 overflow-x-auto pb-2 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink/60 sm:gap-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          style={{ paddingLeft: kantlijn, paddingRight: kantlijn, scrollPaddingLeft: kantlijn }}
         >
-          <div className="relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-3xl bg-ink shadow-lg ring-1 ring-black/10">
-            <div className="absolute -right-16 -top-12 h-56 w-56 rounded-full bg-brand/30 blur-3xl" aria-hidden />
-            <div className="absolute -left-20 top-14 h-52 w-52 rounded-full bg-accent/25 blur-3xl" aria-hidden />
-            {/* ghost-kaartjes die net uit beeld liggen: er is meer */}
-            <div className="absolute right-4 top-6 flex gap-2" aria-hidden>
-              <div className="h-24 w-16 rotate-6 rounded-xl bg-white/10 ring-1 ring-white/15" />
-              <div className="h-28 w-20 -rotate-3 rounded-xl bg-white/[0.07] ring-1 ring-white/10" />
-            </div>
-            <div className="relative p-6">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-cream/80 ring-1 ring-white/15">
-                nieuwe tools onderweg ✨
-              </span>
-              <p className="mt-3 font-display text-3xl font-black leading-[1.03] tracking-tight text-cream">
-                En dit is nog maar het begin
-              </p>
-            </div>
-          </div>
-        </figure>
-      </div>
+          <RailKaarten gezien={gezien} />
+        </div>
 
-      {/* Alleen de navigatie blijft; de kaarten spreken voor zich. */}
-      <div className="mx-auto flex w-full max-w-5xl justify-end px-6 pt-5">
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => stap(-1)}
-            disabled={!kanTerug}
-            aria-label="Vorige tools"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink shadow-sm ring-1 ring-black/10 transition hover:-translate-y-0.5 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-5 w-5" aria-hidden>
-              <path d="M14.5 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={() => stap(1)}
-            disabled={!kanVerder}
-            aria-label="Volgende tools"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink shadow-sm ring-1 ring-black/10 transition hover:-translate-y-0.5 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-5 w-5" aria-hidden>
-              <path d="M9.5 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
+        <div className="mx-auto flex w-full max-w-5xl justify-end px-6 pt-5">
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => stap(-1)}
+              disabled={!kanTerug}
+              aria-label="Vorige tools"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink shadow-sm ring-1 ring-black/10 transition hover:-translate-y-0.5 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-5 w-5" aria-hidden>
+                <path d="M14.5 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => stap(1)}
+              disabled={!kanVerder}
+              aria-label="Volgende tools"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink shadow-sm ring-1 ring-black/10 transition hover:-translate-y-0.5 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-5 w-5" aria-hidden>
+                <path d="M9.5 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1640,11 +1790,11 @@ function KaartBeeld({ soort }: { soort: string }) {
     // Eén coördinatenstelsel (viewBox 336×420 = de 4:5-kaart) voor de route
     // én de stations, zodat elk station exact op de lijn valt, op elk formaat.
     const stations = [
-      { label: "Start", x: 70, y: 58, brand: false, rot: -2 },
-      { label: "Lesdoel", x: 246, y: 130, brand: false, rot: 1 },
-      { label: "Instructie", x: 92, y: 205, brand: false, rot: -1 },
-      { label: "Verwerking", x: 246, y: 280, brand: false, rot: 2 },
-      { label: "Afsluiting ✓", x: 118, y: 352, brand: true, rot: -2 },
+      { label: "Start", x: 70, y: 46, brand: false, rot: -2 },
+      { label: "Lesdoel", x: 246, y: 110, brand: false, rot: 1 },
+      { label: "Instructie", x: 92, y: 174, brand: false, rot: -1 },
+      { label: "Verwerking", x: 246, y: 238, brand: false, rot: 2 },
+      { label: "Afsluiting ✓", x: 128, y: 298, brand: true, rot: -2 },
     ];
     return (
       <div className="absolute inset-0 bg-cream">
@@ -1653,7 +1803,7 @@ function KaartBeeld({ soort }: { soort: string }) {
         {/* de route: serpentine die precies door de vijf stations loopt */}
         <svg viewBox="0 0 336 420" fill="none" className="absolute inset-0 h-full w-full" aria-hidden>
           <path
-            d="M70 58 C 205 76, 260 92, 246 130 C 232 186, 98 152, 92 205 C 86 262, 240 232, 246 280 C 253 330, 136 300, 118 352"
+            d="M70 46 C 205 62, 260 76, 246 110 C 232 162, 98 138, 92 174 C 86 224, 240 200, 246 238 C 253 280, 146 268, 128 298"
             stroke="#2f9e6e"
             strokeWidth="3"
             strokeLinecap="round"
@@ -1842,9 +1992,10 @@ function StijlBlok() {
       .tool-rail { cursor: grab; scroll-snap-type: x proximity; }
       .tool-rail.sleept { cursor: grabbing; scroll-snap-type: none; scroll-behavior: auto; }
 
-      /* De kaarten komen één voor één van rechts binnen.
-         Via translate i.p.v. transform, zodat hover-translate blijft werken. */
-      .anim .rail-kaart {
+      /* De kaarten komen één voor één van rechts binnen — alléén in de
+         handmatige rail. In de gepinde variant zijn ze meteen zichtbaar
+         (de pin ís de reveal). Via translate zodat hover-translate blijft werken. */
+      .anim .tool-rail .rail-kaart {
         opacity: 0;
         translate: 72px 0;
         transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
