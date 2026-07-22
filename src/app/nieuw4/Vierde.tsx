@@ -980,23 +980,12 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
         </div>
       </section>
 
-      {/* ════════════════════════ DE BODY ════════════════════════
-         Geen losse ademruimte meer: onder de laatste filmbeelden staat al een
-         flinke lege strook (de inhoud staat gecentreerd in het scherm). De
-         body schuift daar met een negatieve marge overheen, zodat je na de
-         finale meteen doorleest in plaats van door leegte te scrollen. */}
-      <main
-        id="verder"
-        className={`relative z-10 scroll-mt-16 bg-cream ${film ? "-mt-[9vh]" : "mt-2"}`}
-      >
-        {/* Zachte rand: het laatste filmbeeld vervaagt in de body in plaats
-           van hard te worden afgesneden. */}
-        {film && (
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 -top-20 h-20 bg-gradient-to-b from-transparent to-cream"
-          />
-        )}
+      {/* Ademruimte tussen film en body: de finale mag uitademen voordat de
+         uitleg begint. */}
+      <div aria-hidden className="bg-cream" style={{ height: film ? "14vh" : "6vh" }} />
+
+      {/* ════════════════════════ DE BODY ════════════════════════ */}
+      <main id="verder" className="relative z-10 scroll-mt-16 bg-cream">
         {/* ── 1. Wat Avinka is ─────────────────────────────────────────────
            De film vertelt de belofte en het probleem; hier staat in gewone
            zinnen wát het dan is, zodat niemand hoeft te raden. Kop en knoppen
@@ -1006,13 +995,13 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
         <section className="relative overflow-hidden">
           <div className="pointer-events-none absolute -left-28 top-0 h-80 w-80 rounded-full bg-brand/10 blur-3xl" aria-hidden />
           <div className="pointer-events-none absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-accent/15 blur-3xl" aria-hidden />
-          <div className="relative mx-auto grid w-full max-w-5xl gap-10 px-6 pb-20 pt-4 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16 lg:pb-24 lg:pt-8">
+          <div className="relative mx-auto grid w-full max-w-5xl gap-10 px-6 pb-20 pt-10 lg:grid-cols-[1fr_1.05fr] lg:gap-16 lg:pb-28 lg:pt-16">
             <div>
               <h2
                 data-reveal
-                className="font-display text-[clamp(2.25rem,4.6vw,3.25rem)] font-black leading-[1.04] tracking-tight [text-wrap:balance]"
+                className="font-display text-[clamp(2rem,3.9vw,2.875rem)] font-black leading-[1.06] tracking-tight [text-wrap:balance]"
               >
-                Eén werkplek voor al je schoolwerk
+                De slimme werkplek voor leerkrachten in het basisonderwijs
               </h2>
               <div data-reveal className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
@@ -1030,28 +1019,27 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
               </div>
             </div>
 
-            {/* De uitleg: wat het is, hoe het werkt, wie het laatste woord
-               heeft. Gewone leestekst, geen tweede kop. */}
-            <div className="max-w-xl space-y-5 text-lg leading-8 text-ink/75 lg:pt-1.5">
+            {/* De uitleg: wat het is, wat het je oplevert, en wie de baas
+               blijft. De pen streept per alinea één kernwoord aan. */}
+            <div className="max-w-xl space-y-5 text-lg leading-8 text-ink/75 lg:pt-2">
               <p data-reveal data-penregel>
-                Avinka is een Nederlands platform voor leerkrachten in het
-                basisonderwijs. Je vindt er{" "}
+                Avinka brengt de hulpmiddelen voor je schoolwerk samen in{" "}
                 <span className="relative whitespace-nowrap font-bold text-ink">
-                  acht tools
+                  één omgeving
                   <PenStreep variant={0} />
-                </span>{" "}
-                voor het werk dat naast je klas doorloopt: van je toetsanalyse
-                en rapporten tot het weekbericht aan ouders.
+                </span>
+                . Je geeft aan wat je nodig hebt en Avinka helpt je met de
+                uitwerking, zodat terugkerende taken minder tijd kosten en je
+                werk overzichtelijk blijft.
               </p>
               <p data-reveal data-penregel>
-                Je vertelt in gewone taal wat je nodig hebt. Avinka schrijft de
-                eerste versie, rekent de cijfers zelf uit en verzint er dus
-                nooit iets bij, en de namen van je leerlingen blijven{" "}
+                Jij houdt altijd{" "}
                 <span className="relative whitespace-nowrap font-bold text-ink">
-                  op je eigen computer
+                  de regie
                   <PenStreep variant={1} />
-                </span>
-                . Jij leest na, past aan en vinkt af.
+                </span>{" "}
+                en privacy staat voorop: de namen van je leerlingen blijven op
+                je eigen computer.
               </p>
             </div>
           </div>
