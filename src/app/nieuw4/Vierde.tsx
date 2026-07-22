@@ -1564,6 +1564,21 @@ function RailKop() {
    Sluiten gaat met Escape, met de knop, of door naast het paneel te klikken;
    dan speelt dezelfde beweging terug naar de kaart. Bij verminderde beweging
    verschijnt en verdwijnt het paneel gewoon. ─────────────────────────── */
+/* Waar het paneel moet staan zodat de tékening erin precies op de kaart in de
+   rij valt. Eén schaalfactor voor beide richtingen, anders rekt de tekening
+   uit. Rekent met transform-origin center: een punt P belandt na schalen op
+   midden + schaal × (P − midden). */
+function beeldStand(vanaf: DOMRect, naar: DOMRect, beeld: DOMRect) {
+  const schaal = vanaf.width / beeld.width;
+  const paneelX = naar.left + naar.width / 2;
+  const paneelY = naar.top + naar.height / 2;
+  const dx =
+    vanaf.left + vanaf.width / 2 - paneelX - schaal * (beeld.left + beeld.width / 2 - paneelX);
+  const dy =
+    vanaf.top + vanaf.height / 2 - paneelY - schaal * (beeld.top + beeld.height / 2 - paneelY);
+  return `translate(${dx}px, ${dy}px) scale(${schaal})`;
+}
+
 function ToolPaneel({
   kaart,
   vanaf,
@@ -1610,50 +1625,112 @@ function ToolPaneel({
     };
   }, [vanaf, reduced]);
 
-  /* Sluiten: dezelfde beweging terug, maar het paneel mag niet als
-     samengeperst mini-paneel op de kaart landen. Daarom drie dingen tegelijk:
-     de tekstkolom fadet meteen weg (dan blijft alleen de tekening over, die
-     de kaart al ís), de kaart eronder wordt weer zichtbaar, en het paneel
-     vervaagt in het laatste deel van de reis. Zo vloeit het over in de kaart
-     in plaats van om te klappen. */
+  /* Sluiten in twee bewegingen, zoals je een boekje dichtdoet:
+     1. het paneel klapt dicht tot alleen de tekening (de tekstkolom wordt
+        weggeknipt met clip-path, de tekst vervaagt tegelijk);
+     2. die tekening valt op zijn eigen kaart in de rij: hij schuift ernaartoe
+        en wordt onderweg tot exact het kaartformaat bijgesneden, zodat hij er
+        precies op landt.
+     Op een smal scherm staat de tekening bovenop in plaats van ernaast; daar
+     krimpt het paneel gewoon als geheel terug. */
   const sluit = () => {
     const p = paneel.current;
     const d = doek.current;
     if (!p || !d || bezigMetSluiten.current) return opSluiten();
     bezigMetSluiten.current = true;
-    opStartSluiten();
 
     // De openanimatie stoppen, anders blijft die (fill: both) meepraten over
-    // transform en opacity.
+    // transform en clip-path.
     p.getAnimations().forEach((a) => a.cancel());
 
     const naar = p.getBoundingClientRect();
-    const duur = reduced ? 140 : 440;
+    const beeldEl = p.querySelector("[data-paneelbeeld]");
+    const beeld = beeldEl?.getBoundingClientRect();
+    const naastElkaar = !!beeld && beeld.width < naar.width * 0.9;
+    const duur = reduced ? 140 : 620;
 
     d.animate([{ opacity: 1 }, { opacity: 0 }], { duration: duur, fill: "both" });
     p.querySelector(".paneel-tekst")?.animate([{ opacity: 1 }, { opacity: 0 }], {
-      duration: reduced ? 100 : 170,
+      duration: reduced ? 100 : 200,
       easing: "ease-out",
       fill: "both",
     });
 
-    const terug = p.animate(
+    if (!naastElkaar || !beeld) {
+      // Smal scherm: het paneel krimpt in één beweging terug naar de kaart.
+      const terug = p.animate(
+        [
+          { transform: "translate(0, 0) scale(1, 1)" },
+          {
+            transform: `translate(${vanaf.left - naar.left}px, ${vanaf.top - naar.top}px) scale(${vanaf.width / naar.width}, ${vanaf.height / naar.height})`,
+          },
+        ],
+        { duration: duur, easing: "cubic-bezier(0.32, 0.72, 0, 1)", fill: "both" },
+      );
+      p.animate([{ opacity: 1 }, { opacity: 0 }], {
+        duration: duur * 0.42,
+        delay: duur * 0.58,
+        easing: "ease-in",
+        fill: "both",
+      });
+      window.setTimeout(opStartSluiten, 110);
+      terug.onfinish = opSluiten;
+      return;
+    }
+
+    // 1 · dichtklappen tot de tekening, 2 · vallen op de kaart.
+    const klap = 0.34; // deel van de tijd dat het dichtklappen kost
+    const rechts = naar.width - beeld.width;
+    const schaal = vanaf.width / beeld.width;
+    // Zoveel van de tekening past er in de kaart; de rest snijden we onderweg
+    // symmetrisch weg, zodat hij precies op het kaartformaat uitkomt.
+    const knip = Math.max(0, (beeld.height - vanaf.height / schaal) / 2);
+    const hoek = 24; // rounded-3xl, zodat de hoeken rond blijven tijdens het knippen
+
+    /* Twee losse animaties in plaats van één met tussenpunten: keyframe-
+       posities worden in de geëasede tijd gerekend, waardoor het dichtklappen
+       anders al voorbij is voor je het gezien hebt. Beide op "forwards", zodat
+       de tweede pas meetelt zodra hij begint. */
+    const klapDuur = duur * klap;
+    p.animate(
       [
-        { transform: "translate(0, 0) scale(1, 1)" },
-        {
-          transform: `translate(${vanaf.left - naar.left}px, ${vanaf.top - naar.top}px) scale(${vanaf.width / naar.width}, ${vanaf.height / naar.height})`,
-        },
+        { clipPath: `inset(0px 0px 0px 0px round ${hoek}px)` },
+        { clipPath: `inset(0px ${rechts}px 0px 0px round ${hoek}px)` },
       ],
-      { duration: duur, easing: "cubic-bezier(0.32, 0.72, 0, 1)", fill: "both" },
+      { duration: klapDuur, easing: "cubic-bezier(0.4, 0, 0.2, 1)", fill: "forwards" },
     );
-    // De vervaging krijgt zijn eigen timing: pas in het laatste stuk van de
-    // reis, zodat je hem ziet krimpen en hij daarna in de kaart oplost.
+    p.animate(
+      [
+        { clipPath: `inset(0px ${rechts}px 0px 0px round ${hoek}px)` },
+        { clipPath: `inset(${knip}px ${rechts}px ${knip}px 0px round ${hoek}px)` },
+      ],
+      {
+        duration: duur - klapDuur,
+        delay: klapDuur,
+        easing: "cubic-bezier(0.34, 0.9, 0.24, 1)",
+        fill: "forwards",
+      },
+    );
+
+    const terug = p.animate(
+      [{ transform: "translate(0, 0) scale(1)" }, { transform: beeldStand(vanaf, naar, beeld) }],
+      {
+        duration: duur - klapDuur,
+        delay: klapDuur,
+        easing: "cubic-bezier(0.34, 0.9, 0.24, 1)",
+        fill: "both",
+      },
+    );
+    /* De laatste tel: de tekening lost op in de kaart eronder. Zonder dat
+       verdwijnt hij ineens, en dat zie je. De kaart komt daarom ook net even
+       eerder terug dan de tekening weg is. */
     p.animate([{ opacity: 1 }, { opacity: 0 }], {
-      duration: duur * 0.42,
-      delay: duur * 0.58,
+      duration: 150,
+      delay: duur - 150,
       easing: "ease-in",
-      fill: "both",
+      fill: "forwards",
     });
+    window.setTimeout(opStartSluiten, duur - 190);
     terug.onfinish = opSluiten;
   };
 
@@ -1687,12 +1764,15 @@ function ToolPaneel({
         role="dialog"
         aria-modal="true"
         aria-label={kaart.naam}
-        className="paneel relative z-10 max-h-full w-full max-w-3xl origin-top-left overflow-y-auto rounded-3xl bg-cream shadow-2xl ring-1 ring-black/10"
+        className="paneel relative z-10 max-h-full w-full max-w-3xl overflow-y-auto rounded-3xl bg-cream shadow-2xl ring-1 ring-black/10"
       >
         <div className="grid sm:grid-cols-[0.85fr_1.15fr]">
           {/* De tekening van de kaart, nu groot. Op een smal scherm platter,
              anders duwt hij de tekst helemaal onder de vouw. */}
-          <div className="relative aspect-[16/11] overflow-hidden sm:aspect-auto sm:min-h-[22rem]">
+          <div
+            data-paneelbeeld
+            className="relative aspect-[16/11] overflow-hidden sm:aspect-auto sm:min-h-[22rem]"
+          >
             <KaartBeeld soort={kaart.id} />
             <div className="kaart-grain pointer-events-none absolute inset-0" aria-hidden />
           </div>
