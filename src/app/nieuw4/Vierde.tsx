@@ -1949,7 +1949,7 @@ function ToolRail() {
   return (
     <div className="pt-24">
       <RailKop />
-      <div className="mt-10">
+      <div className="mt-3">
         <div
           ref={rail}
           data-reveal
@@ -1970,7 +1970,7 @@ function ToolRail() {
               stap(-1);
             }
           }}
-          className="tool-rail flex gap-5 overflow-x-auto pb-2 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink/60 sm:gap-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="tool-rail flex gap-5 overflow-x-auto py-7 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink/60 sm:gap-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           style={{ paddingLeft: kantlijn, paddingRight: kantlijn, scrollPaddingLeft: kantlijn }}
         >
           <RailKaarten
@@ -1980,7 +1980,7 @@ function ToolRail() {
           />
         </div>
 
-        <div className="mx-auto flex w-full max-w-5xl justify-end px-6 pt-5">
+        <div className="mx-auto flex w-full max-w-5xl justify-end px-6">
           <div className="flex gap-2">
             <button
               type="button"
