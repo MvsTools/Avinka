@@ -102,7 +102,7 @@ const KAARTEN = [
     tijd: "± 25 minuten per les",
     zin: "Van één leerdoel naar een compleet doordachte les.",
     uitleg:
-      "Geef een leerdoel op en je krijgt een complete les terug volgens het EDI-model. Je kiest zelf het lestype, van een korte instructie tot een bewegende of coöperatieve les, en de differentiatie naar boven en beneden staat er meteen bij.",
+      "Geef een leerdoel op en je krijgt een complete les terug volgens het EDI-model. Je kiest zelf het lestype, van een korte instructie tot een bewegende of coöperatieve les. Met succescriteria, bouwstenen en differentiatie.",
     licht: true,
   },
   {
