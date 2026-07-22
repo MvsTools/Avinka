@@ -137,16 +137,37 @@ export function vouwSamen(afspraken: HerkendeAfspraak[]): Groep[] {
   return uit;
 }
 
-/** Korte samenvatting voor het koppelscherm: "7 studiedagen, 3 keer rapporten". */
-export function tel(groepen: Groep[]): { soort: Soort; aantal: number; slots?: number }[] {
-  const per = new Map<Soort, { aantal: number; slots: number }>();
+/** Het weeknummer zoals scholen het gebruiken, plus het jaar (ISO). */
+function weekSleutel(datum: string): string {
+  const d = new Date(datum + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7) + 3);
+  const eerste = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  eerste.setUTCDate(eerste.getUTCDate() - ((eerste.getUTCDay() + 6) % 7) + 3);
+  return `${d.getUTCFullYear()}-${1 + Math.round((d.getTime() - eerste.getTime()) / 604800000)}`;
+}
+
+/**
+ * Korte samenvatting voor het koppelscherm. `weken` telt over hoeveel
+ * schoolweken iets verspreid staat: gesprekken staan vaak op veel losse
+ * dagen (zeker als je meer dan één groep hebt), maar in maar een paar weken.
+ */
+export function tel(
+  groepen: Groep[],
+): { soort: Soort; aantal: number; slots?: number; weken?: number }[] {
+  const per = new Map<Soort, { aantal: number; slots: number; weken: Set<string> }>();
   for (const g of groepen) {
-    const b = per.get(g.soort) || { aantal: 0, slots: 0 };
+    const b = per.get(g.soort) || { aantal: 0, slots: 0, weken: new Set<string>() };
     b.aantal++;
     b.slots += g.aantal;
+    b.weken.add(weekSleutel(g.van));
     per.set(g.soort, b);
   }
   return [...per.entries()]
-    .map(([soort, b]) => ({ soort, aantal: b.aantal, slots: b.slots > b.aantal ? b.slots : undefined }))
+    .map(([soort, b]) => ({
+      soort,
+      aantal: b.aantal,
+      slots: b.slots > b.aantal ? b.slots : undefined,
+      weken: b.weken.size < b.aantal ? b.weken.size : undefined,
+    }))
     .sort((a, b) => b.aantal - a.aantal);
 }

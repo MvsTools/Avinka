@@ -115,10 +115,12 @@ export async function POST(request: Request) {
     woord: t.aantal === 1 ? SOORT_INFO[t.soort].woord.toLowerCase() : SOORT_INFO[t.soort].meervoud,
     aantal: t.aantal,
     slots: t.slots,
+    weken: t.weken,
     vrij: SOORT_INFO[t.soort].vrij,
   }));
 
   const datums = groepen.map((g) => g.van).sort();
+  const heleDagen = groepen.filter((g) => g.heleDag).length;
 
   return Response.json({
     naam: agenda.naam ?? null,
@@ -127,6 +129,7 @@ export async function POST(request: Request) {
     van: datums[0] ?? null,
     tot: datums[datums.length - 1] ?? null,
     herhalend: agenda.herhalend,
+    heleDagen,
     telling,
   });
 }

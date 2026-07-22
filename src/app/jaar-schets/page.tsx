@@ -700,13 +700,21 @@ const BRONNEN: Bron[] = [
   },
 ];
 
-type Telling = { soort: string; woord: string; aantal: number; slots?: number; vrij: boolean };
+type Telling = {
+  soort: string;
+  woord: string;
+  aantal: number;
+  slots?: number;
+  weken?: number;
+  vrij: boolean;
+};
 type Uitslag = {
   naam: string | null;
   aantal: number;
   blokken: number;
   van: string | null;
   tot: string | null;
+  heleDagen: number;
   telling: Telling[];
 };
 
@@ -845,35 +853,49 @@ function Koppelen() {
                             : ""}
                           .
                         </p>
-                        <ul className="mt-2.5 flex flex-col gap-1 text-sm text-ink/75">
-                          {uitslag.telling.map((t) => (
-                            <li key={t.soort}>
-                              <strong className="font-bold text-ink">{t.aantal}</strong>{" "}
-                              {t.woord}
-                              {t.slots ? ` (${t.slots} losse tijdvakken, samengevouwen per dag)` : ""}
-                              {t.vrij ? ", die zet ik meteen op vrij" : ""}
-                              {t.soort === "overig" ? ", die ken ik niet en laat ik staan zoals ze zijn" : ""}
-                            </li>
-                          ))}
+                        <p className="mt-2.5 text-sm text-ink/75">
+                          <strong className="font-bold text-ink">Alles komt in je agenda.</strong>{" "}
+                          Van een deel weet ik ook wát het is, en daar doe ik dan iets mee:
+                        </p>
+                        <ul className="mt-2 flex flex-col gap-1 text-sm text-ink/75">
+                          {uitslag.telling
+                            .filter((t) => t.soort !== "overig")
+                            .map((t) => (
+                              <li key={t.soort}>
+                                <strong className="font-bold text-ink">{t.aantal}</strong> {t.woord}
+                                {t.slots
+                                  ? ` (${t.slots} losse tijdvakken${t.weken ? ` in ${t.weken} weken` : ""}, per dag samengevouwen)`
+                                  : ""}
+                                {t.vrij ? ", die zet ik meteen op vrij" : ""}
+                              </li>
+                            ))}
                         </ul>
+                        {uitslag.telling.some((t) => t.soort === "overig") && (
+                          <p className="mt-2.5 text-sm text-ink/75">
+                            De overige{" "}
+                            <strong className="font-bold text-ink">
+                              {uitslag.telling.find((t) => t.soort === "overig")?.aantal}
+                            </strong>{" "}
+                            afspraken krijgen geen etiket van mij. Die staan er gewoon in, precies
+                            zoals je school ze heeft opgeschreven.
+                          </p>
+                        )}
+
                         <p className="mt-3 text-sm font-semibold text-ink/70">
                           Wat wil je hiervan overnemen?
                         </p>
                         <div className="mt-2 flex flex-wrap gap-2">
-                          {["Alles", "Alleen hele dagen", "Alleen wat Avinka herkent"].map((k, n) => (
-                            <span
-                              key={k}
-                              className={
-                                "rounded-xl px-3.5 py-1.5 text-sm font-semibold " +
-                                (n === 0
-                                  ? "bg-brand-dark text-white"
-                                  : "border border-black/10 bg-white text-ink/70")
-                              }
-                            >
-                              {k}
-                            </span>
-                          ))}
+                          <span className="rounded-xl bg-brand-dark px-3.5 py-1.5 text-sm font-semibold text-white">
+                            Alles ({uitslag.aantal})
+                          </span>
+                          <span className="rounded-xl border border-black/10 bg-white px-3.5 py-1.5 text-sm font-semibold text-ink/70">
+                            Alleen hele dagen ({uitslag.heleDagen})
+                          </span>
                         </div>
+                        <p className="mt-2 text-xs leading-5 text-ink/50">
+                          Kies je hele dagen, dan haal je alleen de vrije dagen en vakanties op.
+                          Handig voor je persoonlijke agenda, waar ook je tandarts in staat.
+                        </p>
                       </div>
                     )}
                   </div>
