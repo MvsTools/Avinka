@@ -347,34 +347,6 @@ function Streep() {
   );
 }
 
-/* De penstreep onder een woord in de lopende tekst: twee licht verschillende
-   halen, zodat de tweede geen kopie van de eerste is. Trekt zichzelf zodra de
-   alinea in de leesband komt (stroke-dashoffset in het stijlblok). */
-const PENHALEN = [
-  "M3 8.5C46 3.6 118 2.6 197 6.4",
-  "M2 6.8C58 11.4 132 2.2 198 7.6",
-];
-
-function PenStreep({ variant }: { variant: number }) {
-  return (
-    <svg
-      viewBox="0 0 200 12"
-      preserveAspectRatio="none"
-      className="penstreep absolute -bottom-1 left-0 h-[0.26em] w-full text-accent"
-      fill="none"
-      aria-hidden
-    >
-      <path
-        d={PENHALEN[variant % PENHALEN.length]}
-        stroke="currentColor"
-        strokeWidth="6"
-        strokeLinecap="round"
-        pathLength={1}
-      />
-    </svg>
-  );
-}
-
 function abonneerReduced(cb: () => void) {
   const mq = window.matchMedia(REDUCED_QUERY);
   mq.addEventListener("change", cb);
@@ -568,21 +540,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
     );
     reveals.forEach((r) => io.observe(r));
 
-    /* De leesband: staat de alinea op de plek waar je leest, dan trekt de pen
-       zijn streep. Loopt beide kanten op, dus terugscrollen haalt hem weer
-       weg. De band ligt in het bovenste deel van het scherm, want daar leest
-       een mens, niet op de onderrand. */
-    const leesIo = new IntersectionObserver(
-      (entries) =>
-        entries.forEach((e) => e.target.classList.toggle("leest", e.isIntersecting)),
-      { rootMargin: "-18% 0px -45% 0px" },
-    );
-    el.querySelectorAll("[data-penregel]").forEach((r) => leesIo.observe(r));
-
-    return () => {
-      io.disconnect();
-      leesIo.disconnect();
-    };
+    return () => io.disconnect();
   }, [reduced]);
 
   return (
@@ -989,9 +947,8 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
         {/* ── 1. Wat Avinka is ─────────────────────────────────────────────
            De film vertelt de belofte en het probleem; hier staat in gewone
            zinnen wát het dan is, zodat niemand hoeft te raden. Kop en knoppen
-           links, de uitleg rechts als lopende tekst. De pen streept twee
-           dingen aan terwijl je leest (omkeerbaar), meer beweging heeft deze
-           plek niet nodig: de kaarten hieronder zijn het levendige stuk. ── */}
+           links, de uitleg rechts. Bewust stil: de kaarten hieronder zijn het
+           levendige stuk. ── */}
         <section className="relative overflow-hidden">
           <div className="pointer-events-none absolute -left-28 top-0 h-80 w-80 rounded-full bg-brand/10 blur-3xl" aria-hidden />
           <div className="pointer-events-none absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-accent/15 blur-3xl" aria-hidden />
@@ -1019,31 +976,13 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
               </div>
             </div>
 
-            {/* De uitleg: wat het is en wat het je oplevert. De tweede regel
-               is de belofte en mag daarom groter en donkerder staan dan de
-               uitleg erboven; de pen streept het kernwoord aan. */}
+            {/* De uitleg: wat het is en wat het je oplevert. Verder niets. */}
             <div className="max-w-xl lg:pt-2">
-              <p data-reveal data-penregel className="text-lg leading-8 text-ink/75">
-                Avinka brengt de hulpmiddelen voor je schoolwerk samen in{" "}
-                <span className="relative whitespace-nowrap">
-                  één omgeving
-                  <PenStreep variant={0} />
-                </span>
-                . Je geeft aan wat je nodig hebt en Avinka helpt je met de
-                uitwerking, zodat terugkerende taken minder tijd kosten en je
+              <p data-reveal className="text-lg leading-8 text-ink/75">
+                Avinka brengt de hulpmiddelen voor je schoolwerk samen in één
+                omgeving. Je geeft aan wat je nodig hebt en Avinka helpt je met
+                de uitwerking, zodat terugkerende taken minder tijd kosten en je
                 werk overzichtelijk blijft.
-              </p>
-              <p
-                data-reveal
-                data-penregel
-                className="mt-8 border-t border-ink/10 pt-8 text-xl font-semibold leading-9 text-ink [text-wrap:balance]"
-              >
-                Jij houdt{" "}
-                <span className="relative whitespace-nowrap">
-                  de regie
-                  <PenStreep variant={1} />
-                </span>{" "}
-                en privacy is ons belangrijkste uitgangspunt.
               </p>
             </div>
           </div>
@@ -1875,17 +1814,6 @@ function StijlBlok() {
         100% { transform: scale(1); opacity: 1; }
       }
       .anim .vinkpop { animation: vinkpop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
-
-      /* De pen streept aan wat telt zodra de alinea in de leesband komt, en
-         haalt het weer weg als je terugscrolt. Alleen stroke-dashoffset, dus
-         geen layout-werk; een transition en geen keyframe, dus onderbreekbaar.
-         Zonder .anim (verminderde beweging) staat de streep er meteen. */
-      .anim [data-penregel] .penstreep path {
-        stroke-dasharray: 1;
-        stroke-dashoffset: 1;
-        transition: stroke-dashoffset 0.7s cubic-bezier(0.23, 1, 0.32, 1) 0.1s;
-      }
-      .anim [data-penregel].leest .penstreep path { stroke-dashoffset: 0; }
 
       /* Knoppen mogen voelen dat je ze indrukt. */
       .knop-druk:active { transform: scale(0.97); }
