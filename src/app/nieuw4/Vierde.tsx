@@ -1375,15 +1375,18 @@ function ToolRail() {
     setKanVerder(el.scrollLeft < el.scrollWidth - el.clientWidth - 8);
 
     const rand = el.getBoundingClientRect();
+    // Het vinkje volgt de kaart: staat hij goed in beeld, dan vinkt hij zich
+    // af; schuif je terug, dan gaat het vinkje weer uit. Zo zie je de
+    // beweging elke keer opnieuw, welke kant je ook op gaat.
     const kaarten = el.querySelectorAll<HTMLElement>("[data-kaart]");
     setGezien((oud) => {
       let anders = false;
       const nieuw = oud.slice();
       kaarten.forEach((kaart, i) => {
-        if (nieuw[i]) return;
         const r = kaart.getBoundingClientRect();
-        if (r.left >= rand.left - 12 && r.left <= rand.right - r.width * 0.55) {
-          nieuw[i] = true;
+        const inBeeld = r.left >= rand.left - 12 && r.left <= rand.right - r.width * 0.55;
+        if (nieuw[i] !== inBeeld) {
+          nieuw[i] = inBeeld;
           anders = true;
         }
       });
@@ -1701,11 +1704,13 @@ function KaartBeeld({ soort }: { soort: string }) {
           <p className="mt-3 text-sm font-bold text-ink">2. Zoek de woorden</p>
           <div className="mt-1.5 flex items-start gap-2.5">
             {/* 5×4-rooster; 'hok' loopt verticaal, 'reis' diagonaal (echte
-               woordzoeker, niet alles keurig links-naar-rechts) */}
+               woordzoeker, niet alles keurig links-naar-rechts). 'dag' staat
+               er ook echt in (rij 3, horizontaal) — die mag de kijker vinden. */}
             <div className="grid grid-cols-5 gap-1" aria-hidden>
               {(() => {
-                // hok = kolom 0 (idx 0,5,10); reis = diagonaal ↙ (idx 3,7,11,15)
-                const letters = ["H", "T", "B", "R", "M", "O", "N", "E", "L", "P", "K", "I", "C", "E", "D", "S", "G", "A", "J", "T"];
+                // hok = kolom 0 (idx 0,5,10); reis = diagonaal ↙ (idx 3,7,11,15);
+                // dag = idx 12,13,14, nog niet aangestreept
+                const letters = ["H", "T", "B", "R", "M", "O", "N", "E", "L", "P", "K", "I", "D", "A", "G", "S", "T", "A", "J", "E"];
                 const hok = new Set([0, 5, 10]);
                 const reis = new Set([3, 7, 11, 15]);
                 return letters.map((letter, i) => (
