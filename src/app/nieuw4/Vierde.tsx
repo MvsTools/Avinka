@@ -562,14 +562,29 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
 
     /* De leesband: de regel waar je nu bent staat scherp, de andere wachten
        gedempt. Loopt beide kanten op, dus terugscrollen werkt ook. */
+    const regels = el.querySelectorAll("[data-leesregel]");
+    const grootVink = el.querySelector<SVGPathElement>("[data-grootvink] path");
+    const gelezen = new Set<Element>();
     const leesIo = new IntersectionObserver(
-      (entries) =>
-        entries.forEach((e) => e.target.classList.toggle("leest", e.isIntersecting)),
+      (entries) => {
+        entries.forEach((e) => {
+          e.target.classList.toggle("leest", e.isIntersecting);
+          if (e.isIntersecting) gelezen.add(e.target);
+        });
+        // Het grote vinkje in de kantlijn telt op: elke regel die je gelezen
+        // hebt tekent een stukje. Het loopt niet terug, want herkennen doe je
+        // maar één keer.
+        if (grootVink && regels.length) {
+          grootVink.style.strokeDashoffset = String(
+            Math.max(0, 1 - gelezen.size / regels.length),
+          );
+        }
+      },
       // Smalle band (zo'n 10% van het scherm) zodat er meestal één regel
       // tegelijk scherp staat en je oog echt meeloopt.
       { rootMargin: "-42% 0px -48% 0px" },
     );
-    el.querySelectorAll("[data-leesregel]").forEach((r) => leesIo.observe(r));
+    regels.forEach((r) => leesIo.observe(r));
 
     return () => {
       io.disconnect();
@@ -1003,15 +1018,29 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                  stopt bij de onderkant van zijn ouder. Terugscrollen pakt hem
                  vanzelf weer op. */}
               <div className="lg:mb-6">
-                <h2
-                  data-reveal
-                  className="font-display text-[clamp(2.25rem,4.4vw,3.25rem)] font-black leading-[0.98] tracking-tight lg:sticky lg:top-28"
-                >
-                  Herken
-                  <br />
-                  je dit
-                  <span className="text-brand-dark">?</span>
-                </h2>
+                <div className="lg:sticky lg:top-28">
+                  <h2
+                    data-reveal
+                    className="font-display text-[clamp(2.25rem,4.4vw,3.25rem)] font-black leading-[0.98] tracking-tight"
+                  >
+                    Herken
+                    <br />
+                    je dit
+                    <span className="text-brand-dark">?</span>
+                  </h2>
+                  {/* Het antwoord op de vraag, in de kantlijn. De vorm staat
+                     er altijd (lichte lijn, anders leest een half vinkje als
+                     een pijltje); het groen wordt erin getekend bij elke regel
+                     die je herkent. Drie van de drie = vinkje af. */}
+                  <div className="relative mt-10 hidden h-28 w-28 lg:block" aria-hidden>
+                    <Vink className="absolute inset-0 h-full w-full text-ink/10" dik={2.2} />
+                    <Vink
+                      data-grootvink
+                      className="absolute inset-0 h-full w-full text-brand"
+                      dik={2.2}
+                    />
+                  </div>
+                </div>
               </div>
 
             {/* De rijen: kop groot in de displayletter, uitleg in de
@@ -2096,6 +2125,18 @@ function StijlBlok() {
         transition-delay: var(--vertraag, 0.3s);
       }
       .anim [data-reveal].is-in .slotvink path { stroke-dashoffset: 0; }
+
+      /* Het grote vinkje in de kantlijn: begint leeg en wordt door de
+         leesband stukje bij beetje getekend (JS zet stroke-dashoffset).
+         Zonder beweging staat hij meteen af. */
+      [data-grootvink] path {
+        stroke-dasharray: 1;
+        stroke-dashoffset: 0;
+      }
+      .anim [data-grootvink] path {
+        stroke-dashoffset: 1;
+        transition: stroke-dashoffset 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+      }
 
       /* Het herken-vinkje wacht niet op .is-in maar op .leest: pas als je de
          regel echt leest, vinkt het hokje zichzelf af. Deze regels staan ná
