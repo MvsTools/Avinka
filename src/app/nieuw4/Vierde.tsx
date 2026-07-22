@@ -350,6 +350,21 @@ function Vink({
 
 const REDUCED_QUERY = "(prefers-reduced-motion: reduce)";
 
+/* De handgetrokken streep onder een accentwoord — dezelfde als in de hero
+   van de echte landingspagina, zodat het één merk blijft. */
+function Streep() {
+  return (
+    <svg
+      viewBox="0 0 200 12"
+      className="absolute -bottom-3 left-0 w-full text-accent sm:-bottom-4"
+      fill="none"
+      aria-hidden
+    >
+      <path d="M2 9C40 3 160 3 198 7" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function abonneerReduced(cb: () => void) {
   const mq = window.matchMedia(REDUCED_QUERY);
   mq.addEventListener("change", cb);
@@ -543,37 +558,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
     );
     reveals.forEach((r) => io.observe(r));
 
-    /* De optelsom telt naar 155 minuten. */
-    const teller = el.querySelector<HTMLElement>("[data-teller]");
-    let raf = 0;
-    if (teller) {
-      const ioTel = new IntersectionObserver(
-        (entries) => {
-          if (!entries.some((e) => e.isIntersecting)) return;
-          ioTel.disconnect();
-          if (reduced) {
-            teller.textContent = "155";
-            return;
-          }
-          const t0 = performance.now();
-          const duur = 1400;
-          const tick = (t: number) => {
-            const p = Math.min(1, (t - t0) / duur);
-            const eased = 1 - Math.pow(1 - p, 4);
-            teller.textContent = String(Math.round(eased * 155));
-            if (p < 1) raf = requestAnimationFrame(tick);
-          };
-          raf = requestAnimationFrame(tick);
-        },
-        { threshold: 0.6 },
-      );
-      ioTel.observe(teller);
-    }
-
-    return () => {
-      io.disconnect();
-      cancelAnimationFrame(raf);
-    };
+    return () => io.disconnect();
   }, [reduced]);
 
   return (
@@ -1047,21 +1032,22 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           <ToolRail />
 
           <div className="relative mx-auto w-full max-w-5xl px-6 pb-24">
-            {/* De optelsom */}
-            <div data-reveal className="mt-16 rounded-[2rem] bg-sand px-6 py-10 text-center">
-              <p className="text-lg font-bold text-ink/70">35 + 45 + 15 + 25 + 20 + 15 minuten…</p>
-              <p className="mt-3 font-display text-3xl font-black tracking-tight text-ink sm:text-4xl">
-                samen{" "}
-                <span className="text-brand">
-                  <span data-teller className="tabular-nums">
-                    0
-                  </span>{" "}
-                  minuten
-                </span>{" "}
-                per week
+            {/* De payoff: waaróm dit er allemaal staat. Geen rekensom, wel de
+               belofte uit de landingspagina zelf. */}
+            <div data-reveal className="mt-16 rounded-[2rem] bg-sand px-6 py-14 text-center sm:px-12">
+              <p className="font-display text-4xl font-black leading-[1.05] tracking-tight text-ink [text-wrap:balance] sm:text-5xl">
+                Minder administratie,{" "}
+                <span className="relative whitespace-nowrap text-brand">
+                  meer onderwijs
+                  <Streep />
+                </span>
               </p>
-              <p className="mt-3 text-lg font-semibold text-ink/60">
-                Ruim twee uur. Elke week weer.
+              <p className="mx-auto mt-9 max-w-xl text-lg leading-8 text-ink/70">
+                Veel van dit werk kost tijd, maar vraagt niet je volle aandacht.
+                Dát is wat Avinka overneemt. De rest blijft van jou.
+              </p>
+              <p className="mt-8 inline-block rounded-2xl bg-white px-6 py-3 text-lg font-bold text-ink shadow-sm ring-1 ring-black/5">
+                Meer rust. Minder werkdruk. Meer tijd voor je klas.
               </p>
             </div>
           </div>
