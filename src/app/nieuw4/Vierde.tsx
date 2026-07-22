@@ -944,49 +944,13 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
 
       {/* ════════════════════════ DE BODY ════════════════════════ */}
       <main id="verder" className="relative z-10 scroll-mt-16 bg-cream">
-        {/* ── 1. Wat Avinka is ─────────────────────────────────────────────
-           De film vertelt de belofte en het probleem; hier staat in gewone
-           zinnen wát het dan is, zodat niemand hoeft te raden. Kop en knoppen
-           links, de uitleg rechts. Bewust stil: de kaarten hieronder zijn het
-           levendige stuk. ── */}
-        <section className="relative overflow-hidden">
-          <div className="pointer-events-none absolute -left-28 top-0 h-80 w-80 rounded-full bg-brand/10 blur-3xl" aria-hidden />
-          <div className="pointer-events-none absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-accent/15 blur-3xl" aria-hidden />
-          <div className="relative mx-auto grid w-full max-w-5xl gap-10 px-6 pb-20 pt-10 lg:grid-cols-[1fr_1.05fr] lg:gap-16 lg:pb-28 lg:pt-16">
-            <div>
-              <h2
-                data-reveal
-                className="font-display text-[clamp(1.875rem,3.1vw,2.375rem)] font-black leading-[1.08] tracking-tight [text-wrap:balance]"
-              >
-                De slimme werkplek voor leerkrachten in het basisonderwijs
-              </h2>
-              <div data-reveal className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href="/sign-up"
-                  className="knop-druk w-full whitespace-nowrap rounded-2xl bg-brand px-7 py-4 text-center text-lg font-bold text-white shadow-lg shadow-brand/25 transition-[transform,background-color] duration-200 hover:bg-brand-dark sm:w-auto"
-                >
-                  Probeer Avinka gratis
-                </Link>
-                <a
-                  href="#tools"
-                  className="knop-druk w-full whitespace-nowrap rounded-2xl border-2 border-ink/10 bg-white px-7 py-4 text-center text-lg font-bold text-ink transition-[transform,border-color] duration-200 hover:border-ink/20 sm:w-auto"
-                >
-                  Bekijk de tools
-                </a>
-              </div>
-            </div>
-
-            {/* De uitleg: wat het is en wat het je oplevert. Verder niets. */}
-            <div className="max-w-xl lg:pt-2">
-              <p data-reveal className="text-lg leading-8 text-ink/75">
-                Avinka brengt de hulpmiddelen voor je schoolwerk samen in één
-                omgeving. Je geeft aan wat je nodig hebt en Avinka helpt je met
-                de uitwerking, zodat terugkerende taken minder tijd kosten en je
-                werk overzichtelijk blijft.
-              </p>
-            </div>
-          </div>
-        </section>
+        {/* ── 1. Wat Avinka is: de markeerstift ────────────────────────────
+           Hier staat in gewone zinnen wat het platform is. De vorm komt uit
+           het merk: terwijl je scrolt strijkt er één groene haal over de
+           sectie, zoals je een regel aanstreept. Scroll je terug, dan trekt
+           hij zich terug. ── */}
+        <Markeersectie />
+        {/* Einde markeersectie */}
 
         {/* ── 3. De tool-galerij: grote kunstkaarten, jij schuift ze zelf ── */}
         <section id="tools" className="relative overflow-hidden scroll-mt-20">
@@ -1237,6 +1201,136 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           </div>
         </section>
       </main>
+    </div>
+  );
+}
+
+/* ── De markeersectie ───────────────────────────────────────────────────
+   Twee identieke lagen boven elkaar: onderop de crème versie, daarbovenop
+   dezelfde inhoud in het groen. De groene laag wordt met clip-path van links
+   naar rechts opengetrokken op het ritme van je scroll, met een schuine rand
+   zoals een echte markeerstift. Zo kleurt de tekst perfect om in plaats van
+   te verkleuren, en werkt het beide kanten op.
+   De bovenste laag is aria-hidden en vangt geen muis: de knoppen eronder
+   blijven gewoon de echte knoppen. ─────────────────────────────────────── */
+function Markeersectie() {
+  const sectie = useRef<HTMLElement>(null);
+  const haal = useRef<HTMLDivElement>(null);
+  const reduced = useSyncExternalStore<boolean | null>(
+    abonneerReduced,
+    () => window.matchMedia(REDUCED_QUERY).matches,
+    () => null,
+  );
+
+  useEffect(() => {
+    if (reduced === null) return;
+    const sec = sectie.current;
+    const laag = haal.current;
+    if (!sec || !laag) return;
+
+    if (reduced) {
+      laag.style.clipPath = "inset(0 0 0 0)";
+      return;
+    }
+
+    let bezig = false;
+    const teken = () => {
+      if (bezig) return;
+      bezig = true;
+      requestAnimationFrame(() => {
+        bezig = false;
+        const vh = window.innerHeight;
+        const r = sec.getBoundingClientRect();
+        // De haal loopt van "sectie komt onderin binnen" tot "sectie staat
+        // goed in beeld": zo is hij klaar op het moment dat je uitgelezen bent.
+        const p = Math.min(1, Math.max(0, (vh * 0.82 - r.top) / (vh * 0.62)));
+        const b = p * 105;
+        // Geen liniaal maar een stiftrand: licht golvend en iets schuin.
+        laag.style.clipPath =
+          `polygon(0 0, ${b}% 0, ${b - 1.3}% 24%, ${b - 3.1}% 52%,` +
+          ` ${b - 1.8}% 76%, ${b - 3.6}% 100%, 0 100%)`;
+      });
+    };
+
+    teken();
+    window.addEventListener("scroll", teken, { passive: true });
+    window.addEventListener("resize", teken);
+    return () => {
+      window.removeEventListener("scroll", teken);
+      window.removeEventListener("resize", teken);
+    };
+  }, [reduced]);
+
+  return (
+    <section ref={sectie} className="relative isolate overflow-hidden">
+      <div className="pointer-events-none absolute -left-28 top-0 h-80 w-80 rounded-full bg-brand/10 blur-3xl" aria-hidden />
+      <div className="pointer-events-none absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-accent/15 blur-3xl" aria-hidden />
+
+      <MarkeerInhoud />
+
+      <div
+        ref={haal}
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-brand-dark"
+        style={{ clipPath: "polygon(0 0, 0 0, 0 100%, 0 100%)" }}
+      >
+        <MarkeerInhoud donker />
+      </div>
+    </section>
+  );
+}
+
+/* De inhoud staat twee keer op de pagina, dus hij hoort op één plek te
+   staan. `donker` is de versie die op de groene haal ligt. */
+function MarkeerInhoud({ donker = false }: { donker?: boolean }) {
+  return (
+    <div className="relative mx-auto grid w-full max-w-5xl gap-10 px-6 pb-16 pt-12 lg:grid-cols-[1fr_1.05fr] lg:gap-16 lg:pb-20 lg:pt-16">
+      <div>
+        <h2
+          data-reveal={donker ? undefined : ""}
+          className={`font-display text-[clamp(1.875rem,3.1vw,2.375rem)] font-black leading-[1.08] tracking-tight [text-wrap:balance] ${
+            donker ? "text-white" : ""
+          }`}
+        >
+          De slimme werkplek voor leerkrachten in het basisonderwijs
+        </h2>
+        <div data-reveal={donker ? undefined : ""} className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <Link
+            href="/sign-up"
+            tabIndex={donker ? -1 : undefined}
+            className={`knop-druk w-full whitespace-nowrap rounded-2xl px-7 py-4 text-center text-lg font-bold shadow-lg transition-[transform,background-color] duration-200 sm:w-auto ${
+              donker
+                ? "bg-white text-brand-dark shadow-black/10"
+                : "bg-brand text-white shadow-brand/25 hover:bg-brand-dark"
+            }`}
+          >
+            Probeer Avinka gratis
+          </Link>
+          <a
+            href="#tools"
+            tabIndex={donker ? -1 : undefined}
+            className={`knop-druk w-full whitespace-nowrap rounded-2xl border-2 px-7 py-4 text-center text-lg font-bold transition-[transform,border-color] duration-200 sm:w-auto ${
+              donker
+                ? "border-white/45 bg-transparent text-white"
+                : "border-ink/10 bg-white text-ink hover:border-ink/20"
+            }`}
+          >
+            Bekijk de tools
+          </a>
+        </div>
+      </div>
+
+      <div className="max-w-xl lg:pt-2">
+        <p
+          data-reveal={donker ? undefined : ""}
+          className={`text-lg leading-8 ${donker ? "text-white" : "text-ink/75"}`}
+        >
+          Avinka brengt de hulpmiddelen voor je schoolwerk samen in één
+          omgeving. Je geeft aan wat je nodig hebt en Avinka helpt je met de
+          uitwerking, zodat terugkerende taken minder tijd kosten en je werk
+          overzichtelijk blijft.
+        </p>
+      </div>
     </div>
   );
 }
