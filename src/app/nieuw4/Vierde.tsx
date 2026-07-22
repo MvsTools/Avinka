@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  Fragment,
   useEffect,
   useRef,
   useState,
@@ -62,6 +63,51 @@ const PIJNPUNTEN = [
       "Taken die je eigenlijk allang af had willen hebben, blijven op de stapel liggen.",
   },
 ];
+
+/* De kop van elk pijnpunt beeldt zijn eigen pijn uit, en valt op z'n plek
+   zodra je de regel leest (de leesband zet .leest):
+   0 · "Te veel administratie" ligt als stapeltje (twee vage kopieën erachter)
+       en zakt bij het lezen in elkaar tot één regel.
+   1 · "Alles staat verspreid": de woorden staan écht verspreid en schuiven
+       bij het lezen samen.
+   2 · "Het schuift steeds door" staat doorgeschoven uit de kantlijn en
+       schuift bij het lezen terug in lijn.
+   Herkennen = op z'n plek vallen; hetzelfde verhaal als de film en de titel
+   van de pagina. Zonder beweging staat alles gewoon netjes. */
+function PijnKop({ index, tekst }: { index: number; tekst: string }) {
+  if (index === 1) {
+    // Elk woord los, zodat ze verspreid kunnen staan.
+    const woorden = tekst.split(" ");
+    return (
+      <span className="kop relative inline-block font-black">
+        {woorden.map((w, wi) => (
+          <Fragment key={w}>
+            {wi > 0 && " "}
+            <span className={`los los-${wi} inline-block`}>
+              {w}
+              {wi === woorden.length - 1 && "."}
+            </span>
+          </Fragment>
+        ))}
+      </span>
+    );
+  }
+  return (
+    <span className="kop relative inline-block font-black">
+      {index === 0 && (
+        <>
+          <span className="stapel stapel-2" aria-hidden>
+            {tekst}.
+          </span>
+          <span className="stapel stapel-1" aria-hidden>
+            {tekst}.
+          </span>
+        </>
+      )}
+      {tekst}.
+    </span>
+  );
+}
 
 /* De tool-galerij: per tool één kunstkaart (Stripe-achtig, maar in onze
    eigen beeldtaal). Nieuwe tool = kaart erbij. `licht` bepaalt of de naam
@@ -1024,10 +1070,11 @@ export default function Vierde({
                     key={p.titel}
                     data-reveal
                     data-leesregel
+                    data-pijn={i}
                     style={{ transitionDelay: `${i * 110}ms` }}
                     className="border-t border-ink/10 py-7 font-display text-xl leading-[1.5] tracking-tight [text-wrap:pretty] sm:text-2xl sm:leading-[1.45]"
                   >
-                    <span className="kop font-black">{p.titel}.</span>{" "}
+                    <PijnKop index={i} tekst={p.titel} />{" "}
                     <span className="uitleg">{p.tekst}</span>
                   </p>
                 ))}
@@ -2074,24 +2121,56 @@ function StijlBlok() {
       }
       .anim .vinkpop { animation: vinkpop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 
-      /* De herkenningsregels: standaard staat alles gewoon leesbaar. Mét
-         beweging staat de regel waar je bent scherp en schuiven de andere een
-         paar pixels terug, zodat je oog vanzelf meeloopt. Nooit lichter dan
-         55%, ook de wachtende regels moeten te lezen zijn. */
+      /* De herkenningsregels: elke kop beeldt zijn eigen pijn uit en valt op
+         z'n plek zodra je de regel leest. Ongelezen = gedempt en licht in de
+         war; gelezen = vol inkt en netjes. Alles transform/opacity, alles
+         omkeerbaar, en zonder .anim staat alles gewoon netjes en leesbaar. */
       [data-leesregel] .kop { color: rgb(34 28 58); }
       [data-leesregel] .uitleg { color: rgb(34 28 58 / 0.6); }
-      .anim [data-leesregel] {
-        transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-      }
       .anim [data-leesregel] .kop,
       .anim [data-leesregel] .uitleg {
-        transition: color 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        transition: color 0.55s cubic-bezier(0.23, 1, 0.32, 1);
       }
       .anim [data-leesregel] .kop { color: rgb(34 28 58 / 0.55); }
       .anim [data-leesregel] .uitleg { color: rgb(34 28 58 / 0.45); }
-      .anim [data-leesregel].leest { transform: translateX(6px); }
       .anim [data-leesregel].leest .kop { color: rgb(34 28 58); }
       .anim [data-leesregel].leest .uitleg { color: rgb(34 28 58 / 0.7); }
+
+      /* 0 · de stapel: twee vage kopieën boven de kop zakken in elkaar. */
+      .stapel {
+        position: absolute;
+        left: 0;
+        top: 0;
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+      }
+      .anim [data-pijn="0"] .stapel {
+        transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1),
+          opacity 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+      }
+      .anim [data-pijn="0"] .stapel-1 { transform: translate(4px, -0.34em) rotate(0.5deg); opacity: 0.16; }
+      .anim [data-pijn="0"] .stapel-2 { transform: translate(-3px, -0.68em) rotate(-0.7deg); opacity: 0.08; }
+      .anim [data-pijn="0"].leest .stapel { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+
+      /* 1 · verspreid: de woorden staan uit elkaar en schuiven samen. */
+      .anim [data-pijn="1"] .los {
+        transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+      }
+      .anim [data-pijn="1"] .los-0 { transform: translate(-8px, -3px) rotate(-1.1deg); }
+      .anim [data-pijn="1"] .los-1 { transform: translate(2px, 4px) rotate(0.9deg); }
+      /* het laatste woord verdwaalt omhoog, niet opzij: rechts staat tekst */
+      .anim [data-pijn="1"] .los-2 { transform: translate(1px, -4px) rotate(1.3deg); }
+      .anim [data-pijn="1"].leest .los { transform: none; }
+
+      /* 2 · doorgeschoven: de kop is uit de kantlijn geschoven (naar links,
+         zodat hij nergens overheen valt) en schuift terug in lijn. */
+      .anim [data-pijn="2"] .kop {
+        transition: color 0.55s cubic-bezier(0.23, 1, 0.32, 1),
+          transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        transform: translateX(-0.55em) rotate(-0.4deg);
+      }
+      .anim [data-pijn="2"].leest .kop { transform: none; }
 
       /* Knoppen mogen voelen dat je ze indrukt. */
       .knop-druk:active { transform: scale(0.97); }
