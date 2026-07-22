@@ -136,9 +136,9 @@ const KAARTEN = [
     id: "weekplanning",
     naam: "Weekplanning",
     tijd: "± 30 minuten per planning",
-    zin: "Je hele week in één helder rooster, gekoppeld aan je tools.",
+    zin: "Een uitgedacht weekrooster.",
     uitleg:
-      "Zet je vaste momenten neer en Avinka vult je week aan tot een helder rooster, inclusief wat er na schooltijd nog moet gebeuren. Alles blijft versleepbaar.",
+      "Een weekplanning die wordt opgesteld op basis van jouw wensen, ook voor de uren na schooltijd. Avinka houdt rekening met drukke periodes en vinkt je taken af. Koppelen met Parro en je Outlook-agenda is ook mogelijk.",
     licht: false,
   },
 ];
