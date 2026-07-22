@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 
 /**
  * SCHETS (niet in het dashboard opgenomen, niets geregistreerd, geen database).
@@ -164,6 +164,172 @@ function datumVol(iso: string): string {
   return `${DAGEN[d.getUTCDay()]} ${d.getUTCDate()} ${MAANDVOL[d.getUTCMonth()]}`;
 }
 
+// ------------------------------------------------------------ maandweergave
+
+const WEEKDAGEN = ["ma", "di", "wo", "do", "vr", "za", "zo"];
+
+/** Het weeknummer zoals scholen en methodes het gebruiken (ISO). */
+function weeknummer(iso: string): number {
+  const d = dag(iso);
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7) + 3); // donderdag van die week
+  const eersteDonderdag = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  eersteDonderdag.setUTCDate(
+    eersteDonderdag.getUTCDate() - ((eersteDonderdag.getUTCDay() + 6) % 7) + 3,
+  );
+  return 1 + Math.round((d.getTime() - eersteDonderdag.getTime()) / 604800000);
+}
+
+function Maandweergave() {
+  const [eerste, setEerste] = useState(VANDAAG.slice(0, 7) + "-01");
+
+  const jaar = Number(eerste.slice(0, 4));
+  const maand = Number(eerste.slice(5, 7)) - 1;
+  const aantalDagen = new Date(Date.UTC(jaar, maand + 1, 0)).getUTCDate();
+  const laatste = `${eerste.slice(0, 7)}-${String(aantalDagen).padStart(2, "0")}`;
+
+  // Het rooster begint altijd op een maandag en loopt door tot de week
+  // waarin de laatste dag van de maand valt.
+  const rasterStart = maandag(eerste);
+  const rijen = Math.ceil((dagen(rasterStart, laatste) + 1) / 7);
+  const cellen = Array.from({ length: rijen * 7 }, (_, i) => plus(rasterStart, i));
+
+  const verschuif = (n: number) => {
+    const d = new Date(Date.UTC(jaar, maand + n, 1));
+    setEerste(d.toISOString().slice(0, 10));
+  };
+  const kanTerug = eerste > START.slice(0, 7) + "-01";
+  const kanVooruit = eerste < EIND.slice(0, 7) + "-01";
+
+  return (
+    <div>
+      <div className="mb-3 flex flex-wrap items-center gap-3">
+        <h3 className="text-lg font-bold text-ink">
+          {MAANDVOL[maand]} {jaar}
+        </h3>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => verschuif(-1)}
+            disabled={!kanTerug}
+            aria-label="Vorige maand"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-black/10 bg-white text-ink/70 transition-transform duration-150 hover:text-ink active:scale-[0.96] disabled:opacity-35"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+          </button>
+          <button
+            onClick={() => verschuif(1)}
+            disabled={!kanVooruit}
+            aria-label="Volgende maand"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-black/10 bg-white text-ink/70 transition-transform duration-150 hover:text-ink active:scale-[0.96] disabled:opacity-35"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+        {eerste !== VANDAAG.slice(0, 7) + "-01" && (
+          <button
+            onClick={() => setEerste(VANDAAG.slice(0, 7) + "-01")}
+            className="text-sm font-bold text-brand-dark underline-offset-4 hover:underline"
+          >
+            Naar vandaag
+          </button>
+        )}
+        <p className="ml-auto text-sm text-ink/50">Groen betekent vrij</p>
+      </div>
+
+      <div className="overflow-hidden rounded-3xl border border-black/5 bg-white shadow-sm">
+        <div className="grid grid-cols-[2.6rem_repeat(7,1fr)] border-b border-black/5">
+          <div className="px-1 py-2 text-center text-xs font-bold uppercase tracking-wider text-ink/30">
+            wk
+          </div>
+          {WEEKDAGEN.map((d) => (
+            <div key={d} className="px-2 py-2 text-center text-xs font-bold uppercase tracking-wider text-ink/40">
+              {d}
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-[2.6rem_repeat(7,1fr)]">
+          {cellen.map((datum, i) => {
+            const weekcel =
+              i % 7 === 0 ? (
+                <div
+                  key={"wk" + datum}
+                  className="flex min-h-[92px] items-start justify-center border-b border-r border-black/5 bg-cream/50 pt-2 text-xs font-bold tabular-nums text-ink/35"
+                >
+                  {weeknummer(datum)}
+                </div>
+              ) : null;
+            const d = dag(datum);
+            const dezeMaand = datum.slice(0, 7) === eerste.slice(0, 7);
+            const weekend = d.getUTCDay() === 0 || d.getUTCDay() === 6;
+            const vak = inVakantie(datum);
+            const items = ITEMS.filter((it) => it.datum === datum);
+            const studiedag = items.some((it) => it.soort === "studiedag");
+            const vrij = !!vak || studiedag;
+            const isVandaag = datum === VANDAAG;
+            const eersteVakantiedag = vak && (vak.van === datum || d.getUTCDay() === 1);
+
+            return (
+              <Fragment key={datum}>
+              {weekcel}
+              <div
+                className={
+                  "min-h-[92px] border-b border-r border-black/5 p-1.5 " +
+                  (i % 7 === 6 ? "border-r-0 " : "") +
+                  (!dezeMaand ? "opacity-35 " : "") +
+                  (vrij ? "bg-brand-soft " : weekend ? "bg-cream/70 " : "bg-white ")
+                }
+              >
+                <div className="flex items-center justify-between">
+                  <span
+                    className={
+                      "flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold tabular-nums " +
+                      (isVandaag
+                        ? "bg-brand-dark text-white"
+                        : weekend && !vrij
+                          ? "text-ink/35"
+                          : "text-ink/70")
+                    }
+                  >
+                    {d.getUTCDate()}
+                  </span>
+                </div>
+
+                {eersteVakantiedag && dezeMaand && (
+                  <p className="mt-0.5 truncate text-[11px] font-bold leading-tight text-brand-dark">
+                    {vak.naam}
+                  </p>
+                )}
+
+                <div className="mt-1 flex flex-col gap-1">
+                  {items.map((it) => (
+                    <span
+                      key={it.wat}
+                      title={it.wat + (it.tijd ? `, ${it.tijd}` : "")}
+                      className={
+                        "rounded-md px-1.5 py-0.5 text-[11px] font-bold leading-snug " +
+                        (it.soort === "studiedag"
+                          ? "bg-white/70 text-brand-dark"
+                          : ETIKET[it.soort].stijl)
+                      }
+                    >
+                      {it.soort === "studiedag" ? "Studiedag" : it.wat}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              </Fragment>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 type Blok = { nr: number; van: string; tot: string };
 type Stuk = { soort: "blok"; blok: Blok } | { soort: "vakantie"; vakantie: Vakantie };
 
@@ -211,6 +377,7 @@ function Jaaroverzicht() {
   // Blokken die helemaal achter je liggen staan dichtgeklapt. Je opent de
   // pagina dus midden in de periode waar je nú in zit.
   const [open, setOpen] = useState<number[]>([]);
+  const [weergave, setWeergave] = useState<"lijst" | "maand">("lijst");
 
   const weken = (() => {
     let n = 0;
@@ -308,7 +475,25 @@ function Jaaroverzicht() {
         </div>
       </div>
 
-      <div>
+      {/* Zelfde gegevens, twee manieren van kijken. De keuze blijft staan. */}
+      <div className="flex items-center gap-1 self-start rounded-2xl border border-black/5 bg-white p-1 shadow-sm">
+        {(["lijst", "maand"] as const).map((w) => (
+          <button
+            key={w}
+            onClick={() => setWeergave(w)}
+            className={
+              "rounded-xl px-4 py-1.5 text-sm font-bold transition-colors " +
+              (weergave === w ? "bg-brand-dark text-white" : "text-ink/55 hover:text-ink")
+            }
+          >
+            {w === "lijst" ? "Lijst" : "Maand"}
+          </button>
+        ))}
+      </div>
+
+      {weergave === "maand" && <Maandweergave />}
+
+      <div className={weergave === "lijst" ? "" : "hidden"}>
         <h3 className="text-lg font-bold text-ink">Je jaar op een rij</h3>
 
         <div className="mt-4 flex flex-col gap-4">
