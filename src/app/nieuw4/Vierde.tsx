@@ -117,7 +117,7 @@ const KAARTEN = [
   {
     id: "werkbladen",
     naam: "Werkbladen",
-    tijd: "± 20 minuten per werkblad",
+    tijd: "± 15 minuten per werkblad",
     zin: "Printbare werkbladen die precies bij je les passen.",
     uitleg:
       "Kies een onderwerp en je hebt een printklaar werkblad, van invuloefening tot woordzoeker. De opdrachten worden door de tool zelf opgebouwd, zodat de antwoorden en het woordbeeld altijd kloppen.",
