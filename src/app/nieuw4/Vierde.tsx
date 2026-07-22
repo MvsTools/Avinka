@@ -135,7 +135,7 @@ const KAARTEN = [
   {
     id: "weekplanning",
     naam: "Weekplanning",
-    tijd: "± 30 minuten per week",
+    tijd: "± 30 minuten per planning",
     zin: "Je hele week in één helder rooster, gekoppeld aan je tools.",
     uitleg:
       "Zet je vaste momenten neer en Avinka vult je week aan tot een helder rooster, inclusief wat er na schooltijd nog moet gebeuren. Alles blijft versleepbaar.",
@@ -1709,7 +1709,7 @@ function ToolPaneel({
                   <circle cx="12" cy="12" r="9" />
                   <path d="M12 7.5V12l3 2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                {kaart.tijd} terug
+                Bespaart {kaart.tijd}
               </span>
             </p>
             <p className="mt-4 text-lg font-semibold leading-8 text-brand-dark">{kaart.zin}</p>
