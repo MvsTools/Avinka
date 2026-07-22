@@ -1636,38 +1636,48 @@ function KaartBeeld({ soort }: { soort: string }) {
       </div>
     );
 
-  if (soort === "lesontwerp")
+  if (soort === "lesontwerp") {
+    // Eén coördinatenstelsel (viewBox 336×420 = de 4:5-kaart) voor de route
+    // én de stations, zodat elk station exact op de lijn valt, op elk formaat.
+    const stations = [
+      { label: "Start", x: 70, y: 58, brand: false, rot: -2 },
+      { label: "Lesdoel", x: 246, y: 130, brand: false, rot: 1 },
+      { label: "Instructie", x: 92, y: 205, brand: false, rot: -1 },
+      { label: "Verwerking", x: 246, y: 280, brand: false, rot: 2 },
+      { label: "Afsluiting ✓", x: 118, y: 352, brand: true, rot: -2 },
+    ];
     return (
       <div className="absolute inset-0 bg-cream">
         <div className="bg-grid absolute inset-0 opacity-70" aria-hidden />
         <div className="absolute -left-16 top-1/4 h-56 w-56 rounded-full bg-brand/15 blur-3xl" aria-hidden />
-        {/* de route van start naar afsluiting */}
+        {/* de route: serpentine die precies door de vijf stations loopt */}
         <svg viewBox="0 0 336 420" fill="none" className="absolute inset-0 h-full w-full" aria-hidden>
           <path
-            d="M66 52 C 250 62, 260 100, 180 122 C 95 145, 82 175, 168 196 C 255 217, 258 248, 172 268 C 90 288, 92 320, 168 338"
+            d="M70 58 C 205 76, 260 92, 246 130 C 232 186, 98 152, 92 205 C 86 262, 240 232, 246 280 C 253 330, 136 300, 118 352"
             stroke="#2f9e6e"
             strokeWidth="3"
             strokeLinecap="round"
             strokeDasharray="1 11"
           />
         </svg>
-        <p className="absolute left-6 top-8 -rotate-2 rounded-full bg-white px-3 py-1.5 text-sm font-bold text-ink shadow-md ring-1 ring-black/5">
-          Start
-        </p>
-        <p className="absolute right-7 top-[22%] rotate-1 rounded-full bg-white px-3 py-1.5 text-sm font-bold text-ink shadow-md ring-1 ring-black/5">
-          Lesdoel
-        </p>
-        <p className="absolute left-7 top-[40%] -rotate-1 rounded-full bg-white px-3 py-1.5 text-sm font-bold text-ink shadow-md ring-1 ring-black/5">
-          Instructie
-        </p>
-        <p className="absolute right-8 top-[57%] rotate-2 rounded-full bg-white px-3 py-1.5 text-sm font-bold text-ink shadow-md ring-1 ring-black/5">
-          Verwerking
-        </p>
-        <p className="absolute bottom-[19%] left-[24%] -rotate-2 rounded-full bg-brand px-3 py-1.5 text-sm font-bold text-white shadow-md">
-          Afsluiting ✓
-        </p>
+        {stations.map((s) => (
+          <p
+            key={s.label}
+            className={`absolute whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-bold shadow-md ${
+              s.brand ? "bg-brand text-white" : "bg-white text-ink ring-1 ring-black/5"
+            }`}
+            style={{
+              left: `${(s.x / 336) * 100}%`,
+              top: `${(s.y / 420) * 100}%`,
+              transform: `translate(-50%, -50%) rotate(${s.rot}deg)`,
+            }}
+          >
+            {s.label}
+          </p>
+        ))}
       </div>
     );
+  }
 
   if (soort === "plattegrond")
     return (
@@ -1714,26 +1724,38 @@ function KaartBeeld({ soort }: { soort: string }) {
             nen zitten in het hok.
           </p>
           <p className="mt-3 text-sm font-bold text-ink">2. Zoek de woorden</p>
-          <div className="mt-1.5 flex items-start gap-3">
+          <div className="mt-1.5 flex items-start gap-2.5">
+            {/* 5×4-rooster; 'hok' loopt verticaal, 'reis' diagonaal (echte
+               woordzoeker, niet alles keurig links-naar-rechts) */}
             <div className="grid grid-cols-5 gap-1" aria-hidden>
-              {["H", "O", "K", "R", "E", "D", "A", "G", "B", "S", "T", "E", "I", "L", "M", "P", "R", "E", "I", "S"].map(
-                (letter, i) => (
+              {(() => {
+                // hok = kolom 0 (idx 0,5,10); reis = diagonaal ↙ (idx 3,7,11,15)
+                const letters = ["H", "T", "B", "R", "M", "O", "N", "E", "L", "P", "K", "I", "C", "E", "D", "S", "G", "A", "J", "T"];
+                const hok = new Set([0, 5, 10]);
+                const reis = new Set([3, 7, 11, 15]);
+                return letters.map((letter, i) => (
                   <span
                     key={i}
                     className={`flex h-6 w-6 items-center justify-center rounded text-xs font-bold ${
-                      i <= 2 ? "bg-brand-soft text-brand-dark" : "bg-cream text-ink/55"
+                      hok.has(i)
+                        ? "bg-brand text-white"
+                        : reis.has(i)
+                          ? "bg-accent/80 text-ink"
+                          : "bg-cream text-ink/55"
                     }`}
                   >
                     {letter}
                   </span>
-                ),
-              )}
+                ));
+              })()}
             </div>
-            <ul className="space-y-1 text-sm font-bold">
+            <ul className="space-y-1 text-xs font-bold">
               <li className="flex items-center gap-1 text-ink/40 line-through">
                 <Vink className="h-3 w-3 text-brand" dik={4} /> hok
               </li>
-              <li className="text-ink/70">reis</li>
+              <li className="flex items-center gap-1 text-ink/40 line-through">
+                <Vink className="h-3 w-3 text-accent" dik={4} /> reis
+              </li>
               <li className="text-ink/70">dag</li>
             </ul>
           </div>
