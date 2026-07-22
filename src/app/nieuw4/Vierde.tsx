@@ -1560,11 +1560,13 @@ function ToolPaneel({
   kaart,
   vanaf,
   opSluiten,
+  opStartSluiten,
   reduced,
 }: {
   kaart: (typeof KAARTEN)[number];
   vanaf: DOMRect;
   opSluiten: () => void;
+  opStartSluiten: () => void;
   reduced: boolean;
 }) {
   const doek = useRef<HTMLDivElement>(null);
@@ -1600,25 +1602,50 @@ function ToolPaneel({
     };
   }, [vanaf, reduced]);
 
-  // Sluiten: dezelfde beweging terug, en pas daarna weghalen.
+  /* Sluiten: dezelfde beweging terug, maar het paneel mag niet als
+     samengeperst mini-paneel op de kaart landen. Daarom drie dingen tegelijk:
+     de tekstkolom fadet meteen weg (dan blijft alleen de tekening over, die
+     de kaart al ís), de kaart eronder wordt weer zichtbaar, en het paneel
+     vervaagt in het laatste deel van de reis. Zo vloeit het over in de kaart
+     in plaats van om te klappen. */
   const sluit = () => {
     const p = paneel.current;
     const d = doek.current;
     if (!p || !d || bezigMetSluiten.current) return opSluiten();
     bezigMetSluiten.current = true;
+    opStartSluiten();
+
+    // De openanimatie stoppen, anders blijft die (fill: both) meepraten over
+    // transform en opacity.
+    p.getAnimations().forEach((a) => a.cancel());
+
     const naar = p.getBoundingClientRect();
-    const duur = reduced ? 120 : 420;
+    const duur = reduced ? 140 : 440;
+
     d.animate([{ opacity: 1 }, { opacity: 0 }], { duration: duur, fill: "both" });
+    p.querySelector(".paneel-tekst")?.animate([{ opacity: 1 }, { opacity: 0 }], {
+      duration: reduced ? 100 : 170,
+      easing: "ease-out",
+      fill: "both",
+    });
+
     const terug = p.animate(
       [
-        { transform: "translate(0, 0) scale(1, 1)", opacity: 1 },
+        { transform: "translate(0, 0) scale(1, 1)" },
         {
           transform: `translate(${vanaf.left - naar.left}px, ${vanaf.top - naar.top}px) scale(${vanaf.width / naar.width}, ${vanaf.height / naar.height})`,
-          opacity: reduced ? 0 : 1,
         },
       ],
       { duration: duur, easing: "cubic-bezier(0.32, 0.72, 0, 1)", fill: "both" },
     );
+    // De vervaging krijgt zijn eigen timing: pas in het laatste stuk van de
+    // reis, zodat je hem ziet krimpen en hij daarna in de kaart oplost.
+    p.animate([{ opacity: 1 }, { opacity: 0 }], {
+      duration: duur * 0.42,
+      delay: duur * 0.58,
+      easing: "ease-in",
+      fill: "both",
+    });
     terug.onfinish = opSluiten;
   };
 
@@ -1796,6 +1823,9 @@ function ToolRail() {
   const [gezien, setGezien] = useState<boolean[]>(() => KAARTEN.map(() => false));
   const [wakker, setWakker] = useState(false);
   const [open, setOpen] = useState<{ index: number; vanaf: DOMRect } | null>(null);
+  // De kaart onder het paneel is verborgen zolang het paneel er "is"; zodra
+  // het sluiten begint komt hij terug, zodat het paneel erin kan overvloeien.
+  const [kaartVerborgen, setKaartVerborgen] = useState(false);
   const reduced = useSyncExternalStore<boolean | null>(
     abonneerReduced,
     () => window.matchMedia(REDUCED_QUERY).matches,
@@ -1811,6 +1841,7 @@ function ToolRail() {
       e.detail !== 0 && Math.hypot(e.clientX - neer.current.x, e.clientY - neer.current.y) > 6;
     if (versleept) return;
     setOpen({ index, vanaf });
+    setKaartVerborgen(true);
   };
 
   const bijScroll = () => {
@@ -1926,7 +1957,7 @@ function ToolRail() {
           <RailKaarten
             gezien={gezien}
             opOpenen={opOpenen}
-            openId={open ? KAARTEN[open.index].id : null}
+            openId={open && kaartVerborgen ? KAARTEN[open.index].id : null}
           />
         </div>
 
@@ -1963,6 +1994,7 @@ function ToolRail() {
           kaart={KAARTEN[open.index]}
           vanaf={open.vanaf}
           reduced={reduced === true}
+          opStartSluiten={() => setKaartVerborgen(false)}
           opSluiten={() => setOpen(null)}
         />
       )}
