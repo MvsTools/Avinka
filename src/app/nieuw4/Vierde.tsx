@@ -1257,7 +1257,12 @@ function Markeersectie() {
           return;
         }
         ver = p;
-        const b = p * 105;
+        // De haal stopt net voorbij de tekst in plaats van van het scherm af
+        // te lopen, zodat je de kriskras-stiftrand blijft zien. Is er geen
+        // ruimte naast de tekst (smal scherm), dan loopt hij gewoon door.
+        const tekstRechts = r.width / 2 + Math.min(1024, r.width) / 2 - 24;
+        const eind = ((tekstRechts + 28) / r.width) * 100 + 3.6;
+        const b = p * (eind <= 100 ? eind : 105);
         // Geen liniaal maar een stiftrand: licht golvend en iets schuin.
         laag.style.clipPath =
           `polygon(0 0, ${b}% 0, ${b - 1.3}% 24%, ${b - 3.1}% 52%,` +
