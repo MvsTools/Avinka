@@ -91,7 +91,7 @@ const KAARTEN = [
     id: "oudercontact",
     naam: "Oudercontact",
     tijd: "± 2 tot 20 minuten per bericht",
-    zin: "Elk bericht aan ouders, zonder leeg scherm.",
+    zin: "Nooit meer vanaf nul beginnen aan een bericht.",
     uitleg:
       "Van een kort berichtje tot een informatiebrief aan alle ouders: je vertelt wat er speelt en je krijgt een nette tekst terug die je alleen nog hoeft na te lezen. Een berichtje is zo klaar, een brief scheelt al gauw twintig minuten. Ook voor lastige boodschappen, want de toon kies je zelf.",
     licht: false,
