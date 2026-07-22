@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useState } from "react";
 
 /**
  * SCHETS (niet in het dashboard opgenomen, niets geregistreerd, geen database).
  * Doel: laten zien hoe "Mijn schooljaar" eruit gaat zien voordat we het echt bouwen.
- * Twee schermen: het koppelen van een agenda, en het jaarlint zelf.
+ * Twee schermen: het koppelen van een agenda, en je jaar op een rij.
  *
  * Weghalen = deze map verwijderen. Er hangt niets aan vast.
  *
@@ -138,127 +138,132 @@ function inVakantie(iso: string): Vakantie | undefined {
   return VAKANTIES.find((v) => iso >= v.van && iso <= v.tot);
 }
 
-// ---------------------------------------------------------------- het lint
+// ------------------------------------------------------- je jaar op een rij
 
-const BREEDTE = 1000;
-const HOOGTE = 108;
-const BASIS = 52; // de hartlijn van de draad
-const DUN = 1.4; // halve dikte in een rustige week
-const DIK = 11.5; // halve dikte in de drukste week
+/** Elk moment krijgt een woord, niet alleen een kleur. */
+const ETIKET: Record<Soort, { woord: string; stijl: string }> = {
+  studiedag: { woord: "Vrije dag", stijl: "bg-brand-soft text-brand-dark" },
+  rapport: { woord: "Rapporten", stijl: "bg-accent-soft text-amber-800" },
+  gesprek: { woord: "Gesprekken", stijl: "border border-brand/35 bg-white text-brand-dark" },
+  vergadering: { woord: "Vergadering", stijl: "bg-cream text-ink/60" },
+  activiteit: { woord: "Activiteit", stijl: "bg-cream text-ink/60" },
+};
 
-function Jaarlint() {
-  const totaal = dagen(START, EIND);
-  const x = (iso: string) => (dagen(START, iso) / totaal) * BREEDTE;
-  const vandaagX = x(VANDAAG);
+/** "wo 25 nov" */
+function dagKort(iso: string): string {
+  const d = dag(iso);
+  return `${DAGEN[d.getUTCDay()].slice(0, 2)} ${d.getUTCDate()} ${MAANDEN[d.getUTCMonth()]}`;
+}
 
-  // Weken van het schooljaar, met hun druktewaarde.
-  const weken = useMemo(() => {
-    const lijst: { ma: string; druk: number; vakantie: boolean }[] = [];
+const MAANDVOL = [
+  "januari", "februari", "maart", "april", "mei", "juni",
+  "juli", "augustus", "september", "oktober", "november", "december",
+];
+function datumVol(iso: string): string {
+  const d = dag(iso);
+  return `${DAGEN[d.getUTCDay()]} ${d.getUTCDate()} ${MAANDVOL[d.getUTCMonth()]}`;
+}
+
+type Blok = { nr: number; van: string; tot: string };
+type Stuk = { soort: "blok"; blok: Blok } | { soort: "vakantie"; vakantie: Vakantie };
+
+function bouwStukken(): Stuk[] {
+  const uit: Stuk[] = [];
+  let cursor = START;
+  let nr = 1;
+  for (const v of VAKANTIES) {
+    uit.push({ soort: "blok", blok: { nr: nr++, van: cursor, tot: plus(v.van, -1) } });
+    uit.push({ soort: "vakantie", vakantie: v });
+    cursor = plus(v.tot, 1);
+  }
+  uit.push({ soort: "blok", blok: { nr: nr, van: cursor, tot: EIND } });
+  return uit;
+}
+
+function Regel({ item }: { item: Item }) {
+  const geweest = item.datum < VANDAAG;
+  const et = ETIKET[item.soort];
+  return (
+    <li
+      className={
+        "flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-black/5 py-3 first:border-t-0 " +
+        (geweest ? "opacity-45" : "")
+      }
+    >
+      <span className="w-[5.5rem] shrink-0 text-sm font-bold tabular-nums text-ink/55">
+        {dagKort(item.datum)}
+      </span>
+      <span className="font-semibold text-ink">{item.wat}</span>
+      {item.tijd && <span className="text-sm text-ink/50">{item.tijd}</span>}
+      <span className={"rounded-lg px-2 py-0.5 text-xs font-bold " + et.stijl}>{et.woord}</span>
+      {item.tool && !geweest && (
+        <button className="ml-auto shrink-0 text-sm font-bold text-brand-dark underline-offset-4 hover:underline">
+          {item.tool} openen
+        </button>
+      )}
+    </li>
+  );
+}
+
+function Jaaroverzicht() {
+  const stukken = bouwStukken();
+
+  // Blokken die helemaal achter je liggen staan dichtgeklapt. Je opent de
+  // pagina dus midden in de periode waar je nú in zit.
+  const [open, setOpen] = useState<number[]>([]);
+
+  const weken = (() => {
+    let n = 0;
     let d = maandag(START);
     while (d <= EIND) {
-      lijst.push({
-        ma: d,
-        druk: DRUKTE_PIEKEN[d] ?? 0,
-        vakantie: !!inVakantie(plus(d, 2)),
-      });
+      if (!inVakantie(plus(d, 2))) n++;
       d = plus(d, 7);
     }
-    return lijst;
-  }, [totaal]);
-
-  // De draad. Eén doorlopende streek die aanzwelt waar het druk wordt en
-  // dun blijft in een rustige week. Bij een vakantie breekt hij af: dat gat
-  // is de adempauze. De uiteinden lopen taps toe, als een echte penstreek.
-  const draden = (() => {
-    const paden: string[] = [];
-    let run: { ma: string; druk: number }[] = [];
-
-    const vloei = (p: { x: number; y: number }[]) => {
-      let d = "";
-      for (let i = 0; i < p.length - 1; i++) {
-        const a = p[i];
-        const b = p[i + 1];
-        const mx = ((a.x + b.x) / 2).toFixed(1);
-        d += ` C ${mx} ${a.y.toFixed(1)}, ${mx} ${b.y.toFixed(1)}, ${b.x.toFixed(1)} ${b.y.toFixed(1)}`;
-      }
-      return d;
-    };
-
-    const sluit = () => {
-      if (run.length === 0) return;
-      const punten = [
-        { px: x(run[0].ma), h: DUN * 0.55 },
-        ...run.map((w) => ({ px: x(plus(w.ma, 2)), h: DUN + w.druk * (DIK - DUN) })),
-        { px: x(plus(run[run.length - 1].ma, 4)), h: DUN * 0.55 },
-      ];
-      const boven = punten.map((p) => ({ x: p.px, y: BASIS - p.h }));
-      const onder = [...punten].reverse().map((p) => ({ x: p.px, y: BASIS + p.h }));
-      paden.push(
-        `M ${boven[0].x.toFixed(1)} ${boven[0].y.toFixed(1)}` +
-          vloei(boven) +
-          ` L ${onder[0].x.toFixed(1)} ${onder[0].y.toFixed(1)}` +
-          vloei(onder) +
-          " Z",
-      );
-      run = [];
-    };
-
-    for (const w of weken) {
-      if (w.vakantie) sluit();
-      else run.push(w);
+    return n;
+  })();
+  const nu = (() => {
+    let n = 0;
+    let d = maandag(START);
+    while (d <= VANDAAG) {
+      if (!inVakantie(plus(d, 2))) n++;
+      d = plus(d, 7);
     }
-    sluit();
-    return paden;
+    return n;
   })();
 
-  // Maandlabels onder de lijn.
-  const maandLabels = (() => {
-    const uit: { px: number; naam: string }[] = [];
-    const d = dag(START);
-    d.setDate(1);
-    for (let i = 0; i < 12; i++) {
-      d.setMonth(d.getMonth() + 1);
-      const iso = d.toISOString().slice(0, 10);
-      if (iso > START && iso < EIND) uit.push({ px: x(iso), naam: MAANDEN[d.getMonth()] });
-    }
-    return uit;
-  })();
+  const volgendeVakantie = VAKANTIES.find((v) => v.van > VANDAAG)!;
+  const volgendeStudiedag = ITEMS.find((i) => i.soort === "studiedag" && i.datum >= VANDAAG);
+  const drukste = Object.entries(DRUKTE_PIEKEN)
+    .filter(([ma]) => ma > VANDAAG)
+    .sort((a, b) => b[1] - a[1])[0];
 
-  // Intekenen bij het eerste bezoek van deze sessie. Daarna meteen scherp,
-  // want dit scherm zie je elke dag en dan is wachten op een animatie irritant.
-  const [getekend, setGetekend] = useState(true);
-  useEffect(() => {
-    const rust = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (rust || sessionStorage.getItem("avinka-lint-getekend")) return;
-    setGetekend(false);
-    sessionStorage.setItem("avinka-lint-getekend", "1");
-    const t = setTimeout(() => setGetekend(true), 40);
-    return () => clearTimeout(t);
-  }, []);
-
-  const [actief, setActief] = useState<Item | null>(null);
-  const wrap = useRef<HTMLDivElement>(null);
-
-  const komend = ITEMS.filter((i) => i.datum >= VANDAAG).slice(0, 4);
-  const schoolweken = weken.filter((w) => !w.vakantie).length;
-  const geweest = weken.filter((w) => !w.vakantie && w.ma <= VANDAAG).length;
-  const volgendeVakantie = VAKANTIES.find((v) => v.van > VANDAAG);
-  const wekenTot = volgendeVakantie ? Math.round(dagen(VANDAAG, volgendeVakantie.van) / 7) : 0;
+  const feiten = [
+    {
+      label: "Volgende vakantie",
+      groot: volgendeVakantie.naam,
+      klein: `over ${Math.round(dagen(VANDAAG, volgendeVakantie.van) / 7)} weken`,
+    },
+    {
+      label: "Volgende studiedag",
+      groot: volgendeStudiedag ? datumVol(volgendeStudiedag.datum) : "geen meer dit jaar",
+      klein: volgendeStudiedag ? "alle groepen vrij" : "",
+    },
+    {
+      label: "Drukste week hierna",
+      groot: drukste ? `${kort(drukste[0])} tot ${kort(plus(drukste[0], 4))}` : "",
+      klein: "rapporten en gesprekken",
+    },
+  ];
 
   return (
-    <div className="flex flex-col gap-7">
+    <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
             Schooljaar 2026 tot 2027
           </h2>
           <p className="mt-1.5 text-ink/70">
-            Week {geweest} van {schoolweken}.{" "}
-            {volgendeVakantie && (
-              <>
-                Nog {wekenTot} weken tot de {volgendeVakantie.naam.toLowerCase()}.
-              </>
-            )}
+            Je zit in week {nu} van {weken}.
           </p>
         </div>
         <div className="flex items-center gap-1 rounded-2xl border border-black/5 bg-white p-1 shadow-sm">
@@ -266,7 +271,7 @@ function Jaarlint() {
             <span
               key={t}
               className={
-                "rounded-xl px-3.5 py-1.5 text-sm font-bold transition-colors " +
+                "rounded-xl px-3.5 py-1.5 text-sm font-bold " +
                 (i === 0 ? "bg-brand-dark text-white" : "text-ink/55")
               }
             >
@@ -276,194 +281,22 @@ function Jaarlint() {
         </div>
       </div>
 
-      {/* Het lint */}
-      {/* Op een telefoon zou het hele jaar tot postzegelformaat krimpen, dus
-          daar schuift de strook zelf horizontaal. De pagina blijft stilstaan. */}
-      <div ref={wrap} className="relative -mx-5 overflow-x-auto px-5 pb-2 sm:mx-0 sm:overflow-visible sm:px-0">
-        <svg
-          viewBox={`0 0 ${BREEDTE} ${HOOGTE}`}
-          className="w-full min-w-[860px]"
-          style={{ overflow: "visible" }}
-          role="img"
-          aria-label="Tijdlijn van het schooljaar met vakanties, studiedagen en drukke periodes"
-        >
-          <defs>
-            <clipPath id="tot-vandaag">
-              <rect x={0} y={0} width={vandaagX} height={HOOGTE} />
-            </clipPath>
-          </defs>
-
-          {/* Vakanties krijgen geen eigen vorm. Het gat in de draad ís de
-              vakantie: even niets. Alleen een naam erboven. */}
-          {VAKANTIES.map((v) => (
-            <text
-              key={v.naam}
-              x={(x(v.van) + x(plus(v.tot, 1))) / 2}
-              y={BASIS - 16}
-              textAnchor="middle"
-              className="fill-ink/40"
-              style={{ fontSize: 11, letterSpacing: 0.2 }}
-            >
-              {v.kort}
-            </text>
-          ))}
-
-          {/* Het hele jaar, nog niet geleefd */}
-          {draden.map((d, i) => (
-            <path key={i} d={d} fill="rgba(34,28,58,0.10)" />
-          ))}
-
-          {/* Wat geweest is, in groene inkt. Dit deel groeit mee met het jaar. */}
-          <g
-            style={{
-              clipPath: getekend ? "inset(0 0 0 0)" : "inset(0 100% 0 0)",
-              transition: "clip-path 900ms cubic-bezier(0.23, 1, 0.32, 1)",
-            }}
-          >
-            <g clipPath="url(#tot-vandaag)">
-              {draden.map((d, i) => (
-                <path key={i} d={d} fill="#2f9e6e" />
-              ))}
-            </g>
-          </g>
-
-          {/* Maanden, rustig eronder */}
-          {maandLabels.map((m) => (
-            <text
-              key={m.naam + m.px}
-              x={m.px}
-              y={BASIS + 32}
-              textAnchor="middle"
-              className="fill-ink/35"
-              style={{ fontSize: 11, letterSpacing: 1.2 }}
-            >
-              {m.naam}
-            </text>
-          ))}
-
-          {/* De momenten zelf, op de lijn */}
-          {ITEMS.map((it) => {
-            const px = x(it.datum);
-            const aan = actief?.datum === it.datum && actief?.wat === it.wat;
-            const geweestAl = it.datum <= VANDAAG;
-            const kleur = geweestAl ? "#25855a" : "rgba(34,28,58,0.35)";
-            return (
-              <g
-                key={it.datum + it.wat}
-                tabIndex={0}
-                role="button"
-                aria-label={`${it.wat}, ${lang(it.datum)}`}
-                onMouseEnter={() => setActief(it)}
-                onMouseLeave={() => setActief(null)}
-                onFocus={() => setActief(it)}
-                onBlur={() => setActief(null)}
-                style={{ cursor: "pointer", outline: "none" }}
-                className="[&:focus-visible>*:first-child]:opacity-100"
-              >
-                {/* onzichtbaar groter raakvlak plus focusring */}
-                <circle cx={px} cy={BASIS} r={13} fill="transparent" />
-                <circle
-                  cx={px}
-                  cy={BASIS}
-                  r={11}
-                  fill="none"
-                  stroke="#2f9e6e"
-                  strokeWidth={2}
-                  className="opacity-0"
-                />
-                {it.soort === "studiedag" && (
-                  <line
-                    x1={px}
-                    y1={BASIS - 7}
-                    x2={px}
-                    y2={BASIS + 7}
-                    stroke={geweestAl ? "#25855a" : "rgba(34,28,58,0.4)"}
-                    strokeWidth={2.5}
-                    strokeLinecap="round"
-                  />
-                )}
-                {it.soort === "rapport" && (
-                  <circle cx={px} cy={BASIS} r={aan ? 5.5 : 4.5} fill="#f59e0b" style={{ transition: "r 150ms" }} />
-                )}
-                {it.soort === "gesprek" && (
-                  <circle cx={px} cy={BASIS} r={aan ? 5.5 : 4.5} fill="#fbf6ee" stroke={kleur} strokeWidth={2.5} style={{ transition: "r 150ms" }} />
-                )}
-                {it.soort === "vergadering" && <circle cx={px} cy={BASIS} r={2.6} fill={kleur} />}
-                {it.soort === "activiteit" && (
-                  <circle cx={px} cy={BASIS} r={aan ? 4.5 : 3.5} fill={kleur} style={{ transition: "r 150ms" }} />
-                )}
-              </g>
-            );
-          })}
-
-          {/* Vandaag */}
-          <line
-            x1={vandaagX}
-            y1={14}
-            x2={vandaagX}
-            y2={BASIS + 16}
-            stroke="#25855a"
-            strokeWidth={1}
-            strokeDasharray="2 3"
-            opacity={0.5}
-          />
-          <circle cx={vandaagX} cy={BASIS} r={6.5} fill="#fbf6ee" />
-          <circle cx={vandaagX} cy={BASIS} r={4.5} fill="#25855a" />
-          <text
-            x={vandaagX}
-            y={9}
-            textAnchor="middle"
-            className="fill-brand-dark"
-            style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.4 }}
-          >
-            vandaag
-          </text>
-        </svg>
-
-        {/* Wat je aanwijst */}
-        {actief && (
-          <div
-            className="pointer-events-none absolute z-10 -translate-x-1/2 rounded-2xl border border-black/5 bg-white px-3.5 py-2.5 shadow-lg"
-            style={{
-              left: `${(x(actief.datum) / BREEDTE) * 100}%`,
-              top: "calc(100% - 34px)",
-              transformOrigin: "top center",
-              animation: "lintPop 150ms cubic-bezier(0.23, 1, 0.32, 1)",
-            }}
-          >
-            <p className="text-sm font-bold text-ink">{actief.wat}</p>
-            <p className="mt-0.5 text-xs text-ink/60">
-              {lang(actief.datum)}
-              {actief.tijd ? `, ${actief.tijd}` : ""}
-            </p>
+      {/* De drie dingen waar een leerkracht echt naar zoekt. Meteen leesbaar. */}
+      <div className="grid gap-px overflow-hidden rounded-3xl border border-black/5 bg-black/5 shadow-sm sm:grid-cols-3">
+        {feiten.map((f) => (
+          <div key={f.label} className="bg-white px-5 py-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-ink/40">{f.label}</p>
+            <p className="mt-1.5 text-lg font-bold leading-tight text-ink">{f.groot}</p>
+            {f.klein && <p className="mt-0.5 text-sm text-ink/55">{f.klein}</p>}
           </div>
-        )}
+        ))}
       </div>
 
-      {/* Uitleg van de tekens, want kleur alleen is niet genoeg */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-ink/55">
-        <span className="flex items-center gap-2">
-          <span className="inline-block h-3.5 w-0.5 rounded bg-brand-dark" /> studiedag
-        </span>
-        <span className="flex items-center gap-2">
-          <span className="inline-block h-2.5 w-2.5 rounded-full bg-accent" /> rapporten
-        </span>
-        <span className="flex items-center gap-2">
-          <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-brand-dark" /> gesprekken
-        </span>
-        <span className="flex items-center gap-2">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-ink/40" /> vergadering
-        </span>
-        <span className="flex items-center gap-2">
-          <span className="inline-block h-3 w-5 rounded bg-sand" /> vakantie
-        </span>
-      </div>
-
-      {/* Het vooruitkijken. Geen chatvenster, gewoon een notitie op papier. */}
+      {/* Het meedenken. Geen chatvenster, gewoon een notitie. */}
       <div className="rounded-2xl border-l-[3px] border-brand bg-brand-soft/70 px-5 py-4">
         <p className="leading-7 text-ink/85">
           Over twee weken gaan de rapporten mee, en diezelfde week staan de
-          oudergesprekken. Dat wordt de drukste week van je najaar.
+          oudergesprekken. Dat wordt je drukste week van dit najaar.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <button className="rounded-xl bg-brand-dark px-4 py-2 text-sm font-bold text-white transition-transform duration-150 active:scale-[0.97]">
@@ -475,42 +308,110 @@ function Jaarlint() {
         </div>
       </div>
 
-      {/* Wat eraan komt */}
       <div>
-        <h3 className="text-lg font-bold text-ink">Hierna</h3>
-        <ul className="mt-3 border-l border-black/10 pl-5">
-          {komend.map((it) => (
-            <li key={it.datum + it.wat} className="relative py-3 last:pb-0">
-              <span className="absolute -left-[23px] top-[18px] h-2 w-2 rounded-full bg-brand ring-4 ring-cream" />
-              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <span className="w-16 shrink-0 text-sm font-bold tabular-nums text-ink/45">
-                  {kort(it.datum)}
-                </span>
-                <span className="font-semibold text-ink">{it.wat}</span>
-                {it.tijd && <span className="text-sm text-ink/50">{it.tijd}</span>}
-                {it.tool && (
-                  <span className="ml-auto text-sm font-bold text-brand-dark">
-                    {it.tool} openen
+        <h3 className="text-lg font-bold text-ink">Je jaar op een rij</h3>
+
+        <div className="mt-4 flex flex-col gap-4">
+          {stukken.map((s) => {
+            if (s.soort === "vakantie") {
+              const v = s.vakantie;
+              const aantal = dagen(v.van, v.tot) + 1;
+              return (
+                <div
+                  key={v.naam}
+                  className="flex flex-wrap items-baseline gap-x-3 rounded-2xl bg-sand px-5 py-3.5"
+                >
+                  <span className="font-bold text-ink/80">{v.naam}</span>
+                  <span className="text-sm text-ink/55">
+                    {kort(v.van)} tot en met {kort(v.tot)}
                   </span>
+                  <span className="ml-auto text-sm font-semibold text-ink/45">
+                    {aantal} dagen vrij
+                  </span>
+                </div>
+              );
+            }
+
+            const b = s.blok;
+            const items = ITEMS.filter((i) => i.datum >= b.van && i.datum <= b.tot);
+            const voorbij = b.tot < VANDAAG;
+            const bezig = b.van <= VANDAAG && VANDAAG <= b.tot;
+            const uitgeklapt = !voorbij || open.includes(b.nr);
+            const wekenInBlok = Math.round((dagen(b.van, b.tot) + 1) / 7);
+
+            return (
+              <div
+                key={"blok" + b.nr}
+                className={
+                  "overflow-hidden rounded-3xl border bg-white shadow-sm " +
+                  (bezig ? "border-brand/40" : "border-black/5")
+                }
+              >
+                <button
+                  onClick={() =>
+                    setOpen((o) => (o.includes(b.nr) ? o.filter((n) => n !== b.nr) : [...o, b.nr]))
+                  }
+                  disabled={!voorbij}
+                  aria-expanded={uitgeklapt}
+                  className={
+                    "flex w-full flex-wrap items-baseline gap-x-3 gap-y-1 px-5 py-4 text-left " +
+                    (voorbij ? "hover:bg-cream/60" : "cursor-default")
+                  }
+                >
+                  <span className="font-bold text-ink">Blok {b.nr}</span>
+                  <span className="text-sm text-ink/55">
+                    {kort(b.van)} tot {kort(b.tot)}, {wekenInBlok} weken
+                  </span>
+                  {bezig && (
+                    <span className="rounded-lg bg-brand-dark px-2 py-0.5 text-xs font-bold text-white">
+                      hier zit je nu
+                    </span>
+                  )}
+                  {voorbij && (
+                    <span className="ml-auto text-sm font-semibold text-ink/40">
+                      {uitgeklapt ? "verbergen" : `${items.length} momenten, afgerond`}
+                    </span>
+                  )}
+                </button>
+
+                {uitgeklapt && (
+                  <ul className="px-5 pb-4">
+                    {items.length === 0 && (
+                      <li className="py-3 text-sm text-ink/50">
+                        Nog niets in deze periode. Wat je zelf plant komt hier ook te staan.
+                      </li>
+                    )}
+                    {items.map((it, n) => {
+                      const vorige = items[n - 1];
+                      const toonVandaag =
+                        bezig &&
+                        it.datum >= VANDAAG &&
+                        (!vorige || vorige.datum < VANDAAG);
+                      return (
+                        <div key={it.datum + it.wat}>
+                          {toonVandaag && (
+                            <li className="flex items-center gap-3 py-2">
+                              <span className="text-xs font-bold uppercase tracking-wider text-brand-dark">
+                                vandaag
+                              </span>
+                              <span className="h-px flex-1 bg-brand/35" />
+                            </li>
+                          )}
+                          <Regel item={it} />
+                        </div>
+                      );
+                    })}
+                  </ul>
                 )}
               </div>
-            </li>
-          ))}
-        </ul>
+            );
+          })}
+        </div>
       </div>
-
-      <style>{`
-        @keyframes lintPop {
-          from { opacity: 0; transform: translate(-50%, -4px) scale(0.96); }
-          to { opacity: 1; transform: translate(-50%, 0) scale(1); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          [style*="lintPop"] { animation: none !important; }
-        }
-      `}</style>
     </div>
   );
 }
+
 
 // ---------------------------------------------------------------- koppelen
 
@@ -739,7 +640,7 @@ export default function JaarSchets() {
                 (beeld === "lint" ? "bg-ink text-cream" : "text-ink/55 hover:text-ink")
               }
             >
-              2. Het jaarlint
+              2. Je jaar
             </button>
           </div>
           <span className="ml-auto hidden text-xs text-ink/40 sm:block">
@@ -749,7 +650,7 @@ export default function JaarSchets() {
       </div>
 
       <div className="mx-auto max-w-5xl px-5 py-10 sm:py-14">
-        {beeld === "lint" ? <Jaarlint /> : <Koppelen />}
+        {beeld === "lint" ? <Jaaroverzicht /> : <Koppelen />}
       </div>
     </div>
   );
