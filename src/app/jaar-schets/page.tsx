@@ -700,10 +700,42 @@ const BRONNEN: Bron[] = [
   },
 ];
 
+type Telling = { soort: string; woord: string; aantal: number; slots?: number; vrij: boolean };
+type Uitslag = {
+  naam: string | null;
+  aantal: number;
+  blokken: number;
+  van: string | null;
+  tot: string | null;
+  telling: Telling[];
+};
+
 function Koppelen() {
   const [open, setOpen] = useState<string | null>("parro");
-  const [gevonden, setGevonden] = useState(false);
+  const [link, setLink] = useState("");
   const [bezig, setBezig] = useState(false);
+  const [uitslag, setUitslag] = useState<Uitslag | null>(null);
+  const [fout, setFout] = useState<string | null>(null);
+
+  async function controleer() {
+    setBezig(true);
+    setFout(null);
+    setUitslag(null);
+    try {
+      const antwoord = await fetch("/api/agenda/controleer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ link }),
+      });
+      const data = await antwoord.json();
+      if (!antwoord.ok) setFout(data.fout || "Er ging iets mis.");
+      else setUitslag(data);
+    } catch {
+      setFout("We konden de agenda niet bereiken. Probeer het zo nog eens.");
+    } finally {
+      setBezig(false);
+    }
+  }
 
   return (
     <div className="flex flex-col gap-7">
@@ -726,7 +758,8 @@ function Koppelen() {
               <button
                 onClick={() => {
                   setOpen(uit ? null : b.id);
-                  setGevonden(false);
+                  setUitslag(null);
+                  setFout(null);
                 }}
                 aria-expanded={uit}
                 className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-cream/60"
@@ -781,37 +814,51 @@ function Koppelen() {
 
                     <div className="mt-4 flex flex-wrap gap-2">
                       <input
+                        value={link}
+                        onChange={(e) => setLink(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && !bezig && controleer()}
                         className="min-w-0 flex-1 rounded-xl border border-black/10 bg-cream/50 px-4 py-2.5 text-sm text-ink outline-none transition-shadow placeholder:text-ink/35 focus:border-brand focus:shadow-[0_0_0_3px_rgba(47,158,110,0.18)]"
                         placeholder="Plak hier je link"
                         aria-label={`Agendalink van ${b.naam}`}
                       />
                       <button
-                        onClick={() => {
-                          setBezig(true);
-                          setTimeout(() => {
-                            setBezig(false);
-                            setGevonden(true);
-                          }, 700);
-                        }}
-                        className="rounded-xl bg-brand-dark px-4 py-2.5 text-sm font-bold text-white transition-transform duration-150 active:scale-[0.97]"
+                        onClick={controleer}
+                        disabled={bezig}
+                        className="rounded-xl bg-brand-dark px-4 py-2.5 text-sm font-bold text-white transition-transform duration-150 active:scale-[0.97] disabled:opacity-60"
                       >
-                        {bezig ? "Kijken…" : "Controleren"}
+                        {bezig ? "Even kijken…" : "Controleren"}
                       </button>
                     </div>
 
-                    {gevonden && (
+                    {fout && (
+                      <p className="mt-3 rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
+                        {fout}
+                      </p>
+                    )}
+
+                    {uitslag && (
                       <div className="mt-4 rounded-2xl bg-brand-soft/70 px-4 py-4">
                         <p className="font-bold text-ink">
-                          Gelukt. 174 afspraken gevonden, tot september volgend jaar.
+                          Gelukt. {uitslag.aantal} afspraken gevonden
+                          {uitslag.van && uitslag.tot
+                            ? `, van ${kort(uitslag.van)} ${uitslag.van.slice(0, 4)} tot ${kort(uitslag.tot)} ${uitslag.tot.slice(0, 4)}`
+                            : ""}
+                          .
                         </p>
                         <ul className="mt-2.5 flex flex-col gap-1 text-sm text-ink/75">
-                          <li>7 studiedagen, die zet ik meteen op vrij</li>
-                          <li>3 keer rapporten mee</li>
-                          <li>82 gespreksmomenten, samengevouwen tot 4 avonden</li>
-                          <li>5 vergaderingen</li>
-                          <li>48 losse afspraken die ik niet herken, die blijven gewoon staan</li>
+                          {uitslag.telling.map((t) => (
+                            <li key={t.soort}>
+                              <strong className="font-bold text-ink">{t.aantal}</strong>{" "}
+                              {t.woord}
+                              {t.slots ? ` (${t.slots} losse tijdvakken, samengevouwen per dag)` : ""}
+                              {t.vrij ? ", die zet ik meteen op vrij" : ""}
+                              {t.soort === "overig" ? ", die ken ik niet en laat ik staan zoals ze zijn" : ""}
+                            </li>
+                          ))}
                         </ul>
-                        <p className="mt-3 text-sm font-semibold text-ink/70">Wat wil je hiervan overnemen?</p>
+                        <p className="mt-3 text-sm font-semibold text-ink/70">
+                          Wat wil je hiervan overnemen?
+                        </p>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {["Alles", "Alleen hele dagen", "Alleen wat Avinka herkent"].map((k, n) => (
                             <span
