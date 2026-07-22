@@ -74,15 +74,15 @@ const KAARTEN = [
     naam: "Rapporten",
     zin: "Rapportteksten die klinken alsof jij ze schreef.",
     uitleg:
-      "Je geeft per leerling een paar steekwoorden en Avinka maakt er lopende rapportteksten van, in jouw toon en op het niveau dat jij kiest. Namen worden op je eigen computer onleesbaar gemaakt voordat er iets wordt verstuurd. Jij leest na en past aan.",
+      "Je geeft per leerling een paar steekwoorden en Avinka maakt er lopende rapportteksten van, in jouw toon en op het niveau dat jij kiest. Jij leest na, past aan en kopieert elk verhaal met één klik naar je eigen systeem.",
     licht: false,
   },
   {
     id: "toetsanalyse",
     naam: "Toetsanalyse",
-    zin: "Zie in één oogopslag wie extra aandacht nodig heeft.",
+    zin: "Een complete groepsanalyse in twee minuten.",
     uitleg:
-      "Upload je toetsoverzicht en je krijgt een groepsbeeld terug: welke domeinen opvallen, wie extra oefening kan gebruiken en wat een logische vervolgstap is. De cijfers rekent de tool zelf uit, dus er wordt niets verzonnen.",
+      "Voor IEP en Cito. Avinka leest je hele toetsoverzicht uit en legt alles naast elkaar: hoe je groep ervoor staat, welke domeinen achterblijven, welke leerlingen opvallen en waar klassikale zorgen zitten. Geen kind dat je over het hoofd ziet, geen domein dat je overslaat, ook niet bij de vijfentwintigste leerling op een avond. Wat normaal een avond puzzelen kost, ligt er in twee minuten, geschreven zoals jij het zelf zou opschrijven. Jij vult aan wat alleen jij van deze kinderen weet.",
     licht: false,
   },
   {
