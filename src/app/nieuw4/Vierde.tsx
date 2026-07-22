@@ -1771,13 +1771,13 @@ function ToolPaneel({
              anders duwt hij de tekst helemaal onder de vouw. */}
           <div
             data-paneelbeeld
-            className="relative aspect-[16/11] overflow-hidden sm:aspect-auto sm:min-h-[22rem]"
+            className="relative aspect-[16/9] overflow-hidden sm:aspect-auto sm:min-h-[22rem]"
           >
             <KaartBeeld soort={kaart.id} />
             <div className="kaart-grain pointer-events-none absolute inset-0" aria-hidden />
           </div>
 
-          <div className="paneel-tekst p-7 sm:p-9">
+          <div className="paneel-tekst p-6 sm:p-9">
             <h3 className="font-display text-3xl font-black tracking-tight sm:text-4xl">
               {kaart.naam}
             </h3>
