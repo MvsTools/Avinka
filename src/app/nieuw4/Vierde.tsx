@@ -118,9 +118,9 @@ const KAARTEN = [
     id: "werkbladen",
     naam: "Werkbladen",
     tijd: "± 15 minuten per werkblad",
-    zin: "Printbare werkbladen die precies bij je les passen.",
+    zin: "Werkbladen die precies bij je les passen.",
     uitleg:
-      "Kies een onderwerp en je hebt een printklaar werkblad, van invuloefening tot woordzoeker. De opdrachten worden door de tool zelf opgebouwd, zodat de antwoorden en het woordbeeld altijd kloppen.",
+      "Kies een vakgebied en een onderwerp en je krijgt een printklaar werkblad. Je geeft je voorkeuren door en laat het desgewenst aansluiten op een lesontwerp. Ook maak je er hele boekjes mee als ondersteuningsmateriaal.",
     licht: false,
   },
   {
