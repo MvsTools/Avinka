@@ -979,7 +979,9 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
            iemand jouw week opnoemt. Bewust rustig: het groene blok erboven en
            de kaarten eronder zijn allebei luid. ── */}
         <section className="relative">
-          <div className="mx-auto w-full max-w-3xl px-6 pb-8 pt-24 lg:pt-28">
+          {/* Zelfde linkerlijn als de galerij hieronder: de scharnierzin loopt
+             zo recht door in "Dit staat er voor je klaar". */}
+          <div className="mx-auto w-full max-w-5xl px-6 pb-4 pt-24 lg:pt-28">
             <h2
               data-reveal
               className="font-display text-[clamp(1.75rem,3vw,2.25rem)] font-black tracking-tight"
@@ -987,7 +989,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
               Herken je dit?
             </h2>
 
-            <div className="mt-10 border-b border-ink/10">
+            <div className="mt-10 max-w-3xl border-b border-ink/10">
               {PIJNPUNTEN.map((p, i) => (
                 <p
                   key={p.titel}
@@ -1000,10 +1002,16 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
               ))}
             </div>
 
-            <p data-reveal className="mt-12 max-w-lg text-xl leading-9 text-ink/75 [text-wrap:balance]">
-              Het hoort bij het werk. Maar het kan{" "}
-              <span className="font-bold text-brand-dark">sneller, slimmer en met minder gedoe</span>
-              .
+            {/* Het scharnier naar de tools: eerst de erkenning, dan de
+               belofte groot en groen. Dit is de laatste regel voor de kaarten. */}
+            <p
+              data-reveal
+              className="mt-14 max-w-3xl font-display text-[clamp(1.5rem,3.2vw,2.25rem)] font-black leading-[1.18] tracking-tight [text-wrap:balance]"
+            >
+              <span className="text-ink/55">Het hoort bij het werk.</span>{" "}
+              <span className="text-brand-dark">
+                Maar het kan sneller, slimmer en met minder gedoe.
+              </span>
             </p>
           </div>
         </section>
