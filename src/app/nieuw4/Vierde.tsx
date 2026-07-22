@@ -1008,8 +1008,8 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
               data-reveal
               className="mt-14 max-w-3xl font-display text-[clamp(1.5rem,3.2vw,2.25rem)] font-black leading-[1.18] tracking-tight [text-wrap:balance]"
             >
-              <span className="text-ink/55">Het hoort bij het werk.</span>{" "}
-              <span className="text-brand-dark">
+              <span className="doorstreep text-ink/55">Het hoort bij het werk.</span>{" "}
+              <span className="belofte text-brand-dark">
                 Maar het kan sneller, slimmer en met minder gedoe.
               </span>
             </p>
@@ -2016,6 +2016,31 @@ function StijlBlok() {
         100% { transform: scale(1); opacity: 1; }
       }
       .anim .vinkpop { animation: vinkpop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+      /* Het scharnier naar de tools, als nakijken: de oude waarheid wordt
+         doorgestreept en de belofte kleurt daarna groen op. De streep is een
+         achtergrondverloop dat per regel meegroeit (box-decoration-break),
+         zodat het ook klopt als de zin over meer regels valt. Zonder .anim
+         (verminderde beweging) staat de eindstand er meteen. */
+      .doorstreep {
+        background-image: linear-gradient(rgb(34 28 58 / 0.42), rgb(34 28 58 / 0.42));
+        background-repeat: no-repeat;
+        background-position: 0 58%;
+        background-size: 100% 3px;
+        -webkit-box-decoration-break: clone;
+        box-decoration-break: clone;
+      }
+      .anim [data-reveal] .doorstreep {
+        background-size: 0% 3px;
+        transition: background-size 0.6s cubic-bezier(0.23, 1, 0.32, 1) 0.25s;
+      }
+      .anim [data-reveal].is-in .doorstreep { background-size: 100% 3px; }
+
+      .anim [data-reveal] .belofte {
+        color: rgb(34 28 58 / 0.45);
+        transition: color 0.5s cubic-bezier(0.23, 1, 0.32, 1) 0.8s;
+      }
+      .anim [data-reveal].is-in .belofte { color: #25855a; }
 
       /* Knoppen mogen voelen dat je ze indrukt. */
       .knop-druk:active { transform: scale(0.97); }
