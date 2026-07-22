@@ -62,72 +62,55 @@ const PIJNPUNTEN = [
 ];
 
 /* De tool-galerij: per tool één kunstkaart (Stripe-achtig, maar in onze
-   eigen beeldtaal) met één harde regel eronder. Nieuwe tool = kaart erbij.
-   `min` telt mee in de afvink-teller onder de rij; `licht` bepaalt of de
-   naam op de kaart een donker plaatje nodig heeft. */
+   eigen beeldtaal). Nieuwe tool = kaart erbij. `licht` bepaalt of de naam
+   op de kaart een donker plaatje nodig heeft. */
 const KAARTEN = [
   {
     id: "rapporten",
     naam: "Rapporten",
     zin: "Rapportteksten die klinken alsof jij ze schreef.",
-    winst: "± 35 min per week terug.",
-    min: 35,
     licht: false,
   },
   {
     id: "toetsanalyse",
     naam: "Toetsanalyse",
     zin: "Zie in één oogopslag wie extra aandacht nodig heeft.",
-    winst: "± 45 min per week terug.",
-    min: 45,
     licht: false,
   },
   {
     id: "oudercontact",
     naam: "Oudercontact",
     zin: "Weekberichten en oudergesprekken zonder leeg scherm.",
-    winst: "± 15 min per week terug.",
-    min: 15,
     licht: false,
   },
   {
     id: "lesontwerp",
     naam: "Lesontwerp",
     zin: "Van één leerdoel naar een complete les met differentiatie.",
-    winst: "± 25 min per week terug.",
-    min: 25,
     licht: true,
   },
   {
     id: "plattegrond",
     naam: "Plattegrond",
     zin: "De klasopstelling puzzelt zichzelf uit, jouw wensen voorop.",
-    winst: "Scheelt een avond puzzelen.",
-    min: 0,
     licht: false,
   },
   {
     id: "werkbladen",
     naam: "Werkbladen",
     zin: "Printbare werkbladen die precies bij je les passen.",
-    winst: "± 20 min per week terug.",
-    min: 20,
     licht: false,
   },
   {
     id: "draaiboek",
     naam: "Draaiboek",
     zin: "Elk schoolevenement compleet uitgedacht, tot de taakverdeling aan toe.",
-    winst: "Scheelt een avond per evenement.",
-    min: 0,
     licht: true,
   },
   {
     id: "weekplanning",
     naam: "Weekplanning",
     zin: "Je hele week in één helder rooster, gekoppeld aan je tools.",
-    winst: "± 15 min per week terug.",
-    min: 15,
     licht: false,
   },
 ];
@@ -1055,10 +1038,8 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           </div>
         </section>
 
-        {/* ── 3. De tool-galerij: grote kunstkaarten, jij scrolt erdoorheen.
-           Géén overflow-hidden op de sectie: dat zou de sticky-pin breken.
-           De gloed clippen we in een eigen laag. ── */}
-        <section id="tools" className="relative scroll-mt-20">
+        {/* ── 3. De tool-galerij: grote kunstkaarten, jij schuift ze zelf ── */}
+        <section id="tools" className="relative overflow-hidden scroll-mt-20">
           <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
             <div className="absolute -right-32 top-24 h-96 w-96 rounded-full bg-brand/[0.07] blur-3xl" />
           </div>
@@ -1313,36 +1294,10 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
    Zoals de klantkaarten van Stripe, maar in de Avinka-beeldtaal: elk
    kaartbeeld is een eigen kleine wereld met échte inhoud (een rapportzin,
    een berichtje van thuis, een klasopstelling), geen interface-namaak.
-   De bezoeker heeft de regie: slepen, scrollen of de pijltjes. Onder de
-   rij vinkt elke bekeken tool zichzelf af en telt de weekwinst op. ─────── */
-/* ── De tool-galerij ───────────────────────────────────────────────────
-   Twee smaken van dezelfde kaarten:
-   • Op een ruime desktop met muis en zonder "verminderde beweging": de
-     GEPINDE variant. De sectie plakt kort vast en terwijl je verder naar
-     beneden scrolt schuiven de kaarten vanzelf naar rechts; je ziet de
-     vinkjes aangaan en de teruggewonnen tijd oplopen.
-   • Mobiel, touch of reduced-motion: gewoon zelf slepen/vegen met pijltjes.
-   De kaarten zelf zijn identiek; alleen de aandrijving verschilt. ─────── */
-function ToolRail() {
-  const [gepind, setGepind] = useState(false);
+   De bezoeker heeft de regie: zelf slepen, vegen of de pijltjes. Niets
+   beweegt uit zichzelf; een bekeken kaart zet wel zijn eigen vinkje. ──── */
 
-  useEffect(() => {
-    const ruim = window.matchMedia("(min-width: 1024px) and (pointer: fine)");
-    const rustig = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const bepaal = () => setGepind(ruim.matches && !rustig.matches);
-    bepaal();
-    ruim.addEventListener("change", bepaal);
-    rustig.addEventListener("change", bepaal);
-    return () => {
-      ruim.removeEventListener("change", bepaal);
-      rustig.removeEventListener("change", bepaal);
-    };
-  }, []);
-
-  return gepind ? <ToolRailGepind /> : <ToolRailHandmatig />;
-}
-
-/* De kop, in beide varianten gelijk. */
+/* De kop boven de rij. */
 function RailKop() {
   return (
     <div className="mx-auto w-full max-w-5xl px-6">
@@ -1419,123 +1374,7 @@ function RailKaarten({ gezien }: { gezien: boolean[] }) {
   );
 }
 
-/* Het lint met tijdwinst: telt de teruggewonnen minuten op terwijl je scrolt. */
-function TijdLint({ gezien, minuten }: { gezien: boolean[]; minuten: number }) {
-  const aantal = gezien.filter(Boolean).length;
-  return (
-    <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-center gap-x-4 gap-y-2 px-6 text-center">
-      <span className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-ink shadow-sm ring-1 ring-black/5">
-        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand text-white">
-          <Vink className="h-3 w-3" dik={4} />
-        </span>
-        {aantal} {aantal === 1 ? "tool" : "tools"} bekeken
-      </span>
-      <span className="font-display text-2xl font-black tracking-tight text-ink sm:text-3xl">
-        <span className="tabular-nums text-brand">+{minuten} min</span> deze week terug
-      </span>
-    </div>
-  );
-}
-
-/* ── Gepinde variant: scrollen = kaarten schuiven, tijd loopt op. ─────── */
-function ToolRailGepind() {
-  const spoor = useRef<HTMLDivElement>(null);
-  const lint = useRef<HTMLDivElement>(null);
-  const gezienRef = useRef<boolean[]>(KAARTEN.map(() => false));
-  const [gezien, setGezien] = useState<boolean[]>(() => KAARTEN.map(() => false));
-  const minRef = useRef(0);
-  const [minuten, setMinuten] = useState(0);
-  const tweenRef = useRef(0);
-
-  // De teller telt soepel naar het nieuwe doel, nooit met sprongen.
-  const naarMinuten = (doel: number) => {
-    if (doel === minRef.current) return;
-    cancelAnimationFrame(tweenRef.current);
-    const van = minRef.current;
-    const t0 = performance.now();
-    const stap = (t: number) => {
-      const p = Math.min(1, (t - t0) / 500);
-      const e = 1 - Math.pow(1 - p, 3);
-      const v = Math.round(van + (doel - van) * e);
-      minRef.current = v;
-      setMinuten(v);
-      if (p < 1) tweenRef.current = requestAnimationFrame(stap);
-    };
-    tweenRef.current = requestAnimationFrame(stap);
-  };
-
-  useEffect(() => {
-    const trk = spoor.current;
-    const strook = lint.current;
-    if (!trk || !strook) return;
-    let bezig = false;
-
-    const opScroll = () => {
-      if (bezig) return;
-      bezig = true;
-      requestAnimationFrame(() => {
-        bezig = false;
-        const vh = window.innerHeight;
-        const rect = trk.getBoundingClientRect();
-        const reisbaar = rect.height - vh;
-        if (reisbaar <= 0) return;
-        const voortgang = Math.min(1, Math.max(0, -rect.top / reisbaar));
-        const maxX = Math.max(0, strook.scrollWidth - strook.clientWidth);
-        strook.style.transform = `translate3d(${-voortgang * maxX}px, 0, 0)`;
-
-        // Afvinken: zodra een kaart met zijn linkerrand voorbij ~42% is, en
-        // aan het einde van de pin sowieso alles (de laatste kaart wordt door
-        // de teaser-kaart anders nooit ver genoeg naar links geduwd).
-        const drempel = window.innerWidth * 0.42;
-        const bijnaKlaar = voortgang >= 0.995;
-        const kaarten = strook.querySelectorAll<HTMLElement>("[data-kaart]");
-        let anders = false;
-        kaarten.forEach((kaart, i) => {
-          if (gezienRef.current[i]) return;
-          if (bijnaKlaar || kaart.getBoundingClientRect().left <= drempel) {
-            gezienRef.current[i] = true;
-            anders = true;
-          }
-        });
-        if (anders) {
-          const kopie = gezienRef.current.slice();
-          setGezien(kopie);
-          naarMinuten(KAARTEN.reduce((s, k, i) => s + (kopie[i] ? k.min : 0), 0));
-        }
-      });
-    };
-
-    opScroll();
-    window.addEventListener("scroll", opScroll, { passive: true });
-    window.addEventListener("resize", opScroll);
-    return () => {
-      window.removeEventListener("scroll", opScroll);
-      window.removeEventListener("resize", opScroll);
-      cancelAnimationFrame(tweenRef.current);
-    };
-  }, []);
-
-  const kantlijn = "max(1.5rem, calc(50% - 32rem + 1.5rem))";
-
-  return (
-    <div ref={spoor} className="relative h-[240vh]">
-      <div className="sticky top-0 flex h-[100svh] flex-col justify-center gap-8 overflow-hidden py-10">
-        <RailKop />
-        <div
-          ref={lint}
-          className="flex gap-6 will-change-transform"
-          style={{ paddingLeft: kantlijn, paddingRight: kantlijn }}
-        >
-          <RailKaarten gezien={gezien} />
-        </div>
-        <TijdLint gezien={gezien} minuten={minuten} />
-      </div>
-    </div>
-  );
-}
-
-/* ── Handmatige variant: zelf slepen, vegen of pijltjes. ───────────────── */
-function ToolRailHandmatig() {
+function ToolRail() {
   const rail = useRef<HTMLDivElement>(null);
   const greep = useRef({ actief: false, startX: 0, startScroll: 0 });
   const [kanTerug, setKanTerug] = useState(false);
