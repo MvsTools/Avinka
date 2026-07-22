@@ -27,8 +27,8 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
    binnen en dragen je de pagina in.
 
    BODY (eronder): de volledige inhoud van de landingspagina, positief
-   verteld: wat Avinka is, herkenning, de tools (met bewegende mini-demo's
-   en de optelsom naar 2 uur), privacy, gemak, de maker, prijzen en vragen.
+   verteld: de landing (wat Avinka is, mét het afgevinkte briefje uit de
+   filmwereld), de tools, privacy, gemak, de maker, prijzen en vragen.
 
    prefers-reduced-motion krijgt een stilstaande, volledige versie.
    Wordt stuk voor stuk handmatig bijgeschaafd.
@@ -41,24 +41,6 @@ const STRIP = [
   "🇳🇱 Volledig Nederlands",
   "💚 Door een leerkracht gemaakt",
   "✓ Maandelijks opzegbaar",
-];
-
-const PIJNPUNTEN = [
-  {
-    titel: "Te veel administratie",
-    tekst:
-      "Je wilt er zijn voor je klas, maar raakt steeds meer tijd kwijt aan formulieren, analyses en verslagen.",
-  },
-  {
-    titel: "Alles staat verspreid",
-    tekst:
-      "Voor elke taak weer een andere tool, website of document. Niets komt op één plek samen.",
-  },
-  {
-    titel: "Het werk gaat mee naar huis",
-    tekst:
-      "Avonden en weekenden vullen zich met taken die je eigenlijk allang af had willen hebben.",
-  },
 ];
 
 /* De tool-galerij: per tool één kunstkaart (Stripe-achtig, maar in onze
@@ -957,69 +939,83 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
       </section>
 
       {/* Ademruimte tussen film en body */}
-      <div aria-hidden className="bg-cream" style={{ height: film ? "14vh" : "6vh" }} />
+      <div aria-hidden className="bg-cream" style={{ height: film ? "7vh" : "4vh" }} />
 
       {/* ════════════════════════ DE BODY ════════════════════════ */}
       <main id="verder" className="relative z-10 scroll-mt-16 bg-cream">
-        {/* ── 1. Wat dit is ── */}
+        {/* ── 1. De landing: wat dit is, mét het briefje dat uit de film is
+           neergedwarreld. Links de woorden, rechts het bewijs: een afgevinkt
+           takenlijstje in handschrift. De vinkjes tekenen zichzelf één voor
+           één zodra de sectie in beeld komt. ── */}
         <section className="relative overflow-hidden">
           <div className="pointer-events-none absolute -left-28 top-6 h-80 w-80 rounded-full bg-brand/10 blur-3xl" aria-hidden />
           <div className="pointer-events-none absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-accent/15 blur-3xl" aria-hidden />
-          <div className="relative mx-auto w-full max-w-3xl px-6 pb-20 pt-8 text-center">
-            <h2 data-reveal className="font-display text-4xl font-black tracking-tight [text-wrap:balance] sm:text-5xl">
-              Eén werkplek voor al je schoolwerk
-            </h2>
-            <p data-reveal className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-ink/70">
-              Avinka vermindert de administratieve werkdruk van leerkrachten met
-              slimme AI-tools. Minder uitzoekwerk, minder typwerk, meer tijd voor
-              lesgeven en persoonlijke aandacht.
-            </p>
-            <div data-reveal className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link
-                href="/sign-up"
-                className="w-full rounded-2xl bg-brand px-8 py-4 text-lg font-bold text-white shadow-lg shadow-brand/25 transition hover:-translate-y-0.5 hover:bg-brand-dark sm:w-auto"
-              >
-                Probeer Avinka gratis
-              </Link>
-              <a
-                href="#tools"
-                className="w-full rounded-2xl border-2 border-ink/10 bg-white px-8 py-4 text-lg font-bold text-ink transition hover:border-ink/20 sm:w-auto"
-              >
-                Bekijk de tools
-              </a>
-            </div>
-          </div>
-        </section>
-
-        {/* ── 2. Herkenning: de brug terug naar de film ── */}
-        <section className="relative border-y border-black/5 bg-white">
-          <div className="mx-auto grid w-full max-w-5xl gap-10 px-6 py-20 lg:grid-cols-[1fr_1.2fr] lg:gap-16">
-            <div data-reveal>
-              <h2 className="font-display text-3xl font-black tracking-tight [text-wrap:balance] sm:text-4xl">
-                Dat scherm van net? Gewoon een dinsdagavond.
+          <div className="relative mx-auto grid w-full max-w-5xl items-center gap-14 px-6 pb-24 pt-10 lg:grid-cols-[1.15fr_0.85fr] lg:gap-10">
+            <div>
+              <h2 data-reveal className="font-display text-4xl font-black tracking-tight [text-wrap:balance] sm:text-5xl">
+                Eén werkplek voor al je schoolwerk
               </h2>
-              <p className="mt-5 text-lg leading-8 text-ink/70">
-                Het hoort bij het werk. Maar het kan{" "}
-                <span className="font-bold text-brand">sneller, slimmer en efficiënter</span>.
+              <p data-reveal className="mt-7 max-w-xl text-lg leading-8 text-ink/70">
+                Toetsanalyse, rapporten, het weekbericht voor ouders: Avinka zet
+                het voorwerk alvast voor je klaar, in gewoon Nederlands en in
+                jouw toon. Jij leest het na, past aan wat je anders wilt en
+                vinkt af. Het laatste woord is altijd van jou.
               </p>
-              {/* knipoog naar de film */}
-              <div
-                className="mt-8 hidden w-40 -rotate-3 rounded-sm bg-accent-soft p-3 text-sm font-semibold leading-snug text-ink/75 shadow-md lg:block"
-                aria-hidden
-              >
-                herkenbaar? 😅
+              <div data-reveal className="mt-9 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/sign-up"
+                  className="w-full rounded-2xl bg-brand px-8 py-4 text-center text-lg font-bold text-white shadow-lg shadow-brand/25 transition hover:-translate-y-0.5 hover:bg-brand-dark sm:w-auto"
+                >
+                  Probeer Avinka gratis
+                </Link>
+                <a
+                  href="#tools"
+                  className="w-full rounded-2xl border-2 border-ink/10 bg-white px-8 py-4 text-center text-lg font-bold text-ink transition hover:border-ink/20 sm:w-auto"
+                >
+                  Bekijk de tools
+                </a>
               </div>
             </div>
-            <ul className="space-y-6 self-center">
-              {PIJNPUNTEN.map((p, i) => (
-                <li key={p.titel} data-reveal style={{ transitionDelay: `${i * 90}ms` }} className="flex gap-4">
-                  <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-accent" aria-hidden />
-                  <p className="leading-7 text-ink/75">
-                    <span className="font-bold text-ink">{p.titel}.</span> {p.tekst}
-                  </p>
-                </li>
-              ))}
-            </ul>
+
+            {/* Het briefje: het laatste velletje van de film, hier geland.
+               Concrete taken, allemaal afgevinkt, en de slotregel echoot de
+               film (avond werd dag). */}
+            <div data-reveal className="justify-self-center lg:justify-self-end lg:pr-4">
+              <div className="relative w-80 -rotate-[2.5deg] rounded-md bg-white p-7 pt-9 shadow-xl ring-1 ring-black/5">
+                {/* plakbandje */}
+                <span
+                  className="absolute -top-3 left-1/2 h-7 w-20 -translate-x-1/2 -rotate-2 rounded-[2px] bg-accent/30 ring-1 ring-accent/20"
+                  aria-hidden
+                />
+                <ul className="space-y-4">
+                  {[
+                    "toetsanalyse groep 5",
+                    "rapporten, eerste versie",
+                    "weekbericht ouders",
+                    "werkblad breuken",
+                  ].map((taak, i) => (
+                    <li key={taak} className="flex items-center gap-3.5">
+                      {/* het hokje, met een pennenstreek die eroverheen slaat */}
+                      <span
+                        className="relative h-6 w-6 shrink-0 rounded-[5px] ring-2 ring-inset ring-ink/15"
+                        style={{ rotate: `${i % 2 === 0 ? -2 : 2}deg` }}
+                        aria-hidden
+                      >
+                        <Vink
+                          className="slotvink absolute -left-0.5 -top-1.5 h-7 w-7 -rotate-3 text-brand"
+                          dik={3}
+                          style={{ "--vertraag": `${0.35 + i * 0.3}s` } as CSSProperties}
+                        />
+                      </span>
+                      <span className="font-hand text-xl leading-tight text-ink/80">{taak}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="font-hand mt-6 -rotate-1 text-right text-xl leading-snug text-brand-dark">
+                  en het is nog licht buiten
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -1854,7 +1850,8 @@ function StijlBlok() {
       .anim [data-reveal] .slotvink path {
         stroke-dasharray: 1;
         stroke-dashoffset: 1;
-        transition: stroke-dashoffset 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.3s;
+        transition: stroke-dashoffset 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        transition-delay: var(--vertraag, 0.3s);
       }
       .anim [data-reveal].is-in .slotvink path { stroke-dashoffset: 0; }
 
