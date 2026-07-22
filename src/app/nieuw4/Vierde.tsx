@@ -100,9 +100,9 @@ const KAARTEN = [
     id: "lesontwerp",
     naam: "Lesontwerp",
     tijd: "± 25 minuten per les",
-    zin: "Van één leerdoel naar een complete les met differentiatie.",
+    zin: "Van één leerdoel naar een compleet doordachte les.",
     uitleg:
-      "Geef een leerdoel op en je krijgt een complete les terug: opbouw, instructie, verwerking en differentiatie naar boven en beneden. Je kiest zelf het lestype, van korte instructie tot een bewegende of coöperatieve les.",
+      "Geef een leerdoel op en je krijgt een complete les terug volgens het EDI-model: voorkennis ophalen, lesdoel, instructie, controle van begrip, verwerking en afsluiting. Je kiest zelf het lestype, van een korte instructie tot een bewegende of coöperatieve les, en de differentiatie naar boven en beneden staat er meteen bij.",
     licht: true,
   },
   {
@@ -2231,7 +2231,7 @@ function KaartBeeld({ soort }: { soort: string }) {
     // Eén coördinatenstelsel (viewBox 336×420 = de 4:5-kaart) voor de route
     // én de stations, zodat elk station exact op de lijn valt, op elk formaat.
     const stations = [
-      { label: "Start", x: 70, y: 46, brand: false, rot: -2 },
+      { label: "Voorkennis", x: 70, y: 46, brand: false, rot: -2 },
       { label: "Lesdoel", x: 246, y: 110, brand: false, rot: 1 },
       { label: "Instructie", x: 92, y: 174, brand: false, rot: -1 },
       { label: "Verwerking", x: 246, y: 238, brand: false, rot: 2 },
