@@ -179,8 +179,18 @@ function weeknummer(iso: string): number {
   return 1 + Math.round((d.getTime() - eersteDonderdag.getTime()) / 604800000);
 }
 
+/** Kleur van het stipje in de compacte (telefoon) weergave. */
+const STIP: Record<Soort, string> = {
+  studiedag: "bg-brand-dark",
+  rapport: "bg-amber-500",
+  gesprek: "border-2 border-brand-dark",
+  vergadering: "bg-ink/40",
+  activiteit: "bg-ink/40",
+};
+
 function Maandweergave() {
   const [eerste, setEerste] = useState(VANDAAG.slice(0, 7) + "-01");
+  const [gekozen, setGekozen] = useState<string | null>(null);
 
   const jaar = Number(eerste.slice(0, 4));
   const maand = Number(eerste.slice(5, 7)) - 1;
@@ -240,7 +250,7 @@ function Maandweergave() {
       </div>
 
       <div className="overflow-hidden rounded-3xl border border-black/5 bg-white shadow-sm">
-        <div className="grid grid-cols-[2.6rem_repeat(7,1fr)] border-b border-black/5">
+        <div className="grid grid-cols-[2rem_repeat(7,minmax(0,1fr))] sm:grid-cols-[2.6rem_repeat(7,minmax(0,1fr))] border-b border-black/5">
           <div className="px-1 py-2 text-center text-xs font-bold uppercase tracking-wider text-ink/30">
             wk
           </div>
@@ -251,7 +261,7 @@ function Maandweergave() {
           ))}
         </div>
 
-        <div className="grid grid-cols-[2.6rem_repeat(7,1fr)]">
+        <div className="grid grid-cols-[2rem_repeat(7,minmax(0,1fr))] sm:grid-cols-[2.6rem_repeat(7,minmax(0,1fr))]">
           {cellen.map((datum, i) => {
             const weekcel =
               i % 7 === 0 ? (
@@ -275,42 +285,45 @@ function Maandweergave() {
             return (
               <Fragment key={datum}>
               {weekcel}
-              <div
+              <button
+                onClick={() => setGekozen(gekozen === datum ? null : datum)}
+                aria-label={`${datumVol(datum)}${items.length ? `, ${items.length} afspraken` : ""}`}
                 className={
-                  "min-h-[92px] border-b border-r border-black/5 p-1.5 " +
+                  "min-h-[58px] border-b border-r border-black/5 p-1 text-left sm:min-h-[92px] sm:p-1.5 " +
                   (i % 7 === 6 ? "border-r-0 " : "") +
                   (!dezeMaand ? "opacity-35 " : "") +
+                  (gekozen === datum ? "ring-2 ring-inset ring-brand " : "") +
                   (vrij ? "bg-brand-soft " : weekend ? "bg-cream/70 " : "bg-white ")
                 }
               >
-                <div className="flex items-center justify-between">
-                  <span
-                    className={
-                      "flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold tabular-nums " +
-                      (isVandaag
-                        ? "bg-brand-dark text-white"
-                        : weekend && !vrij
-                          ? "text-ink/35"
-                          : "text-ink/70")
-                    }
-                  >
-                    {d.getUTCDate()}
-                  </span>
-                </div>
+                <span
+                  className={
+                    "flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold tabular-nums " +
+                    (isVandaag
+                      ? "bg-brand-dark text-white"
+                      : weekend && !vrij
+                        ? "text-ink/35"
+                        : "text-ink/70")
+                  }
+                >
+                  {d.getUTCDate()}
+                </span>
 
                 {eersteVakantiedag && dezeMaand && (
-                  <p className="mt-0.5 truncate text-[11px] font-bold leading-tight text-brand-dark">
+                  <p className="mt-0.5 hidden truncate text-[11px] font-bold leading-tight text-brand-dark sm:block">
                     {vak.naam}
                   </p>
                 )}
 
-                <div className="mt-1 flex flex-col gap-1">
+                {/* Op een laptop de hele naam, op een telefoon stipjes. Zeven
+                    kolommen met tekst passen daar simpelweg niet. */}
+                <span className="mt-1 hidden flex-col gap-1 sm:flex">
                   {items.map((it) => (
                     <span
                       key={it.wat}
                       title={it.wat + (it.tijd ? `, ${it.tijd}` : "")}
                       className={
-                        "rounded-md px-1.5 py-0.5 text-[11px] font-bold leading-snug " +
+                        "truncate rounded-md px-1.5 py-0.5 text-[11px] font-bold leading-snug " +
                         (it.soort === "studiedag"
                           ? "bg-white/70 text-brand-dark"
                           : ETIKET[it.soort].stijl)
@@ -319,13 +332,52 @@ function Maandweergave() {
                       {it.soort === "studiedag" ? "Studiedag" : it.wat}
                     </span>
                   ))}
-                </div>
-              </div>
+                </span>
+                <span className="mt-1 flex flex-wrap gap-1 sm:hidden">
+                  {items.map((it) => (
+                    <span
+                      key={it.wat}
+                      className={"h-1.5 w-1.5 rounded-full " + STIP[it.soort]}
+                    />
+                  ))}
+                </span>
+              </button>
               </Fragment>
             );
           })}
         </div>
       </div>
+
+      {/* Tik een dag aan en je ziet wat er staat. Op een telefoon is dit de
+          manier om bij de details te komen, op een laptop een snelle blik. */}
+      {gekozen && (
+        <div className="mt-3 rounded-2xl border border-black/5 bg-white p-4 shadow-sm">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="font-bold text-ink">{datumVol(gekozen)}</p>
+            <button
+              onClick={() => setGekozen(null)}
+              className="text-sm font-semibold text-ink/50 hover:text-ink"
+            >
+              Sluiten
+            </button>
+          </div>
+          {inVakantie(gekozen) && (
+            <p className="mt-1 font-semibold text-brand-dark">
+              {inVakantie(gekozen)!.naam}, je bent vrij
+            </p>
+          )}
+          <ul className="mt-1">
+            {ITEMS.filter((it) => it.datum === gekozen).map((it) => (
+              <Regel key={it.wat} item={it} />
+            ))}
+          </ul>
+          {!inVakantie(gekozen) && !ITEMS.some((it) => it.datum === gekozen) && (
+            <p className="mt-1 text-sm text-ink/55">
+              Niets bijzonders deze dag. Een gewone lesdag dus.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
