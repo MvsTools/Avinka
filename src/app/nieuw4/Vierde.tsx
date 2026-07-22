@@ -81,7 +81,7 @@ const KAARTEN = [
   {
     id: "toetsanalyse",
     naam: "Toetsanalyse",
-    tijd: "± 2 uur per toetsronde",
+    tijd: "± 3 uur per toetsronde",
     zin: "Zie in één oogopslag wie extra aandacht nodig heeft.",
     uitleg:
       "Voor IEP en Cito. Avinka haalt alle gegevens uit je toetsoverzicht en zet ze om in een analyse zoals jij die zelf zou schrijven: waar je groep staat, welke leerlingen opvallen en welke zorgen klassikaal aandacht vragen. Een stevige basis voor je eigen analyse, die je alleen nog hoeft aan te scherpen.",
@@ -90,16 +90,16 @@ const KAARTEN = [
   {
     id: "oudercontact",
     naam: "Oudercontact",
-    tijd: "± 15 minuten per bericht",
+    tijd: "± 2 tot 20 minuten per bericht",
     zin: "Weekberichten en oudergesprekken zonder leeg scherm.",
     uitleg:
-      "Van weekbericht tot gespreksvoorbereiding: je vertelt wat er speelt en je krijgt een nette tekst terug die je alleen nog hoeft na te lezen. Ook handig voor lastige boodschappen, want de toon kies je zelf.",
+      "Van een kort berichtje tot een informatiebrief aan alle ouders: je vertelt wat er speelt en je krijgt een nette tekst terug die je alleen nog hoeft na te lezen. Een berichtje is zo klaar, een brief scheelt al gauw twintig minuten. Ook voor lastige boodschappen, want de toon kies je zelf.",
     licht: false,
   },
   {
     id: "lesontwerp",
     naam: "Lesontwerp",
-    tijd: "± 30 minuten per les",
+    tijd: "± 25 minuten per les",
     zin: "Van één leerdoel naar een complete les met differentiatie.",
     uitleg:
       "Geef een leerdoel op en je krijgt een complete les terug: opbouw, instructie, verwerking en differentiatie naar boven en beneden. Je kiest zelf het lestype, van korte instructie tot een bewegende of coöperatieve les.",
@@ -108,7 +108,7 @@ const KAARTEN = [
   {
     id: "plattegrond",
     naam: "Plattegrond",
-    tijd: "± 45 minuten per opstelling",
+    tijd: "± 20 minuten per opstelling",
     zin: "De klasopstelling puzzelt zichzelf uit, jouw wensen voorop.",
     uitleg:
       "Je geeft je wensen door, zoals wie beter niet naast elkaar zit en wie vooraan hoort, en de plattegrond puzzelt zichzelf uit. Schuiven mag altijd, want jij kent je klas het best.",
@@ -126,7 +126,7 @@ const KAARTEN = [
   {
     id: "draaiboek",
     naam: "Draaiboek",
-    tijd: "± een avond per evenement",
+    tijd: "± 3 uur per draaiboek",
     zin: "Elk schoolevenement compleet uitgedacht, tot de taakverdeling aan toe.",
     uitleg:
       "Van kerstdiner tot schoolreis: je krijgt een compleet draaiboek met tijdlijn, taakverdeling en boodschappenlijst. Klaar om te delen met je collega's.",
