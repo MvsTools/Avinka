@@ -866,11 +866,11 @@ create table if not exists public.agenda_bronnen (
   laatst_gelukt timestamptz,
   laatste_fout  text,
   aantal_items  integer not null default 0,
-  created_at    timestamptz not null default now(),
-  constraint agenda_bronnen_modus_check check (modus in ('alles', 'heledagen')),
-  constraint agenda_bronnen_systeem_check
-    check (systeem in ('parro', 'socialschools', 'outlook', 'google', 'ics'))
+  created_at    timestamptz not null default now()
 );
+-- Toegestane waarden voor 'modus' en 'systeem' bewaakt de code
+-- (src/app/api/agenda/bronnen/route.ts). Bewust geen check-constraints hier:
+-- die sneuvelden bij het plakken in de SQL-editor en leveren weinig op.
 alter table public.agenda_bronnen enable row level security;
 drop policy if exists "eigen agendabronnen" on public.agenda_bronnen;
 create policy "eigen agendabronnen" on public.agenda_bronnen
