@@ -138,7 +138,7 @@ const KAARTEN = [
     tijd: "± 30 minuten per planning",
     zin: "Je week compleet ingepland.",
     uitleg:
-      "Een weekplanning die wordt opgesteld op basis van jouw wensen, ook voor de uren na schooltijd. Avinka houdt rekening met drukke periodes en vinkt je taken af. Koppelen met Parro en je Outlook-agenda is ook mogelijk.",
+      "Een weekplanning die wordt opgesteld op basis van jouw wensen, ook voor de uren na schooltijd. Avinka houdt rekening met drukke periodes en vinkt je taken af. Koppelen aan je persoonlijke agenda en de schoolagenda is ook mogelijk.",
     licht: false,
   },
 ];
