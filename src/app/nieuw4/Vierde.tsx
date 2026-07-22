@@ -943,19 +943,23 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
 
       {/* ════════════════════════ DE BODY ════════════════════════ */}
       <main id="verder" className="relative z-10 scroll-mt-16 bg-cream">
-        {/* ── 1. De landing: wat dit is, mét het briefje dat uit de film is
-           neergedwarreld. Links de woorden, rechts het bewijs: een afgevinkt
-           takenlijstje in handschrift. De vinkjes tekenen zichzelf één voor
-           één zodra de sectie in beeld komt. ── */}
+        {/* ── 1. De landing: bewust de rustpauze tussen twee rijke stukken
+           (de film hierboven, de kunstkaarten hieronder). Alleen woorden,
+           asymmetrisch gezet: kop links groot, uitleg en knoppen ingesprongen
+           in de rechterkolom. Géén object, want de film toont al een
+           takenlijst en de galerij al vellen papier. ── */}
         <section className="relative overflow-hidden">
           <div className="pointer-events-none absolute -left-28 top-6 h-80 w-80 rounded-full bg-brand/10 blur-3xl" aria-hidden />
           <div className="pointer-events-none absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-accent/15 blur-3xl" aria-hidden />
-          <div className="relative mx-auto grid w-full max-w-5xl items-center gap-14 px-6 pb-24 pt-10 lg:grid-cols-[1.15fr_0.85fr] lg:gap-10">
-            <div>
-              <h2 data-reveal className="font-display text-4xl font-black tracking-tight [text-wrap:balance] sm:text-5xl">
-                Eén werkplek voor al je schoolwerk
-              </h2>
-              <p data-reveal className="mt-7 max-w-xl text-lg leading-8 text-ink/70">
+          <div className="relative mx-auto grid w-full max-w-5xl gap-8 px-6 pb-28 pt-14 lg:grid-cols-[1fr_1.1fr] lg:gap-14">
+            <h2
+              data-reveal
+              className="font-display text-[clamp(2.5rem,5.5vw,3.75rem)] font-black leading-[1.03] tracking-tight [text-wrap:balance]"
+            >
+              Eén werkplek voor al je schoolwerk
+            </h2>
+            <div className="lg:pt-3">
+              <p data-reveal className="max-w-md text-lg leading-8 text-ink/70">
                 Toetsanalyse, rapporten, het weekbericht voor ouders: Avinka zet
                 het voorwerk alvast voor je klaar, in gewoon Nederlands en in
                 jouw toon. Jij leest het na, past aan wat je anders wilt en
@@ -964,56 +968,16 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
               <div data-reveal className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/sign-up"
-                  className="w-full rounded-2xl bg-brand px-8 py-4 text-center text-lg font-bold text-white shadow-lg shadow-brand/25 transition hover:-translate-y-0.5 hover:bg-brand-dark sm:w-auto"
+                  className="w-full whitespace-nowrap rounded-2xl bg-brand px-7 py-4 text-center text-lg font-bold text-white shadow-lg shadow-brand/25 transition hover:-translate-y-0.5 hover:bg-brand-dark sm:w-auto"
                 >
                   Probeer Avinka gratis
                 </Link>
                 <a
                   href="#tools"
-                  className="w-full rounded-2xl border-2 border-ink/10 bg-white px-8 py-4 text-center text-lg font-bold text-ink transition hover:border-ink/20 sm:w-auto"
+                  className="w-full whitespace-nowrap rounded-2xl border-2 border-ink/10 bg-white px-7 py-4 text-center text-lg font-bold text-ink transition hover:border-ink/20 sm:w-auto"
                 >
                   Bekijk de tools
                 </a>
-              </div>
-            </div>
-
-            {/* Het briefje: het laatste velletje van de film, hier geland.
-               Concrete taken, allemaal afgevinkt, en de slotregel echoot de
-               film (avond werd dag). */}
-            <div data-reveal className="justify-self-center lg:justify-self-end lg:pr-4">
-              <div className="relative w-80 -rotate-[2.5deg] rounded-md bg-white p-7 pt-9 shadow-xl ring-1 ring-black/5">
-                {/* plakbandje */}
-                <span
-                  className="absolute -top-3 left-1/2 h-7 w-20 -translate-x-1/2 -rotate-2 rounded-[2px] bg-accent/30 ring-1 ring-accent/20"
-                  aria-hidden
-                />
-                <ul className="space-y-4">
-                  {[
-                    "toetsanalyse groep 5",
-                    "rapporten, eerste versie",
-                    "weekbericht ouders",
-                    "werkblad breuken",
-                  ].map((taak, i) => (
-                    <li key={taak} className="flex items-center gap-3.5">
-                      {/* het hokje, met een pennenstreek die eroverheen slaat */}
-                      <span
-                        className="relative h-6 w-6 shrink-0 rounded-[5px] ring-2 ring-inset ring-ink/15"
-                        style={{ rotate: `${i % 2 === 0 ? -2 : 2}deg` }}
-                        aria-hidden
-                      >
-                        <Vink
-                          className="slotvink absolute -left-0.5 -top-1.5 h-7 w-7 -rotate-3 text-brand"
-                          dik={3}
-                          style={{ "--vertraag": `${0.35 + i * 0.3}s` } as CSSProperties}
-                        />
-                      </span>
-                      <span className="font-hand text-xl leading-tight text-ink/80">{taak}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="font-hand mt-6 -rotate-1 text-right text-xl leading-snug text-brand-dark">
-                  en het is nog licht buiten
-                </p>
               </div>
             </div>
           </div>
