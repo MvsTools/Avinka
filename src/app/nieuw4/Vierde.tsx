@@ -43,6 +43,26 @@ const STRIP = [
   "✓ Maandelijks opzegbaar",
 ];
 
+/* De herkenning boven de tools: het werk bij de naam noemen, in de taal van
+   de leerkracht zelf. Kort houden; de kaarten eronder doen het echte werk. */
+const PIJNPUNTEN = [
+  {
+    titel: "Te veel administratie",
+    tekst:
+      "Je wilt er zijn voor je klas, maar raakt steeds meer tijd kwijt aan formulieren, analyses en verslagen.",
+  },
+  {
+    titel: "Alles staat verspreid",
+    tekst:
+      "Voor elke taak weer een andere tool, website of document. Niets komt op één plek samen.",
+  },
+  {
+    titel: "Het schuift steeds door",
+    tekst:
+      "Taken die je eigenlijk allang af had willen hebben, blijven op de stapel liggen.",
+  },
+];
+
 /* De tool-galerij: per tool één kunstkaart (Stripe-achtig, maar in onze
    eigen beeldtaal). Nieuwe tool = kaart erbij. `licht` bepaalt of de naam
    op de kaart een donker plaatje nodig heeft. */
@@ -951,6 +971,42 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
            hij zich terug. ── */}
         <Markeersectie />
         {/* Einde markeersectie */}
+
+        {/* ── 2. Herken je dit? ────────────────────────────────────────────
+           De brug naar de tools: eerst noemen we het werk bij de naam. Geen
+           kaartjes met icoontjes, maar drie regels onder elkaar met een
+           haarlijn ertussen, in de displayletter, zodat het leest alsof
+           iemand jouw week opnoemt. Bewust rustig: het groene blok erboven en
+           de kaarten eronder zijn allebei luid. ── */}
+        <section className="relative">
+          <div className="mx-auto w-full max-w-3xl px-6 pb-8 pt-24 lg:pt-28">
+            <h2
+              data-reveal
+              className="font-display text-[clamp(1.75rem,3vw,2.25rem)] font-black tracking-tight"
+            >
+              Herken je dit?
+            </h2>
+
+            <div className="mt-10 border-b border-ink/10">
+              {PIJNPUNTEN.map((p, i) => (
+                <p
+                  key={p.titel}
+                  data-reveal
+                  style={{ transitionDelay: `${i * 110}ms` }}
+                  className="border-t border-ink/10 py-7 font-display text-xl leading-[1.5] tracking-tight text-ink/60 [text-wrap:pretty] sm:text-2xl sm:leading-[1.45]"
+                >
+                  <span className="font-black text-ink">{p.titel}.</span> {p.tekst}
+                </p>
+              ))}
+            </div>
+
+            <p data-reveal className="mt-12 max-w-lg text-xl leading-9 text-ink/75 [text-wrap:balance]">
+              Het hoort bij het werk. Maar het kan{" "}
+              <span className="font-bold text-brand-dark">sneller, slimmer en met minder gedoe</span>
+              .
+            </p>
+          </div>
+        </section>
 
         {/* ── 3. De tool-galerij: grote kunstkaarten, jij schuift ze zelf ── */}
         <section id="tools" className="relative overflow-hidden scroll-mt-20">
