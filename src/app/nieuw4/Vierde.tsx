@@ -1205,20 +1205,20 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
   );
 }
 
-/* ── De markeersectie (stille versie) ───────────────────────────────────
-   Hetzelfde gebaar als de volle groene haal, maar dan gefluisterd: er
-   schuift geen kleurvlak over de tekst, alleen een zandkleurig papiervlak
-   dat meeloopt met je scroll. Wat je écht ziet is de natte rand van de
-   stift: één groene haarlijn die precies op de rand van het vlak meereist.
-   Kleur doet dus 3 pixels werk in plaats van een heel vlak, en de tekst
-   blijft gewoon inkt op papier. Werkt beide kanten op.
-   Terug naar de volle groene variant: commit 66591e4. ─────────────────── */
-const HAAL_SCHUIN = 2.2; // procent van de breedte dat de rand naar links helt
-
+/* ── De markeersectie ───────────────────────────────────────────────────
+   Twee identieke lagen boven elkaar: onderop de crème versie, daarbovenop
+   dezelfde inhoud in het groen. De groene laag wordt met clip-path van links
+   naar rechts opengetrokken op het ritme van je scroll, met een schuine rand
+   zoals een echte markeerstift. Zo kleurt de tekst perfect om in plaats van
+   te verkleuren.
+   De haal gaat één kant op: eenmaal aangestreept blijft het staan, ook als je
+   terugscrolt. Zo blijft de pagina rustig in plaats van heen en weer te
+   flikkeren bij elke scrollbeweging.
+   De bovenste laag is aria-hidden en vangt geen muis: de knoppen eronder
+   blijven gewoon de echte knoppen. ─────────────────────────────────────── */
 function Markeersectie() {
   const sectie = useRef<HTMLElement>(null);
-  const vlak = useRef<HTMLDivElement>(null);
-  const rand = useRef<HTMLDivElement>(null);
+  const haal = useRef<HTMLDivElement>(null);
   const reduced = useSyncExternalStore<boolean | null>(
     abonneerReduced,
     () => window.matchMedia(REDUCED_QUERY).matches,
@@ -1228,17 +1228,16 @@ function Markeersectie() {
   useEffect(() => {
     if (reduced === null) return;
     const sec = sectie.current;
-    const laag = vlak.current;
-    const lijn = rand.current;
-    if (!sec || !laag || !lijn) return;
+    const laag = haal.current;
+    if (!sec || !laag) return;
 
     if (reduced) {
       laag.style.clipPath = "inset(0 0 0 0)";
-      lijn.style.opacity = "0";
       return;
     }
 
     let bezig = false;
+    let ver = 0; // hoe ver de stift is geweest; loopt nooit terug
     const teken = () => {
       if (bezig) return;
       bezig = true;
@@ -1246,22 +1245,23 @@ function Markeersectie() {
         bezig = false;
         const vh = window.innerHeight;
         const r = sec.getBoundingClientRect();
-        // Loopt van "sectie komt onderin binnen" tot "sectie staat goed in
-        // beeld", zodat de haal klaar is als je uitgelezen bent.
+        // De haal loopt van "sectie komt onderin binnen" tot "sectie staat
+        // goed in beeld": zo is hij klaar op het moment dat je uitgelezen bent.
         const p = Math.min(1, Math.max(0, (vh * 0.82 - r.top) / (vh * 0.62)));
-        const b = p * 104;
-        laag.style.clipPath = `polygon(0 0, ${b}% 0, ${b - HAAL_SCHUIN}% 100%, 0 100%)`;
-
-        // De haarlijn ligt precies op die schuine rand: hoek volgt uit de
-        // verhouding van de sectie, dus hij klopt op elk scherm.
-        const dx = (HAAL_SCHUIN / 100) * r.width;
-        const hoek = (Math.atan2(dx, r.height) * 180) / Math.PI;
-        const midden = ((b - HAAL_SCHUIN / 2) / 100) * r.width;
-        lijn.style.transform = `translateX(${midden}px) skewX(${-hoek}deg)`;
-        // Op een smal scherm staat de sectie hoog en smal: de streek zou dan
-        // recht door de tekst lopen. Daar schuift alleen het papier mee.
-        const ruim = window.innerWidth >= 640;
-        lijn.style.opacity = ruim && p > 0.015 && p < 0.995 ? "1" : "0";
+        if (p <= ver) {
+          // Al verder geweest: laten staan en verder niets rekenen.
+          if (ver >= 1) {
+            window.removeEventListener("scroll", teken);
+            window.removeEventListener("resize", teken);
+          }
+          return;
+        }
+        ver = p;
+        const b = p * 105;
+        // Geen liniaal maar een stiftrand: licht golvend en iets schuin.
+        laag.style.clipPath =
+          `polygon(0 0, ${b}% 0, ${b - 1.3}% 24%, ${b - 3.1}% 52%,` +
+          ` ${b - 1.8}% 76%, ${b - 3.6}% 100%, 0 100%)`;
       });
     };
 
@@ -1279,58 +1279,72 @@ function Markeersectie() {
       <div className="pointer-events-none absolute -left-28 top-0 h-80 w-80 rounded-full bg-brand/10 blur-3xl" aria-hidden />
       <div className="pointer-events-none absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-accent/15 blur-3xl" aria-hidden />
 
-      {/* Het papiervlak dat meeschuift, en de natte rand van de stift. */}
+      <MarkeerInhoud />
+
       <div
-        ref={vlak}
+        ref={haal}
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-sand"
+        className="pointer-events-none absolute inset-0 bg-brand-dark"
         style={{ clipPath: "polygon(0 0, 0 0, 0 100%, 0 100%)" }}
-      />
-      <div
-        ref={rand}
-        aria-hidden
-        className="pointer-events-none absolute inset-y-0 left-0 w-[2px] opacity-0 transition-opacity duration-300"
-        style={{
-          // Vervaagt boven en onder, zodat het een streek is en geen liniaal.
-          background:
-            "linear-gradient(to bottom, transparent, rgb(47 158 110 / 0.9) 18%, rgb(47 158 110 / 0.9) 82%, transparent)",
-        }}
-      />
-
-      <div className="relative mx-auto grid w-full max-w-5xl gap-10 px-6 pb-16 pt-12 lg:grid-cols-[1fr_1.05fr] lg:gap-16 lg:pb-20 lg:pt-16">
-        <div>
-          <h2
-            data-reveal
-            className="font-display text-[clamp(1.875rem,3.1vw,2.375rem)] font-black leading-[1.08] tracking-tight [text-wrap:balance]"
-          >
-            De slimme werkplek voor leerkrachten in het basisonderwijs
-          </h2>
-          <div data-reveal className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/sign-up"
-              className="knop-druk w-full whitespace-nowrap rounded-2xl bg-brand px-7 py-4 text-center text-lg font-bold text-white shadow-lg shadow-brand/25 transition-[transform,background-color] duration-200 hover:bg-brand-dark sm:w-auto"
-            >
-              Probeer Avinka gratis
-            </Link>
-            <a
-              href="#tools"
-              className="knop-druk w-full whitespace-nowrap rounded-2xl border-2 border-ink/10 bg-white px-7 py-4 text-center text-lg font-bold text-ink transition-[transform,border-color] duration-200 hover:border-ink/20 sm:w-auto"
-            >
-              Bekijk de tools
-            </a>
-          </div>
-        </div>
-
-        <div className="max-w-xl lg:pt-2">
-          <p data-reveal className="text-lg leading-8 text-ink/75">
-            Avinka brengt de hulpmiddelen voor je schoolwerk samen in één
-            omgeving. Je geeft aan wat je nodig hebt en Avinka helpt je met de
-            uitwerking, zodat terugkerende taken minder tijd kosten en je werk
-            overzichtelijk blijft.
-          </p>
-        </div>
+      >
+        <MarkeerInhoud donker />
       </div>
     </section>
+  );
+}
+
+/* De inhoud staat twee keer op de pagina, dus hij hoort op één plek te
+   staan. `donker` is de versie die op de groene haal ligt. */
+function MarkeerInhoud({ donker = false }: { donker?: boolean }) {
+  return (
+    <div className="relative mx-auto grid w-full max-w-5xl gap-10 px-6 pb-16 pt-12 lg:grid-cols-[1fr_1.05fr] lg:gap-16 lg:pb-20 lg:pt-16">
+      <div>
+        <h2
+          data-reveal={donker ? undefined : ""}
+          className={`font-display text-[clamp(1.875rem,3.1vw,2.375rem)] font-black leading-[1.08] tracking-tight [text-wrap:balance] ${
+            donker ? "text-white" : ""
+          }`}
+        >
+          De slimme werkplek voor leerkrachten in het basisonderwijs
+        </h2>
+        <div data-reveal={donker ? undefined : ""} className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <Link
+            href="/sign-up"
+            tabIndex={donker ? -1 : undefined}
+            className={`knop-druk w-full whitespace-nowrap rounded-2xl px-7 py-4 text-center text-lg font-bold shadow-lg transition-[transform,background-color] duration-200 sm:w-auto ${
+              donker
+                ? "bg-white text-brand-dark shadow-black/10"
+                : "bg-brand text-white shadow-brand/25 hover:bg-brand-dark"
+            }`}
+          >
+            Probeer Avinka gratis
+          </Link>
+          <a
+            href="#tools"
+            tabIndex={donker ? -1 : undefined}
+            className={`knop-druk w-full whitespace-nowrap rounded-2xl border-2 px-7 py-4 text-center text-lg font-bold transition-[transform,border-color] duration-200 sm:w-auto ${
+              donker
+                ? "border-white/45 bg-transparent text-white"
+                : "border-ink/10 bg-white text-ink hover:border-ink/20"
+            }`}
+          >
+            Bekijk de tools
+          </a>
+        </div>
+      </div>
+
+      <div className="max-w-xl lg:pt-2">
+        <p
+          data-reveal={donker ? undefined : ""}
+          className={`text-lg leading-8 ${donker ? "text-white" : "text-ink/75"}`}
+        >
+          Avinka brengt de hulpmiddelen voor je schoolwerk samen in één
+          omgeving. Je geeft aan wat je nodig hebt en Avinka helpt je met de
+          uitwerking, zodat terugkerende taken minder tijd kosten en je werk
+          overzichtelijk blijft.
+        </p>
+      </div>
+    </div>
   );
 }
 
