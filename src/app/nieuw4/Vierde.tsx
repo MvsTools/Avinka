@@ -2081,14 +2081,15 @@ function KaartBeeld({ soort }: { soort: string }) {
         <div className="absolute -left-16 -top-20 h-64 w-64 rounded-full bg-white/15 blur-3xl" aria-hidden />
         {/* Flow-layout: nooit overlap, ook op de kortere mobiele kaart. */}
         <div className="relative flex h-full flex-col px-6 pb-16 pt-6">
-          <p className="font-hand self-end text-xl text-white">groep 5 · M-toets</p>
-          {/* per domein één balk, zoals in het echte groepsbeeld */}
+          <p className="font-hand self-end text-xl text-white">groep 5 · middenmeting</p>
+          {/* Per vak één balk, niet per rekendomein: een toetsronde gaat net
+             zo goed over spelling en begrijpend lezen. */}
           <div className="mt-4 space-y-3" aria-hidden>
             {[
-              { naam: "Getallen", breed: 78, aandacht: false },
-              { naam: "Verhoudingen", breed: 64, aandacht: false },
-              { naam: "Meten en meetkunde", breed: 36, aandacht: true },
-              { naam: "Verbanden", breed: 70, aandacht: false },
+              { naam: "Rekenen", breed: 78, aandacht: false },
+              { naam: "Begrijpend lezen", breed: 64, aandacht: false },
+              { naam: "Spelling", breed: 36, aandacht: true },
+              { naam: "Technisch lezen", breed: 72, aandacht: false },
             ].map((d) => (
               <div key={d.naam}>
                 <div className="flex items-center justify-between gap-2">
@@ -2109,7 +2110,7 @@ function KaartBeeld({ soort }: { soort: string }) {
             ))}
           </div>
           <p className="mt-auto pt-4 text-sm font-bold leading-6 text-white">
-            Sofie en Yassin kunnen extra oefenen bij meten.
+            Sofie en Yassin vallen op bij spelling: werkwoorden.
           </p>
         </div>
       </div>
