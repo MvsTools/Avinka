@@ -43,6 +43,14 @@ const STRIP = [
   "✓ Maandelijks opzegbaar",
 ];
 
+/* De drie regels die oplichten terwijl je erlangs scrolt. Kort, want dit is
+   de rustplek tussen de film en de kaarten; het accent krijgt de penstreep. */
+const LEESREGELS = [
+  { voor: "Het ", accent: "voorwerk", na: " staat al klaar." },
+  { voor: "In gewoon Nederlands, in ", accent: "jouw toon", na: "." },
+  { voor: "En jij houdt het ", accent: "laatste woord", na: "." },
+];
+
 /* De tool-galerij: per tool één kunstkaart (Stripe-achtig, maar in onze
    eigen beeldtaal). Nieuwe tool = kaart erbij. `licht` bepaalt of de naam
    op de kaart een donker plaatje nodig heeft. */
@@ -347,6 +355,35 @@ function Streep() {
   );
 }
 
+/* De penstreep onder een leesregel: drie licht verschillende halen, zodat de
+   drie regels niet als kopieën van elkaar aanvoelen. Trekt zichzelf zodra de
+   regel in de leesband komt (stroke-dashoffset in het stijlblok). */
+const PENHALEN = [
+  "M3 8.5C46 3.6 118 2.6 197 6.4",
+  "M2 6.8C58 11.4 132 2.2 198 7.6",
+  "M4 9.2C52 4.1 138 4.6 196 8.1",
+];
+
+function PenStreep({ variant }: { variant: number }) {
+  return (
+    <svg
+      viewBox="0 0 200 12"
+      preserveAspectRatio="none"
+      className="penstreep absolute -bottom-1.5 left-0 h-[0.42em] w-full text-accent sm:-bottom-2"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d={PENHALEN[variant % PENHALEN.length]}
+        stroke="currentColor"
+        strokeWidth="5"
+        strokeLinecap="round"
+        pathLength={1}
+      />
+    </svg>
+  );
+}
+
 function abonneerReduced(cb: () => void) {
   const mq = window.matchMedia(REDUCED_QUERY);
   mq.addEventListener("change", cb);
@@ -540,7 +577,21 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
     );
     reveals.forEach((r) => io.observe(r));
 
-    return () => io.disconnect();
+    /* De leesband: de regel waar je nu bent kleurt bij en krijgt zijn
+       penstreep. Loopt beide kanten op, dus terugscrollen doet hem weer uit.
+       De band ligt in het bovenste derde deel van het scherm: daar leest een
+       mens, niet op de onderrand. */
+    const leesIo = new IntersectionObserver(
+      (entries) =>
+        entries.forEach((e) => e.target.classList.toggle("leest", e.isIntersecting)),
+      { rootMargin: "-22% 0px -55% 0px" },
+    );
+    el.querySelectorAll("[data-leesregel]").forEach((r) => leesIo.observe(r));
+
+    return () => {
+      io.disconnect();
+      leesIo.disconnect();
+    };
   }, [reduced]);
 
   return (
@@ -943,42 +994,56 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
 
       {/* ════════════════════════ DE BODY ════════════════════════ */}
       <main id="verder" className="relative z-10 scroll-mt-16 bg-cream">
-        {/* ── 1. De landing: bewust de rustpauze tussen twee rijke stukken
-           (de film hierboven, de kunstkaarten hieronder). Alleen woorden,
-           asymmetrisch gezet: kop links groot, uitleg en knoppen ingesprongen
-           in de rechterkolom. Géén object, want de film toont al een
-           takenlijst en de galerij al vellen papier. ── */}
+        {/* ── 1. "De pen leest met je mee" ─────────────────────────────────
+           De kop blijft links staan terwijl je leest; rechts lichten de drie
+           regels één voor één op zodra ze in de leesband komen, met een
+           handgetekende streep eronder die zichzelf trekt. Terugscrollen zet
+           ze weer uit, dus er gebeurt altijd iets, maar niets beweegt uit
+           zichzelf: jij bepaalt het tempo. Geen object, geen kaart: de film
+           toont al een takenlijst en de galerij al papier. ── */}
         <section className="relative overflow-hidden">
           <div className="pointer-events-none absolute -left-28 top-6 h-80 w-80 rounded-full bg-brand/10 blur-3xl" aria-hidden />
           <div className="pointer-events-none absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-accent/15 blur-3xl" aria-hidden />
-          <div className="relative mx-auto grid w-full max-w-5xl gap-8 px-6 pb-28 pt-14 lg:grid-cols-[1fr_1.1fr] lg:gap-14">
-            <h2
-              data-reveal
-              className="font-display text-[clamp(2.5rem,5.5vw,3.75rem)] font-black leading-[1.03] tracking-tight [text-wrap:balance]"
-            >
-              Eén werkplek voor al je schoolwerk
-            </h2>
-            <div className="lg:pt-3">
-              <p data-reveal className="max-w-md text-lg leading-8 text-ink/70">
-                Toetsanalyse, rapporten, het weekbericht voor ouders: Avinka zet
-                het voorwerk alvast voor je klaar, in gewoon Nederlands en in
-                jouw toon. Jij leest het na, past aan wat je anders wilt en
-                vinkt af. Het laatste woord is altijd van jou.
-              </p>
-              <div data-reveal className="mt-9 flex flex-col gap-3 sm:flex-row">
+          <div className="relative mx-auto grid w-full max-w-5xl gap-12 px-6 pb-28 pt-16 lg:grid-cols-[0.95fr_1.05fr] lg:gap-16 lg:pb-40 lg:pt-24">
+            <div className="lg:sticky lg:top-28 lg:self-start">
+              <h2
+                data-reveal
+                className="font-display text-[clamp(2.5rem,5.5vw,3.75rem)] font-black leading-[1.03] tracking-tight [text-wrap:balance]"
+              >
+                Eén werkplek voor al je schoolwerk
+              </h2>
+              <div data-reveal className="mt-10 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/sign-up"
-                  className="w-full whitespace-nowrap rounded-2xl bg-brand px-7 py-4 text-center text-lg font-bold text-white shadow-lg shadow-brand/25 transition hover:-translate-y-0.5 hover:bg-brand-dark sm:w-auto"
+                  className="knop-druk w-full whitespace-nowrap rounded-2xl bg-brand px-7 py-4 text-center text-lg font-bold text-white shadow-lg shadow-brand/25 transition-[transform,background-color] duration-200 hover:bg-brand-dark sm:w-auto"
                 >
                   Probeer Avinka gratis
                 </Link>
                 <a
                   href="#tools"
-                  className="w-full whitespace-nowrap rounded-2xl border-2 border-ink/10 bg-white px-7 py-4 text-center text-lg font-bold text-ink transition hover:border-ink/20 sm:w-auto"
+                  className="knop-druk w-full whitespace-nowrap rounded-2xl border-2 border-ink/10 bg-white px-7 py-4 text-center text-lg font-bold text-ink transition-[transform,border-color] duration-200 hover:border-ink/20 sm:w-auto"
                 >
                   Bekijk de tools
                 </a>
               </div>
+            </div>
+
+            {/* De drie regels. Kort houden: dit is leesvoer, geen folder. */}
+            <div className="space-y-14 sm:space-y-20 lg:pt-2">
+              {LEESREGELS.map((r, i) => (
+                <p
+                  key={r.accent}
+                  data-leesregel
+                  className="font-display text-[clamp(1.75rem,3.4vw,2.5rem)] font-black leading-[1.15] tracking-tight [text-wrap:balance]"
+                >
+                  {r.voor}
+                  <span className="relative whitespace-nowrap">
+                    {r.accent}
+                    <PenStreep variant={i} />
+                  </span>
+                  {r.na}
+                </p>
+              ))}
             </div>
           </div>
         </section>
@@ -1809,6 +1874,27 @@ function StijlBlok() {
         100% { transform: scale(1); opacity: 1; }
       }
       .anim .vinkpop { animation: vinkpop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+      /* Leesregels: de regel in de leesband kleurt bij en de pen trekt zijn
+         streep. Alleen kleur en stroke, dus geen layout-werk; omkeerbaar,
+         want het is een transition en geen keyframe. Zonder .anim (verminderde
+         beweging) staat alles meteen in de eindstand. */
+      .anim [data-leesregel] {
+        /* Niet lichter dan dit: ook de regel waar je nog niet bent moet
+           leesbaar blijven (3,7:1 op crème, grote tekst). */
+        color: rgb(34 28 58 / 0.55);
+        transition: color 0.55s cubic-bezier(0.23, 1, 0.32, 1);
+      }
+      .anim [data-leesregel].leest { color: rgb(34 28 58); }
+      .anim [data-leesregel] .penstreep path {
+        stroke-dasharray: 1;
+        stroke-dashoffset: 1;
+        transition: stroke-dashoffset 0.7s cubic-bezier(0.23, 1, 0.32, 1) 0.1s;
+      }
+      .anim [data-leesregel].leest .penstreep path { stroke-dashoffset: 0; }
+
+      /* Knoppen mogen voelen dat je ze indrukt. */
+      .knop-druk:active { transform: scale(0.97); }
 
       /* Slotvinkje tekent zichzelf. */
       .anim [data-reveal] .slotvink path {
