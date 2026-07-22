@@ -1216,9 +1216,32 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
    flikkeren bij elke scrollbeweging.
    De bovenste laag is aria-hidden en vangt geen muis: de knoppen eronder
    blijven gewoon de echte knoppen. ─────────────────────────────────────── */
+/* De oneffen boven- en onderrand van de stift: [fractie van de haal, pixels
+   vanaf de rand]. Onregelmatige tussenafstanden, want een hand streept niet
+   in gelijke stappen. De onderrand loopt van rechts naar links. */
+const BOVENRAND: [number, number][] = [
+  [0.11, 5],
+  [0.26, 1],
+  [0.38, 7],
+  [0.55, 2],
+  [0.71, 6],
+  [0.86, 2],
+  [0.95, 5],
+];
+const ONDERRAND: [number, number][] = [
+  [0.93, 6],
+  [0.79, 1],
+  [0.64, 7],
+  [0.5, 2],
+  [0.33, 6],
+  [0.19, 2],
+  [0.08, 5],
+];
+
 function Markeersectie() {
   const sectie = useRef<HTMLElement>(null);
   const haal = useRef<HTMLDivElement>(null);
+  const waas = useRef<HTMLDivElement>(null);
   const reduced = useSyncExternalStore<boolean | null>(
     abonneerReduced,
     () => window.matchMedia(REDUCED_QUERY).matches,
@@ -1231,8 +1254,11 @@ function Markeersectie() {
     const laag = haal.current;
     if (!sec || !laag) return;
 
+    const schaduw = waas.current;
+
     if (reduced) {
       laag.style.clipPath = "inset(0 0 0 0)";
+      if (schaduw) schaduw.style.clipPath = "inset(0 0 0 0)";
       return;
     }
 
@@ -1263,10 +1289,26 @@ function Markeersectie() {
         const tekstRechts = r.width / 2 + Math.min(1024, r.width) / 2 - 24;
         const eind = ((tekstRechts + 28) / r.width) * 100 + 3.6;
         const b = p * (eind <= 100 ? eind : 105);
-        // Geen liniaal maar een stiftrand: licht golvend en iets schuin.
-        laag.style.clipPath =
-          `polygon(0 0, ${b}% 0, ${b - 1.3}% 24%, ${b - 3.1}% 52%,` +
-          ` ${b - 1.8}% 76%, ${b - 3.6}% 100%, 0 100%)`;
+        // Geen liniaal maar een stiftrand. Ook boven en onder loopt de rand
+        // een paar pixels op en neer, zoals een stift over papier; de punten
+        // liggen op fracties van de haal, dus ze blijven altijd binnen wat er
+        // al aangestreept is.
+        const maakVorm = (bb: number, extra: number) => {
+          const boven = BOVENRAND.map(([f, y]) => `${bb * f}% ${Math.max(0, y - extra)}px`).join(", ");
+          const onder = ONDERRAND.map(
+            ([f, y]) => `${bb * f}% calc(100% - ${Math.max(0, y - extra)}px)`,
+          ).join(", ");
+          return (
+            `polygon(0 ${Math.max(0, 3 - extra)}px, ${boven}, ${bb}% ${Math.max(0, 1 - extra)}px,` +
+            ` ${bb - 1.3}% 24%, ${bb - 3.1}% 52%, ${bb - 1.8}% 76%,` +
+            ` ${bb - 3.6}% calc(100% - ${Math.max(0, 2 - extra)}px), ${onder},` +
+            ` 0 calc(100% - ${Math.max(0, 4 - extra)}px))`
+          );
+        };
+
+        laag.style.clipPath = maakVorm(b, 0);
+        // De waas is dezelfde vorm, een tikje ruimer: uitgelopen inkt.
+        if (schaduw) schaduw.style.clipPath = maakVorm(b + 0.55, 7);
       });
     };
 
@@ -1280,11 +1322,24 @@ function Markeersectie() {
   }, [reduced]);
 
   return (
-    <section ref={sectie} className="relative isolate overflow-hidden">
-      <div className="pointer-events-none absolute -left-28 top-0 h-80 w-80 rounded-full bg-brand/10 blur-3xl" aria-hidden />
-      <div className="pointer-events-none absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-accent/15 blur-3xl" aria-hidden />
+    <section ref={sectie} className="relative isolate">
+      {/* De gloed hoort binnen de sectie te blijven; de stiftinkt niet. */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        <div className="absolute -left-28 top-0 h-80 w-80 rounded-full bg-brand/10 blur-3xl" />
+        <div className="absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-accent/15 blur-3xl" />
+      </div>
 
       <MarkeerInhoud />
+
+      {/* Uitgelopen inkt: dezelfde vorm, iets ruimer en half doorschijnend,
+         zodat de rand niet als een geplakt vlak aanvoelt maar als iets dat
+         in het papier trekt. */}
+      <div
+        ref={waas}
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 -inset-y-[10px] -z-10 bg-brand-dark/20 blur-[3px]"
+        style={{ clipPath: "polygon(0 0, 0 0, 0 100%, 0 100%)" }}
+      />
 
       <div
         ref={haal}
