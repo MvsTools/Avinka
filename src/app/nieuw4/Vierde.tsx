@@ -127,9 +127,9 @@ const KAARTEN = [
     id: "draaiboek",
     naam: "Draaiboek",
     tijd: "± 3 uur per draaiboek",
-    zin: "Elk schoolevenement compleet uitgedacht, tot de taakverdeling aan toe.",
+    zin: "Een uitgedacht schoolevenement.",
     uitleg:
-      "Van kerstdiner tot schoolreis: je krijgt een compleet draaiboek met tijdlijn, taakverdeling en boodschappenlijst. Klaar om te delen met je collega's.",
+      "Van kerstdiner tot schoolreis. Je geeft je wensen door en krijgt een compleet draaiboek met tijdlijn, taakverdeling, boodschappenlijst en nog veel meer. Klaar om te delen met je collega's en te gebruiken als werkbestand.",
     licht: true,
   },
   {
