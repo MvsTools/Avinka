@@ -109,9 +109,9 @@ const KAARTEN = [
     id: "plattegrond",
     naam: "Plattegrond",
     tijd: "± 20 minuten per opstelling",
-    zin: "De klasopstelling puzzelt zichzelf uit, jouw wensen voorop.",
+    zin: "De slimme klassenopstelling.",
     uitleg:
-      "Je geeft je wensen door, zoals wie beter niet naast elkaar zit en wie vooraan hoort, en de plattegrond puzzelt zichzelf uit. Schuiven mag altijd, want jij kent je klas het best.",
+      "Een plattegrond op basis van jouw wensen, of van een sociogram dat je uploadt. Avinka legt de basis, jij verschuift wat er nog geschoven moet worden. Want jij kent je klas het best.",
     licht: false,
   },
   {
