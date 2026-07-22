@@ -120,7 +120,7 @@ const KAARTEN = [
     tijd: "± 15 minuten per werkblad",
     zin: "Werkbladen die precies bij je les passen.",
     uitleg:
-      "Kies een vakgebied en een onderwerp en je krijgt een printklaar werkblad. Je geeft je voorkeuren door en laat het desgewenst aansluiten op een lesontwerp. Ook maak je er hele boekjes mee als ondersteuningsmateriaal.",
+      "Kies een vakgebied en onderwerp en je krijgt een printklaar werkblad. Je geeft je voorkeuren door en kunt het laten aansluiten op een lesontwerp. Ook maak je er hele boekjes mee als ondersteuningsmateriaal.",
     licht: false,
   },
   {
