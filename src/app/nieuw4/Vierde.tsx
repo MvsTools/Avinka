@@ -566,7 +566,21 @@ export default function Vierde({
     );
     reveals.forEach((r) => io.observe(r));
 
-    return () => io.disconnect();
+    /* De leesband: de regel waar je nu bent staat scherp, de andere wachten
+       gedempt. Loopt beide kanten op, dus terugscrollen werkt ook. */
+    const leesIo = new IntersectionObserver(
+      (entries) =>
+        entries.forEach((e) => e.target.classList.toggle("leest", e.isIntersecting)),
+      // Smalle band (zo'n 10% van het scherm) zodat er meestal één regel
+      // tegelijk scherp staat en je oog echt meeloopt.
+      { rootMargin: "-42% 0px -48% 0px" },
+    );
+    el.querySelectorAll("[data-leesregel]").forEach((r) => leesIo.observe(r));
+
+    return () => {
+      io.disconnect();
+      leesIo.disconnect();
+    };
   }, [reduced]);
 
   return (
@@ -1009,10 +1023,12 @@ export default function Vierde({
                   <p
                     key={p.titel}
                     data-reveal
+                    data-leesregel
                     style={{ transitionDelay: `${i * 110}ms` }}
-                    className="border-t border-ink/10 py-7 font-display text-xl leading-[1.5] tracking-tight text-ink/60 [text-wrap:pretty] sm:text-2xl sm:leading-[1.45]"
+                    className="border-t border-ink/10 py-7 font-display text-xl leading-[1.5] tracking-tight [text-wrap:pretty] sm:text-2xl sm:leading-[1.45]"
                   >
-                    <span className="font-black text-ink">{p.titel}.</span> {p.tekst}
+                    <span className="kop font-black">{p.titel}.</span>{" "}
+                    <span className="uitleg">{p.tekst}</span>
                   </p>
                 ))}
               </div>
@@ -2057,6 +2073,25 @@ function StijlBlok() {
         100% { transform: scale(1); opacity: 1; }
       }
       .anim .vinkpop { animation: vinkpop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+      /* De herkenningsregels: standaard staat alles gewoon leesbaar. Mét
+         beweging staat de regel waar je bent scherp en schuiven de andere een
+         paar pixels terug, zodat je oog vanzelf meeloopt. Nooit lichter dan
+         55%, ook de wachtende regels moeten te lezen zijn. */
+      [data-leesregel] .kop { color: rgb(34 28 58); }
+      [data-leesregel] .uitleg { color: rgb(34 28 58 / 0.6); }
+      .anim [data-leesregel] {
+        transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+      }
+      .anim [data-leesregel] .kop,
+      .anim [data-leesregel] .uitleg {
+        transition: color 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+      }
+      .anim [data-leesregel] .kop { color: rgb(34 28 58 / 0.55); }
+      .anim [data-leesregel] .uitleg { color: rgb(34 28 58 / 0.45); }
+      .anim [data-leesregel].leest { transform: translateX(6px); }
+      .anim [data-leesregel].leest .kop { color: rgb(34 28 58); }
+      .anim [data-leesregel].leest .uitleg { color: rgb(34 28 58 / 0.7); }
 
       /* Knoppen mogen voelen dat je ze indrukt. */
       .knop-druk:active { transform: scale(0.97); }
