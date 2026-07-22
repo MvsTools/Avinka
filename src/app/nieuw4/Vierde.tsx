@@ -1521,7 +1521,7 @@ function RailKop() {
           Alle tools, één werkplek
         </h2>
         <p className="mt-4 text-lg text-ink/60">
-          Sleep de rij opzij om ze allemaal te zien. Er komen er steeds meer bij.
+          Sleep de rij opzij om ze allemaal te zien.
         </p>
       </div>
     </div>
