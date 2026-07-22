@@ -1564,6 +1564,35 @@ function RailKop() {
    Sluiten gaat met Escape, met de knop, of door naast het paneel te klikken;
    dan speelt dezelfde beweging terug naar de kaart. Bij verminderde beweging
    verschijnt en verdwijnt het paneel gewoon. ─────────────────────────── */
+/* De stand van het paneel op kaartformaat: één schaalfactor voor beide
+   richtingen, want een aparte X- en Y-schaal rekt de tekening uit (het paneel
+   is breed en laag, de kaart smal en hoog). Het paneel wordt daarom
+   gelijkmatig verkleind en op het midden van de kaart gelegd; dat het net
+   niet exact dekt valt niet op, omdat het op dat moment al aan het vervagen
+   is. Vereist transform-origin center, dus niet linksboven. */
+function kaartStand(vanaf: DOMRect, naar: DOMRect) {
+  const schaal = vanaf.width / naar.width;
+  const dx = vanaf.left + vanaf.width / 2 - (naar.left + naar.width / 2);
+  const dy = vanaf.top + vanaf.height / 2 - (naar.top + naar.height / 2);
+  return `translate(${dx}px, ${dy}px) scale(${schaal})`;
+}
+
+/* Voor het sluiten iets preciezer: niet het hele paneel op de kaart leggen,
+   maar de tékening erin. Het papier eromheen is dan toch al aan het vervagen,
+   dus wat je ziet is de tekening die terugschuift naar zijn kaart. Rekent met
+   transform-origin center: een punt P belandt na schalen op
+   midden + schaal × (P − midden). */
+function beeldStand(vanaf: DOMRect, naar: DOMRect, beeld: DOMRect) {
+  const schaal = vanaf.width / beeld.width;
+  const paneelX = naar.left + naar.width / 2;
+  const paneelY = naar.top + naar.height / 2;
+  const dx =
+    vanaf.left + vanaf.width / 2 - paneelX - schaal * (beeld.left + beeld.width / 2 - paneelX);
+  const dy =
+    vanaf.top + vanaf.height / 2 - paneelY - schaal * (beeld.top + beeld.height / 2 - paneelY);
+  return `translate(${dx}px, ${dy}px) scale(${schaal})`;
+}
+
 function ToolPaneel({
   kaart,
   vanaf,
@@ -1593,15 +1622,10 @@ function ToolPaneel({
     d.animate([{ opacity: 0 }, { opacity: 1 }], { duration: reduced ? 0 : 260, fill: "both" });
 
     const naar = p.getBoundingClientRect();
-    const schaalX = vanaf.width / naar.width;
-    const schaalY = vanaf.height / naar.height;
     p.animate(
       [
-        {
-          transform: `translate(${vanaf.left - naar.left}px, ${vanaf.top - naar.top}px) scale(${schaalX}, ${schaalY})`,
-          opacity: reduced ? 0 : 1,
-        },
-        { transform: "translate(0, 0) scale(1, 1)", opacity: 1 },
+        { transform: kaartStand(vanaf, naar), opacity: reduced ? 0 : 1 },
+        { transform: "translate(0, 0) scale(1)", opacity: 1 },
       ],
       { duration: duur, easing: "cubic-bezier(0.32, 0.72, 0, 1)", fill: "both" },
     );
@@ -1621,7 +1645,9 @@ function ToolPaneel({
     const d = doek.current;
     if (!p || !d || bezigMetSluiten.current) return opSluiten();
     bezigMetSluiten.current = true;
-    opStartSluiten();
+    // De kaart komt met een kleine vertraging terug; dan valt zijn fade-in
+    // samen met het vervagen van het paneel in plaats van ervoor.
+    window.setTimeout(opStartSluiten, reduced ? 0 : 110);
 
     // De openanimatie stoppen, anders blijft die (fill: both) meepraten over
     // transform en opacity.
@@ -1636,13 +1662,16 @@ function ToolPaneel({
       easing: "ease-out",
       fill: "both",
     });
+    // Ook het papier onder de tekst gaat weg, anders krimpt er een leeg wit
+    // vlak mee naar de kaart. Wat overblijft is de tekening, en die ís de
+    // kaart.
+    p.classList.add("paneel-sluit");
 
+    const beeld = p.querySelector("[data-paneelbeeld]")?.getBoundingClientRect();
     const terug = p.animate(
       [
-        { transform: "translate(0, 0) scale(1, 1)" },
-        {
-          transform: `translate(${vanaf.left - naar.left}px, ${vanaf.top - naar.top}px) scale(${vanaf.width / naar.width}, ${vanaf.height / naar.height})`,
-        },
+        { transform: "translate(0, 0) scale(1)" },
+        { transform: beeld ? beeldStand(vanaf, naar, beeld) : kaartStand(vanaf, naar) },
       ],
       { duration: duur, easing: "cubic-bezier(0.32, 0.72, 0, 1)", fill: "both" },
     );
@@ -1687,12 +1716,15 @@ function ToolPaneel({
         role="dialog"
         aria-modal="true"
         aria-label={kaart.naam}
-        className="paneel relative z-10 max-h-full w-full max-w-3xl origin-top-left overflow-y-auto rounded-3xl bg-cream shadow-2xl ring-1 ring-black/10"
+        className="paneel relative z-10 max-h-full w-full max-w-3xl overflow-y-auto rounded-3xl bg-cream shadow-2xl ring-1 ring-black/10"
       >
         <div className="grid sm:grid-cols-[0.85fr_1.15fr]">
           {/* De tekening van de kaart, nu groot. Op een smal scherm platter,
              anders duwt hij de tekst helemaal onder de vouw. */}
-          <div className="relative aspect-[16/11] overflow-hidden sm:aspect-auto sm:min-h-[22rem]">
+          <div
+            data-paneelbeeld
+            className="relative aspect-[16/11] overflow-hidden sm:aspect-auto sm:min-h-[22rem]"
+          >
             <KaartBeeld soort={kaart.id} />
             <div className="kaart-grain pointer-events-none absolute inset-0" aria-hidden />
           </div>
@@ -2416,6 +2448,16 @@ function StijlBlok() {
       }
       .kaart-knop:focus-visible .kaart-hint { opacity: 1; }
       .kaart-knop:focus-visible .kaart-hint > span { transform: translateY(0); }
+
+      /* Bij het sluiten verdwijnt het papier van het paneel, zodat alleen de
+         tekening naar de kaart terugkrimpt. */
+      .paneel {
+        transition: background-color 0.2s ease-out, box-shadow 0.2s ease-out;
+      }
+      .paneel.paneel-sluit {
+        background-color: transparent;
+        box-shadow: none;
+      }
 
       /* De tekst in het paneel komt net na de beweging binnen. */
       .paneel-tekst > * {
