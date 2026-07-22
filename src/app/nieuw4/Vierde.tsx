@@ -997,12 +997,22 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
              zo recht door in "Dit staat er voor je klaar". */}
           <div className="mx-auto w-full max-w-5xl px-6 pb-4 pt-24 lg:pt-28">
             <div className="grid gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
-              <h2
-                data-reveal
-                className="font-display text-[clamp(1.75rem,3vw,2.25rem)] font-black tracking-tight lg:sticky lg:top-28 lg:self-start"
-              >
-                Herken je dit?
-              </h2>
+              {/* De kop krijgt de hele kolom en blijft meelopen tot ongeveer
+                 het midden van de laatste regel: daarna scrolt hij mee weg.
+                 Dat regelt de hoogte van dit blokje, want een sticky element
+                 stopt bij de onderkant van zijn ouder. Terugscrollen pakt hem
+                 vanzelf weer op. */}
+              <div className="lg:mb-6">
+                <h2
+                  data-reveal
+                  className="font-display text-[clamp(2.25rem,4.4vw,3.25rem)] font-black leading-[0.98] tracking-tight lg:sticky lg:top-28"
+                >
+                  Herken
+                  <br />
+                  je dit
+                  <span className="text-brand-dark">?</span>
+                </h2>
+              </div>
 
             {/* De rijen: kop groot in de displayletter, uitleg in de
                gewone tekstletter eronder. In de kantlijn een leeg hokje dat
