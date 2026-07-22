@@ -999,7 +999,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
             <div>
               <h2
                 data-reveal
-                className="font-display text-[clamp(2rem,3.9vw,2.875rem)] font-black leading-[1.06] tracking-tight [text-wrap:balance]"
+                className="font-display text-[clamp(1.875rem,3.1vw,2.375rem)] font-black leading-[1.08] tracking-tight [text-wrap:balance]"
               >
                 De slimme werkplek voor leerkrachten in het basisonderwijs
               </h2>
@@ -1019,12 +1019,13 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
               </div>
             </div>
 
-            {/* De uitleg: wat het is, wat het je oplevert, en wie de baas
-               blijft. De pen streept per alinea één kernwoord aan. */}
-            <div className="max-w-xl space-y-5 text-lg leading-8 text-ink/75 lg:pt-2">
-              <p data-reveal data-penregel>
+            {/* De uitleg: wat het is en wat het je oplevert. De tweede regel
+               is de belofte en mag daarom groter en donkerder staan dan de
+               uitleg erboven; de pen streept het kernwoord aan. */}
+            <div className="max-w-xl lg:pt-2">
+              <p data-reveal data-penregel className="text-lg leading-8 text-ink/75">
                 Avinka brengt de hulpmiddelen voor je schoolwerk samen in{" "}
-                <span className="relative whitespace-nowrap font-bold text-ink">
+                <span className="relative whitespace-nowrap">
                   één omgeving
                   <PenStreep variant={0} />
                 </span>
@@ -1032,14 +1033,17 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                 uitwerking, zodat terugkerende taken minder tijd kosten en je
                 werk overzichtelijk blijft.
               </p>
-              <p data-reveal data-penregel>
-                Jij houdt altijd{" "}
-                <span className="relative whitespace-nowrap font-bold text-ink">
+              <p
+                data-reveal
+                data-penregel
+                className="mt-8 border-t border-ink/10 pt-8 text-xl font-semibold leading-9 text-ink [text-wrap:balance]"
+              >
+                Jij houdt{" "}
+                <span className="relative whitespace-nowrap">
                   de regie
                   <PenStreep variant={1} />
                 </span>{" "}
-                en privacy staat voorop: de namen van je leerlingen blijven op
-                je eigen computer.
+                en privacy is ons belangrijkste uitgangspunt.
               </p>
             </div>
           </div>
