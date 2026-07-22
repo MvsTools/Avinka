@@ -1002,17 +1002,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
               ))}
             </div>
 
-            {/* Het scharnier naar de tools: eerst de erkenning, dan de
-               belofte groot en groen. Dit is de laatste regel voor de kaarten. */}
-            <p
-              data-reveal
-              className="mt-14 max-w-3xl font-display text-[clamp(1.5rem,3.2vw,2.25rem)] font-black leading-[1.18] tracking-tight [text-wrap:balance]"
-            >
-              <span className="doorstreep text-ink/55">Het hoort bij het werk.</span>{" "}
-              <span className="belofte text-brand-dark">
-                Maar het kan sneller, slimmer en met minder gedoe.
-              </span>
-            </p>
+            <Scharnier />
           </div>
         </section>
 
@@ -1280,6 +1270,102 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
    flikkeren bij elke scrollbeweging.
    De bovenste laag is aria-hidden en vangt geen muis: de knoppen eronder
    blijven gewoon de echte knoppen. ─────────────────────────────────────── */
+/* ── Het scharnier naar de tools ────────────────────────────────────────
+   Dezelfde stift als bij de werkplek-sectie, nu op zinsniveau: terwijl je
+   naar de zin toe scrolt, strijkt de groene haal over de belofte en klappen
+   de woorden om naar crème. Je leest gewoon door; de markering volgt jouw
+   tempo en loopt niet vooruit. Eenmaal aangestreept blijft het staan. ──── */
+const BELOFTE = ["Maar het kan sneller, slimmer", "en met minder gedoe."];
+
+function Scharnier() {
+  const regel = useRef<HTMLParagraphElement>(null);
+  const banden = useRef<(HTMLSpanElement | null)[]>([]);
+  const reduced = useSyncExternalStore<boolean | null>(
+    abonneerReduced,
+    () => window.matchMedia(REDUCED_QUERY).matches,
+    () => null,
+  );
+
+  useEffect(() => {
+    if (reduced === null) return;
+    const p = regel.current;
+    if (!p) return;
+
+    if (reduced) {
+      banden.current.forEach((b) => b && (b.style.clipPath = "inset(0 0 0 0)"));
+      return;
+    }
+
+    let bezig = false;
+    let ver = 0;
+    const teken = () => {
+      if (bezig) return;
+      bezig = true;
+      requestAnimationFrame(() => {
+        bezig = false;
+        const vh = window.innerHeight;
+        const r = p.getBoundingClientRect();
+        // Begint als de zin onderin verschijnt en is klaar wanneer hij op
+        // leeshoogte staat: je hebt hem dus gelezen terwijl de stift liep.
+        const voortgang = Math.min(1, Math.max(0, (vh * 0.86 - r.top) / (vh * 0.34)));
+        if (voortgang <= ver) {
+          if (ver >= 1) {
+            window.removeEventListener("scroll", teken);
+            window.removeEventListener("resize", teken);
+          }
+          return;
+        }
+        ver = voortgang;
+        // Regel voor regel, met een kleine overlap: de stift gaat aan het
+        // eind van de eerste regel terug naar links en streept door.
+        banden.current.forEach((band, i) => {
+          if (!band) return;
+          const deel = Math.min(1, Math.max(0, (voortgang - i * 0.45) / 0.55));
+          const b = deel * 104;
+          band.style.clipPath = `polygon(0 0, ${b}% 0, ${b - 3}% 100%, 0 100%)`;
+        });
+      });
+    };
+
+    teken();
+    window.addEventListener("scroll", teken, { passive: true });
+    window.addEventListener("resize", teken);
+    return () => {
+      window.removeEventListener("scroll", teken);
+      window.removeEventListener("resize", teken);
+    };
+  }, [reduced]);
+
+  return (
+    <p
+      ref={regel}
+      className="mt-14 flex max-w-3xl flex-col items-start font-display text-[clamp(1.375rem,3.1vw,2.25rem)] font-black leading-[1.25] tracking-tight"
+    >
+      <span data-reveal className="text-ink/55">
+        Het hoort bij het werk.
+      </span>
+      {/* Elke regel van de belofte staat er twee keer: eronder in het groen,
+         erop in crème op de groene haal. Zo klapt de kleur perfect om onder
+         de stift, en valt de balk precies om de woorden van díe regel. */}
+      {BELOFTE.map((tekst, i) => (
+        <span key={tekst} className={`relative ${i === 0 ? "mt-3" : "mt-2"}`}>
+          <span className="text-brand-dark">{tekst}</span>
+          <span
+            ref={(el) => {
+              banden.current[i] = el;
+            }}
+            aria-hidden
+            className="absolute -inset-x-2 -inset-y-[3px] rounded-[3px] bg-brand-dark px-2 py-[3px] text-cream"
+            style={{ clipPath: "polygon(0 0, 0 0, 0 100%, 0 100%)" }}
+          >
+            {tekst}
+          </span>
+        </span>
+      ))}
+    </p>
+  );
+}
+
 function Markeersectie() {
   const sectie = useRef<HTMLElement>(null);
   const haal = useRef<HTMLDivElement>(null);
@@ -2016,31 +2102,6 @@ function StijlBlok() {
         100% { transform: scale(1); opacity: 1; }
       }
       .anim .vinkpop { animation: vinkpop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
-
-      /* Het scharnier naar de tools, als nakijken: de oude waarheid wordt
-         doorgestreept en de belofte kleurt daarna groen op. De streep is een
-         achtergrondverloop dat per regel meegroeit (box-decoration-break),
-         zodat het ook klopt als de zin over meer regels valt. Zonder .anim
-         (verminderde beweging) staat de eindstand er meteen. */
-      .doorstreep {
-        background-image: linear-gradient(rgb(34 28 58 / 0.42), rgb(34 28 58 / 0.42));
-        background-repeat: no-repeat;
-        background-position: 0 58%;
-        background-size: 100% 3px;
-        -webkit-box-decoration-break: clone;
-        box-decoration-break: clone;
-      }
-      .anim [data-reveal] .doorstreep {
-        background-size: 0% 3px;
-        transition: background-size 0.6s cubic-bezier(0.23, 1, 0.32, 1) 0.25s;
-      }
-      .anim [data-reveal].is-in .doorstreep { background-size: 100% 3px; }
-
-      .anim [data-reveal] .belofte {
-        color: rgb(34 28 58 / 0.45);
-        transition: color 0.5s cubic-bezier(0.23, 1, 0.32, 1) 0.8s;
-      }
-      .anim [data-reveal].is-in .belofte { color: #25855a; }
 
       /* Knoppen mogen voelen dat je ze indrukt. */
       .knop-druk:active { transform: scale(0.97); }
