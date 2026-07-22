@@ -995,7 +995,9 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
         <section className="relative">
           {/* Zelfde linkerlijn als de galerij hieronder: de scharnierzin loopt
              zo recht door in "Dit staat er voor je klaar". */}
-          <div className="mx-auto w-full max-w-5xl px-6 pb-4 pt-24 lg:pt-28">
+          {/* Flinke ruimte onderaan: het zandvlak van de tools hoort pas te
+             beginnen als de scharnierzin heeft kunnen uitademen. */}
+          <div className="mx-auto w-full max-w-5xl px-6 pb-20 pt-24 lg:pb-28 lg:pt-28">
             <div className="grid gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
               {/* De kop krijgt de hele kolom en blijft meelopen tot ongeveer
                  het midden van de laatste regel: daarna scrolt hij mee weg.
@@ -1516,7 +1518,7 @@ function RailKop() {
     <div className="mx-auto w-full max-w-5xl px-6">
       <div data-reveal className="max-w-2xl">
         <h2 className="font-display text-4xl font-black tracking-tight [text-wrap:balance]">
-          Acht tools, één werkplek
+          Alle tools, één werkplek
         </h2>
         <p className="mt-4 text-lg text-ink/60">
           Sleep de rij opzij om ze allemaal te zien. Er komen er steeds meer bij.
