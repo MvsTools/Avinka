@@ -43,14 +43,6 @@ const STRIP = [
   "✓ Maandelijks opzegbaar",
 ];
 
-/* De drie regels die oplichten terwijl je erlangs scrolt. Kort, want dit is
-   de rustplek tussen de film en de kaarten; het accent krijgt de penstreep. */
-const LEESREGELS = [
-  { voor: "Het ", accent: "voorwerk", na: " staat al klaar." },
-  { voor: "In gewoon Nederlands, in ", accent: "jouw toon", na: "." },
-  { voor: "En jij houdt het ", accent: "laatste woord", na: "." },
-];
-
 /* De tool-galerij: per tool één kunstkaart (Stripe-achtig, maar in onze
    eigen beeldtaal). Nieuwe tool = kaart erbij. `licht` bepaalt of de naam
    op de kaart een donker plaatje nodig heeft. */
@@ -355,13 +347,12 @@ function Streep() {
   );
 }
 
-/* De penstreep onder een leesregel: drie licht verschillende halen, zodat de
-   drie regels niet als kopieën van elkaar aanvoelen. Trekt zichzelf zodra de
-   regel in de leesband komt (stroke-dashoffset in het stijlblok). */
+/* De penstreep onder een woord in de lopende tekst: twee licht verschillende
+   halen, zodat de tweede geen kopie van de eerste is. Trekt zichzelf zodra de
+   alinea in de leesband komt (stroke-dashoffset in het stijlblok). */
 const PENHALEN = [
   "M3 8.5C46 3.6 118 2.6 197 6.4",
   "M2 6.8C58 11.4 132 2.2 198 7.6",
-  "M4 9.2C52 4.1 138 4.6 196 8.1",
 ];
 
 function PenStreep({ variant }: { variant: number }) {
@@ -369,14 +360,14 @@ function PenStreep({ variant }: { variant: number }) {
     <svg
       viewBox="0 0 200 12"
       preserveAspectRatio="none"
-      className="penstreep absolute -bottom-1.5 left-0 h-[0.42em] w-full text-accent sm:-bottom-2"
+      className="penstreep absolute -bottom-1 left-0 h-[0.26em] w-full text-accent"
       fill="none"
       aria-hidden
     >
       <path
         d={PENHALEN[variant % PENHALEN.length]}
         stroke="currentColor"
-        strokeWidth="5"
+        strokeWidth="6"
         strokeLinecap="round"
         pathLength={1}
       />
@@ -577,16 +568,16 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
     );
     reveals.forEach((r) => io.observe(r));
 
-    /* De leesband: de regel waar je nu bent kleurt bij en krijgt zijn
-       penstreep. Loopt beide kanten op, dus terugscrollen doet hem weer uit.
-       De band ligt in het bovenste derde deel van het scherm: daar leest een
-       mens, niet op de onderrand. */
+    /* De leesband: staat de alinea op de plek waar je leest, dan trekt de pen
+       zijn streep. Loopt beide kanten op, dus terugscrollen haalt hem weer
+       weg. De band ligt in het bovenste deel van het scherm, want daar leest
+       een mens, niet op de onderrand. */
     const leesIo = new IntersectionObserver(
       (entries) =>
         entries.forEach((e) => e.target.classList.toggle("leest", e.isIntersecting)),
-      { rootMargin: "-22% 0px -55% 0px" },
+      { rootMargin: "-18% 0px -45% 0px" },
     );
-    el.querySelectorAll("[data-leesregel]").forEach((r) => leesIo.observe(r));
+    el.querySelectorAll("[data-penregel]").forEach((r) => leesIo.observe(r));
 
     return () => {
       io.disconnect();
@@ -989,30 +980,41 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
         </div>
       </section>
 
-      {/* Ademruimte tussen film en body */}
-      <div aria-hidden className="bg-cream" style={{ height: film ? "7vh" : "4vh" }} />
-
-      {/* ════════════════════════ DE BODY ════════════════════════ */}
-      <main id="verder" className="relative z-10 scroll-mt-16 bg-cream">
-        {/* ── 1. "De pen leest met je mee" ─────────────────────────────────
-           De kop blijft links staan terwijl je leest; rechts lichten de drie
-           regels één voor één op zodra ze in de leesband komen, met een
-           handgetekende streep eronder die zichzelf trekt. Terugscrollen zet
-           ze weer uit, dus er gebeurt altijd iets, maar niets beweegt uit
-           zichzelf: jij bepaalt het tempo. Geen object, geen kaart: de film
-           toont al een takenlijst en de galerij al papier. ── */}
+      {/* ════════════════════════ DE BODY ════════════════════════
+         Geen losse ademruimte meer: onder de laatste filmbeelden staat al een
+         flinke lege strook (de inhoud staat gecentreerd in het scherm). De
+         body schuift daar met een negatieve marge overheen, zodat je na de
+         finale meteen doorleest in plaats van door leegte te scrollen. */}
+      <main
+        id="verder"
+        className={`relative z-10 scroll-mt-16 bg-cream ${film ? "-mt-[9vh]" : "mt-2"}`}
+      >
+        {/* Zachte rand: het laatste filmbeeld vervaagt in de body in plaats
+           van hard te worden afgesneden. */}
+        {film && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 -top-20 h-20 bg-gradient-to-b from-transparent to-cream"
+          />
+        )}
+        {/* ── 1. Wat Avinka is ─────────────────────────────────────────────
+           De film vertelt de belofte en het probleem; hier staat in gewone
+           zinnen wát het dan is, zodat niemand hoeft te raden. Kop en knoppen
+           links, de uitleg rechts als lopende tekst. De pen streept twee
+           dingen aan terwijl je leest (omkeerbaar), meer beweging heeft deze
+           plek niet nodig: de kaarten hieronder zijn het levendige stuk. ── */}
         <section className="relative overflow-hidden">
-          <div className="pointer-events-none absolute -left-28 top-6 h-80 w-80 rounded-full bg-brand/10 blur-3xl" aria-hidden />
+          <div className="pointer-events-none absolute -left-28 top-0 h-80 w-80 rounded-full bg-brand/10 blur-3xl" aria-hidden />
           <div className="pointer-events-none absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-accent/15 blur-3xl" aria-hidden />
-          <div className="relative mx-auto grid w-full max-w-5xl gap-12 px-6 pb-28 pt-16 lg:grid-cols-[0.95fr_1.05fr] lg:gap-16 lg:pb-40 lg:pt-24">
-            <div className="lg:sticky lg:top-28 lg:self-start">
+          <div className="relative mx-auto grid w-full max-w-5xl gap-10 px-6 pb-20 pt-4 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16 lg:pb-24 lg:pt-8">
+            <div>
               <h2
                 data-reveal
-                className="font-display text-[clamp(2.5rem,5.5vw,3.75rem)] font-black leading-[1.03] tracking-tight [text-wrap:balance]"
+                className="font-display text-[clamp(2.25rem,4.6vw,3.25rem)] font-black leading-[1.04] tracking-tight [text-wrap:balance]"
               >
                 Eén werkplek voor al je schoolwerk
               </h2>
-              <div data-reveal className="mt-10 flex flex-col gap-3 sm:flex-row">
+              <div data-reveal className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/sign-up"
                   className="knop-druk w-full whitespace-nowrap rounded-2xl bg-brand px-7 py-4 text-center text-lg font-bold text-white shadow-lg shadow-brand/25 transition-[transform,background-color] duration-200 hover:bg-brand-dark sm:w-auto"
@@ -1028,22 +1030,29 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
               </div>
             </div>
 
-            {/* De drie regels. Kort houden: dit is leesvoer, geen folder. */}
-            <div className="space-y-14 sm:space-y-20 lg:pt-2">
-              {LEESREGELS.map((r, i) => (
-                <p
-                  key={r.accent}
-                  data-leesregel
-                  className="font-display text-[clamp(1.75rem,3.4vw,2.5rem)] font-black leading-[1.15] tracking-tight [text-wrap:balance]"
-                >
-                  {r.voor}
-                  <span className="relative whitespace-nowrap">
-                    {r.accent}
-                    <PenStreep variant={i} />
-                  </span>
-                  {r.na}
-                </p>
-              ))}
+            {/* De uitleg: wat het is, hoe het werkt, wie het laatste woord
+               heeft. Gewone leestekst, geen tweede kop. */}
+            <div className="max-w-xl space-y-5 text-lg leading-8 text-ink/75 lg:pt-1.5">
+              <p data-reveal data-penregel>
+                Avinka is een Nederlands platform voor leerkrachten in het
+                basisonderwijs. Je vindt er{" "}
+                <span className="relative whitespace-nowrap font-bold text-ink">
+                  acht tools
+                  <PenStreep variant={0} />
+                </span>{" "}
+                voor het werk dat naast je klas doorloopt: van je toetsanalyse
+                en rapporten tot het weekbericht aan ouders.
+              </p>
+              <p data-reveal data-penregel>
+                Je vertelt in gewone taal wat je nodig hebt. Avinka schrijft de
+                eerste versie, rekent de cijfers zelf uit en verzint er dus
+                nooit iets bij, en de namen van je leerlingen blijven{" "}
+                <span className="relative whitespace-nowrap font-bold text-ink">
+                  op je eigen computer
+                  <PenStreep variant={1} />
+                </span>
+                . Jij leest na, past aan en vinkt af.
+              </p>
             </div>
           </div>
         </section>
@@ -1875,23 +1884,16 @@ function StijlBlok() {
       }
       .anim .vinkpop { animation: vinkpop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 
-      /* Leesregels: de regel in de leesband kleurt bij en de pen trekt zijn
-         streep. Alleen kleur en stroke, dus geen layout-werk; omkeerbaar,
-         want het is een transition en geen keyframe. Zonder .anim (verminderde
-         beweging) staat alles meteen in de eindstand. */
-      .anim [data-leesregel] {
-        /* Niet lichter dan dit: ook de regel waar je nog niet bent moet
-           leesbaar blijven (3,7:1 op crème, grote tekst). */
-        color: rgb(34 28 58 / 0.55);
-        transition: color 0.55s cubic-bezier(0.23, 1, 0.32, 1);
-      }
-      .anim [data-leesregel].leest { color: rgb(34 28 58); }
-      .anim [data-leesregel] .penstreep path {
+      /* De pen streept aan wat telt zodra de alinea in de leesband komt, en
+         haalt het weer weg als je terugscrolt. Alleen stroke-dashoffset, dus
+         geen layout-werk; een transition en geen keyframe, dus onderbreekbaar.
+         Zonder .anim (verminderde beweging) staat de streep er meteen. */
+      .anim [data-penregel] .penstreep path {
         stroke-dasharray: 1;
         stroke-dashoffset: 1;
         transition: stroke-dashoffset 0.7s cubic-bezier(0.23, 1, 0.32, 1) 0.1s;
       }
-      .anim [data-leesregel].leest .penstreep path { stroke-dashoffset: 0; }
+      .anim [data-penregel].leest .penstreep path { stroke-dashoffset: 0; }
 
       /* Knoppen mogen voelen dat je ze indrukt. */
       .knop-druk:active { transform: scale(0.97); }
