@@ -115,7 +115,7 @@ export function periodesVan(jaar: Schooljaar): Periode[] {
     if (tot < van) continue; // een vakantie vóór de eerste schooldag slaan we over
     uit.push({
       nummer: uit.length + 1,
-      naam: `Blok ${uit.length + 1}`,
+      naam: `Periode ${uit.length + 1}`,
       omschrijving: vorige
         ? `van de ${vorige.toLowerCase()} tot de ${vakantie.naam.toLowerCase()}`
         : `van de eerste schooldag tot de ${vakantie.naam.toLowerCase()}`,

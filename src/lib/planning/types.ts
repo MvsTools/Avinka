@@ -30,7 +30,7 @@ export type Schooljaar = {
 export type Periode = {
   /** 1, 2, 3 … op volgorde van het jaar. */
   nummer: number;
-  /** "Blok 1" */
+  /** "Periode 1" */
   naam: string;
   /** "van de zomervakantie tot de herfstvakantie" */
   omschrijving: string;
