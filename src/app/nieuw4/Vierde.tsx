@@ -1606,10 +1606,27 @@ function vloeiend(p: Array<[number, number]>) {
   return d;
 }
 
+/* Wat er over de slinger meereist: de naam zoals jij hem typt, en de
+   schuilnaam waarmee hij bij de AI aankomt. Dezelfde eerste leerling als in
+   de klassenlijst op de tweede kaart, zodat het één verhaal is. */
+const NAAM_ECHT = "Sofie";
+const NAAM_MASKER = "leerling A";
+
+/* Op welk punt van de reis de naam wordt vervangen: ruim voorbij de eerste
+   kaart en ruim vóór de tweede, dus in de vrije baan ertussen. */
+const WISSELPUNT = 0.55;
+
 function Slinger() {
   const wrap = useRef<HTMLDivElement>(null);
+  const padEl = useRef<SVGPathElement>(null);
+  const labelEl = useRef<HTMLDivElement>(null);
   const [pad, setPad] = useState("");
   const [maat, setMaat] = useState<{ w: number; h: number } | null>(null);
+  const reduced = useSyncExternalStore<boolean | null>(
+    abonneerReduced,
+    () => window.matchMedia(REDUCED_QUERY).matches,
+    () => null,
+  );
 
   useEffect(() => {
     const el = wrap.current;
@@ -1628,17 +1645,18 @@ function Slinger() {
          de twee tekstblokken naar beneden, en achter kaart 2 eindigen. De
          knikpunten liggen bewust nét naast de kaarten, zodat je de bocht
          ziet en niet alleen twee losse uiteinden. */
-      setPad(
-        vloeiend([
-          [Math.max(28, x(k1.left) - 176), Math.max(30, y(k1.top) - 118)],
-          [x(k1.left) - 62, y(k1.top) + k1.height * 0.34],
-          [x(k1.right) + 62, y(k1.bottom) - 30],
-          [x(k1.right) + 200, y(k1.bottom) + (y(k2.top) - y(k1.bottom)) * 0.55],
-          [x(k2.left) - 68, y(k2.top) + 46],
-          [x(k2.right) + 64, y(k2.bottom) - 44],
-        ]),
+      const d = vloeiend([
+        [Math.max(28, x(k1.left) - 176), Math.max(30, y(k1.top) - 118)],
+        [x(k1.left) - 62, y(k1.top) + k1.height * 0.34],
+        [x(k1.right) + 62, y(k1.bottom) - 30],
+        [x(k1.right) + 200, y(k1.bottom) + (y(k2.top) - y(k1.bottom)) * 0.55],
+        [x(k2.left) - 68, y(k2.top) + 46],
+        [x(k2.right) + 64, y(k2.bottom) - 44],
+      ]);
+      setPad((oud) => (oud === d ? oud : d));
+      setMaat((oud) =>
+        oud && oud.w === s.width && oud.h === s.height ? oud : { w: s.width, h: s.height },
       );
-      setMaat({ w: s.width, h: s.height });
     };
 
     teken();
@@ -1646,6 +1664,51 @@ function Slinger() {
     ro.observe(sectie);
     return () => ro.disconnect();
   }, []);
+
+  /* Het labeltje loopt met je scroll mee over de lijn. Sta je stil, dan
+     staat het stil: jij bepaalt het tempo. Halverwege, in de vrije baan
+     tussen de twee kaarten, wordt de naam vervangen door de schuilnaam.
+     Dat is precies wat er in het echt gebeurt, alleen dan onzichtbaar. */
+  useEffect(() => {
+    if (reduced === null || reduced || !pad) return;
+    const baan = padEl.current;
+    const label = labelEl.current;
+    const sectie = wrap.current?.parentElement;
+    if (!baan || !label || !sectie) return;
+
+    const lengte = baan.getTotalLength();
+    let bezig = false;
+    let gewisseld = false;
+
+    const volg = () => {
+      if (bezig) return;
+      bezig = true;
+      requestAnimationFrame(() => {
+        bezig = false;
+        const vh = window.innerHeight;
+        const r = sectie.getBoundingClientRect();
+        const t = Math.min(1, Math.max(0, (vh * 0.78 - r.top) / (r.height * 0.72)));
+        const punt = baan.getPointAtLength(t * lengte);
+        label.style.translate = `${punt.x.toFixed(1)}px ${punt.y.toFixed(1)}px`;
+        // Aan het allereerste en allerlaatste stukje uit beeld, zodat het
+        // labeltje nergens stil geparkeerd blijft staan.
+        label.style.opacity = t > 0.03 && t < 0.98 ? "1" : "0";
+        const na = t >= WISSELPUNT;
+        if (na !== gewisseld) {
+          gewisseld = na;
+          label.classList.toggle("gewisseld", na);
+        }
+      });
+    };
+
+    volg();
+    window.addEventListener("scroll", volg, { passive: true });
+    window.addEventListener("resize", volg);
+    return () => {
+      window.removeEventListener("scroll", volg);
+      window.removeEventListener("resize", volg);
+    };
+  }, [pad, maat, reduced]);
 
   return (
     <div
@@ -1658,18 +1721,29 @@ function Slinger() {
       className="slinger pointer-events-none absolute inset-0 hidden lg:block"
     >
       {maat && pad ? (
-        <svg width={maat.w} height={maat.h} viewBox={`0 0 ${maat.w} ${maat.h}`} fill="none">
-          <path
-            className="slingerpad"
-            d={pad}
-            stroke="var(--color-brand)"
-            strokeOpacity={0.42}
-            strokeWidth={14}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            pathLength={1}
-          />
-        </svg>
+        <>
+          <svg width={maat.w} height={maat.h} viewBox={`0 0 ${maat.w} ${maat.h}`} fill="none">
+            <path
+              ref={padEl}
+              className="slingerpad"
+              d={pad}
+              stroke="var(--color-brand)"
+              strokeOpacity={0.42}
+              strokeWidth={14}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              pathLength={1}
+            />
+          </svg>
+          {!reduced && (
+            <div ref={labelEl} className="naamplek absolute left-0 top-0">
+              <div className="naamlabel">
+                <span className="voor">{NAAM_ECHT}</span>
+                <span className="na">{NAAM_MASKER}</span>
+              </div>
+            </div>
+          )}
+        </>
       ) : null}
     </div>
   );
@@ -2881,6 +2955,47 @@ function StijlBlok() {
         transition-delay: 0.35s;
       }
       .anim .slinger.is-in .slingerpad { stroke-dashoffset: 0; }
+
+      /* Het labeltje dat over de lijn meereist. De plek wordt door het
+         script gezet met de losse translate-eigenschap; het centreren zit
+         op het label zelf, zodat die twee elkaar niet overschrijven. */
+      .naamplek {
+        opacity: 0;
+        transition: opacity 0.35s ease;
+        will-change: translate;
+      }
+      .naamlabel {
+        display: grid;
+        transform: translate(-50%, -50%);
+        place-items: center;
+        border-radius: 9999px;
+        padding: 0.34rem 0.85rem;
+        font-size: 0.9rem;
+        font-weight: 700;
+        white-space: nowrap;
+        background: #fff;
+        color: rgb(34 28 58);
+        box-shadow: 0 10px 24px -12px rgb(34 28 58 / 0.55);
+        border: 1px solid rgb(34 28 58 / 0.08);
+        transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+      }
+      /* Voorbij het wisselpunt is het de gemaskeerde versie: groen, zoals de
+         kolom "de AI ziet" op de tweede kaart. */
+      .naamlabel.gewisseld,
+      .gewisseld .naamlabel {
+        background: var(--color-brand);
+        color: #fff;
+        border-color: transparent;
+      }
+      /* Beide teksten liggen op elkaar, dus de pil verspringt niet in
+         breedte terwijl hij onderweg is. */
+      .naamlabel > span {
+        grid-area: 1 / 1;
+        transition: opacity 0.28s ease;
+      }
+      .naamlabel .na { opacity: 0; }
+      .gewisseld .naamlabel .voor { opacity: 0; }
+      .gewisseld .naamlabel .na { opacity: 1; }
 
       /* De vellen onder de kaart: zonder beweging liggen ze meteen goed,
          mét beweging beginnen ze recht onder de kaart en schuiven ze er
