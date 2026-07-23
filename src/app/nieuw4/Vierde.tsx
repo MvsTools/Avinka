@@ -1623,13 +1623,14 @@ function Verfspetter({ spiegel = false }: { spiegel?: boolean }) {
   );
 }
 
-/* Wat er van jou op onze servers staat, en wat nadrukkelijk niet. */
-const BIJ_ONS = ["je e-mailadres", "je abonnement"];
+/* De scheidslijn loopt langs de leerling: je eigen lesmateriaal bewaren we
+   zodat je het terugvindt, alles waar een kind in voorkomt niet. */
+const BIJ_ONS = ["lesontwerpen", "werkbladen", "draaiboeken"];
 const NIET_BIJ_ONS = [
-  "namen van leerlingen",
-  "rapportteksten",
-  "toetsgegevens",
-  "alles wat je maakt",
+  "leerlinggegevens",
+  "toetsresultaten",
+  "gespreksverslagen",
+  "berichten",
 ];
 
 function BewaarKaart() {
@@ -1638,7 +1639,7 @@ function BewaarKaart() {
       <Verfspetter />
       <div className="relative rounded-2xl bg-white p-6 shadow-[0_26px_60px_-28px_rgba(34,28,58,0.45)] ring-1 ring-black/5">
       <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-ink/45">
-        Wat er bij ons staat
+        Wat we wel bewaren
       </p>
       <ul className="mt-4 space-y-2.5">
         {BIJ_ONS.map((regel) => (
@@ -1654,7 +1655,7 @@ function BewaarKaart() {
       <div className="my-5 border-t border-dashed border-ink/20" aria-hidden />
 
       <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-ink/45">
-        En verder niets
+        Wat we niet bewaren
       </p>
       <ul className="mt-4 space-y-2.5">
         {NIET_BIJ_ONS.map((regel, i) => (
