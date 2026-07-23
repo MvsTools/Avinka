@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   bereikTekst,
   filterVoorMij,
@@ -61,25 +61,7 @@ export default function SchooljaarView({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-3xl font-black tracking-tight text-ink">Mijn schooljaar</h1>
 
-        {jaren.length > 1 && (
-          <div className="flex items-center gap-1 rounded-2xl border border-black/5 bg-white p-1 shadow-sm">
-            {jaren.map((j) => (
-              <Link
-                key={j.id}
-                href={`/dashboard/schooljaar?jaar=${j.id}`}
-                scroll={false}
-                className={
-                  "rounded-xl px-3.5 py-1.5 text-sm font-bold transition-colors " +
-                  (j.id === schooljaar.id
-                    ? "bg-brand-dark text-white"
-                    : "text-ink/55 hover:text-ink")
-                }
-              >
-                {j.label}
-              </Link>
-            ))}
-          </div>
-        )}
+        {jaren.length > 1 && <JaarKiezer jaren={jaren} huidig={schooljaar.id} />}
       </div>
 
       {schooljaar.afgesloten && (
@@ -165,6 +147,82 @@ export default function SchooljaarView({
             <Jaarlijst bron={bron} vandaag={vandaag} groepen={mijnGroepen} />
           )}
         </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Het schooljaar rechtsboven: het huidige jaar met een pijltje, en een klapmenu
+ * om naar een ander (bewaard) schooljaar te wisselen. We bewaren alleen dit jaar
+ * en het vorige, dus het menu blijft kort.
+ */
+function JaarKiezer({ jaren, huidig }: { jaren: JaarKeuze[]; huidig: string }) {
+  const [open, setOpen] = useState(false);
+  const doos = useRef<HTMLDivElement>(null);
+  const dit = jaren.find((j) => j.id === huidig);
+
+  // Buiten het menu klikken of Escape sluit het.
+  useEffect(() => {
+    if (!open) return;
+    const sluit = (e: MouseEvent) => {
+      if (doos.current && !doos.current.contains(e.target as Node)) setOpen(false);
+    };
+    const toets = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", sluit);
+    document.addEventListener("keydown", toets);
+    return () => {
+      document.removeEventListener("mousedown", sluit);
+      document.removeEventListener("keydown", toets);
+    };
+  }, [open]);
+
+  return (
+    <div ref={doos} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="flex items-center gap-2 rounded-2xl border border-black/5 bg-white px-4 py-2 text-sm font-bold text-ink shadow-sm transition-colors hover:bg-cream/60"
+      >
+        {dit?.label ?? huidig}
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={"text-ink/40 transition-transform duration-200 " + (open ? "rotate-180" : "")}
+          aria-hidden
+        >
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 z-30 mt-1.5 min-w-[10rem] overflow-hidden rounded-2xl border border-black/5 bg-white p-1 shadow-lg"
+        >
+          {jaren.map((j) => (
+            <Link
+              key={j.id}
+              href={`/dashboard/schooljaar?jaar=${j.id}`}
+              scroll={false}
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className={
+                "block rounded-xl px-3.5 py-2 text-sm font-bold transition-colors " +
+                (j.id === huidig ? "bg-brand-soft text-brand-dark" : "text-ink/70 hover:bg-cream/70")
+              }
+            >
+              {j.label}
+            </Link>
+          ))}
+        </div>
       )}
     </div>
   );
