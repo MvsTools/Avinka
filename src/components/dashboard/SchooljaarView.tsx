@@ -59,7 +59,7 @@ export default function SchooljaarView({
   return (
     <div className="flex flex-col gap-7">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="font-serif text-3xl font-semibold text-ink">Mijn schooljaar</h1>
+        <h1 className="text-3xl font-black tracking-tight text-ink">Mijn schooljaar</h1>
 
         {jaren.length > 1 && (
           <div className="flex items-center gap-1 rounded-2xl border border-black/5 bg-white p-1 shadow-sm">
