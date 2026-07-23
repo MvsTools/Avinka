@@ -1063,16 +1063,33 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
 
         {/* ── 3. De tool-galerij: grote kunstkaarten, jij schuift ze zelf.
            Eigen ondergrond (zand) zodat het duidelijk een nieuw hoofdstuk is
-           en niet doorloopt uit de herkenning erboven. ── */}
+           en niet doorloopt uit de herkenning erboven.
+           Alleen een lijn bovenaan: onderaan loopt het zand in het groen van
+           de sectie hierna, en daar hoort geen rand tussen. ── */}
         <section
           id="tools"
-          className="relative overflow-hidden border-y border-ink/[0.07] bg-sand pb-20 scroll-mt-20"
+          className="relative overflow-hidden border-t border-ink/[0.07] bg-sand pb-36 scroll-mt-20"
         >
           <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
             <div className="absolute -right-32 top-24 h-96 w-96 rounded-full bg-brand/[0.07] blur-3xl" />
           </div>
 
           <ToolRail />
+
+          {/* Het zand zakt onderaan al in het groen van de doorloop, zodat de
+             sprong naar de volgende sectie geen rand meer is maar een
+             overgang. Staat hier en niet op het groen zelf: daar zou de waas
+             over het mozaïek heen liggen. */}
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-36"
+            style={{
+              // Het groen is al vol op driekwart en blijft dat: liep het
+              // verloop tot de laatste pixel door, dan scheelde de onderste
+              // rand nog een paar procent zand en zag je daar alsnog een naad.
+              backgroundImage: `linear-gradient(to bottom, rgba(244,236,219,0) 0%, ${DOORLOOP_GROEN} 74%, ${DOORLOOP_GROEN} 100%)`,
+            }}
+            aria-hidden
+          />
         </section>
 
         {/* ── 4. Wat de galerij niet laat zien: de tools staan niet los.
@@ -1655,10 +1672,17 @@ function Doorloop() {
       {/* Het groene veld. */}
       <div ref={veld} className="relative" style={{ backgroundColor: DOORLOOP_GROEN }}>
         {/* Korrel: het vlak hoort materiaal te zijn, geen kleurstaal. */}
-        <div className="kaart-grain pointer-events-none absolute inset-0" aria-hidden />
-        {/* Licht van linksboven, zodat het veld bolt in plaats van plat ligt. */}
+        {/* Hier stond korrel over het vlak. Die is eruit: een laag met
+           mix-blend-mode verschuift de tint van het hele blok net genoeg om
+           op de naad met het zand hierboven een streep te laten zien, en het
+           veld wordt er nauwelijks mooier van. De diepte komt van het licht
+           hieronder en van de wand zelf. */}
+        {/* Licht van linksboven, zodat het veld bolt in plaats van plat ligt.
+           Ruim binnen de bovenrand: raakt de waas de rand van de sectie, dan
+           knipt overflow-hidden hem af en staat er een kaarsrechte streep op
+           precies de plek waar het zand in het groen moet overlopen. */}
         <div
-          className="pointer-events-none absolute -left-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-white/[0.07] blur-3xl"
+          className="pointer-events-none absolute -left-40 top-24 h-[34rem] w-[34rem] rounded-full bg-white/[0.07] blur-3xl"
           aria-hidden
         />
         {/* De afdaling naar de inkt: geen naad, het groen zakt erin weg. */}
