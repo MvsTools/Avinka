@@ -8,6 +8,7 @@ import {
   dagbeeld,
   kort,
   maandagVan,
+  maandnaam,
   plus,
   schoolweken,
   telDubbelingen,
@@ -27,6 +28,20 @@ import SchooljaarDagkaart from "./SchooljaarDagkaart";
 // dezelfde (zie src/lib/planning).
 
 type JaarKeuze = { id: string; label: string; afgesloten: boolean };
+
+/** Alle maanden van het schooljaar, als "JJJJ-MM-01". */
+function maandenVan(start: string, eind: string): string[] {
+  const uit: string[] = [];
+  let m = start.slice(0, 7) + "-01";
+  const laatste = eind.slice(0, 7) + "-01";
+  while (m <= laatste) {
+    uit.push(m);
+    m = new Date(Date.UTC(Number(m.slice(0, 4)), Number(m.slice(5, 7)), 1))
+      .toISOString()
+      .slice(0, 10);
+  }
+  return uit;
+}
 
 export default function SchooljaarView({
   bron: volledigeBron,
@@ -72,6 +87,13 @@ export default function SchooljaarView({
 
   const { schooljaar, items } = bron;
   const loopt = vandaag >= schooljaar.start && vandaag <= schooljaar.eind;
+
+  // Welke maand de kalender toont. Staat hier en niet in de kalender zelf,
+  // zodat de maandkiezer op de knoppenregel hem kan aansturen.
+  const maanden = maandenVan(schooljaar.start, schooljaar.eind);
+  const [maand, setMaand] = useState(
+    () => (loopt ? vandaag : schooljaar.start).slice(0, 7) + "-01",
+  );
 
   return (
     <div className="flex flex-col gap-7">
@@ -142,14 +164,18 @@ export default function SchooljaarView({
               in de lijst), rechts het filter en de weergave-schuif. */}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              {weergave === "lijst" && alleBlokken.length > 0 && (
-                <button
-                  onClick={vouwAlles}
-                  className="rounded-2xl border border-black/5 bg-white px-4 py-2 text-sm font-bold text-ink/55 shadow-sm transition-colors hover:text-ink"
-                >
-                  {allesDicht ? "Alles uitklappen" : "Alles inklappen"}
-                </button>
-              )}
+              {weergave === "lijst"
+                ? alleBlokken.length > 0 && (
+                    <button
+                      onClick={vouwAlles}
+                      className="rounded-2xl border border-black/5 bg-white px-4 py-2 text-sm font-bold text-ink/55 shadow-sm transition-colors hover:text-ink"
+                    >
+                      {allesDicht ? "Alles uitklappen" : "Alles inklappen"}
+                    </button>
+                  )
+                : maanden.length > 0 && (
+                    <MaandKiezer maanden={maanden} huidig={maand} kies={setMaand} />
+                  )}
             </div>
             <div className="flex flex-wrap gap-2">
               {opzij > 0 && (
@@ -172,7 +198,13 @@ export default function SchooljaarView({
           </div>
 
           {weergave === "maand" ? (
-            <SchooljaarMaand bron={bron} vandaag={vandaag} groepen={mijnGroepen} />
+            <SchooljaarMaand
+              bron={bron}
+              vandaag={vandaag}
+              groepen={mijnGroepen}
+              maand={maand}
+              zetMaand={setMaand}
+            />
           ) : (
             <Jaarlijst
               bron={bron}
@@ -189,16 +221,21 @@ export default function SchooljaarView({
 }
 
 /**
- * Het schooljaar rechtsboven: het huidige jaar met een pijltje, en een klapmenu
- * om naar een ander (bewaard) schooljaar te wisselen. We bewaren alleen dit jaar
- * en het vorige, dus het menu blijft kort.
+ * Een knop met een uitklapmenu eronder. Sluit bij buiten klikken, bij Escape en
+ * zodra je iets kiest. Gedeeld door de jaar- en de maandkiezer.
  */
-function JaarKiezer({ jaren, huidig }: { jaren: JaarKeuze[]; huidig: string }) {
+function Klapmenu({
+  knop,
+  kant = "rechts",
+  children,
+}: {
+  knop: string;
+  kant?: "links" | "rechts";
+  children: React.ReactNode;
+}) {
   const [open, setOpen] = useState(false);
   const doos = useRef<HTMLDivElement>(null);
-  const dit = jaren.find((j) => j.id === huidig);
 
-  // Buiten het menu klikken of Escape sluit het.
   useEffect(() => {
     if (!open) return;
     const sluit = (e: MouseEvent) => {
@@ -221,7 +258,7 @@ function JaarKiezer({ jaren, huidig }: { jaren: JaarKeuze[]; huidig: string }) {
         aria-expanded={open}
         className="flex items-center gap-2 rounded-2xl border border-black/5 bg-white px-4 py-2 text-sm font-bold text-ink shadow-sm transition-colors hover:bg-cream/60"
       >
-        {dit?.label ?? huidig}
+        {knop}
         <svg
           width="16"
           height="16"
@@ -241,26 +278,76 @@ function JaarKiezer({ jaren, huidig }: { jaren: JaarKeuze[]; huidig: string }) {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-30 mt-1.5 overflow-hidden rounded-2xl border border-black/5 bg-white p-1 shadow-lg"
+          onClick={() => setOpen(false)}
+          className={
+            "absolute z-30 mt-1.5 max-h-72 overflow-y-auto rounded-2xl border border-black/5 bg-white p-1 shadow-lg " +
+            (kant === "links" ? "left-0" : "right-0")
+          }
         >
-          {jaren.map((j) => (
-            <Link
-              key={j.id}
-              href={`/dashboard/schooljaar?jaar=${j.id}`}
-              scroll={false}
-              role="menuitem"
-              onClick={() => setOpen(false)}
-              className={
-                "block rounded-xl px-3.5 py-2 text-sm font-bold transition-colors " +
-                (j.id === huidig ? "bg-brand-soft text-brand-dark" : "text-ink/70 hover:bg-cream/70")
-              }
-            >
-              {j.label}
-            </Link>
-          ))}
+          {children}
         </div>
       )}
     </div>
+  );
+}
+
+const MENU_ITEM =
+  "block w-full rounded-xl px-3.5 py-2 text-left text-sm font-bold transition-colors ";
+
+/** Het schooljaar rechtsboven, met een klapmenu naar het vorige schooljaar. */
+function JaarKiezer({ jaren, huidig }: { jaren: JaarKeuze[]; huidig: string }) {
+  const dit = jaren.find((j) => j.id === huidig);
+  return (
+    <Klapmenu knop={dit?.label ?? huidig}>
+      {jaren.map((j) => (
+        <Link
+          key={j.id}
+          href={`/dashboard/schooljaar?jaar=${j.id}`}
+          scroll={false}
+          role="menuitem"
+          className={
+            MENU_ITEM +
+            (j.id === huidig ? "bg-brand-soft text-brand-dark" : "text-ink/70 hover:bg-cream/70")
+          }
+        >
+          {j.label}
+        </Link>
+      ))}
+    </Klapmenu>
+  );
+}
+
+/** "november 2026" */
+function maandLabel(maand: string): string {
+  return `${maandnaam(maand)} ${maand.slice(0, 4)}`;
+}
+
+/** Springen naar een maand van dit schooljaar, zonder te bladeren. */
+function MaandKiezer({
+  maanden,
+  huidig,
+  kies,
+}: {
+  maanden: string[];
+  huidig: string;
+  kies: (maand: string) => void;
+}) {
+  return (
+    <Klapmenu knop={maandLabel(huidig)} kant="links">
+      {maanden.map((m) => (
+        <button
+          key={m}
+          role="menuitem"
+          onClick={() => kies(m)}
+          className={
+            MENU_ITEM +
+            (m === huidig ? "bg-brand-soft text-brand-dark" : "text-ink/70 hover:bg-cream/70")
+          }
+        >
+          {maandLabel(m)}
+        </button>
+      ))}
+    </Klapmenu>
   );
 }
 

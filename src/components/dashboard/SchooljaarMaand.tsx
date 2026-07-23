@@ -27,14 +27,19 @@ export default function SchooljaarMaand({
   bron,
   vandaag,
   groepen,
+  maand: eerste,
+  zetMaand: setEerste,
 }: {
   bron: PlanningBron;
   vandaag: string;
   groepen: number[];
+  /** Welke maand er getoond wordt; staat hierbuiten omdat de maandkiezer op de
+   *  knoppenregel hem ook aanstuurt. */
+  maand: string;
+  zetMaand: (maand: string) => void;
 }) {
   const binnenJaar = vandaag >= bron.schooljaar.start && vandaag <= bron.schooljaar.eind;
   const begin = binnenJaar ? vandaag : bron.schooljaar.start;
-  const [eerste, setEerste] = useState(begin.slice(0, 7) + "-01");
   const [gekozen, setGekozen] = useState<string | null>(null);
 
   const jaar = Number(eerste.slice(0, 4));
