@@ -1540,42 +1540,41 @@ function RailKop() {
    afdaling in plaats van twee losse vlakken. */
 const DOORLOOP_GROEN = "#1e7149";
 
-/* Het mozaïek. Handmatig geplaatst op een raster van vijf bij vijf: een
-   automatische pakking zet de open plek elke keer ergens anders neer, en
-   juist die plek moet kloppen. Ze verschijnen in leesvolgorde.
-   Amber alleen op plekken die hélemaal in beeld vallen: half afgesneden
-   trekt de felste kleur van de pagina alle aandacht naar de rand.
-   Elke tegel staat een halve graad scheef en heeft een eigen ronding. Zonder
-   dat leest een raster van gladde rechthoeken als een scherm dat nog moet
-   laden in plaats van als iets dat met de hand gelegd is. */
-const TEGELS: {
-  kol: number;
-  rij: number;
-  kb?: number;
-  rb?: number;
-  kleur?: string;
-  open?: boolean;
-  draai: number;
-  rond: string;
-}[] = [
-  { kol: 1, rij: 1, kb: 2, kleur: "bg-cream", draai: -1.3, rond: "1.3rem" },
-  { kol: 3, rij: 1, kleur: "bg-sand", draai: 1.1, rond: "1rem" },
-  { kol: 4, rij: 1, rb: 2, kleur: "bg-brand-soft", draai: -0.9, rond: "1.5rem" },
-  { kol: 5, rij: 1, kleur: "bg-cream", draai: 1.4, rond: "1.1rem" },
-  { kol: 1, rij: 2, kleur: "bg-sand", draai: -1.5, rond: "1rem" },
-  { kol: 2, rij: 2, kb: 2, rb: 2, kleur: "bg-cream", draai: 0.8, rond: "1.6rem" },
-  { kol: 5, rij: 2, kleur: "bg-sand", draai: -1.1, rond: "1.2rem" },
-  { kol: 1, rij: 3, kleur: "bg-cream", draai: 1.2, rond: "1.4rem" },
-  { kol: 4, rij: 3, kleur: "bg-accent", draai: -1.2, rond: "1.1rem" },
-  { kol: 5, rij: 3, rb: 2, kleur: "bg-brand-soft", draai: 1.0, rond: "1.4rem" },
-  { kol: 1, rij: 4, kb: 2, kleur: "bg-sand", draai: -0.9, rond: "1.2rem" },
-  { kol: 3, rij: 4, open: true, draai: 1.0, rond: "1.15rem" },
-  { kol: 4, rij: 4, kleur: "bg-cream", draai: 1.5, rond: "1rem" },
-  { kol: 1, rij: 5, kleur: "bg-cream", draai: 1.1, rond: "1.3rem" },
-  { kol: 2, rij: 5, kleur: "bg-brand-soft", draai: -1.4, rond: "1rem" },
-  { kol: 3, rij: 5, kb: 2, kleur: "bg-sand", draai: 0.8, rond: "1.35rem" },
-  { kol: 5, rij: 5, kleur: "bg-cream", draai: -1.1, rond: "1.1rem" },
+/* Het mozaïek: een wand van kleine tegels. Klein en veel, niet groot en
+   weinig, want pas bij veel tegels wordt het een veld dat de diepte in loopt
+   in plaats van een stapel plakken.
+   Alles wordt uit de index gerekend en niets uit toeval, zodat de wand er bij
+   elke bezoeker hetzelfde uitziet. Elke tegel staat een graad scheef met een
+   eigen ronding: een raster van identieke rechthoeken leest als een scherm
+   dat nog moet laden. Eén plek blijft open, dichtbij en links, want daar kijk
+   je voordat de verte oplost. Dat is wat we niet bewaren. */
+const WAND_KOL = 8;
+const WAND_RIJ = 6;
+const WAND_KLEUREN = [
+  "bg-cream",
+  "bg-sand",
+  "bg-cream",
+  "bg-brand-soft",
+  "bg-sand",
+  "bg-cream",
+  "bg-cream",
+  "bg-sand",
 ];
+const WAND_OPEN = 2 * WAND_KOL + 1; // derde rij, tweede kolom: dichtbij en in beeld
+const WAND_AMBER = 1 * WAND_KOL + 3; // één warme vonk, ruim voor de vervaging
+
+const TEGELS = Array.from({ length: WAND_KOL * WAND_RIJ }, (_, i) => {
+  const kol = i % WAND_KOL;
+  const rij = Math.floor(i / WAND_KOL);
+  return {
+    kol,
+    rij,
+    open: i === WAND_OPEN,
+    kleur: i === WAND_AMBER ? "bg-accent" : WAND_KLEUREN[(i * 3 + rij * 5) % WAND_KLEUREN.length],
+    draai: (((i * 37) % 7) - 3) * 0.5,
+    rond: ["0.7rem", "0.85rem", "0.6rem", "0.78rem"][i % 4],
+  };
+});
 
 function Doorloop() {
   const veld = useRef<HTMLDivElement>(null);
@@ -1593,7 +1592,7 @@ function Doorloop() {
     if (!blok || !raster) return;
 
     const tegels = Array.from(raster.querySelectorAll<HTMLElement>("[data-tegel]"));
-    const n = tegels.length;
+    
     /* Hoeveel van de scroll één tegel nodig heeft om binnen te komen. Ruim
        genoeg dat ze elkaar overlappen: anders wordt het een rij losse
        gebeurtenissen in plaats van één beweging. */
@@ -1614,18 +1613,28 @@ function Doorloop() {
         const p = Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.5 + r.height * 0.6)));
 
         tegels.forEach((el, i) => {
-          const start = (i / (n - 1)) * (1 - DUUR);
+          /* De volgorde loopt van dichtbij naar ver: eerst de kolommen die
+             vooraan staan, per kolom van boven naar onder. Zo bouwt de wand
+             zich de diepte in op in plaats van in leesvolgorde, wat bij een
+             gekanteld vlak nergens naar uitziet. */
+          const kol = i % WAND_KOL;
+          const rij = Math.floor(i / WAND_KOL);
+          const fase = (kol + rij * 0.22) / (WAND_KOL - 1 + (WAND_RIJ - 1) * 0.22);
+          const start = fase * (1 - DUUR);
           const t = Math.min(1, Math.max(0, (p - start) / DUUR));
           // Sterke uitloop: hard binnen en dan zachtjes op zijn plek zakken.
           const e = 1 - Math.pow(1 - t, 5);
           const uit = 1 - e;
-          /* Ze komen van rechts, de kant waar het mozaïek doorloopt: daar
-             komt het vandaan, daar komt ook de rest vandaan. Wat verderop in
-             de rij ligt, komt van verder weg. */
-          const dx = uit * (260 + i * 16);
-          const dy = uit * (((i % 3) - 1) * 44);
-          const dr = uit * (i % 2 ? 8 : -7);
-          el.style.transform = `translate3d(${dx.toFixed(1)}px, ${dy.toFixed(1)}px, 0) rotate(${dr.toFixed(2)}deg)`;
+          /* Ze komen uit de diepte van de wand: naar achteren langs het vlak
+             (x, want dáár loopt het mozaïek door) en een stukje van de wand
+             af naar je toe (z), zodat ze er als laatste op neerkomen in
+             plaats van erin te schuiven. Het perspectief maakt ze onderweg
+             vanzelf kleiner. Wat verderop in de rij ligt komt van verder. */
+          const dx = uit * (170 + kol * 24);
+          const dy = uit * (((i % 3) - 1) * 26);
+          const dz = uit * 90;
+          const dr = uit * (i % 2 ? 7 : -6);
+          el.style.transform = `translate3d(${dx.toFixed(1)}px, ${dy.toFixed(1)}px, ${dz.toFixed(1)}px) rotate(${dr.toFixed(2)}deg)`;
           // De laatste tel is hij al vol: het landen wil je zien, niet het opdoemen.
           el.style.opacity = String(Math.min(1, e * 1.7));
         });
@@ -1658,7 +1667,7 @@ function Doorloop() {
           aria-hidden
         />
 
-        <div className="relative mx-auto w-full max-w-5xl px-6 py-16 lg:min-h-[31vw] lg:py-20">
+        <div className="relative mx-auto w-full max-w-5xl px-6 py-16 lg:min-h-[44vw] lg:py-20">
           <div className="lg:flex lg:min-h-[24rem] lg:w-[44%] lg:flex-col lg:justify-center">
             <h2
               data-reveal
@@ -1689,11 +1698,17 @@ function Doorloop() {
           {/* Het mozaïek hangt op groot scherm aan de rechterrand van het
              venster en loopt er een stukje voorbij. Daarom wordt de rechter-
              positie uit de vensterbreedte gerekend en niet uit de kolom: bij
-             een breed scherm zou het anders midden op de pagina ophouden. */}
+             een breed scherm zou het anders midden op de pagina ophouden.
+             De doos geeft het perspectief en laat de verte oplossen; de wand
+             erin staat gekanteld, zodat het mozaïek van je wegloopt in plaats
+             van plat op het scherm te liggen. */}
+          <div
+            aria-hidden
+            className="mozaiek-doos -mr-8 mt-12 lg:absolute lg:right-[calc(50%-50vw-2rem)] lg:top-1/2 lg:mr-0 lg:mt-0 lg:w-[44vw] lg:-translate-y-1/2"
+          >
           <div
             ref={mozaiek}
-            aria-hidden
-            className="mozaiek -mr-10 mt-12 grid aspect-[8/5] grid-cols-5 grid-rows-5 gap-2.5 sm:gap-3 lg:absolute lg:right-[calc(50%-50vw-3rem)] lg:top-1/2 lg:mr-0 lg:mt-0 lg:w-[46vw] lg:-translate-y-1/2"
+            className="mozaiek mozaiek-wand grid aspect-[8/6] grid-cols-8 grid-rows-6 gap-1.5 sm:gap-2"
           >
             {TEGELS.map((t) => (
               <span
@@ -1701,22 +1716,21 @@ function Doorloop() {
                 data-tegel
                 style={
                   {
-                    gridColumn: `${t.kol} / span ${t.kb ?? 1}`,
-                    gridRow: `${t.rij} / span ${t.rb ?? 1}`,
                     // Via een variabele, zodat kleine schermen de ronding
                     // kunnen terugbrengen: dezelfde straal maakt van een
-                    // tegel van 50 pixels een pilletje.
+                    // tegel van 40 pixels een pilletje.
                     "--rond": t.rond,
                     rotate: `${t.draai}deg`,
                   } as CSSProperties
                 }
                 className={
                   t.open
-                    ? "ring-2 ring-inset ring-white/35"
-                    : `shadow-[0_10px_30px_-16px_rgba(9,32,22,0.7)] ${t.kleur}`
+                    ? "ring-2 ring-inset ring-white/40"
+                    : `shadow-[0_8px_20px_-12px_rgba(9,32,22,0.65)] ${t.kleur}`
                 }
               />
             ))}
+          </div>
           </div>
         </div>
       </div>
@@ -2694,10 +2708,29 @@ function StijlBlok() {
          beweging zet het script per beeldje hun transform en dekking, want
          ze komen aanvliegen op het ritme van de scroll. Daarom hier geen
          overgang: die zou tegen de sturing per beeldje in werken. */
+      /* De doos geeft het perspectief en laat het mozaïek naar achteren
+         oplossen in het groen: zonder die vervaging houdt de verte gewoon
+         op bij de schermrand en is het geen diepte meer maar een afsnijding. */
+      .mozaiek-doos {
+        perspective: 1100px;
+        perspective-origin: 50% 50%;
+        -webkit-mask-image: linear-gradient(to right, #000 58%, transparent 99%);
+        mask-image: linear-gradient(to right, #000 58%, transparent 99%);
+      }
+      /* De wand zelf. Op kleine schermen milder gekanteld: bij een smalle
+         doos wordt de verte anders zo klein dat er niets meer te zien is. */
+      .mozaiek-wand {
+        transform: rotateY(-18deg);
+        transform-origin: left center;
+        transform-style: preserve-3d;
+      }
+      @media (min-width: 1024px) {
+        .mozaiek-wand { transform: rotateY(-34deg); }
+      }
       .mozaiek [data-tegel] { border-radius: var(--rond, 1.15rem); }
       @media (max-width: 639px) {
         /* Kleine tegels met een grote straal worden pilletjes. */
-        .mozaiek [data-tegel] { border-radius: 0.6rem; }
+        .mozaiek [data-tegel] { border-radius: 0.45rem; }
       }
       .anim .mozaiek [data-tegel] { will-change: transform, opacity; }
 
