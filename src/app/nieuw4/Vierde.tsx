@@ -2757,16 +2757,23 @@ function StijlBlok() {
         background: rgb(47 158 110 / 0.8);
         transform-origin: left center;
       }
+      /* De tekst gaat voor. De kaart staat ernaast en komt dus op hetzelfde
+         moment in beeld, maar hij wacht tot de zin er staat: eerst lezen,
+         dan het bewijs. Alles in de kaart hangt aan die ene wachttijd, zodat
+         de volgorde binnen de kaart klopt hoe lang je hem ook maakt. */
+      .kaartblok { --wacht: 0.42s; }
+      .anim .kaartblok { transition-delay: var(--wacht); }
+
       .anim .kaartblok .wis-regel {
         color: rgb(34 28 58 / 0.75);
         transition: color 0.45s ease;
-        transition-delay: calc(0.4s + var(--i) * 0.13s);
+        transition-delay: calc(var(--wacht) + 0.36s + var(--i) * 0.13s);
       }
       .anim .kaartblok.is-in .wis-regel { color: rgb(34 28 58 / 0.45); }
       .anim .kaartblok .wis-woord::after {
         transform: scaleX(0);
         transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-        transition-delay: calc(0.4s + var(--i) * 0.13s);
+        transition-delay: calc(var(--wacht) + 0.36s + var(--i) * 0.13s);
       }
       .anim .kaartblok.is-in .wis-woord::after { transform: scaleX(1); }
 
@@ -2776,7 +2783,7 @@ function StijlBlok() {
         opacity: 0;
         transform: translateX(-6px);
         transition: opacity 0.4s ease-out, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-        transition-delay: calc(0.35s + var(--i) * 0.11s);
+        transition-delay: calc(var(--wacht) + 0.32s + var(--i) * 0.11s);
       }
       .anim .kaartblok.is-in .klasmasker { opacity: 1; transform: none; }
 
@@ -2789,6 +2796,7 @@ function StijlBlok() {
         opacity: 0;
         transform: scale(0.82) rotate(-7deg);
         transition: opacity 0.5s ease-out, transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+        transition-delay: calc(var(--wacht) + 0.06s);
       }
       .anim .kaartblok.is-in .verfspetter {
         opacity: 1;
