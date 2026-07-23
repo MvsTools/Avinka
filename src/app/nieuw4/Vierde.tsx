@@ -378,21 +378,6 @@ function Vink({
 
 const REDUCED_QUERY = "(prefers-reduced-motion: reduce)";
 
-/* De handgetrokken streep onder een accentwoord — dezelfde als in de hero
-   van de echte landingspagina, zodat het één merk blijft. */
-function Streep() {
-  return (
-    <svg
-      viewBox="0 0 200 12"
-      className="absolute -bottom-3 left-0 w-full text-accent sm:-bottom-4"
-      fill="none"
-      aria-hidden
-    >
-      <path d="M2 9C40 3 160 3 198 7" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 function abonneerReduced(cb: () => void) {
   const mq = window.matchMedia(REDUCED_QUERY);
   mq.addEventListener("change", cb);
@@ -1081,42 +1066,25 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
            en niet doorloopt uit de herkenning erboven. ── */}
         <section
           id="tools"
-          className="relative overflow-hidden border-y border-ink/[0.07] bg-sand scroll-mt-20"
+          className="relative overflow-hidden border-y border-ink/[0.07] bg-sand pb-20 scroll-mt-20"
         >
           <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
             <div className="absolute -right-32 top-24 h-96 w-96 rounded-full bg-brand/[0.07] blur-3xl" />
           </div>
 
           <ToolRail />
-
-          <div className="relative mx-auto w-full max-w-5xl px-6 pb-24">
-            {/* De payoff: waaróm dit er allemaal staat. Geen rekensom, wel de
-               belofte uit de landingspagina zelf. */}
-            <div
-              data-reveal
-              className="mt-16 rounded-[2rem] bg-white px-6 py-14 text-center shadow-sm ring-1 ring-black/5 sm:px-12"
-            >
-              <p className="font-display text-4xl font-black leading-[1.05] tracking-tight text-ink [text-wrap:balance] sm:text-5xl">
-                Minder administratie,{" "}
-                <span className="relative whitespace-nowrap text-brand">
-                  meer onderwijs
-                  <Streep />
-                </span>
-              </p>
-              <p className="mx-auto mt-9 max-w-xl text-lg leading-8 text-ink/70">
-                Veel van dit werk kost tijd, maar vraagt niet je volle aandacht.
-                Dát is wat Avinka overneemt. De rest blijft van jou.
-              </p>
-              <p className="mt-8 inline-block rounded-2xl bg-sand px-6 py-3 text-lg font-bold text-ink">
-                Meer rust. Minder werkdruk. Meer tijd voor je klas.
-              </p>
-            </div>
-          </div>
         </section>
 
-        {/* ── 4. Privacy, zichtbaar gemaakt ── */}
+        {/* ── 4. Wat de galerij niet laat zien: de tools staan niet los.
+           En waar dat ophoudt. ── */}
+        <Doorloop />
+
+        {/* ── 5. Privacy, zichtbaar gemaakt ── */}
         <section className="relative overflow-hidden bg-ink text-cream">
-          <div className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-brand/20 blur-3xl" aria-hidden />
+          {/* De gloed begint binnen de sectie: stond hij hoger, dan sneed
+             overflow-hidden hem af en zag je een streep tegen het donkere
+             blok erboven. */}
+          <div className="pointer-events-none absolute -left-24 top-10 h-80 w-80 rounded-full bg-brand/20 blur-3xl" aria-hidden />
           <div className="relative mx-auto grid w-full max-w-5xl items-center gap-12 px-6 py-24 lg:grid-cols-2">
             <div data-reveal>
               <h2 className="font-display text-4xl font-black tracking-tight text-white [text-wrap:balance]">
@@ -1157,7 +1125,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           </div>
         </section>
 
-        {/* ── 5. De regie blijft bij jou ── */}
+        {/* ── 6. De regie blijft bij jou ── */}
         <section className="mx-auto w-full max-w-5xl px-6 py-24">
           <div className="grid gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-16">
             <div data-reveal>
@@ -1196,7 +1164,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           </div>
         </section>
 
-        {/* ── 6. De maker ── */}
+        {/* ── 7. De maker ── */}
         <section className="mx-auto w-full max-w-5xl px-6 pb-24">
           <div data-reveal className="relative overflow-hidden rounded-[2rem] bg-sand px-8 py-14 sm:px-14">
             <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-accent/15 blur-2xl" aria-hidden />
@@ -1244,7 +1212,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           </div>
         </section>
 
-        {/* ── 7. Eerlijk over ervaringen ── */}
+        {/* ── 8. Eerlijk over ervaringen ── */}
         <section className="border-y border-black/5 bg-white">
           <div className="mx-auto w-full max-w-3xl px-6 py-16 text-center">
             <h2 data-reveal className="font-display text-3xl font-black tracking-tight [text-wrap:balance]">
@@ -1258,10 +1226,10 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           </div>
         </section>
 
-        {/* ── 8. Prijzen ── */}
+        {/* ── 9. Prijzen ── */}
         <Prijzen />
 
-        {/* ── 9. Veelgestelde vragen ── */}
+        {/* ── 10. Veelgestelde vragen ── */}
         <section id="vragen" className="scroll-mt-16 bg-white">
           <div className="mx-auto w-full max-w-3xl px-6 py-24">
             <h2 className="text-center font-display text-4xl font-black tracking-tight [text-wrap:balance]">
@@ -1308,7 +1276,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           </div>
         </section>
 
-        {/* ── 10. Slot ── */}
+        {/* ── 11. Slot ── */}
         <section className="relative overflow-hidden bg-ink">
           <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-brand/25 blur-3xl" aria-hidden />
           <div className="pointer-events-none absolute -bottom-24 -left-20 h-80 w-80 rounded-full bg-accent/15 blur-3xl" aria-hidden />
@@ -1539,6 +1507,189 @@ function MarkeerInhoud({ donker = false }: { donker?: boolean }) {
 
 /* De kop boven de rij. De ondertitel wijst meteen op het slepen: zonder die
    hint blijft de helft van de kaarten onopgemerkt buiten beeld staan. */
+/* ── De doorloop ────────────────────────────────────────────────────────
+   Het blok onder de galerij. De galerij laat acht losse kaarten zien; hier
+   staat wat je daar niet aan af kunt lezen, namelijk dat ze bij elkaar horen
+   en dat er steeds iets bij komt.
+   De vorm is één beeld: een groene inktlijn in de kantlijn die met je mee
+   naar beneden loopt terwijl je leest. Waar het donker wordt houdt hij op,
+   met een klein plasje inkt op de plek waar de pen bleef staan. Die stop is
+   het scharnier naar de privacysectie eronder: je hoeft niet te schrijven
+   dat er een grens is, je ziet hem.
+   Boven staat de markeerstift (breed, aanstrepen), hier de pen (dun,
+   verbinden). Ander gereedschap, ander gebaar, zodat het geen tic wordt.
+   Zonder JS of bij verminderde beweging staat de lijn er gewoon helemaal. ── */
+function Doorloop() {
+  const licht = useRef<HTMLDivElement>(null);
+  const pad = useRef<SVGPathElement>(null);
+  const vlek = useRef<HTMLSpanElement>(null);
+  const reduced = useSyncExternalStore<boolean | null>(
+    abonneerReduced,
+    () => window.matchMedia(REDUCED_QUERY).matches,
+    () => null,
+  );
+
+  useEffect(() => {
+    if (reduced === null || reduced) return;
+    const blok = licht.current;
+    const lijn = pad.current;
+    if (!blok || !lijn) return;
+
+    lijn.style.strokeDashoffset = "1";
+
+    let bezig = false;
+    let ver = 0; // inkt gaat er niet meer af: de lijn loopt nooit terug
+    const teken = () => {
+      if (bezig) return;
+      bezig = true;
+      requestAnimationFrame(() => {
+        bezig = false;
+        const vh = window.innerHeight;
+        const r = blok.getBoundingClientRect();
+        /* De pen zet aan zodra het blok onderin binnenkomt en is klaar als je
+           de laatste regel gelezen hebt. Zo loopt de lijn op leestempo mee in
+           plaats van dat hij zijn eigen animatie afdraait. */
+        const p = Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.15 + r.height)));
+        if (p <= ver) {
+          if (ver >= 1) {
+            window.removeEventListener("scroll", teken);
+            window.removeEventListener("resize", teken);
+          }
+          return;
+        }
+        ver = p;
+        lijn.style.strokeDashoffset = String(1 - p);
+        // Het plasje verschijnt pas als de pen er echt staat.
+        if (p > 0.96) vlek.current?.classList.add("aan");
+      });
+    };
+
+    teken();
+    window.addEventListener("scroll", teken, { passive: true });
+    window.addEventListener("resize", teken);
+    return () => {
+      window.removeEventListener("scroll", teken);
+      window.removeEventListener("resize", teken);
+    };
+  }, [reduced]);
+
+  return (
+    <section className="relative isolate bg-cream">
+      {/* Het lichte deel: wat er is. */}
+      <div ref={licht} className="relative z-20">
+        {/* De kantlijn. Hij stopt een stukje boven de donkere rand, zodat je
+           ziet dát hij ophoudt in plaats van dat hij het donker in verdwijnt. */}
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-14 top-10">
+          <div className="mx-auto h-full w-full max-w-5xl px-6">
+            <div className="relative h-full w-8">
+              <svg
+                viewBox="0 0 32 600"
+                preserveAspectRatio="none"
+                fill="none"
+                className="h-full w-full text-brand-dark"
+              >
+                {/* Geen liniaal: de hand loopt onderweg een paar keer uit de
+                   koers en komt er weer op terug. */}
+                <path
+                  ref={pad}
+                  d="M16 6C10.8 88 21.2 164 15.2 248 10.4 320 21.6 396 16.4 476 13 538 20 566 16 594"
+                  pathLength={1}
+                  strokeDasharray={1}
+                  strokeDashoffset={0}
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+              {/* Het plasje inkt waar de pen bleef staan. */}
+              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
+                <span ref={vlek} className="inktvlek relative block h-3.5 w-3.5">
+                  <span className="absolute -inset-2 rounded-full bg-brand-dark/20 blur-[7px]" />
+                  <span
+                    className="absolute inset-0 bg-brand-dark"
+                    style={{ borderRadius: "52% 48% 44% 56% / 50% 56% 44% 50%" }}
+                  />
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Warmte in de lege rechterhelft: het vlak mag ademen, maar niet leeg
+           aanvoelen. */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+          <div className="absolute -right-32 bottom-4 h-80 w-80 rounded-full bg-accent/[0.09] blur-3xl" />
+          <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-brand/[0.06] blur-3xl" />
+        </div>
+
+        <div className="relative mx-auto w-full max-w-5xl px-6 py-24 lg:py-28">
+          <div className="max-w-3xl pl-10 sm:pl-14">
+            <h2
+              data-reveal
+              className="max-w-2xl font-display text-[clamp(2.5rem,6vw,4.25rem)] font-black leading-[0.98] tracking-tight [text-wrap:balance]"
+            >
+              De tools werken samen
+            </h2>
+            <p
+              data-reveal
+              style={{ transitionDelay: "90ms" }}
+              className="mt-9 max-w-2xl text-lg leading-8 text-ink/70 sm:text-xl sm:leading-9"
+            >
+              Binnen Avinka wordt er veel werk voor je uit handen genomen. De
+              tools staan niet los van elkaar maar werken samen aan hetzelfde
+              resultaat.
+            </p>
+            <p
+              data-reveal
+              style={{ transitionDelay: "160ms" }}
+              className="mt-5 max-w-2xl text-lg leading-8 text-ink/70 sm:text-xl sm:leading-9"
+            >
+              Je stelt één keer in hoe jij werkt en daar houdt alles rekening
+              mee. En het platform groeit mee: er komt steeds meer bij, zonder
+              dat je opnieuw hoeft uit te zoeken hoe het werkt.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Waar het ophoudt. Dit deel is al donker en loopt door in de
+         privacysectie eronder: samen zijn ze één hoofdstuk over de grens. */}
+      <div className="relative z-10 bg-ink text-cream">
+        {/* Geen kantlijn meer, dus ook geen inspringing: hier gaat de tekst
+           op één lijn staan met de privacysectie eronder. Dat de tekst
+           opschuift is precies het moment waarop het verhaal draait. */}
+        <div className="mx-auto w-full max-w-5xl px-6 pb-14 pt-20 lg:pt-24">
+          <div className="max-w-2xl">
+            <p
+              data-reveal
+              className="font-display text-[clamp(1.6rem,3.1vw,2.35rem)] font-black leading-[1.15] tracking-tight text-white [text-wrap:balance]"
+            >
+              Er is één ding dat we bewust niet doen.
+            </p>
+            <p
+              data-reveal
+              style={{ transitionDelay: "90ms" }}
+              className="mt-7 text-lg leading-8 text-cream/80"
+            >
+              Gegevens van leerlingen bewaren we niet. Daardoor kun je niet
+              alles terugvinden wat je gemaakt hebt. Het staat bij jou en niet
+              bij ons.
+            </p>
+            <p
+              data-reveal
+              style={{ transitionDelay: "160ms" }}
+              className="mt-7 text-lg font-bold leading-8 text-white"
+            >
+              Onhandig? Soms. Maar privacy weegt voor ons het zwaarst.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function RailKop() {
   return (
     <div className="mx-auto w-full max-w-5xl px-6">
@@ -2485,6 +2636,17 @@ function StijlBlok() {
       .anim [data-leesregel].leest .kop { color: rgb(34 28 58); }
       .anim [data-leesregel].leest .uitleg { color: rgb(34 28 58 / 0.7); }
 
+
+      /* Het plasje inkt onderaan de kantlijn. Zonder beweging staat het er
+         gewoon; mét beweging komt het pas op het moment dat de pen er is,
+         zoals inkt die in het papier trekt: snel uit en dan rustig uit. */
+      .anim .inktvlek {
+        opacity: 0;
+        scale: 0.35;
+        transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+          scale 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .anim .inktvlek.aan { opacity: 1; scale: 1; }
 
       /* Knoppen mogen voelen dat je ze indrukt. */
       .knop-druk:active { transform: scale(0.97); }
