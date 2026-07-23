@@ -160,6 +160,51 @@ gemerkt, want die gelden voor iedereen.
 De eigen groep komt uit de instellingen, waar vrije tekst in staat ("Groep 7",
 "7", "1/2"); we halen de nummers eruit en filteren niet als dat niet lukt.
 
+### 3.6 De agenda en het basisrooster lopen niet door elkaar
+
+Vraag van de eigenaar: het lijkt niet prettig als de weekplanning en de agenda
+door elkaar gaan lopen. Terecht, en het antwoord zit in het verschil tussen die
+twee:
+
+- Het **basisrooster is een sjabloon zonder datums**: "elke dinsdag om 8:30
+  rekenen". Daar kán geen agenda-afspraak in staan, want die hoort bij één datum.
+- Een **agenda-afspraak hoort bij één dag**. Ze ontmoeten elkaar dus pas in een
+  concrete week, nooit in het sjabloon zelf.
+
+**Harde regel: de agenda past je basisrooster nooit aan.** Hij zegt hooguit dat
+een week afwijkt.
+
+In de praktijk valt wat uit de agenda komt in drie soorten uiteen:
+
+| Uit de agenda | Waar het terechtkomt |
+|---|---|
+| Vakantie, studiedag (hele dag) | Vult het rooster niet maar **wist** het: die dag heeft geen les |
+| Gesprekken, vergaderingen (na 14:00) | In het **na-schooltijd-rooster**, dat al een apart raster is |
+| Uitstapje onder schooltijd | De uitzondering; botst wél met lessen |
+
+Bij een echte schoolagenda (145 afspraken, zie §3.5) valt verreweg het meeste in
+de eerste twee rijen. Het lesrooster blijft dus in de praktijk schoon.
+
+**Weergave, gekozen 24-7:** boven elke dagkolom een smal **agenda-strookje** met
+wat er die dag speelt; na-schooltijd-afspraken landen in het na-schooltijd-
+rooster. Het lesrooster zelf blijft onaangeroerd.
+
+```
+        ma        di        wo        do        vr
+      ┌────────┬────────┬─────────┬────────┬──────────┐
+agenda│        │        │Studiedag│        │Schoolreis│
+      ├────────┼────────┼─────────┼────────┼──────────┤
+08:30 │Rekenen │Rekenen │         │Rekenen │          │
+09:15 │Spelling│Gym     │         │Spelling│          │
+      └────────┴────────┴─────────┴────────┴──────────┘
+      na schooltijd
+14:30 │        │Gesprek │         │Gesprek │          │
+```
+
+Afgewezen alternatieven: alles in één raster (wordt druk, vast rooster en losse
+afspraken lopen visueel door elkaar) en alleen een stipje op de dagkop (te veel
+klikken om te weten wat er speelt).
+
 ### 3.3 Schooljaren bewaren
 
 We bewaren **dit schooljaar en het vorige**. Vorig jaar mag je bekijken (jaar,
