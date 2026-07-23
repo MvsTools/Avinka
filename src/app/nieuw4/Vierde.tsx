@@ -1090,132 +1090,38 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
              erboven. */}
           <div className="pointer-events-none absolute -left-24 top-10 h-80 w-80 rounded-full bg-brand/[0.09] blur-3xl" aria-hidden />
 
-          {/* De bekentenis. Wat je hierboven nergens kon opslaan, wordt hier
-             uitgesproken vóórdat we over maskering beginnen: eerst toegeven
-             wat het kost, dan pas vertellen wat het beschermt.
-             Links een groot merkgroen schild met het Avinka-vinkje dat
-             zichzelf tekent: zo is in één oogopslag duidelijk dat dit
-             hoofdstuk over privacy gaat, en dat het een uitgangspunt is en
-             geen voetnoot. Hetzelfde schild-met-vinkje keert klein terug in
-             de maskeer-demo hieronder, als terugkerend privacy-embleem. */}
-          <div className="relative mx-auto w-full max-w-5xl px-6 pt-24">
-            <div className="grid items-center gap-10 lg:grid-cols-[auto_1fr] lg:gap-16">
-              {/* Het privacy-embleem */}
-              <div
-                data-reveal
-                className="flex flex-col items-center gap-4 lg:items-start"
-              >
-                <div className="relative w-32 sm:w-36">
-                  <div
-                    className="absolute -inset-5 rounded-full bg-brand/20 blur-2xl"
-                    aria-hidden
-                  />
-                  {/* Het schild draagt een zachte groene slagschaduw zodat het
-                     van het crème afkomt. */}
-                  <svg
-                    viewBox="0 0 24 26"
-                    fill="none"
-                    className="relative w-full drop-shadow-[0_16px_26px_rgba(37,133,90,0.35)]"
-                    aria-hidden
-                  >
-                    <path
-                      d="M12 1.4 21.6 5.1 V13 C21.6 19.5 17.3 23.5 12 25.4 6.7 23.5 2.4 19.5 2.4 13 V5.1 Z"
-                      fill="#2f9e6e"
-                    />
-                    <path
-                      d="M12 1.4 21.6 5.1 V13 C21.6 19.5 17.3 23.5 12 25.4 6.7 23.5 2.4 19.5 2.4 13 V5.1 Z"
-                      fill="url(#schild-licht)"
-                    />
-                    <defs>
-                      <linearGradient id="schild-licht" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0" stopColor="#fff" stopOpacity="0.18" />
-                        <stop offset="0.5" stopColor="#fff" stopOpacity="0" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  {/* Het vinkje tekent zichzelf zodra het embleem in beeld komt. */}
-                  <Vink
-                    className="slotvink absolute left-1/2 top-[45%] w-1/2 -translate-x-1/2 -translate-y-1/2 text-white"
-                    dik={2.8}
-                  />
-                </div>
-                <p className="text-base font-black tracking-tight text-brand-dark">
-                  Privacy voorop
-                </p>
-              </div>
-
-              {/* De bekentenis-tekst, naar rechts */}
-              <div className="max-w-2xl">
-                <p
-                  data-reveal
-                  className="font-display text-[clamp(1.6rem,3.1vw,2.35rem)] font-black leading-[1.15] tracking-tight [text-wrap:balance]"
-                >
-                  Er is één ding dat we bewust niet doen.
-                </p>
-                <p
-                  data-reveal
-                  style={{ transitionDelay: "90ms" }}
-                  className="mt-7 text-lg leading-8 text-ink/70"
-                >
-                  Gegevens van leerlingen bewaren we niet. Daardoor kun je niet
-                  alles terugvinden wat je gemaakt hebt. Het staat bij jou en
-                  niet bij ons.
-                </p>
-                <p
-                  data-reveal
-                  style={{ transitionDelay: "160ms" }}
-                  className="mt-7 text-lg font-bold leading-8 text-ink"
-                >
-                  Onhandig? Soms. Maar privacy weegt voor ons het zwaarst.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="relative mx-auto grid w-full max-w-5xl items-center gap-12 px-6 pb-24 pt-16 lg:grid-cols-2">
-            <div data-reveal>
-              <h2 className="font-display text-4xl font-black tracking-tight [text-wrap:balance]">
-                Namen blijven thuis
-              </h2>
-              <p className="mt-6 text-lg leading-8 text-ink/70">
-                Privacy is ons belangrijkste uitgangspunt. Namen van leerlingen
-                gaan nooit naar AI: ze worden op je eigen apparaat onleesbaar
-                gemaakt voordat er ook maar iets wordt verstuurd.
-              </p>
-              <p className="mt-4 text-lg leading-8 text-ink/70">
-                Je account staat bovendien op beveiligde servers in Europa.
-                Geen bijzaak, maar de ruggengraat van alles wat we bouwen.
-              </p>
-            </div>
-            {/* De maskeer-demo: Sofie wordt leerling A voor je ogen. Op het
-               lichte vlak draagt de kaart zichzelf met een rand en een diepe
-               zachte schaduw; een zware slagschaduw zonder rand zweeft hier
-               los boven de pagina. */}
-            <div
+          {/* De bekentenis (over NIET bewaren). Een eerlijke bekentenis draagt
+             zich met woorden, niet met een icoon: strak, zelfverzekerd, geen
+             schild. De teaser groot, daaronder wat het kost en de keuze. */}
+          <div className="relative mx-auto w-full max-w-4xl px-6 pt-24 lg:pt-28">
+            <p
               data-reveal
-              className="maskeer rounded-2xl bg-white p-6 text-ink shadow-[0_28px_60px_-32px_rgba(34,28,58,0.5)] ring-1 ring-black/5 sm:p-8"
+              className="font-display text-[clamp(2rem,4.4vw,3.4rem)] font-black leading-[1.04] tracking-tight [text-wrap:balance]"
             >
-              <p className="text-sm font-bold text-ink/50">Jij typt:</p>
-              <p className="mt-2 text-xl leading-9 text-ink">
-                &ldquo;
-                <span className="relative">
-                  <span className="naam-echt font-bold">Sofie</span>
-                  <span className="naam-masker font-bold text-brand-dark">leerling A</span>
-                </span>{" "}
-                heeft hard gewerkt aan haar tafels.&rdquo;
-              </p>
-              <div className="mt-5 flex items-center gap-3 rounded-xl bg-brand-soft p-4">
-                <svg viewBox="0 0 24 24" className="schildje h-8 w-8 shrink-0 text-brand-dark" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M12 3l7 3v5c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6l7-3z" />
-                  <path d="M9 12l2 2 4-4" />
-                </svg>
-                <p className="text-base font-semibold leading-6 text-brand-dark">
-                  Voordat er iets wordt verstuurd, maakt Avinka de naam op jouw eigen
-                  apparaat onleesbaar. De AI ziet alleen &ldquo;leerling A&rdquo;.
-                </p>
-              </div>
-            </div>
+              Er is één ding dat we bewust niet doen.
+            </p>
+            <p
+              data-reveal
+              style={{ transitionDelay: "90ms" }}
+              className="mt-8 max-w-2xl text-xl leading-9 text-ink/70"
+            >
+              Gegevens van leerlingen bewaren we niet. Daardoor kun je niet alles
+              terugvinden wat je gemaakt hebt. Het staat bij jou en niet bij ons.
+            </p>
+            <p
+              data-reveal
+              style={{ transitionDelay: "160ms" }}
+              className="mt-6 text-xl font-bold leading-9 text-ink"
+            >
+              Onhandig? Soms. Maar privacy weegt voor ons het zwaarst.
+            </p>
           </div>
+
+          {/* Het maskeer-mechanisme (over namen die NIET naar de AI gaan).
+             Zie de component: de rapportzin staat op jouw apparaat met de echte
+             naam; op de grens naar de AI wordt de naam verzegeld, en alleen
+             "leerling A" steekt over. Privacy laten zien in plaats van beweren. */}
+          <MaskeerGrens />
         </section>
 
         {/* ── 5. De regie blijft bij jou ── */}
@@ -1597,6 +1503,120 @@ function MarkeerInhoud({ donker = false }: { donker?: boolean }) {
    een berichtje van thuis, een klasopstelling), geen interface-namaak.
    De bezoeker heeft de regie: zelf slepen, vegen of de pijltjes. Niets
    beweegt uit zichzelf; een bekeken kaart zet wel zijn eigen vinkje. ──── */
+
+/* ── De grens: maskeren, zichtbaar gemaakt ──────────────────────────────
+   De sterkste privacy-claim is dat namen nooit naar de AI gaan: op je eigen
+   apparaat wordt de naam onleesbaar gemaakt vóór er iets verstuurd wordt.
+   Dat beweren we niet, dat laten we zien. Twee panelen: links wat op jouw
+   apparaat staat (de echte naam), rechts wat de AI ziet (alleen "leerling
+   A"). Ertussen de grens. Terwijl je scrolt reist de zin naar de AI en wordt
+   de naam op de grens verzegeld; alleen de gemaskeerde versie steekt over.
+   Aangedreven door één scrollwaarde --p (0→1). Zonder JS of bij verminderde
+   beweging staat --p op 1: de eindstand, waarin beide panelen hun verhaal
+   al vertellen. ─────────────────────────────────────────────────────────── */
+function MaskeerGrens() {
+  const wrap = useRef<HTMLDivElement>(null);
+  const reduced = useSyncExternalStore<boolean | null>(
+    abonneerReduced,
+    () => window.matchMedia(REDUCED_QUERY).matches,
+    () => null,
+  );
+
+  useEffect(() => {
+    if (reduced === null || reduced) return;
+    const el = wrap.current;
+    if (!el) return;
+    el.style.setProperty("--p", "0");
+
+    let bezig = false;
+    const teken = () => {
+      if (bezig) return;
+      bezig = true;
+      requestAnimationFrame(() => {
+        bezig = false;
+        const vh = window.innerHeight;
+        const r = el.getBoundingClientRect();
+        // Van "het mechanisme komt onderin binnen" tot "het staat goed in
+        // beeld", op leestempo. Volgt de scroll beide kanten op, dus de
+        // verzegeling speelt terug als je omhoog scrolt.
+        const p = Math.min(1, Math.max(0, (vh * 0.8 - r.top) / (vh * 0.5)));
+        el.style.setProperty("--p", p.toFixed(3));
+      });
+    };
+
+    teken();
+    window.addEventListener("scroll", teken, { passive: true });
+    window.addEventListener("resize", teken);
+    return () => {
+      window.removeEventListener("scroll", teken);
+      window.removeEventListener("resize", teken);
+    };
+  }, [reduced]);
+
+  const zin = " heeft hard gewerkt aan haar tafels.";
+
+  return (
+    <div className="relative mx-auto w-full max-w-5xl px-6 pb-24 pt-20 lg:pt-24">
+      {/* De kop en uitleg */}
+      <div data-reveal className="max-w-2xl">
+        <h2 className="font-display text-4xl font-black tracking-tight [text-wrap:balance]">
+          Namen blijven thuis
+        </h2>
+        <p className="mt-6 text-lg leading-8 text-ink/70">
+          Privacy is ons belangrijkste uitgangspunt. Namen van leerlingen gaan
+          nooit naar de AI: ze worden op je eigen apparaat onleesbaar gemaakt
+          voordat er ook maar iets wordt verstuurd. Je account staat op
+          beveiligde servers in Europa.
+        </p>
+      </div>
+
+      {/* Het mechanisme */}
+      <div ref={wrap} className="grens mt-12" data-reveal>
+        <div className="grid items-stretch gap-4 lg:grid-cols-[1fr_auto_1fr] lg:gap-0">
+          {/* ── Jouw apparaat ── */}
+          <div className="grens-kaart relative overflow-hidden rounded-2xl bg-white p-6 shadow-[0_24px_50px_-32px_rgba(34,28,58,0.45)] ring-1 ring-black/5 sm:p-7 lg:rounded-r-none">
+            <p className="text-xs font-bold uppercase tracking-wider text-ink/45">
+              Op jouw apparaat
+            </p>
+            <p className="mt-4 text-xl leading-9 text-ink sm:text-2xl sm:leading-10">
+              &ldquo;<span className="grens-echt font-bold text-ink">Sofie</span>
+              {zin}&rdquo;
+            </p>
+          </div>
+
+          {/* ── De grens ── */}
+          <div className="grens-naad relative flex items-center justify-center py-1 lg:w-24 lg:flex-col lg:py-0">
+            {/* De lijn waarlangs verzonden wordt, en het licht dat er bij het
+               scrollen overheen loopt. Horizontaal op desktop, verticaal op
+               mobiel. */}
+            <div className="grens-lijn" aria-hidden />
+            <div className="grens-slot relative z-10 flex items-center gap-2 rounded-full bg-brand px-3.5 py-1.5 text-sm font-bold text-white shadow-lg shadow-brand/25">
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden>
+                <rect x="5" y="11" width="14" height="9" rx="2" />
+                <path d="M8 11V8a4 4 0 0 1 8 0v3" strokeLinecap="round" />
+              </svg>
+              verzegeld
+            </div>
+          </div>
+
+          {/* ── Wat de AI ziet ── */}
+          <div className="grens-kaart grens-ai relative overflow-hidden rounded-2xl bg-ink/[0.03] p-6 ring-1 ring-ink/10 sm:p-7 lg:rounded-l-none">
+            <p className="text-xs font-bold uppercase tracking-wider text-ink/45">
+              De AI ziet
+            </p>
+            <p className="mt-4 text-xl leading-9 text-ink/80 sm:text-2xl sm:leading-10">
+              &ldquo;
+              <span className="grens-masker font-bold text-brand-dark">
+                leerling A
+              </span>
+              {zin}&rdquo;
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* De kop boven de rij. De ondertitel wijst meteen op het slepen: zonder die
    hint blijft de helft van de kaarten onopgemerkt buiten beeld staan. */
@@ -2607,23 +2627,74 @@ function StijlBlok() {
       }
       .anim [data-leesregel].leest .herkenvink path { stroke-dashoffset: 0; }
 
-      /* Maskeer-demo: Sofie wordt leerling A zodra de kaart in beeld is.
-         Alleen opacity/filter/transform, geen layout-animatie. */
-      .maskeer .naam-masker { display: none; }
-      .anim .maskeer .naam-echt {
-        display: inline-block;
-        transition: opacity 0.4s ease 0.9s, filter 0.4s ease 0.9s;
+      /* ── De grens: maskeren, zichtbaar gemaakt ──
+         Alles hangt aan één scrollwaarde --p (0→1), door het script gezet.
+         Standaard staat --p op 1: de eindstand, zodat het zonder JS of bij
+         verminderde beweging gewoon klopt. Alleen transform/opacity/filter. */
+      .grens { --p: 1; }
+      /* De echte naam op jouw apparaat: leesbaar, met een zachte merkonderstreep
+         zodat je ziet dat dit het gevoelige woord is dat straks verzegeld wordt. */
+      .grens-echt {
+        box-shadow: inset 0 -0.55em 0 rgba(47, 158, 110, 0.16);
       }
-      .anim .maskeer .naam-masker {
-        display: inline-block;
-        opacity: 0;
-        transform: translateY(6px);
-        transition: opacity 0.4s ease 1.2s, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1) 1.2s;
+      /* De gemaskeerde naam die de AI ziet: een groene pil. */
+      .grens-masker {
+        border-radius: 0.4rem;
+        background: #e7f4ed;
+        padding: 0.05em 0.4em;
       }
-      .anim .maskeer.is-in .naam-echt { opacity: 0; filter: blur(4px); position: absolute; }
-      .anim .maskeer.is-in .naam-masker { opacity: 1; transform: none; }
-      .anim .maskeer .schildje { transform: scale(0.6); opacity: 0; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 1.5s, opacity 0.3s ease 1.5s; }
-      .anim .maskeer.is-in .schildje { transform: scale(1); opacity: 1; }
+      /* Het AI-paneel lost op de grens uit de waas op: pas als er verzegeld is,
+         verschijnt wat de AI te zien krijgt. */
+      .grens-ai {
+        opacity: clamp(0, calc((var(--p) - 0.38) * 2.4), 1);
+        transform: translateX(calc((1 - clamp(0, calc((var(--p) - 0.38) * 2.4), 1)) * -18px));
+        filter: blur(calc((1 - clamp(0, calc((var(--p) - 0.38) * 2.4), 1)) * 5px));
+      }
+      @media (max-width: 1023px) {
+        .grens-ai {
+          transform: translateY(calc((1 - clamp(0, calc((var(--p) - 0.38) * 2.4), 1)) * 16px));
+        }
+      }
+      /* De verzegel-pil: klikt zachtjes vast naarmate de verzegeling vordert. */
+      .grens-slot {
+        transform: scale(calc(0.92 + clamp(0, var(--p), 1) * 0.08));
+      }
+      /* De lijn tussen de panelen, met een licht dat er bij het scrollen
+         overheen naar de AI toe loopt. */
+      /* Een schone verbindingslijn tussen de panelen; het bewegende werk zit
+         in het AI-paneel dat uit de waas oplost, niet in de lijn. */
+      .grens-lijn {
+        position: absolute;
+        left: -0.5rem;
+        right: -0.5rem;
+        top: 50%;
+        height: 2px;
+        transform: translateY(-50%);
+        border-radius: 9999px;
+        background: linear-gradient(
+          to right,
+          rgba(34, 28, 58, 0.05),
+          rgba(34, 28, 58, 0.18),
+          rgba(34, 28, 58, 0.05)
+        );
+      }
+      @media (max-width: 1023px) {
+        .grens-lijn {
+          left: 50%;
+          right: auto;
+          top: -0.5rem;
+          bottom: -0.5rem;
+          height: auto;
+          width: 2px;
+          transform: translateX(-50%);
+          background: linear-gradient(
+            to bottom,
+            rgba(34, 28, 58, 0.05),
+            rgba(34, 28, 58, 0.18),
+            rgba(34, 28, 58, 0.05)
+          );
+        }
+      }
 
       @media (prefers-reduced-motion: reduce) {
         .anim [data-reveal] { opacity: 1; transform: none; transition: none; }
