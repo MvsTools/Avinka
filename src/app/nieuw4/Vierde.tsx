@@ -1094,12 +1094,14 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           <div className="pointer-events-none absolute -left-24 top-10 h-80 w-80 rounded-full bg-brand/[0.09] blur-3xl" aria-hidden />
 
           <div className="relative pb-28 pt-24 lg:pt-28">
-            {/* ── Gegevens: hard rechts, tot aan de paginarand. De ruimte
-               blijft links over. Een eerlijke bekentenis draagt zich met
-               woorden, niet met een icoon: strak, zelfverzekerd, geen
-               schild. */}
+            {/* ── Gegevens: de tekst hard rechts tot aan de paginarand, het
+               bewijs in de ruimte die links overblijft. Een eerlijke
+               bekentenis draagt zich met woorden, niet met een icoon:
+               strak, zelfverzekerd, geen schild. Op een smal scherm valt
+               de kaart onder zijn eigen tekst, in leesvolgorde. */}
             <div className="mx-auto w-full max-w-7xl px-6">
-              <div className="max-w-xl lg:ml-auto">
+              <div className="grid gap-12 lg:grid-cols-2 lg:items-center lg:gap-16">
+              <div className="max-w-xl lg:order-2 lg:justify-self-end">
                 <p
                   data-reveal
                   className="font-display text-[clamp(2rem,3.6vw,3rem)] font-black leading-[1.06] tracking-tight [text-wrap:balance]"
@@ -1123,12 +1125,24 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                   Onhandig? Soms. Maar privacy weegt voor ons het zwaarst.
                 </p>
               </div>
+
+              {/* De kaart begint op dezelfde linkerlijn als de tekstkolom
+                 van de site (en dus als "Namen blijven thuis" hieronder),
+                 terwijl de tekst ernaast juist tot de paginarand mag lopen.
+                 De inspringing rekent het verschil tussen de brede en de
+                 gewone containerbreedte uit, zodat die lijn op elk scherm
+                 klopt in plaats van alleen op 1440. */}
+              <div className="lg:order-1 lg:pl-[calc((min(100vw,80rem)-min(100vw,64rem))/2)]">
+                <BewaarKaart />
+              </div>
+              </div>
             </div>
 
-            {/* ── Leerlingnamen: links, maar op de gewone tekstkolom van de
-               site (max-w-5xl, net als de secties hieronder), niet tegen de
-               paginarand. De ruimte blijft rechts over. ── */}
+            {/* ── Leerlingnamen: de tekst links op de gewone tekstkolom van
+               de site (max-w-5xl, net als de secties hieronder), het bewijs
+               in de ruimte rechts. ── */}
             <div className="mx-auto mt-28 w-full max-w-5xl px-6 lg:mt-40">
+              <div className="grid gap-12 lg:grid-cols-2 lg:items-center lg:gap-16">
               <div className="max-w-xl">
                 <h2
                   data-reveal
@@ -1146,6 +1160,11 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                   iets wordt verstuurd. Je account staat op beveiligde servers
                   in Europa.
                 </p>
+              </div>
+
+              <div>
+                <KlassenlijstKaart />
+              </div>
               </div>
             </div>
           </div>
@@ -1530,6 +1549,117 @@ function MarkeerInhoud({ donker = false }: { donker?: boolean }) {
    een berichtje van thuis, een klasopstelling), geen interface-namaak.
    De bezoeker heeft de regie: zelf slepen, vegen of de pijltjes. Niets
    beweegt uit zichzelf; een bekeken kaart zet wel zijn eigen vinkje. ──── */
+
+/* ── Het bewijs bij de privacybelofte ───────────────────────────────────
+   Twee kaarten die een bewering omzetten in iets dat je kunt nalopen. Ze
+   zijn van tekst gemaakt en niet van tekeningetjes: daardoor blijven ze
+   op een telefoon net zo leesbaar als op een breed scherm, alleen dan op
+   volle breedte onder hun eigen alinea.
+   De beweging hangt aan de reveal die de pagina al gebruikt: krijgt de
+   kaart `is-in`, dan lopen de regels één voor één af. Zonder beweging of
+   zonder JS staat de eindstand er meteen. ──────────────────────────────── */
+
+/* Wat er van jou op onze servers staat, en wat nadrukkelijk niet. */
+const BIJ_ONS = ["je e-mailadres", "je abonnement"];
+const NIET_BIJ_ONS = [
+  "namen van leerlingen",
+  "rapportteksten",
+  "toetsgegevens",
+  "alles wat je maakt",
+];
+
+function BewaarKaart() {
+  return (
+    <div
+      data-reveal
+      className="bewaarkaart w-full max-w-md rounded-3xl bg-white p-7 shadow-[0_30px_60px_-38px_rgba(34,28,58,0.5)] ring-1 ring-black/5 sm:p-8"
+    >
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-ink/45">
+        Wat er bij ons staat
+      </p>
+      <ul className="mt-5 space-y-3.5">
+        {BIJ_ONS.map((regel) => (
+          <li key={regel} className="flex items-center gap-3 text-lg font-bold text-ink">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-dark">
+              <Vink className="h-3.5 w-3.5" dik={3.8} />
+            </span>
+            {regel}
+          </li>
+        ))}
+      </ul>
+
+      <div className="my-7 border-t border-dashed border-ink/20" aria-hidden />
+
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-ink/45">
+        En verder niets
+      </p>
+      <ul className="mt-5 space-y-3.5">
+        {NIET_BIJ_ONS.map((regel, i) => (
+          <li
+            key={regel}
+            style={{ "--i": i } as CSSProperties}
+            className="wis-regel flex items-center gap-3 text-lg"
+          >
+            <span className="h-6 w-6 shrink-0" aria-hidden />
+            <span className="wis-woord">{regel}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/* De klassenlijst: het meest persoonlijke bestand dat een leerkracht heeft.
+   Links wat op jouw apparaat blijft staan, rechts wat de AI ervan te zien
+   krijgt. De rechterkolom schrijft zichzelf regel voor regel vol, zodat je
+   niet één naam ziet veranderen maar een hele klas tegelijk. */
+const KLAS = ["Sofie", "Daan", "Iris", "Mees", "Noor", "Luuk", "Fenna"];
+const KLAS_REST = 17;
+
+function KlassenlijstKaart() {
+  return (
+    <div
+      data-reveal
+      className="klaskaart w-full max-w-md rounded-3xl bg-white p-7 shadow-[0_30px_60px_-38px_rgba(34,28,58,0.5)] ring-1 ring-black/5 sm:p-8 lg:ml-auto"
+    >
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="font-display text-xl font-black tracking-tight">Groep 5</p>
+        <p className="text-sm text-ink/50">{KLAS.length + KLAS_REST} leerlingen</p>
+      </div>
+
+      {/* Op een smal scherm valt het linkerkopje over twee regels; met een
+         gedeelde onderlijn blijven de twee kopjes toch netjes op één hoogte. */}
+      <div className="mt-6 flex items-end gap-4 text-[0.65rem] font-bold uppercase tracking-[0.14em]">
+        <span className="flex-1 text-ink/45">Op jouw apparaat</span>
+        <span className="w-32 shrink-0 pl-4 text-brand-dark">De AI ziet</span>
+      </div>
+
+      <ul className="mt-2">
+        {KLAS.map((naam, i) => (
+          <li
+            key={naam}
+            style={{ "--i": i } as CSSProperties}
+            className="flex items-stretch gap-4 border-t border-ink/[0.07] text-base sm:text-lg"
+          >
+            <span className="flex-1 py-2.5 font-semibold text-ink">{naam}</span>
+            <span className="w-32 shrink-0 border-l border-ink/10 bg-brand-soft/50 py-2.5 pl-4 font-semibold text-brand-dark">
+              <span className="klasmasker">
+                leerling {String.fromCharCode(65 + i)}
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      <div className="flex gap-4 border-t border-ink/[0.07]">
+        <span className="flex-1 py-2.5 text-sm text-ink/50">
+          en {KLAS_REST} anderen
+        </span>
+        <span className="w-32 shrink-0 border-l border-ink/10 bg-brand-soft/50" aria-hidden />
+      </div>
+    </div>
+  );
+}
 
 /* De kop boven de rij. De ondertitel wijst meteen op het slepen: zonder die
    hint blijft de helft van de kaarten onopgemerkt buiten beeld staan. */
@@ -2539,6 +2669,51 @@ function StijlBlok() {
         transition: stroke-dashoffset 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.15s;
       }
       .anim [data-leesregel].leest .herkenvink path { stroke-dashoffset: 0; }
+
+      /* ── Het bewijs bij de privacybelofte ──
+         Beide kaarten hangen aan de reveal die de pagina al gebruikt. De
+         eindstand staat in de eerste regels, dus zonder JS of zonder
+         beweging klopt het beeld meteen; .anim draait het terug naar het
+         beginpunt en laat het aflopen. */
+
+      /* De doorgestreepte regels: de streep trekt zichzelf en de tekst
+         zakt weg, één regel na de andere. Je ziet het weggaan in plaats
+         van erover te lezen. */
+      .wis-regel { color: rgb(34 28 58 / 0.45); }
+      .wis-woord { position: relative; }
+      .wis-woord::after {
+        content: "";
+        position: absolute;
+        left: -0.12em;
+        right: -0.12em;
+        top: 0.7em;
+        height: 2px;
+        border-radius: 2px;
+        background: rgb(47 158 110 / 0.8);
+        transform-origin: left center;
+      }
+      .anim .bewaarkaart .wis-regel {
+        color: rgb(34 28 58 / 0.75);
+        transition: color 0.45s ease;
+        transition-delay: calc(0.4s + var(--i) * 0.13s);
+      }
+      .anim .bewaarkaart.is-in .wis-regel { color: rgb(34 28 58 / 0.45); }
+      .anim .bewaarkaart .wis-woord::after {
+        transform: scaleX(0);
+        transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+        transition-delay: calc(0.4s + var(--i) * 0.13s);
+      }
+      .anim .bewaarkaart.is-in .wis-woord::after { transform: scaleX(1); }
+
+      /* De klassenlijst: de rechterkolom schrijft zichzelf regel voor regel
+         vol. De echte namen blijven staan, want die blijven bij jou. */
+      .anim .klaskaart .klasmasker {
+        opacity: 0;
+        transform: translateX(-6px);
+        transition: opacity 0.4s ease-out, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+        transition-delay: calc(0.35s + var(--i) * 0.11s);
+      }
+      .anim .klaskaart.is-in .klasmasker { opacity: 1; transform: none; }
 
       @media (prefers-reduced-motion: reduce) {
         .anim [data-reveal] { opacity: 1; transform: none; transition: none; }
