@@ -65,6 +65,27 @@ const PIJNPUNTEN = [
   },
 ];
 
+/* De regie blijft bij jou: drie beloftes, elk op een eigen kaartje. Bewust
+   drie losse kaarten en geen doorlopend verhaal, want dit zijn drie dingen
+   die je los van elkaar moet kunnen onthouden. */
+const REGIE = [
+  {
+    titel: "Jij beslist",
+    tekst:
+      "Avinka schrijft de voorzet, jij beslist. Niets gaat zonder jou de deur uit.",
+  },
+  {
+    titel: "Altijd bij te sturen",
+    tekst:
+      "Elke tekst is een voorstel. Aanpassen, inkorten of opnieuw laten schrijven kan met één klik, net zo makkelijk als een mailtje typen.",
+  },
+  {
+    titel: "De cijfers kloppen altijd",
+    tekst:
+      "Die berekent de tool zelf. De AI schrijft alleen de tekst eromheen en verzint nooit getallen of feiten.",
+  },
+];
+
 /* De tool-galerij: per tool één kunstkaart (Stripe-achtig, maar in onze
    eigen beeldtaal). Nieuwe tool = kaart erbij. `licht` bepaalt of de naam
    op de kaart een donker plaatje nodig heeft. */
@@ -1170,42 +1191,34 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           </div>
         </section>
 
-        {/* ── 5. De regie blijft bij jou ── */}
+        {/* ── 5. De regie blijft bij jou. Drie witte kaartjes naast elkaar:
+           bewust een ander ritme dan de sectie hierboven, waar de kaarten
+           juist naast de tekst staan. Op een smal scherm vallen ze onder
+           elkaar. ── */}
         <section className="mx-auto w-full max-w-5xl px-6 py-24">
-          <div className="grid gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-16">
-            <div data-reveal>
-              <h2 className="font-display text-4xl font-black tracking-tight [text-wrap:balance]">
-                Jij houdt het laatste woord
-              </h2>
-              <p className="mt-6 max-w-xl text-lg leading-8 text-ink/70">
-                Avinka schrijft de voorzet, jij beslist. Niets gaat zonder jou de
-                deur uit. En de cijfers? Die berekent de tool zelf, dus die kloppen
-                altijd. De AI schrijft alleen de tekst eromheen en verzint nooit
-                getallen of feiten.
-              </p>
-            </div>
-            <div className="space-y-6 self-center">
-              <div data-reveal className="flex gap-4">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-xl" aria-hidden>
-                  ✉️
+          <h2
+            data-reveal
+            className="font-display text-4xl font-black tracking-tight [text-wrap:balance]"
+          >
+            Jij houdt het laatste woord
+          </h2>
+          <div className="mt-10 grid gap-5 md:grid-cols-3">
+            {REGIE.map((kaart, i) => (
+              <div
+                key={kaart.titel}
+                data-reveal
+                style={{ transitionDelay: `${i * 90}ms` }}
+                className="rounded-2xl bg-white p-6 shadow-[0_22px_50px_-30px_rgba(34,28,58,0.4)] ring-1 ring-black/5"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand-dark">
+                  <Vink className="h-4 w-4" dik={3.6} />
                 </span>
-                <p className="leading-7 text-ink/75">
-                  <span className="font-bold text-ink">Niet ingewikkeld.</span>{" "}
-                  Net zo makkelijk als een mailtje typen. Je hoeft niets te
-                  leren en weet meteen wat je moet doen.
-                </p>
+                <h3 className="mt-4 font-display text-xl font-black tracking-tight [text-wrap:balance]">
+                  {kaart.titel}
+                </h3>
+                <p className="mt-2.5 leading-7 text-ink/70">{kaart.tekst}</p>
               </div>
-              <div data-reveal style={{ transitionDelay: "90ms" }} className="flex gap-4">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-xl" aria-hidden>
-                  ✏️
-                </span>
-                <p className="leading-7 text-ink/75">
-                  <span className="font-bold text-ink">Altijd bij te sturen.</span>{" "}
-                  Elke tekst is een voorstel. Aanpassen, inkorten of opnieuw
-                  laten schrijven kan met één klik.
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
         </section>
 
