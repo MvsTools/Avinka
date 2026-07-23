@@ -535,6 +535,15 @@ function Blok({
   const bezig = periode.van <= vandaag && vandaag <= periode.tot;
   const vakantie = periode.eindigtMet;
 
+  // Zit je in deze periode, dan tel je af naar de vakantie erna — zo praten
+  // leerkrachten. Het getal loopt mee terwijl de periode vordert.
+  const restWeken = Math.max(0, periode.weken - schoolweken(periode.van, vandaag));
+  const naarVakantie = vakantie?.naam.toLowerCase() ?? "vakantie";
+  const aftellen =
+    restWeken === 0
+      ? `laatste week tot de ${naarVakantie}`
+      : `nog ${restWeken} ${restWeken === 1 ? "week" : "weken"} tot de ${naarVakantie}`;
+
   return (
     <div className="flex flex-col gap-4">
       <div
@@ -550,11 +559,12 @@ function Blok({
         >
           <span className="font-bold text-ink">{periode.naam}</span>
           <span className="text-sm text-ink/55">
-            {bereikTekst(periode.van, periode.tot)}, {periode.weken} weken
+            {bereikTekst(periode.van, periode.tot)}
+            {bezig ? "" : `, ${periode.weken} weken`}
           </span>
           {bezig && (
-            <span className="rounded-lg bg-brand-dark px-2 py-0.5 text-xs font-bold text-white">
-              hier zit je nu
+            <span className="rounded-lg bg-brand-dark px-2.5 py-1 text-sm font-bold text-white">
+              {aftellen}
             </span>
           )}
           <span className="ml-auto text-sm font-semibold text-ink/40">
