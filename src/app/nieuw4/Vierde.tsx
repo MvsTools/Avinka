@@ -1559,6 +1559,70 @@ function MarkeerInhoud({ donker = false }: { donker?: boolean }) {
    kaart `is-in`, dan lopen de regels één voor één af. Zonder beweging of
    zonder JS staat de eindstand er meteen. ──────────────────────────────── */
 
+/* ── De verfspetter achter de kaarten ──────────────────────────────────
+   Een grote onregelmatige groene vlek met losse spatten eromheen, zodat
+   de witte kaart ergens op ligt in plaats van in het niets te zweven.
+   Twee lagen: een donkerder afdruk die een paar pixels verschoven ligt,
+   en de vlek zelf erbovenop. Dat scheve tweede laagje is wat het redt van
+   een platte clipart-blob: het leest als drukwerk dat net niet perfect
+   uitgelijnd is. ────────────────────────────────────────────────────── */
+const SPETTER_PAD =
+  "M96,6 C120,2 132,22 144,36 C156,50 184,44 190,68 C196,92 172,100 174,120" +
+  " C176,140 198,156 182,172 C166,188 148,170 130,176 C112,182 104,198 84,194" +
+  " C64,190 66,170 52,160 C38,150 12,158 6,136 C0,114 24,106 26,88" +
+  " C28,70 8,54 22,40 C36,26 56,42 68,34 C80,26 72,10 96,6 Z";
+
+/* De losse spatten liggen aan de buitenkant en aan de boven- en onderkant:
+   precies de randen waar de vlek onder de kaart vandaan komt. Ellipsen en
+   geen rondjes, want een weggeschoten druppel is nooit precies rond. */
+const SPATTEN = [
+  { cx: 10, cy: 66, rx: 7, ry: 5 },
+  { cx: 1, cy: 98, rx: 3.2, ry: 2.6 },
+  { cx: 16, cy: 150, rx: 5, ry: 3.8 },
+  { cx: 74, cy: 5, rx: 5, ry: 3.4 },
+  { cx: 122, cy: 195, rx: 4.4, ry: 3.2 },
+];
+
+function SpetterVorm() {
+  return (
+    <>
+      <path d={SPETTER_PAD} />
+      {SPATTEN.map((s) => (
+        <ellipse key={`${s.cx}-${s.cy}`} cx={s.cx} cy={s.cy} rx={s.rx} ry={s.ry} />
+      ))}
+    </>
+  );
+}
+
+/* De vlek is net iets groter dan de kaart en ligt naar buiten geschoven: hij
+   piept langs de buitenrand, de boven- en de onderkant vandaan en blijft ver
+   weg van de tekstkolom ernaast. Bij de rechterkaart hetzelfde beeld,
+   gespiegeld, zodat de twee samen één gebaar vormen. */
+function Verfspetter({ spiegel = false }: { spiegel?: boolean }) {
+  return (
+    <div
+      aria-hidden
+      className={`verfspetter pointer-events-none absolute top-1/2 h-[120%] w-[116%] -translate-y-1/2 ${
+        spiegel ? "-right-[13%]" : "-left-[13%]"
+      }`}
+    >
+      <svg
+        viewBox="0 0 200 200"
+        preserveAspectRatio="none"
+        className={`h-full w-full ${spiegel ? "-scale-x-100" : ""}`}
+      >
+        {/* De verschoven onderafdruk. */}
+        <g style={{ fill: "var(--color-brand-dark)" }} opacity="0.2" transform="translate(6,7)">
+          <SpetterVorm />
+        </g>
+        <g style={{ fill: "var(--color-brand)" }}>
+          <SpetterVorm />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
 /* Wat er van jou op onze servers staat, en wat nadrukkelijk niet. */
 const BIJ_ONS = ["je e-mailadres", "je abonnement"];
 const NIET_BIJ_ONS = [
@@ -1570,10 +1634,9 @@ const NIET_BIJ_ONS = [
 
 function BewaarKaart() {
   return (
-    <div
-      data-reveal
-      className="bewaarkaart w-full max-w-md rounded-3xl bg-white p-7 shadow-[0_30px_60px_-38px_rgba(34,28,58,0.5)] ring-1 ring-black/5 sm:p-8"
-    >
+    <div data-reveal className="kaartblok relative w-full max-w-md">
+      <Verfspetter />
+      <div className="relative rounded-3xl bg-white p-7 shadow-[0_30px_70px_-30px_rgba(34,28,58,0.45)] ring-1 ring-black/5 sm:p-8">
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-ink/45">
         Wat er bij ons staat
       </p>
@@ -1605,6 +1668,7 @@ function BewaarKaart() {
           </li>
         ))}
       </ul>
+      </div>
     </div>
   );
 }
@@ -1618,10 +1682,9 @@ const KLAS_REST = 17;
 
 function KlassenlijstKaart() {
   return (
-    <div
-      data-reveal
-      className="klaskaart w-full max-w-md rounded-3xl bg-white p-7 shadow-[0_30px_60px_-38px_rgba(34,28,58,0.5)] ring-1 ring-black/5 sm:p-8 lg:ml-auto"
-    >
+    <div data-reveal className="kaartblok relative w-full max-w-md lg:ml-auto">
+      <Verfspetter spiegel />
+      <div className="relative rounded-3xl bg-white p-7 shadow-[0_30px_70px_-30px_rgba(34,28,58,0.45)] ring-1 ring-black/5 sm:p-8">
       <div className="flex items-baseline justify-between gap-3">
         <p className="font-display text-xl font-black tracking-tight">Groep 5</p>
         <p className="text-sm text-ink/50">{KLAS.length + KLAS_REST} leerlingen</p>
@@ -1656,6 +1719,7 @@ function KlassenlijstKaart() {
           en {KLAS_REST} anderen
         </span>
         <span className="w-32 shrink-0 border-l border-ink/10 bg-brand-soft/50" aria-hidden />
+      </div>
       </div>
     </div>
   );
@@ -2692,28 +2756,43 @@ function StijlBlok() {
         background: rgb(47 158 110 / 0.8);
         transform-origin: left center;
       }
-      .anim .bewaarkaart .wis-regel {
+      .anim .kaartblok .wis-regel {
         color: rgb(34 28 58 / 0.75);
         transition: color 0.45s ease;
         transition-delay: calc(0.4s + var(--i) * 0.13s);
       }
-      .anim .bewaarkaart.is-in .wis-regel { color: rgb(34 28 58 / 0.45); }
-      .anim .bewaarkaart .wis-woord::after {
+      .anim .kaartblok.is-in .wis-regel { color: rgb(34 28 58 / 0.45); }
+      .anim .kaartblok .wis-woord::after {
         transform: scaleX(0);
         transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
         transition-delay: calc(0.4s + var(--i) * 0.13s);
       }
-      .anim .bewaarkaart.is-in .wis-woord::after { transform: scaleX(1); }
+      .anim .kaartblok.is-in .wis-woord::after { transform: scaleX(1); }
 
       /* De klassenlijst: de rechterkolom schrijft zichzelf regel voor regel
          vol. De echte namen blijven staan, want die blijven bij jou. */
-      .anim .klaskaart .klasmasker {
+      .anim .kaartblok .klasmasker {
         opacity: 0;
         transform: translateX(-6px);
         transition: opacity 0.4s ease-out, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
         transition-delay: calc(0.35s + var(--i) * 0.11s);
       }
-      .anim .klaskaart.is-in .klasmasker { opacity: 1; transform: none; }
+      .anim .kaartblok.is-in .klasmasker { opacity: 1; transform: none; }
+
+      /* De verfspetter zet zich neer: hij komt net iets kleiner en scheef
+         binnen en veert op zijn plek, een tel vóór de regels aflopen.
+         Alleen schalen en draaien; het verticaal centreren doet Tailwind met
+         de losse translate-eigenschap, en die hoort hier niet overschreven
+         te worden (anders telt het dubbel en schiet de vlek omhoog). */
+      .anim .kaartblok .verfspetter {
+        opacity: 0;
+        transform: scale(0.82) rotate(-7deg);
+        transition: opacity 0.5s ease-out, transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .anim .kaartblok.is-in .verfspetter {
+        opacity: 1;
+        transform: none;
+      }
 
       @media (prefers-reduced-motion: reduce) {
         .anim [data-reveal] { opacity: 1; transform: none; transition: none; }
