@@ -93,7 +93,7 @@ export default function SchooljaarView({
       <div className="flex items-center gap-1 self-start rounded-2xl border border-black/5 bg-white p-1 shadow-sm">
         {(
           [
-            ["jaar", "Je jaar"],
+            ["jaar", "Jaaroverzicht"],
             ["agendas", agendas.length ? `Agenda's (${agendas.length})` : "Agenda koppelen"],
           ] as const
         ).map(([id, label]) => (
