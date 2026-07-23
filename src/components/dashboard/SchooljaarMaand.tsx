@@ -11,7 +11,7 @@ import {
   zijkantLabel,
 } from "@/lib/planning";
 import type { PlanningBron } from "@/lib/planning";
-import { ETIKET, STIP } from "./schooljaar-stijl";
+import { aftellenTotVakantie, ETIKET, STIP } from "./schooljaar-stijl";
 import SchooljaarDagkaart from "./SchooljaarDagkaart";
 
 // De maandweergave: hetzelfde jaar, maar dan als kalender. Handig om te zien
@@ -41,6 +41,10 @@ export default function SchooljaarMaand({
   const maand = Number(eerste.slice(5, 7)) - 1;
   const aantalDagen = new Date(Date.UTC(jaar, maand + 1, 0)).getUTCDate();
   const laatste = `${eerste.slice(0, 7)}-${String(aantalDagen).padStart(2, "0")}`;
+
+  // De aftelling hoort bij "nu", dus alleen als je naar de huidige maand kijkt.
+  const huidigePeriode = bron.periodes.find((p) => p.van <= vandaag && vandaag <= p.tot);
+  const toonAftellen = huidigePeriode && eerste.slice(0, 7) === vandaag.slice(0, 7);
 
   // Het rooster begint altijd op een maandag en loopt tot en met de week
   // waarin de laatste dag van de maand valt.
@@ -98,6 +102,11 @@ export default function SchooljaarMaand({
           >
             {binnenJaar ? "Naar vandaag" : "Naar het begin"}
           </button>
+        )}
+        {toonAftellen && (
+          <span className="text-sm font-semibold text-brand-dark">
+            {aftellenTotVakantie(huidigePeriode, vandaag)}
+          </span>
         )}
         <p className="ml-auto text-sm text-ink/50">Groen betekent geen les</p>
       </div>
