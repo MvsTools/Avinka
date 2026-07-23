@@ -443,9 +443,8 @@ export default function AgendaKoppelen({ agendas }: { agendas: AgendaBron[] }) {
       </div>
 
       <p className="max-w-xl text-sm leading-6 text-ink/55">
-        Zo&apos;n link is een sleutel tot jouw agenda. Hij staat versleuteld in je eigen account,
-        alleen jij kunt erbij, en je kunt hem met één klik intrekken. Namen van kinderen worden
-        afgeschermd voordat er iets wordt bewaard.
+        Je link staat versleuteld in je eigen account en namen van kinderen worden afgeschermd
+        voordat er iets wordt bewaard.
       </p>
     </div>
   );
