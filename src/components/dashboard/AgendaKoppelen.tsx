@@ -239,24 +239,26 @@ export default function AgendaKoppelen({ agendas }: { agendas: AgendaBron[] }) {
         </div>
       )}
 
-      {/* Heb je al gekoppeld, dan is de hele uitleg overbodig: dan volstaat een
-          kopje. Voor wie nog niets heeft, blijft het verhaal staan. */}
-      {bronnen.length > 0 ? (
-        <h3 className="text-lg font-bold text-ink">Nog een agenda koppelen?</h3>
-      ) : (
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-ink">
-            Koppel de agenda van je school
-          </h2>
-          <p className="mt-1.5 max-w-xl leading-7 text-ink/70">
-            Plak één link en je hele schooljaar staat er. Studiedagen, rapporten, gesprekken. Je
-            mag er zoveel toevoegen als je wilt, want bij de meeste scholen staat niet alles op één
-            plek.
-          </p>
-        </div>
-      )}
+      {/* Het kopje hoort bij de lijst eronder, dus die twee staan dicht op
+          elkaar. Heb je al gekoppeld, dan is de hele uitleg overbodig: dan
+          volstaat een kopje. Voor wie nog niets heeft blijft het verhaal staan. */}
+      <div className="flex flex-col gap-3">
+        {bronnen.length > 0 ? (
+          <h3 className="text-lg font-bold text-ink">Nog een agenda koppelen?</h3>
+        ) : (
+          <div className="mb-1">
+            <h2 className="text-2xl font-bold tracking-tight text-ink">
+              Koppel de agenda van je school
+            </h2>
+            <p className="mt-1.5 max-w-xl leading-7 text-ink/70">
+              Plak één link en je hele schooljaar staat er. Studiedagen, rapporten, gesprekken. Je
+              mag er zoveel toevoegen als je wilt, want bij de meeste scholen staat niet alles op
+              één plek.
+            </p>
+          </div>
+        )}
 
-      <div className="overflow-hidden rounded-3xl border border-black/5 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-3xl border border-black/5 bg-white shadow-sm">
         {AANBIEDERS.map((b, i) => {
           const uit = open === b.id;
           return (
@@ -421,8 +423,9 @@ export default function AgendaKoppelen({ agendas }: { agendas: AgendaBron[] }) {
                 </div>
               </div>
             </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       <p className="max-w-xl text-sm leading-6 text-ink/55">
