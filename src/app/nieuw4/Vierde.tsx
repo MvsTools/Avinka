@@ -1584,10 +1584,10 @@ function MarkeerInhoud({ donker = false }: { donker?: boolean }) {
 
 /* ── De verbindingspijl ─────────────────────────────────────────────────
    De zin "De tools werken samen" stond te los onder de galerij. Een met de
-   hand getekende amberpijl vult de lege ruimte links van de tekst en wijst
-   ernaar; hij tekent zichzelf terwijl je scrolt, zoals iemand die er in de
-   kantlijn een pijltje bij zet. De schacht komt het eerst, het pijlpuntje
-   flikt er als laatste bij.
+   hand getekende groene pijl (merkkleur) vult de lege ruimte links van de
+   tekst en wijst ernaar; hij tekent zichzelf terwijl je scrolt, zoals iemand
+   die er in de kantlijn een pijltje bij zet. De schacht komt het eerst, met
+   onderweg één speelse lus, en het pijlpuntje flikt er als laatste bij.
    Klein en met een doel (verbinden), geen nieuw bewegingsnummer. Alleen op
    grote schermen: op mobiel staat de tekst al vlak onder de galerij en is er
    niets te overbruggen. Zonder JS of bij verminderde beweging staat de pijl
@@ -1651,16 +1651,16 @@ function ToolsPijl() {
     <div
       ref={wrap}
       aria-hidden
-      className="pointer-events-none absolute left-4 -top-6 hidden h-64 w-[20rem] text-accent lg:block"
+      className="pointer-events-none absolute left-2 -top-4 hidden h-[19rem] w-[19rem] text-brand-dark lg:block"
     >
-      <svg viewBox="0 0 300 260" fill="none" className="h-full w-full">
-        {/* De schacht komt van boven, uit de richting van de galerij, en
-           daalt af naar de kop: zo overbrugt hij het gat tussen de tools en
-           de zin eronder in plaats van de kop met zijn eigen tekst te
-           verbinden. */}
+      <svg viewBox="0 0 300 300" fill="none" className="h-full w-full">
+        {/* De schacht komt van boven, uit de richting van de galerij, draait
+           onderweg één speelse lus en wijst dan naar de kop. De lus is het
+           handgeschreven-gebaar dat de eigenaar wilde; het pijlpunt houdt
+           bewust afstand tot de tekst in plaats van er tegenaan te zitten. */}
         <path
           ref={schacht}
-          d="M26 18 C 70 118 150 156 210 140 C 246 130 268 132 290 136"
+          d="M152 16 C 92 44 60 104 96 150 C 128 190 182 168 170 122 C 162 92 120 96 116 128 C 110 172 156 214 214 206 C 244 202 268 206 288 210"
           pathLength={1}
           strokeDasharray={1}
           strokeDashoffset={0}
@@ -1671,7 +1671,7 @@ function ToolsPijl() {
         />
         <path
           ref={punt}
-          d="M266 114 L293 137 L268 162"
+          d="M266 190 L292 211 L270 234"
           pathLength={1}
           strokeDasharray={1}
           strokeDashoffset={0}
