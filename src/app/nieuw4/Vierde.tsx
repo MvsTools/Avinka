@@ -1666,29 +1666,44 @@ function Slinger() {
       const x = (v: number) => v - s.left;
       const y = (v: number) => v - s.top;
 
-      /* De route: linksboven beginnen, twee keer achter kaart 1 door, in de
-         vrije baan tussen de twee tekstblokken naar rechts en omlaag, dan
-         twee keer achter kaart 2 door, en onder die kaart naar buiten. De
-         bochten liggen telkens nét naast de kaart, in de vrije ruimte, dus
-         je ziet dat het één lijn is die terugkeert.
-         De baan tussen de kaarten blijft hoog tot voorbij de tekst links,
-         zodat hij daar overheen duikt en er niet doorheen loopt. */
-      const gat = y(k2.top) - y(k1.bottom);
-      const d = vloeiend([
-        [Math.max(28, x(k1.left) - 178), Math.max(30, y(k1.top) - 120)],
-        [x(k1.left) - 58, y(k1.top) + k1.height * 0.26],
-        [x(k1.right) + 58, y(k1.top) + k1.height * 0.4],
-        [x(k1.right) + 148, y(k1.top) + k1.height * 0.74],
-        [x(k1.left) - 56, y(k1.bottom) - k1.height * 0.1],
-        [x(k1.left) - 128, y(k1.bottom) + gat * 0.34],
-        [x(k1.right) + 10, y(k1.bottom) + gat * 0.72],
-        [x(k2.left) - 68, y(k2.top) + k2.height * 0.22],
-        [x(k2.right) + 58, y(k2.top) + k2.height * 0.42],
-        [x(k2.right) + 148, y(k2.top) + k2.height * 0.76],
-        [x(k2.left) - 56, y(k2.bottom) - k2.height * 0.1],
-        [x(k2.left) - 120, y(k2.bottom) + 54],
-        [x(k2.right) + 40, y(k2.bottom) + 98],
-      ]);
+      /* De baan is geen reeks losse hoekpunten meer maar één berekende golf
+         die van boven naar beneden stroomt. Daardoor is de kromming overal
+         gelijk: hij kan nergens knikken, want er zit geen enkel punt in waar
+         twee losse bochten op elkaar moeten aansluiten.
+         De golf zakt altijd door (x hangt af van y), dus hij keert nooit
+         terug naar boven; dat is precies wat een lijn rustig maakt.
+         De middenlijn schuift van kaart 1 naar kaart 2 en doet dat volledig
+         binnen de vrije band tussen de twee kaarten, waar geen tekst staat.
+         Boven die band ligt de golf dus links bij kaart 1 en eronder rechts
+         bij kaart 2, en raakt hij de tekstkolommen nergens. */
+      const yBoven = y(k1.top) - 96;
+      const yOnder = y(k2.bottom) + 96;
+      const mid1 = x(k1.left) + k1.width / 2;
+      const mid2 = x(k2.left) + k2.width / 2;
+      const gatVan = y(k1.bottom);
+      const gatTot = y(k2.top);
+      // Zover reikt de golf opzij: voorbij de kaartrand, zodat hij er echt
+      // onderuit komt in plaats van er net achter te blijven.
+      const uitslag = Math.max(k1.width, k2.width) / 2 + 96;
+
+      const punten: Array<[number, number]> = [];
+      const stappen = 48;
+      for (let i = 0; i <= stappen; i += 1) {
+        const u = i / stappen;
+        const yy = yBoven + (yOnder - yBoven) * u;
+        const g = Math.min(1, Math.max(0, (yy - gatVan) / (gatTot - gatVan)));
+        const zacht = g * g * (3 - 2 * g);
+        const middenlijn = mid1 + (mid2 - mid1) * zacht;
+        // Tweeënhalve slag over de hele hoogte: dat is ongeveer één heen en
+        // weer per kaart. De uitslag ademt een beetje mee, anders leest het
+        // als een gedrukte sinus in plaats van als een getrokken lijn.
+        const adem = 0.84 + 0.16 * Math.sin(u * Math.PI * 1.7 + 0.6);
+        punten.push([
+          middenlijn + uitslag * adem * Math.sin(u * Math.PI * 5 - Math.PI / 2),
+          yy,
+        ]);
+      }
+      const d = vloeiend(punten);
       setPad((oud) => (oud === d ? oud : d));
       setMaat((oud) =>
         oud && oud.w === s.width && oud.h === s.height ? oud : { w: s.width, h: s.height },
