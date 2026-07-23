@@ -1602,8 +1602,8 @@ function Verfspetter({ spiegel = false }: { spiegel?: boolean }) {
   return (
     <div
       aria-hidden
-      className={`verfspetter pointer-events-none absolute top-1/2 h-[120%] w-[116%] -translate-y-1/2 ${
-        spiegel ? "-right-[13%]" : "-left-[13%]"
+      className={`verfspetter pointer-events-none absolute top-1/2 h-[132%] w-[132%] -translate-y-1/2 ${
+        spiegel ? "-right-[19%]" : "-left-[19%]"
       }`}
     >
       <svg
@@ -1634,36 +1634,36 @@ const NIET_BIJ_ONS = [
 
 function BewaarKaart() {
   return (
-    <div data-reveal className="kaartblok relative w-full max-w-md">
+    <div data-reveal className="kaartblok relative w-full max-w-xs">
       <Verfspetter />
-      <div className="relative rounded-3xl bg-white p-7 shadow-[0_30px_70px_-30px_rgba(34,28,58,0.45)] ring-1 ring-black/5 sm:p-8">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-ink/45">
+      <div className="relative rounded-2xl bg-white p-6 shadow-[0_26px_60px_-28px_rgba(34,28,58,0.45)] ring-1 ring-black/5">
+      <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-ink/45">
         Wat er bij ons staat
       </p>
-      <ul className="mt-5 space-y-3.5">
+      <ul className="mt-4 space-y-2.5">
         {BIJ_ONS.map((regel) => (
-          <li key={regel} className="flex items-center gap-3 text-lg font-bold text-ink">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-dark">
-              <Vink className="h-3.5 w-3.5" dik={3.8} />
+          <li key={regel} className="flex items-center gap-2.5 font-bold text-ink">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-dark">
+              <Vink className="h-3 w-3" dik={4} />
             </span>
             {regel}
           </li>
         ))}
       </ul>
 
-      <div className="my-7 border-t border-dashed border-ink/20" aria-hidden />
+      <div className="my-5 border-t border-dashed border-ink/20" aria-hidden />
 
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-ink/45">
+      <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-ink/45">
         En verder niets
       </p>
-      <ul className="mt-5 space-y-3.5">
+      <ul className="mt-4 space-y-2.5">
         {NIET_BIJ_ONS.map((regel, i) => (
           <li
             key={regel}
             style={{ "--i": i } as CSSProperties}
-            className="wis-regel flex items-center gap-3 text-lg"
+            className="wis-regel flex items-center gap-2.5"
           >
-            <span className="h-6 w-6 shrink-0" aria-hidden />
+            <span className="h-5 w-5 shrink-0" aria-hidden />
             <span className="wis-woord">{regel}</span>
           </li>
         ))}
@@ -1677,24 +1677,24 @@ function BewaarKaart() {
    Links wat op jouw apparaat blijft staan, rechts wat de AI ervan te zien
    krijgt. De rechterkolom schrijft zichzelf regel voor regel vol, zodat je
    niet één naam ziet veranderen maar een hele klas tegelijk. */
-const KLAS = ["Sofie", "Daan", "Iris", "Mees", "Noor", "Luuk", "Fenna"];
-const KLAS_REST = 17;
+const KLAS = ["Sofie", "Daan", "Iris", "Mees", "Noor"];
+const KLAS_REST = 19;
 
 function KlassenlijstKaart() {
   return (
-    <div data-reveal className="kaartblok relative w-full max-w-md lg:ml-auto">
+    <div data-reveal className="kaartblok relative w-full max-w-xs lg:ml-auto">
       <Verfspetter spiegel />
-      <div className="relative rounded-3xl bg-white p-7 shadow-[0_30px_70px_-30px_rgba(34,28,58,0.45)] ring-1 ring-black/5 sm:p-8">
+      <div className="relative rounded-2xl bg-white p-6 shadow-[0_26px_60px_-28px_rgba(34,28,58,0.45)] ring-1 ring-black/5">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="font-display text-xl font-black tracking-tight">Groep 5</p>
-        <p className="text-sm text-ink/50">{KLAS.length + KLAS_REST} leerlingen</p>
+        <p className="font-display text-lg font-black tracking-tight">Groep 5</p>
+        <p className="text-xs text-ink/50">{KLAS.length + KLAS_REST} leerlingen</p>
       </div>
 
       {/* Op een smal scherm valt het linkerkopje over twee regels; met een
          gedeelde onderlijn blijven de twee kopjes toch netjes op één hoogte. */}
-      <div className="mt-6 flex items-end gap-4 text-[0.65rem] font-bold uppercase tracking-[0.14em]">
+      <div className="mt-5 flex items-end gap-3 text-[0.6rem] font-bold uppercase tracking-[0.12em]">
         <span className="flex-1 text-ink/45">Op jouw apparaat</span>
-        <span className="w-32 shrink-0 pl-4 text-brand-dark">De AI ziet</span>
+        <span className="w-[6.5rem] shrink-0 pl-3 text-brand-dark">De AI ziet</span>
       </div>
 
       <ul className="mt-2">
@@ -1702,10 +1702,10 @@ function KlassenlijstKaart() {
           <li
             key={naam}
             style={{ "--i": i } as CSSProperties}
-            className="flex items-stretch gap-4 border-t border-ink/[0.07] text-base sm:text-lg"
+            className="flex items-stretch gap-3 border-t border-ink/[0.07]"
           >
-            <span className="flex-1 py-2.5 font-semibold text-ink">{naam}</span>
-            <span className="w-32 shrink-0 border-l border-ink/10 bg-brand-soft/50 py-2.5 pl-4 font-semibold text-brand-dark">
+            <span className="flex-1 py-2 font-semibold text-ink">{naam}</span>
+            <span className="w-[6.5rem] shrink-0 border-l border-ink/10 bg-brand-soft/50 py-2 pl-3 font-semibold text-brand-dark">
               <span className="klasmasker">
                 leerling {String.fromCharCode(65 + i)}
               </span>
@@ -1714,11 +1714,11 @@ function KlassenlijstKaart() {
         ))}
       </ul>
 
-      <div className="flex gap-4 border-t border-ink/[0.07]">
-        <span className="flex-1 py-2.5 text-sm text-ink/50">
+      <div className="flex gap-3 border-t border-ink/[0.07]">
+        <span className="flex-1 py-2 text-xs text-ink/50">
           en {KLAS_REST} anderen
         </span>
-        <span className="w-32 shrink-0 border-l border-ink/10 bg-brand-soft/50" aria-hidden />
+        <span className="w-[6.5rem] shrink-0 border-l border-ink/10 bg-brand-soft/50" aria-hidden />
       </div>
       </div>
     </div>
