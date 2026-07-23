@@ -226,13 +226,19 @@ weekend, vakantie, meerdaagse afspraak, dubbele afspraak, week met een
 studiedag erin). De berekende schooljaargrenzen voor regio midden komen exact
 uit op de datums die in de schets stonden: 31-8-2026 tot 16-7-2027.
 
-### Fase 1 — Mijn schooljaar in de balk, met de Jaar-laag
+### Fase 1 — Mijn schooljaar in de balk, met de Jaar-laag — **AF (23-7-2026)**
 - Nieuw nav-item + route `/dashboard/schooljaar`.
 - Schets omgezet naar echt scherm: jaar (lijst + maand) op echte gegevens uit
   `agenda_items`, plus het koppelscherm als eigen tabblad.
 - **Meerdere agenda's** + de dubbelingen-samenvoeging uit §3.1.
 - Lege staat: geen agenda gekoppeld → uitnodigend beginscherm.
 - `src/app/jaar-schets/` verdwijnt.
+
+Gebouwd: `src/app/dashboard/schooljaar/page.tsx` (haalt alles op de server op),
+`SchooljaarView.tsx` (schil + jaar als lijst), `SchooljaarMaand.tsx` (kalender +
+dagpaneel), `AgendaKoppelen.tsx`, `schooljaar-stijl.ts` (één plek voor hoe een
+soort afspraak eruitziet), `src/lib/planning/dubbelingen.ts`. Menu-item in
+`DashboardNav.tsx`, direct onder Start.
 
 ### Fase 2 — het basisrooster komt naar binnen
 - Van losse `public/tools/weekplanning.html` naar de Week-laag binnen Mijn
