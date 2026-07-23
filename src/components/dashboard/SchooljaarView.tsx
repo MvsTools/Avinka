@@ -238,41 +238,95 @@ function Feiten({
   loopt: boolean;
 }) {
   const { schooljaar, periodes, items } = bron;
-  const peil = loopt ? vandaag : schooljaar.start;
+  const nogNietBegonnen = vandaag < schooljaar.start;
+  const voorbij = vandaag > schooljaar.eind;
 
+  // "over X weken" reken je vanaf vandaag, niet vanaf het begin van het jaar.
+  // Anders zegt hij midden in de zomervakantie "volgende vakantie over 7 weken"
+  // terwijl het schooljaar zelf nog moet beginnen.
+  const wekenVanafNu = (datum: string) => Math.max(1, Math.round(verschil(vandaag, datum) / 7));
+
+  // Een afgelopen jaar heeft geen "hierna" meer. Dan een korte terugblik in
+  // plaats van een volgende-vakantie die nergens meer op slaat.
+  if (voorbij) {
+    const echt = items.filter((i) => !i.dubbelVan);
+    return (
+      <FeitenRij
+        feiten={[
+          {
+            label: "Vakanties",
+            groot: `${schooljaar.vakanties.length}`,
+            klein: "dit schooljaar",
+          },
+          {
+            label: "Dagen zonder les",
+            groot: `${new Set(echt.filter((i) => i.soort === "vrij").map((i) => i.datum)).size}`,
+            klein: "studiedagen en vrije dagen",
+          },
+          {
+            label: "Afspraken",
+            groot: `${echt.filter((i) => i.soort !== "vakantie" && i.soort !== "vrij").length}`,
+            klein: "gesprekken, toetsen, activiteiten",
+          },
+        ]}
+      />
+    );
+  }
+
+  // Vanaf welk moment kijken we vooruit: bij een lopend jaar vandaag, bij een
+  // jaar dat nog moet beginnen de eerste schooldag.
+  const peil = nogNietBegonnen ? schooljaar.start : vandaag;
   const vakantie = schooljaar.vakanties.find((v) => v.van > peil);
   const vrijeDag = items.find(
     (i) => !i.dubbelVan && i.soort === "vrij" && i.datum >= peil && i.datum <= schooljaar.eind,
   );
   const periode = periodes.find((p) => peil >= p.van && peil <= p.tot);
 
-  // De drukste week die nog komt: waar de meeste afspraken op één week vallen.
   const perWeek = new Map<string, number>();
   for (const i of items) {
     if (i.dubbelVan || i.datum < peil || i.datum > schooljaar.eind) continue;
     if (i.soort === "vakantie" || i.soort === "vrij") continue;
-    const week = maandagVan(i.datum);
-    perWeek.set(week, (perWeek.get(week) ?? 0) + 1);
+    perWeek.set(maandagVan(i.datum), (perWeek.get(maandagVan(i.datum)) ?? 0) + 1);
   }
   const drukste = [...perWeek.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
 
-  const feiten = [
-    {
-      label: "Volgende vakantie",
-      groot: vakantie ? vakantie.naam : "geen meer dit jaar",
-      klein: vakantie ? `over ${Math.max(1, Math.round(verschil(peil, vakantie.van) / 7))} weken` : "",
-    },
-    {
-      label: "Volgende dag zonder les",
-      groot: vrijeDag ? volledig(vrijeDag.datum).replace(/ \d{4}$/, "") : "nog niet bekend",
-      klein: vrijeDag ? vrijeDag.titel : "studiedagen staan in je schoolagenda",
-    },
-    {
-      label: "Drukste week hierna",
-      groot: drukste ? bereikTekst(drukste[0], plus(drukste[0], 4)) : "nog rustig",
-      klein: drukste ? `${drukste[1]} dingen in die week` : "",
-    },
-  ];
+  // Zit je nog in de zomervakantie, dan is het eerste dat telt: wanneer begint
+  // het weer. Loopt het jaar, dan kijk je naar de volgende vakantie.
+  const feiten = nogNietBegonnen
+    ? [
+        {
+          label: "Schooljaar begint",
+          groot: volledig(schooljaar.start).replace(/ \d{4}$/, ""),
+          klein: `over ${wekenVanafNu(schooljaar.start)} weken`,
+        },
+        {
+          label: "Eerste vakantie",
+          groot: vakantie ? vakantie.naam : "—",
+          klein: vakantie ? `over ${wekenVanafNu(vakantie.van)} weken` : "",
+        },
+        {
+          label: "Eerste dag zonder les",
+          groot: vrijeDag ? volledig(vrijeDag.datum).replace(/ \d{4}$/, "") : "nog niet bekend",
+          klein: vrijeDag ? vrijeDag.titel : "studiedagen staan in je schoolagenda",
+        },
+      ]
+    : [
+        {
+          label: "Volgende vakantie",
+          groot: vakantie ? vakantie.naam : "geen meer dit jaar",
+          klein: vakantie ? `over ${wekenVanafNu(vakantie.van)} weken` : "",
+        },
+        {
+          label: "Volgende dag zonder les",
+          groot: vrijeDag ? volledig(vrijeDag.datum).replace(/ \d{4}$/, "") : "nog niet bekend",
+          klein: vrijeDag ? vrijeDag.titel : "studiedagen staan in je schoolagenda",
+        },
+        {
+          label: "Drukste week hierna",
+          groot: drukste ? bereikTekst(drukste[0], plus(drukste[0], 4)) : "nog rustig",
+          klein: drukste ? `${drukste[1]} dingen in die week` : "",
+        },
+      ];
 
   return (
     <div className="flex flex-col gap-4">
@@ -284,15 +338,25 @@ function Feiten({
           {periode.eindigtMet?.naam.toLowerCase() ?? "vakantie"}.
         </p>
       )}
-      <div className="grid gap-px overflow-hidden rounded-3xl border border-black/5 bg-black/5 shadow-sm sm:grid-cols-3">
-        {feiten.map((f) => (
-          <div key={f.label} className="bg-white px-5 py-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-ink/40">{f.label}</p>
-            <p className="mt-1.5 text-lg font-bold leading-tight text-ink">{f.groot}</p>
-            {f.klein && <p className="mt-0.5 text-sm text-ink/55">{f.klein}</p>}
-          </div>
-        ))}
-      </div>
+      <FeitenRij feiten={feiten} />
+    </div>
+  );
+}
+
+function FeitenRij({
+  feiten,
+}: {
+  feiten: { label: string; groot: string; klein: string }[];
+}) {
+  return (
+    <div className="grid gap-px overflow-hidden rounded-3xl border border-black/5 bg-black/5 shadow-sm sm:grid-cols-3">
+      {feiten.map((f) => (
+        <div key={f.label} className="bg-white px-5 py-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-ink/40">{f.label}</p>
+          <p className="mt-1.5 text-lg font-bold leading-tight text-ink">{f.groot}</p>
+          {f.klein && <p className="mt-0.5 text-sm text-ink/55">{f.klein}</p>}
+        </div>
+      ))}
     </div>
   );
 }
