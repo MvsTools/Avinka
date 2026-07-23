@@ -1191,32 +1191,25 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           </div>
         </section>
 
-        {/* ── 5. De regie blijft bij jou. Drie witte kaartjes naast elkaar:
-           bewust een ander ritme dan de sectie hierboven, waar de kaarten
-           juist naast de tekst staan. Op een smal scherm vallen ze onder
+        {/* ── 5. De regie blijft bij jou. Drie witte kaartjes naast elkaar,
+           zonder kop en zonder iconen: op deze plek in de pagina hoort rust,
+           dus de kaartjes moeten het met woorden en witruimte doen. Bewust
+           een ander ritme dan de sectie hierboven, waar de kaarten juist
+           naast de tekst staan. Op een smal scherm vallen ze onder
            elkaar. ── */}
         <section className="mx-auto w-full max-w-5xl px-6 py-24">
-          <h2
-            data-reveal
-            className="font-display text-4xl font-black tracking-tight [text-wrap:balance]"
-          >
-            Jij houdt het laatste woord
-          </h2>
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-3">
             {REGIE.map((kaart, i) => (
               <div
                 key={kaart.titel}
                 data-reveal
                 style={{ transitionDelay: `${i * 90}ms` }}
-                className="rounded-2xl bg-white p-6 shadow-[0_22px_50px_-30px_rgba(34,28,58,0.4)] ring-1 ring-black/5"
+                className="rounded-2xl bg-white p-8 shadow-[0_12px_34px_-26px_rgba(34,28,58,0.5)] ring-1 ring-ink/[0.06]"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand-dark">
-                  <Vink className="h-4 w-4" dik={3.6} />
-                </span>
-                <h3 className="mt-4 font-display text-xl font-black tracking-tight [text-wrap:balance]">
+                <h3 className="font-display text-xl font-bold tracking-tight [text-wrap:balance]">
                   {kaart.titel}
                 </h3>
-                <p className="mt-2.5 leading-7 text-ink/70">{kaart.tekst}</p>
+                <p className="mt-3 leading-7 text-ink/65">{kaart.tekst}</p>
               </div>
             ))}
           </div>
