@@ -1076,33 +1076,82 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
 
           <ToolRail />
 
-          {/* Het zand zakt onderaan al in het groen van de doorloop, zodat de
-             sprong naar de volgende sectie geen rand meer is maar een
-             overgang. Staat hier en niet op het groen zelf: daar zou de waas
-             over het mozaïek heen liggen. */}
-          <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-36"
-            style={{
-              // Het groen is al vol op driekwart en blijft dat: liep het
-              // verloop tot de laatste pixel door, dan scheelde de onderste
-              // rand nog een paar procent zand en zag je daar alsnog een naad.
-              backgroundImage: `linear-gradient(to bottom, rgba(244,236,219,0) 0%, ${DOORLOOP_GROEN} 74%, ${DOORLOOP_GROEN} 100%)`,
-            }}
-            aria-hidden
-          />
+          {/* ── Het rustpunt. Na de film, de stift, de vinkjes en de
+             sleepbare galerij is dit de eerste plek waar niets beweegt:
+             alleen tekst, rechts gezet waar al het andere links begint. Wat
+             de galerij niet laat zien, staat hier in twee alinea's: de
+             kaarten horen bij elkaar, en er komt steeds meer bij. Bewust
+             zonder toolnamen, zodat dit blijft kloppen bij elke tool die er
+             nog bij komt. ── */}
+          <div className="relative mx-auto w-full max-w-5xl px-6 pt-24 lg:pt-28">
+            <div className="ml-auto max-w-2xl">
+              <h2
+                data-reveal
+                className="font-display text-4xl font-black tracking-tight [text-wrap:balance]"
+              >
+                De tools werken samen
+              </h2>
+              <p
+                data-reveal
+                style={{ transitionDelay: "90ms" }}
+                className="mt-7 text-lg leading-8 text-ink/70"
+              >
+                Binnen Avinka wordt er veel werk voor je uit handen genomen. De
+                tools staan niet los van elkaar maar werken samen aan hetzelfde
+                resultaat.
+              </p>
+              <p
+                data-reveal
+                style={{ transitionDelay: "160ms" }}
+                className="mt-5 text-lg leading-8 text-ink/70"
+              >
+                Je stelt één keer in hoe jij werkt en daar houdt alles rekening
+                mee. En het platform groeit mee: er komt steeds meer bij, zonder
+                dat je opnieuw hoeft uit te zoeken hoe het werkt.
+              </p>
+            </div>
+          </div>
         </section>
 
-        {/* ── 4. Wat de galerij niet laat zien: de tools staan niet los.
-           En waar dat ophoudt. ── */}
-        <Doorloop />
-
-        {/* ── 5. Privacy, zichtbaar gemaakt ── */}
+        {/* ── 4. Privacy, zichtbaar gemaakt. Het donkere hoofdstuk opent met
+           wat we bewust níét doen: de eerlijkheid eerst, dan het bewijs. ── */}
         <section className="relative overflow-hidden bg-ink text-cream">
           {/* De gloed begint binnen de sectie: stond hij hoger, dan sneed
              overflow-hidden hem af en zag je een streep tegen het donkere
              blok erboven. */}
           <div className="pointer-events-none absolute -left-24 top-10 h-80 w-80 rounded-full bg-brand/20 blur-3xl" aria-hidden />
-          <div className="relative mx-auto grid w-full max-w-5xl items-center gap-12 px-6 py-24 lg:grid-cols-2">
+
+          {/* De bekentenis. Wat je hierboven nergens kon opslaan, wordt hier
+             uitgesproken vóórdat we over maskering beginnen: eerst toegeven
+             wat het kost, dan pas vertellen wat het beschermt. */}
+          <div className="relative mx-auto w-full max-w-5xl px-6 pt-24">
+            <div className="max-w-2xl">
+              <p
+                data-reveal
+                className="font-display text-[clamp(1.6rem,3.1vw,2.35rem)] font-black leading-[1.15] tracking-tight text-white [text-wrap:balance]"
+              >
+                Er is één ding dat we bewust niet doen.
+              </p>
+              <p
+                data-reveal
+                style={{ transitionDelay: "90ms" }}
+                className="mt-7 text-lg leading-8 text-cream/80"
+              >
+                Gegevens van leerlingen bewaren we niet. Daardoor kun je niet
+                alles terugvinden wat je gemaakt hebt. Het staat bij jou en
+                niet bij ons.
+              </p>
+              <p
+                data-reveal
+                style={{ transitionDelay: "160ms" }}
+                className="mt-7 text-lg font-bold leading-8 text-white"
+              >
+                Onhandig? Soms. Maar privacy weegt voor ons het zwaarst.
+              </p>
+            </div>
+          </div>
+
+          <div className="relative mx-auto grid w-full max-w-5xl items-center gap-12 px-6 pb-24 pt-16 lg:grid-cols-2">
             <div data-reveal>
               <h2 className="font-display text-4xl font-black tracking-tight text-white [text-wrap:balance]">
                 Namen blijven thuis
@@ -1142,7 +1191,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           </div>
         </section>
 
-        {/* ── 6. De regie blijft bij jou ── */}
+        {/* ── 5. De regie blijft bij jou ── */}
         <section className="mx-auto w-full max-w-5xl px-6 py-24">
           <div className="grid gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-16">
             <div data-reveal>
@@ -1181,7 +1230,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           </div>
         </section>
 
-        {/* ── 7. De maker ── */}
+        {/* ── 6. De maker ── */}
         <section className="mx-auto w-full max-w-5xl px-6 pb-24">
           <div data-reveal className="relative overflow-hidden rounded-[2rem] bg-sand px-8 py-14 sm:px-14">
             <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-accent/15 blur-2xl" aria-hidden />
@@ -1229,7 +1278,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           </div>
         </section>
 
-        {/* ── 8. Eerlijk over ervaringen ── */}
+        {/* ── 7. Eerlijk over ervaringen ── */}
         <section className="border-y border-black/5 bg-white">
           <div className="mx-auto w-full max-w-3xl px-6 py-16 text-center">
             <h2 data-reveal className="font-display text-3xl font-black tracking-tight [text-wrap:balance]">
@@ -1243,10 +1292,10 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           </div>
         </section>
 
-        {/* ── 9. Prijzen ── */}
+        {/* ── 8. Prijzen ── */}
         <Prijzen />
 
-        {/* ── 10. Veelgestelde vragen ── */}
+        {/* ── 9. Veelgestelde vragen ── */}
         <section id="vragen" className="scroll-mt-16 bg-white">
           <div className="mx-auto w-full max-w-3xl px-6 py-24">
             <h2 className="text-center font-display text-4xl font-black tracking-tight [text-wrap:balance]">
@@ -1293,7 +1342,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           </div>
         </section>
 
-        {/* ── 11. Slot ── */}
+        {/* ── 10. Slot ── */}
         <section className="relative overflow-hidden bg-ink">
           <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-brand/25 blur-3xl" aria-hidden />
           <div className="pointer-events-none absolute -bottom-24 -left-20 h-80 w-80 rounded-full bg-accent/15 blur-3xl" aria-hidden />
@@ -1536,377 +1585,6 @@ function RailKop() {
         </p>
       </div>
     </div>
-  );
-}
-
-/* ── De doorloop ────────────────────────────────────────────────────────
-   Het blok onder de galerij. De galerij laat losse kaarten zien; hier staat
-   wat je daar niet aan af kunt lezen, namelijk dat ze bij elkaar horen en
-   dat er steeds iets bij komt.
-   Twee dingen dragen de sectie. Ten eerste de kleur: de pagina zakt hier van
-   zand naar diepgroen naar inkt, zodat het serieuzer worden van het verhaal
-   iets is dat je voelt in plaats van leest. Ten tweede het mozaïek: terwijl
-   je scrolt legt het zichzelf tegel voor tegel, het loopt aan de rechterkant
-   gewoon door van het scherm af (er komt steeds meer bij, we noemen nooit
-   een aantal) en er blijft één plek open. Die open plek is wat we niet
-   bewaren, en daarmee de opmaat naar de privacysectie eronder.
-   Zonder JS of bij verminderde beweging ligt het mozaïek er gewoon. ────── */
-
-/* Het diepgroen zit tussen brand-dark en de inkt in: donker genoeg voor wit
-   op 5,9:1 en crème op 5,5:1, en het maakt van zand → groen → inkt een
-   afdaling in plaats van twee losse vlakken. */
-const DOORLOOP_GROEN = "#1e7149";
-
-/* Het mozaïek: een wand van kleine tegels. Klein en veel, niet groot en
-   weinig, want pas bij veel tegels wordt het een veld dat de diepte in loopt
-   in plaats van een stapel plakken.
-   Alles wordt uit de index gerekend en niets uit toeval, zodat de wand er bij
-   elke bezoeker hetzelfde uitziet. Elke tegel staat een graad scheef met een
-   eigen ronding: een raster van identieke rechthoeken leest als een scherm
-   dat nog moet laden. Eén plek is een gat in de wand, dichtbij en links,
-   waar je kijkt voordat de verte oplost. Dat is wat we niet bewaren. */
-const WAND_KOL = 8;
-const WAND_RIJ = 6;
-const WAND_KLEUREN = [
-  "bg-cream",
-  "bg-sand",
-  "bg-cream",
-  "bg-brand-soft",
-  "bg-sand",
-  "bg-cream",
-  "bg-cream",
-  "bg-sand",
-];
-const WAND_OPEN = 2 * WAND_KOL + 1; // derde rij, tweede kolom: dichtbij en in beeld
-
-const TEGELS = Array.from({ length: WAND_KOL * WAND_RIJ }, (_, i) => {
-  const kol = i % WAND_KOL;
-  const rij = Math.floor(i / WAND_KOL);
-  return {
-    kol,
-    rij,
-    open: i === WAND_OPEN,
-    kleur: WAND_KLEUREN[(i * 3 + rij * 5) % WAND_KLEUREN.length],
-    draai: (((i * 37) % 7) - 3) * 0.5,
-    rond: ["0.7rem", "0.85rem", "0.6rem", "0.78rem"][i % 4],
-  };
-});
-
-/* De reis van het kaartje: de wand krijgt een hoofdpersoon. Eén klein
-   document begint diep in de verte en wordt tijdens het scrollen van tegel
-   naar tegel doorgegeven; vooraan aangekomen krijgt het zijn vinkje. Dát is
-   "de tools werken samen" als beweging in plaats van als zin.
-   De stations staan met de hand gekozen: grofweg de derde rij naar voren,
-   met een kleine wiebel erin zodat het doorgeven leest als handwerk. De
-   laatste sprong gaat over het gat heen: daar landt nooit iets, en het
-   donkere blok eronder legt twee tellen later uit waarom. */
-const REIS: [number, number][] = [
-  [7, 1],
-  [6, 2],
-  [5, 2],
-  [4, 1],
-  [3, 2],
-  [2, 2],
-  [0, 2], // over het gat op kolom 1 heen
-];
-
-function Doorloop() {
-  const veld = useRef<HTMLDivElement>(null);
-  const mozaiek = useRef<HTMLDivElement>(null);
-  const reduced = useSyncExternalStore<boolean | null>(
-    abonneerReduced,
-    () => window.matchMedia(REDUCED_QUERY).matches,
-    () => null,
-  );
-
-  useEffect(() => {
-    if (reduced === null || reduced) return;
-    const blok = veld.current;
-    const raster = mozaiek.current;
-    if (!blok || !raster) return;
-
-    const tegels = Array.from(raster.querySelectorAll<HTMLElement>("[data-tegel]"));
-    const kaart = raster.querySelector<HTMLElement>("[data-reiskaart]");
-    const vinkje = raster.querySelector<HTMLElement>("[data-reisvink]");
-    const TEGELSCHADUW = "0 8px 20px -12px rgba(9,32,22,0.65)";
-
-    /* Hoeveel van de scroll één tegel nodig heeft om binnen te komen. Ruim
-       genoeg dat ze elkaar overlappen: anders wordt het een rij losse
-       gebeurtenissen in plaats van één beweging. */
-    const DUUR = 0.42;
-
-    let bezig = false;
-    const leg = () => {
-      if (bezig) return;
-      bezig = true;
-      requestAnimationFrame(() => {
-        bezig = false;
-        const vh = window.innerHeight;
-        const r = blok.getBoundingClientRect();
-        /* Eén klok voor de hele sectie: van "het veld komt onderin binnen"
-           tot "het veld staat bovenin". Aan de scroll gekoppeld en niet aan
-           een tijdlijn: scroll je terug, dan speelt alles terug. Dat mag
-           hier, want jij bestuurt het. In de eerste helft landt de wand, in
-           de tweede helft reist het kaartje. */
-        const p = Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.92)));
-        const pWand = Math.min(1, p / 0.5);
-        const pReis = Math.min(1, Math.max(0, (p - 0.52) / 0.46));
-
-        tegels.forEach((el, i) => {
-          /* De volgorde loopt van dichtbij naar ver: eerst de kolommen die
-             vooraan staan, per kolom van boven naar onder. Zo bouwt de wand
-             zich de diepte in op in plaats van in leesvolgorde, wat bij een
-             gekanteld vlak nergens naar uitziet. */
-          const kol = i % WAND_KOL;
-          const rij = Math.floor(i / WAND_KOL);
-          const fase = (kol + rij * 0.22) / (WAND_KOL - 1 + (WAND_RIJ - 1) * 0.22);
-          const start = fase * (1 - DUUR);
-          const t = Math.min(1, Math.max(0, (pWand - start) / DUUR));
-          // Sterke uitloop: hard binnen en dan zachtjes op zijn plek zakken.
-          const e = 1 - Math.pow(1 - t, 5);
-          const uit = 1 - e;
-          /* Ze komen uit de diepte van de wand: naar achteren langs het vlak
-             (x, want dáár loopt het mozaïek door) en een stukje van de wand
-             af naar je toe (z), zodat ze er als laatste op neerkomen in
-             plaats van erin te schuiven. Het perspectief maakt ze onderweg
-             vanzelf kleiner. Wat verderop in de rij ligt komt van verder. */
-          const dx = uit * (170 + kol * 24);
-          const dy = uit * (((i % 3) - 1) * 26);
-          const dz = uit * 90;
-          const dr = uit * (i % 2 ? 7 : -6);
-          el.style.transform = `translate3d(${dx.toFixed(1)}px, ${dy.toFixed(1)}px, ${dz.toFixed(1)}px) rotate(${dr.toFixed(2)}deg)`;
-          // De laatste tel is hij al vol: het landen wil je zien, niet het opdoemen.
-          el.style.opacity = String(Math.min(1, e * 1.7));
-        });
-
-        /* ── Het kaartje ── */
-        if (!kaart) return;
-        if (pReis <= 0) {
-          kaart.style.opacity = "0";
-          vinkje?.classList.remove("vinkpop");
-          tegels.forEach((el) => {
-            if (el.style.boxShadow) el.style.boxShadow = "";
-          });
-          return;
-        }
-
-        /* De sprong over het gat krijgt dubbel zoveel scrolweg als een gewone
-           overdracht: dat is het moment van deze wand, dus dat mag niet
-           voorbijflitsen. */
-        const GEWICHT = REIS.slice(0, -1).map(([k], j) =>
-          Math.abs(REIS[j + 1][0] - k) > 1 ? 2 : 1,
-        );
-        const totaal = GEWICHT.reduce((a, b) => a + b, 0);
-        let u = pReis * totaal;
-        let stap = 0;
-        while (stap < GEWICHT.length - 1 && u > GEWICHT[stap]) {
-          u -= GEWICHT[stap];
-          stap += 1;
-        }
-        const pad = stap + Math.min(1, u / GEWICHT[stap]);
-        const [vanK, vanR] = REIS[stap];
-        const [naarK, naarR] = REIS[stap + 1];
-        /* Even rusten op elk station voordat de volgende sprong begint:
-           doorgeven is pakken en weer loslaten, geen glijbaan. */
-        const ruw = pad - stap;
-        const tHop = Math.min(1, Math.max(0, (ruw - 0.18) / 0.64));
-        const glad = tHop * tHop * (3 - 2 * tHop);
-
-        const x = ((vanK + 0.5 + (naarK - vanK) * glad) / WAND_KOL) * 100;
-        const y = ((vanR + 0.5 + (naarR - vanR) * glad) / WAND_RIJ) * 100;
-        /* De sprong over het gat is de laatste en gaat hoger: je moet zíén
-           dat hij die ene plek overslaat in plaats van erover heen schuift. */
-        const sprong = Math.abs(naarK - vanK) > 1 ? 64 : 26;
-        const z = 6 + Math.sin(Math.PI * glad) * sprong;
-        const rot = -2 + (stap % 2) * 4 + glad * ((stap % 2 ? -1 : 1) * 4);
-
-        kaart.style.opacity = String(Math.min(1, pReis * 8));
-        kaart.style.left = `${x.toFixed(2)}%`;
-        kaart.style.top = `${y.toFixed(2)}%`;
-        kaart.style.transform = `translate(-50%, -50%) translateZ(${z.toFixed(1)}px) rotate(${rot.toFixed(2)}deg)`;
-
-        /* Stations waar het kaartje al geweest is, gloeien even na: zo zie
-           je het spoor van het doorgeven, en dooft het vanzelf weer uit. */
-        REIS.forEach(([sk, sr], j) => {
-          const el = tegels[sr * WAND_KOL + sk];
-          if (!el || j >= REIS.length - 1) return;
-          const na = pad - j;
-          const gloed = na > 0 ? Math.max(0, 1 - na / 2.6) * 0.3 : 0;
-          el.style.boxShadow =
-            gloed > 0.01
-              ? `${TEGELSCHADUW}, inset 0 0 0 999px rgba(255,255,255,${gloed.toFixed(3)})`
-              : "";
-        });
-
-        // Aangekomen: het vinkje popt, zoals alles hier afgevinkt wordt.
-        if (pReis >= 0.995) vinkje?.classList.add("vinkpop");
-        else vinkje?.classList.remove("vinkpop");
-      });
-    };
-
-    leg();
-    window.addEventListener("scroll", leg, { passive: true });
-    window.addEventListener("resize", leg);
-    return () => {
-      window.removeEventListener("scroll", leg);
-      window.removeEventListener("resize", leg);
-    };
-  }, [reduced]);
-
-  return (
-    <section className="relative isolate overflow-hidden">
-      {/* Het groene veld. */}
-      <div ref={veld} className="relative" style={{ backgroundColor: DOORLOOP_GROEN }}>
-        {/* Korrel: het vlak hoort materiaal te zijn, geen kleurstaal. */}
-        {/* Hier stond korrel over het vlak. Die is eruit: een laag met
-           mix-blend-mode verschuift de tint van het hele blok net genoeg om
-           op de naad met het zand hierboven een streep te laten zien, en het
-           veld wordt er nauwelijks mooier van. De diepte komt van het licht
-           hieronder en van de wand zelf. */}
-        {/* Licht van linksboven, zodat het veld bolt in plaats van plat ligt.
-           Ruim binnen de bovenrand: raakt de waas de rand van de sectie, dan
-           knipt overflow-hidden hem af en staat er een kaarsrechte streep op
-           precies de plek waar het zand in het groen moet overlopen. */}
-        <div
-          className="pointer-events-none absolute -left-40 top-24 h-[34rem] w-[34rem] rounded-full bg-white/[0.07] blur-3xl"
-          aria-hidden
-        />
-        {/* De afdaling naar de inkt: geen naad, het groen zakt erin weg. */}
-        <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-44 bg-gradient-to-b from-transparent to-ink"
-          aria-hidden
-        />
-
-        <div className="relative mx-auto w-full max-w-5xl px-6 py-16 lg:min-h-[44vw] lg:py-20">
-          <div className="lg:flex lg:min-h-[24rem] lg:w-[44%] lg:flex-col lg:justify-center">
-            <h2
-              data-reveal
-              className="font-display text-[clamp(2.25rem,4.4vw,3.5rem)] font-black leading-[1] tracking-tight text-white [text-wrap:balance]"
-            >
-              De tools werken samen
-            </h2>
-            <p
-              data-reveal
-              style={{ transitionDelay: "90ms" }}
-              className="mt-7 max-w-xl text-lg leading-8 text-white/90"
-            >
-              Binnen Avinka wordt er veel werk voor je uit handen genomen. De
-              tools staan niet los van elkaar maar werken samen aan hetzelfde
-              resultaat.
-            </p>
-            <p
-              data-reveal
-              style={{ transitionDelay: "160ms" }}
-              className="mt-5 max-w-xl text-lg leading-8 text-white/90"
-            >
-              Je stelt één keer in hoe jij werkt en daar houdt alles rekening
-              mee. En het platform groeit mee: er komt steeds meer bij, zonder
-              dat je opnieuw hoeft uit te zoeken hoe het werkt.
-            </p>
-          </div>
-
-          {/* Het mozaïek hangt op groot scherm aan de rechterrand van het
-             venster en loopt er een stukje voorbij. Daarom wordt de rechter-
-             positie uit de vensterbreedte gerekend en niet uit de kolom: bij
-             een breed scherm zou het anders midden op de pagina ophouden.
-             De doos geeft het perspectief en laat de verte oplossen; de wand
-             erin staat gekanteld, zodat het mozaïek van je wegloopt in plaats
-             van plat op het scherm te liggen. */}
-          <div
-            aria-hidden
-            className="mozaiek-doos -mr-8 mt-12 lg:absolute lg:right-[calc(50%-50vw-2rem)] lg:top-1/2 lg:mr-0 lg:mt-0 lg:w-[44vw] lg:-translate-y-1/2"
-          >
-          <div
-            ref={mozaiek}
-            className="mozaiek mozaiek-wand relative grid aspect-[8/6] grid-cols-8 grid-rows-6 gap-1.5 sm:gap-2"
-          >
-            {TEGELS.map((t) => (
-              <span
-                key={`${t.kol}-${t.rij}`}
-                data-tegel
-                style={
-                  {
-                    // Via een variabele, zodat kleine schermen de ronding
-                    // kunnen terugbrengen: dezelfde straal maakt van een
-                    // tegel van 40 pixels een pilletje.
-                    "--rond": t.rond,
-                    rotate: `${t.draai}deg`,
-                  } as CSSProperties
-                }
-                className={
-                  t.open
-                    ? // Het gat: je kijkt de wand ín. Donkerder dan het veld,
-                      // met een schaduw alsof de rand een dikte heeft.
-                      "bg-black/25 shadow-[inset_0_4px_14px_rgba(0,0,0,0.45)] ring-1 ring-inset ring-white/20"
-                    : `shadow-[0_8px_20px_-12px_rgba(9,32,22,0.65)] ${t.kleur}`
-                }
-              />
-            ))}
-
-            {/* Het reizende kaartje. Absoluut binnen de wand, dus het deelt
-               het perspectief: dichterbij is vanzelf groter. Zonder script
-               (of met verminderde beweging) ligt het gewoon klaar op zijn
-               eindstation, mét vinkje. */}
-            <div
-              data-reiskaart
-              className="absolute left-0 top-0 w-[9.5%]"
-              style={{
-                left: `${((0.5 / WAND_KOL) * 100).toFixed(2)}%`,
-                top: `${((2.5 / WAND_RIJ) * 100).toFixed(2)}%`,
-                transform: "translate(-50%, -50%) rotate(-2deg)",
-              }}
-            >
-              <div className="flex aspect-[4/5] flex-col justify-center gap-[11%] rounded-[0.5rem] bg-white px-[14%] shadow-[0_14px_28px_-12px_rgba(9,32,22,0.6)]">
-                <span className="block h-[3px] w-3/4 rounded-full bg-ink/30" />
-                <span className="block h-[3px] w-full rounded-full bg-ink/15" />
-                <span className="block h-[3px] w-5/6 rounded-full bg-ink/15" />
-              </div>
-              <span
-                data-reisvink
-                className="absolute -bottom-[14%] -right-[16%] flex w-[46%] items-center justify-center rounded-full bg-brand text-white shadow-sm ring-2 ring-white/90 aspect-square"
-              >
-                <Vink className="h-3/5 w-3/5" dik={4} />
-              </span>
-            </div>
-          </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Waar het ophoudt. Dit blok staat rechts, precies onder waar het
-         mozaïek net stond: je oog hoeft niet terug naar links te springen, en
-         na drie secties die links beginnen breekt het de dreun. */}
-      {/* Eén pixel overlap: anders zie je op sommige schermen een haarlijn
-         waar het verloop en het inktvlak elkaar raken. */}
-      <div className="relative -mt-px bg-ink text-cream">
-        <div className="mx-auto w-full max-w-5xl px-6 pb-16 pt-20 lg:pt-24">
-          <div className="max-w-2xl lg:ml-auto">
-            <p
-              data-reveal
-              className="font-display text-[clamp(1.6rem,3.1vw,2.35rem)] font-black leading-[1.15] tracking-tight text-white [text-wrap:balance]"
-            >
-              Er is één ding dat we bewust niet doen.
-            </p>
-            <p
-              data-reveal
-              style={{ transitionDelay: "90ms" }}
-              className="mt-7 text-lg leading-8 text-cream/80"
-            >
-              Gegevens van leerlingen bewaren we niet. Daardoor kun je niet
-              alles terugvinden wat je gemaakt hebt. Het staat bij jou en niet
-              bij ons.
-            </p>
-            <p
-              data-reveal
-              style={{ transitionDelay: "160ms" }}
-              className="mt-7 text-lg font-bold leading-8 text-white"
-            >
-              Onhandig? Soms. Maar privacy weegt voor ons het zwaarst.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -2842,42 +2520,6 @@ function StijlBlok() {
       .anim [data-leesregel].leest .uitleg { color: rgb(34 28 58 / 0.7); }
 
 
-      /* Het mozaïek. De tegels liggen standaard gewoon op hun plek; mét
-         beweging zet het script per beeldje hun transform en dekking, want
-         ze komen aanvliegen op het ritme van de scroll. Daarom hier geen
-         overgang: die zou tegen de sturing per beeldje in werken. */
-      /* De doos geeft het perspectief en laat het mozaïek naar achteren
-         oplossen in het groen: zonder die vervaging houdt de verte gewoon
-         op bij de schermrand en is het geen diepte meer maar een afsnijding. */
-      .mozaiek-doos {
-        perspective: 1100px;
-        perspective-origin: 50% 50%;
-        -webkit-mask-image: linear-gradient(to right, #000 58%, transparent 99%);
-        mask-image: linear-gradient(to right, #000 58%, transparent 99%);
-      }
-      /* De wand zelf. Op kleine schermen milder gekanteld: bij een smalle
-         doos wordt de verte anders zo klein dat er niets meer te zien is.
-         Onderaan lost hij op in de afdaling naar de inkt, net zoals hij
-         rechts in de verte oplost: nergens een afgekapte rij. */
-      .mozaiek-wand {
-        transform: rotateY(-18deg);
-        transform-origin: left center;
-        transform-style: preserve-3d;
-        -webkit-mask-image: linear-gradient(to bottom, #000 68%, transparent 100%);
-        mask-image: linear-gradient(to bottom, #000 68%, transparent 100%);
-      }
-      /* Het vinkje op het reizende kaartje wacht op de landing; de pop zelf
-         is de bestaande vinkpop. Zonder .anim staat het er gewoon. */
-      .anim [data-reisvink]:not(.vinkpop) { opacity: 0; }
-      @media (min-width: 1024px) {
-        .mozaiek-wand { transform: rotateY(-34deg); }
-      }
-      .mozaiek [data-tegel] { border-radius: var(--rond, 1.15rem); }
-      @media (max-width: 639px) {
-        /* Kleine tegels met een grote straal worden pilletjes. */
-        .mozaiek [data-tegel] { border-radius: 0.45rem; }
-      }
-      .anim .mozaiek [data-tegel] { will-change: transform, opacity; }
 
       /* Knoppen mogen voelen dat je ze indrukt. */
       .knop-druk:active { transform: scale(0.97); }
