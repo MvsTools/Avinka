@@ -385,7 +385,7 @@ function Jaarlijst({
           nog niet. Eigen warme tint, geen vakantiekleur. */}
       <button
         onClick={() => setDag(schooljaar.startweek.van)}
-        className="flex flex-wrap items-baseline gap-x-3 rounded-2xl border-l-[3px] border-amber-300 bg-accent-soft/70 px-5 py-3.5 text-left transition-colors hover:bg-accent-soft"
+        className="flex flex-wrap items-baseline gap-x-3 rounded-2xl bg-accent-soft/70 px-5 py-3.5 text-left transition-colors hover:bg-accent-soft"
       >
         <span className="font-bold text-ink/80">Startweek</span>
         <span className="text-sm text-ink/55">
