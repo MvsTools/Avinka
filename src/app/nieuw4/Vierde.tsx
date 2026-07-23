@@ -1573,6 +1573,99 @@ function MarkeerInhoud({ donker = false }: { donker?: boolean }) {
    rechterkaart waaieren ze de andere kant op.
    De eindstand staat in `--eind`, zodat de vellen zonder beweging gewoon
    goed liggen en er mét beweging onder de kaart vandaan schuiven. ────── */
+/* ── De doorgekraste regels achter de stapel ───────────────────────────
+   Een vel vol geschreven regels waar met een groene pen dwars doorheen is
+   gekrast. Geen willekeurige versiering: doorkrassen ís wat hier gebeurt,
+   iets onleesbaar maken. Het ligt in de ruimte naast de kaart, dus het
+   grootste deel van de krassen valt buiten het kaartje en is echt te zien.
+   De randen lopen dood in een verloopmaskering, zodat het nergens een vel
+   met een rand wordt. ─────────────────────────────────────────────────── */
+const KRAS_REGELS = [
+  { y: 24, eind: 210 },
+  { y: 48, eind: 268 },
+  { y: 72, eind: 176 },
+  { y: 96, eind: 250 },
+  { y: 120, eind: 288 },
+  { y: 144, eind: 196 },
+  { y: 168, eind: 262 },
+  { y: 192, eind: 150 },
+  { y: 216, eind: 236 },
+  { y: 240, eind: 280 },
+  { y: 264, eind: 190 },
+];
+
+/* Elke kras ligt op de hoogte van een regel: hij streept die regel weg. */
+const KRASSEN = [
+  { x1: 22, x2: 150, y: 48, hoog: 7, stap: 15 },
+  { x1: 30, x2: 128, y: 120, hoog: 6, stap: 13 },
+  { x1: 18, x2: 165, y: 192, hoog: 8, stap: 17 },
+  { x1: 34, x2: 112, y: 264, hoog: 6, stap: 14 },
+];
+
+/* Een heen-en-weer gaande pennenhaal over één regel. De hoogte en de
+   tussenafstand verspringen per haal: een streng regelmatige zigzag leest
+   als een grafiek, en dit moet een hand zijn. De afwijking wordt uit de
+   tellerstand gerekend en is dus elke keer hetzelfde, zodat de server en de
+   browser niet uit elkaar lopen. */
+function krasPad(x1: number, x2: number, y: number, hoog: number, stap: number) {
+  let d = `M${x1} ${y}`;
+  let omhoog = true;
+  let i = 0;
+  for (let x = x1 + stap / 2; x < x2; x += stap) {
+    i += 1;
+    const wiebel = 0.66 + (((i * 37) % 13) / 13) * 0.62;
+    const schuif = ((((i * 23) % 7) / 7) - 0.5) * 2.6;
+    d += ` L${(x + schuif).toFixed(1)} ${(y + (omhoog ? -hoog : hoog) * wiebel).toFixed(1)}`;
+    omhoog = !omhoog;
+  }
+  return `${d} L${x2} ${y}`;
+}
+
+function DoorgekrasteRegels({ spiegel = false }: { spiegel?: boolean }) {
+  return (
+    <div
+      aria-hidden
+      /* Onder lg vult de kaart bijna het hele scherm en blijft er van het
+         krasveld alleen een willekeurige snipper langs de rand over. Dan
+         liever helemaal niet: de stapel en het groen in de kaart zelf
+         dragen daar de sectie. */
+      className={`krasveld pointer-events-none absolute top-1/2 hidden aspect-square w-[95%] -translate-y-1/2 lg:block ${
+        spiegel ? "-right-[58%]" : "-left-[58%]"
+      }`}
+    >
+      <svg
+        viewBox="0 0 300 300"
+        className={`h-full w-full ${spiegel ? "-scale-x-100" : ""}`}
+      >
+        {/* De regels: net genoeg om als geschreven tekst te lezen. */}
+        <g
+          stroke="var(--color-ink)"
+          strokeOpacity="0.1"
+          strokeWidth="3"
+          strokeLinecap="round"
+        >
+          {KRAS_REGELS.map((r) => (
+            <line key={r.y} x1={12} y1={r.y} x2={r.eind} y2={r.y} />
+          ))}
+        </g>
+        {/* De pen eroverheen. */}
+        <g
+          fill="none"
+          stroke="var(--color-brand)"
+          strokeOpacity="0.42"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          {KRASSEN.map((k) => (
+            <path key={k.y} d={krasPad(k.x1, k.x2, k.y, k.hoog, k.stap)} />
+          ))}
+        </g>
+      </svg>
+    </div>
+  );
+}
+
 const VELLEN = [
   { vulling: "bg-sand", rand: "ring-ink/[0.07]", graden: 5, x: 11, y: 7, wacht: 0.16 },
   { vulling: "bg-white", rand: "ring-ink/[0.05]", graden: 2.4, x: 5, y: 3, wacht: 0.08 },
@@ -1611,6 +1704,7 @@ const NIET_BIJ_ONS = [
 function BewaarKaart() {
   return (
     <div data-reveal className="kaartblok relative w-full max-w-xs">
+      <DoorgekrasteRegels />
       <PapierStapel />
       <div className="relative rounded-2xl bg-white p-6 shadow-[0_26px_60px_-28px_rgba(34,28,58,0.45)] ring-1 ring-black/5">
       <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-ink/45">
@@ -1659,6 +1753,7 @@ const KLAS_REST = 19;
 function KlassenlijstKaart() {
   return (
     <div data-reveal className="kaartblok relative w-full max-w-xs lg:ml-auto">
+      <DoorgekrasteRegels spiegel />
       <PapierStapel spiegel />
       <div className="relative rounded-2xl bg-white p-6 shadow-[0_26px_60px_-28px_rgba(34,28,58,0.45)] ring-1 ring-black/5">
       <div className="flex items-baseline justify-between gap-3">
@@ -2761,6 +2856,19 @@ function StijlBlok() {
         transition-delay: calc(var(--wacht) + 0.32s + var(--i) * 0.11s);
       }
       .anim .kaartblok.is-in .klasmasker { opacity: 1; transform: none; }
+
+      /* Het krasveld dooft naar alle kanten uit, zodat het geen vel met een
+         rand wordt maar iets dat achter de stapel vandaan komt. */
+      .krasveld {
+        -webkit-mask-image: radial-gradient(closest-side, #000 42%, transparent 92%);
+        mask-image: radial-gradient(closest-side, #000 42%, transparent 92%);
+      }
+      .anim .kaartblok .krasveld {
+        opacity: 0;
+        transition: opacity 0.8s ease-out;
+        transition-delay: var(--wacht);
+      }
+      .anim .kaartblok.is-in .krasveld { opacity: 1; }
 
       /* De vellen onder de kaart: zonder beweging liggen ze meteen goed,
          mét beweging beginnen ze recht onder de kaart en schuiven ze er
