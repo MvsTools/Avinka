@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import {
-  useCallback,
   useEffect,
   useRef,
   useState,
@@ -1079,8 +1078,11 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           <ToolRail />
         </section>
 
-        {/* ── 4. Privacy, zichtbaar gemaakt. Opent met wat we bewust níét
-           doen: de eerlijkheid eerst, dan het bewijs.
+        {/* ── 4. Privacy: twee onderwerpen, twee kanten van de pagina.
+           Wat we met gegévens doen staat hard rechts, wat we met leerling-
+           námen doen staat hard links. De ruimte die daardoor tegenover elk
+           blok vrijkomt is geen leegte maar werkruimte: daar hoort per
+           onderwerp het bewijs te komen. Nog in te vullen.
            Bewust licht en niet donker. Het zand hierboven is het hele
            tools-hoofdstuk; hier keert de pagina terug naar de kleur waarmee
            hij begon. Donker is daarmee gereserveerd voor het slot, en dat
@@ -1091,39 +1093,55 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
              erboven. */}
           <div className="pointer-events-none absolute -left-24 top-10 h-80 w-80 rounded-full bg-brand/[0.09] blur-3xl" aria-hidden />
 
-          {/* De bekentenis (over NIET bewaren). Een eerlijke bekentenis draagt
-             zich met woorden, niet met een icoon: strak, zelfverzekerd, geen
-             schild. De teaser groot, daaronder wat het kost en de keuze. */}
-          <div className="relative mx-auto w-full max-w-4xl px-6 pt-24 lg:pt-28">
-            <p
-              data-reveal
-              className="font-display text-[clamp(2rem,4.4vw,3.4rem)] font-black leading-[1.04] tracking-tight [text-wrap:balance]"
-            >
-              Er is één ding dat we bewust niet doen.
-            </p>
-            <p
-              data-reveal
-              style={{ transitionDelay: "90ms" }}
-              className="mt-8 max-w-2xl text-xl leading-9 text-ink/70"
-            >
-              Gegevens van leerlingen bewaren we niet. Daardoor kun je niet alles
-              terugvinden wat je gemaakt hebt. Het staat bij jou en niet bij ons.
-            </p>
-            <p
-              data-reveal
-              style={{ transitionDelay: "160ms" }}
-              className="mt-6 text-xl font-bold leading-9 text-ink"
-            >
-              Onhandig? Soms. Maar privacy weegt voor ons het zwaarst.
-            </p>
-          </div>
+          <div className="relative mx-auto w-full max-w-7xl px-6 pb-28 pt-24 lg:pt-28">
+            {/* ── Gegevens: hard rechts. De ruimte blijft links over. ──
+               Een eerlijke bekentenis draagt zich met woorden, niet met een
+               icoon: strak, zelfverzekerd, geen schild. */}
+            <div className="max-w-xl lg:ml-auto">
+              <p
+                data-reveal
+                className="font-display text-[clamp(2rem,3.6vw,3rem)] font-black leading-[1.06] tracking-tight [text-wrap:balance]"
+              >
+                Er is één ding dat we bewust niet doen.
+              </p>
+              <p
+                data-reveal
+                style={{ transitionDelay: "90ms" }}
+                className="mt-8 text-xl leading-9 text-ink/70"
+              >
+                Gegevens van leerlingen bewaren we niet. Daardoor kun je niet
+                alles terugvinden wat je gemaakt hebt. Het staat bij jou en niet
+                bij ons.
+              </p>
+              <p
+                data-reveal
+                style={{ transitionDelay: "160ms" }}
+                className="mt-6 text-xl font-bold leading-9 text-ink"
+              >
+                Onhandig? Soms. Maar privacy weegt voor ons het zwaarst.
+              </p>
+            </div>
 
-          {/* Het maskeer-mechanisme (over namen die NIET naar de AI gaan):
-             de naamklapper. Eén rapportzin waarin een groene lamel over de
-             naam valt en omklapt naar de schuilnaam, zoals op een vertrek-
-             bord: wat jij typt wordt wat de AI te zien krijgt. Privacy laten
-             zien in plaats van beweren. */}
-          <NaamKlapper />
+            {/* ── Leerlingnamen: hard links. De ruimte blijft rechts over. ── */}
+            <div className="mt-28 max-w-xl lg:mt-40 lg:mr-auto">
+              <h2
+                data-reveal
+                className="font-display text-[clamp(2rem,3.6vw,3rem)] font-black leading-[1.06] tracking-tight [text-wrap:balance]"
+              >
+                Namen blijven thuis
+              </h2>
+              <p
+                data-reveal
+                style={{ transitionDelay: "90ms" }}
+                className="mt-8 text-xl leading-9 text-ink/70"
+              >
+                Namen van leerlingen gaan nooit naar de AI: op jouw apparaat
+                wordt elke naam vervangen door een schuilnaam, nog vóór er iets
+                wordt verstuurd. Je account staat op beveiligde servers in
+                Europa.
+              </p>
+            </div>
+          </div>
         </section>
 
         {/* ── 5. De regie blijft bij jou ── */}
@@ -1505,296 +1523,6 @@ function MarkeerInhoud({ donker = false }: { donker?: boolean }) {
    een berichtje van thuis, een klasopstelling), geen interface-namaak.
    De bezoeker heeft de regie: zelf slepen, vegen of de pijltjes. Niets
    beweegt uit zichzelf; een bekeken kaart zet wel zijn eigen vinkje. ──── */
-
-/* ── De naamklapper: maskeren, zichtbaar gemaakt ────────────────────────
-   De sterkste privacy-claim is dat namen nooit naar de AI gaan: op je
-   eigen apparaat wordt elke naam vervangen door een schuilnaam vóór er
-   iets verstuurd wordt. Dat beweren we niet, dat laten we zien, in één
-   zin uit een rapport: valt de zin in beeld, dan klapt er een groene
-   lamel over de naam heen, zoals op een vertrekbord op het station. Het
-   kader boven de zin wisselt mee: "Wat jij typt" wordt "Wat de AI te
-   zien krijgt".
-   Klikken mag, en dat is het beleid in het klein: de klep laat de naam
-   heel even zien (bij jou staat hij gewoon) en klapt daarna vanzelf
-   weer dicht. Een naam blijft nooit open staan.
-   Zonder JS of bij verminderde beweging staat de eindstand er meteen. */
-
-type KlapStaat = "echt" | "masker";
-
-const NAAM_ECHT = "Sofie";
-const NAAM_MASKER = "leerling A";
-const ZIN_REST = " heeft hard gewerkt aan haar tafels.";
-const KLAP_DUUR = 640;
-
-/* Eén lamel-inhoud: de echte naam in inkt, of de schuilnaam-tegel. */
-function KlapInhoud({ staat }: { staat: KlapStaat }) {
-  return staat === "echt" ? (
-    <span className="klapper-echt">
-      <span>{NAAM_ECHT}</span>
-    </span>
-  ) : (
-    <span className="klapper-masker">
-      <span>{NAAM_MASKER}</span>
-    </span>
-  );
-}
-
-function NaamKlapper() {
-  const wrap = useRef<HTMLDivElement>(null);
-  const cel = useRef<HTMLButtonElement>(null);
-  const flap = useRef<HTMLSpanElement>(null);
-  const meetEcht = useRef<HTMLSpanElement>(null);
-  const meetMasker = useRef<HTMLSpanElement>(null);
-
-  /* Zonder JS (en vóór de eerste klap-kans) staat de eindstand er: de
-     schuilnaam. Het script zet hem pas op "echt" als de zin nog onder in
-     beeld moet komen, zodat de klap ook echt te zien is. */
-  const [fase, setFase] = useState<KlapStaat>("masker");
-  const [klap, setKlap] = useState<{ van: KlapStaat; naar: KlapStaat } | null>(null);
-  const [labelMasker, setLabelMasker] = useState(true);
-  const [breedte, setBreedte] = useState<{ echt: number; masker: number } | null>(null);
-  const bezig = useRef(false);
-  const naKlap = useRef<(() => void) | null>(null);
-  const wachters = useRef<number[]>([]);
-  const reduced = useSyncExternalStore<boolean | null>(
-    abonneerReduced,
-    () => window.matchMedia(REDUCED_QUERY).matches,
-    () => null,
-  );
-
-  /* Opruimen wat nog in de wacht staat. */
-  useEffect(() => {
-    const w = wachters.current;
-    return () => w.forEach((t) => window.clearTimeout(t));
-  }, []);
-
-  /* De twee breedtes meten (en opnieuw zodra het font binnenkomt), zodat
-     de cel veerkrachtig van naam-breed naar tegel-breed kan groeien en de
-     rest van de zin ruimte maakt. */
-  useEffect(() => {
-    const a = meetEcht.current;
-    const b = meetMasker.current;
-    if (!a || !b) return;
-    const meet = () =>
-      setBreedte((oud) => {
-        const nieuw = { echt: a.offsetWidth, masker: b.offsetWidth };
-        return oud && oud.echt === nieuw.echt && oud.masker === nieuw.masker ? oud : nieuw;
-      });
-    meet();
-    const ro = new ResizeObserver(meet);
-    ro.observe(a);
-    ro.observe(b);
-    return () => ro.disconnect();
-  }, []);
-
-  const speel = useCallback(
-    (van: KlapStaat, naar: KlapStaat, klaar?: () => void) => {
-      if (reduced) {
-        setFase(naar);
-        setLabelMasker(naar === "masker");
-        klaar?.();
-        return;
-      }
-      naKlap.current = klaar ?? null;
-      setKlap({ van, naar });
-    },
-    [reduced],
-  );
-
-  /* De val van de lamel: zwaartekracht erin, een korte naklap-stuiter, en
-     op het moment van neerkomen het klak-dipje van de hele cel plus de
-     wissel van het kader boven de zin. */
-  useEffect(() => {
-    if (!klap) return;
-    const f = flap.current;
-    const c = cel.current;
-    if (!f || !c) {
-      setFase(klap.naar);
-      setKlap(null);
-      return;
-    }
-    const val = f.animate(
-      [
-        { transform: "rotateX(0deg)", easing: "cubic-bezier(0.62, 0, 0.78, 0.4)" },
-        { transform: "rotateX(-180deg)", offset: 0.56, easing: "cubic-bezier(0.16, 0.84, 0.32, 1)" },
-        { transform: "rotateX(-162deg)", offset: 0.78, easing: "cubic-bezier(0.6, 0, 0.72, 0.5)" },
-        { transform: "rotateX(-180deg)", offset: 1 },
-      ],
-      { duration: KLAP_DUUR, fill: "forwards" },
-    );
-    const klak = window.setTimeout(() => {
-      setLabelMasker(klap.naar === "masker");
-      c.animate(
-        [
-          { transform: "translateY(0)" },
-          { transform: "translateY(1.5px)" },
-          { transform: "translateY(0)" },
-        ],
-        { duration: 160, easing: "ease-out" },
-      );
-    }, KLAP_DUUR * 0.56);
-    val.onfinish = () => {
-      setFase(klap.naar);
-      setKlap(null);
-      const volg = naKlap.current;
-      naKlap.current = null;
-      if (volg) volg();
-      else bezig.current = false;
-    };
-    return () => {
-      val.cancel();
-      window.clearTimeout(klak);
-    };
-  }, [klap]);
-
-  /* De eerste klap: zodra de zin op leeshoogte staat, met een korte adem
-     zodat je "Sofie" nog echt gelezen hebt. Wie de pagina al voorbij dit
-     punt binnenkomt, ziet gewoon de eindstand. */
-  useEffect(() => {
-    if (reduced === null || reduced) return;
-    const el = wrap.current;
-    if (!el) return;
-    if (el.getBoundingClientRect().top < window.innerHeight * 0.72) return;
-    setFase("echt");
-    setLabelMasker(false);
-    let klaar = false;
-    const kijk = () => {
-      if (klaar) return;
-      if (el.getBoundingClientRect().top < window.innerHeight * 0.62) {
-        klaar = true;
-        window.removeEventListener("scroll", kijk);
-        wachters.current.push(
-          window.setTimeout(() => {
-            bezig.current = true;
-            speel("echt", "masker", () => {
-              bezig.current = false;
-            });
-          }, 500),
-        );
-      }
-    };
-    kijk();
-    window.addEventListener("scroll", kijk, { passive: true });
-    return () => window.removeEventListener("scroll", kijk);
-  }, [reduced, speel]);
-
-  /* Klikken: de klep laat de naam even zien en klapt vanzelf weer dicht.
-     Precies andersom dan je verwacht, en precies het punt. */
-  const klik = () => {
-    if (bezig.current || klap) return;
-    bezig.current = true;
-    if (fase === "masker") {
-      speel("masker", "echt", () => {
-        wachters.current.push(
-          window.setTimeout(() => {
-            speel("echt", "masker", () => {
-              bezig.current = false;
-            });
-          }, 900),
-        );
-      });
-    } else {
-      speel("echt", "masker", () => {
-        bezig.current = false;
-      });
-    }
-  };
-
-  const doel = klap ? klap.naar : fase;
-  const celBreedte = breedte ? (doel === "echt" ? breedte.echt : breedte.masker) : undefined;
-
-  return (
-    <div className="relative mx-auto w-full max-w-5xl px-6 pb-24 pt-20 lg:pt-24">
-      {/* De kop en uitleg */}
-      <div data-reveal className="max-w-2xl">
-        <h2 className="font-display text-4xl font-black tracking-tight [text-wrap:balance]">
-          Namen blijven thuis
-        </h2>
-        <p className="mt-6 text-lg leading-8 text-ink/70">
-          Privacy is ons belangrijkste uitgangspunt. Namen van leerlingen gaan
-          nooit naar de AI: op jouw apparaat wordt elke naam vervangen door
-          een schuilnaam, nog vóór er iets wordt verstuurd. Je account staat
-          op beveiligde servers in Europa.
-        </p>
-      </div>
-
-      {/* Het mechanisme: kader, rapportzin met de klapcel, en de uitnodiging
-         om er zelf aan te zitten. */}
-      <div ref={wrap} data-reveal className="mt-14">
-        <p
-          aria-hidden
-          className={`klapper-label text-xs font-bold uppercase tracking-[0.16em] text-ink/45 ${
-            labelMasker ? "toont-masker" : ""
-          }`}
-        >
-          <span className="label-echt">Wat jij typt</span>
-          <span className="label-masker text-brand-dark">Wat de AI te zien krijgt</span>
-        </p>
-
-        <p className="relative mt-5 max-w-4xl font-display text-[clamp(1.65rem,3.4vw,2.7rem)] font-medium leading-[1.45] tracking-tight text-ink">
-          {/* De meetlatten: onzichtbaar, maar in precies dezelfde letter. */}
-          <span ref={meetEcht} aria-hidden className="klapper-meet font-bold">
-            {NAAM_ECHT}
-          </span>
-          <span ref={meetMasker} aria-hidden className="klapper-meet px-[0.55em] font-bold">
-            {NAAM_MASKER}
-          </span>
-          &ldquo;
-          <button
-            ref={cel}
-            type="button"
-            onClick={klik}
-            style={celBreedte ? { width: `${celBreedte}px` } : undefined}
-            className="klapper-cel cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
-            aria-label={`Op jouw apparaat staat ${NAAM_ECHT}; de AI krijgt alleen ${NAAM_MASKER} te zien. Klik om de klep nog eens te laten klappen.`}
-          >
-            {/* Het spook-woord houdt maat en basislijn vast, ook zonder JS. */}
-            <span className={`klapper-spook font-bold ${doel === "masker" ? "met-rand" : ""}`} aria-hidden>
-              {doel === "echt" ? NAAM_ECHT : NAAM_MASKER}
-            </span>
-            {klap ? (
-              <>
-                <span className="klapper-venster boven" aria-hidden>
-                  <span className="klapper-vlak">
-                    <KlapInhoud staat={klap.naar} />
-                  </span>
-                </span>
-                <span className="klapper-venster onder" aria-hidden>
-                  <span className="klapper-vlak">
-                    <KlapInhoud staat={klap.van} />
-                  </span>
-                </span>
-                <span ref={flap} className="klapper-flap" aria-hidden>
-                  <span className="flap-voor">
-                    <span className="klapper-vlak">
-                      <KlapInhoud staat={klap.van} />
-                    </span>
-                  </span>
-                  <span className="flap-achter">
-                    <span className="klapper-vlak">
-                      <KlapInhoud staat={klap.naar} />
-                    </span>
-                  </span>
-                </span>
-              </>
-            ) : (
-              <span className="klapper-vol" aria-hidden>
-                <KlapInhoud staat={fase} />
-              </span>
-            )}
-          </button>
-          <span>{ZIN_REST}</span>&rdquo;
-        </p>
-
-        <p className="mt-6 max-w-xl text-base leading-7 text-ink/55">
-          Dit gebeurt op jouw apparaat, nog vóór er iets wordt verstuurd.
-          Klik gerust op de naam: bij jou mag de klep even open, maar hij
-          klapt altijd vanzelf weer dicht.
-        </p>
-      </div>
-    </div>
-  );
-}
 
 /* De kop boven de rij. De ondertitel wijst meteen op het slepen: zonder die
    hint blijft de helft van de kaarten onopgemerkt buiten beeld staan. */
@@ -2805,114 +2533,7 @@ function StijlBlok() {
       }
       .anim [data-leesregel].leest .herkenvink path { stroke-dashoffset: 0; }
 
-      /* ── De naamklapper: maskeren, zichtbaar gemaakt ──
-         Eén klapcel in de grote rapportzin. Het spook-woord in de cel houdt
-         de maat en de basislijn vast (ook zonder JS); de lagen erboven
-         tekenen de naam of de schuilnaam-tegel. Het script meet de twee
-         breedtes en laat de lamel vallen. De maten staan in em, zodat het
-         hele mechaniek meeschaalt met de zin waar het in staat. */
-      .klapper-cel {
-        position: relative;
-        display: inline-block;
-        line-height: 1.42;
-        white-space: nowrap;
-        perspective: 20em;
-        border-radius: 0.42em;
-        transition: width 0.54s cubic-bezier(0.34, 1.2, 0.4, 1);
-      }
-      .klapper-spook { visibility: hidden; display: inline-block; }
-      .klapper-spook.met-rand { padding-inline: 0.55em; }
-      .klapper-meet {
-        position: absolute;
-        visibility: hidden;
-        white-space: nowrap;
-        pointer-events: none;
-      }
-      .klapper-vol { position: absolute; inset: 0; display: block; }
-      .klapper-venster { position: absolute; left: 0; right: 0; overflow: hidden; display: block; }
-      .klapper-venster.boven { top: 0; height: 50%; }
-      .klapper-venster.onder { bottom: 0; height: 50%; }
-      .klapper-vlak { position: absolute; left: 0; right: 0; height: 200%; display: block; }
-      .klapper-venster.boven .klapper-vlak { top: 0; }
-      .klapper-venster.onder .klapper-vlak { top: -100%; }
-
-      /* De vallende lamel: de bovenste helft, scharnier op de naad. De
-         voorkant toont de oude inhoud; de achterkant (alvast omgeklapt)
-         de onderste helft van de nieuwe, zodat hij na de val precies het
-         onderste venster vult. */
-      .klapper-flap {
-        position: absolute;
-        left: 0; right: 0; top: 0; height: 50%;
-        transform-origin: center bottom;
-        transform-style: preserve-3d;
-        z-index: 3;
-        will-change: transform;
-        display: block;
-      }
-      .flap-voor,
-      .flap-achter {
-        position: absolute; inset: 0;
-        overflow: hidden;
-        display: block;
-        backface-visibility: hidden;
-        -webkit-backface-visibility: hidden;
-      }
-      .flap-achter {
-        transform: rotateX(180deg);
-        box-shadow: 0 3px 8px -2px rgb(34 28 58 / 0.35);
-      }
-      .flap-voor .klapper-vlak { top: 0; }
-      .flap-achter .klapper-vlak { top: -100%; }
-
-      /* De echte naam zoals hij op jouw apparaat staat: gewone inkt, met een
-         zachte merk-onderstreep die aanwijst welk woord zo omklapt. */
-      .klapper-echt {
-        position: absolute; inset: 0;
-        display: flex; align-items: center;
-        font-weight: 700;
-      }
-      .klapper-echt > span {
-        line-height: 1;
-        box-shadow: inset 0 -0.26em 0 rgb(47 158 110 / 0.22);
-      }
-
-      /* De schuilnaam-tegel: één lamel van een vertrekbord. Lichtval boven,
-         iets dieper groen onder, en de naad over het midden. */
-      .klapper-masker {
-        position: absolute; inset: 0;
-        display: flex; align-items: center; justify-content: center;
-        color: #fff; font-weight: 700;
-      }
-      .klapper-masker > span { position: relative; z-index: 1; }
-      .klapper-masker::before {
-        content: "";
-        position: absolute; inset: 0;
-        border-radius: 0.42em;
-        background: linear-gradient(to bottom, #35a273 0%, #2b9066 49%, #257f59 51%, #21754f 100%);
-        box-shadow:
-          inset 0 1px 0 rgb(255 255 255 / 0.22),
-          0 2px 5px -2px rgb(34 28 58 / 0.4);
-      }
-      .klapper-masker::after {
-        content: "";
-        position: absolute; left: 0.12em; right: 0.12em; top: 50%; height: 1px;
-        transform: translateY(-0.5px);
-        background: rgb(12 44 30 / 0.5);
-      }
-
-      /* Het kader boven de zin wisselt mee met de klap. */
-      .klapper-label { position: relative; display: block; height: 1.5em; }
-      .klapper-label span {
-        position: absolute; left: 0; top: 0;
-        transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-      }
-      .klapper-label .label-masker { opacity: 0; transform: translateY(9px); }
-      .klapper-label.toont-masker .label-echt { opacity: 0; transform: translateY(-9px); }
-      .klapper-label.toont-masker .label-masker { opacity: 1; transform: none; }
-
       @media (prefers-reduced-motion: reduce) {
-        .klapper-cel { transition: none; }
-        .klapper-label span { transition: none; }
         .anim [data-reveal] { opacity: 1; transform: none; transition: none; }
         /* Paneel en kaart-hint gewoon tonen, zonder beweging. */
         .paneel-tekst > * { opacity: 1; transform: none; animation: none; }
