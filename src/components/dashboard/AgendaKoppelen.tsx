@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { kort } from "@/lib/planning";
 import type { AgendaBron } from "@/lib/planning";
 
@@ -99,15 +100,14 @@ export default function AgendaKoppelen({ agendas }: { agendas: AgendaBron[] }) {
   const [modus, setModus] = useState<"alles" | "heledagen">("alles");
   const [opslaan, setOpslaan] = useState(false);
   const [druk, setDruk] = useState<string | null>(null);
+  const router = useRouter();
 
   // De agenda's komen van de server mee. Na koppelen, verversen of loskoppelen
-  // moet het hele jaar opnieuw worden opgebouwd, en dat gebeurt daar ook, dus
-  // halen we de pagina opnieuw op.
+  // moet het jaar opnieuw worden opgebouwd. Dat doen we met router.refresh():
+  // die haalt de servergegevens opnieuw op zonder de pagina te herladen, dus je
+  // blijft gewoon op dit scherm staan en ziet het bijgewerkte tijdstip
+  // verschijnen. Een echte herlaad zou je terugzetten op het jaaroverzicht.
   const bronnen = agendas;
-
-  function vernieuwPagina() {
-    window.location.reload();
-  }
 
   async function controleer() {
     setBezig(true);
@@ -143,7 +143,11 @@ export default function AgendaKoppelen({ agendas }: { agendas: AgendaBron[] }) {
         setFout(data.fout || "Koppelen is niet gelukt.");
         return;
       }
-      vernieuwPagina();
+      // Gelukt: het formulier leegmaken en de nieuwe agenda laten verschijnen.
+      setLink("");
+      setUitslag(null);
+      setOpen(null);
+      router.refresh();
     } catch {
       setFout("Koppelen is niet gelukt. Probeer het zo nog eens.");
     } finally {
@@ -158,13 +162,15 @@ export default function AgendaKoppelen({ agendas }: { agendas: AgendaBron[] }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
-    vernieuwPagina();
+    router.refresh();
+    setDruk(null);
   }
 
   async function koppelLos(id: string) {
     setDruk(id);
     await fetch(`/api/agenda/bronnen?id=${id}`, { method: "DELETE" });
-    vernieuwPagina();
+    router.refresh();
+    setDruk(null);
   }
 
   return (
