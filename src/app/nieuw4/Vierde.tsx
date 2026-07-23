@@ -1114,6 +1114,10 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
              erboven. */}
           <div className="pointer-events-none absolute -left-24 top-10 h-80 w-80 rounded-full bg-brand/[0.09] blur-3xl" aria-hidden />
 
+          {/* De slinger die beide kaarten aan elkaar rijgt. Staat vóór de
+             inhoud in de opmaak, dus de kaarten en de tekst liggen erbovenop. */}
+          <Slinger />
+
           <div className="relative pb-28 pt-24 lg:pt-28">
             {/* ── Gegevens: de tekst hard rechts tot aan de paginarand, het
                bewijs in de ruimte die links overblijft. Een eerlijke
@@ -1573,47 +1577,100 @@ function MarkeerInhoud({ donker = false }: { donker?: boolean }) {
    rechterkaart waaieren ze de andere kant op.
    De eindstand staat in `--eind`, zodat de vellen zonder beweging gewoon
    goed liggen en er mét beweging onder de kaart vandaan schuiven. ────── */
-/* ── De penstrepen achter de kaart ─────────────────────────────────────
-   Een paar dikke groene halen die dwars achter de kaart door lopen en er
-   aan beide kanten weer uit komen. Doordat de kaart het midden opslokt zie
-   je alleen de uiteinden, en juist dat maakt de diepte: de kaart ligt er
-   duidelijk bovenop. Licht golvend, met ronde uiteinden, zodat het een
-   hand blijft en geen streepjescode wordt. ───────────────────────────── */
-/* Eén doorlopende haal die drie keer achter de kaart door gaat en aan de
-   zijkanten telkens een bocht maakt. Die bochten vallen in de vrije ruimte
-   naast de kaart, dus je ziet dat het één lijn is die terugkeert en niet
-   drie losse strepen. */
-const KRISKRAS =
-  "M14 208 C70 196 140 220 206 204 C250 194 292 196 330 186" +
-  " C356 179 366 162 358 146 C350 130 328 126 306 130" +
-  " C250 138 180 116 118 130 C78 138 40 132 30 112" +
-  " C20 92 44 74 74 72 C130 68 190 44 252 54 C300 62 336 46 366 34";
+/* ── De slinger door de hele privacysectie ─────────────────────────────
+   Eén dikke groene haal die linksboven begint, achter de eerste kaart door
+   loopt, tussen de twee tekstblokken door naar beneden zwiert en achter de
+   tweede kaart weer verdwijnt. Daardoor horen de twee kaarten bij elkaar
+   in plaats van los in hun eigen hoek te liggen.
+   De vorm wordt uit de échte posities van beide kaarten gerekend, niet uit
+   vaste coördinaten: die posities verschuiven met de schermbreedte en met
+   hoeveel regels de teksten innemen. Bij elke maatverandering wordt hij
+   opnieuw getekend. ───────────────────────────────────────────────────── */
 
-function PenStrepen({ spiegel = false }: { spiegel?: boolean }) {
+/* Een vloeiende lijn door een reeks punten (Catmull-Rom naar bezier), zodat
+   de bochten vanzelf rond zijn in plaats van geknikt. */
+function vloeiend(p: Array<[number, number]>) {
+  if (p.length < 2) return "";
+  const rond = (n: number) => n.toFixed(1);
+  let d = `M${rond(p[0][0])} ${rond(p[0][1])}`;
+  for (let i = 0; i < p.length - 1; i += 1) {
+    const p0 = p[i - 1] ?? p[i];
+    const p1 = p[i];
+    const p2 = p[i + 1];
+    const p3 = p[i + 2] ?? p2;
+    d +=
+      ` C${rond(p1[0] + (p2[0] - p0[0]) / 6)} ${rond(p1[1] + (p2[1] - p0[1]) / 6)}` +
+      ` ${rond(p2[0] - (p3[0] - p1[0]) / 6)} ${rond(p2[1] - (p3[1] - p1[1]) / 6)}` +
+      ` ${rond(p2[0])} ${rond(p2[1])}`;
+  }
+  return d;
+}
+
+function Slinger() {
+  const wrap = useRef<HTMLDivElement>(null);
+  const [pad, setPad] = useState("");
+  const [maat, setMaat] = useState<{ w: number; h: number } | null>(null);
+
+  useEffect(() => {
+    const el = wrap.current;
+    const sectie = el?.parentElement;
+    if (!el || !sectie) return;
+
+    const teken = () => {
+      const k1 = sectie.querySelector('[data-kaart="1"]')?.getBoundingClientRect();
+      const k2 = sectie.querySelector('[data-kaart="2"]')?.getBoundingClientRect();
+      if (!k1 || !k2) return;
+      const s = sectie.getBoundingClientRect();
+      const x = (v: number) => v - s.left;
+      const y = (v: number) => v - s.top;
+
+      /* Linksboven beginnen, achter kaart 1 door, in de vrije baan tussen
+         de twee tekstblokken naar beneden, en achter kaart 2 eindigen. De
+         knikpunten liggen bewust nét naast de kaarten, zodat je de bocht
+         ziet en niet alleen twee losse uiteinden. */
+      setPad(
+        vloeiend([
+          [Math.max(28, x(k1.left) - 176), Math.max(30, y(k1.top) - 118)],
+          [x(k1.left) - 62, y(k1.top) + k1.height * 0.34],
+          [x(k1.right) + 62, y(k1.bottom) - 30],
+          [x(k1.right) + 200, y(k1.bottom) + (y(k2.top) - y(k1.bottom)) * 0.55],
+          [x(k2.left) - 68, y(k2.top) + 46],
+          [x(k2.right) + 64, y(k2.bottom) - 44],
+        ]),
+      );
+      setMaat({ w: s.width, h: s.height });
+    };
+
+    teken();
+    const ro = new ResizeObserver(teken);
+    ro.observe(sectie);
+    return () => ro.disconnect();
+  }, []);
+
   return (
     <div
+      ref={wrap}
+      data-reveal
       aria-hidden
-      /* Onder lg vult de kaart bijna het hele scherm; de halen zouden dan
-         links en rechts als losse stompjes blijven staan. Daar draagt de
-         stapel de sectie. */
-      className={`strepenveld pointer-events-none absolute left-1/2 top-1/2 hidden aspect-[380/260] w-[190%] -translate-x-1/2 -translate-y-1/2 lg:block`}
+      /* Onder lg staan de kaarten onder elkaar op volle breedte; een slinger
+         die daar tussendoor moet, heeft geen ruimte. Daar draagt de stapel
+         de sectie. */
+      className="slinger pointer-events-none absolute inset-0 hidden lg:block"
     >
-      <svg
-        viewBox="0 0 380 260"
-        className={`h-full w-full ${spiegel ? "-scale-x-100" : ""}`}
-        fill="none"
-        stroke="var(--color-brand)"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path
-          className="penstreep"
-          d={KRISKRAS}
-          strokeWidth={14}
-          strokeOpacity={0.5}
-          pathLength={1}
-        />
-      </svg>
+      {maat && pad ? (
+        <svg width={maat.w} height={maat.h} viewBox={`0 0 ${maat.w} ${maat.h}`} fill="none">
+          <path
+            className="slingerpad"
+            d={pad}
+            stroke="var(--color-brand)"
+            strokeOpacity={0.42}
+            strokeWidth={14}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            pathLength={1}
+          />
+        </svg>
+      ) : null}
     </div>
   );
 }
@@ -1655,8 +1712,7 @@ const NIET_BIJ_ONS = [
 
 function BewaarKaart() {
   return (
-    <div data-reveal className="kaartblok relative w-full max-w-xs">
-      <PenStrepen />
+    <div data-reveal data-kaart="1" className="kaartblok relative w-full max-w-xs">
       <PapierStapel />
       <div className="relative rounded-2xl bg-white p-6 shadow-[0_26px_60px_-28px_rgba(34,28,58,0.45)] ring-1 ring-black/5">
       <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-ink/45">
@@ -1704,8 +1760,7 @@ const KLAS_REST = 19;
 
 function KlassenlijstKaart() {
   return (
-    <div data-reveal className="kaartblok relative w-full max-w-xs lg:ml-auto">
-      <PenStrepen spiegel />
+    <div data-reveal data-kaart="2" className="kaartblok relative w-full max-w-xs lg:ml-auto">
       <PapierStapel spiegel />
       <div className="relative rounded-2xl bg-white p-6 shadow-[0_26px_60px_-28px_rgba(34,28,58,0.45)] ring-1 ring-black/5">
       <div className="flex items-baseline justify-between gap-3">
@@ -2809,15 +2864,23 @@ function StijlBlok() {
       }
       .anim .kaartblok.is-in .klasmasker { opacity: 1; transform: none; }
 
-      /* De haal trekt zichzelf in één beweging, van begin tot eind, alsof
+      /* De slinger is een laag over de hele sectie; de gewone reveal (die
+         alles 18px omhoog schuift) hoort daar niet op te werken. Deze regel
+         staat sterker dan de algemene en zet dat terug. */
+      .anim .slinger[data-reveal] {
+        opacity: 1;
+        transform: none;
+        transition: none;
+      }
+      /* De haal trekt zichzelf in één beweging van begin tot eind, alsof
          iemand hem net zet. Zonder beweging staat hij er gewoon. */
-      .anim .kaartblok .penstreep {
+      .anim .slinger .slingerpad {
         stroke-dasharray: 1;
         stroke-dashoffset: 1;
-        transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0.1, 0.3, 1);
-        transition-delay: var(--wacht);
+        transition: stroke-dashoffset 2.8s cubic-bezier(0.35, 0.05, 0.2, 1);
+        transition-delay: 0.35s;
       }
-      .anim .kaartblok.is-in .penstreep { stroke-dashoffset: 0; }
+      .anim .slinger.is-in .slingerpad { stroke-dashoffset: 0; }
 
       /* De vellen onder de kaart: zonder beweging liggen ze meteen goed,
          mét beweging beginnen ze recht onder de kaart en schuiven ze er
