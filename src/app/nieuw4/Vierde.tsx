@@ -1579,26 +1579,15 @@ function MarkeerInhoud({ donker = false }: { donker?: boolean }) {
    je alleen de uiteinden, en juist dat maakt de diepte: de kaart ligt er
    duidelijk bovenop. Licht golvend, met ronde uiteinden, zodat het een
    hand blijft en geen streepjescode wordt. ───────────────────────────── */
-const PENSTREPEN = [
-  {
-    d: "M2 78 C74 56 132 94 200 74 C262 56 318 90 378 68",
-    dik: 15,
-    dekking: 0.6,
-    wacht: 0,
-  },
-  {
-    d: "M4 154 C68 176 130 138 196 158 C258 177 320 146 376 162",
-    dik: 13,
-    dekking: 0.48,
-    wacht: 0.12,
-  },
-  {
-    d: "M26 216 C96 202 152 230 218 214 C272 201 320 222 366 210",
-    dik: 8,
-    dekking: 0.32,
-    wacht: 0.24,
-  },
-];
+/* Eén doorlopende haal die drie keer achter de kaart door gaat en aan de
+   zijkanten telkens een bocht maakt. Die bochten vallen in de vrije ruimte
+   naast de kaart, dus je ziet dat het één lijn is die terugkeert en niet
+   drie losse strepen. */
+const KRISKRAS =
+  "M14 208 C70 196 140 220 206 204 C250 194 292 196 330 186" +
+  " C356 179 366 162 358 146 C350 130 328 126 306 130" +
+  " C250 138 180 116 118 130 C78 138 40 132 30 112" +
+  " C20 92 44 74 74 72 C130 68 190 44 252 54 C300 62 336 46 366 34";
 
 function PenStrepen({ spiegel = false }: { spiegel?: boolean }) {
   return (
@@ -1615,18 +1604,15 @@ function PenStrepen({ spiegel = false }: { spiegel?: boolean }) {
         fill="none"
         stroke="var(--color-brand)"
         strokeLinecap="round"
+        strokeLinejoin="round"
       >
-        {PENSTREPEN.map((s) => (
-          <path
-            key={s.d}
-            className="penstreep"
-            style={{ "--s": `${s.wacht}s` } as CSSProperties}
-            d={s.d}
-            strokeWidth={s.dik}
-            strokeOpacity={s.dekking}
-            pathLength={1}
-          />
-        ))}
+        <path
+          className="penstreep"
+          d={KRISKRAS}
+          strokeWidth={14}
+          strokeOpacity={0.5}
+          pathLength={1}
+        />
       </svg>
     </div>
   );
@@ -2823,13 +2809,13 @@ function StijlBlok() {
       }
       .anim .kaartblok.is-in .klasmasker { opacity: 1; transform: none; }
 
-      /* De penstrepen trekken zichzelf, één voor één, alsof iemand ze net
-         zet. Zonder beweging staan ze er gewoon. */
+      /* De haal trekt zichzelf in één beweging, van begin tot eind, alsof
+         iemand hem net zet. Zonder beweging staat hij er gewoon. */
       .anim .kaartblok .penstreep {
         stroke-dasharray: 1;
         stroke-dashoffset: 1;
-        transition: stroke-dashoffset 0.95s cubic-bezier(0.22, 1, 0.36, 1);
-        transition-delay: calc(var(--wacht) + var(--s));
+        transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0.1, 0.3, 1);
+        transition-delay: var(--wacht);
       }
       .anim .kaartblok.is-in .penstreep { stroke-dashoffset: 0; }
 
