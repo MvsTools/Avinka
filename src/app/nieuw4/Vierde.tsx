@@ -1563,8 +1563,8 @@ const DOORLOOP_GROEN = "#1e7149";
    Alles wordt uit de index gerekend en niets uit toeval, zodat de wand er bij
    elke bezoeker hetzelfde uitziet. Elke tegel staat een graad scheef met een
    eigen ronding: een raster van identieke rechthoeken leest als een scherm
-   dat nog moet laden. Eén plek blijft open, dichtbij en links, want daar kijk
-   je voordat de verte oplost. Dat is wat we niet bewaren. */
+   dat nog moet laden. Eén plek is een gat in de wand, dichtbij en links,
+   waar je kijkt voordat de verte oplost. Dat is wat we niet bewaren. */
 const WAND_KOL = 8;
 const WAND_RIJ = 6;
 const WAND_KLEUREN = [
@@ -1578,7 +1578,6 @@ const WAND_KLEUREN = [
   "bg-sand",
 ];
 const WAND_OPEN = 2 * WAND_KOL + 1; // derde rij, tweede kolom: dichtbij en in beeld
-const WAND_AMBER = 1 * WAND_KOL + 3; // één warme vonk, ruim voor de vervaging
 
 const TEGELS = Array.from({ length: WAND_KOL * WAND_RIJ }, (_, i) => {
   const kol = i % WAND_KOL;
@@ -1587,11 +1586,29 @@ const TEGELS = Array.from({ length: WAND_KOL * WAND_RIJ }, (_, i) => {
     kol,
     rij,
     open: i === WAND_OPEN,
-    kleur: i === WAND_AMBER ? "bg-accent" : WAND_KLEUREN[(i * 3 + rij * 5) % WAND_KLEUREN.length],
+    kleur: WAND_KLEUREN[(i * 3 + rij * 5) % WAND_KLEUREN.length],
     draai: (((i * 37) % 7) - 3) * 0.5,
     rond: ["0.7rem", "0.85rem", "0.6rem", "0.78rem"][i % 4],
   };
 });
+
+/* De reis van het kaartje: de wand krijgt een hoofdpersoon. Eén klein
+   document begint diep in de verte en wordt tijdens het scrollen van tegel
+   naar tegel doorgegeven; vooraan aangekomen krijgt het zijn vinkje. Dát is
+   "de tools werken samen" als beweging in plaats van als zin.
+   De stations staan met de hand gekozen: grofweg de derde rij naar voren,
+   met een kleine wiebel erin zodat het doorgeven leest als handwerk. De
+   laatste sprong gaat over het gat heen: daar landt nooit iets, en het
+   donkere blok eronder legt twee tellen later uit waarom. */
+const REIS: [number, number][] = [
+  [7, 1],
+  [6, 2],
+  [5, 2],
+  [4, 1],
+  [3, 2],
+  [2, 2],
+  [0, 2], // over het gat op kolom 1 heen
+];
 
 function Doorloop() {
   const veld = useRef<HTMLDivElement>(null);
@@ -1609,7 +1626,10 @@ function Doorloop() {
     if (!blok || !raster) return;
 
     const tegels = Array.from(raster.querySelectorAll<HTMLElement>("[data-tegel]"));
-    
+    const kaart = raster.querySelector<HTMLElement>("[data-reiskaart]");
+    const vinkje = raster.querySelector<HTMLElement>("[data-reisvink]");
+    const TEGELSCHADUW = "0 8px 20px -12px rgba(9,32,22,0.65)";
+
     /* Hoeveel van de scroll één tegel nodig heeft om binnen te komen. Ruim
        genoeg dat ze elkaar overlappen: anders wordt het een rij losse
        gebeurtenissen in plaats van één beweging. */
@@ -1623,11 +1643,14 @@ function Doorloop() {
         bezig = false;
         const vh = window.innerHeight;
         const r = blok.getBoundingClientRect();
-        /* Het leggen loopt van "het veld komt onderin binnen" tot "het veld
-           staat goed in beeld". Aan de scroll gekoppeld en niet aan een
-           tijdlijn: scroll je terug, dan gaan de tegels weer uit elkaar. Dat
-           mag hier, want jij bestuurt het. */
-        const p = Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.5 + r.height * 0.6)));
+        /* Eén klok voor de hele sectie: van "het veld komt onderin binnen"
+           tot "het veld staat bovenin". Aan de scroll gekoppeld en niet aan
+           een tijdlijn: scroll je terug, dan speelt alles terug. Dat mag
+           hier, want jij bestuurt het. In de eerste helft landt de wand, in
+           de tweede helft reist het kaartje. */
+        const p = Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.92)));
+        const pWand = Math.min(1, p / 0.5);
+        const pReis = Math.min(1, Math.max(0, (p - 0.52) / 0.46));
 
         tegels.forEach((el, i) => {
           /* De volgorde loopt van dichtbij naar ver: eerst de kolommen die
@@ -1638,7 +1661,7 @@ function Doorloop() {
           const rij = Math.floor(i / WAND_KOL);
           const fase = (kol + rij * 0.22) / (WAND_KOL - 1 + (WAND_RIJ - 1) * 0.22);
           const start = fase * (1 - DUUR);
-          const t = Math.min(1, Math.max(0, (p - start) / DUUR));
+          const t = Math.min(1, Math.max(0, (pWand - start) / DUUR));
           // Sterke uitloop: hard binnen en dan zachtjes op zijn plek zakken.
           const e = 1 - Math.pow(1 - t, 5);
           const uit = 1 - e;
@@ -1655,6 +1678,69 @@ function Doorloop() {
           // De laatste tel is hij al vol: het landen wil je zien, niet het opdoemen.
           el.style.opacity = String(Math.min(1, e * 1.7));
         });
+
+        /* ── Het kaartje ── */
+        if (!kaart) return;
+        if (pReis <= 0) {
+          kaart.style.opacity = "0";
+          vinkje?.classList.remove("vinkpop");
+          tegels.forEach((el) => {
+            if (el.style.boxShadow) el.style.boxShadow = "";
+          });
+          return;
+        }
+
+        /* De sprong over het gat krijgt dubbel zoveel scrolweg als een gewone
+           overdracht: dat is het moment van deze wand, dus dat mag niet
+           voorbijflitsen. */
+        const GEWICHT = REIS.slice(0, -1).map(([k], j) =>
+          Math.abs(REIS[j + 1][0] - k) > 1 ? 2 : 1,
+        );
+        const totaal = GEWICHT.reduce((a, b) => a + b, 0);
+        let u = pReis * totaal;
+        let stap = 0;
+        while (stap < GEWICHT.length - 1 && u > GEWICHT[stap]) {
+          u -= GEWICHT[stap];
+          stap += 1;
+        }
+        const pad = stap + Math.min(1, u / GEWICHT[stap]);
+        const [vanK, vanR] = REIS[stap];
+        const [naarK, naarR] = REIS[stap + 1];
+        /* Even rusten op elk station voordat de volgende sprong begint:
+           doorgeven is pakken en weer loslaten, geen glijbaan. */
+        const ruw = pad - stap;
+        const tHop = Math.min(1, Math.max(0, (ruw - 0.18) / 0.64));
+        const glad = tHop * tHop * (3 - 2 * tHop);
+
+        const x = ((vanK + 0.5 + (naarK - vanK) * glad) / WAND_KOL) * 100;
+        const y = ((vanR + 0.5 + (naarR - vanR) * glad) / WAND_RIJ) * 100;
+        /* De sprong over het gat is de laatste en gaat hoger: je moet zíén
+           dat hij die ene plek overslaat in plaats van erover heen schuift. */
+        const sprong = Math.abs(naarK - vanK) > 1 ? 64 : 26;
+        const z = 6 + Math.sin(Math.PI * glad) * sprong;
+        const rot = -2 + (stap % 2) * 4 + glad * ((stap % 2 ? -1 : 1) * 4);
+
+        kaart.style.opacity = String(Math.min(1, pReis * 8));
+        kaart.style.left = `${x.toFixed(2)}%`;
+        kaart.style.top = `${y.toFixed(2)}%`;
+        kaart.style.transform = `translate(-50%, -50%) translateZ(${z.toFixed(1)}px) rotate(${rot.toFixed(2)}deg)`;
+
+        /* Stations waar het kaartje al geweest is, gloeien even na: zo zie
+           je het spoor van het doorgeven, en dooft het vanzelf weer uit. */
+        REIS.forEach(([sk, sr], j) => {
+          const el = tegels[sr * WAND_KOL + sk];
+          if (!el || j >= REIS.length - 1) return;
+          const na = pad - j;
+          const gloed = na > 0 ? Math.max(0, 1 - na / 2.6) * 0.3 : 0;
+          el.style.boxShadow =
+            gloed > 0.01
+              ? `${TEGELSCHADUW}, inset 0 0 0 999px rgba(255,255,255,${gloed.toFixed(3)})`
+              : "";
+        });
+
+        // Aangekomen: het vinkje popt, zoals alles hier afgevinkt wordt.
+        if (pReis >= 0.995) vinkje?.classList.add("vinkpop");
+        else vinkje?.classList.remove("vinkpop");
       });
     };
 
@@ -1732,7 +1818,7 @@ function Doorloop() {
           >
           <div
             ref={mozaiek}
-            className="mozaiek mozaiek-wand grid aspect-[8/6] grid-cols-8 grid-rows-6 gap-1.5 sm:gap-2"
+            className="mozaiek mozaiek-wand relative grid aspect-[8/6] grid-cols-8 grid-rows-6 gap-1.5 sm:gap-2"
           >
             {TEGELS.map((t) => (
               <span
@@ -1749,11 +1835,39 @@ function Doorloop() {
                 }
                 className={
                   t.open
-                    ? "ring-2 ring-inset ring-white/40"
+                    ? // Het gat: je kijkt de wand ín. Donkerder dan het veld,
+                      // met een schaduw alsof de rand een dikte heeft.
+                      "bg-black/25 shadow-[inset_0_4px_14px_rgba(0,0,0,0.45)] ring-1 ring-inset ring-white/20"
                     : `shadow-[0_8px_20px_-12px_rgba(9,32,22,0.65)] ${t.kleur}`
                 }
               />
             ))}
+
+            {/* Het reizende kaartje. Absoluut binnen de wand, dus het deelt
+               het perspectief: dichterbij is vanzelf groter. Zonder script
+               (of met verminderde beweging) ligt het gewoon klaar op zijn
+               eindstation, mét vinkje. */}
+            <div
+              data-reiskaart
+              className="absolute left-0 top-0 w-[9.5%]"
+              style={{
+                left: `${((0.5 / WAND_KOL) * 100).toFixed(2)}%`,
+                top: `${((2.5 / WAND_RIJ) * 100).toFixed(2)}%`,
+                transform: "translate(-50%, -50%) rotate(-2deg)",
+              }}
+            >
+              <div className="flex aspect-[4/5] flex-col justify-center gap-[11%] rounded-[0.5rem] bg-white px-[14%] shadow-[0_14px_28px_-12px_rgba(9,32,22,0.6)]">
+                <span className="block h-[3px] w-3/4 rounded-full bg-ink/30" />
+                <span className="block h-[3px] w-full rounded-full bg-ink/15" />
+                <span className="block h-[3px] w-5/6 rounded-full bg-ink/15" />
+              </div>
+              <span
+                data-reisvink
+                className="absolute -bottom-[14%] -right-[16%] flex w-[46%] items-center justify-center rounded-full bg-brand text-white shadow-sm ring-2 ring-white/90 aspect-square"
+              >
+                <Vink className="h-3/5 w-3/5" dik={4} />
+              </span>
+            </div>
           </div>
           </div>
         </div>
@@ -2742,12 +2856,19 @@ function StijlBlok() {
         mask-image: linear-gradient(to right, #000 58%, transparent 99%);
       }
       /* De wand zelf. Op kleine schermen milder gekanteld: bij een smalle
-         doos wordt de verte anders zo klein dat er niets meer te zien is. */
+         doos wordt de verte anders zo klein dat er niets meer te zien is.
+         Onderaan lost hij op in de afdaling naar de inkt, net zoals hij
+         rechts in de verte oplost: nergens een afgekapte rij. */
       .mozaiek-wand {
         transform: rotateY(-18deg);
         transform-origin: left center;
         transform-style: preserve-3d;
+        -webkit-mask-image: linear-gradient(to bottom, #000 68%, transparent 100%);
+        mask-image: linear-gradient(to bottom, #000 68%, transparent 100%);
       }
+      /* Het vinkje op het reizende kaartje wacht op de landing; de pop zelf
+         is de bestaande vinkpop. Zonder .anim staat het er gewoon. */
+      .anim [data-reisvink]:not(.vinkpop) { opacity: 0; }
       @media (min-width: 1024px) {
         .mozaiek-wand { transform: rotateY(-34deg); }
       }
