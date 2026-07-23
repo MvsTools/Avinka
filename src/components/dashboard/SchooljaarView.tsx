@@ -563,9 +563,7 @@ function Blok({
             {bezig ? "" : `, ${periode.weken} weken`}
           </span>
           {bezig && (
-            <span className="rounded-lg bg-brand-dark px-2.5 py-1 text-sm font-bold text-white">
-              {aftellen}
-            </span>
+            <span className="text-sm font-semibold text-brand-dark">{aftellen}</span>
           )}
           <span className="ml-auto text-sm font-semibold text-ink/40">
             {open
