@@ -205,7 +205,7 @@ function JaarKiezer({ jaren, huidig }: { jaren: JaarKeuze[]; huidig: string }) {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-30 mt-1.5 min-w-[10rem] overflow-hidden rounded-2xl border border-black/5 bg-white p-1 shadow-lg"
+          className="absolute right-0 z-30 mt-1.5 overflow-hidden rounded-2xl border border-black/5 bg-white p-1 shadow-lg"
         >
           {jaren.map((j) => (
             <Link
