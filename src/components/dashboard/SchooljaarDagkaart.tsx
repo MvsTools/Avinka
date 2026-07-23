@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { kort, volledig } from "@/lib/planning";
+import { kort, volledig, zijkantLabel } from "@/lib/planning";
 import type { Dagbeeld } from "@/lib/planning";
 import { ETIKET } from "./schooljaar-stijl";
 
@@ -12,9 +12,11 @@ import { ETIKET } from "./schooljaar-stijl";
 export default function SchooljaarDagkaart({
   beeld,
   sluit,
+  groepen = [],
 }: {
   beeld: Dagbeeld;
   sluit: () => void;
+  groepen?: number[];
 }) {
   const kaart = useRef<HTMLDivElement>(null);
 
@@ -86,13 +88,25 @@ export default function SchooljaarDagkaart({
             {afspraken.map((item) => {
               const et = ETIKET[item.soort];
               const meerdaags = item.totDatum > item.datum;
+              const zijkant = zijkantLabel(item, groepen);
               return (
-                <li key={item.id} className="rounded-2xl border border-black/5 bg-cream/40 px-4 py-3">
+                <li
+                  key={item.id}
+                  className={
+                    "rounded-2xl border border-black/5 bg-cream/40 px-4 py-3 " +
+                    (zijkant ? "opacity-70" : "")
+                  }
+                >
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                     <span className="font-semibold text-ink">{item.titel}</span>
                     <span className={"rounded-lg px-2 py-0.5 text-xs font-bold " + et.stijl}>
                       {et.woord}
                     </span>
+                    {zijkant && (
+                      <span className="rounded-lg border border-black/10 px-2 py-0.5 text-xs font-semibold text-ink/45">
+                        {zijkant}
+                      </span>
+                    )}
                   </div>
                   <p className="mt-1 text-sm text-ink/60">
                     {item.heleDag

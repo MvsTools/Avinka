@@ -86,8 +86,28 @@ export function beoordeel(item: PlanItem, eigenGroepen: number[] = []): Relevant
 }
 
 /**
+ * Het merkje bij een afspraak die waarschijnlijk niet van jou is: "groep 8" of
+ * "voor ouders". Geeft null als het gewoon van jou is.
+ *
+ * WAAROM MERKEN EN NIET VERBERGEN: bij groep 8 hoort soms iets waar de hele
+ * school bij is (de musical, het uitzwaaien). "Oh, hier hoef ik niets mee" is
+ * een prima ervaring; "dat heb ik gemist, het stond niet in mijn agenda" is dat
+ * niet. Dus laten we het staan, alleen rustiger.
+ */
+export function zijkantLabel(item: PlanItem, eigenGroepen: number[] = []): string | null {
+  if (item.soort === "vakantie" || item.soort === "vrij") return null;
+  const oordeel = beoordeel(item, eigenGroepen);
+  if (oordeel.andereGroep) {
+    const groepen = groepenUitTitel(item.titel) ?? [];
+    return groepen.length === 1 ? `groep ${groepen[0]}` : "andere groepen";
+  }
+  return oordeel.ouderoproep ? "voor ouders" : null;
+}
+
+/**
  * De afspraken die over jou gaan, plus hoeveel er opzij zijn gezet en waarom.
- * Vakanties en vrije dagen blijven altijd staan: die gelden voor iedereen.
+ * Alleen voor wie zelf kiest om strak te filteren; standaard tonen we alles.
+ * Vakanties en vrije dagen blijven sowieso staan: die gelden voor iedereen.
  */
 export function filterVoorMij(
   items: PlanItem[],

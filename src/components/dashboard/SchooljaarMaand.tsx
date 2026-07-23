@@ -1,7 +1,15 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import { dagbeeld, maandagVan, plus, verschil, volledig, weeknummer } from "@/lib/planning";
+import {
+  dagbeeld,
+  maandagVan,
+  plus,
+  verschil,
+  volledig,
+  weeknummer,
+  zijkantLabel,
+} from "@/lib/planning";
 import type { PlanningBron } from "@/lib/planning";
 import { ETIKET, STIP } from "./schooljaar-stijl";
 import SchooljaarDagkaart from "./SchooljaarDagkaart";
@@ -18,9 +26,11 @@ const MAANDVOL = [
 export default function SchooljaarMaand({
   bron,
   vandaag,
+  groepen,
 }: {
   bron: PlanningBron;
   vandaag: string;
+  groepen: number[];
 }) {
   const binnenJaar = vandaag >= bron.schooljaar.start && vandaag <= bron.schooljaar.eind;
   const begin = binnenJaar ? vandaag : bron.schooljaar.start;
@@ -162,10 +172,16 @@ export default function SchooljaarMaand({
                     {beeld.items.slice(0, 3).map((it) => (
                       <span
                         key={it.id}
-                        title={it.titel + (it.begin ? `, ${it.begin}` : "")}
+                        title={
+                          it.titel +
+                          (it.begin ? `, ${it.begin}` : "") +
+                          (zijkantLabel(it, groepen) ? ` (${zijkantLabel(it, groepen)})` : "")
+                        }
                         className={
                           "truncate rounded-md px-1.5 py-0.5 text-xs font-bold leading-snug " +
-                          ETIKET[it.soort].stijl
+                          ETIKET[it.soort].stijl +
+                          // Waarschijnlijk niet van jou: blijft staan, maar rustiger.
+                          (zijkantLabel(it, groepen) ? " opacity-50" : "")
                         }
                       >
                         {it.titel}
@@ -191,7 +207,7 @@ export default function SchooljaarMaand({
 
       {/* Tik een dag aan en het kaartje van die dag komt naar voren: wat er
           staat en hoe laat. */}
-      {gekozen && <SchooljaarDagkaart beeld={beeldVan(gekozen)} sluit={() => setGekozen(null)} />}
+      {gekozen && <SchooljaarDagkaart beeld={beeldVan(gekozen)} groepen={groepen} sluit={() => setGekozen(null)} />}
     </div>
   );
 }

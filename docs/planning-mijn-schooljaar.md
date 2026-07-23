@@ -139,6 +139,27 @@ De eerste en laatste schooldag schuiven mee: begint jouw zomervakantie een week
 eerder, dan is jouw laatste schooldag ook een week eerder, en de periodes
 herberekenen zich daarop.
 
+### 3.5 Wat niet van jou is: tonen, niet verbergen
+
+Een gedeelde schoolagenda is geschreven voor ouders en voor de hele school. In
+een echte Parro-agenda van 145 afspraken hoorden er 31 bij een andere groep en
+waren er 13 oproepen aan ouders (chauffeurs, meefietsen, hulp gezocht).
+
+Eerste versie verborg die. **Dat is teruggedraaid op aanwijzing van de eigenaar,
+en de reden is de moeite waard om te onthouden:**
+
+> Groep 8 heeft soms iets wat belangrijk is voor de hele school en dus ook voor
+> iedere leerkracht. Liever dat een leerkracht ziet "oh, hier hoef ik niets mee"
+> dan dat hij zegt "dat heb ik gemist, het stond niet in mijn Avinka-agenda".
+
+Dus: alles blijft staan, maar wat waarschijnlijk niet van jou is wordt **gedempt
+en krijgt een merkje** ("groep 8", "voor ouders"). Wie het tóch strak wil, zet
+zelf "Alleen wat van mij is" aan. Vakanties en dagen zonder les worden nooit
+gemerkt, want die gelden voor iedereen.
+
+De eigen groep komt uit de instellingen, waar vrije tekst in staat ("Groep 7",
+"7", "1/2"); we halen de nummers eruit en filteren niet als dat niet lukt.
+
 ### 3.3 Schooljaren bewaren
 
 We bewaren **dit schooljaar en het vorige**. Vorig jaar mag je bekijken (jaar,

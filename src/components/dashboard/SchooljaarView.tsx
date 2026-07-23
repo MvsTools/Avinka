@@ -11,6 +11,7 @@ import {
   plus,
   schoolweken,
   telDubbelingen,
+  zijkantLabel,
   verschil,
   volledig,
   weekdag,
@@ -44,12 +45,13 @@ export default function SchooljaarView({
   const [weergave, setWeergave] = useState<"lijst" | "maand">("lijst");
   const [toonAlles, setToonAlles] = useState(false);
 
-  // Een schoolagenda staat vol met dingen die niet van jou zijn: de gesprekken
-  // van groep 7, oproepen aan rijouders. Die zetten we opzij, met een knop om
-  // ze alsnog te laten zien. Weggooien doen we nooit.
+  // Een schoolagenda staat vol met dingen van andere groepen en oproepen aan
+  // ouders. Die tonen we gewoon, alleen rustiger: gedempt en met een merkje.
+  // Verbergen is te riskant, want bij groep 8 hoort soms iets waar de hele
+  // school bij is. Wie het tóch strak wil, zet het filter zelf aan.
   const zeef = filterVoorMij(volledigeBron.items, mijnGroepen);
   const opzij = zeef.andereGroep + zeef.ouderoproep;
-  const bron = toonAlles ? volledigeBron : { ...volledigeBron, items: zeef.voorMij };
+  const bron = toonAlles ? { ...volledigeBron, items: zeef.voorMij } : volledigeBron;
 
   const { schooljaar, items } = bron;
   const loopt = vandaag >= schooljaar.start && vandaag <= schooljaar.eind;
@@ -162,37 +164,29 @@ export default function SchooljaarView({
           {opzij > 0 && (
             <p className="text-sm text-ink/55">
               {toonAlles ? (
-                <>Je ziet nu ook wat niet van jou is.</>
+                <>
+                  {opzij} afspraken van andere groepen en oproepen aan ouders staan nu niet in je
+                  jaar.
+                </>
               ) : (
                 <>
-                  {zeef.andereGroep > 0 && (
-                    <>
-                      {zeef.andereGroep} afspraken horen bij een andere groep
-                      {zeef.ouderoproep > 0 ? ", " : ". "}
-                    </>
-                  )}
-                  {zeef.ouderoproep > 0 && (
-                    <>
-                      {zeef.ouderoproep} {zeef.ouderoproep === 1 ? "is een oproep" : "zijn oproepen"}{" "}
-                      aan ouders.{" "}
-                    </>
-                  )}
-                  Die laat ik weg.
+                  {opzij} afspraken gaan waarschijnlijk niet over jou. Die staan er gedempt bij, met
+                  een merkje, zodat je ze wel ziet.
                 </>
               )}{" "}
               <button
                 onClick={() => setToonAlles(!toonAlles)}
                 className="font-bold text-brand-dark underline-offset-4 hover:underline"
               >
-                {toonAlles ? "Alleen wat voor mij is" : "Toon ze toch"}
+                {toonAlles ? "Toon ze toch" : "Alleen wat van mij is"}
               </button>
             </p>
           )}
 
           {weergave === "maand" ? (
-            <SchooljaarMaand bron={bron} vandaag={vandaag} />
+            <SchooljaarMaand bron={bron} vandaag={vandaag} groepen={mijnGroepen} />
           ) : (
-            <Jaarlijst bron={bron} vandaag={vandaag} />
+            <Jaarlijst bron={bron} vandaag={vandaag} groepen={mijnGroepen} />
           )}
         </>
       )}
@@ -271,14 +265,24 @@ function Feiten({
 }
 
 /** Het jaar als lijst: blokken werk, met de vakanties ertussen. */
-function Jaarlijst({ bron, vandaag }: { bron: PlanningBron; vandaag: string }) {
+function Jaarlijst({
+  bron,
+  vandaag,
+  groepen,
+}: {
+  bron: PlanningBron;
+  vandaag: string;
+  groepen: number[];
+}) {
   const { schooljaar, periodes, items } = bron;
   const [open, setOpen] = useState<number[]>([]);
   const [dag, setDag] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col gap-4">
-      {dag && <SchooljaarDagkaart beeld={dagbeeld(bron, dag)} sluit={() => setDag(null)} />}
+      {dag && (
+        <SchooljaarDagkaart beeld={dagbeeld(bron, dag)} groepen={groepen} sluit={() => setDag(null)} />
+      )}
 
       {periodes.map((periode) => (
         <Blok
@@ -287,6 +291,7 @@ function Jaarlijst({ bron, vandaag }: { bron: PlanningBron; vandaag: string }) {
           bron={bron}
           vandaag={vandaag}
           toonDag={setDag}
+          groepen={groepen}
           open={open.includes(periode.nummer)}
           zetOpen={() =>
             setOpen((o) =>
@@ -316,6 +321,7 @@ function Blok({
   bron,
   vandaag,
   toonDag,
+  groepen,
   open,
   zetOpen,
 }: {
@@ -323,6 +329,7 @@ function Blok({
   bron: PlanningBron;
   vandaag: string;
   toonDag: (datum: string) => void;
+  groepen: number[];
   open: boolean;
   zetOpen: () => void;
 }) {
@@ -390,7 +397,7 @@ function Blok({
                       <span className="h-px flex-1 bg-brand/35" />
                     </li>
                   )}
-                  <Regel item={item} vandaag={vandaag} toonDag={toonDag} />
+                  <Regel item={item} vandaag={vandaag} toonDag={toonDag} groepen={groepen} />
                 </div>
               );
             })}
@@ -417,15 +424,25 @@ function Regel({
   item,
   vandaag,
   toonDag,
+  groepen,
 }: {
   item: PlanItem;
   vandaag: string;
   toonDag: (datum: string) => void;
+  groepen: number[];
 }) {
   const geweest = (item.totDatum || item.datum) < vandaag;
   const et = ETIKET[item.soort];
+  // Gaat dit waarschijnlijk niet over jou, dan blijft het staan maar rustiger:
+  // je moet het kunnen zien zonder dat het je lijst overneemt.
+  const zijkant = zijkantLabel(item, groepen);
   return (
-    <li className={"border-t border-black/5 first:border-t-0 " + (geweest ? "opacity-45" : "")}>
+    <li
+      className={
+        "border-t border-black/5 first:border-t-0 " +
+        (geweest ? "opacity-45 " : zijkant ? "opacity-60 " : "")
+      }
+    >
       {/* De hele regel is aanklikbaar: dan komt het kaartje van die dag naar
           voren met alles wat er die dag staat, en hoe laat. */}
       <button
@@ -444,6 +461,11 @@ function Regel({
           </span>
         )}
         <span className={"rounded-lg px-2 py-0.5 text-xs font-bold " + et.stijl}>{et.woord}</span>
+        {zijkant && (
+          <span className="rounded-lg border border-black/10 px-2 py-0.5 text-xs font-semibold text-ink/45">
+            {zijkant}
+          </span>
+        )}
         {item.tijdvakken > 1 && (
           <span className="text-sm text-ink/45">{item.tijdvakken} tijdvakken</span>
         )}
