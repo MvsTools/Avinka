@@ -1063,55 +1063,19 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
 
         {/* ── 3. De tool-galerij: grote kunstkaarten, jij schuift ze zelf.
            Eigen ondergrond (zand) zodat het duidelijk een nieuw hoofdstuk is
-           en niet doorloopt uit de herkenning erboven. Het zand loopt door tot
-           en met het rustpunt onderaan: alles wat over de tools gaat heeft
-           dezelfde kleur, en daarna keert de pagina terug naar crème. ── */}
+           en niet doorloopt uit de herkenning erboven. Dat het één werkplek
+           is en niet een tas losse tools, heeft de film bovenaan al laten
+           zien; hier hoeft dat niet nog eens in tekst. Na de kaarten gaat de
+           pagina direct door naar de privacybelofte. ── */}
         <section
           id="tools"
-          className="relative overflow-hidden border-y border-ink/[0.07] bg-sand pb-28 scroll-mt-20"
+          className="relative overflow-hidden border-y border-ink/[0.07] bg-sand pb-20 scroll-mt-20"
         >
           <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
             <div className="absolute -right-32 top-24 h-96 w-96 rounded-full bg-brand/[0.07] blur-3xl" />
           </div>
 
           <ToolRail />
-
-          {/* ── Het rustpunt. Na de film, de stift, de vinkjes en de
-             sleepbare galerij is dit de eerste plek waar niets beweegt:
-             alleen tekst, rechts gezet waar al het andere links begint. Wat
-             de galerij niet laat zien, staat hier in twee alinea's: de
-             kaarten horen bij elkaar, en er komt steeds meer bij. Bewust
-             zonder toolnamen, zodat dit blijft kloppen bij elke tool die er
-             nog bij komt. ── */}
-          <div className="relative mx-auto w-full max-w-5xl px-6 pt-24 lg:pt-28">
-            <ToolsPijl />
-            <div className="ml-auto max-w-2xl">
-              <h2
-                data-reveal
-                className="font-display text-4xl font-black tracking-tight [text-wrap:balance]"
-              >
-                De tools werken samen
-              </h2>
-              <p
-                data-reveal
-                style={{ transitionDelay: "90ms" }}
-                className="mt-7 text-lg leading-8 text-ink/70"
-              >
-                Binnen Avinka wordt er veel werk voor je uit handen genomen. De
-                tools staan niet los van elkaar maar werken samen aan hetzelfde
-                resultaat.
-              </p>
-              <p
-                data-reveal
-                style={{ transitionDelay: "160ms" }}
-                className="mt-5 text-lg leading-8 text-ink/70"
-              >
-                Je stelt één keer in hoe jij werkt en daar houdt alles rekening
-                mee. En het platform groeit mee: er komt steeds meer bij, zonder
-                dat je opnieuw hoeft uit te zoeken hoe het werkt.
-              </p>
-            </div>
-          </div>
         </section>
 
         {/* ── 4. Privacy, zichtbaar gemaakt. Opent met wat we bewust níét
@@ -1128,31 +1092,83 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
 
           {/* De bekentenis. Wat je hierboven nergens kon opslaan, wordt hier
              uitgesproken vóórdat we over maskering beginnen: eerst toegeven
-             wat het kost, dan pas vertellen wat het beschermt. */}
+             wat het kost, dan pas vertellen wat het beschermt.
+             Links een groot merkgroen schild met het Avinka-vinkje dat
+             zichzelf tekent: zo is in één oogopslag duidelijk dat dit
+             hoofdstuk over privacy gaat, en dat het een uitgangspunt is en
+             geen voetnoot. Hetzelfde schild-met-vinkje keert klein terug in
+             de maskeer-demo hieronder, als terugkerend privacy-embleem. */}
           <div className="relative mx-auto w-full max-w-5xl px-6 pt-24">
-            <div className="max-w-2xl">
-              <p
+            <div className="grid items-center gap-10 lg:grid-cols-[auto_1fr] lg:gap-16">
+              {/* Het privacy-embleem */}
+              <div
                 data-reveal
-                className="font-display text-[clamp(1.6rem,3.1vw,2.35rem)] font-black leading-[1.15] tracking-tight [text-wrap:balance]"
+                className="flex flex-col items-center gap-4 lg:items-start"
               >
-                Er is één ding dat we bewust niet doen.
-              </p>
-              <p
-                data-reveal
-                style={{ transitionDelay: "90ms" }}
-                className="mt-7 text-lg leading-8 text-ink/70"
-              >
-                Gegevens van leerlingen bewaren we niet. Daardoor kun je niet
-                alles terugvinden wat je gemaakt hebt. Het staat bij jou en
-                niet bij ons.
-              </p>
-              <p
-                data-reveal
-                style={{ transitionDelay: "160ms" }}
-                className="mt-7 text-lg font-bold leading-8 text-ink"
-              >
-                Onhandig? Soms. Maar privacy weegt voor ons het zwaarst.
-              </p>
+                <div className="relative w-32 sm:w-36">
+                  <div
+                    className="absolute -inset-5 rounded-full bg-brand/20 blur-2xl"
+                    aria-hidden
+                  />
+                  {/* Het schild draagt een zachte groene slagschaduw zodat het
+                     van het crème afkomt. */}
+                  <svg
+                    viewBox="0 0 24 26"
+                    fill="none"
+                    className="relative w-full drop-shadow-[0_16px_26px_rgba(37,133,90,0.35)]"
+                    aria-hidden
+                  >
+                    <path
+                      d="M12 1.4 21.6 5.1 V13 C21.6 19.5 17.3 23.5 12 25.4 6.7 23.5 2.4 19.5 2.4 13 V5.1 Z"
+                      fill="#2f9e6e"
+                    />
+                    <path
+                      d="M12 1.4 21.6 5.1 V13 C21.6 19.5 17.3 23.5 12 25.4 6.7 23.5 2.4 19.5 2.4 13 V5.1 Z"
+                      fill="url(#schild-licht)"
+                    />
+                    <defs>
+                      <linearGradient id="schild-licht" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" stopColor="#fff" stopOpacity="0.18" />
+                        <stop offset="0.5" stopColor="#fff" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  {/* Het vinkje tekent zichzelf zodra het embleem in beeld komt. */}
+                  <Vink
+                    className="slotvink absolute left-1/2 top-[45%] w-1/2 -translate-x-1/2 -translate-y-1/2 text-white"
+                    dik={2.8}
+                  />
+                </div>
+                <p className="text-base font-black tracking-tight text-brand-dark">
+                  Privacy voorop
+                </p>
+              </div>
+
+              {/* De bekentenis-tekst, naar rechts */}
+              <div className="max-w-2xl">
+                <p
+                  data-reveal
+                  className="font-display text-[clamp(1.6rem,3.1vw,2.35rem)] font-black leading-[1.15] tracking-tight [text-wrap:balance]"
+                >
+                  Er is één ding dat we bewust niet doen.
+                </p>
+                <p
+                  data-reveal
+                  style={{ transitionDelay: "90ms" }}
+                  className="mt-7 text-lg leading-8 text-ink/70"
+                >
+                  Gegevens van leerlingen bewaren we niet. Daardoor kun je niet
+                  alles terugvinden wat je gemaakt hebt. Het staat bij jou en
+                  niet bij ons.
+                </p>
+                <p
+                  data-reveal
+                  style={{ transitionDelay: "160ms" }}
+                  className="mt-7 text-lg font-bold leading-8 text-ink"
+                >
+                  Onhandig? Soms. Maar privacy weegt voor ons het zwaarst.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -1581,109 +1597,6 @@ function MarkeerInhoud({ donker = false }: { donker?: boolean }) {
    een berichtje van thuis, een klasopstelling), geen interface-namaak.
    De bezoeker heeft de regie: zelf slepen, vegen of de pijltjes. Niets
    beweegt uit zichzelf; een bekeken kaart zet wel zijn eigen vinkje. ──── */
-
-/* ── De verbindingspijl ─────────────────────────────────────────────────
-   De zin "De tools werken samen" stond te los onder de galerij. Een met de
-   hand getekende groene pijl (merkkleur) vult de lege ruimte links van de
-   tekst en wijst ernaar; hij tekent zichzelf terwijl je scrolt, zoals iemand
-   die er in de kantlijn een pijltje bij zet. De schacht komt het eerst, met
-   onderweg één speelse lus, en het pijlpuntje flikt er als laatste bij.
-   Klein en met een doel (verbinden), geen nieuw bewegingsnummer. Alleen op
-   grote schermen: op mobiel staat de tekst al vlak onder de galerij en is er
-   niets te overbruggen. Zonder JS of bij verminderde beweging staat de pijl
-   er gewoon helemaal. ──────────────────────────────────────────────────── */
-function ToolsPijl() {
-  const wrap = useRef<HTMLDivElement>(null);
-  const schacht = useRef<SVGPathElement>(null);
-  const punt = useRef<SVGPathElement>(null);
-  const reduced = useSyncExternalStore<boolean | null>(
-    abonneerReduced,
-    () => window.matchMedia(REDUCED_QUERY).matches,
-    () => null,
-  );
-
-  useEffect(() => {
-    if (reduced === null || reduced) return;
-    const el = wrap.current;
-    const s = schacht.current;
-    const k = punt.current;
-    if (!el || !s || !k) return;
-
-    s.style.strokeDashoffset = "1";
-    k.style.strokeDashoffset = "1";
-
-    let bezig = false;
-    let ver = 0; // de inkt gaat er niet meer af: de pijl tekent één kant op
-    const teken = () => {
-      if (bezig) return;
-      bezig = true;
-      requestAnimationFrame(() => {
-        bezig = false;
-        const vh = window.innerHeight;
-        const r = el.getBoundingClientRect();
-        // Van "de pijl komt onderin in beeld" tot "hij staat comfortabel in
-        // beeld", op leestempo dus, niet als eigen animatie.
-        const p = Math.min(1, Math.max(0, (vh * 0.86 - r.top) / (vh * 0.42)));
-        if (p <= ver) {
-          if (ver >= 1) {
-            window.removeEventListener("scroll", teken);
-            window.removeEventListener("resize", teken);
-          }
-          return;
-        }
-        ver = p;
-        // Eerst de schacht, dan pas het pijlpuntje eroverheen.
-        s.style.strokeDashoffset = String(1 - Math.min(1, p / 0.82));
-        k.style.strokeDashoffset = String(1 - Math.min(1, Math.max(0, (p - 0.82) / 0.18)));
-      });
-    };
-
-    teken();
-    window.addEventListener("scroll", teken, { passive: true });
-    window.addEventListener("resize", teken);
-    return () => {
-      window.removeEventListener("scroll", teken);
-      window.removeEventListener("resize", teken);
-    };
-  }, [reduced]);
-
-  return (
-    <div
-      ref={wrap}
-      aria-hidden
-      className="pointer-events-none absolute left-2 -top-4 hidden h-[19rem] w-[19rem] text-brand-dark lg:block"
-    >
-      <svg viewBox="0 0 300 300" fill="none" className="h-full w-full">
-        {/* De schacht komt van boven, uit de richting van de galerij, draait
-           onderweg één speelse lus en wijst dan naar de kop. De lus is het
-           handgeschreven-gebaar dat de eigenaar wilde; het pijlpunt houdt
-           bewust afstand tot de tekst in plaats van er tegenaan te zitten. */}
-        <path
-          ref={schacht}
-          d="M152 16 C 92 44 60 104 96 150 C 128 190 182 168 170 122 C 162 92 120 96 116 128 C 110 172 156 214 214 206 C 244 202 268 206 288 210"
-          pathLength={1}
-          strokeDasharray={1}
-          strokeDashoffset={0}
-          stroke="currentColor"
-          strokeWidth="5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          ref={punt}
-          d="M266 190 L292 211 L270 234"
-          pathLength={1}
-          strokeDasharray={1}
-          strokeDashoffset={0}
-          stroke="currentColor"
-          strokeWidth="5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </div>
-  );
-}
 
 /* De kop boven de rij. De ondertitel wijst meteen op het slepen: zonder die
    hint blijft de helft van de kaarten onopgemerkt buiten beeld staan. */
