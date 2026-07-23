@@ -6,7 +6,8 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Soort } from "../agenda-herken";
-import { vandaag } from "./datum";
+import { plus, vandaag } from "./datum";
+import { metEigenVakanties } from "./eigen-vakanties";
 import { beschikbareSchooljaren, maakSchooljaar, periodesVan, schooljaarVoor } from "./schooljaar";
 import type { PlanItem, PlanningBron, Taak } from "./types";
 import { isRegio, STANDAARD_REGIO, type Regio } from "./vakanties";
@@ -93,19 +94,23 @@ export async function haalPlanning(
   const regio = await haalRegio(supabase);
   const schooljaar = maakSchooljaar(opties.schooljaarId ?? schooljaarVoor(nu, regio), regio, nu);
 
-  // Ook de vakanties zelf horen erbij, dus we kijken iets ruimer dan de
-  // schooldagen: van de eerste vakantiedag tot en met de zomervakantie.
-  const van = opties.van ?? schooljaar.vakanties[0]?.van ?? schooljaar.start;
-  const tot = opties.tot ?? schooljaar.vakanties.at(-1)?.tot ?? schooljaar.eind;
+  // We kijken bewust ruimer dan de schooldagen. De vakanties zelf horen erbij,
+  // en de school kan eerder beginnen of later stoppen dan de landelijke lijst
+  // zegt; dat willen we zien vóór we het schooljaar vastzetten.
+  const van = opties.van ?? plus(schooljaar.start, -45);
+  const tot = opties.tot ?? plus(schooljaar.eind, 75);
 
   const [items, taken] = await Promise.all([
     haalItems(supabase, van, tot),
     haalTaken(supabase, van, tot),
   ]);
 
+  // De vakanties van je eigen school gaan boven de landelijke lijst.
+  const eigen = metEigenVakanties(schooljaar, items);
+
   return {
-    schooljaar,
-    periodes: periodesVan(schooljaar),
+    schooljaar: eigen,
+    periodes: periodesVan(eigen),
     items,
     taken,
     // Het basisrooster komt in fase 2 uit de database. Tot die tijd rekenen de

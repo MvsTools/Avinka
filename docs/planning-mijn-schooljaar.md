@@ -114,6 +114,31 @@ Geen tool meer, maar het hart van de weeklaag.
   A/B-rooster). Nu niet bouwen, wel het model erop voorbereiden: een basisrooster
   hangt aan een schooljaar en kan er in principe meer dan één zijn.
 
+### 3.4 Scholen wijken af van de landelijke vakanties
+
+Scholen mogen zelf van de adviesdata van de Rijksoverheid afwijken en doen dat
+ook: een tweede meiweek, een eigen studieweek, een herfstvakantie die een week
+verschoven is. **De landelijke lijst is dus een vangnet, nooit de waarheid.**
+Zodra de gekoppelde schoolagenda een vakantie noemt, is die leidend.
+
+Drie gevallen, en het verschil ertussen is waar het misgaat als je er niet over
+nadenkt:
+
+| Geval | Wat we doen | Waarom |
+|---|---|---|
+| De agenda **overlapt** de landelijke vakantie (school schuift hem op) | De agenda wint helemaal | Landelijk 17-25 oktober, jouw school 10-18 oktober: samenvoegen zou 19-25 oktober onterecht als vakantie tonen terwijl je gewoon voor de klas staat |
+| De agenda **sluit erop aan** (tweede meiweek) | Samen één langere vakantie | Vervangen zou de échte meivakantie wegpoetsen |
+| De agenda staat er **los van** | Twee verschillende vakanties, allebei blijven staan | Een eigen studieweek is geen herfstvakantie |
+
+Twee vangnetten daarbovenop: een vermelding van maar een dag of twee zien we als
+een flard (school heeft alleen de eerste dag genoteerd) en dan houden we allebei
+aan, en losse dagen die aan elkaar grenzen plakken we weer aan elkaar tot één
+vakantie (scholen noteren de kerstvakantie soms per dag).
+
+De eerste en laatste schooldag schuiven mee: begint jouw zomervakantie een week
+eerder, dan is jouw laatste schooldag ook een week eerder, en de periodes
+herberekenen zich daarop.
+
 ### 3.3 Schooljaren bewaren
 
 We bewaren **dit schooljaar en het vorige**. Vorig jaar mag je bekijken (jaar,
@@ -190,6 +215,7 @@ Gebouwd:
 | `datum.ts` | Datumrekenen op "JJJJ-MM-DD" (nooit Date-objecten rondsturen), weeknummers, schoolweken, tekst in gewone taal |
 | `vakanties.ts` | De landelijke vakanties per schooljaar en regio (2025-2026 + 2026-2027, opgehaald bij de Rijksoverheid op 23-7-2026). **Jaarlijks bijwerken.** Vangnet: de gekoppelde agenda wint altijd |
 | `schooljaar.ts` | Van een datum naar het juiste schooljaar, eerste/laatste schooldag, en het jaar geknipt in periodes tussen de vakanties |
+| `eigen-vakanties.ts` | **De vakanties van jouw school gaan boven de landelijke lijst** (zie §3.4) |
 | `types.ts` | De begrippen: Schooljaar, Periode, PlanItem, Roosterblok, Taak, Dagbeeld, Weekbeeld |
 | `dagbeeld.ts` | "Wat speelt er op dag X" en dezelfde vraag voor een week; volgende schooldag; wat komt eraan |
 | `ophalen.ts` | De enige plek die met de database praat: agenda-items, taken, vakantieregio |
