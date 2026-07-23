@@ -391,9 +391,6 @@ function Jaarlijst({
         <span className="text-sm text-ink/55">
           {bereikTekst(schooljaar.startweek.van, schooljaar.startweek.tot)}
         </span>
-        <span className="ml-auto text-sm font-semibold text-ink/45">
-          je lokaal klaarmaken, de kinderen beginnen erna
-        </span>
       </button>
 
       {periodes.map((periode) => (
