@@ -48,17 +48,7 @@ export default function SchooljaarDagkaart({
         className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white p-6 shadow-xl outline-none sm:rounded-3xl"
       >
         <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="font-serif text-2xl font-semibold text-ink">{volledig(beeld.datum)}</p>
-            {beeld.periode && (
-              <p className="mt-1 text-sm text-ink/50">
-                {beeld.periode.naam}
-                {beeld.periode.eindigtMet
-                  ? `, tot de ${beeld.periode.eindigtMet.naam.toLowerCase()}`
-                  : ""}
-              </p>
-            )}
-          </div>
+          <p className="font-serif text-2xl font-semibold text-ink">{volledig(beeld.datum)}</p>
           <button
             onClick={sluit}
             aria-label="Sluiten"
@@ -130,9 +120,7 @@ export default function SchooljaarDagkaart({
 
         {!afspraken.length && !beeld.vakantie && !beeld.startweek && (
           <p className="mt-4 text-ink/60">
-            {beeld.weekend
-              ? "Niets gepland."
-              : "Niets bijzonders deze dag. Een gewone lesdag dus."}
+            {beeld.weekend ? "Niets gepland." : "Niets bijzonders deze dag."}
           </p>
         )}
       </div>
