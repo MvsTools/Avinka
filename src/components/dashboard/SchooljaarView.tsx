@@ -10,7 +10,6 @@ import {
   maandagVan,
   maandnaam,
   plus,
-  schoolweken,
   telDubbelingen,
   zijkantLabel,
   verschil,
@@ -151,7 +150,7 @@ export default function SchooljaarView({
             </div>
           )}
 
-          <Feiten bron={bron} vandaag={vandaag} loopt={loopt} />
+          <Feiten bron={bron} vandaag={vandaag} />
 
           {telDubbelingen(items) > 0 && (
             <p className="text-sm text-ink/55">
@@ -415,13 +414,11 @@ function WeergaveKnop({
 function Feiten({
   bron,
   vandaag,
-  loopt,
 }: {
   bron: PlanningBron;
   vandaag: string;
-  loopt: boolean;
 }) {
-  const { schooljaar, periodes, items } = bron;
+  const { schooljaar, items } = bron;
   const nogNietBegonnen = vandaag < schooljaar.start;
   const voorbij = vandaag > schooljaar.eind;
 
@@ -464,7 +461,6 @@ function Feiten({
   const vrijeDag = items.find(
     (i) => !i.dubbelVan && i.soort === "vrij" && i.datum >= peil && i.datum <= schooljaar.eind,
   );
-  const periode = periodes.find((p) => peil >= p.van && peil <= p.tot);
 
   const perWeek = new Map<string, number>();
   for (const i of items) {
@@ -512,19 +508,7 @@ function Feiten({
         },
       ];
 
-  return (
-    <div className="flex flex-col gap-4">
-      {loopt && periode && (
-        <p className="text-ink/70">
-          Je zit in {periode.naam.toLowerCase()}, week{" "}
-          {schoolweken(periode.van, vandaag)} van {periode.weken}. Nog{" "}
-          {Math.max(0, periode.weken - schoolweken(periode.van, vandaag))} weken tot de{" "}
-          {periode.eindigtMet?.naam.toLowerCase() ?? "vakantie"}.
-        </p>
-      )}
-      <FeitenRij feiten={feiten} />
-    </div>
-  );
+  return <FeitenRij feiten={feiten} />;
 }
 
 function FeitenRij({
