@@ -317,9 +317,12 @@ function JaarKiezer({ jaren, huidig }: { jaren: JaarKeuze[]; huidig: string }) {
   );
 }
 
-/** "november 2026" */
+/**
+ * "november". Zonder jaartal: een schooljaar loopt van augustus tot juli, dus
+ * elke maandnaam komt maar één keer voor. Het jaar staat al in de jaarkiezer.
+ */
 function maandLabel(maand: string): string {
-  return `${maandnaam(maand)} ${maand.slice(0, 4)}`;
+  return maandnaam(maand);
 }
 
 /** Springen naar een maand van dit schooljaar, zonder te bladeren. */
