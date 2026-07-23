@@ -15,5 +15,6 @@ export * from "./datum";
 export * from "./vakanties";
 export * from "./schooljaar";
 export * from "./eigen-vakanties";
+export * from "./dubbelingen";
 export * from "./dagbeeld";
 export * from "./ophalen";

@@ -16,6 +16,9 @@ type NavItem = {
 };
 const items: NavItem[] = [
   { href: "/dashboard", label: "Start", icon: IconHome },
+  // Mijn schooljaar staat bewust direct onder Start: het is de rode draad van
+  // het platform, niet zomaar een schermpje ertussen.
+  { href: "/dashboard/schooljaar", label: "Mijn schooljaar", icon: IconJaar },
   { href: "/dashboard/taken", label: "Takenlijst", icon: IconTaken },
   { href: "/dashboard/mijn-klas", label: "Mijn klas", icon: IconKlas },
   { href: "/dashboard/mijn-teksten", label: "Bestanden", icon: IconTekst },
@@ -191,6 +194,15 @@ function IconLock({ className }: IconProps) {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className} aria-hidden>
       <rect x="5" y="11" width="14" height="9" rx="2" />
       <path d="M8 11V8a4 4 0 0 1 8 0v3" strokeLinecap="round" />
+    </svg>
+  );
+}
+function IconJaar({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className} aria-hidden>
+      <rect x="3.5" y="5" width="17" height="15.5" rx="3" />
+      <path d="M3.5 9.5h17M8 3.5V6.5M16 3.5V6.5" strokeLinecap="round" />
+      <path d="M8 13.5h2.5M8 17h2.5M14 13.5h2M14 17h2" strokeLinecap="round" />
     </svg>
   );
 }

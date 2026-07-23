@@ -7,6 +7,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Soort } from "../agenda-herken";
 import { plus, vandaag } from "./datum";
+import { markeerDubbelingen } from "./dubbelingen";
 import { metEigenVakanties } from "./eigen-vakanties";
 import { beschikbareSchooljaren, maakSchooljaar, periodesVan, schooljaarVoor } from "./schooljaar";
 import type { PlanItem, PlanningBron, Taak } from "./types";
@@ -67,6 +68,34 @@ export async function haalItems(
   return ((data as ItemRij[] | null) ?? []).map(naarItem);
 }
 
+export type AgendaBron = {
+  id: string;
+  naam: string;
+  systeem: string;
+  modus: string;
+  aantal_items: number;
+  laatst_gelukt: string | null;
+  laatste_fout: string | null;
+};
+
+/**
+ * De gekoppelde agenda's op volgorde van koppelen. De eerste is de
+ * hoofdagenda: staat dezelfde afspraak in twee agenda's, dan is die van de
+ * hoofdagenda het origineel.
+ */
+export async function haalBronnen(supabase: SupabaseClient): Promise<AgendaBron[]> {
+  const { data } = await supabase
+    .from("agenda_bronnen")
+    .select("id, naam, systeem, modus, aantal_items, laatst_gelukt, laatste_fout")
+    .eq("actief", true)
+    .order("created_at");
+  return (data as AgendaBron[] | null) ?? [];
+}
+
+export async function haalBronvolgorde(supabase: SupabaseClient): Promise<string[]> {
+  return (await haalBronnen(supabase)).map((b) => b.id);
+}
+
 export async function haalTaken(
   supabase: SupabaseClient,
   van: string,
@@ -100,10 +129,14 @@ export async function haalPlanning(
   const van = opties.van ?? plus(schooljaar.start, -45);
   const tot = opties.tot ?? plus(schooljaar.eind, 75);
 
-  const [items, taken] = await Promise.all([
+  const [ruwe, taken, volgorde] = await Promise.all([
     haalItems(supabase, van, tot),
     haalTaken(supabase, van, tot),
+    haalBronvolgorde(supabase),
   ]);
+
+  // Staat dezelfde afspraak in twee agenda's, dan tonen we hem één keer.
+  const items = markeerDubbelingen(ruwe, volgorde);
 
   // De vakanties van je eigen school gaan boven de landelijke lijst.
   const eigen = metEigenVakanties(schooljaar, items);
