@@ -1127,7 +1127,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
               </div>
 
               {/* De kaart begint op dezelfde linkerlijn als de tekstkolom
-                 van de site (en dus als "Namen blijven thuis" hieronder),
+                 van de site (en dus als "Veilig omgaan met AI" hieronder),
                  terwijl de tekst ernaast juist tot de paginarand mag lopen.
                  De inspringing rekent het verschil tussen de brede en de
                  gewone containerbreedte uit, zodat die lijn op elk scherm
@@ -1148,7 +1148,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                   data-reveal
                   className="font-display text-[clamp(2rem,3.6vw,3rem)] font-black leading-[1.06] tracking-tight [text-wrap:balance]"
                 >
-                  Namen blijven thuis
+                  Veilig omgaan met AI
                 </h2>
                 <p
                   data-reveal
@@ -1157,8 +1157,8 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                 >
                   Namen van leerlingen gaan nooit naar de AI: op jouw apparaat
                   wordt elke naam vervangen door een schuilnaam, nog vóór er
-                  iets wordt verstuurd. Je account staat op beveiligde servers
-                  in Europa.
+                  iets wordt verstuurd. Je hoeft er niets voor te doen. Alles
+                  gaat automatisch.
                 </p>
               </div>
 
