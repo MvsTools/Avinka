@@ -1093,53 +1093,60 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
              erboven. */}
           <div className="pointer-events-none absolute -left-24 top-10 h-80 w-80 rounded-full bg-brand/[0.09] blur-3xl" aria-hidden />
 
-          <div className="relative mx-auto w-full max-w-7xl px-6 pb-28 pt-24 lg:pt-28">
-            {/* ── Gegevens: hard rechts. De ruimte blijft links over. ──
-               Een eerlijke bekentenis draagt zich met woorden, niet met een
-               icoon: strak, zelfverzekerd, geen schild. */}
-            <div className="max-w-xl lg:ml-auto">
-              <p
-                data-reveal
-                className="font-display text-[clamp(2rem,3.6vw,3rem)] font-black leading-[1.06] tracking-tight [text-wrap:balance]"
-              >
-                Er is één ding dat we bewust niet doen.
-              </p>
-              <p
-                data-reveal
-                style={{ transitionDelay: "90ms" }}
-                className="mt-8 text-xl leading-9 text-ink/70"
-              >
-                Gegevens van leerlingen bewaren we niet. Daardoor kun je niet
-                alles terugvinden wat je gemaakt hebt. Het staat bij jou en niet
-                bij ons.
-              </p>
-              <p
-                data-reveal
-                style={{ transitionDelay: "160ms" }}
-                className="mt-6 text-xl font-bold leading-9 text-ink"
-              >
-                Onhandig? Soms. Maar privacy weegt voor ons het zwaarst.
-              </p>
+          <div className="relative pb-28 pt-24 lg:pt-28">
+            {/* ── Gegevens: hard rechts, tot aan de paginarand. De ruimte
+               blijft links over. Een eerlijke bekentenis draagt zich met
+               woorden, niet met een icoon: strak, zelfverzekerd, geen
+               schild. */}
+            <div className="mx-auto w-full max-w-7xl px-6">
+              <div className="max-w-xl lg:ml-auto">
+                <p
+                  data-reveal
+                  className="font-display text-[clamp(2rem,3.6vw,3rem)] font-black leading-[1.06] tracking-tight [text-wrap:balance]"
+                >
+                  Er is één ding dat we bewust niet doen.
+                </p>
+                <p
+                  data-reveal
+                  style={{ transitionDelay: "90ms" }}
+                  className="mt-8 text-xl leading-9 text-ink/70"
+                >
+                  Gegevens van leerlingen bewaren we niet. Daardoor kun je niet
+                  alles terugvinden wat je gemaakt hebt. Het staat bij jou en
+                  niet bij ons.
+                </p>
+                <p
+                  data-reveal
+                  style={{ transitionDelay: "160ms" }}
+                  className="mt-6 text-xl font-bold leading-9 text-ink"
+                >
+                  Onhandig? Soms. Maar privacy weegt voor ons het zwaarst.
+                </p>
+              </div>
             </div>
 
-            {/* ── Leerlingnamen: hard links. De ruimte blijft rechts over. ── */}
-            <div className="mt-28 max-w-xl lg:mt-40 lg:mr-auto">
-              <h2
-                data-reveal
-                className="font-display text-[clamp(2rem,3.6vw,3rem)] font-black leading-[1.06] tracking-tight [text-wrap:balance]"
-              >
-                Namen blijven thuis
-              </h2>
-              <p
-                data-reveal
-                style={{ transitionDelay: "90ms" }}
-                className="mt-8 text-xl leading-9 text-ink/70"
-              >
-                Namen van leerlingen gaan nooit naar de AI: op jouw apparaat
-                wordt elke naam vervangen door een schuilnaam, nog vóór er iets
-                wordt verstuurd. Je account staat op beveiligde servers in
-                Europa.
-              </p>
+            {/* ── Leerlingnamen: links, maar op de gewone tekstkolom van de
+               site (max-w-5xl, net als de secties hieronder), niet tegen de
+               paginarand. De ruimte blijft rechts over. ── */}
+            <div className="mx-auto mt-28 w-full max-w-5xl px-6 lg:mt-40">
+              <div className="max-w-xl">
+                <h2
+                  data-reveal
+                  className="font-display text-[clamp(2rem,3.6vw,3rem)] font-black leading-[1.06] tracking-tight [text-wrap:balance]"
+                >
+                  Namen blijven thuis
+                </h2>
+                <p
+                  data-reveal
+                  style={{ transitionDelay: "90ms" }}
+                  className="mt-8 text-xl leading-9 text-ink/70"
+                >
+                  Namen van leerlingen gaan nooit naar de AI: op jouw apparaat
+                  wordt elke naam vervangen door een schuilnaam, nog vóór er
+                  iets wordt verstuurd. Je account staat op beveiligde servers
+                  in Europa.
+                </p>
+              </div>
             </div>
           </div>
         </section>
