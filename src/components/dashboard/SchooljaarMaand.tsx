@@ -13,6 +13,7 @@ import {
 import type { PlanningBron } from "@/lib/planning";
 import { ETIKET, STIP } from "./schooljaar-stijl";
 import SchooljaarDagkaart from "./SchooljaarDagkaart";
+import SchooljaarWeekkaart from "./SchooljaarWeekkaart";
 
 // De maandweergave: hetzelfde jaar, maar dan als kalender. Handig om te zien
 // hoe druk een maand is en waar de gaten zitten.
@@ -41,6 +42,7 @@ export default function SchooljaarMaand({
   const binnenJaar = vandaag >= bron.schooljaar.start && vandaag <= bron.schooljaar.eind;
   const begin = binnenJaar ? vandaag : bron.schooljaar.start;
   const [gekozen, setGekozen] = useState<string | null>(null);
+  const [week, setWeek] = useState<string | null>(null);
 
   const jaar = Number(eerste.slice(0, 4));
   const maand = Number(eerste.slice(5, 7)) - 1;
@@ -132,9 +134,13 @@ export default function SchooljaarMaand({
             return (
               <Fragment key={datum}>
                 {i % 7 === 0 && (
-                  <div className="flex min-h-[58px] items-start justify-center border-b border-r border-black/5 bg-cream/50 pt-2 text-xs font-bold tabular-nums text-ink/35 sm:min-h-[92px]">
+                  <button
+                    onClick={() => setWeek(datum)}
+                    aria-label={`Week ${weeknummer(datum)} bekijken`}
+                    className="flex min-h-[58px] items-start justify-center border-b border-r border-black/5 bg-cream/50 pt-2 text-xs font-bold tabular-nums text-ink/35 transition-colors hover:bg-cream hover:text-ink/70 sm:min-h-[92px]"
+                  >
                     {weeknummer(datum)}
-                  </div>
+                  </button>
                 )}
                 <button
                   onClick={() => setGekozen(gekozen === datum ? null : datum)}
@@ -222,6 +228,14 @@ export default function SchooljaarMaand({
       {/* Tik een dag aan en het kaartje van die dag komt naar voren: wat er
           staat en hoe laat. */}
       {gekozen && <SchooljaarDagkaart beeld={beeldVan(gekozen)} groepen={groepen} sluit={() => setGekozen(null)} />}
+      {week && (
+        <SchooljaarWeekkaart
+          bron={bron}
+          maandag={week}
+          groepen={groepen}
+          sluit={() => setWeek(null)}
+        />
+      )}
     </div>
   );
 }
