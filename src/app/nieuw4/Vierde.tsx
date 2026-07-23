@@ -1507,22 +1507,79 @@ function MarkeerInhoud({ donker = false }: { donker?: boolean }) {
 
 /* De kop boven de rij. De ondertitel wijst meteen op het slepen: zonder die
    hint blijft de helft van de kaarten onopgemerkt buiten beeld staan. */
+function RailKop() {
+  return (
+    <div className="mx-auto w-full max-w-5xl px-6">
+      <div data-reveal className="max-w-2xl">
+        <h2 className="font-display text-4xl font-black tracking-tight [text-wrap:balance]">
+          Alle tools, één werkplek
+        </h2>
+        <p className="mt-4 text-lg text-ink/60">
+          Sleep de rij opzij om ze allemaal te zien.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 /* ── De doorloop ────────────────────────────────────────────────────────
-   Het blok onder de galerij. De galerij laat acht losse kaarten zien; hier
-   staat wat je daar niet aan af kunt lezen, namelijk dat ze bij elkaar horen
-   en dat er steeds iets bij komt.
-   De vorm is één beeld: een groene inktlijn in de kantlijn die met je mee
-   naar beneden loopt terwijl je leest. Waar het donker wordt houdt hij op,
-   met een klein plasje inkt op de plek waar de pen bleef staan. Die stop is
-   het scharnier naar de privacysectie eronder: je hoeft niet te schrijven
-   dat er een grens is, je ziet hem.
-   Boven staat de markeerstift (breed, aanstrepen), hier de pen (dun,
-   verbinden). Ander gereedschap, ander gebaar, zodat het geen tic wordt.
-   Zonder JS of bij verminderde beweging staat de lijn er gewoon helemaal. ── */
+   Het blok onder de galerij. De galerij laat losse kaarten zien; hier staat
+   wat je daar niet aan af kunt lezen, namelijk dat ze bij elkaar horen en
+   dat er steeds iets bij komt.
+   Twee dingen dragen de sectie. Ten eerste de kleur: de pagina zakt hier van
+   zand naar diepgroen naar inkt, zodat het serieuzer worden van het verhaal
+   iets is dat je voelt in plaats van leest. Ten tweede het mozaïek: terwijl
+   je scrolt legt het zichzelf tegel voor tegel, het loopt aan de rechterkant
+   gewoon door van het scherm af (er komt steeds meer bij, we noemen nooit
+   een aantal) en er blijft één plek open. Die open plek is wat we niet
+   bewaren, en daarmee de opmaat naar de privacysectie eronder.
+   Zonder JS of bij verminderde beweging ligt het mozaïek er gewoon. ────── */
+
+/* Het diepgroen zit tussen brand-dark en de inkt in: donker genoeg voor wit
+   op 5,9:1 en crème op 5,5:1, en het maakt van zand → groen → inkt een
+   afdaling in plaats van twee losse vlakken. */
+const DOORLOOP_GROEN = "#1e7149";
+
+/* Het mozaïek. Handmatig geplaatst op een raster van vijf bij vijf: een
+   automatische pakking zet de open plek elke keer ergens anders neer, en
+   juist die plek moet kloppen. Ze verschijnen in leesvolgorde.
+   Amber alleen op plekken die hélemaal in beeld vallen: half afgesneden
+   trekt de felste kleur van de pagina alle aandacht naar de rand.
+   Elke tegel staat een halve graad scheef en heeft een eigen ronding. Zonder
+   dat leest een raster van gladde rechthoeken als een scherm dat nog moet
+   laden in plaats van als iets dat met de hand gelegd is. */
+const TEGELS: {
+  kol: number;
+  rij: number;
+  kb?: number;
+  rb?: number;
+  kleur?: string;
+  open?: boolean;
+  draai: number;
+  rond: string;
+}[] = [
+  { kol: 1, rij: 1, kb: 2, kleur: "bg-cream", draai: -1.3, rond: "1.3rem" },
+  { kol: 3, rij: 1, kleur: "bg-sand", draai: 1.1, rond: "1rem" },
+  { kol: 4, rij: 1, rb: 2, kleur: "bg-brand-soft", draai: -0.9, rond: "1.5rem" },
+  { kol: 5, rij: 1, kleur: "bg-cream", draai: 1.4, rond: "1.1rem" },
+  { kol: 1, rij: 2, kleur: "bg-sand", draai: -1.5, rond: "1rem" },
+  { kol: 2, rij: 2, kb: 2, rb: 2, kleur: "bg-cream", draai: 0.8, rond: "1.6rem" },
+  { kol: 5, rij: 2, kleur: "bg-sand", draai: -1.1, rond: "1.2rem" },
+  { kol: 1, rij: 3, kleur: "bg-cream", draai: 1.2, rond: "1.4rem" },
+  { kol: 4, rij: 3, kleur: "bg-accent", draai: -1.2, rond: "1.1rem" },
+  { kol: 5, rij: 3, rb: 2, kleur: "bg-brand-soft", draai: 1.0, rond: "1.4rem" },
+  { kol: 1, rij: 4, kb: 2, kleur: "bg-sand", draai: -0.9, rond: "1.2rem" },
+  { kol: 3, rij: 4, open: true, draai: 1.0, rond: "1.15rem" },
+  { kol: 4, rij: 4, kleur: "bg-cream", draai: 1.5, rond: "1rem" },
+  { kol: 1, rij: 5, kleur: "bg-cream", draai: 1.1, rond: "1.3rem" },
+  { kol: 2, rij: 5, kleur: "bg-brand-soft", draai: -1.4, rond: "1rem" },
+  { kol: 3, rij: 5, kb: 2, kleur: "bg-sand", draai: 0.8, rond: "1.35rem" },
+  { kol: 5, rij: 5, kleur: "bg-cream", draai: -1.1, rond: "1.1rem" },
+];
+
 function Doorloop() {
-  const licht = useRef<HTMLDivElement>(null);
-  const pad = useRef<SVGPathElement>(null);
-  const vlek = useRef<HTMLSpanElement>(null);
+  const veld = useRef<HTMLDivElement>(null);
+  const mozaiek = useRef<HTMLDivElement>(null);
   const reduced = useSyncExternalStore<boolean | null>(
     abonneerReduced,
     () => window.matchMedia(REDUCED_QUERY).matches,
@@ -1531,134 +1588,136 @@ function Doorloop() {
 
   useEffect(() => {
     if (reduced === null || reduced) return;
-    const blok = licht.current;
-    const lijn = pad.current;
-    if (!blok || !lijn) return;
+    const blok = veld.current;
+    const raster = mozaiek.current;
+    if (!blok || !raster) return;
 
-    lijn.style.strokeDashoffset = "1";
+    const tegels = Array.from(raster.querySelectorAll<HTMLElement>("[data-tegel]"));
+    tegels.forEach((t) => t.classList.remove("aan"));
 
     let bezig = false;
-    let ver = 0; // inkt gaat er niet meer af: de lijn loopt nooit terug
-    const teken = () => {
+    let ver = 0; // gelegd is gelegd: het mozaïek breekt niet af bij terugscrollen
+    const leg = () => {
       if (bezig) return;
       bezig = true;
       requestAnimationFrame(() => {
         bezig = false;
         const vh = window.innerHeight;
         const r = blok.getBoundingClientRect();
-        /* De pen zet aan zodra het blok onderin binnenkomt en is klaar als je
-           de laatste regel gelezen hebt. Zo loopt de lijn op leestempo mee in
-           plaats van dat hij zijn eigen animatie afdraait. */
-        const p = Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.15 + r.height)));
+        /* Het leggen begint zodra het veld onderin binnenkomt en is klaar als
+           het goed in beeld staat, dus op leestempo in plaats van als een
+           animatie die zijn eigen gang gaat. */
+        const p = Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.25 + r.height * 0.75)));
         if (p <= ver) {
           if (ver >= 1) {
-            window.removeEventListener("scroll", teken);
-            window.removeEventListener("resize", teken);
+            window.removeEventListener("scroll", leg);
+            window.removeEventListener("resize", leg);
           }
           return;
         }
         ver = p;
-        lijn.style.strokeDashoffset = String(1 - p);
-        // Het plasje verschijnt pas als de pen er echt staat.
-        if (p > 0.96) vlek.current?.classList.add("aan");
+        const tot = Math.round(p * tegels.length);
+        tegels.forEach((t, i) => {
+          if (i < tot) t.classList.add("aan");
+        });
       });
     };
 
-    teken();
-    window.addEventListener("scroll", teken, { passive: true });
-    window.addEventListener("resize", teken);
+    leg();
+    window.addEventListener("scroll", leg, { passive: true });
+    window.addEventListener("resize", leg);
     return () => {
-      window.removeEventListener("scroll", teken);
-      window.removeEventListener("resize", teken);
+      window.removeEventListener("scroll", leg);
+      window.removeEventListener("resize", leg);
     };
   }, [reduced]);
 
   return (
-    <section className="relative isolate bg-cream">
-      {/* Het lichte deel: wat er is. */}
-      <div ref={licht} className="relative z-20">
-        {/* De kantlijn. Hij stopt een stukje boven de donkere rand, zodat je
-           ziet dát hij ophoudt in plaats van dat hij het donker in verdwijnt. */}
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-14 top-10">
-          <div className="mx-auto h-full w-full max-w-5xl px-6">
-            <div className="relative h-full w-8">
-              <svg
-                viewBox="0 0 32 600"
-                preserveAspectRatio="none"
-                fill="none"
-                className="h-full w-full text-brand-dark"
-              >
-                {/* Geen liniaal: de hand loopt onderweg een paar keer uit de
-                   koers en komt er weer op terug. */}
-                <path
-                  ref={pad}
-                  d="M16 6C10.8 88 21.2 164 15.2 248 10.4 320 21.6 396 16.4 476 13 538 20 566 16 594"
-                  pathLength={1}
-                  strokeDasharray={1}
-                  strokeDashoffset={0}
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  vectorEffect="non-scaling-stroke"
-                />
-              </svg>
-              {/* Het plasje inkt waar de pen bleef staan. */}
-              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
-                <span ref={vlek} className="inktvlek relative block h-3.5 w-3.5">
-                  <span className="absolute -inset-2 rounded-full bg-brand-dark/20 blur-[7px]" />
-                  <span
-                    className="absolute inset-0 bg-brand-dark"
-                    style={{ borderRadius: "52% 48% 44% 56% / 50% 56% 44% 50%" }}
-                  />
-                </span>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Warmte in de lege rechterhelft: het vlak mag ademen, maar niet leeg
-           aanvoelen. */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-          <div className="absolute -right-32 bottom-4 h-80 w-80 rounded-full bg-accent/[0.09] blur-3xl" />
-          <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-brand/[0.06] blur-3xl" />
-        </div>
+    <section className="relative isolate overflow-hidden">
+      {/* Het groene veld. */}
+      <div ref={veld} className="relative" style={{ backgroundColor: DOORLOOP_GROEN }}>
+        {/* Korrel: het vlak hoort materiaal te zijn, geen kleurstaal. */}
+        <div className="kaart-grain pointer-events-none absolute inset-0" aria-hidden />
+        {/* Licht van linksboven, zodat het veld bolt in plaats van plat ligt. */}
+        <div
+          className="pointer-events-none absolute -left-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-white/[0.07] blur-3xl"
+          aria-hidden
+        />
+        {/* De afdaling naar de inkt: geen naad, het groen zakt erin weg. */}
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-44 bg-gradient-to-b from-transparent to-ink"
+          aria-hidden
+        />
 
         <div className="relative mx-auto w-full max-w-5xl px-6 py-24 lg:py-28">
-          <div className="max-w-3xl pl-10 sm:pl-14">
-            <h2
-              data-reveal
-              className="max-w-2xl font-display text-[clamp(2.5rem,6vw,4.25rem)] font-black leading-[0.98] tracking-tight [text-wrap:balance]"
+          <div className="grid items-center gap-14 lg:grid-cols-[1fr_1.05fr] lg:gap-16">
+            <div>
+              <h2
+                data-reveal
+                className="font-display text-[clamp(2.25rem,4.4vw,3.5rem)] font-black leading-[1] tracking-tight text-white [text-wrap:balance]"
+              >
+                De tools werken samen
+              </h2>
+              <p
+                data-reveal
+                style={{ transitionDelay: "90ms" }}
+                className="mt-8 max-w-xl text-lg leading-8 text-white/90"
+              >
+                Binnen Avinka wordt er veel werk voor je uit handen genomen. De
+                tools staan niet los van elkaar maar werken samen aan hetzelfde
+                resultaat.
+              </p>
+              <p
+                data-reveal
+                style={{ transitionDelay: "160ms" }}
+                className="mt-5 max-w-xl text-lg leading-8 text-white/90"
+              >
+                Je stelt één keer in hoe jij werkt en daar houdt alles rekening
+                mee. En het platform groeit mee: er komt steeds meer bij, zonder
+                dat je opnieuw hoeft uit te zoeken hoe het werkt.
+              </p>
+            </div>
+
+            {/* Het mozaïek loopt breder dan zijn kolom en wordt door de sectie
+               afgesneden: het houdt niet op, je ziet er alleen een stuk van.
+               Dat gebeurt met een negatieve marge en niet met een breedte,
+               want een te brede rastercel duwt de tekstkolom plat. */}
+            <div
+              ref={mozaiek}
+              aria-hidden
+              className="mozaiek -mr-10 grid aspect-[7/5] min-w-0 grid-cols-5 grid-rows-5 gap-2.5 sm:gap-3 lg:-mr-[22vw]"
             >
-              De tools werken samen
-            </h2>
-            <p
-              data-reveal
-              style={{ transitionDelay: "90ms" }}
-              className="mt-9 max-w-2xl text-lg leading-8 text-ink/70 sm:text-xl sm:leading-9"
-            >
-              Binnen Avinka wordt er veel werk voor je uit handen genomen. De
-              tools staan niet los van elkaar maar werken samen aan hetzelfde
-              resultaat.
-            </p>
-            <p
-              data-reveal
-              style={{ transitionDelay: "160ms" }}
-              className="mt-5 max-w-2xl text-lg leading-8 text-ink/70 sm:text-xl sm:leading-9"
-            >
-              Je stelt één keer in hoe jij werkt en daar houdt alles rekening
-              mee. En het platform groeit mee: er komt steeds meer bij, zonder
-              dat je opnieuw hoeft uit te zoeken hoe het werkt.
-            </p>
+              {TEGELS.map((t, i) => (
+                <span
+                  key={`${t.kol}-${t.rij}`}
+                  data-tegel
+                  style={
+                    {
+                      gridColumn: `${t.kol} / span ${t.kb ?? 1}`,
+                      gridRow: `${t.rij} / span ${t.rb ?? 1}`,
+                      // Via een variabele, zodat kleine schermen de ronding
+                      // kunnen terugbrengen: dezelfde straal maakt van een
+                      // tegel van 50 pixels een pilletje.
+                      "--rond": t.rond,
+                      rotate: `${t.draai}deg`,
+                      transitionDelay: `${(i % 4) * 25}ms`,
+                    } as CSSProperties
+                  }
+                  className={
+                    t.open
+                      ? "ring-2 ring-inset ring-white/35"
+                      : `shadow-[0_10px_30px_-16px_rgba(9,32,22,0.7)] ${t.kleur}`
+                  }
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Waar het ophoudt. Dit deel is al donker en loopt door in de
-         privacysectie eronder: samen zijn ze één hoofdstuk over de grens. */}
-      <div className="relative z-10 bg-ink text-cream">
-        {/* Geen kantlijn meer, dus ook geen inspringing: hier gaat de tekst
-           op één lijn staan met de privacysectie eronder. Dat de tekst
-           opschuift is precies het moment waarop het verhaal draait. */}
+      {/* Waar het ophoudt. Dit deel staat op één lijn met de privacysectie
+         eronder en loopt erin door: samen zijn ze één hoofdstuk over de grens. */}
+      <div className="relative bg-ink text-cream">
         <div className="mx-auto w-full max-w-5xl px-6 pb-14 pt-20 lg:pt-24">
           <div className="max-w-2xl">
             <p
@@ -1687,21 +1746,6 @@ function Doorloop() {
         </div>
       </div>
     </section>
-  );
-}
-
-function RailKop() {
-  return (
-    <div className="mx-auto w-full max-w-5xl px-6">
-      <div data-reveal className="max-w-2xl">
-        <h2 className="font-display text-4xl font-black tracking-tight [text-wrap:balance]">
-          Alle tools, één werkplek
-        </h2>
-        <p className="mt-4 text-lg text-ink/60">
-          Sleep de rij opzij om ze allemaal te zien.
-        </p>
-      </div>
-    </div>
   );
 }
 
@@ -2637,16 +2681,21 @@ function StijlBlok() {
       .anim [data-leesregel].leest .uitleg { color: rgb(34 28 58 / 0.7); }
 
 
-      /* Het plasje inkt onderaan de kantlijn. Zonder beweging staat het er
-         gewoon; mét beweging komt het pas op het moment dat de pen er is,
-         zoals inkt die in het papier trekt: snel uit en dan rustig uit. */
-      .anim .inktvlek {
-        opacity: 0;
-        scale: 0.35;
-        transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-          scale 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+      /* Het mozaïek legt zichzelf. Zonder beweging ligt het er gewoon; mét
+         beweging komt elke tegel op zijn plek zoals je een tegel neerlegt:
+         net iets te groot binnen en dan zakken. */
+      .mozaiek [data-tegel] { border-radius: var(--rond, 1.15rem); }
+      @media (max-width: 639px) {
+        /* Kleine tegels met een grote straal worden pilletjes. */
+        .mozaiek [data-tegel] { border-radius: 0.6rem; }
       }
-      .anim .inktvlek.aan { opacity: 1; scale: 1; }
+      .anim .mozaiek [data-tegel] {
+        opacity: 0;
+        scale: 0.88;
+        transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+          scale 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .anim .mozaiek [data-tegel].aan { opacity: 1; scale: 1; }
 
       /* Knoppen mogen voelen dat je ze indrukt. */
       .knop-druk:active { transform: scale(0.97); }
