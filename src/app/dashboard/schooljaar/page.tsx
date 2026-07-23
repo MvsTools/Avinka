@@ -1,5 +1,11 @@
 import { createClient } from "@/utils/supabase/server";
-import { haalBronnen, haalPlanning, haalSchooljaren, vandaag } from "@/lib/planning";
+import {
+  haalBronnen,
+  haalMijnGroepen,
+  haalPlanning,
+  haalSchooljaren,
+  vandaag,
+} from "@/lib/planning";
 import SchooljaarView from "@/components/dashboard/SchooljaarView";
 
 // Mijn schooljaar: het jaar van deze leerkracht, opgebouwd uit zijn eigen
@@ -19,9 +25,10 @@ export default async function SchooljaarPage({
   const jaren = await haalSchooljaren(supabase, nu);
   const jaarId = jaren.some((j) => j.id === gekozen) ? gekozen : jaren[0]?.id;
 
-  const [bron, agendas] = await Promise.all([
+  const [bron, agendas, groepen] = await Promise.all([
     haalPlanning(supabase, { schooljaarId: jaarId, nu }),
     haalBronnen(supabase),
+    haalMijnGroepen(supabase),
   ]);
 
   return (
@@ -30,6 +37,7 @@ export default async function SchooljaarPage({
       jaren={jaren.map((j) => ({ id: j.id, label: j.label, afgesloten: j.afgesloten }))}
       vandaag={nu}
       agendas={agendas}
+      mijnGroepen={groepen}
     />
   );
 }

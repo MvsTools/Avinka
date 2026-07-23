@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import {
   bereikTekst,
+  filterVoorMij,
   dagbeeld,
   kort,
   maandagVan,
@@ -27,18 +28,28 @@ import SchooljaarDagkaart from "./SchooljaarDagkaart";
 type JaarKeuze = { id: string; label: string; afgesloten: boolean };
 
 export default function SchooljaarView({
-  bron,
+  bron: volledigeBron,
   jaren,
   vandaag,
   agendas,
+  mijnGroepen,
 }: {
   bron: PlanningBron;
   jaren: JaarKeuze[];
   vandaag: string;
   agendas: AgendaBron[];
+  mijnGroepen: number[];
 }) {
   const [tab, setTab] = useState<"jaar" | "agendas">(agendas.length ? "jaar" : "agendas");
   const [weergave, setWeergave] = useState<"lijst" | "maand">("lijst");
+  const [toonAlles, setToonAlles] = useState(false);
+
+  // Een schoolagenda staat vol met dingen die niet van jou zijn: de gesprekken
+  // van groep 7, oproepen aan rijouders. Die zetten we opzij, met een knop om
+  // ze alsnog te laten zien. Weggooien doen we nooit.
+  const zeef = filterVoorMij(volledigeBron.items, mijnGroepen);
+  const opzij = zeef.andereGroep + zeef.ouderoproep;
+  const bron = toonAlles ? volledigeBron : { ...volledigeBron, items: zeef.voorMij };
 
   const { schooljaar, items } = bron;
   const loopt = vandaag >= schooljaar.start && vandaag <= schooljaar.eind;
@@ -147,6 +158,36 @@ export default function SchooljaarView({
               </p>
             )}
           </div>
+
+          {opzij > 0 && (
+            <p className="text-sm text-ink/55">
+              {toonAlles ? (
+                <>Je ziet nu ook wat niet van jou is.</>
+              ) : (
+                <>
+                  {zeef.andereGroep > 0 && (
+                    <>
+                      {zeef.andereGroep} afspraken horen bij een andere groep
+                      {zeef.ouderoproep > 0 ? ", " : ". "}
+                    </>
+                  )}
+                  {zeef.ouderoproep > 0 && (
+                    <>
+                      {zeef.ouderoproep} {zeef.ouderoproep === 1 ? "is een oproep" : "zijn oproepen"}{" "}
+                      aan ouders.{" "}
+                    </>
+                  )}
+                  Die laat ik weg.
+                </>
+              )}{" "}
+              <button
+                onClick={() => setToonAlles(!toonAlles)}
+                className="font-bold text-brand-dark underline-offset-4 hover:underline"
+              >
+                {toonAlles ? "Alleen wat voor mij is" : "Toon ze toch"}
+              </button>
+            </p>
+          )}
 
           {weergave === "maand" ? (
             <SchooljaarMaand bron={bron} vandaag={vandaag} />

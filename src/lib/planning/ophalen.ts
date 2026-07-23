@@ -8,6 +8,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Soort } from "../agenda-herken";
 import { plus, vandaag } from "./datum";
 import { markeerDubbelingen } from "./dubbelingen";
+import { mijnGroepen } from "./relevantie";
 import { metEigenVakanties } from "./eigen-vakanties";
 import { beschikbareSchooljaren, maakSchooljaar, periodesVan, schooljaarVoor } from "./schooljaar";
 import type { PlanItem, PlanningBron, Taak } from "./types";
@@ -66,6 +67,17 @@ export async function haalItems(
     .gte("tot_datum", van)
     .order("datum");
   return ((data as ItemRij[] | null) ?? []).map(naarItem);
+}
+
+/**
+ * De groep(en) van deze leerkracht, uit zijn instellingen. Daarmee zetten we de
+ * afspraken van andere groepen opzij. In dat veld staat vrije tekst ("Groep 7",
+ * "7", "1/2"), dus we halen er de nummers uit; lukt dat niet, dan filteren we
+ * niet.
+ */
+export async function haalMijnGroepen(supabase: SupabaseClient): Promise<number[]> {
+  const { data } = await supabase.from("instellingen").select("standaardgroep").maybeSingle();
+  return mijnGroepen((data as { standaardgroep?: string } | null)?.standaardgroep);
 }
 
 export type AgendaBron = {
