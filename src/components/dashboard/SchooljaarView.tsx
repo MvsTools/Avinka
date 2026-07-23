@@ -61,30 +61,25 @@ export default function SchooljaarView({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-serif text-3xl font-semibold text-ink">Mijn schooljaar</h1>
 
-        {/* Rechtsboven, altijd op dezelfde plek: hoe je kijkt. De lijst/maand-
-            schuif hoort alleen bij je jaar, niet bij het koppelscherm. */}
-        <div className="flex items-center gap-2">
-          {tab === "jaar" && <WeergaveKnop weergave={weergave} zet={setWeergave} />}
-          {jaren.length > 1 && (
-            <div className="flex items-center gap-1 rounded-2xl border border-black/5 bg-white p-1 shadow-sm">
-              {jaren.map((j) => (
-                <Link
-                  key={j.id}
-                  href={`/dashboard/schooljaar?jaar=${j.id}`}
-                  scroll={false}
-                  className={
-                    "rounded-xl px-3.5 py-1.5 text-sm font-bold transition-colors " +
-                    (j.id === schooljaar.id
-                      ? "bg-brand-dark text-white"
-                      : "text-ink/55 hover:text-ink")
-                  }
-                >
-                  {j.label}
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
+        {jaren.length > 1 && (
+          <div className="flex items-center gap-1 rounded-2xl border border-black/5 bg-white p-1 shadow-sm">
+            {jaren.map((j) => (
+              <Link
+                key={j.id}
+                href={`/dashboard/schooljaar?jaar=${j.id}`}
+                scroll={false}
+                className={
+                  "rounded-xl px-3.5 py-1.5 text-sm font-bold transition-colors " +
+                  (j.id === schooljaar.id
+                    ? "bg-brand-dark text-white"
+                    : "text-ink/55 hover:text-ink")
+                }
+              >
+                {j.label}
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
       {schooljaar.afgesloten && (
@@ -142,6 +137,12 @@ export default function SchooljaarView({
               {telDubbelingen(items)} afspraken stonden in meer dan één agenda. Die tel ik één keer.
             </p>
           )}
+
+          {/* Het feiten-blok hierboven blijft in elke weergave staan; de schuif
+              bepaalt alleen wat daaronder komt. Daarom hoort hij hier, rechts. */}
+          <div className="flex justify-end">
+            <WeergaveKnop weergave={weergave} zet={setWeergave} />
+          </div>
 
           {opzij > 0 && (
             <p className="text-sm text-ink/55">
