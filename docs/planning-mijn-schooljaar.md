@@ -256,8 +256,20 @@ Deze regels gelden voor het hele onderdeel en zijn niet onderhandelbaar:
 6. **Bewaren: dit schooljaar en het vorige.** Vorig jaar alleen te bekijken, niet
    te bewerken. Vooruit plannen in een volgend schooljaar: nee. (§3.3)
 
-## 10. Nog te beslissen onderweg
+## 10. Twee kleine besluiten erbij (23-7-2026)
 
-- Waar precies in de balk: onder Start, of onder Takenlijst?
-- Krijgt Mijn schooljaar een plek in de statistieken (tijdwinst per week)?
+- **Plek in de balk: direct onder Start**, boven Takenlijst. Reden van de
+  eigenaar: het is de rode draad van het platform.
+- **Niet in de statistieken.** Mijn schooljaar bespaart geen aanwijsbare minuten;
+  het is een hulpmiddel dat je hoofd leegmaakt, "een soort digitale
+  assistent-agenda" (eigenaar). De statistiekenpagina draait op de belofte "2 uur
+  per week terug" en die getallen zijn nu eerlijk te verantwoorden — er één
+  verzonnen minutenteller bij zetten maakt de hele pagina ongeloofwaardig.
+  **Dus: `avinkaTel()` niet aanroepen vanuit Mijn schooljaar.** Idee voor later,
+  als we iets willen tonen: een rustige regel in de trant van "je bent dit jaar
+  14 keer op tijd gewaarschuwd" — vertelt wat het écht doet, zonder tijd te
+  claimen.
+
+## 11. Nog te beslissen onderweg
+
 - Hoe ver gaat "de hulp" in fase 5 — eigen ontwerpronde.
