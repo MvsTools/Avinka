@@ -169,16 +169,7 @@ export default function AgendaKoppelen({ agendas }: { agendas: AgendaBron[] }) {
 
   return (
     <div className="flex flex-col gap-7">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-ink">
-          Koppel de agenda van je school
-        </h2>
-        <p className="mt-1.5 max-w-xl leading-7 text-ink/70">
-          Plak één link en je hele schooljaar staat er. Studiedagen, rapporten, gesprekken. Je mag
-          er zoveel toevoegen als je wilt, want bij de meeste scholen staat niet alles op één plek.
-        </p>
-      </div>
-
+      {/* Eerst wat je al gekoppeld hebt, daarna pas hoe je er een toevoegt. */}
       {bronnen.length > 0 && (
         <div className="flex flex-col gap-2">
           <h3 className="text-lg font-bold text-ink">Je gekoppelde agenda&apos;s</h3>
@@ -247,6 +238,16 @@ export default function AgendaKoppelen({ agendas }: { agendas: AgendaBron[] }) {
           )}
         </div>
       )}
+
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight text-ink">
+          Koppel de agenda van je school
+        </h2>
+        <p className="mt-1.5 max-w-xl leading-7 text-ink/70">
+          Plak één link en je hele schooljaar staat er. Studiedagen, rapporten, gesprekken. Je mag
+          er zoveel toevoegen als je wilt, want bij de meeste scholen staat niet alles op één plek.
+        </p>
+      </div>
 
       <div className="overflow-hidden rounded-3xl border border-black/5 bg-white shadow-sm">
         {AANBIEDERS.map((b, i) => {
