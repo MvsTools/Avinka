@@ -171,11 +171,11 @@ export default function AgendaKoppelen({ agendas }: { agendas: AgendaBron[] }) {
     <div className="flex flex-col gap-7">
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-ink">
-          Waar staat de agenda van je school?
+          Koppel de agenda van je school
         </h2>
         <p className="mt-1.5 max-w-xl leading-7 text-ink/70">
-          Kies hieronder waar hij staat en plak de link. Staat niet alles op één plek? Je kunt er
-          zoveel koppelen als je wilt.
+          Plak één link en je hele schooljaar staat er. Studiedagen, rapporten, gesprekken. Je mag
+          er zoveel toevoegen als je wilt, want bij de meeste scholen staat niet alles op één plek.
         </p>
       </div>
 
