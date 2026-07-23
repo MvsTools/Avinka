@@ -100,6 +100,7 @@ export default function AgendaKoppelen({ agendas }: { agendas: AgendaBron[] }) {
   const [modus, setModus] = useState<"alles" | "heledagen">("alles");
   const [opslaan, setOpslaan] = useState(false);
   const [druk, setDruk] = useState<string | null>(null);
+  const [gelukt, setGelukt] = useState<string | null>(null);
   const router = useRouter();
 
   // De agenda's komen van de server mee. Na koppelen, verversen of loskoppelen
@@ -164,6 +165,10 @@ export default function AgendaKoppelen({ agendas }: { agendas: AgendaBron[] }) {
     });
     router.refresh();
     setDruk(null);
+    // Even een vinkje: als het tijdstip binnen dezelfde minuut valt zie je
+    // anders helemaal niet dat er iets is gebeurd.
+    setGelukt(id);
+    setTimeout(() => setGelukt((h) => (h === id ? null : h)), 2500);
   }
 
   async function koppelLos(id: string) {
@@ -222,9 +227,19 @@ export default function AgendaKoppelen({ agendas }: { agendas: AgendaBron[] }) {
                 <button
                   onClick={() => ververs(br.id)}
                   disabled={druk === br.id}
-                  className="rounded-xl border border-black/10 px-3.5 py-2 text-sm font-semibold text-ink/70 transition-transform duration-150 hover:text-ink active:scale-[0.97] disabled:opacity-50"
+                  className={
+                    "flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-sm font-semibold transition-colors duration-200 active:scale-[0.97] disabled:opacity-50 " +
+                    (gelukt === br.id
+                      ? "border-brand/30 bg-brand-soft text-brand-dark"
+                      : "border-black/10 text-ink/70 hover:text-ink")
+                  }
                 >
-                  {druk === br.id ? "Bezig…" : "Ververs"}
+                  {gelukt === br.id && (
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M4 12.5l5 5 11-11" />
+                    </svg>
+                  )}
+                  {druk === br.id ? "Bezig…" : gelukt === br.id ? "Bijgewerkt" : "Ververs"}
                 </button>
                 <button
                   onClick={() => koppelLos(br.id)}
