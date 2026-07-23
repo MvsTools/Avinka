@@ -43,15 +43,15 @@ export default function SchooljaarView({
 }) {
   const [tab, setTab] = useState<"jaar" | "agendas">(agendas.length ? "jaar" : "agendas");
   const [weergave, setWeergave] = useState<"lijst" | "maand">("lijst");
-  const [toonAlles, setToonAlles] = useState(false);
+  const [alleenMijne, setAlleenMijne] = useState(false);
 
   // Een schoolagenda staat vol met dingen van andere groepen en oproepen aan
-  // ouders. Die tonen we gewoon, alleen rustiger: gedempt en met een merkje.
-  // Verbergen is te riskant, want bij groep 8 hoort soms iets waar de hele
-  // school bij is. Wie het tóch strak wil, zet het filter zelf aan.
+  // ouders. Standaard tonen we ze gewoon, alleen rustiger: gedempt en met een
+  // merkje. Verbergen is te riskant, want bij groep 8 hoort soms iets waar de
+  // hele school bij is. Wie het tóch strak wil, zet "Alleen mijn afspraken" aan.
   const zeef = filterVoorMij(volledigeBron.items, mijnGroepen);
   const opzij = zeef.andereGroep + zeef.ouderoproep;
-  const bron = toonAlles ? { ...volledigeBron, items: zeef.voorMij } : volledigeBron;
+  const bron = alleenMijne ? { ...volledigeBron, items: zeef.voorMij } : volledigeBron;
 
   const { schooljaar, items } = bron;
   const loopt = vandaag >= schooljaar.start && vandaag <= schooljaar.eind;
@@ -138,33 +138,26 @@ export default function SchooljaarView({
             </p>
           )}
 
-          {/* Het feiten-blok hierboven blijft in elke weergave staan; de schuif
-              bepaalt alleen wat daaronder komt. Daarom hoort hij hier, rechts. */}
-          <div className="flex justify-end">
+          {/* Het feiten-blok hierboven blijft in elke weergave staan; deze regel
+              bepaalt alleen wat daaronder komt. Rechts: het filter en de schuif. */}
+          <div className="flex flex-wrap justify-end gap-2">
+            {opzij > 0 && (
+              <button
+                onClick={() => setAlleenMijne(!alleenMijne)}
+                aria-pressed={alleenMijne}
+                title="Afspraken van andere groepen en oproepen aan ouders even verbergen"
+                className={
+                  "rounded-2xl border px-4 py-2 text-sm font-bold shadow-sm transition-colors " +
+                  (alleenMijne
+                    ? "border-transparent bg-brand-dark text-white"
+                    : "border-black/5 bg-white text-ink/55 hover:text-ink")
+                }
+              >
+                Alleen mijn afspraken
+              </button>
+            )}
             <WeergaveKnop weergave={weergave} zet={setWeergave} />
           </div>
-
-          {opzij > 0 && (
-            <p className="text-sm text-ink/55">
-              {toonAlles ? (
-                <>
-                  {opzij} afspraken van andere groepen en oproepen aan ouders staan nu niet in je
-                  jaar.
-                </>
-              ) : (
-                <>
-                  {opzij} afspraken gaan waarschijnlijk niet over jou. Die staan er gedempt bij, met
-                  een merkje, zodat je ze wel ziet.
-                </>
-              )}{" "}
-              <button
-                onClick={() => setToonAlles(!toonAlles)}
-                className="font-bold text-brand-dark underline-offset-4 hover:underline"
-              >
-                {toonAlles ? "Toon ze toch" : "Alleen wat van mij is"}
-              </button>
-            </p>
-          )}
 
           {weergave === "maand" ? (
             <SchooljaarMaand bron={bron} vandaag={vandaag} groepen={mijnGroepen} />
