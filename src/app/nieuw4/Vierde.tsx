@@ -1565,66 +1565,35 @@ function MarkeerInhoud({ donker = false }: { donker?: boolean }) {
    kaart `is-in`, dan lopen de regels één voor één af. Zonder beweging of
    zonder JS staat de eindstand er meteen. ──────────────────────────────── */
 
-/* ── De verfspetter achter de kaarten ──────────────────────────────────
-   Een grote onregelmatige groene vlek met losse spatten eromheen, zodat
-   de witte kaart ergens op ligt in plaats van in het niets te zweven.
-   Twee lagen: een donkerder afdruk die een paar pixels verschoven ligt,
-   en de vlek zelf erbovenop. Dat scheve tweede laagje is wat het redt van
-   een platte clipart-blob: het leest als drukwerk dat net niet perfect
-   uitgelijnd is. ────────────────────────────────────────────────────── */
-const SPETTER_PAD =
-  "M96,6 C120,2 132,22 144,36 C156,50 184,44 190,68 C196,92 172,100 174,120" +
-  " C176,140 198,156 182,172 C166,188 148,170 130,176 C112,182 104,198 84,194" +
-  " C64,190 66,170 52,160 C38,150 12,158 6,136 C0,114 24,106 26,88" +
-  " C28,70 8,54 22,40 C36,26 56,42 68,34 C80,26 72,10 96,6 Z";
-
-/* De losse spatten liggen aan de buitenkant en aan de boven- en onderkant:
-   precies de randen waar de vlek onder de kaart vandaan komt. Ellipsen en
-   geen rondjes, want een weggeschoten druppel is nooit precies rond. */
-const SPATTEN = [
-  { cx: 10, cy: 66, rx: 7, ry: 5 },
-  { cx: 1, cy: 98, rx: 3.2, ry: 2.6 },
-  { cx: 16, cy: 150, rx: 5, ry: 3.8 },
-  { cx: 74, cy: 5, rx: 5, ry: 3.4 },
-  { cx: 122, cy: 195, rx: 4.4, ry: 3.2 },
+/* ── De papierstapel achter de kaarten ─────────────────────────────────
+   Twee vellen die schuin onder het kaartje uit steken, zoals een stapeltje
+   op je bureau. Ze geven de kaart iets om op te liggen zonder er kleur bij
+   te halen, wat op deze plek in de pagina belangrijker is dan opvallen.
+   De vellen liggen naar de buitenkant, weg van de tekst ernaast; bij de
+   rechterkaart waaieren ze de andere kant op.
+   De eindstand staat in `--eind`, zodat de vellen zonder beweging gewoon
+   goed liggen en er mét beweging onder de kaart vandaan schuiven. ────── */
+const VELLEN = [
+  { vulling: "bg-sand", rand: "ring-ink/[0.07]", graden: 5, x: 11, y: 7, wacht: 0.16 },
+  { vulling: "bg-white", rand: "ring-ink/[0.05]", graden: 2.4, x: 5, y: 3, wacht: 0.08 },
 ];
 
-function SpetterVorm() {
+function PapierStapel({ spiegel = false }: { spiegel?: boolean }) {
+  const kant = spiegel ? 1 : -1;
   return (
-    <>
-      <path d={SPETTER_PAD} />
-      {SPATTEN.map((s) => (
-        <ellipse key={`${s.cx}-${s.cy}`} cx={s.cx} cy={s.cy} rx={s.rx} ry={s.ry} />
+    <div aria-hidden className="pointer-events-none absolute inset-0">
+      {VELLEN.map((vel) => (
+        <div
+          key={vel.graden}
+          style={
+            {
+              "--eind": `translate(${kant * vel.x}px, ${vel.y}px) rotate(${kant * vel.graden}deg)`,
+              "--vel-wacht": `${vel.wacht}s`,
+            } as CSSProperties
+          }
+          className={`stapelvel absolute inset-0 rounded-2xl ring-1 shadow-[0_8px_20px_-16px_rgba(34,28,58,0.5)] ${vel.vulling} ${vel.rand}`}
+        />
       ))}
-    </>
-  );
-}
-
-/* De vlek is net iets groter dan de kaart en ligt naar buiten geschoven: hij
-   piept langs de buitenrand, de boven- en de onderkant vandaan en blijft ver
-   weg van de tekstkolom ernaast. Bij de rechterkaart hetzelfde beeld,
-   gespiegeld, zodat de twee samen één gebaar vormen. */
-function Verfspetter({ spiegel = false }: { spiegel?: boolean }) {
-  return (
-    <div
-      aria-hidden
-      className={`verfspetter pointer-events-none absolute top-1/2 h-[132%] w-[132%] -translate-y-1/2 ${
-        spiegel ? "-right-[19%]" : "-left-[19%]"
-      }`}
-    >
-      <svg
-        viewBox="0 0 200 200"
-        preserveAspectRatio="none"
-        className={`h-full w-full ${spiegel ? "-scale-x-100" : ""}`}
-      >
-        {/* De verschoven onderafdruk. */}
-        <g style={{ fill: "var(--color-brand-dark)" }} opacity="0.2" transform="translate(6,7)">
-          <SpetterVorm />
-        </g>
-        <g style={{ fill: "var(--color-brand)" }}>
-          <SpetterVorm />
-        </g>
-      </svg>
     </div>
   );
 }
@@ -1642,7 +1611,7 @@ const NIET_BIJ_ONS = [
 function BewaarKaart() {
   return (
     <div data-reveal className="kaartblok relative w-full max-w-xs">
-      <Verfspetter />
+      <PapierStapel />
       <div className="relative rounded-2xl bg-white p-6 shadow-[0_26px_60px_-28px_rgba(34,28,58,0.45)] ring-1 ring-black/5">
       <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-ink/45">
         Wat we wel bewaren
@@ -1690,7 +1659,7 @@ const KLAS_REST = 19;
 function KlassenlijstKaart() {
   return (
     <div data-reveal className="kaartblok relative w-full max-w-xs lg:ml-auto">
-      <Verfspetter spiegel />
+      <PapierStapel spiegel />
       <div className="relative rounded-2xl bg-white p-6 shadow-[0_26px_60px_-28px_rgba(34,28,58,0.45)] ring-1 ring-black/5">
       <div className="flex items-baseline justify-between gap-3">
         <p className="font-display text-lg font-black tracking-tight">Groep 5</p>
@@ -2793,20 +2762,19 @@ function StijlBlok() {
       }
       .anim .kaartblok.is-in .klasmasker { opacity: 1; transform: none; }
 
-      /* De verfspetter zet zich neer: hij komt net iets kleiner en scheef
-         binnen en veert op zijn plek, een tel vóór de regels aflopen.
-         Alleen schalen en draaien; het verticaal centreren doet Tailwind met
-         de losse translate-eigenschap, en die hoort hier niet overschreven
-         te worden (anders telt het dubbel en schiet de vlek omhoog). */
-      .anim .kaartblok .verfspetter {
+      /* De vellen onder de kaart: zonder beweging liggen ze meteen goed,
+         mét beweging beginnen ze recht onder de kaart en schuiven ze er
+         rustig onderuit. */
+      .stapelvel { transform: var(--eind); }
+      .anim .kaartblok .stapelvel {
         opacity: 0;
-        transform: scale(0.82) rotate(-7deg);
-        transition: opacity 0.5s ease-out, transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
-        transition-delay: calc(var(--wacht) + 0.06s);
-      }
-      .anim .kaartblok.is-in .verfspetter {
-        opacity: 1;
         transform: none;
+        transition: opacity 0.45s ease-out, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+        transition-delay: calc(var(--wacht) + var(--vel-wacht));
+      }
+      .anim .kaartblok.is-in .stapelvel {
+        opacity: 1;
+        transform: var(--eind);
       }
 
       @media (prefers-reduced-motion: reduce) {
