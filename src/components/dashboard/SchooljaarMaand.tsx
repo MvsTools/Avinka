@@ -71,9 +71,9 @@ export default function SchooljaarMaand({
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-3">
-        <h3 className="text-lg font-bold text-ink">
-          {MAANDVOL[maand]} {jaar}
-        </h3>
+        {/* Pijltjes vóór de maandnaam, en de naam op een vaste breedte. Anders
+            schuiven ze mee met de lengte van het woord ("mei" tegenover
+            "september") en klik je bij doorbladeren steeds mis. */}
         <div className="flex items-center gap-1">
           <button
             onClick={() => verschuif(-1)}
@@ -96,6 +96,9 @@ export default function SchooljaarMaand({
             </svg>
           </button>
         </div>
+        <h3 className="min-w-[11rem] text-lg font-bold text-ink">
+          {MAANDVOL[maand]} {jaar}
+        </h3>
         {!opVandaag && (
           <button
             onClick={() => setEerste(begin.slice(0, 7) + "-01")}
