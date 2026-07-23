@@ -45,6 +45,18 @@ export default function SchooljaarView({
   const [weergave, setWeergave] = useState<"lijst" | "maand">("lijst");
   const [alleenMijne, setAlleenMijne] = useState(false);
 
+  // Welke periode-blokken openstaan. Standaard: het blok waar je nu in zit en
+  // wat nog komt open, wat achter je ligt dicht. De knop "Alles inklappen"
+  // stuurt ze allemaal tegelijk; een los blok kun je daarna nog apart openen.
+  const alleBlokken = volledigeBron.periodes.map((p) => p.nummer);
+  const [openBlokken, setOpenBlokken] = useState<number[]>(() =>
+    volledigeBron.periodes.filter((p) => p.tot >= vandaag).map((p) => p.nummer),
+  );
+  const allesDicht = openBlokken.length === 0;
+  const vouwAlles = () => setOpenBlokken(allesDicht ? alleBlokken : []);
+  const vouwBlok = (nr: number) =>
+    setOpenBlokken((o) => (o.includes(nr) ? o.filter((n) => n !== nr) : [...o, nr]));
+
   // Een schoolagenda staat vol met dingen van andere groepen en oproepen aan
   // ouders. Standaard tonen we ze gewoon, alleen rustiger: gedempt en met een
   // merkje. Verbergen is te riskant, want bij groep 8 hoort soms iets waar de
@@ -121,30 +133,49 @@ export default function SchooljaarView({
           )}
 
           {/* Het feiten-blok hierboven blijft in elke weergave staan; deze regel
-              bepaalt alleen wat daaronder komt. Rechts: het filter en de schuif. */}
-          <div className="flex flex-wrap justify-end gap-2">
-            {opzij > 0 && (
-              <button
-                onClick={() => setAlleenMijne(!alleenMijne)}
-                aria-pressed={alleenMijne}
-                title="Afspraken van andere groepen en oproepen aan ouders even verbergen"
-                className={
-                  "rounded-2xl border px-4 py-2 text-sm font-bold shadow-sm transition-colors " +
-                  (alleenMijne
-                    ? "border-transparent bg-brand-dark text-white"
-                    : "border-black/5 bg-white text-ink/55 hover:text-ink")
-                }
-              >
-                Alleen mijn afspraken
-              </button>
-            )}
-            <WeergaveKnop weergave={weergave} zet={setWeergave} />
+              bepaalt alleen wat daaronder komt. Links het in-/uitklappen (alleen
+              in de lijst), rechts het filter en de weergave-schuif. */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              {weergave === "lijst" && alleBlokken.length > 0 && (
+                <button
+                  onClick={vouwAlles}
+                  className="rounded-2xl border border-black/5 bg-white px-4 py-2 text-sm font-bold text-ink/55 shadow-sm transition-colors hover:text-ink"
+                >
+                  {allesDicht ? "Alles uitklappen" : "Alles inklappen"}
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {opzij > 0 && (
+                <button
+                  onClick={() => setAlleenMijne(!alleenMijne)}
+                  aria-pressed={alleenMijne}
+                  title="Afspraken van andere groepen en oproepen aan ouders even verbergen"
+                  className={
+                    "rounded-2xl border px-4 py-2 text-sm font-bold shadow-sm transition-colors " +
+                    (alleenMijne
+                      ? "border-transparent bg-brand-dark text-white"
+                      : "border-black/5 bg-white text-ink/55 hover:text-ink")
+                  }
+                >
+                  Alleen mijn afspraken
+                </button>
+              )}
+              <WeergaveKnop weergave={weergave} zet={setWeergave} />
+            </div>
           </div>
 
           {weergave === "maand" ? (
             <SchooljaarMaand bron={bron} vandaag={vandaag} groepen={mijnGroepen} />
           ) : (
-            <Jaarlijst bron={bron} vandaag={vandaag} groepen={mijnGroepen} />
+            <Jaarlijst
+              bron={bron}
+              vandaag={vandaag}
+              groepen={mijnGroepen}
+              open={openBlokken}
+              vouwBlok={vouwBlok}
+            />
           )}
         </>
       )}
@@ -424,13 +455,16 @@ function Jaarlijst({
   bron,
   vandaag,
   groepen,
+  open,
+  vouwBlok,
 }: {
   bron: PlanningBron;
   vandaag: string;
   groepen: number[];
+  open: number[];
+  vouwBlok: (nr: number) => void;
 }) {
   const { schooljaar, periodes, items } = bron;
-  const [open, setOpen] = useState<number[]>([]);
   const [dag, setDag] = useState<string | null>(null);
 
   return (
@@ -460,13 +494,7 @@ function Jaarlijst({
           toonDag={setDag}
           groepen={groepen}
           open={open.includes(periode.nummer)}
-          zetOpen={() =>
-            setOpen((o) =>
-              o.includes(periode.nummer)
-                ? o.filter((n) => n !== periode.nummer)
-                : [...o, periode.nummer],
-            )
-          }
+          zetOpen={() => vouwBlok(periode.nummer)}
         />
       ))}
 
@@ -505,9 +533,6 @@ function Blok({
   );
   const voorbij = periode.tot < vandaag;
   const bezig = periode.van <= vandaag && vandaag <= periode.tot;
-  // Wat achter je ligt staat dichtgeklapt: je opent de pagina in de periode
-  // waar je nú in zit.
-  const uitgeklapt = !voorbij || open;
   const vakantie = periode.eindigtMet;
 
   return (
@@ -520,12 +545,8 @@ function Blok({
       >
         <button
           onClick={zetOpen}
-          disabled={!voorbij}
-          aria-expanded={uitgeklapt}
-          className={
-            "flex w-full flex-wrap items-baseline gap-x-3 gap-y-1 px-5 py-4 text-left " +
-            (voorbij ? "hover:bg-cream/60" : "cursor-default")
-          }
+          aria-expanded={open}
+          className="flex w-full flex-wrap items-baseline gap-x-3 gap-y-1 px-5 py-4 text-left transition-colors hover:bg-cream/60"
         >
           <span className="font-bold text-ink">{periode.naam}</span>
           <span className="text-sm text-ink/55">
@@ -536,14 +557,14 @@ function Blok({
               hier zit je nu
             </span>
           )}
-          {voorbij && (
-            <span className="ml-auto text-sm font-semibold text-ink/40">
-              {uitgeklapt ? "verbergen" : `${items.length} momenten, afgerond`}
-            </span>
-          )}
+          <span className="ml-auto text-sm font-semibold text-ink/40">
+            {open
+              ? "verbergen"
+              : `${items.length} momenten${voorbij ? ", afgerond" : ""}`}
+          </span>
         </button>
 
-        {uitgeklapt && (
+        {open && (
           <ul className="px-5 pb-4">
             {!items.length && (
               <li className="py-3 text-sm text-ink/50">
