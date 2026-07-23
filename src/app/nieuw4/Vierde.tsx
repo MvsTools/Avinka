@@ -1593,10 +1593,13 @@ function Doorloop() {
     if (!blok || !raster) return;
 
     const tegels = Array.from(raster.querySelectorAll<HTMLElement>("[data-tegel]"));
-    tegels.forEach((t) => t.classList.remove("aan"));
+    const n = tegels.length;
+    /* Hoeveel van de scroll één tegel nodig heeft om binnen te komen. Ruim
+       genoeg dat ze elkaar overlappen: anders wordt het een rij losse
+       gebeurtenissen in plaats van één beweging. */
+    const DUUR = 0.42;
 
     let bezig = false;
-    let ver = 0; // gelegd is gelegd: het mozaïek breekt niet af bij terugscrollen
     const leg = () => {
       if (bezig) return;
       bezig = true;
@@ -1604,21 +1607,27 @@ function Doorloop() {
         bezig = false;
         const vh = window.innerHeight;
         const r = blok.getBoundingClientRect();
-        /* Het leggen begint zodra het veld onderin binnenkomt en is klaar als
-           het goed in beeld staat, dus op leestempo in plaats van als een
-           animatie die zijn eigen gang gaat. */
-        const p = Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.25 + r.height * 0.75)));
-        if (p <= ver) {
-          if (ver >= 1) {
-            window.removeEventListener("scroll", leg);
-            window.removeEventListener("resize", leg);
-          }
-          return;
-        }
-        ver = p;
-        const tot = Math.round(p * tegels.length);
-        tegels.forEach((t, i) => {
-          if (i < tot) t.classList.add("aan");
+        /* Het leggen loopt van "het veld komt onderin binnen" tot "het veld
+           staat goed in beeld". Aan de scroll gekoppeld en niet aan een
+           tijdlijn: scroll je terug, dan gaan de tegels weer uit elkaar. Dat
+           mag hier, want jij bestuurt het. */
+        const p = Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.5 + r.height * 0.6)));
+
+        tegels.forEach((el, i) => {
+          const start = (i / (n - 1)) * (1 - DUUR);
+          const t = Math.min(1, Math.max(0, (p - start) / DUUR));
+          // Sterke uitloop: hard binnen en dan zachtjes op zijn plek zakken.
+          const e = 1 - Math.pow(1 - t, 5);
+          const uit = 1 - e;
+          /* Ze komen van rechts, de kant waar het mozaïek doorloopt: daar
+             komt het vandaan, daar komt ook de rest vandaan. Wat verderop in
+             de rij ligt, komt van verder weg. */
+          const dx = uit * (260 + i * 16);
+          const dy = uit * (((i % 3) - 1) * 44);
+          const dr = uit * (i % 2 ? 8 : -7);
+          el.style.transform = `translate3d(${dx.toFixed(1)}px, ${dy.toFixed(1)}px, 0) rotate(${dr.toFixed(2)}deg)`;
+          // De laatste tel is hij al vol: het landen wil je zien, niet het opdoemen.
+          el.style.opacity = String(Math.min(1, e * 1.7));
         });
       });
     };
@@ -1649,77 +1658,77 @@ function Doorloop() {
           aria-hidden
         />
 
-        <div className="relative mx-auto w-full max-w-5xl px-6 py-24 lg:py-28">
-          <div className="grid items-center gap-14 lg:grid-cols-[1fr_1.05fr] lg:gap-16">
-            <div>
-              <h2
-                data-reveal
-                className="font-display text-[clamp(2.25rem,4.4vw,3.5rem)] font-black leading-[1] tracking-tight text-white [text-wrap:balance]"
-              >
-                De tools werken samen
-              </h2>
-              <p
-                data-reveal
-                style={{ transitionDelay: "90ms" }}
-                className="mt-8 max-w-xl text-lg leading-8 text-white/90"
-              >
-                Binnen Avinka wordt er veel werk voor je uit handen genomen. De
-                tools staan niet los van elkaar maar werken samen aan hetzelfde
-                resultaat.
-              </p>
-              <p
-                data-reveal
-                style={{ transitionDelay: "160ms" }}
-                className="mt-5 max-w-xl text-lg leading-8 text-white/90"
-              >
-                Je stelt één keer in hoe jij werkt en daar houdt alles rekening
-                mee. En het platform groeit mee: er komt steeds meer bij, zonder
-                dat je opnieuw hoeft uit te zoeken hoe het werkt.
-              </p>
-            </div>
-
-            {/* Het mozaïek loopt breder dan zijn kolom en wordt door de sectie
-               afgesneden: het houdt niet op, je ziet er alleen een stuk van.
-               Dat gebeurt met een negatieve marge en niet met een breedte,
-               want een te brede rastercel duwt de tekstkolom plat. */}
-            <div
-              ref={mozaiek}
-              aria-hidden
-              className="mozaiek -mr-10 grid aspect-[7/5] min-w-0 grid-cols-5 grid-rows-5 gap-2.5 sm:gap-3 lg:-mr-[22vw]"
+        <div className="relative mx-auto w-full max-w-5xl px-6 py-16 lg:min-h-[31vw] lg:py-20">
+          <div className="lg:flex lg:min-h-[24rem] lg:w-[44%] lg:flex-col lg:justify-center">
+            <h2
+              data-reveal
+              className="font-display text-[clamp(2.25rem,4.4vw,3.5rem)] font-black leading-[1] tracking-tight text-white [text-wrap:balance]"
             >
-              {TEGELS.map((t, i) => (
-                <span
-                  key={`${t.kol}-${t.rij}`}
-                  data-tegel
-                  style={
-                    {
-                      gridColumn: `${t.kol} / span ${t.kb ?? 1}`,
-                      gridRow: `${t.rij} / span ${t.rb ?? 1}`,
-                      // Via een variabele, zodat kleine schermen de ronding
-                      // kunnen terugbrengen: dezelfde straal maakt van een
-                      // tegel van 50 pixels een pilletje.
-                      "--rond": t.rond,
-                      rotate: `${t.draai}deg`,
-                      transitionDelay: `${(i % 4) * 25}ms`,
-                    } as CSSProperties
-                  }
-                  className={
-                    t.open
-                      ? "ring-2 ring-inset ring-white/35"
-                      : `shadow-[0_10px_30px_-16px_rgba(9,32,22,0.7)] ${t.kleur}`
-                  }
-                />
-              ))}
-            </div>
+              De tools werken samen
+            </h2>
+            <p
+              data-reveal
+              style={{ transitionDelay: "90ms" }}
+              className="mt-7 max-w-xl text-lg leading-8 text-white/90"
+            >
+              Binnen Avinka wordt er veel werk voor je uit handen genomen. De
+              tools staan niet los van elkaar maar werken samen aan hetzelfde
+              resultaat.
+            </p>
+            <p
+              data-reveal
+              style={{ transitionDelay: "160ms" }}
+              className="mt-5 max-w-xl text-lg leading-8 text-white/90"
+            >
+              Je stelt één keer in hoe jij werkt en daar houdt alles rekening
+              mee. En het platform groeit mee: er komt steeds meer bij, zonder
+              dat je opnieuw hoeft uit te zoeken hoe het werkt.
+            </p>
+          </div>
+
+          {/* Het mozaïek hangt op groot scherm aan de rechterrand van het
+             venster en loopt er een stukje voorbij. Daarom wordt de rechter-
+             positie uit de vensterbreedte gerekend en niet uit de kolom: bij
+             een breed scherm zou het anders midden op de pagina ophouden. */}
+          <div
+            ref={mozaiek}
+            aria-hidden
+            className="mozaiek -mr-10 mt-12 grid aspect-[8/5] grid-cols-5 grid-rows-5 gap-2.5 sm:gap-3 lg:absolute lg:right-[calc(50%-50vw-3rem)] lg:top-1/2 lg:mr-0 lg:mt-0 lg:w-[46vw] lg:-translate-y-1/2"
+          >
+            {TEGELS.map((t) => (
+              <span
+                key={`${t.kol}-${t.rij}`}
+                data-tegel
+                style={
+                  {
+                    gridColumn: `${t.kol} / span ${t.kb ?? 1}`,
+                    gridRow: `${t.rij} / span ${t.rb ?? 1}`,
+                    // Via een variabele, zodat kleine schermen de ronding
+                    // kunnen terugbrengen: dezelfde straal maakt van een
+                    // tegel van 50 pixels een pilletje.
+                    "--rond": t.rond,
+                    rotate: `${t.draai}deg`,
+                  } as CSSProperties
+                }
+                className={
+                  t.open
+                    ? "ring-2 ring-inset ring-white/35"
+                    : `shadow-[0_10px_30px_-16px_rgba(9,32,22,0.7)] ${t.kleur}`
+                }
+              />
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Waar het ophoudt. Dit deel staat op één lijn met de privacysectie
-         eronder en loopt erin door: samen zijn ze één hoofdstuk over de grens. */}
-      <div className="relative bg-ink text-cream">
-        <div className="mx-auto w-full max-w-5xl px-6 pb-14 pt-20 lg:pt-24">
-          <div className="max-w-2xl">
+      {/* Waar het ophoudt. Dit blok staat rechts, precies onder waar het
+         mozaïek net stond: je oog hoeft niet terug naar links te springen, en
+         na drie secties die links beginnen breekt het de dreun. */}
+      {/* Eén pixel overlap: anders zie je op sommige schermen een haarlijn
+         waar het verloop en het inktvlak elkaar raken. */}
+      <div className="relative -mt-px bg-ink text-cream">
+        <div className="mx-auto w-full max-w-5xl px-6 pb-16 pt-20 lg:pt-24">
+          <div className="max-w-2xl lg:ml-auto">
             <p
               data-reveal
               className="font-display text-[clamp(1.6rem,3.1vw,2.35rem)] font-black leading-[1.15] tracking-tight text-white [text-wrap:balance]"
@@ -2681,21 +2690,16 @@ function StijlBlok() {
       .anim [data-leesregel].leest .uitleg { color: rgb(34 28 58 / 0.7); }
 
 
-      /* Het mozaïek legt zichzelf. Zonder beweging ligt het er gewoon; mét
-         beweging komt elke tegel op zijn plek zoals je een tegel neerlegt:
-         net iets te groot binnen en dan zakken. */
+      /* Het mozaïek. De tegels liggen standaard gewoon op hun plek; mét
+         beweging zet het script per beeldje hun transform en dekking, want
+         ze komen aanvliegen op het ritme van de scroll. Daarom hier geen
+         overgang: die zou tegen de sturing per beeldje in werken. */
       .mozaiek [data-tegel] { border-radius: var(--rond, 1.15rem); }
       @media (max-width: 639px) {
         /* Kleine tegels met een grote straal worden pilletjes. */
         .mozaiek [data-tegel] { border-radius: 0.6rem; }
       }
-      .anim .mozaiek [data-tegel] {
-        opacity: 0;
-        scale: 0.88;
-        transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-          scale 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-      }
-      .anim .mozaiek [data-tegel].aan { opacity: 1; scale: 1; }
+      .anim .mozaiek [data-tegel] { will-change: transform, opacity; }
 
       /* Knoppen mogen voelen dat je ze indrukt. */
       .knop-druk:active { transform: scale(0.97); }
