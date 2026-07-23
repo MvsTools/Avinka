@@ -1084,6 +1084,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
              zonder toolnamen, zodat dit blijft kloppen bij elke tool die er
              nog bij komt. ── */}
           <div className="relative mx-auto w-full max-w-5xl px-6 pt-24 lg:pt-28">
+            <ToolsPijl />
             <div className="ml-auto max-w-2xl">
               <h2
                 data-reveal
@@ -1580,6 +1581,109 @@ function MarkeerInhoud({ donker = false }: { donker?: boolean }) {
    een berichtje van thuis, een klasopstelling), geen interface-namaak.
    De bezoeker heeft de regie: zelf slepen, vegen of de pijltjes. Niets
    beweegt uit zichzelf; een bekeken kaart zet wel zijn eigen vinkje. ──── */
+
+/* ── De verbindingspijl ─────────────────────────────────────────────────
+   De zin "De tools werken samen" stond te los onder de galerij. Een met de
+   hand getekende amberpijl vult de lege ruimte links van de tekst en wijst
+   ernaar; hij tekent zichzelf terwijl je scrolt, zoals iemand die er in de
+   kantlijn een pijltje bij zet. De schacht komt het eerst, het pijlpuntje
+   flikt er als laatste bij.
+   Klein en met een doel (verbinden), geen nieuw bewegingsnummer. Alleen op
+   grote schermen: op mobiel staat de tekst al vlak onder de galerij en is er
+   niets te overbruggen. Zonder JS of bij verminderde beweging staat de pijl
+   er gewoon helemaal. ──────────────────────────────────────────────────── */
+function ToolsPijl() {
+  const wrap = useRef<HTMLDivElement>(null);
+  const schacht = useRef<SVGPathElement>(null);
+  const punt = useRef<SVGPathElement>(null);
+  const reduced = useSyncExternalStore<boolean | null>(
+    abonneerReduced,
+    () => window.matchMedia(REDUCED_QUERY).matches,
+    () => null,
+  );
+
+  useEffect(() => {
+    if (reduced === null || reduced) return;
+    const el = wrap.current;
+    const s = schacht.current;
+    const k = punt.current;
+    if (!el || !s || !k) return;
+
+    s.style.strokeDashoffset = "1";
+    k.style.strokeDashoffset = "1";
+
+    let bezig = false;
+    let ver = 0; // de inkt gaat er niet meer af: de pijl tekent één kant op
+    const teken = () => {
+      if (bezig) return;
+      bezig = true;
+      requestAnimationFrame(() => {
+        bezig = false;
+        const vh = window.innerHeight;
+        const r = el.getBoundingClientRect();
+        // Van "de pijl komt onderin in beeld" tot "hij staat comfortabel in
+        // beeld", op leestempo dus, niet als eigen animatie.
+        const p = Math.min(1, Math.max(0, (vh * 0.86 - r.top) / (vh * 0.42)));
+        if (p <= ver) {
+          if (ver >= 1) {
+            window.removeEventListener("scroll", teken);
+            window.removeEventListener("resize", teken);
+          }
+          return;
+        }
+        ver = p;
+        // Eerst de schacht, dan pas het pijlpuntje eroverheen.
+        s.style.strokeDashoffset = String(1 - Math.min(1, p / 0.82));
+        k.style.strokeDashoffset = String(1 - Math.min(1, Math.max(0, (p - 0.82) / 0.18)));
+      });
+    };
+
+    teken();
+    window.addEventListener("scroll", teken, { passive: true });
+    window.addEventListener("resize", teken);
+    return () => {
+      window.removeEventListener("scroll", teken);
+      window.removeEventListener("resize", teken);
+    };
+  }, [reduced]);
+
+  return (
+    <div
+      ref={wrap}
+      aria-hidden
+      className="pointer-events-none absolute left-4 -top-6 hidden h-64 w-[20rem] text-accent lg:block"
+    >
+      <svg viewBox="0 0 300 260" fill="none" className="h-full w-full">
+        {/* De schacht komt van boven, uit de richting van de galerij, en
+           daalt af naar de kop: zo overbrugt hij het gat tussen de tools en
+           de zin eronder in plaats van de kop met zijn eigen tekst te
+           verbinden. */}
+        <path
+          ref={schacht}
+          d="M26 18 C 70 118 150 156 210 140 C 246 130 268 132 290 136"
+          pathLength={1}
+          strokeDasharray={1}
+          strokeDashoffset={0}
+          stroke="currentColor"
+          strokeWidth="5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          ref={punt}
+          d="M266 114 L293 137 L268 162"
+          pathLength={1}
+          strokeDasharray={1}
+          strokeDashoffset={0}
+          stroke="currentColor"
+          strokeWidth="5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
+  );
+}
 
 /* De kop boven de rij. De ondertitel wijst meteen op het slepen: zonder die
    hint blijft de helft van de kaarten onopgemerkt buiten beeld staan. */
