@@ -908,3 +908,49 @@ create index if not exists idx_agenda_items_user_datum
 -- zelf bevat, zijn die leidend. Scholen wijken af (een tweede week mei, een
 -- eigen pinkstervakantie), dus de landelijke lijst is nooit de waarheid.
 alter table public.instellingen add column if not exists vakantieregio text;
+
+-- ── 17) BASISROOSTER — je vaste lesweek ───────────────────────────────────
+-- Het rooster wordt gemaakt in de weekplanning en stond eerst alleen in de
+-- browser (localStorage). Daardoor was je rooster op school een ander dan thuis.
+-- Nu hangt het aan je account, per schooljaar.
+--
+-- We bewaren de vorm van de weekplanning ongewijzigd in `data` (setup + blokken,
+-- tijden in minuten). Dat houdt de tool werkend en we vertalen één keer in
+-- src/lib/planning/rooster.ts. Er staan GEEN leerlingnamen in: alleen vakken,
+-- dagen en tijden.
+
+create table if not exists public.basisrooster (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  schooljaar text not null,                       -- "2026-2027"
+  data       jsonb not null default '{}'::jsonb,  -- { setup, blokken, duurVoorkeur }
+  bijgewerkt timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+alter table public.basisrooster enable row level security;
+drop policy if exists "eigen basisrooster" on public.basisrooster;
+create policy "eigen basisrooster" on public.basisrooster
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.basisrooster to authenticated;
+-- Eén rooster per schooljaar. (Later mogelijk meer, bijvoorbeeld bij een
+-- duobaan; dan vervalt deze unieke index.)
+create unique index if not exists idx_basisrooster_uniek
+  on public.basisrooster(user_id, schooljaar);
+
+-- Een week die afwijkt van je basisrooster: uitstapje, toetsweek, geruilde dag.
+-- Je basisrooster blijft ongemoeid; hier staat alleen wat er die ene week anders
+-- is. Leeg record of geen record = die week volgt gewoon je basisrooster.
+create table if not exists public.rooster_week (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  maandag    date not null,                       -- de maandag van die week
+  data       jsonb not null default '{}'::jsonb,  -- { blokken }
+  bijgewerkt timestamptz not null default now()
+);
+alter table public.rooster_week enable row level security;
+drop policy if exists "eigen roosterweek" on public.rooster_week;
+create policy "eigen roosterweek" on public.rooster_week
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.rooster_week to authenticated;
+create unique index if not exists idx_rooster_week_uniek
+  on public.rooster_week(user_id, maandag);

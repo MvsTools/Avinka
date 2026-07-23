@@ -9,6 +9,7 @@ import type { Soort } from "../agenda-herken";
 import { plus, vandaag } from "./datum";
 import { markeerDubbelingen } from "./dubbelingen";
 import { mijnGroepen } from "./relevantie";
+import { isBasisrooster, naarBlokken, type Basisrooster } from "./rooster";
 import { metEigenVakanties } from "./eigen-vakanties";
 import { beschikbareSchooljaren, maakSchooljaar, periodesVan, schooljaarVoor } from "./schooljaar";
 import type { PlanItem, PlanningBron, Taak } from "./types";
@@ -80,6 +81,23 @@ export async function haalMijnGroepen(supabase: SupabaseClient): Promise<number[
   return mijnGroepen((data as { standaardgroep?: string } | null)?.standaardgroep);
 }
 
+/**
+ * Het basisrooster van dit schooljaar. Nog niet gemaakt? Dan null, en de
+ * schermen rekenen met een lege week.
+ */
+export async function haalBasisrooster(
+  supabase: SupabaseClient,
+  schooljaarId: string,
+): Promise<Basisrooster | null> {
+  const { data } = await supabase
+    .from("basisrooster")
+    .select("data")
+    .eq("schooljaar", schooljaarId)
+    .maybeSingle();
+  const ruw = (data as { data?: unknown } | null)?.data;
+  return isBasisrooster(ruw) ? ruw : null;
+}
+
 export type AgendaBron = {
   id: string;
   naam: string;
@@ -141,10 +159,11 @@ export async function haalPlanning(
   const van = opties.van ?? plus(schooljaar.start, -45);
   const tot = opties.tot ?? plus(schooljaar.eind, 75);
 
-  const [ruwe, taken, volgorde] = await Promise.all([
+  const [ruwe, taken, volgorde, rooster] = await Promise.all([
     haalItems(supabase, van, tot),
     haalTaken(supabase, van, tot),
     haalBronvolgorde(supabase),
+    haalBasisrooster(supabase, schooljaar.id),
   ]);
 
   // Staat dezelfde afspraak in twee agenda's, dan tonen we hem één keer.
@@ -158,9 +177,7 @@ export async function haalPlanning(
     periodes: periodesVan(eigen),
     items,
     taken,
-    // Het basisrooster komt in fase 2 uit de database. Tot die tijd rekenen de
-    // schermen met een lege week; alles eromheen werkt al wel.
-    blokken: [],
+    blokken: naarBlokken(rooster),
   };
 }
 

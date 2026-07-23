@@ -18,6 +18,7 @@ import {
 } from "@/lib/planning";
 import type { AgendaBron, Periode, PlanItem, PlanningBron } from "@/lib/planning";
 import SchooljaarMaand from "./SchooljaarMaand";
+import SchooljaarWeek from "./SchooljaarWeek";
 import AgendaKoppelen from "./AgendaKoppelen";
 import { ETIKET } from "./schooljaar-stijl";
 import SchooljaarDagkaart from "./SchooljaarDagkaart";
@@ -55,7 +56,9 @@ export default function SchooljaarView({
   agendas: AgendaBron[];
   mijnGroepen: number[];
 }) {
-  const [tab, setTab] = useState<"jaar" | "agendas">(agendas.length ? "jaar" : "agendas");
+  const [tab, setTab] = useState<"jaar" | "week" | "agendas">(
+    agendas.length ? "jaar" : "agendas",
+  );
   const [weergave, setWeergave] = useState<"lijst" | "maand">("lijst");
   const [alleenMijne, setAlleenMijne] = useState(false);
 
@@ -114,6 +117,7 @@ export default function SchooljaarView({
         {(
           [
             ["jaar", "Jaaroverzicht"],
+            ["week", "Weekrooster"],
             ["agendas", agendas.length ? `Agenda's (${agendas.length})` : "Agenda koppelen"],
           ] as const
         ).map(([id, label]) => (
@@ -132,6 +136,8 @@ export default function SchooljaarView({
 
       {tab === "agendas" ? (
         <AgendaKoppelen agendas={agendas} />
+      ) : tab === "week" ? (
+        <SchooljaarWeek bron={bron} vandaag={vandaag} groepen={mijnGroepen} />
       ) : (
         <>
           {agendas.length === 0 && (
