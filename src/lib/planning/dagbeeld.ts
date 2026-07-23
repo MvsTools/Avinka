@@ -26,6 +26,10 @@ export function dagbeeld(bron: PlanningBron, datum: string): Dagbeeld {
   const vakantie = vakantieOp(schooljaar, datum);
   const weekend = isWeekend(datum);
   const buitenSchooljaar = datum < schooljaar.start || datum > schooljaar.eind;
+  // De startweek valt vóór de eerste schooldag (technisch nog vakantie), maar
+  // is voor de leerkracht een werkweek. Alleen de werkdagen tellen mee.
+  const startweek =
+    !weekend && datum >= schooljaar.startweek.van && datum <= schooljaar.startweek.tot;
 
   // Een vrije dag uit de agenda (studiedag, margedag) telt net zo hard als een
   // vakantie: er is dan geen les, ook al staat er wel iets in je rooster.
@@ -58,6 +62,7 @@ export function dagbeeld(bron: PlanningBron, datum: string): Dagbeeld {
     taken: taken.filter((t) => t.deadline === datum),
     periode: periodeOp(periodes, datum),
     buitenSchooljaar,
+    startweek,
   };
 }
 

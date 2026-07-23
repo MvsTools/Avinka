@@ -137,14 +137,16 @@ export default function SchooljaarMaand({
                     (i % 7 === 6 ? "border-r-0 " : "") +
                     (!dezeMaand ? "opacity-35 " : "") +
                     (gekozen === datum ? "ring-2 ring-inset ring-brand " : "") +
-                    // Groen is vrij. In een vakantie is het weekend dat ook,
-                    // anders staat er een gat in de week terwijl de uitleg
-                    // ernaast zegt dat groen vrij betekent.
-                    (beeld.vakantie || (beeld.vrij && !beeld.weekend)
-                      ? "bg-brand-soft "
-                      : beeld.weekend
-                        ? "bg-cream/70 "
-                        : "bg-white ")
+                    // De startweek is geen vrije dag maar een werkweek: eigen
+                    // warme tint, niet het groen van "geen les". Daarna: groen
+                    // is vrij, en in een vakantie is het weekend dat ook.
+                    (beeld.startweek
+                      ? "bg-accent-soft "
+                      : beeld.vakantie || (beeld.vrij && !beeld.weekend)
+                        ? "bg-brand-soft "
+                        : beeld.weekend
+                          ? "bg-cream/70 "
+                          : "bg-white ")
                   }
                 >
                   <span
@@ -160,6 +162,11 @@ export default function SchooljaarMaand({
                     {Number(datum.slice(8, 10))}
                   </span>
 
+                  {beeld.startweek && datum === bron.schooljaar.startweek.van && dezeMaand && (
+                    <p className="mt-0.5 hidden truncate text-xs font-bold leading-tight text-amber-800 sm:block">
+                      Startweek
+                    </p>
+                  )}
                   {eersteVakantiedag && dezeMaand && (
                     <p className="mt-0.5 hidden truncate text-xs font-bold leading-tight text-brand-dark sm:block">
                       {vakantie.naam}

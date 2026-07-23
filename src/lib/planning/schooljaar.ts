@@ -1,6 +1,6 @@
 // Van een datum naar een schooljaar, en van een schooljaar naar zijn periodes.
 
-import { plus, schoolweken, vandaag, weekdag } from "./datum";
+import { maandagVan, plus, schoolweken, vandaag, weekdag } from "./datum";
 import type { Periode, Schooljaar } from "./types";
 import {
   BEKENDE_SCHOOLJAREN,
@@ -48,6 +48,11 @@ export function maakSchooljaar(
 ): Schooljaar {
   const start = eersteSchooldag(schooljaarId, regio);
   const eind = laatsteSchooldag(schooljaarId, regio);
+  // De startweek: de vijf werkdagen (ma t/m vr) vlak vóór de eerste schooldag.
+  // Voor de leerkracht begint het jaar dan al — lokaal klaarmaken, plannen —
+  // terwijl de kinderen nog een week vakantie hebben. Elke school heeft dit;
+  // wanneer precies hangt aan de regio (want die bepaalt de eerste schooldag).
+  const startweekMaandag = plus(maandagVan(start), -7);
   return {
     id: schooljaarId,
     label: schooljaarId.replace("-", "/"),
@@ -55,6 +60,7 @@ export function maakSchooljaar(
     start,
     eind,
     vakanties: vakantiesVan(schooljaarId, regio),
+    startweek: { van: startweekMaandag, tot: plus(startweekMaandag, 4) },
     afgesloten: nu > eind,
   };
 }

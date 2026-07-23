@@ -381,6 +381,21 @@ function Jaarlijst({
         <SchooljaarDagkaart beeld={dagbeeld(bron, dag)} groepen={groepen} sluit={() => setDag(null)} />
       )}
 
+      {/* De startweek staat vóór het eerste blok: je bent er al, de kinderen
+          nog niet. Eigen warme tint, geen vakantiekleur. */}
+      <button
+        onClick={() => setDag(schooljaar.startweek.van)}
+        className="flex flex-wrap items-baseline gap-x-3 rounded-2xl border-l-[3px] border-amber-300 bg-accent-soft/70 px-5 py-3.5 text-left transition-colors hover:bg-accent-soft"
+      >
+        <span className="font-bold text-ink/80">Startweek</span>
+        <span className="text-sm text-ink/55">
+          {bereikTekst(schooljaar.startweek.van, schooljaar.startweek.tot)}
+        </span>
+        <span className="ml-auto text-sm font-semibold text-ink/45">
+          je lokaal klaarmaken, de kinderen beginnen erna
+        </span>
+      </button>
+
       {periodes.map((periode) => (
         <Blok
           key={periode.nummer}

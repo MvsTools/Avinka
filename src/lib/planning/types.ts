@@ -21,6 +21,8 @@ export type Schooljaar = {
   /** Laatste schooldag. */
   eind: string;
   vakanties: Vakantie[];
+  /** De week (ma–vr) vóór de eerste schooldag: lokaal klaarmaken, plannen. */
+  startweek: { van: string; tot: string };
   /** Vorig schooljaar mag je bekijken, niet bewerken. */
   afgesloten: boolean;
 };
@@ -93,6 +95,8 @@ export type Dagbeeld = {
   vrij: boolean;
   vrijReden?: "weekend" | "vakantie" | "vrije dag";
   vakantie?: Vakantie;
+  /** De startweek vóór de eerste schooldag: geen les, maar wel een werkweek. */
+  startweek: boolean;
   /** De afspraken van vandaag, op tijd gesorteerd. */
   items: PlanItem[];
   /** Je rooster van vandaag, op tijd gesorteerd. Leeg als de dag vrij is. */

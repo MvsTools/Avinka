@@ -71,7 +71,12 @@ export default function SchooljaarDagkaart({
         </div>
 
         {/* Wat voor dag is het? Eén regel, meteen duidelijk. */}
-        {beeld.vakantie ? (
+        {beeld.startweek ? (
+          <p className="mt-4 rounded-2xl bg-accent-soft px-4 py-3 font-semibold text-amber-800">
+            Startweek: de week voordat de kinderen beginnen. Tijd om je lokaal en je planning klaar
+            te maken.
+          </p>
+        ) : beeld.vakantie ? (
           <p className="mt-4 rounded-2xl bg-brand-soft px-4 py-3 font-semibold text-brand-dark">
             {beeld.vakantie.naam}, tot en met {kort(beeld.vakantie.tot)}
           </p>
@@ -124,7 +129,7 @@ export default function SchooljaarDagkaart({
           </ul>
         )}
 
-        {!afspraken.length && !beeld.vakantie && (
+        {!afspraken.length && !beeld.vakantie && !beeld.startweek && (
           <p className="mt-4 text-ink/60">
             {beeld.weekend
               ? "Niets gepland."
