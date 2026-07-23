@@ -669,9 +669,7 @@ function Blok({
         {open && (
           <ul className="px-5 pb-4">
             {!items.length && (
-              <li className="py-3 text-sm text-ink/50">
-                Niets in deze periode. Wat je zelf plant komt hier ook te staan.
-              </li>
+              <li className="py-3 text-sm text-ink/50">Niets in deze periode.</li>
             )}
             {items.map((item, n) => {
               const vorige = items[n - 1];
