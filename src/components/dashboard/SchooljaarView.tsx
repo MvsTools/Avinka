@@ -45,12 +45,16 @@ export default function SchooljaarView({
   const [weergave, setWeergave] = useState<"lijst" | "maand">("lijst");
   const [alleenMijne, setAlleenMijne] = useState(false);
 
-  // Welke periode-blokken openstaan. Standaard: het blok waar je nu in zit en
-  // wat nog komt open, wat achter je ligt dicht. De knop "Alles inklappen"
-  // stuurt ze allemaal tegelijk; een los blok kun je daarna nog apart openen.
+  // Welke periode-blokken openstaan. Standaard alleen het blok waar je nu in
+  // zit; al het andere klapt dicht voor een rustig overzicht. Zit je in geen
+  // enkele periode (zomervakantie, of een ander schooljaar), dan staat alles
+  // dicht. De knop "Alles inklappen" stuurt ze samen; een los blok kun je
+  // daarna gewoon apart openklikken.
   const alleBlokken = volledigeBron.periodes.map((p) => p.nummer);
   const [openBlokken, setOpenBlokken] = useState<number[]>(() =>
-    volledigeBron.periodes.filter((p) => p.tot >= vandaag).map((p) => p.nummer),
+    volledigeBron.periodes
+      .filter((p) => p.van <= vandaag && vandaag <= p.tot)
+      .map((p) => p.nummer),
   );
   const allesDicht = openBlokken.length === 0;
   const vouwAlles = () => setOpenBlokken(allesDicht ? alleBlokken : []);
