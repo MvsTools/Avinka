@@ -306,7 +306,17 @@ dagpaneel), `AgendaKoppelen.tsx`, `schooljaar-stijl.ts` (één plek voor hoe een
 soort afspraak eruitziet), `src/lib/planning/dubbelingen.ts`. Menu-item in
 `DashboardNav.tsx`, direct onder Start.
 
-### Fase 2 — het basisrooster komt naar binnen
+### Fase 2 — het basisrooster komt naar binnen — **stap 1 AF (24-7-2026)**
+
+Gedaan in stap 1: schema-blok 17 (`basisrooster` per schooljaar, `rooster_week`
+voor een afwijkende week), `src/lib/planning/rooster.ts` (vertaalt de vorm van de
+weekplanning naar de begrippen hier), `POST /api/rooster`, het tabblad
+**Weekrooster** (`SchooljaarWeek.tsx`) met het agenda-strookje uit §3.6, en
+`RoosterOvernemen.tsx` dat een rooster uit localStorage aanbiedt over te nemen.
+
+Nog te doen in fase 2: bewerken in het weekrooster zelf (nu maak en wijzig je je
+rooster nog in `public/tools/weekplanning.html`), en basis versus "deze week
+wijkt af" — de tabel `rooster_week` staat klaar maar wordt nog niet gebruikt.
 - Van losse `public/tools/weekplanning.html` naar de Week-laag binnen Mijn
   schooljaar; niet langer een tool.
 - Opslag van localStorage naar de database (per gebruiker, per schooljaar), zodat
