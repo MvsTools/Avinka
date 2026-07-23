@@ -10,13 +10,12 @@ import type { AgendaBron } from "@/lib/planning";
 // vergaderingen in Outlook). Staat dezelfde afspraak in twee agenda's, dan
 // tellen we hem één keer (zie src/lib/planning/dubbelingen.ts).
 
-type Aanbieder = { id: string; naam: string; regel: string; stappen: string[] };
+type Aanbieder = { id: string; naam: string; stappen: string[] };
 
 const AANBIEDERS: Aanbieder[] = [
   {
     id: "parro",
     naam: "Parro",
-    regel: "De agenda die je school met ouders deelt",
     stappen: [
       "Ga naar talk.parro.com en log in",
       "Klik op Instellingen",
@@ -27,7 +26,6 @@ const AANBIEDERS: Aanbieder[] = [
   {
     id: "socialschools",
     naam: "Social Schools",
-    regel: "Zelfde idee, andere schoolapp",
     stappen: [
       "Ga naar app.socialschools.eu en log in",
       "Open het tabblad Agenda",
@@ -38,7 +36,6 @@ const AANBIEDERS: Aanbieder[] = [
   {
     id: "outlook",
     naam: "Outlook of Teams",
-    regel: "Je vergaderingen en werkafspraken. Teams zit hierbij in",
     stappen: [
       "Open Outlook in de browser",
       "Ga naar Instellingen, dan Agenda, dan Gedeelde agenda's",
@@ -49,7 +46,6 @@ const AANBIEDERS: Aanbieder[] = [
   {
     id: "google",
     naam: "Google Agenda",
-    regel: "Je eigen agenda, bijvoorbeeld voor je werkafspraken",
     stappen: [
       "Open calendar.google.com op een computer",
       "Ga naar Instellingen en kies je agenda in de zijbalk",
@@ -304,10 +300,7 @@ export default function AgendaKoppelen({ agendas }: { agendas: AgendaBron[] }) {
                     <path d="M3.5 9.5h17M8 3.5V6.5M16 3.5V6.5" />
                   </svg>
                 </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block font-bold text-ink">{b.naam}</span>
-                  <span className="block text-sm text-ink/60">{b.regel}</span>
-                </span>
+                <span className="min-w-0 flex-1 font-bold text-ink">{b.naam}</span>
                 <svg
                   width="18"
                   height="18"
