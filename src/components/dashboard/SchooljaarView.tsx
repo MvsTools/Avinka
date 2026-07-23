@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import {
   bereikTekst,
+  dagbeeld,
   kort,
   maandagVan,
   plus,
@@ -17,6 +18,7 @@ import type { AgendaBron, Periode, PlanItem, PlanningBron } from "@/lib/planning
 import SchooljaarMaand from "./SchooljaarMaand";
 import AgendaKoppelen from "./AgendaKoppelen";
 import { ETIKET } from "./schooljaar-stijl";
+import SchooljaarDagkaart from "./SchooljaarDagkaart";
 
 // Mijn schooljaar, laag 1: je jaar op een rij. De weekplanning en je lesdag
 // komen hier straks als eigen tabbladen bij; de gegevens eronder zijn al
@@ -231,15 +233,19 @@ function Feiten({
 function Jaarlijst({ bron, vandaag }: { bron: PlanningBron; vandaag: string }) {
   const { schooljaar, periodes, items } = bron;
   const [open, setOpen] = useState<number[]>([]);
+  const [dag, setDag] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col gap-4">
+      {dag && <SchooljaarDagkaart beeld={dagbeeld(bron, dag)} sluit={() => setDag(null)} />}
+
       {periodes.map((periode) => (
         <Blok
           key={periode.nummer}
           periode={periode}
           bron={bron}
           vandaag={vandaag}
+          toonDag={setDag}
           open={open.includes(periode.nummer)}
           zetOpen={() =>
             setOpen((o) =>
@@ -268,12 +274,14 @@ function Blok({
   periode,
   bron,
   vandaag,
+  toonDag,
   open,
   zetOpen,
 }: {
   periode: Periode;
   bron: PlanningBron;
   vandaag: string;
+  toonDag: (datum: string) => void;
   open: boolean;
   zetOpen: () => void;
 }) {
@@ -341,7 +349,7 @@ function Blok({
                       <span className="h-px flex-1 bg-brand/35" />
                     </li>
                   )}
-                  <Regel item={item} vandaag={vandaag} />
+                  <Regel item={item} vandaag={vandaag} toonDag={toonDag} />
                 </div>
               );
             })}
@@ -364,31 +372,41 @@ function Blok({
   );
 }
 
-function Regel({ item, vandaag }: { item: PlanItem; vandaag: string }) {
+function Regel({
+  item,
+  vandaag,
+  toonDag,
+}: {
+  item: PlanItem;
+  vandaag: string;
+  toonDag: (datum: string) => void;
+}) {
   const geweest = (item.totDatum || item.datum) < vandaag;
   const et = ETIKET[item.soort];
   return (
-    <li
-      className={
-        "flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-black/5 py-3 first:border-t-0 " +
-        (geweest ? "opacity-45" : "")
-      }
-    >
-      <span className="w-[5.5rem] shrink-0 text-sm font-bold tabular-nums text-ink/55">
-        {dagKort(item.datum)}
-        {item.totDatum > item.datum ? "…" : ""}
-      </span>
-      <span className="font-semibold text-ink">{item.titel}</span>
-      {item.begin && (
-        <span className="text-sm text-ink/50">
-          {item.begin}
-          {item.eind ? ` tot ${item.eind}` : ""}
+    <li className={"border-t border-black/5 first:border-t-0 " + (geweest ? "opacity-45" : "")}>
+      {/* De hele regel is aanklikbaar: dan komt het kaartje van die dag naar
+          voren met alles wat er die dag staat, en hoe laat. */}
+      <button
+        onClick={() => toonDag(item.datum)}
+        className="-mx-2 flex w-[calc(100%+1rem)] flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl px-2 py-3 text-left transition-colors hover:bg-cream/70"
+      >
+        <span className="w-[5.5rem] shrink-0 text-sm font-bold tabular-nums text-ink/55">
+          {dagKort(item.datum)}
+          {item.totDatum > item.datum ? "…" : ""}
         </span>
-      )}
-      <span className={"rounded-lg px-2 py-0.5 text-xs font-bold " + et.stijl}>{et.woord}</span>
-      {item.tijdvakken > 1 && (
-        <span className="text-sm text-ink/45">{item.tijdvakken} tijdvakken</span>
-      )}
+        <span className="font-semibold text-ink">{item.titel}</span>
+        {item.begin && (
+          <span className="text-sm text-ink/50">
+            {item.begin}
+            {item.eind ? ` tot ${item.eind}` : ""}
+          </span>
+        )}
+        <span className={"rounded-lg px-2 py-0.5 text-xs font-bold " + et.stijl}>{et.woord}</span>
+        {item.tijdvakken > 1 && (
+          <span className="text-sm text-ink/45">{item.tijdvakken} tijdvakken</span>
+        )}
+      </button>
     </li>
   );
 }

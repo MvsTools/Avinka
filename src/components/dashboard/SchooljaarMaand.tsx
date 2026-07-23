@@ -1,9 +1,10 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import { dagbeeld, kort, maandagVan, plus, verschil, volledig, weeknummer } from "@/lib/planning";
-import type { PlanItem, PlanningBron } from "@/lib/planning";
+import { dagbeeld, maandagVan, plus, verschil, volledig, weeknummer } from "@/lib/planning";
+import type { PlanningBron } from "@/lib/planning";
 import { ETIKET, STIP } from "./schooljaar-stijl";
+import SchooljaarDagkaart from "./SchooljaarDagkaart";
 
 // De maandweergave: hetzelfde jaar, maar dan als kalender. Handig om te zien
 // hoe druk een maand is en waar de gaten zitten.
@@ -188,71 +189,10 @@ export default function SchooljaarMaand({
         </div>
       </div>
 
-      {/* Tik een dag aan en je ziet wat er staat. Op een telefoon is dit de
-          manier om bij de details te komen, op een laptop een snelle blik. */}
-      {gekozen && <Dagpaneel beeld={beeldVan(gekozen)} sluit={() => setGekozen(null)} />}
+      {/* Tik een dag aan en het kaartje van die dag komt naar voren: wat er
+          staat en hoe laat. */}
+      {gekozen && <SchooljaarDagkaart beeld={beeldVan(gekozen)} sluit={() => setGekozen(null)} />}
     </div>
   );
 }
 
-function Dagpaneel({
-  beeld,
-  sluit,
-}: {
-  beeld: ReturnType<typeof dagbeeld>;
-  sluit: () => void;
-}) {
-  return (
-    <div className="mt-3 rounded-2xl border border-black/5 bg-white p-4 shadow-sm">
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="font-bold text-ink">{volledig(beeld.datum)}</p>
-        <button onClick={sluit} className="text-sm font-semibold text-ink/50 hover:text-ink">
-          Sluiten
-        </button>
-      </div>
-
-      {beeld.vakantie && (
-        <p className="mt-1 font-semibold text-brand-dark">
-          {beeld.vakantie.naam}, tot en met {kort(beeld.vakantie.tot)}
-        </p>
-      )}
-      {!beeld.vakantie && beeld.vrijReden === "vrije dag" && (
-        <p className="mt-1 font-semibold text-brand-dark">
-          Geen les vandaag. Voor jou is het meestal wel een werkdag.
-        </p>
-      )}
-
-      <ul className="mt-1">
-        {beeld.items.map((it) => (
-          <Afspraak key={it.id} item={it} />
-        ))}
-      </ul>
-
-      {!beeld.items.length && (
-        <p className="mt-1 text-sm text-ink/55">
-          {beeld.weekend
-            ? "Weekend."
-            : beeld.vakantie
-              ? "Vakantie, niets te doen."
-              : "Niets bijzonders deze dag. Een gewone lesdag dus."}
-        </p>
-      )}
-    </div>
-  );
-}
-
-export function Afspraak({ item }: { item: PlanItem }) {
-  const et = ETIKET[item.soort];
-  return (
-    <li className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-black/5 py-2.5 first:border-t-0">
-      <span className="font-semibold text-ink">{item.titel}</span>
-      {item.begin && (
-        <span className="text-sm text-ink/50">
-          {item.begin}
-          {item.eind ? ` tot ${item.eind}` : ""}
-        </span>
-      )}
-      <span className={"rounded-lg px-2 py-0.5 text-xs font-bold " + et.stijl}>{et.woord}</span>
-    </li>
-  );
-}
