@@ -356,7 +356,7 @@ export default function AgendaKoppelen({ agendas }: { agendas: AgendaBron[] }) {
                                 {t.slots
                                   ? ` (${t.slots} losse tijdvakken${t.weken ? ` in ${t.weken} weken` : ""}, per dag samengevouwen)`
                                   : ""}
-                                {t.vrij ? ", die zet ik meteen op vrij" : ""}
+                                {t.vrij ? ", daar plan ik geen les op" : ""}
                               </li>
                             ))}
                         </ul>

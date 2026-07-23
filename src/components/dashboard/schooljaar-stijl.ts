@@ -8,7 +8,9 @@ import type { Soort } from "@/lib/planning";
 
 export const ETIKET: Record<Soort, { woord: string; stijl: string }> = {
   vakantie: { woord: "Vakantie", stijl: "bg-brand-soft text-brand-dark" },
-  vrij: { woord: "Vrije dag", stijl: "bg-brand-soft text-brand-dark" },
+  // Bewust niet "Vrije dag": een studiedag is vrij voor de kinderen, maar voor
+  // de leerkracht gewoon een werkdag. "Geen les" klopt voor allebei.
+  vrij: { woord: "Geen les", stijl: "bg-brand-soft text-brand-dark" },
   rapport: { woord: "Rapporten", stijl: "bg-accent-soft text-amber-800" },
   gesprek: { woord: "Gesprekken", stijl: "border border-brand/35 bg-white text-brand-dark" },
   vergadering: { woord: "Vergadering", stijl: "bg-cream text-ink/60" },

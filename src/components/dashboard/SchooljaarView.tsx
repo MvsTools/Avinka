@@ -193,7 +193,7 @@ function Feiten({
       klein: vakantie ? `over ${Math.max(1, Math.round(verschil(peil, vakantie.van) / 7))} weken` : "",
     },
     {
-      label: "Volgende vrije dag",
+      label: "Volgende dag zonder les",
       groot: vrijeDag ? volledig(vrijeDag.datum).replace(/ \d{4}$/, "") : "nog niet bekend",
       klein: vrijeDag ? vrijeDag.titel : "studiedagen staan in je schoolagenda",
     },

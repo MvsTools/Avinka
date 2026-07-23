@@ -44,7 +44,13 @@ export default function SchooljaarMaand({
   const kanVooruit = eerste < bron.schooljaar.eind.slice(0, 7) + "-01";
   const opVandaag = eerste === begin.slice(0, 7) + "-01";
 
-  const beeldVan = (datum: string) => dagbeeld(bron, datum);
+  // De vakantie staat al als groen vlak met een naam in de kalender. Hem
+  // daarnaast ook nog als afspraak tonen leverde op elke maandag twee keer
+  // hetzelfde woord op.
+  const beeldVan = (datum: string) => {
+    const beeld = dagbeeld(bron, datum);
+    return { ...beeld, items: beeld.items.filter((i) => i.soort !== "vakantie") };
+  };
 
   return (
     <div>
@@ -82,7 +88,7 @@ export default function SchooljaarMaand({
             {binnenJaar ? "Naar vandaag" : "Naar het begin"}
           </button>
         )}
-        <p className="ml-auto text-sm text-ink/50">Groen betekent vrij</p>
+        <p className="ml-auto text-sm text-ink/50">Groen betekent geen les</p>
       </div>
 
       <div className="overflow-hidden rounded-3xl border border-black/5 bg-white shadow-sm">
@@ -211,7 +217,9 @@ function Dagpaneel({
         </p>
       )}
       {!beeld.vakantie && beeld.vrijReden === "vrije dag" && (
-        <p className="mt-1 font-semibold text-brand-dark">Je bent vrij</p>
+        <p className="mt-1 font-semibold text-brand-dark">
+          Geen les vandaag. Voor jou is het meestal wel een werkdag.
+        </p>
       )}
 
       <ul className="mt-1">

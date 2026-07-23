@@ -53,7 +53,9 @@ export const SOORT_INFO: Record<
   { woord: string; meervoud: string; vrij: boolean; tool?: string }
 > = {
   vakantie: { woord: "Vakantie", meervoud: "vakanties", vrij: true },
-  vrij: { woord: "Vrije dag", meervoud: "vrije dagen", vrij: true },
+  // "Geen les" en niet "vrije dag": een studiedag is vrij voor de kinderen,
+  // maar voor de leerkracht een werkdag.
+  vrij: { woord: "Geen les", meervoud: "dagen zonder les", vrij: true },
   rapport: { woord: "Rapporten", meervoud: "rapportmomenten", vrij: false, tool: "rapporten" },
   gesprek: {
     woord: "Gesprekken",
