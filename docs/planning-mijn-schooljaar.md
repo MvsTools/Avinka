@@ -176,12 +176,29 @@ Andersom: een taak met een datum verschijnt in de planning op die dag.
 Elke fase is los af te leveren en te keuren. Niets gaat naar `main` zonder dat de
 eigenaar het zelf gezien heeft.
 
-### Fase 0 — fundament (geen zichtbaar scherm)
+### Fase 0 — fundament (geen zichtbaar scherm) — **AF (23-7-2026)**
 - Eén gedeelde **planning-laag** in `src/lib/planning/`: schooljaar, periodes,
   agenda-items, roosterblokken, taken — met één manier om "wat speelt er op dag
   X / in week X / in periode X" te vragen.
 - Vakantiedata Rijksoverheid als vangnet, per regio.
 - Beslist hier: wat staat server-side en wat blijft op het apparaat (§8).
+
+Gebouwd:
+
+| Bestand | Wat het doet |
+|---|---|
+| `datum.ts` | Datumrekenen op "JJJJ-MM-DD" (nooit Date-objecten rondsturen), weeknummers, schoolweken, tekst in gewone taal |
+| `vakanties.ts` | De landelijke vakanties per schooljaar en regio (2025-2026 + 2026-2027, opgehaald bij de Rijksoverheid op 23-7-2026). **Jaarlijks bijwerken.** Vangnet: de gekoppelde agenda wint altijd |
+| `schooljaar.ts` | Van een datum naar het juiste schooljaar, eerste/laatste schooldag, en het jaar geknipt in periodes tussen de vakanties |
+| `types.ts` | De begrippen: Schooljaar, Periode, PlanItem, Roosterblok, Taak, Dagbeeld, Weekbeeld |
+| `dagbeeld.ts` | "Wat speelt er op dag X" en dezelfde vraag voor een week; volgende schooldag; wat komt eraan |
+| `ophalen.ts` | De enige plek die met de database praat: agenda-items, taken, vakantieregio |
+| `index.ts` | Eén ingang: `import { haalPlanning, dagbeeld } from "@/lib/planning"` |
+
+Nagerekend met een proefrun (alle drie de regio's, periodes, studiedag,
+weekend, vakantie, meerdaagse afspraak, dubbele afspraak, week met een
+studiedag erin). De berekende schooljaargrenzen voor regio midden komen exact
+uit op de datums die in de schets stonden: 31-8-2026 tot 16-7-2027.
 
 ### Fase 1 — Mijn schooljaar in de balk, met de Jaar-laag
 - Nieuw nav-item + route `/dashboard/schooljaar`.
