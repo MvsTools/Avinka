@@ -100,7 +100,15 @@ export default function SchooljaarWeek({
       </div>
 
       {!heeftRooster ? (
-        <RoosterOvernemen schooljaar={schooljaar.id} />
+        // Voor een afgelopen jaar heeft het geen zin om een rooster te maken of
+        // over te nemen; daar valt niets meer aan te plannen.
+        schooljaar.afgesloten ? (
+          <p className="rounded-3xl border border-black/5 bg-white px-6 py-8 text-ink/60 shadow-sm">
+            Voor dit schooljaar is geen rooster bewaard.
+          </p>
+        ) : (
+          <RoosterOvernemen schooljaar={schooljaar.id} />
+        )
       ) : (
         <Weekraster
           dagen={dagen}
