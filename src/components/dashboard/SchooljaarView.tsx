@@ -469,7 +469,7 @@ function Jaarlijst({
   open: number[];
   vouwBlok: (nr: number) => void;
 }) {
-  const { schooljaar, periodes, items } = bron;
+  const { schooljaar, periodes } = bron;
   const [dag, setDag] = useState<string | null>(null);
 
   return (
@@ -508,10 +508,6 @@ function Jaarlijst({
           Voor dit schooljaar kennen we de vakanties nog niet.
         </p>
       )}
-
-      <p className="text-sm text-ink/50">
-        {items.filter((i) => !i.dubbelVan).length} afspraken in {schooljaar.label}.
-      </p>
     </div>
   );
 }
