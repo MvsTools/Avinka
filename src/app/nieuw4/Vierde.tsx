@@ -1587,21 +1587,44 @@ function MarkeerInhoud({ donker = false }: { donker?: boolean }) {
    hoeveel regels de teksten innemen. Bij elke maatverandering wordt hij
    opnieuw getekend. ───────────────────────────────────────────────────── */
 
-/* Een vloeiende lijn door een reeks punten (Catmull-Rom naar bezier), zodat
-   de bochten vanzelf rond zijn in plaats van geknikt. */
+/* Een vloeiende lijn door een reeks punten. Met de gewone (uniforme)
+   Catmull-Rom krijg je knikken en uithalen zodra de punten ongelijk verdeeld
+   liggen, en dat is hier precies het geval: vlak bij de kaarten liggen ze
+   dicht op elkaar, in de baan ertussen ver uit elkaar. De centripetale
+   variant weegt de afstand mee en houdt de bocht daardoor overal even rond.
+   Aan begin en eind wordt een punt doorgetrokken, zodat de lijn daar zijn
+   richting aanhoudt in plaats van abrupt te starten. */
 function vloeiend(p: Array<[number, number]>) {
   if (p.length < 2) return "";
   const rond = (n: number) => n.toFixed(1);
-  let d = `M${rond(p[0][0])} ${rond(p[0][1])}`;
-  for (let i = 0; i < p.length - 1; i += 1) {
-    const p0 = p[i - 1] ?? p[i];
-    const p1 = p[i];
-    const p2 = p[i + 1];
-    const p3 = p[i + 2] ?? p2;
+  const eerste = p[0];
+  const tweede = p[1];
+  const laatste = p[p.length - 1];
+  const voorlaatste = p[p.length - 2];
+  const pts: Array<[number, number]> = [
+    [2 * eerste[0] - tweede[0], 2 * eerste[1] - tweede[1]],
+    ...p,
+    [2 * laatste[0] - voorlaatste[0], 2 * laatste[1] - voorlaatste[1]],
+  ];
+
+  let d = `M${rond(eerste[0])} ${rond(eerste[1])}`;
+  for (let i = 1; i < pts.length - 2; i += 1) {
+    const [x0, y0] = pts[i - 1];
+    const [x1, y1] = pts[i];
+    const [x2, y2] = pts[i + 1];
+    const [x3, y3] = pts[i + 2];
+    // Wortel van de afstand = centripetale weging (alpha 0,5).
+    const a = Math.sqrt(Math.hypot(x1 - x0, y1 - y0)) || 1e-4;
+    const b = Math.sqrt(Math.hypot(x2 - x1, y2 - y1)) || 1e-4;
+    const c = Math.sqrt(Math.hypot(x3 - x2, y3 - y2)) || 1e-4;
+    const n1 = 3 * a * (a + b);
+    const n2 = 3 * c * (c + b);
     d +=
-      ` C${rond(p1[0] + (p2[0] - p0[0]) / 6)} ${rond(p1[1] + (p2[1] - p0[1]) / 6)}` +
-      ` ${rond(p2[0] - (p3[0] - p1[0]) / 6)} ${rond(p2[1] - (p3[1] - p1[1]) / 6)}` +
-      ` ${rond(p2[0])} ${rond(p2[1])}`;
+      ` C${rond((a * a * x2 - b * b * x0 + (2 * a * a + 3 * a * b + b * b) * x1) / n1)}` +
+      ` ${rond((a * a * y2 - b * b * y0 + (2 * a * a + 3 * a * b + b * b) * y1) / n1)}` +
+      ` ${rond((c * c * x1 - b * b * x3 + (2 * c * c + 3 * c * b + b * b) * x2) / n2)}` +
+      ` ${rond((c * c * y1 - b * b * y3 + (2 * c * c + 3 * c * b + b * b) * y2) / n2)}` +
+      ` ${rond(x2)} ${rond(y2)}`;
   }
   return d;
 }
@@ -1612,9 +1635,11 @@ function vloeiend(p: Array<[number, number]>) {
 const NAAM_ECHT = "Sofie";
 const NAAM_MASKER = "leerling A";
 
-/* Op welk punt van de reis de naam wordt vervangen: ruim voorbij de eerste
-   kaart en ruim vóór de tweede, dus in de vrije baan ertussen. */
-const WISSELPUNT = 0.55;
+/* Op welk punt van de reis de naam wordt vervangen. Nagemeten op de baan:
+   het labeltje zit tussen 0,50 en 0,55 in de vrije ruimte tussen de twee
+   kaarten. Net binnen die vensteropening wisselen, zodat je de wissel ziet
+   gebeuren én de gemaskeerde versie daarna nog een stuk ziet reizen. */
+const WISSELPUNT = 0.51;
 
 function Slinger() {
   const wrap = useRef<HTMLDivElement>(null);
@@ -1641,17 +1666,28 @@ function Slinger() {
       const x = (v: number) => v - s.left;
       const y = (v: number) => v - s.top;
 
-      /* Linksboven beginnen, achter kaart 1 door, in de vrije baan tussen
-         de twee tekstblokken naar beneden, en achter kaart 2 eindigen. De
-         knikpunten liggen bewust nét naast de kaarten, zodat je de bocht
-         ziet en niet alleen twee losse uiteinden. */
+      /* De route: linksboven beginnen, twee keer achter kaart 1 door, in de
+         vrije baan tussen de twee tekstblokken naar rechts en omlaag, dan
+         twee keer achter kaart 2 door, en onder die kaart naar buiten. De
+         bochten liggen telkens nét naast de kaart, in de vrije ruimte, dus
+         je ziet dat het één lijn is die terugkeert.
+         De baan tussen de kaarten blijft hoog tot voorbij de tekst links,
+         zodat hij daar overheen duikt en er niet doorheen loopt. */
+      const gat = y(k2.top) - y(k1.bottom);
       const d = vloeiend([
-        [Math.max(28, x(k1.left) - 176), Math.max(30, y(k1.top) - 118)],
-        [x(k1.left) - 62, y(k1.top) + k1.height * 0.34],
-        [x(k1.right) + 62, y(k1.bottom) - 30],
-        [x(k1.right) + 200, y(k1.bottom) + (y(k2.top) - y(k1.bottom)) * 0.55],
-        [x(k2.left) - 68, y(k2.top) + 46],
-        [x(k2.right) + 64, y(k2.bottom) - 44],
+        [Math.max(28, x(k1.left) - 178), Math.max(30, y(k1.top) - 120)],
+        [x(k1.left) - 58, y(k1.top) + k1.height * 0.26],
+        [x(k1.right) + 58, y(k1.top) + k1.height * 0.4],
+        [x(k1.right) + 148, y(k1.top) + k1.height * 0.74],
+        [x(k1.left) - 56, y(k1.bottom) - k1.height * 0.1],
+        [x(k1.left) - 128, y(k1.bottom) + gat * 0.34],
+        [x(k1.right) + 10, y(k1.bottom) + gat * 0.72],
+        [x(k2.left) - 68, y(k2.top) + k2.height * 0.22],
+        [x(k2.right) + 58, y(k2.top) + k2.height * 0.42],
+        [x(k2.right) + 148, y(k2.top) + k2.height * 0.76],
+        [x(k2.left) - 56, y(k2.bottom) - k2.height * 0.1],
+        [x(k2.left) - 120, y(k2.bottom) + 54],
+        [x(k2.right) + 40, y(k2.bottom) + 98],
       ]);
       setPad((oud) => (oud === d ? oud : d));
       setMaat((oud) =>
@@ -1674,7 +1710,9 @@ function Slinger() {
     const baan = padEl.current;
     const label = labelEl.current;
     const sectie = wrap.current?.parentElement;
-    if (!baan || !label || !sectie) return;
+    const kaart1 = sectie?.querySelector('[data-kaart="1"]');
+    const kaart2 = sectie?.querySelector('[data-kaart="2"]');
+    if (!baan || !label || !sectie || !kaart1 || !kaart2) return;
 
     const lengte = baan.getTotalLength();
     let bezig = false;
@@ -1686,8 +1724,16 @@ function Slinger() {
       requestAnimationFrame(() => {
         bezig = false;
         const vh = window.innerHeight;
-        const r = sectie.getBoundingClientRect();
-        const t = Math.min(1, Math.max(0, (vh * 0.78 - r.top) / (r.height * 0.72)));
+        /* De reis loopt van "kaart 1 staat goed in beeld" tot "kaart 2 staat
+           goed in beeld", gemeten aan de kaarten zelf en niet aan de sectie.
+           Anders is het labeltje al aangekomen voordat je bij de kaarten
+           bent: de sectie begint een heel scherm eerder dan de eerste kaart. */
+        const r1 = kaart1.getBoundingClientRect();
+        const r2 = kaart2.getBoundingClientRect();
+        const midden1 = r1.top + r1.height / 2;
+        const midden2 = r2.top + r2.height / 2;
+        const reis = midden2 - midden1 + vh * 0.17;
+        const t = Math.min(1, Math.max(0, (vh * 0.62 - midden1) / reis));
         const punt = baan.getPointAtLength(t * lengte);
         label.style.translate = `${punt.x.toFixed(1)}px ${punt.y.toFixed(1)}px`;
         // Aan het allereerste en allerlaatste stukje uit beeld, zodat het
