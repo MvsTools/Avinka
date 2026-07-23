@@ -104,10 +104,9 @@ export default function SchooljaarMaand({
             onClick={() => setEerste(begin.slice(0, 7) + "-01")}
             className="text-sm font-bold text-brand-dark underline-offset-4 hover:underline"
           >
-            {binnenJaar ? "Naar vandaag" : "Naar het begin"}
+            Naar vandaag
           </button>
         )}
-        <p className="ml-auto text-sm text-ink/50">Groen betekent geen les</p>
       </div>
 
       <div className="overflow-hidden rounded-3xl border border-black/5 bg-white shadow-sm">
