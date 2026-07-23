@@ -58,34 +58,33 @@ export default function SchooljaarView({
 
   return (
     <div className="flex flex-col gap-7">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-serif text-3xl font-semibold text-ink">Mijn schooljaar</h1>
-          <p className="mt-2 max-w-xl text-lg text-ink/70">
-            Je hele jaar op een rij: vakanties, studiedagen, rapporten en gesprekken. Koppel de
-            agenda van je school en hij vult zichzelf.
-          </p>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="font-serif text-3xl font-semibold text-ink">Mijn schooljaar</h1>
 
-        {jaren.length > 1 && (
-          <div className="flex items-center gap-1 rounded-2xl border border-black/5 bg-white p-1 shadow-sm">
-            {jaren.map((j) => (
-              <Link
-                key={j.id}
-                href={`/dashboard/schooljaar?jaar=${j.id}`}
-                scroll={false}
-                className={
-                  "rounded-xl px-3.5 py-1.5 text-sm font-bold transition-colors " +
-                  (j.id === schooljaar.id
-                    ? "bg-brand-dark text-white"
-                    : "text-ink/55 hover:text-ink")
-                }
-              >
-                {j.label}
-              </Link>
-            ))}
-          </div>
-        )}
+        {/* Rechtsboven, altijd op dezelfde plek: hoe je kijkt. De lijst/maand-
+            schuif hoort alleen bij je jaar, niet bij het koppelscherm. */}
+        <div className="flex items-center gap-2">
+          {tab === "jaar" && <WeergaveKnop weergave={weergave} zet={setWeergave} />}
+          {jaren.length > 1 && (
+            <div className="flex items-center gap-1 rounded-2xl border border-black/5 bg-white p-1 shadow-sm">
+              {jaren.map((j) => (
+                <Link
+                  key={j.id}
+                  href={`/dashboard/schooljaar?jaar=${j.id}`}
+                  scroll={false}
+                  className={
+                    "rounded-xl px-3.5 py-1.5 text-sm font-bold transition-colors " +
+                    (j.id === schooljaar.id
+                      ? "bg-brand-dark text-white"
+                      : "text-ink/55 hover:text-ink")
+                  }
+                >
+                  {j.label}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {schooljaar.afgesloten && (
@@ -138,28 +137,11 @@ export default function SchooljaarView({
 
           <Feiten bron={bron} vandaag={vandaag} loopt={loopt} />
 
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-1 rounded-2xl border border-black/5 bg-white p-1 shadow-sm">
-              {(["lijst", "maand"] as const).map((w) => (
-                <button
-                  key={w}
-                  onClick={() => setWeergave(w)}
-                  className={
-                    "rounded-xl px-4 py-1.5 text-sm font-bold transition-colors " +
-                    (weergave === w ? "bg-brand-dark text-white" : "text-ink/55 hover:text-ink")
-                  }
-                >
-                  {w === "lijst" ? "Lijst" : "Maand"}
-                </button>
-              ))}
-            </div>
-            {telDubbelingen(items) > 0 && (
-              <p className="text-sm text-ink/55">
-                {telDubbelingen(items)} afspraken stonden in meer dan één agenda. Die tel ik één
-                keer.
-              </p>
-            )}
-          </div>
+          {telDubbelingen(items) > 0 && (
+            <p className="text-sm text-ink/55">
+              {telDubbelingen(items)} afspraken stonden in meer dan één agenda. Die tel ik één keer.
+            </p>
+          )}
 
           {opzij > 0 && (
             <p className="text-sm text-ink/55">
@@ -190,6 +172,63 @@ export default function SchooljaarView({
           )}
         </>
       )}
+    </div>
+  );
+}
+
+/**
+ * De weergave-schuif, rechtsboven: lijst of maand. Een schuivend bolletje onder
+ * twee icoontjes, zodat je in één oogopslag ziet welke kant aan staat en er met
+ * één tik tussen wisselt.
+ */
+function WeergaveKnop({
+  weergave,
+  zet,
+}: {
+  weergave: "lijst" | "maand";
+  zet: (w: "lijst" | "maand") => void;
+}) {
+  return (
+    <div
+      role="group"
+      aria-label="Weergave"
+      className="relative flex items-center rounded-2xl border border-black/5 bg-white p-1 shadow-sm"
+    >
+      <span
+        aria-hidden
+        className="absolute top-1 bottom-1 w-10 rounded-xl bg-brand-dark transition-transform duration-200 ease-out"
+        style={{ transform: weergave === "maand" ? "translateX(100%)" : "translateX(0)" }}
+      />
+      {(
+        [
+          ["lijst", "Lijst"],
+          ["maand", "Maand"],
+        ] as const
+      ).map(([id, label]) => (
+        <button
+          key={id}
+          onClick={() => zet(id)}
+          aria-pressed={weergave === id}
+          title={label}
+          className={
+            "relative z-10 flex h-8 w-10 items-center justify-center rounded-xl transition-colors " +
+            (weergave === id ? "text-white" : "text-ink/45 hover:text-ink")
+          }
+        >
+          <span className="sr-only">{label}</span>
+          {id === "lijst" ? (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+              <path d="M8 6h12M8 12h12M8 18h12" />
+              <path d="M4 6h.01M4 12h.01M4 18h.01" />
+            </svg>
+          ) : (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <rect x="3.5" y="4.5" width="17" height="16" rx="2.5" />
+              <path d="M3.5 9h17M8 3v3M16 3v3" />
+            </svg>
+          )}
+        </button>
+      ))}
     </div>
   );
 }
