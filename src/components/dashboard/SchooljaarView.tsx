@@ -19,7 +19,7 @@ import {
 import type { AgendaBron, Periode, PlanItem, PlanningBron } from "@/lib/planning";
 import SchooljaarMaand from "./SchooljaarMaand";
 import AgendaKoppelen from "./AgendaKoppelen";
-import { aftellenTotVakantie, ETIKET } from "./schooljaar-stijl";
+import { ETIKET } from "./schooljaar-stijl";
 import SchooljaarDagkaart from "./SchooljaarDagkaart";
 
 // Mijn schooljaar, laag 1: je jaar op een rij. De weekplanning en je lesdag
@@ -46,16 +46,17 @@ export default function SchooljaarView({
   const [alleenMijne, setAlleenMijne] = useState(false);
 
   // Welke periode-blokken openstaan. Standaard alleen het blok waar je nu in
-  // zit; al het andere klapt dicht voor een rustig overzicht. Zit je in geen
-  // enkele periode (zomervakantie, of een ander schooljaar), dan staat alles
-  // dicht. De knop "Alles inklappen" stuurt ze samen; een los blok kun je
-  // daarna gewoon apart openklikken.
+  // zit; al het andere klapt dicht voor een rustig overzicht. Zit je in een
+  // vakantie (of het schooljaar moet nog beginnen), dan staat het eerstvolgende
+  // blok open, zodat je meteen ziet wat eraan komt. De knop "Alles inklappen"
+  // stuurt ze samen; een los blok kun je daarna gewoon apart openklikken.
   const alleBlokken = volledigeBron.periodes.map((p) => p.nummer);
-  const [openBlokken, setOpenBlokken] = useState<number[]>(() =>
-    volledigeBron.periodes
-      .filter((p) => p.van <= vandaag && vandaag <= p.tot)
-      .map((p) => p.nummer),
-  );
+  const [openBlokken, setOpenBlokken] = useState<number[]>(() => {
+    const huidig = volledigeBron.periodes.find((p) => p.van <= vandaag && vandaag <= p.tot);
+    const volgende = volledigeBron.periodes.find((p) => p.van > vandaag);
+    const kies = huidig ?? volgende;
+    return kies ? [kies.nummer] : [];
+  });
   const allesDicht = openBlokken.length === 0;
   const vouwAlles = () => setOpenBlokken(allesDicht ? alleBlokken : []);
   const vouwBlok = (nr: number) =>
@@ -554,14 +555,8 @@ function Blok({
         >
           <span className="font-bold text-ink">{periode.naam}</span>
           <span className="text-sm text-ink/55">
-            {bereikTekst(periode.van, periode.tot)}
-            {bezig ? "" : `, ${periode.weken} weken`}
+            {bereikTekst(periode.van, periode.tot)}, {periode.weken} weken
           </span>
-          {bezig && (
-            <span className="text-sm font-semibold text-brand-dark">
-              {aftellenTotVakantie(periode, vandaag)}
-            </span>
-          )}
           <span className="ml-auto text-sm font-semibold text-ink/40">
             {open
               ? "verbergen"

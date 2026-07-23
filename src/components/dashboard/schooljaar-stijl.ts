@@ -1,18 +1,4 @@
-import { schoolweken } from "@/lib/planning";
-import type { Periode, Soort } from "@/lib/planning";
-
-/**
- * "nog 4 weken tot de kerstvakantie" — hoe leerkrachten aftellen. Op één plek,
- * zodat de lijst en de kalender exact dezelfde tekst tonen. In de laatste week
- * wordt het "laatste week tot de ...".
- */
-export function aftellenTotVakantie(periode: Periode, vandaag: string): string {
-  const rest = Math.max(0, periode.weken - schoolweken(periode.van, vandaag));
-  const vak = periode.eindigtMet?.naam.toLowerCase() ?? "vakantie";
-  return rest === 0
-    ? `laatste week tot de ${vak}`
-    : `nog ${rest} ${rest === 1 ? "week" : "weken"} tot de ${vak}`;
-}
+import type { Soort } from "@/lib/planning";
 
 // Hoe een soort afspraak eruitziet in Mijn schooljaar. Op één plek, zodat de
 // lijst, de kalender en straks je lesdag dezelfde taal spreken.
