@@ -1063,12 +1063,12 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
 
         {/* ── 3. De tool-galerij: grote kunstkaarten, jij schuift ze zelf.
            Eigen ondergrond (zand) zodat het duidelijk een nieuw hoofdstuk is
-           en niet doorloopt uit de herkenning erboven.
-           Alleen een lijn bovenaan: onderaan loopt het zand in het groen van
-           de sectie hierna, en daar hoort geen rand tussen. ── */}
+           en niet doorloopt uit de herkenning erboven. Het zand loopt door tot
+           en met het rustpunt onderaan: alles wat over de tools gaat heeft
+           dezelfde kleur, en daarna keert de pagina terug naar crème. ── */}
         <section
           id="tools"
-          className="relative overflow-hidden border-t border-ink/[0.07] bg-sand pb-36 scroll-mt-20"
+          className="relative overflow-hidden border-y border-ink/[0.07] bg-sand pb-28 scroll-mt-20"
         >
           <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
             <div className="absolute -right-32 top-24 h-96 w-96 rounded-full bg-brand/[0.07] blur-3xl" />
@@ -1113,13 +1113,17 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           </div>
         </section>
 
-        {/* ── 4. Privacy, zichtbaar gemaakt. Het donkere hoofdstuk opent met
-           wat we bewust níét doen: de eerlijkheid eerst, dan het bewijs. ── */}
-        <section className="relative overflow-hidden bg-ink text-cream">
+        {/* ── 4. Privacy, zichtbaar gemaakt. Opent met wat we bewust níét
+           doen: de eerlijkheid eerst, dan het bewijs.
+           Bewust licht en niet donker. Het zand hierboven is het hele
+           tools-hoofdstuk; hier keert de pagina terug naar de kleur waarmee
+           hij begon. Donker is daarmee gereserveerd voor het slot, en dat
+           komt dus precies één keer voor in plaats van twee keer. ── */}
+        <section className="relative overflow-hidden">
           {/* De gloed begint binnen de sectie: stond hij hoger, dan sneed
-             overflow-hidden hem af en zag je een streep tegen het donkere
-             blok erboven. */}
-          <div className="pointer-events-none absolute -left-24 top-10 h-80 w-80 rounded-full bg-brand/20 blur-3xl" aria-hidden />
+             overflow-hidden hem af en zag je een streep tegen het zand
+             erboven. */}
+          <div className="pointer-events-none absolute -left-24 top-10 h-80 w-80 rounded-full bg-brand/[0.09] blur-3xl" aria-hidden />
 
           {/* De bekentenis. Wat je hierboven nergens kon opslaan, wordt hier
              uitgesproken vóórdat we over maskering beginnen: eerst toegeven
@@ -1128,14 +1132,14 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
             <div className="max-w-2xl">
               <p
                 data-reveal
-                className="font-display text-[clamp(1.6rem,3.1vw,2.35rem)] font-black leading-[1.15] tracking-tight text-white [text-wrap:balance]"
+                className="font-display text-[clamp(1.6rem,3.1vw,2.35rem)] font-black leading-[1.15] tracking-tight [text-wrap:balance]"
               >
                 Er is één ding dat we bewust niet doen.
               </p>
               <p
                 data-reveal
                 style={{ transitionDelay: "90ms" }}
-                className="mt-7 text-lg leading-8 text-cream/80"
+                className="mt-7 text-lg leading-8 text-ink/70"
               >
                 Gegevens van leerlingen bewaren we niet. Daardoor kun je niet
                 alles terugvinden wat je gemaakt hebt. Het staat bij jou en
@@ -1144,7 +1148,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
               <p
                 data-reveal
                 style={{ transitionDelay: "160ms" }}
-                className="mt-7 text-lg font-bold leading-8 text-white"
+                className="mt-7 text-lg font-bold leading-8 text-ink"
               >
                 Onhandig? Soms. Maar privacy weegt voor ons het zwaarst.
               </p>
@@ -1153,21 +1157,27 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
 
           <div className="relative mx-auto grid w-full max-w-5xl items-center gap-12 px-6 pb-24 pt-16 lg:grid-cols-2">
             <div data-reveal>
-              <h2 className="font-display text-4xl font-black tracking-tight text-white [text-wrap:balance]">
+              <h2 className="font-display text-4xl font-black tracking-tight [text-wrap:balance]">
                 Namen blijven thuis
               </h2>
-              <p className="mt-6 text-lg leading-8 text-cream/80">
+              <p className="mt-6 text-lg leading-8 text-ink/70">
                 Privacy is ons belangrijkste uitgangspunt. Namen van leerlingen
                 gaan nooit naar AI: ze worden op je eigen apparaat onleesbaar
                 gemaakt voordat er ook maar iets wordt verstuurd.
               </p>
-              <p className="mt-4 text-lg leading-8 text-cream/80">
+              <p className="mt-4 text-lg leading-8 text-ink/70">
                 Je account staat bovendien op beveiligde servers in Europa.
                 Geen bijzaak, maar de ruggengraat van alles wat we bouwen.
               </p>
             </div>
-            {/* De maskeer-demo: Sofie wordt leerling A voor je ogen */}
-            <div data-reveal className="maskeer rounded-2xl bg-white p-6 text-ink shadow-2xl sm:p-8">
+            {/* De maskeer-demo: Sofie wordt leerling A voor je ogen. Op het
+               lichte vlak draagt de kaart zichzelf met een rand en een diepe
+               zachte schaduw; een zware slagschaduw zonder rand zweeft hier
+               los boven de pagina. */}
+            <div
+              data-reveal
+              className="maskeer rounded-2xl bg-white p-6 text-ink shadow-[0_28px_60px_-32px_rgba(34,28,58,0.5)] ring-1 ring-black/5 sm:p-8"
+            >
               <p className="text-sm font-bold text-ink/50">Jij typt:</p>
               <p className="mt-2 text-xl leading-9 text-ink">
                 &ldquo;
