@@ -557,10 +557,26 @@ function Blok({
           <span className="text-sm text-ink/55">
             {bereikTekst(periode.van, periode.tot)}, {periode.weken} weken
           </span>
-          <span className="ml-auto text-sm font-semibold text-ink/40">
-            {open
-              ? "verbergen"
-              : `${items.length} momenten${voorbij ? ", afgerond" : ""}`}
+          <span className="ml-auto flex items-center gap-2 text-sm font-semibold text-ink/40">
+            {!open && (
+              <span>
+                {items.length} momenten{voorbij ? ", afgerond" : ""}
+              </span>
+            )}
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={"transition-transform duration-200 " + (open ? "rotate-180" : "")}
+              aria-hidden
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
           </span>
         </button>
 
