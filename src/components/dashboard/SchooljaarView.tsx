@@ -59,6 +59,16 @@ export default function SchooljaarView({
   const [tab, setTab] = useState<"jaar" | "week" | "agendas">(
     agendas.length ? "jaar" : "agendas",
   );
+
+  // De bewerkstand van het weekrooster (in SchooljaarWeek) registreert hier dat
+  // er onopgeslagen wijzigingen zijn. De tabbladen zijn gewone knoppen (geen
+  // navigatie), dus we vragen die guard eerst: is er iets onopgeslagen, dan toont
+  // de editor zijn waarschuwing en voert 'ie onze actie pas daarna uit.
+  const verlaatGuard = useRef<((actie: () => void) => void) | null>(null);
+  const wissel = (actie: () => void) => {
+    if (verlaatGuard.current) verlaatGuard.current(actie);
+    else actie();
+  };
   const [weergave, setWeergave] = useState<"lijst" | "maand">("lijst");
   const [alleenMijne, setAlleenMijne] = useState(false);
 
@@ -123,7 +133,7 @@ export default function SchooljaarView({
         ).map(([id, label]) => (
           <button
             key={id}
-            onClick={() => setTab(id)}
+            onClick={() => wissel(() => setTab(id))}
             className={
               "rounded-xl px-4 py-1.5 text-sm font-bold transition-colors " +
               (tab === id ? "bg-brand-dark text-white" : "text-ink/55 hover:text-ink")
@@ -137,7 +147,12 @@ export default function SchooljaarView({
       {tab === "agendas" ? (
         <AgendaKoppelen agendas={agendas} />
       ) : tab === "week" ? (
-        <SchooljaarWeek bron={bron} vandaag={vandaag} groepen={mijnGroepen} />
+        <SchooljaarWeek
+          bron={bron}
+          vandaag={vandaag}
+          groepen={mijnGroepen}
+          verlaatGuard={verlaatGuard}
+        />
       ) : (
         <>
           {agendas.length === 0 && (

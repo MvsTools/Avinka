@@ -47,10 +47,12 @@ export default function SchooljaarWeek({
   bron,
   vandaag,
   groepen,
+  verlaatGuard,
 }: {
   bron: PlanningBron;
   vandaag: string;
   groepen: number[];
+  verlaatGuard?: { current: ((actie: () => void) => void) | null };
 }) {
   const { schooljaar } = bron;
   const router = useRouter();
@@ -67,6 +69,7 @@ export default function SchooljaarWeek({
     return (
       <RoosterBewerken
         schooljaar={schooljaar.id}
+        verlaatGuard={verlaatGuard}
         onKlaar={() => {
           setBewerken(false);
           router.refresh();

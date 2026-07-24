@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type {
   CSSProperties,
   MouseEvent as ReactMouseEvent,
@@ -138,9 +139,15 @@ type Gekozen = { id: string; x: number; y: number; kant: "links" | "rechts" };
 export default function RoosterBewerken({
   schooljaar,
   onKlaar,
+  verlaatGuard,
 }: {
   schooljaar: string;
   onKlaar: () => void;
+  // Zolang er onopgeslagen wijzigingen zijn, laat de editor via deze ref weten:
+  // "vraag het mij eerst". De tabbladen erboven (Jaaroverzicht, Agenda's, …) zijn
+  // gewone knoppen die geen navigatie doen, dus die roepen deze guard aan i.p.v.
+  // meteen te wisselen. null = niets onopgeslagen, gewoon doorgaan.
+  verlaatGuard?: { current: ((actie: () => void) => void) | null };
 }) {
   const [concept, setConcept] = useState<Basisrooster | null>(null);
   const [geschiedenis, setGeschiedenis] = useState<Basisrooster[]>([]);
@@ -158,6 +165,27 @@ export default function RoosterBewerken({
     kant: "links" | "rechts";
   } | null>(null);
   const [instellingenOpen, setInstellingenOpen] = useState(false);
+  const [vraagAfsluiten, setVraagAfsluiten] = useState(false);
+  // Wat er moet gebeuren zodra de waarschuwing is afgehandeld: naar een andere
+  // pagina (onderschepte link), een ander tabblad (guard) of terug naar het
+  // overzicht (Annuleren). null valt terug op onKlaar.
+  const [naDeWaarschuwing, setNaDeWaarschuwing] = useState<(() => void) | null>(null);
+  const router = useRouter();
+
+  // De guard registreren zolang er onopgeslagen wijzigingen zijn, zodat de
+  // tabbladen erboven eerst de waarschuwing kunnen laten zien.
+  useEffect(() => {
+    if (!verlaatGuard) return;
+    verlaatGuard.current = vuil
+      ? (actie: () => void) => {
+          setNaDeWaarschuwing(() => actie);
+          setVraagAfsluiten(true);
+        }
+      : null;
+    return () => {
+      verlaatGuard.current = null;
+    };
+  }, [vuil, verlaatGuard]);
 
   // De vakkenlijst in de instellingen wijzigen (welke vakken, hoe vaak per week).
   // Eigen vakken die niet in de catalogus staan, blijven onaangeroerd. Via pasToe
@@ -189,6 +217,46 @@ export default function RoosterBewerken({
     };
   }, [schooljaar]);
 
+  // Waarschuw ook als je de pagina zelf verlaat (verversen/sluiten) met
+  // niet-opgeslagen wijzigingen.
+  useEffect(() => {
+    if (!vuil) return;
+    const waarschuw = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", waarschuw);
+    return () => window.removeEventListener("beforeunload", waarschuw);
+  }, [vuil]);
+
+  // En óók als je binnen het platform wegklikt (Agenda's, Statistieken, een
+  // menu-link): die navigatie laadt de pagina niet opnieuw, dus beforeunload
+  // vangt haar niet. We onderscheppen zo'n klik en vragen eerst wat je wilt.
+  useEffect(() => {
+    if (!vuil) return;
+    const opKlik = (e: globalThis.MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const link = (e.target as HTMLElement | null)?.closest?.(
+        "a[href]",
+      ) as HTMLAnchorElement | null;
+      if (!link || link.target === "_blank" || link.hasAttribute("download")) return;
+      const href = link.getAttribute("href") ?? "";
+      if (!href || href.startsWith("#")) return;
+      const url = new URL(link.href, window.location.href);
+      if (url.origin !== window.location.origin) return;
+      const hier = window.location.pathname + window.location.search;
+      if (url.pathname + url.search === hier) return; // zelfde pagina
+      e.preventDefault();
+      e.stopPropagation();
+      const doel = url.pathname + url.search + url.hash;
+      setNaDeWaarschuwing(() => () => router.push(doel));
+      setVraagAfsluiten(true);
+    };
+    document.addEventListener("click", opKlik, true);
+    return () => document.removeEventListener("click", opKlik, true);
+  }, [vuil]);
+
   // Elke wijziging bewaart de vorige stand voor "ongedaan maken" en zet het
   // rooster op "niet opgeslagen". Nog niets naar de server: dat doe je zelf.
   function pasToe(maak: (c: Basisrooster) => Basisrooster) {
@@ -206,11 +274,8 @@ export default function RoosterBewerken({
     setGekozen(null);
   }
 
-  async function opslaan(daarnaTerug: boolean) {
-    if (!concept) {
-      if (daarnaTerug) onKlaar();
-      return;
-    }
+  async function opslaan(): Promise<boolean> {
+    if (!concept) return true;
     setOpslaanBezig(true);
     setFout(null);
     try {
@@ -221,12 +286,38 @@ export default function RoosterBewerken({
       });
       if (!antwoord.ok) throw new Error();
       setVuil(false);
-      if (daarnaTerug) onKlaar();
+      return true;
     } catch {
       setFout("Opslaan is niet gelukt. Probeer het nog eens.");
+      return false;
     } finally {
       setOpslaanBezig(false);
     }
+  }
+
+  // De bewerkstand verlaten zónder op te slaan. Voer de geparkeerde actie uit
+  // (naar de andere pagina/het tabblad), of val terug op terug-naar-overzicht.
+  function verlaat() {
+    const actie = naDeWaarschuwing;
+    setVuil(false);
+    setVraagAfsluiten(false);
+    setNaDeWaarschuwing(null);
+    if (verlaatGuard) verlaatGuard.current = null; // guard nu direct uit
+    (actie ?? onKlaar)();
+  }
+
+  async function opslaanEnVerlaat() {
+    const actie = naDeWaarschuwing;
+    if (!(await opslaan())) return; // opslaan mislukt: blijf, toon de fout
+    setVraagAfsluiten(false);
+    setNaDeWaarschuwing(null);
+    if (verlaatGuard) verlaatGuard.current = null;
+    (actie ?? onKlaar)();
+  }
+
+  function sluitWaarschuwing() {
+    setVraagAfsluiten(false);
+    setNaDeWaarschuwing(null);
   }
 
   const lessen = useMemo<Roosterblok[]>(
@@ -396,7 +487,6 @@ export default function RoosterBewerken({
             </svg>
             Je past je basisrooster aan
           </span>
-          <span className="text-sm text-ink/55">Klik op een lege plek voor een nieuwe les.</span>
           {vuil && <span className="text-xs font-semibold text-ink/45">Niet opgeslagen</span>}
         </div>
 
@@ -435,13 +525,20 @@ export default function RoosterBewerken({
               Ongedaan maken
             </button>
             <button
-              onClick={onKlaar}
+              onClick={() => {
+                if (vuil) {
+                  setNaDeWaarschuwing(null);
+                  setVraagAfsluiten(true);
+                } else onKlaar();
+              }}
               className="rounded-xl border border-black/10 bg-white px-3.5 py-2 text-sm font-bold text-ink/70 transition-transform duration-150 hover:text-ink active:scale-[0.97]"
             >
               Annuleren
             </button>
             <button
-              onClick={() => opslaan(true)}
+              onClick={async () => {
+                if (await opslaan()) onKlaar();
+              }}
               disabled={opslaanBezig}
               className="rounded-xl bg-brand-dark px-4 py-2 text-sm font-bold text-white transition-transform duration-150 active:scale-[0.97] disabled:opacity-60"
             >
@@ -529,6 +626,48 @@ export default function RoosterBewerken({
           verwijder={verwijderVak}
           sluit={() => setInstellingenOpen(false)}
         />
+      )}
+
+      {/* Waarschuwing bij afsluiten met niet-opgeslagen wijzigingen. */}
+      {vraagAfsluiten && (
+        <div
+          className="fixed inset-0 z-[70] flex items-end justify-center bg-ink/25 p-0 backdrop-blur-[2px] sm:items-center sm:p-6"
+          onClick={sluitWaarschuwing}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Niet-opgeslagen wijzigingen"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-t-3xl bg-white p-6 shadow-xl sm:rounded-3xl"
+          >
+            <p className="font-serif text-2xl font-semibold text-ink">Niet-opgeslagen wijzigingen</p>
+            <p className="mt-2 text-sm leading-6 text-ink/70">
+              Je hebt wijzigingen aan je basisrooster die nog niet zijn opgeslagen. Wat wil je doen?
+            </p>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button
+                onClick={sluitWaarschuwing}
+                className="rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-bold text-ink/70 transition-transform duration-150 hover:text-ink active:scale-[0.97]"
+              >
+                Terug
+              </button>
+              <button
+                onClick={verlaat}
+                className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-bold text-red-700 transition-transform duration-150 active:scale-[0.97]"
+              >
+                Afsluiten zonder opslaan
+              </button>
+              <button
+                onClick={opslaanEnVerlaat}
+                disabled={opslaanBezig}
+                className="rounded-xl bg-brand-dark px-4 py-2 text-sm font-bold text-white transition-transform duration-150 active:scale-[0.97] disabled:opacity-60"
+              >
+                {opslaanBezig ? "Bezig met opslaan…" : "Opslaan"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
