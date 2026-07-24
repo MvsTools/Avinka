@@ -32,7 +32,9 @@ export type RoosterSetup = {
   eind?: number;
   dagBegin?: Record<string, number>;
   dagEind?: Record<string, number>;
-  vakken?: { id: string; naam: string }[];
+  // Eigen vakken bewaren hun kleur mee (bg + tx), standaardvakken niet: die
+  // halen we uit de vaste catalogus hieronder.
+  vakken?: { id: string; naam: string; bg?: string; tx?: string }[];
 };
 
 export type Basisrooster = {
@@ -41,6 +43,55 @@ export type Basisrooster = {
 };
 
 const DAGEN = ["ma", "di", "wo", "do", "vr"];
+
+// Dezelfde kleuren als in de weekplanning-tool (public/tools/weekplanning.html):
+// een zachte achtergrond met een bijpassende donkere tekstkleur. Zo herkent de
+// leerkracht in het weekrooster precies de kleuren waarmee hij het bouwde.
+// Pauzes zijn bewust gedempt zodat de lessen zelf eruit springen.
+type Kleur = { bg: string; tekst: string };
+
+// Een vol, vrolijk palet dat de hele kleurenwaaier gebruikt. Voor rood-groen-
+// kleurenblindheid is de sleutel het verschil in licht/donker: vakken die qua
+// kleur op elkaar zouden lijken (twee groenen, geel/oranje) staan bewust op een
+// andere lichtheid, en een paar krijgen een stevige donkere kleur met witte
+// tekst. De naam in het blok blijft altijd het vangnet.
+// Een vol, vrolijk palet dat de hele kleurenwaaier gebruikt. Voor rood-groen-
+// kleurenblindheid is de sleutel het verschil in licht/donker: vakken die qua
+// tint op elkaar zouden lijken (de groen/geel/oranje-groep) staan bewust op een
+// andere lichtheid, van heel licht (geel) naar dieper (gym-groen). De naam in
+// het blok blijft altijd het vangnet.
+const VAK_KLEUR: Record<string, Kleur> = {
+  dagopening: { bg: "#f7cf5e", tekst: "#6e5000" }, // goud
+  rekenen: { bg: "#9cc7ff", tekst: "#0d4a95" }, // blauw
+  taal: { bg: "#cdb0ff", tekst: "#4d1e9c" }, // paars
+  spelling: { bg: "#ffb3e6", tekst: "#8a1f74" }, // magenta
+  tlezen: { bg: "#b6e88f", tekst: "#35701a" }, // licht groen
+  blezen: { bg: "#7fdcd6", tekst: "#06534f" }, // aqua
+  schrijven: { bg: "#cdd45a", tekst: "#4e5600" }, // olijf
+  wo: { bg: "#ffb066", tekst: "#7a3d00" }, // oranje
+  engels: { bg: "#93dbf2", tekst: "#0a5a7a" }, // hemelsblauw
+  creatief: { bg: "#ff9fb0", tekst: "#8a1f3d" }, // koraalroze
+  muziek: { bg: "#ff8a7a", tekst: "#7a1e10" }, // rood
+  seo: { bg: "#ffe873", tekst: "#6e5600" }, // geel
+  verkeer: { bg: "#aeb4f5", tekst: "#2f3aa5" }, // indigo
+  gym: { bg: "#74c78a", tekst: "#0f5e34" }, // diep groen
+  pauze: { bg: "#e5e0d5", tekst: "#6f6a5c" }, // gedempt neutraal
+};
+
+/** Als we een vak niet kennen: een rustige neutrale kleur i.p.v. niets. */
+const VAK_KLEUR_STANDAARD: Kleur = { bg: "#efeae0", tekst: "#5c5647" };
+
+/**
+ * De kleur van een blok: eerst de vaste catalogus (standaardvakken, pauze, gym),
+ * dan de kleur die een eigen vak zelf heeft meegekregen in de setup, en anders
+ * een neutrale terugval.
+ */
+function kleurVoor(vak: string, setup: RoosterSetup): Kleur {
+  if (VAK_KLEUR[vak]) return VAK_KLEUR[vak];
+  const eigen = setup.vakken?.find((v) => v.id === vak);
+  if (eigen?.bg && eigen?.tx) return { bg: eigen.bg, tekst: eigen.tx };
+  return VAK_KLEUR_STANDAARD;
+}
 
 /** "ma" → 0, "vr" → 4. Geeft -1 voor iets wat we niet kennen. */
 export function dagNummer(dag: string): number {
@@ -78,6 +129,7 @@ export function naarBlokken(rooster: Basisrooster | null): Roosterblok[] {
       eind: minutenNaarTijd(b.start + b.duur),
       vak: b.vak,
       naam: b.naam,
+      kleur: kleurVoor(b.vak, rooster.setup),
       soort: b.type === "taak" ? ("taak" as const) : ("les" as const),
     }))
     .sort((a, b) => a.weekdag - b.weekdag || a.begin.localeCompare(b.begin));

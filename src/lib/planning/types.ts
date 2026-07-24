@@ -74,7 +74,8 @@ export type Roosterblok = {
   /** Vak-id uit het basisrooster ("rekenen", "gym") of taaksoort na schooltijd. */
   vak: string;
   naam: string;
-  kleur?: string;
+  /** Zachte achtergrond + bijpassende tekstkleur, overgenomen uit de weekplanning. */
+  kleur?: { bg: string; tekst: string };
   /** Een les binnen schooltijd, of je eigen tijd erna. */
   soort: "les" | "taak";
 };

@@ -30,6 +30,13 @@ function minuten(tijd: string): number {
   return u * 60 + (m || 0);
 }
 
+/** 510 → "08:30" */
+function tijdTekst(m: number): string {
+  const u = Math.floor(m / 60);
+  const rest = Math.round(m % 60);
+  return `${String(u).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
+}
+
 export default function SchooljaarWeek({
   bron,
   vandaag,
@@ -87,7 +94,7 @@ export default function SchooljaarWeek({
             </svg>
           </button>
         </div>
-        <h3 className="min-w-[11rem] text-lg font-bold text-ink">Week {weeknummer(maandag)}</h3>
+        <h3 className="text-lg font-bold text-ink">Week {weeknummer(maandag)}</h3>
         <span className="text-sm text-ink/55">{bereikTekst(maandag, plus(maandag, 4))}</span>
         {!opDezeWeek && (
           <button
@@ -135,8 +142,23 @@ function Weekraster({
   hoogte: number;
   opendag: (datum: string) => void;
 }) {
-  // Eén pixel per minuut leest prettig: een blok van 45 minuten wordt 45 hoog.
-  const PX = 1.15;
+  // Iets meer dan één pixel per minuut: een blok van 45 minuten wordt ~56 hoog.
+  // Net genoeg dat een kort blok (dagopening, pauze: 15 min) zijn naam nog kwijt
+  // kan zonder dat de tekst onderaan wegvalt.
+  const PX = 1.25;
+
+  // De blokken tonen zelf geen tijd (dat werd te druk). In plaats daarvan de
+  // vertrouwde tijdbalk met alle hele uren, plus de schoolbegin- en eindtijd als
+  // extra ankers (tenzij die al op een heel uur vallen). De hulplijnen door de
+  // dagen lopen op de hele uren mee.
+  const y = (m: number) => (m - rasterBegin) * PX + 8;
+  const rasterTot = rasterBegin + hoogte;
+  const uren: number[] = [];
+  for (let m = Math.ceil(rasterBegin / 60) * 60; m <= rasterTot; m += 60) uren.push(m);
+  const ankers: number[] = [];
+  if (rasterBegin % 60 !== 0) ankers.push(rasterBegin);
+  if (rasterTot % 60 !== 0) ankers.push(rasterTot);
+  const tijdstippen = [...uren, ...ankers].sort((a, b) => a - b);
 
   return (
     <div className="overflow-x-auto">
@@ -163,7 +185,7 @@ function Weekraster({
 
         {/* Agenda-strookje: wat er die dag speelt, los van je rooster. */}
         <div className="grid grid-cols-[3.5rem_repeat(5,minmax(0,1fr))] border-b border-black/5 bg-cream/40">
-          <div className="px-2 py-1.5 text-right text-xs font-bold uppercase tracking-wider text-ink/30">
+          <div className="px-1 py-1.5 text-right text-xs font-semibold leading-tight text-ink/35">
             agenda
           </div>
           {dagen.map((d) => {
@@ -203,23 +225,29 @@ function Weekraster({
           style={{ height: hoogte * PX + 16 }}
         >
           <div className="relative">
-            {Array.from({ length: Math.ceil(hoogte / 60) + 1 }, (_, i) => {
-              const m = Math.ceil(rasterBegin / 60) * 60 + i * 60;
-              if (m > rasterBegin + hoogte) return null;
-              return (
-                <span
-                  key={m}
-                  className="absolute right-2 -translate-y-1/2 text-xs tabular-nums text-ink/35"
-                  style={{ top: (m - rasterBegin) * PX + 8 }}
-                >
-                  {String(Math.floor(m / 60)).padStart(2, "0")}:00
-                </span>
-              );
-            })}
+            {tijdstippen.map((m) => (
+              <span
+                key={m}
+                className="absolute right-2 -translate-y-1/2 text-xs tabular-nums text-ink/45"
+                style={{ top: y(m) }}
+              >
+                {tijdTekst(m)}
+              </span>
+            ))}
           </div>
 
           {dagen.map((d) => (
             <div key={d.datum} className="relative border-l border-black/5">
+              {!d.vrij &&
+                uren
+                  .filter((m) => m !== rasterBegin && m !== rasterTot)
+                  .map((m) => (
+                    <div
+                      key={"lijn" + m}
+                      className="pointer-events-none absolute inset-x-0 border-t border-black/[0.06]"
+                      style={{ top: y(m) }}
+                    />
+                  ))}
               {d.vrij ? (
                 <div className="absolute inset-0 flex items-start justify-center bg-[repeating-linear-gradient(135deg,rgba(0,0,0,0.03)_0_6px,transparent_6px_12px)] pt-4">
                   <span className="rounded-lg bg-white/80 px-2 py-1 text-xs font-bold text-ink/50">
@@ -235,20 +263,29 @@ function Weekraster({
                   .filter((b) => b.soort === "les")
                   .map((b) => {
                     const top = (minuten(b.begin) - rasterBegin) * PX + 8;
-                    const h = Math.max(14, (minuten(b.eind) - minuten(b.begin)) * PX - 2);
+                    const h = Math.max(17, (minuten(b.eind) - minuten(b.begin)) * PX - 2);
                     return (
                       <div
                         key={b.id}
                         title={`${b.naam} ${b.begin}–${b.eind}`}
-                        className="absolute left-1 right-1 overflow-hidden rounded-lg border border-black/5 bg-cream/70 px-1.5 py-0.5"
-                        style={{ top, height: h }}
+                        className="absolute left-1 right-1 flex items-baseline gap-1.5 overflow-hidden rounded-lg border border-black/5 bg-cream/70 px-1.5 py-px"
+                        style={{ top, height: h, background: b.kleur?.bg }}
                       >
-                        <span className="block truncate text-xs font-bold text-ink/80">
+                        <span
+                          className="min-w-0 flex-1 truncate text-xs font-bold leading-tight"
+                          style={{ color: b.kleur?.tekst }}
+                        >
                           {b.naam}
                         </span>
-                        {h > 30 && (
-                          <span className="block truncate text-xs text-ink/45">{b.begin}</span>
-                        )}
+                        {/* De begintijd op het blok zelf: klein, gedempt en rechts,
+                            zoals in volwassen agenda's. Zo lees je 'm zonder de
+                            hulplijnen nodig te hebben. */}
+                        <span
+                          className="shrink-0 text-xs leading-tight tabular-nums opacity-60"
+                          style={{ color: b.kleur?.tekst }}
+                        >
+                          {b.begin}
+                        </span>
                       </div>
                     );
                   })
@@ -259,7 +296,7 @@ function Weekraster({
 
         {/* Na schooltijd: je eigen tijd, en waar de gesprekken uit je agenda thuishoren. */}
         <div className="grid grid-cols-[3.5rem_repeat(5,minmax(0,1fr))] border-t border-black/5 bg-cream/30">
-          <div className="px-2 py-2 text-right text-xs font-bold uppercase leading-tight tracking-wider text-ink/30">
+          <div className="px-1 py-2 text-right text-xs font-semibold leading-tight text-ink/35">
             na school
           </div>
           {dagen.map((d) => {

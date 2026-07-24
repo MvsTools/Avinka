@@ -336,6 +336,12 @@ wijkt af" — de tabel `rooster_week` staat klaar maar wordt nog niet gebruikt.
 - Vooruitkijk-blok in Planning + dag-signaal op Start.
 - Tools openen mét context (datum, aanleiding); terugkoppeling van tool naar
   planning.
+- **Klikbaar lesblok in het weekrooster → detailpaneel.** Per les een eigen
+  lesnummer / methodebladzijde / korte notitie kunnen zetten (eigen tekst van de
+  leerkracht, AVG-veilig), en de les kunnen koppelen aan een echt lesontwerp uit
+  de Lesontwerp-tool of er een werkblad bij maken — met datum en context al
+  ingevuld. Grens uit §8: eigen lesnummers/notities mogen, de lesstructuur van
+  een methode als dataset inbouwen niet.
 
 ### Fase 5 — de periodeplanning en de hulp
 - Periodelaag: blokken tussen vakanties, wat komt eraan, hoeveel weken nog.

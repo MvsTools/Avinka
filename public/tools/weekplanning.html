@@ -442,22 +442,22 @@ const DAGEN = [
    Vlaggen sturen de AI: zwaar (cognitief), middag (liever 's middags), ochtend
    (start van de dag), ontspan (ontspannend). */
 const VAKKEN = [
-  {id:'dagopening', naam:'Dagopening', bg:'#e9e3d3', tx:'#6a5c37', perWeek:5, duur:15, zwaar:false, ochtend:true},
-  {id:'rekenen', naam:'Rekenen', bg:'#dbe9fb', tx:'#1c4e8a', perWeek:5, duur:45, zwaar:true},
-  {id:'taal', naam:'Taal', bg:'#e7dffb', tx:'#5b3ca6', perWeek:4, duur:45, zwaar:true},
-  {id:'spelling', naam:'Spelling', bg:'#efe2f7', tx:'#7d3ca0', perWeek:4, duur:30, zwaar:true},
-  {id:'tlezen', naam:'Technisch lezen', bg:'#d8efe6', tx:'#1f7a55', perWeek:4, duur:30, zwaar:false},
-  {id:'blezen', naam:'Begrijpend lezen', bg:'#d5ecec', tx:'#1c6d70', perWeek:2, duur:45, zwaar:true, middag:true},
-  {id:'schrijven', naam:'Schrijven', bg:'#e6ead3', tx:'#5c6b1f', perWeek:2, duur:30, zwaar:false},
-  {id:'wo', naam:'Wereldoriëntatie', bg:'#fbe6cf', tx:'#a5601a', perWeek:3, duur:45, zwaar:false, middag:true},
-  {id:'engels', naam:'Engels', bg:'#d9e4f7', tx:'#33518a', perWeek:2, duur:30, zwaar:false},
-  {id:'creatief', naam:'Creatief', bg:'#fbdfe9', tx:'#a83b66', perWeek:2, duur:60, zwaar:false, ontspan:true, middag:true},
-  {id:'muziek', naam:'Muziek', bg:'#f7e0d1', tx:'#a85a2b', perWeek:1, duur:30, zwaar:false, ontspan:true, middag:true},
-  {id:'seo', naam:'Sociaal-emotioneel', bg:'#fdeecb', tx:'#9a7415', perWeek:1, duur:30, zwaar:false, middag:true},
-  {id:'verkeer', naam:'Verkeer', bg:'#e2e8ee', tx:'#4a5a6b', perWeek:1, duur:30, zwaar:false, middag:true},
+  {id:'dagopening', naam:'Dagopening', bg:'#f7cf5e', tx:'#6e5000', perWeek:5, duur:15, zwaar:false, ochtend:true},
+  {id:'rekenen', naam:'Rekenen', bg:'#9cc7ff', tx:'#0d4a95', perWeek:5, duur:45, zwaar:true},
+  {id:'taal', naam:'Taal', bg:'#cdb0ff', tx:'#4d1e9c', perWeek:4, duur:45, zwaar:true},
+  {id:'spelling', naam:'Spelling', bg:'#ffb3e6', tx:'#8a1f74', perWeek:4, duur:30, zwaar:true},
+  {id:'tlezen', naam:'Technisch lezen', bg:'#b6e88f', tx:'#35701a', perWeek:4, duur:30, zwaar:false},
+  {id:'blezen', naam:'Begrijpend lezen', bg:'#7fdcd6', tx:'#06534f', perWeek:2, duur:45, zwaar:true, middag:true},
+  {id:'schrijven', naam:'Schrijven', bg:'#cdd45a', tx:'#4e5600', perWeek:2, duur:30, zwaar:false},
+  {id:'wo', naam:'Wereldoriëntatie', bg:'#ffb066', tx:'#7a3d00', perWeek:3, duur:45, zwaar:false, middag:true},
+  {id:'engels', naam:'Engels', bg:'#93dbf2', tx:'#0a5a7a', perWeek:2, duur:30, zwaar:false},
+  {id:'creatief', naam:'Creatief', bg:'#ff9fb0', tx:'#8a1f3d', perWeek:2, duur:60, zwaar:false, ontspan:true, middag:true},
+  {id:'muziek', naam:'Muziek', bg:'#ff8a7a', tx:'#7a1e10', perWeek:1, duur:30, zwaar:false, ontspan:true, middag:true},
+  {id:'seo', naam:'Sociaal-emotioneel', bg:'#ffe873', tx:'#6e5600', perWeek:1, duur:30, zwaar:false, middag:true},
+  {id:'verkeer', naam:'Verkeer', bg:'#aeb4f5', tx:'#2f3aa5', perWeek:1, duur:30, zwaar:false, middag:true},
 ];
 const VAK = id => VAKKEN.find(v => v.id === id) || TAKEN.find(t => t.id === id) || {id, naam:id, bg:'#e4e0d6', tx:'#555'};
-const GYM = {id:'gym', naam:'Gym', bg:'#d3ead9', tx:'#256b3a'};
+const GYM = {id:'gym', naam:'Gym', bg:'#c3efc9', tx:'#1f8a3c'};
 
 /* ── Fase 2: de tijd ná schooltijd ──────────────────────────────────────
    Het onderscheidende van deze planner: nakijken, voorbereiden en
@@ -485,9 +485,9 @@ const pixelBegin = (su, type) => type === 'taak' ? naAsBegin(su) : su.begin;
 
 /* Kleuren voor zelf toegevoegde vakken — de eerstvolgende ongebruikte. */
 const EXTRA_KLEUREN = [
-  {bg:'#d7ecdd', tx:'#2b6b45'}, {bg:'#f3ddd9', tx:'#9c4a3c'}, {bg:'#dde3f5', tx:'#3a4a86'},
-  {bg:'#f0e5d0', tx:'#8a6a2e'}, {bg:'#e3ddf0', tx:'#5a4a86'}, {bg:'#d5ece9', tx:'#2c6d68'},
-  {bg:'#f5dfec', tx:'#9c3f6f'}, {bg:'#e6e9d4', tx:'#5f6b2e'},
+  {bg:'#c8f0d4', tx:'#1f7a4a'}, {bg:'#ffd6cf', tx:'#b34433'}, {bg:'#d3ddff', tx:'#3646ad'},
+  {bg:'#ffe6b8', tx:'#9a6a1a'}, {bg:'#e6d6ff', tx:'#6337ba'}, {bg:'#c2eeea', tx:'#0f7d75'},
+  {bg:'#ffd4ea', tx:'#b32f74'}, {bg:'#e2f0b8', tx:'#5f7a15'},
 ];
 function volgendeKleur() {
   const gebruikt = new Set(VAKKEN.map(v => v.bg));
