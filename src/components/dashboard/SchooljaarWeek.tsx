@@ -257,7 +257,8 @@ function Weekraster({
         {/* Het lesrooster */}
         <div
           className="grid grid-cols-[3.5rem_repeat(5,minmax(0,1fr))]"
-          style={{ height: hoogte * PX + 16 }}
+          // Wat extra lucht onderaan zodat het raster niet strak op de eindtijd afkapt.
+          style={{ height: hoogte * PX + 16 + 28 }}
         >
           <div className="relative">
             {tijdstippen.map((m) => (
@@ -304,10 +305,11 @@ function Weekraster({
                     const { kol, n } = schik.get(b.id) ?? { kol: 0, n: 1 };
                     const left = `calc(${(kol * 100) / n}% + 4px)`;
                     const breedte = `calc(${100 / n}% - 8px)`;
-                    // Te klein blok? Alleen de naam. Groot genoeg? Ook de tijd —
-                    // bij smalle (naast elkaar) blokken eronder, anders ernaast.
+                    // Breed blok: naam + tijd naast elkaar op één regel (past ook
+                    // bij een kort blok). Smal (overlappend) blok: naam boven, tijd
+                    // eronder — en alleen als het hoog genoeg is.
                     const smal = n > 1;
-                    const tijdTonen = h >= 30;
+                    const tijdTonen = !smal || h >= 30;
                     const gestapeld = smal && tijdTonen;
                     return (
                       <div

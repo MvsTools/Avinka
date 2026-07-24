@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import { naarBlokken, rasterGrenzen, schikDag, type Basisrooster } from "@/lib/planning/rooster";
 import type { Roosterblok } from "@/lib/planning/types";
 
@@ -15,6 +16,12 @@ import type { Roosterblok } from "@/lib/planning/types";
 // Volgende stap: verslepen (verplaatsen en langer/korter door te slepen).
 
 const DAGNAMEN = ["maandag", "dinsdag", "woensdag", "donderdag", "vrijdag"];
+const DAG_ID = ["ma", "di", "wo", "do", "vr"]; // weekdag-nummer → zoals de tool bewaart
+
+/** Ronden op 5 minuten, zodat slepen netjes "klikt". */
+function snap5(m: number): number {
+  return Math.round(m / 5) * 5;
+}
 
 /** "08:30" → 510 */
 function minuten(tijd: string): number {
@@ -146,6 +153,23 @@ export default function RoosterBewerken({
     setGekozen(null);
   }
 
+  // Een blok naar een andere dag/tijd of lengte zetten (na het slepen).
+  function zetBlok(id: string, w: { weekdag?: number; start?: number; duur?: number }) {
+    pasToe((c) => ({
+      ...c,
+      blokken: c.blokken.map((b) =>
+        b.id === id
+          ? {
+              ...b,
+              dag: w.weekdag != null ? DAG_ID[w.weekdag] : b.dag,
+              start: w.start != null ? w.start : b.start,
+              duur: w.duur != null ? w.duur : b.duur,
+            }
+          : b,
+      ),
+    }));
+  }
+
   // Bij een klik op een blok zetten we het kaartje NAAST het blok (rechts als het
   // past, anders links), nooit erboven of eronder. Zo bedekt het het blok nooit
   // en zie je het blok live veranderen terwijl je begin/einde bijstelt.
@@ -219,7 +243,12 @@ export default function RoosterBewerken({
           Er staan nog geen lessen in je rooster.
         </p>
       ) : (
-        <Bewerkraster lessen={lessen} gekozenId={gekozen?.id ?? null} kies={kies} />
+        <Bewerkraster
+          lessen={lessen}
+          gekozenId={gekozen?.id ?? null}
+          kies={kies}
+          zetBlok={zetBlok}
+        />
       )}
 
       {/* Het kaartje dat uit het blok openvouwt, met de opties. */}
@@ -358,16 +387,40 @@ function Blokkaart({
   );
 }
 
+type Sleep = {
+  id: string;
+  modus: "verplaats" | "top" | "onder";
+  weekdag: number;
+  start: number;
+  duur: number;
+  dx: number;
+  dy: number;
+};
+type Drag = {
+  id: string;
+  modus: "verplaats" | "top" | "onder";
+  startX: number;
+  startY: number;
+  origStart: number;
+  origDuur: number;
+  origEind: number;
+  origWeekdag: number;
+  bewogen: boolean;
+};
+
 function Bewerkraster({
   lessen,
   gekozenId,
   kies,
+  zetBlok,
 }: {
   lessen: Roosterblok[];
   gekozenId: string | null;
   kies: (id: string, el: HTMLElement) => void;
+  zetBlok: (id: string, w: { weekdag?: number; start?: number; duur?: number }) => void;
 }) {
   const PX = 1.25;
+  const RAND = 9; // px boven-/onderrand waar je kunt trekken (i.p.v. verplaatsen)
   const grenzen = rasterGrenzen(lessen);
   const rasterBegin = minuten(grenzen.begin);
   const rasterTot = minuten(grenzen.eind);
@@ -380,6 +433,111 @@ function Bewerkraster({
   if (rasterBegin % 60 !== 0) ankers.push(rasterBegin);
   if (rasterTot % 60 !== 0) ankers.push(rasterTot);
   const tijdstippen = [...uren, ...ankers].sort((a, b) => a - b);
+
+  // Slepen: verplaatsen (naar een andere dag/tijd) of aan de boven-/onderrand
+  // trekken (korter/langer). We snappen op 5 minuten en houden de live-stand in
+  // `sleep`; pas bij loslaten leggen we het echt vast (via zetBlok → geschiedenis).
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [sleep, setSleep] = useState<Sleep | null>(null);
+  const sleepRef = useRef<Sleep | null>(null);
+  sleepRef.current = sleep;
+  const dragRef = useRef<Drag | null>(null);
+
+  // Linkerkant en breedte van één dagkolom (om bij het slepen de dag te bepalen).
+  function kolommen() {
+    const r = gridRef.current?.getBoundingClientRect();
+    const gutter = 56; // 3.5rem
+    return { linkerkant: (r?.left ?? 0) + gutter, breedte: r ? (r.width - gutter) / 5 : 0 };
+  }
+
+  function omlaag(e: ReactPointerEvent, b: Roosterblok) {
+    if (e.button > 0) return;
+    e.preventDefault();
+    const el = e.currentTarget as HTMLElement;
+    const rect = el.getBoundingClientRect();
+    const offsetY = e.clientY - rect.top;
+    let modus: Drag["modus"] = "verplaats";
+    if (rect.height >= 24) {
+      if (offsetY <= RAND) modus = "top";
+      else if (offsetY >= rect.height - RAND) modus = "onder";
+    }
+    const origStart = minuten(b.begin);
+    const origDuur = minuten(b.eind) - minuten(b.begin);
+    dragRef.current = {
+      id: b.id,
+      modus,
+      startX: e.clientX,
+      startY: e.clientY,
+      origStart,
+      origDuur,
+      origEind: origStart + origDuur,
+      origWeekdag: b.weekdag,
+      bewogen: false,
+    };
+    el.style.cursor = modus === "verplaats" ? "grabbing" : "ns-resize";
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {}
+  }
+
+  function beweeg(e: ReactPointerEvent) {
+    const d = dragRef.current;
+    if (!d) {
+      // Niet aan het slepen: het handje wordt een sleeppijltje op de randen,
+      // zodat je ziet waar je kunt trekken om korter/langer te maken.
+      const el = e.currentTarget as HTMLElement;
+      const rect = el.getBoundingClientRect();
+      const offsetY = e.clientY - rect.top;
+      const opRand = rect.height >= 24 && (offsetY <= RAND || offsetY >= rect.height - RAND);
+      el.style.cursor = opRand ? "ns-resize" : "";
+      return;
+    }
+    const dx = e.clientX - d.startX;
+    const dy = e.clientY - d.startY;
+    if (!d.bewogen && Math.abs(dx) + Math.abs(dy) > 4) d.bewogen = true;
+    if (!d.bewogen) return;
+    const dyMin = snap5(dy / PX);
+    if (d.modus === "verplaats") {
+      const k = kolommen();
+      let dag = k.breedte ? Math.floor((e.clientX - k.linkerkant) / k.breedte) : d.origWeekdag;
+      dag = Math.max(0, Math.min(4, dag));
+      const start = Math.max(0, d.origStart + dyMin);
+      setSleep({
+        id: d.id,
+        modus: "verplaats",
+        weekdag: dag,
+        start,
+        duur: d.origDuur,
+        dx: (dag - d.origWeekdag) * k.breedte,
+        dy: (start - d.origStart) * PX,
+      });
+    } else if (d.modus === "top") {
+      const start = Math.min(d.origEind - 10, Math.max(0, d.origStart + dyMin));
+      setSleep({ id: d.id, modus: "top", weekdag: d.origWeekdag, start, duur: d.origEind - start, dx: 0, dy: 0 });
+    } else {
+      const duur = Math.max(10, Math.min(180, d.origDuur + dyMin));
+      setSleep({ id: d.id, modus: "onder", weekdag: d.origWeekdag, start: d.origStart, duur, dx: 0, dy: 0 });
+    }
+  }
+
+  function omhoog(e: ReactPointerEvent, b: Roosterblok) {
+    const d = dragRef.current;
+    dragRef.current = null;
+    const el = e.currentTarget as HTMLElement;
+    el.style.cursor = "";
+    try {
+      el.releasePointerCapture(e.pointerId);
+    } catch {}
+    if (!d) return;
+    const s = sleepRef.current;
+    setSleep(null);
+    // Niet echt gesleept? Dan telt het als een klik: open het kaartje.
+    if (!d.bewogen || !s) {
+      kies(b.id, e.currentTarget as HTMLElement);
+      return;
+    }
+    zetBlok(s.id, { weekdag: s.weekdag, start: s.start, duur: s.duur });
+  }
 
   return (
     <div className="overflow-x-auto">
@@ -396,8 +554,11 @@ function Bewerkraster({
 
         {/* Het lesrooster */}
         <div
+          ref={gridRef}
           className="grid grid-cols-[3.5rem_repeat(5,minmax(0,1fr))]"
-          style={{ height: hoogte * PX + 16 }}
+          // 8px boven + 8px onder, plus wat extra lucht onderaan zodat het raster
+          // niet strak op de eindtijd afkapt (en je iets ruimer kunt slepen).
+          style={{ height: hoogte * PX + 16 + 28 }}
         >
           <div className="relative">
             {tijdstippen.map((m) => (
@@ -426,31 +587,55 @@ function Bewerkraster({
                     />
                   ))}
                 {dagBlokken.map((b) => {
-                  const top = (minuten(b.begin) - rasterBegin) * PX + 8;
-                  const h = Math.max(17, (minuten(b.eind) - minuten(b.begin)) * PX - 2);
+                  // Wordt dit blok gesleept? Bij verplaatsen doet de transform het
+                  // werk (top blijft staan); bij randen trekken verandert de
+                  // top/hoogte juist wél. Anders zou de beweging dubbel tellen.
+                  const s = sleep && sleep.id === b.id ? sleep : null;
+                  const herschaal = s !== null && s.modus !== "verplaats";
+                  const startMin = herschaal ? s.start : minuten(b.begin);
+                  const duurMin = herschaal ? s.duur : minuten(b.eind) - minuten(b.begin);
+                  const top = (startMin - rasterBegin) * PX + 8;
+                  const h = Math.max(17, duurMin * PX - 2);
                   const actief = b.id === gekozenId;
                   // Overlappende lessen naast elkaar: eigen kolom binnen de dag.
                   const { kol, n } = schik.get(b.id) ?? { kol: 0, n: 1 };
                   const left = `calc(${(kol * 100) / n}% + 4px)`;
                   const breedte = `calc(${100 / n}% - 8px)`;
-                  // Te klein blok? Alleen de naam. Groot genoeg? Ook de tijd —
-                  // bij smalle (naast elkaar) blokken eronder, anders ernaast.
+                  // Breed blok: naam + tijd naast elkaar op één regel (past ook
+                  // bij een kort blok). Smal (overlappend) blok: naam boven, tijd
+                  // eronder — en alleen als het hoog genoeg is, anders zou de tijd
+                  // in een te klein blokje worden gepropt.
                   const smal = n > 1;
-                  const tijdTonen = h >= 30;
+                  const tijdTonen = !smal || h >= 30;
                   const gestapeld = smal && tijdTonen;
+                  const toonBegin = s ? tijdTekst(s.start) : b.begin;
+                  const stijl: CSSProperties = {
+                    top,
+                    height: h,
+                    left,
+                    width: breedte,
+                    background: b.kleur?.bg,
+                  };
+                  if (s) {
+                    stijl.zIndex = 50;
+                    stijl.boxShadow = "0 10px 24px rgba(0,0,0,0.18)";
+                    if (s.modus === "verplaats") stijl.transform = `translate(${s.dx}px, ${s.dy}px)`;
+                  }
                   return (
                     <button
                       key={b.id}
-                      onClick={(e) => kies(b.id, e.currentTarget)}
+                      onPointerDown={(e) => omlaag(e, b)}
+                      onPointerMove={beweeg}
+                      onPointerUp={(e) => omhoog(e, b)}
                       title={`${b.naam} ${b.begin}–${b.eind}`}
                       className={
-                        "absolute overflow-hidden rounded-lg border px-1.5 py-px text-left transition-shadow " +
+                        "group absolute cursor-grab touch-none select-none overflow-hidden rounded-lg border px-1.5 py-px text-left transition-shadow active:cursor-grabbing " +
                         (gestapeld ? "flex flex-col " : "flex items-baseline gap-1.5 ") +
                         (actief
                           ? "border-brand-dark ring-2 ring-brand-dark/40"
                           : "border-black/5 hover:ring-2 hover:ring-black/10")
                       }
-                      style={{ top, height: h, left, width: breedte, background: b.kleur?.bg }}
+                      style={stijl}
                     >
                       <span
                         className={
@@ -469,8 +654,15 @@ function Bewerkraster({
                           }
                           style={{ color: b.kleur?.tekst }}
                         >
-                          {b.begin}
+                          {toonBegin}
                         </span>
+                      )}
+                      {/* Sleepgrepen boven en onder (bij hover) om te verlengen. */}
+                      {h >= 24 && (
+                        <>
+                          <span className="pointer-events-none absolute left-1/2 top-0.5 h-1 w-6 -translate-x-1/2 rounded-full bg-black/20 opacity-0 transition-opacity group-hover:opacity-100" />
+                          <span className="pointer-events-none absolute bottom-0.5 left-1/2 h-1 w-6 -translate-x-1/2 rounded-full bg-black/20 opacity-0 transition-opacity group-hover:opacity-100" />
+                        </>
                       )}
                     </button>
                   );
