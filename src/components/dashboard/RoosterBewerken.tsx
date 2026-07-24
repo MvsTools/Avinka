@@ -54,6 +54,18 @@ function snap5(m: number): number {
 }
 
 
+// Kleuren voor een zelf toegevoegd vak — vivid, in dezelfde stijl als de rest.
+const EIGEN_KLEUREN: { bg: string; tx: string }[] = [
+  { bg: "#c8f0d4", tx: "#1f7a4a" },
+  { bg: "#ffd6cf", tx: "#b34433" },
+  { bg: "#d3ddff", tx: "#3646ad" },
+  { bg: "#ffe6b8", tx: "#9a6a1a" },
+  { bg: "#e6d6ff", tx: "#6337ba" },
+  { bg: "#c2eeea", tx: "#0f7d75" },
+  { bg: "#ffd4ea", tx: "#b32f74" },
+  { bg: "#e2f0b8", tx: "#5f7a15" },
+];
+
 /** Een uniek id voor een nieuw blok. */
 function nieuwId(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) return "les-" + crypto.randomUUID();
@@ -202,6 +214,55 @@ export default function RoosterBewerken({
     setGekozen(null);
   }
 
+  // Een compleet nieuw (eigen) vak: krijgt een kleur, komt in je vakkenlijst, en
+  // wordt meteen als les geplaatst op de gekozen plek.
+  function voegEigenVakToe(naam: string) {
+    if (!toevoegen) return;
+    const t = naam.trim();
+    if (!t) return;
+    const { weekdag, start, duur } = toevoegen;
+    const vakId = nieuwId();
+    const gebruikt = new Set((concept?.setup.vakken ?? []).map((v) => v.bg));
+    const kl =
+      EIGEN_KLEUREN.find((k) => !gebruikt.has(k.bg)) ??
+      EIGEN_KLEUREN[(concept?.setup.vakken?.length ?? 0) % EIGEN_KLEUREN.length];
+    pasToe((c) => ({
+      ...c,
+      setup: {
+        ...c.setup,
+        vakken: [...(c.setup.vakken ?? []), { id: vakId, naam: t, bg: kl.bg, tx: kl.tx }],
+      },
+      blokken: [
+        ...c.blokken,
+        { id: nieuwId(), dag: DAG_ID[weekdag], start, duur, vak: vakId, naam: t, type: "les" },
+      ],
+    }));
+    setToevoegen(null);
+  }
+
+  // Een hele dag kopiëren naar een of meer andere dagen. De doeldag(en) worden
+  // vervangen door een kopie van de brondag (met nieuwe id's). Ideaal als je
+  // ochtenden op elke dag hetzelfde opbouwt; daarna pas je alleen de rest aan.
+  function kopieerDag(bron: number, doelen: number[]) {
+    pasToe((c) => {
+      const bronBlokken = c.blokken.filter((b) => DAG_ID.indexOf(b.dag) === bron);
+      const blokken = c.blokken.filter((b) => !doelen.includes(DAG_ID.indexOf(b.dag)));
+      for (const doel of doelen)
+        for (const b of bronBlokken) blokken.push({ ...b, id: nieuwId(), dag: DAG_ID[doel] });
+      return { ...c, blokken };
+    });
+  }
+
+  // Een vak uit de lijst halen (bijv. na een typfout): weg uit je vakkenlijst,
+  // inclusief de al geplaatste lessen ervan. Eén keer ongedaan te maken.
+  function verwijderVak(id: string) {
+    pasToe((c) => ({
+      ...c,
+      setup: { ...c.setup, vakken: (c.setup.vakken ?? []).filter((v) => v.id !== id) },
+      blokken: c.blokken.filter((b) => b.vak !== id),
+    }));
+  }
+
   // Een nieuw vak toevoegen op een dag+tijd (na klikken op een lege plek).
   function voegToe(weekdag: number, start: number, duur: number, vak: string, naam: string) {
     pasToe((c) => ({
@@ -310,6 +371,7 @@ export default function RoosterBewerken({
           gekozenId={gekozen?.id ?? null}
           kies={kies}
           zetBlok={zetBlok}
+          kopieerDag={kopieerDag}
           nieuwOp={(weekdag, start, duur, x, y, kant) => {
             setGekozen(null);
             setToevoegen({ weekdag, start, duur, x, y, kant });
@@ -354,6 +416,8 @@ export default function RoosterBewerken({
             kies={(vak, naam) =>
               voegToe(toevoegen.weekdag, toevoegen.start, toevoegen.duur, vak, naam)
             }
+            eigenVak={voegEigenVakToe}
+            verwijderVak={verwijderVak}
             sluit={() => setToevoegen(null)}
           />
         </>
@@ -369,6 +433,8 @@ function VakKiezer({
   y,
   kant,
   kies,
+  eigenVak,
+  verwijderVak,
   sluit,
 }: {
   vakken: { id: string; naam: string }[];
@@ -377,11 +443,14 @@ function VakKiezer({
   y: number;
   kant: "links" | "rechts";
   kies: (vak: string, naam: string) => void;
+  eigenVak: (naam: string) => void;
+  verwijderVak: (id: string) => void;
   sluit: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [top, setTop] = useState(y);
+  const [eigenNaam, setEigenNaam] = useState("");
   // Openvouwen én de positie bijstellen zodat het kiezertje volledig in beeld
   // valt (anders vallen onderaan de pagina vakken buiten beeld).
   useEffect(() => {
@@ -417,19 +486,106 @@ function VakKiezer({
         {vakken.map((v) => {
           const kl = kleurVoor(v.id, setup);
           return (
-            <button
+            <div
               key={v.id}
-              onClick={() => kies(v.id, v.naam)}
-              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm font-semibold text-ink/80 transition-colors hover:bg-black/5"
+              className="group/vak flex items-center rounded-lg transition-colors hover:bg-black/5"
             >
-              <span
-                className="h-3.5 w-3.5 shrink-0 rounded"
-                style={{ background: kl.bg, boxShadow: `inset 0 0 0 1px ${kl.tekst}33` }}
-              />
-              <span className="truncate">{v.naam}</span>
-            </button>
+              <button
+                onClick={() => kies(v.id, v.naam)}
+                className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left text-sm font-semibold text-ink/80"
+              >
+                <span
+                  className="h-3.5 w-3.5 shrink-0 rounded"
+                  style={{ background: kl.bg, boxShadow: `inset 0 0 0 1px ${kl.tekst}33` }}
+                />
+                <span className="truncate">{v.naam}</span>
+              </button>
+              <button
+                onClick={() => verwijderVak(v.id)}
+                aria-label={`${v.naam} uit de lijst halen`}
+                className="mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded text-ink/30 opacity-0 transition hover:bg-black/10 hover:text-red-600 group-hover/vak:opacity-100"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              </button>
+            </div>
           );
         })}
+      </div>
+
+      {/* Een compleet nieuw vak dat nog niet in de lijst staat. */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const t = eigenNaam.trim();
+          if (t) eigenVak(t);
+        }}
+        className="mt-1 flex items-center gap-1 border-t border-black/5 pt-1.5"
+      >
+        <input
+          value={eigenNaam}
+          onChange={(e) => setEigenNaam(e.target.value)}
+          placeholder="Eigen vak…"
+          className="min-w-0 flex-1 rounded-lg border border-black/10 bg-white px-2 py-1.5 text-sm text-ink outline-none placeholder:text-ink/35 focus:border-brand-dark/40"
+        />
+        <button
+          type="submit"
+          aria-label="Eigen vak toevoegen"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-dark text-lg font-bold text-white transition-transform duration-150 active:scale-[0.94]"
+        >
+          +
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function KopieerMenu({
+  bron,
+  x,
+  y,
+  kant,
+  kopieer,
+}: {
+  bron: number;
+  x: number;
+  y: number;
+  kant: "links" | "rechts";
+  kopieer: (doelen: number[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => setOpen(true), []);
+  const anderen = [0, 1, 2, 3, 4].filter((d) => d !== bron);
+  return (
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{ left: x, top: y, width: 220 }}
+      className={
+        "fixed z-50 rounded-2xl border border-black/10 bg-white p-2 shadow-xl transition duration-150 ease-out " +
+        (kant === "links" ? "origin-top-right " : "origin-top-left ") +
+        (open ? "scale-100 opacity-100" : "scale-95 opacity-0")
+      }
+    >
+      <p className="border-b border-black/5 px-2 pb-1.5 pt-1 text-sm font-bold text-ink">
+        Dag kopiëren naar:
+      </p>
+      <div className="mt-1 flex flex-col gap-0.5">
+        {anderen.map((d) => (
+          <button
+            key={d}
+            onClick={() => kopieer([d])}
+            className="rounded-lg px-2 py-1.5 text-left text-sm font-semibold capitalize text-ink/80 transition-colors hover:bg-black/5"
+          >
+            {DAGNAMEN[d]}
+          </button>
+        ))}
+        <button
+          onClick={() => kopieer(anderen)}
+          className="mt-0.5 rounded-lg border-t border-black/5 px-2 pb-1.5 pt-2 text-left text-sm font-bold text-brand-dark transition-colors hover:bg-black/5"
+        >
+          Alle andere dagen
+        </button>
       </div>
     </div>
   );
@@ -575,6 +731,7 @@ function Bewerkraster({
   gekozenId,
   kies,
   zetBlok,
+  kopieerDag,
   nieuwOp,
   voorbeeld,
 }: {
@@ -582,6 +739,7 @@ function Bewerkraster({
   gekozenId: string | null;
   kies: (id: string, el: HTMLElement) => void;
   zetBlok: (id: string, w: { weekdag?: number; start?: number; duur?: number }) => void;
+  kopieerDag: (bron: number, doelen: number[]) => void;
   nieuwOp: (
     weekdag: number,
     start: number,
@@ -627,6 +785,26 @@ function Bewerkraster({
     gapStart: number;
     gapEind: number;
   } | null>(null);
+  // Het "kopieer dag"-menu: welke dag we kopiëren en waar het menu staat.
+  const [kopieer, setKopieer] = useState<{
+    bron: number;
+    x: number;
+    y: number;
+    kant: "links" | "rechts";
+  } | null>(null);
+
+  function openKopieer(weekdag: number, el: HTMLElement) {
+    const r = el.getBoundingClientRect();
+    const breedte = 220;
+    let x = r.left;
+    let kant: "links" | "rechts" = "rechts";
+    if (x + breedte > window.innerWidth - 8) {
+      x = r.right - breedte;
+      kant = "links";
+    }
+    x = Math.max(8, x);
+    setKopieer({ bron: weekdag, x, y: r.bottom + 6, kant });
+  }
 
   // Linkerkant en breedte van één dagkolom (om bij het slepen de dag te bepalen).
   function kolommen() {
@@ -798,14 +976,29 @@ function Bewerkraster({
   }
 
   return (
+    <>
     <div className="overflow-x-auto">
       <div className="min-w-[46rem] overflow-hidden rounded-3xl border border-black/5 bg-white shadow-sm">
         {/* Dagkoppen — geen datums, want dit is het sjabloon. */}
         <div className="grid grid-cols-[3.5rem_repeat(5,minmax(0,1fr))] border-b border-black/5">
           <div />
-          {DAGNAMEN.map((naam) => (
-            <div key={naam} className="border-l border-black/5 px-2 py-2">
-              <span className="block text-sm font-bold text-ink">{naam}</span>
+          {DAGNAMEN.map((naam, weekdag) => (
+            <div
+              key={naam}
+              className="flex items-center justify-between gap-1 border-l border-black/5 px-2 py-2"
+            >
+              <span className="truncate text-sm font-bold text-ink">{naam}</span>
+              <button
+                onClick={(e) => openKopieer(weekdag, e.currentTarget)}
+                aria-label={`${naam} kopiëren naar een andere dag`}
+                title="Kopieer deze dag"
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-ink/35 transition-colors hover:bg-black/5 hover:text-ink"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="9" y="9" width="11" height="11" rx="2" />
+                  <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+                </svg>
+              </button>
             </div>
           ))}
         </div>
@@ -1001,5 +1194,22 @@ function Bewerkraster({
         </div>
       </div>
     </div>
+
+      {kopieer && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setKopieer(null)} />
+          <KopieerMenu
+            bron={kopieer.bron}
+            x={kopieer.x}
+            y={kopieer.y}
+            kant={kopieer.kant}
+            kopieer={(doelen) => {
+              kopieerDag(kopieer.bron, doelen);
+              setKopieer(null);
+            }}
+          />
+        </>
+      )}
+    </>
   );
 }
