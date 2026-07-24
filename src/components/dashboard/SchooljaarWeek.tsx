@@ -177,10 +177,10 @@ function Weekraster({
   hoogte: number;
   opendag: (datum: string) => void;
 }) {
-  // Iets meer dan één pixel per minuut: een blok van 45 minuten wordt ~56 hoog.
-  // Net genoeg dat een kort blok (dagopening, pauze: 15 min) zijn naam nog kwijt
-  // kan zonder dat de tekst onderaan wegvalt.
-  const PX = 1.25;
+  // Anderhalve pixel per minuut: een blok van 45 minuten wordt ~66 hoog. Ruim
+  // genoeg dat ook korte blokken (10-15 min) leesbaar blijven zonder over hun
+  // buur eronder te vallen.
+  const PX = 1.5;
   const BOVEN = 20; // lucht boven de eerste les/tijd, zodat het niet krap begint
 
   // De blokken tonen zelf geen tijd (dat werd te druk). In plaats daarvan de
@@ -301,7 +301,9 @@ function Weekraster({
               ) : (
                 lesBlokken.map((b) => {
                     const top = (minuten(b.begin) - rasterBegin) * PX + BOVEN;
-                    const h = Math.max(17, (minuten(b.eind) - minuten(b.begin)) * PX - 2);
+                    // Echte hoogte (geen minimum van 17), anders steekt een kort blok
+                    // over zijn buuronder heen.
+                    const h = Math.max(6, (minuten(b.eind) - minuten(b.begin)) * PX - 2);
                     // Overlappende lessen naast elkaar: eigen kolom binnen de dag.
                     const { kol, n } = schik.get(b.id) ?? { kol: 0, n: 1 };
                     const left = `calc(${(kol * 100) / n}% + 4px)`;
@@ -317,14 +319,14 @@ function Weekraster({
                         key={b.id}
                         title={`${b.naam} ${b.begin}–${b.eind}`}
                         className={
-                          "absolute overflow-hidden rounded-lg border border-black/5 bg-cream/70 px-1.5 py-px " +
+                          "absolute overflow-hidden rounded-lg border border-black/5 bg-cream/70 px-1.5 py-0 " +
                           (gestapeld ? "flex flex-col" : "flex items-baseline gap-1.5")
                         }
                         style={{ top, height: h, left, width: breedte, background: b.kleur?.bg }}
                       >
                         <span
                           className={
-                            "truncate text-xs font-bold leading-tight " +
+                            "truncate text-xs font-bold leading-none " +
                             (tijdTonen && !smal ? "min-w-0 flex-1" : "")
                           }
                           style={{ color: b.kleur?.tekst }}
@@ -334,7 +336,7 @@ function Weekraster({
                         {tijdTonen && (
                           <span
                             className={
-                              "text-xs leading-tight tabular-nums opacity-60 " +
+                              "text-xs leading-none tabular-nums opacity-60 " +
                               (gestapeld ? "truncate" : "shrink-0")
                             }
                             style={{ color: b.kleur?.tekst }}

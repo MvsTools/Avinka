@@ -1,8 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
-import { naarBlokken, rasterGrenzen, schikDag, type Basisrooster } from "@/lib/planning/rooster";
+import type {
+  CSSProperties,
+  MouseEvent as ReactMouseEvent,
+  PointerEvent as ReactPointerEvent,
+} from "react";
+import {
+  kleurVoor,
+  naarBlokken,
+  rasterGrenzen,
+  schikDag,
+  type Basisrooster,
+  type RoosterSetup,
+} from "@/lib/planning/rooster";
 import type { Roosterblok } from "@/lib/planning/types";
 
 // De bewerkstand van het basisrooster: je vaste lesweek als sjabloon (ma–vr,
@@ -18,9 +29,34 @@ import type { Roosterblok } from "@/lib/planning/types";
 const DAGNAMEN = ["maandag", "dinsdag", "woensdag", "donderdag", "vrijdag"];
 const DAG_ID = ["ma", "di", "wo", "do", "vr"]; // weekdag-nummer → zoals de tool bewaart
 
+// Terugval-vakken voor het toevoegen, als een rooster (zeldzaam) geen eigen
+// vakkenlijst heeft meegekregen. Zelfde ids als de kleurencatalogus.
+const STANDAARD_VAKKEN: { id: string; naam: string }[] = [
+  { id: "dagopening", naam: "Dagopening" },
+  { id: "rekenen", naam: "Rekenen" },
+  { id: "taal", naam: "Taal" },
+  { id: "spelling", naam: "Spelling" },
+  { id: "tlezen", naam: "Technisch lezen" },
+  { id: "blezen", naam: "Begrijpend lezen" },
+  { id: "schrijven", naam: "Schrijven" },
+  { id: "wo", naam: "Wereldoriëntatie" },
+  { id: "engels", naam: "Engels" },
+  { id: "creatief", naam: "Creatief" },
+  { id: "muziek", naam: "Muziek" },
+  { id: "seo", naam: "Sociaal-emotioneel" },
+  { id: "verkeer", naam: "Verkeer" },
+  { id: "gym", naam: "Gym" },
+];
+
 /** Ronden op 5 minuten, zodat slepen netjes "klikt". */
 function snap5(m: number): number {
   return Math.round(m / 5) * 5;
+}
+
+/** Een uniek id voor een nieuw blok. */
+function nieuwId(): string {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return "les-" + crypto.randomUUID();
+  return "les-" + Date.now() + "-" + Math.round(Math.random() * 1e6);
 }
 
 /** "08:30" → 510 */
@@ -52,6 +88,14 @@ export default function RoosterBewerken({
   const [fout, setFout] = useState<string | null>(null);
   const [opslaanBezig, setOpslaanBezig] = useState(false);
   const [gekozen, setGekozen] = useState<Gekozen | null>(null);
+  const [toevoegen, setToevoegen] = useState<{
+    weekdag: number;
+    start: number;
+    duur: number;
+    x: number;
+    y: number;
+    kant: "links" | "rechts";
+  } | null>(null);
 
   // Het rooster van je account ophalen zodra de bewerkstand opent.
   useEffect(() => {
@@ -121,6 +165,10 @@ export default function RoosterBewerken({
     [concept],
   );
   const gekozenBlok = gekozen ? lessen.find((b) => b.id === gekozen.id) ?? null : null;
+  const vakkenLijst =
+    concept?.setup.vakken && concept.setup.vakken.length > 0
+      ? concept.setup.vakken
+      : STANDAARD_VAKKEN;
 
   // De onderkant verschuiven: alleen de lengte verandert (begintijd blijft staan).
   function wijzigEinde(id: string, delta: number) {
@@ -151,6 +199,18 @@ export default function RoosterBewerken({
   function verwijder(id: string) {
     pasToe((c) => ({ ...c, blokken: c.blokken.filter((b) => b.id !== id) }));
     setGekozen(null);
+  }
+
+  // Een nieuw vak toevoegen op een dag+tijd (na klikken op een lege plek).
+  function voegToe(weekdag: number, start: number, duur: number, vak: string, naam: string) {
+    pasToe((c) => ({
+      ...c,
+      blokken: [
+        ...c.blokken,
+        { id: nieuwId(), dag: DAG_ID[weekdag], start, duur, vak, naam, type: "les" },
+      ],
+    }));
+    setToevoegen(null);
   }
 
   // Een blok naar een andere dag/tijd of lengte zetten (na het slepen).
@@ -204,6 +264,7 @@ export default function RoosterBewerken({
           </svg>
           Je past je basisrooster aan
         </span>
+        <span className="text-sm text-ink/55">Klik op een lege plek voor een nieuwe les.</span>
         {vuil && <span className="text-xs font-semibold text-ink/45">Niet opgeslagen</span>}
 
         <span className="ml-auto flex items-center gap-2">
@@ -248,6 +309,15 @@ export default function RoosterBewerken({
           gekozenId={gekozen?.id ?? null}
           kies={kies}
           zetBlok={zetBlok}
+          nieuwOp={(weekdag, start, duur, x, y, kant) => {
+            setGekozen(null);
+            setToevoegen({ weekdag, start, duur, x, y, kant });
+          }}
+          voorbeeld={
+            toevoegen
+              ? { weekdag: toevoegen.weekdag, start: toevoegen.start, duur: toevoegen.duur }
+              : null
+          }
         />
       )}
 
@@ -269,6 +339,74 @@ export default function RoosterBewerken({
           />
         </>
       )}
+
+      {/* Het kiezertje voor een nieuw vak, na klikken op een lege plek. */}
+      {toevoegen && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setToevoegen(null)} />
+          <VakKiezer
+            vakken={vakkenLijst}
+            setup={concept?.setup ?? {}}
+            x={toevoegen.x}
+            y={toevoegen.y}
+            kant={toevoegen.kant}
+            kies={(vak, naam) =>
+              voegToe(toevoegen.weekdag, toevoegen.start, toevoegen.duur, vak, naam)
+            }
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
+function VakKiezer({
+  vakken,
+  setup,
+  x,
+  y,
+  kant,
+  kies,
+}: {
+  vakken: { id: string; naam: string }[];
+  setup: RoosterSetup;
+  x: number;
+  y: number;
+  kant: "links" | "rechts";
+  kies: (vak: string, naam: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => setOpen(true), []);
+
+  return (
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{ left: x, top: y, width: 220 }}
+      className={
+        "fixed z-50 rounded-2xl border border-black/10 bg-white p-2 shadow-xl transition duration-150 ease-out " +
+        (kant === "links" ? "origin-top-right " : "origin-top-left ") +
+        (open ? "scale-100 opacity-100" : "scale-95 opacity-0")
+      }
+    >
+      <p className="px-2 py-1 text-xs font-bold uppercase tracking-wide text-ink/40">Welke les?</p>
+      <div className="flex max-h-64 flex-col gap-0.5 overflow-y-auto">
+        {vakken.map((v) => {
+          const kl = kleurVoor(v.id, setup);
+          return (
+            <button
+              key={v.id}
+              onClick={() => kies(v.id, v.naam)}
+              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm font-semibold text-ink/80 transition-colors hover:bg-black/5"
+            >
+              <span
+                className="h-3.5 w-3.5 shrink-0 rounded"
+                style={{ background: kl.bg, boxShadow: `inset 0 0 0 1px ${kl.tekst}33` }}
+              />
+              <span className="truncate">{v.naam}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -413,13 +551,24 @@ function Bewerkraster({
   gekozenId,
   kies,
   zetBlok,
+  nieuwOp,
+  voorbeeld,
 }: {
   lessen: Roosterblok[];
   gekozenId: string | null;
   kies: (id: string, el: HTMLElement) => void;
   zetBlok: (id: string, w: { weekdag?: number; start?: number; duur?: number }) => void;
+  nieuwOp: (
+    weekdag: number,
+    start: number,
+    duur: number,
+    x: number,
+    y: number,
+    kant: "links" | "rechts",
+  ) => void;
+  voorbeeld: { weekdag: number; start: number; duur: number } | null;
 }) {
-  const PX = 1.25;
+  const PX = 1.5; // px per minuut; iets ruimer zodat ook korte blokken leesbaar zijn
   const RAND = 9; // px boven-/onderrand waar je kunt trekken (i.p.v. verplaatsen)
   const BOVEN = 20; // lucht boven de eerste les/tijd, zodat het niet krap begint
   const grenzen = rasterGrenzen(lessen);
@@ -443,6 +592,9 @@ function Bewerkraster({
   const sleepRef = useRef<Sleep | null>(null);
   sleepRef.current = sleep;
   const dragRef = useRef<Drag | null>(null);
+  const sleepEinde = useRef(0); // tijdstip van de laatste écht-gesleepte beweging
+  // Waar de muis in de lege ruimte staat: toont alvast een plek voor een nieuwe les.
+  const [hover, setHover] = useState<{ weekdag: number; start: number; duur: number } | null>(null);
 
   // Linkerkant en breedte van één dagkolom (om bij het slepen de dag te bepalen).
   function kolommen() {
@@ -454,6 +606,7 @@ function Bewerkraster({
   function omlaag(e: ReactPointerEvent, b: Roosterblok) {
     if (e.button > 0) return;
     e.preventDefault();
+    setHover(null);
     const el = e.currentTarget as HTMLElement;
     const rect = el.getBoundingClientRect();
     const offsetY = e.clientY - rect.top;
@@ -537,7 +690,70 @@ function Bewerkraster({
       kies(b.id, e.currentTarget as HTMLElement);
       return;
     }
+    sleepEinde.current = performance.now();
     zetBlok(s.id, { weekdag: s.weekdag, start: s.start, duur: s.duur });
+  }
+
+  // De tijd (gesnapt) die hoort bij een verticale muispositie in een dagkolom.
+  function tijdBijMuis(clientY: number, rect: DOMRect): number {
+    const start = snap5((clientY - rect.top - BOVEN) / PX) + rasterBegin;
+    return Math.max(rasterBegin, Math.min(rasterTot - 10, start));
+  }
+
+  // Is er op tijdstip T (in deze dag) plek voor een nieuwe les? Zo ja, hoe lang?
+  // Bezet (er staat al een les op dat moment, ook al is er visueel witruimte
+  // naast een kort blok) → geen plek. Anders: duur tot de eerstvolgende les,
+  // met een prettige standaard van 45 min als er ruim plek is.
+  function plekBij(weekdag: number, T: number): { start: number; duur: number } | null {
+    const dag = lessen
+      .filter((b) => b.weekdag === weekdag)
+      .map((b) => ({ s: minuten(b.begin), e: minuten(b.eind) }));
+    if (dag.some((b) => b.s <= T && T < b.e)) return null; // bezet op dit moment
+    let gapEind = rasterTot;
+    for (const b of dag) if (b.s > T && b.s < gapEind) gapEind = b.s;
+    const duur = Math.min(45, gapEind - T);
+    // Overal een les kunnen maken, ook heel kort. Is de ruimte te klein voor een
+    // tijd, dan tonen we die gewoon niet (zie hieronder).
+    if (duur < 5) return null;
+    return { start: T, duur };
+  }
+
+  // Muis over de lege ruimte: alvast een plek tonen onder de cursor.
+  function beweegLeeg(e: ReactMouseEvent, weekdag: number) {
+    if (dragRef.current) return;
+    if (e.target !== e.currentTarget) {
+      setHover(null);
+      return;
+    }
+    const T = tijdBijMuis(e.clientY, (e.currentTarget as HTMLElement).getBoundingClientRect());
+    const plek = plekBij(weekdag, T);
+    setHover((h) =>
+      plek === null
+        ? null
+        : h && h.weekdag === weekdag && h.start === plek.start && h.duur === plek.duur
+          ? h
+          : { weekdag, ...plek },
+    );
+  }
+
+  // Klik op een lege plek in een dagkolom → een nieuw vak toevoegen op die tijd.
+  function klikLeeg(e: ReactMouseEvent, weekdag: number) {
+    if (e.target !== e.currentTarget) return; // alleen de lege achtergrond, geen blok
+    if (performance.now() - sleepEinde.current < 250) return; // net gesleept: geen toevoeg
+    const T = tijdBijMuis(e.clientY, (e.currentTarget as HTMLElement).getBoundingClientRect());
+    const plek = plekBij(weekdag, T);
+    if (plek === null) return; // bezet: hier niets plaatsen
+    const start = plek.start;
+    const breedte = 220;
+    let x = e.clientX + 8;
+    let kant: "links" | "rechts" = "rechts";
+    if (x + breedte > window.innerWidth - 8) {
+      x = e.clientX - breedte - 8;
+      kant = "links";
+    }
+    x = Math.max(8, x);
+    const y = Math.max(8, Math.min(e.clientY, window.innerHeight - 240));
+    nieuwOp(weekdag, start, plek.duur, x, y, kant);
   }
 
   return (
@@ -576,8 +792,26 @@ function Bewerkraster({
           {[0, 1, 2, 3, 4].map((weekdag) => {
             const dagBlokken = lessen.filter((b) => b.weekdag === weekdag);
             const schik = schikDag(dagBlokken);
+            // De voorbeeld-plek: bij een open kiezertje de gekozen plek (steviger),
+            // anders de plek onder je muis (lichter, met +).
+            const spook =
+              voorbeeld && voorbeeld.weekdag === weekdag
+                ? voorbeeld
+                : !voorbeeld && hover && hover.weekdag === weekdag
+                  ? hover
+                  : null;
+            const spookStevig = Boolean(voorbeeld && voorbeeld.weekdag === weekdag);
+            // Het voorbeeld precies zo hoog als de vrije ruimte (geen minimum van
+            // 17), anders zou het bij een korte gap over de les eronder vallen.
+            const spookH = spook ? Math.max(6, spook.duur * PX - 2) : 0;
             return (
-              <div key={weekdag} className="relative border-l border-black/5">
+              <div
+                key={weekdag}
+                className="relative border-l border-black/5"
+                onClick={(e) => klikLeeg(e, weekdag)}
+                onMouseMove={(e) => beweegLeeg(e, weekdag)}
+                onMouseLeave={() => setHover(null)}
+              >
                 {uren
                   .filter((m) => m !== rasterBegin && m !== rasterTot)
                   .map((m) => (
@@ -596,7 +830,9 @@ function Bewerkraster({
                   const startMin = herschaal ? s.start : minuten(b.begin);
                   const duurMin = herschaal ? s.duur : minuten(b.eind) - minuten(b.begin);
                   const top = (startMin - rasterBegin) * PX + BOVEN;
-                  const h = Math.max(17, duurMin * PX - 2);
+                  // Echte hoogte (geen minimum van 17), anders steekt een kort blok
+                  // over zijn buuronder heen. Tekst die niet past, wordt afgekapt.
+                  const h = Math.max(6, duurMin * PX - 2);
                   const actief = b.id === gekozenId;
                   // Overlappende lessen naast elkaar: eigen kolom binnen de dag.
                   const { kol, n } = schik.get(b.id) ?? { kol: 0, n: 1 };
@@ -630,7 +866,7 @@ function Bewerkraster({
                       onPointerUp={(e) => omhoog(e, b)}
                       title={`${b.naam} ${b.begin}–${b.eind}`}
                       className={
-                        "group absolute cursor-grab touch-none select-none overflow-hidden rounded-lg border px-1.5 py-px text-left transition-shadow active:cursor-grabbing " +
+                        "group absolute cursor-grab touch-none select-none overflow-hidden rounded-lg border px-1.5 py-0 text-left transition-shadow active:cursor-grabbing " +
                         (gestapeld ? "flex flex-col " : "flex items-baseline gap-1.5 ") +
                         (actief
                           ? "border-brand-dark ring-2 ring-brand-dark/40"
@@ -640,7 +876,7 @@ function Bewerkraster({
                     >
                       <span
                         className={
-                          "truncate text-xs font-bold leading-tight " +
+                          "truncate text-xs font-bold leading-none " +
                           (tijdTonen && !smal ? "min-w-0 flex-1" : "")
                         }
                         style={{ color: b.kleur?.tekst }}
@@ -650,7 +886,7 @@ function Bewerkraster({
                       {tijdTonen && (
                         <span
                           className={
-                            "text-xs leading-tight tabular-nums opacity-60 " +
+                            "text-xs leading-none tabular-nums opacity-60 " +
                             (gestapeld ? "truncate" : "shrink-0")
                           }
                           style={{ color: b.kleur?.tekst }}
@@ -668,6 +904,30 @@ function Bewerkraster({
                     </button>
                   );
                 })}
+                {/* Voorbeeld-plek: onder de muis (hover) of de gekozen plek (kiezertje).
+                    De hoogte volgt de vrije ruimte tot de volgende les; de tijd
+                    staat bovenin (waar de les begint). */}
+                {spook && (
+                  <div
+                    className={
+                      "pointer-events-none absolute left-1 right-1 overflow-hidden rounded-lg border-2 border-dashed px-1.5 py-px " +
+                      (spookStevig
+                        ? "border-brand-dark/50 bg-brand-soft/60"
+                        : "border-brand-dark/30 bg-brand-soft/35")
+                    }
+                    style={{
+                      top: (spook.start - rasterBegin) * PX + BOVEN,
+                      height: spookH,
+                    }}
+                  >
+                    {spookH >= 16 && (
+                      <span className="flex items-center gap-1 text-xs font-bold leading-tight tabular-nums text-brand-dark">
+                        {!spookStevig && <span className="text-sm leading-none">+</span>}
+                        {tijdTekst(spook.start)}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}

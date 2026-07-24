@@ -86,7 +86,7 @@ const VAK_KLEUR_STANDAARD: Kleur = { bg: "#efeae0", tekst: "#5c5647" };
  * dan de kleur die een eigen vak zelf heeft meegekregen in de setup, en anders
  * een neutrale terugval.
  */
-function kleurVoor(vak: string, setup: RoosterSetup): Kleur {
+export function kleurVoor(vak: string, setup: RoosterSetup): Kleur {
   if (VAK_KLEUR[vak]) return VAK_KLEUR[vak];
   const eigen = setup.vakken?.find((v) => v.id === vak);
   if (eigen?.bg && eigen?.tx) return { bg: eigen.bg, tekst: eigen.tx };
