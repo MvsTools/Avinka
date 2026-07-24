@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   bereikTekst,
   dagbeeld,
   maandagVan,
   plus,
   rasterGrenzen,
+  schikDag,
   volledig,
   weeknummer,
 } from "@/lib/planning";
@@ -14,13 +16,16 @@ import type { Dagbeeld, PlanningBron } from "@/lib/planning";
 import { ETIKET } from "./schooljaar-stijl";
 import SchooljaarDagkaart from "./SchooljaarDagkaart";
 import RoosterOvernemen from "./RoosterOvernemen";
+import RoosterBewerken from "./RoosterBewerken";
 
-// De Week-laag: je basisrooster in een concrete week.
+// De Week-laag: je basisrooster in een concrete week (alleen-lezen), plus de
+// bewerkstand waarin je het sjabloon aanpast.
 //
 // AFSPRAAK (docs/planning-mijn-schooljaar.md §3.6): agenda en rooster lopen niet
 // door elkaar. Boven elke dag een smal agenda-strookje, de lessen in het raster
-// eronder, en na-schooltijd apart. Een vakantie of studiedag vult het rooster
-// niet maar wist het.
+// eronder. Een vakantie of studiedag vult het rooster niet maar wist het.
+// "Na schooltijd" hoort niet bij het basisrooster (wisselt per dag) en staat hier
+// dus niet.
 
 const DAGNAMEN = ["maandag", "dinsdag", "woensdag", "donderdag", "vrijdag"];
 
@@ -47,11 +52,27 @@ export default function SchooljaarWeek({
   groepen: number[];
 }) {
   const { schooljaar } = bron;
+  const router = useRouter();
   const binnenJaar = vandaag >= schooljaar.start && vandaag <= schooljaar.eind;
   const [maandag, setMaandag] = useState(() =>
     maandagVan(binnenJaar ? vandaag : schooljaar.start),
   );
   const [dagkaart, setDagkaart] = useState<string | null>(null);
+  const [bewerken, setBewerken] = useState(false);
+
+  // In de bewerkstand vervangt de editor het overzicht. Bij "Klaar" halen we de
+  // server opnieuw op (router.refresh), zodat het overzicht je nieuwe rooster toont.
+  if (bewerken) {
+    return (
+      <RoosterBewerken
+        schooljaar={schooljaar.id}
+        onKlaar={() => {
+          setBewerken(false);
+          router.refresh();
+        }}
+      />
+    );
+  }
 
   const dagen = [0, 1, 2, 3, 4].map((n) => dagbeeld(bron, plus(maandag, n)));
   const heeftRooster = bron.blokken.length > 0;
@@ -104,11 +125,11 @@ export default function SchooljaarWeek({
             Naar deze week
           </button>
         )}
-        {/* Aanpassen doe je niet in dit overzicht, maar in het aanpasscherm (de
-            weekplanning-editor). Alleen bij een lopend jaar met een rooster. */}
+        {/* Aanpassen gebeurt in dit scherm zelf, als aparte bewerkstand — geen
+            sprong naar een los scherm. Alleen bij een lopend jaar met een rooster. */}
         {heeftRooster && !schooljaar.afgesloten && (
-          <a
-            href="/tools/weekplanning.html"
+          <button
+            onClick={() => setBewerken(true)}
             className="ml-auto inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3.5 py-2 text-sm font-bold text-ink/80 transition-transform duration-150 hover:text-ink active:scale-[0.97]"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -116,7 +137,7 @@ export default function SchooljaarWeek({
               <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
             </svg>
             Basisrooster aanpassen
-          </a>
+          </button>
         )}
       </div>
 
@@ -250,7 +271,10 @@ function Weekraster({
             ))}
           </div>
 
-          {dagen.map((d) => (
+          {dagen.map((d) => {
+            const lesBlokken = d.vrij ? [] : d.blokken.filter((b) => b.soort === "les");
+            const schik = schikDag(lesBlokken);
+            return (
             <div key={d.datum} className="relative border-l border-black/5">
               {!d.vrij &&
                 uren
@@ -273,39 +297,55 @@ function Weekraster({
                   </span>
                 </div>
               ) : (
-                d.blokken
-                  .filter((b) => b.soort === "les")
-                  .map((b) => {
+                lesBlokken.map((b) => {
                     const top = (minuten(b.begin) - rasterBegin) * PX + 8;
                     const h = Math.max(17, (minuten(b.eind) - minuten(b.begin)) * PX - 2);
+                    // Overlappende lessen naast elkaar: eigen kolom binnen de dag.
+                    const { kol, n } = schik.get(b.id) ?? { kol: 0, n: 1 };
+                    const left = `calc(${(kol * 100) / n}% + 4px)`;
+                    const breedte = `calc(${100 / n}% - 8px)`;
+                    // Te klein blok? Alleen de naam. Groot genoeg? Ook de tijd —
+                    // bij smalle (naast elkaar) blokken eronder, anders ernaast.
+                    const smal = n > 1;
+                    const tijdTonen = h >= 30;
+                    const gestapeld = smal && tijdTonen;
                     return (
                       <div
                         key={b.id}
                         title={`${b.naam} ${b.begin}–${b.eind}`}
-                        className="absolute left-1 right-1 flex items-baseline gap-1.5 overflow-hidden rounded-lg border border-black/5 bg-cream/70 px-1.5 py-px"
-                        style={{ top, height: h, background: b.kleur?.bg }}
+                        className={
+                          "absolute overflow-hidden rounded-lg border border-black/5 bg-cream/70 px-1.5 py-px " +
+                          (gestapeld ? "flex flex-col" : "flex items-baseline gap-1.5")
+                        }
+                        style={{ top, height: h, left, width: breedte, background: b.kleur?.bg }}
                       >
                         <span
-                          className="min-w-0 flex-1 truncate text-xs font-bold leading-tight"
+                          className={
+                            "truncate text-xs font-bold leading-tight " +
+                            (tijdTonen && !smal ? "min-w-0 flex-1" : "")
+                          }
                           style={{ color: b.kleur?.tekst }}
                         >
                           {b.naam}
                         </span>
-                        {/* De begintijd op het blok zelf: klein, gedempt en rechts,
-                            zoals in volwassen agenda's. Zo lees je 'm zonder de
-                            hulplijnen nodig te hebben. */}
-                        <span
-                          className="shrink-0 text-xs leading-tight tabular-nums opacity-60"
-                          style={{ color: b.kleur?.tekst }}
-                        >
-                          {b.begin}
-                        </span>
+                        {tijdTonen && (
+                          <span
+                            className={
+                              "text-xs leading-tight tabular-nums opacity-60 " +
+                              (gestapeld ? "truncate" : "shrink-0")
+                            }
+                            style={{ color: b.kleur?.tekst }}
+                          >
+                            {b.begin}
+                          </span>
+                        )}
                       </div>
                     );
                   })
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
 
       </div>

@@ -136,6 +136,56 @@ export function naarBlokken(rooster: Basisrooster | null): Roosterblok[] {
 }
 
 /**
+ * Overlappen twee lessen op dezelfde dag qua tijd, dan horen ze naast elkaar in
+ * plaats van over elkaar (net als afspraken in een agenda). Deze functie geeft
+ * per blok een kolom (`kol`) en het aantal kolommen in zijn overlap-groep (`n`),
+ * zodat een weergave `left = kol/n` en `breedte = 1/n` kan rekenen.
+ */
+export function schikDag(blokken: Roosterblok[]): Map<string, { kol: number; n: number }> {
+  const min = (t: string) => {
+    const [u, m] = t.split(":").map(Number);
+    return u * 60 + (m || 0);
+  };
+  const items = blokken
+    .map((b) => ({ id: b.id, start: min(b.begin), eind: min(b.eind), kol: 0 }))
+    .sort((a, b) => a.start - b.start || a.eind - b.eind);
+
+  const uit = new Map<string, { kol: number; n: number }>();
+  let groep: typeof items = [];
+  let groepEind = -1;
+  let kolommen: number[] = []; // laatste eindtijd per kolom, binnen de groep
+
+  const sluitGroep = () => {
+    const n = Math.max(1, kolommen.length);
+    for (const it of groep) uit.set(it.id, { kol: it.kol, n });
+    groep = [];
+    kolommen = [];
+  };
+
+  for (const it of items) {
+    // Geen overlap meer met de lopende groep? Dan die groep afsluiten.
+    if (groep.length && it.start >= groepEind) {
+      sluitGroep();
+      groepEind = -1;
+    }
+    // De eerste kolom die vrij is (waarvan de vorige les al klaar is), anders een
+    // nieuwe kolom erbij.
+    let kol = kolommen.findIndex((e) => e <= it.start);
+    if (kol === -1) {
+      kol = kolommen.length;
+      kolommen.push(it.eind);
+    } else {
+      kolommen[kol] = it.eind;
+    }
+    it.kol = kol;
+    groep.push(it);
+    groepEind = Math.max(groepEind, it.eind);
+  }
+  sluitGroep();
+  return uit;
+}
+
+/**
  * De vroegste begintijd en de laatste eindtijd van de lesdagen, zodat de
  * weekweergave weet hoe hoog het raster moet zijn. Zonder rooster geven we een
  * gewone schooldag terug.
