@@ -421,11 +421,12 @@ function Bewerkraster({
 }) {
   const PX = 1.25;
   const RAND = 9; // px boven-/onderrand waar je kunt trekken (i.p.v. verplaatsen)
+  const BOVEN = 20; // lucht boven de eerste les/tijd, zodat het niet krap begint
   const grenzen = rasterGrenzen(lessen);
   const rasterBegin = minuten(grenzen.begin);
   const rasterTot = minuten(grenzen.eind);
   const hoogte = Math.max(1, rasterTot - rasterBegin);
-  const y = (m: number) => (m - rasterBegin) * PX + 8;
+  const y = (m: number) => (m - rasterBegin) * PX + BOVEN;
 
   const uren: number[] = [];
   for (let m = Math.ceil(rasterBegin / 60) * 60; m <= rasterTot; m += 60) uren.push(m);
@@ -556,9 +557,9 @@ function Bewerkraster({
         <div
           ref={gridRef}
           className="grid grid-cols-[3.5rem_repeat(5,minmax(0,1fr))]"
-          // 8px boven + 8px onder, plus wat extra lucht onderaan zodat het raster
-          // niet strak op de eindtijd afkapt (en je iets ruimer kunt slepen).
-          style={{ height: hoogte * PX + 16 + 28 }}
+          // Lucht boven (BOVEN) en onderaan zodat het raster niet strak afkapt (en
+          // je iets ruimer kunt slepen).
+          style={{ height: hoogte * PX + BOVEN + 36 }}
         >
           <div className="relative">
             {tijdstippen.map((m) => (
@@ -594,7 +595,7 @@ function Bewerkraster({
                   const herschaal = s !== null && s.modus !== "verplaats";
                   const startMin = herschaal ? s.start : minuten(b.begin);
                   const duurMin = herschaal ? s.duur : minuten(b.eind) - minuten(b.begin);
-                  const top = (startMin - rasterBegin) * PX + 8;
+                  const top = (startMin - rasterBegin) * PX + BOVEN;
                   const h = Math.max(17, duurMin * PX - 2);
                   const actief = b.id === gekozenId;
                   // Overlappende lessen naast elkaar: eigen kolom binnen de dag.

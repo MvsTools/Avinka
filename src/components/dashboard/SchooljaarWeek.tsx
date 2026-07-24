@@ -181,12 +181,13 @@ function Weekraster({
   // Net genoeg dat een kort blok (dagopening, pauze: 15 min) zijn naam nog kwijt
   // kan zonder dat de tekst onderaan wegvalt.
   const PX = 1.25;
+  const BOVEN = 20; // lucht boven de eerste les/tijd, zodat het niet krap begint
 
   // De blokken tonen zelf geen tijd (dat werd te druk). In plaats daarvan de
   // vertrouwde tijdbalk met alle hele uren, plus de schoolbegin- en eindtijd als
   // extra ankers (tenzij die al op een heel uur vallen). De hulplijnen door de
   // dagen lopen op de hele uren mee.
-  const y = (m: number) => (m - rasterBegin) * PX + 8;
+  const y = (m: number) => (m - rasterBegin) * PX + BOVEN;
   const rasterTot = rasterBegin + hoogte;
   const uren: number[] = [];
   for (let m = Math.ceil(rasterBegin / 60) * 60; m <= rasterTot; m += 60) uren.push(m);
@@ -257,8 +258,8 @@ function Weekraster({
         {/* Het lesrooster */}
         <div
           className="grid grid-cols-[3.5rem_repeat(5,minmax(0,1fr))]"
-          // Wat extra lucht onderaan zodat het raster niet strak op de eindtijd afkapt.
-          style={{ height: hoogte * PX + 16 + 28 }}
+          // Lucht boven (BOVEN) en onderaan zodat het raster niet strak afkapt.
+          style={{ height: hoogte * PX + BOVEN + 36 }}
         >
           <div className="relative">
             {tijdstippen.map((m) => (
@@ -299,7 +300,7 @@ function Weekraster({
                 </div>
               ) : (
                 lesBlokken.map((b) => {
-                    const top = (minuten(b.begin) - rasterBegin) * PX + 8;
+                    const top = (minuten(b.begin) - rasterBegin) * PX + BOVEN;
                     const h = Math.max(17, (minuten(b.eind) - minuten(b.begin)) * PX - 2);
                     // Overlappende lessen naast elkaar: eigen kolom binnen de dag.
                     const { kol, n } = schik.get(b.id) ?? { kol: 0, n: 1 };
