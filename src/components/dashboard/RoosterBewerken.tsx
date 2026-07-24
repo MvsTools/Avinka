@@ -53,6 +53,7 @@ function snap5(m: number): number {
   return Math.round(m / 5) * 5;
 }
 
+
 /** Een uniek id voor een nieuw blok. */
 function nieuwId(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) return "les-" + crypto.randomUUID();
@@ -353,6 +354,7 @@ export default function RoosterBewerken({
             kies={(vak, naam) =>
               voegToe(toevoegen.weekdag, toevoegen.start, toevoegen.duur, vak, naam)
             }
+            sluit={() => setToevoegen(null)}
           />
         </>
       )}
@@ -367,6 +369,7 @@ function VakKiezer({
   y,
   kant,
   kies,
+  sluit,
 }: {
   vakken: { id: string; naam: string }[];
   setup: RoosterSetup;
@@ -374,21 +377,42 @@ function VakKiezer({
   y: number;
   kant: "links" | "rechts";
   kies: (vak: string, naam: string) => void;
+  sluit: () => void;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  useEffect(() => setOpen(true), []);
+  const [top, setTop] = useState(y);
+  // Openvouwen én de positie bijstellen zodat het kiezertje volledig in beeld
+  // valt (anders vallen onderaan de pagina vakken buiten beeld).
+  useEffect(() => {
+    setOpen(true);
+    const el = ref.current;
+    if (el) setTop(Math.max(8, Math.min(y, window.innerHeight - el.offsetHeight - 8)));
+  }, [y]);
 
   return (
     <div
+      ref={ref}
       onClick={(e) => e.stopPropagation()}
-      style={{ left: x, top: y, width: 220 }}
+      style={{ left: x, top, width: 220 }}
       className={
         "fixed z-50 rounded-2xl border border-black/10 bg-white p-2 shadow-xl transition duration-150 ease-out " +
         (kant === "links" ? "origin-top-right " : "origin-top-left ") +
         (open ? "scale-100 opacity-100" : "scale-95 opacity-0")
       }
     >
-      <p className="px-2 py-1 text-xs font-bold uppercase tracking-wide text-ink/40">Welke les?</p>
+      <div className="flex items-center justify-between pb-1 pl-2">
+        <span className="text-xs font-bold uppercase tracking-wide text-ink/40">Welke les?</span>
+        <button
+          onClick={sluit}
+          aria-label="Sluiten"
+          className="flex h-6 w-6 items-center justify-center rounded-lg text-ink/45 transition-colors hover:bg-black/5 hover:text-ink"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
       <div className="flex max-h-64 flex-col gap-0.5 overflow-y-auto">
         {vakken.map((v) => {
           const kl = kleurVoor(v.id, setup);
@@ -568,7 +592,8 @@ function Bewerkraster({
   ) => void;
   voorbeeld: { weekdag: number; start: number; duur: number } | null;
 }) {
-  const PX = 1.5; // px per minuut; iets ruimer zodat ook korte blokken leesbaar zijn
+  const PX = 1.7; // px per minuut; ruim genoeg dat ook een 10-min-blok (15px) de
+  //                letterstaartjes (p/g/j) volledig toont
   const RAND = 9; // px boven-/onderrand waar je kunt trekken (i.p.v. verplaatsen)
   const BOVEN = 20; // lucht boven de eerste les/tijd, zodat het niet krap begint
   const grenzen = rasterGrenzen(lessen);
@@ -593,8 +618,15 @@ function Bewerkraster({
   sleepRef.current = sleep;
   const dragRef = useRef<Drag | null>(null);
   const sleepEinde = useRef(0); // tijdstip van de laatste écht-gesleepte beweging
-  // Waar de muis in de lege ruimte staat: toont alvast een plek voor een nieuwe les.
-  const [hover, setHover] = useState<{ weekdag: number; start: number; duur: number } | null>(null);
+  // Waar de muis in de lege ruimte staat: toont alvast een plek voor een nieuwe
+  // les, plus de grenzen van de vrije ruimte (voor het 10-minuten-raster).
+  const [hover, setHover] = useState<{
+    weekdag: number;
+    start: number;
+    duur: number;
+    gapStart: number;
+    gapEind: number;
+  } | null>(null);
 
   // Linkerkant en breedte van één dagkolom (om bij het slepen de dag te bepalen).
   function kolommen() {
@@ -694,28 +726,36 @@ function Bewerkraster({
     zetBlok(s.id, { weekdag: s.weekdag, start: s.start, duur: s.duur });
   }
 
-  // De tijd (gesnapt) die hoort bij een verticale muispositie in een dagkolom.
+  // De ruwe (ongesnapte) tijd bij een verticale muispositie; het snappen gebeurt
+  // gap-gebaseerd in plekBij.
   function tijdBijMuis(clientY: number, rect: DOMRect): number {
-    const start = snap5((clientY - rect.top - BOVEN) / PX) + rasterBegin;
-    return Math.max(rasterBegin, Math.min(rasterTot - 10, start));
+    const t = (clientY - rect.top - BOVEN) / PX + rasterBegin;
+    return Math.max(rasterBegin, Math.min(rasterTot, t));
   }
 
-  // Is er op tijdstip T (in deze dag) plek voor een nieuwe les? Zo ja, hoe lang?
-  // Bezet (er staat al een les op dat moment, ook al is er visueel witruimte
-  // naast een kort blok) → geen plek. Anders: duur tot de eerstvolgende les,
-  // met een prettige standaard van 45 min als er ruim plek is.
-  function plekBij(weekdag: number, T: number): { start: number; duur: number } | null {
+  // Is er op deze muispositie (in deze dag) plek voor een nieuwe les? Zo ja, waar
+  // en hoe lang? Bezet (er staat al een les op dat moment) → geen plek. Anders
+  // bepalen we de vrije ruimte (van het blok erboven tot het blok eronder) en
+  // snappen we op 10 min VANAF de bovenkant van die ruimte, zodat je een gap ook
+  // helemaal kunt vullen als het blok erboven op een oneven tijd eindigt.
+  function plekBij(
+    weekdag: number,
+    rawT: number,
+  ): { start: number; duur: number; gapStart: number; gapEind: number } | null {
     const dag = lessen
       .filter((b) => b.weekdag === weekdag)
       .map((b) => ({ s: minuten(b.begin), e: minuten(b.eind) }));
-    if (dag.some((b) => b.s <= T && T < b.e)) return null; // bezet op dit moment
+    if (dag.some((b) => b.s <= rawT && rawT < b.e)) return null; // bezet op dit moment
+    let gapStart = rasterBegin;
+    for (const b of dag) if (b.e <= rawT && b.e > gapStart) gapStart = b.e;
     let gapEind = rasterTot;
-    for (const b of dag) if (b.s > T && b.s < gapEind) gapEind = b.s;
-    const duur = Math.min(45, gapEind - T);
-    // Overal een les kunnen maken, ook heel kort. Is de ruimte te klein voor een
-    // tijd, dan tonen we die gewoon niet (zie hieronder).
-    if (duur < 5) return null;
-    return { start: T, duur };
+    for (const b of dag) if (b.s > rawT && b.s < gapEind) gapEind = b.s;
+    let start = gapStart + Math.round((rawT - gapStart) / 10) * 10;
+    start = Math.max(gapStart, Math.min(gapEind - 10, start));
+    const duur = Math.min(45, gapEind - start);
+    // Een les is minstens 10 minuten; minder ruimte bieden we niet aan.
+    if (duur < 10) return null;
+    return { start, duur, gapStart, gapEind };
   }
 
   // Muis over de lege ruimte: alvast een plek tonen onder de cursor.
@@ -752,8 +792,9 @@ function Bewerkraster({
       kant = "links";
     }
     x = Math.max(8, x);
-    const y = Math.max(8, Math.min(e.clientY, window.innerHeight - 240));
-    nieuwOp(weekdag, start, plek.duur, x, y, kant);
+    // De y-positie mag ruw; het kiezertje zet zichzelf zo nodig hoger zodat het
+    // volledig in beeld valt.
+    nieuwOp(weekdag, start, plek.duur, x, e.clientY, kant);
   }
 
   return (
@@ -772,7 +813,7 @@ function Bewerkraster({
         {/* Het lesrooster */}
         <div
           ref={gridRef}
-          className="grid grid-cols-[3.5rem_repeat(5,minmax(0,1fr))]"
+          className="relative grid grid-cols-[3.5rem_repeat(5,minmax(0,1fr))]"
           // Lucht boven (BOVEN) en onderaan zodat het raster niet strak afkapt (en
           // je iets ruimer kunt slepen).
           style={{ height: hoogte * PX + BOVEN + 36 }}
@@ -821,6 +862,23 @@ function Bewerkraster({
                       style={{ top: y(m) }}
                     />
                   ))}
+                {/* Het 10-minuten-raster binnen de vrije ruimte waar je hovert —
+                    vastgepind op de bovenkant van die ruimte. */}
+                {hover &&
+                  hover.weekdag === weekdag &&
+                  !voorbeeld &&
+                  Array.from(
+                    { length: Math.max(0, Math.ceil((hover.gapEind - hover.gapStart) / 10) - 1) },
+                    (_, i) => hover.gapStart + (i + 1) * 10,
+                  )
+                    .filter((m) => m < hover.gapEind)
+                    .map((m) => (
+                      <div
+                        key={"tien" + m}
+                        className="pointer-events-none absolute inset-x-0 border-t border-black/[0.045]"
+                        style={{ top: y(m) }}
+                      />
+                    ))}
                 {dagBlokken.map((b) => {
                   // Wordt dit blok gesleept? Bij verplaatsen doet de transform het
                   // werk (top blijft staan); bij randen trekken verandert de
@@ -876,7 +934,7 @@ function Bewerkraster({
                     >
                       <span
                         className={
-                          "truncate text-xs font-bold leading-none " +
+                          "truncate text-xs font-bold leading-tight " +
                           (tijdTonen && !smal ? "min-w-0 flex-1" : "")
                         }
                         style={{ color: b.kleur?.tekst }}
@@ -886,7 +944,7 @@ function Bewerkraster({
                       {tijdTonen && (
                         <span
                           className={
-                            "text-xs leading-none tabular-nums opacity-60 " +
+                            "text-xs leading-tight tabular-nums opacity-60 " +
                             (gestapeld ? "truncate" : "shrink-0")
                           }
                           style={{ color: b.kleur?.tekst }}
@@ -905,32 +963,41 @@ function Bewerkraster({
                   );
                 })}
                 {/* Voorbeeld-plek: onder de muis (hover) of de gekozen plek (kiezertje).
-                    De hoogte volgt de vrije ruimte tot de volgende les; de tijd
-                    staat bovenin (waar de les begint). */}
+                    De hoogte volgt de vrije ruimte; de tijd staat bovenin. Plus een
+                    zwarte stippellijn op de begin- en eindtijd, over de hele kolom. */}
                 {spook && (
                   <div
                     className={
-                      "pointer-events-none absolute left-1 right-1 overflow-hidden rounded-lg border-2 border-dashed px-1.5 py-px " +
+                      "pointer-events-none absolute left-1 right-1 overflow-hidden rounded-lg border border-dashed px-1.5 py-0 " +
                       (spookStevig
-                        ? "border-brand-dark/50 bg-brand-soft/60"
-                        : "border-brand-dark/30 bg-brand-soft/35")
+                        ? "border-brand-dark/60 bg-brand-soft/60"
+                        : "border-brand-dark/40 bg-brand-soft/35")
                     }
                     style={{
                       top: (spook.start - rasterBegin) * PX + BOVEN,
                       height: spookH,
                     }}
                   >
-                    {spookH >= 16 && (
-                      <span className="flex items-center gap-1 text-xs font-bold leading-tight tabular-nums text-brand-dark">
-                        {!spookStevig && <span className="text-sm leading-none">+</span>}
-                        {tijdTekst(spook.start)}
-                      </span>
-                    )}
+                    <span className="flex items-center gap-0.5 text-xs font-bold leading-none tabular-nums text-brand-dark">
+                      {!spookStevig && <span>+</span>}
+                      {tijdTekst(spook.start)}
+                    </span>
                   </div>
                 )}
               </div>
             );
           })}
+
+          {/* Duidelijke stippellijnen over de hele breedte op de begin- en eindtijd
+              van de schooldag — zo zie je precies tot waar je kunt plannen. */}
+          <div
+            className="pointer-events-none absolute left-14 right-0 z-20 border-t border-dashed border-black/45"
+            style={{ top: y(rasterBegin) - 2 }}
+          />
+          <div
+            className="pointer-events-none absolute left-14 right-0 z-20 border-t border-dashed border-black/45"
+            style={{ top: y(rasterTot) }}
+          />
         </div>
       </div>
     </div>

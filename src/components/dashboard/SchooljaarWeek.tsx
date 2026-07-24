@@ -177,10 +177,10 @@ function Weekraster({
   hoogte: number;
   opendag: (datum: string) => void;
 }) {
-  // Anderhalve pixel per minuut: een blok van 45 minuten wordt ~66 hoog. Ruim
-  // genoeg dat ook korte blokken (10-15 min) leesbaar blijven zonder over hun
-  // buur eronder te vallen.
-  const PX = 1.5;
+  // 1,7 pixel per minuut: een blok van 45 minuten wordt ~75 hoog. Ruim genoeg dat
+  // ook een kort blok (10 min = 15px) zijn naam mét letterstaartjes (p/g/j) toont
+  // zonder over de buur eronder te vallen.
+  const PX = 1.7;
   const BOVEN = 20; // lucht boven de eerste les/tijd, zodat het niet krap begint
 
   // De blokken tonen zelf geen tijd (dat werd te druk). In plaats daarvan de
@@ -326,7 +326,7 @@ function Weekraster({
                       >
                         <span
                           className={
-                            "truncate text-xs font-bold leading-none " +
+                            "truncate text-xs font-bold leading-tight " +
                             (tijdTonen && !smal ? "min-w-0 flex-1" : "")
                           }
                           style={{ color: b.kleur?.tekst }}
@@ -336,7 +336,7 @@ function Weekraster({
                         {tijdTonen && (
                           <span
                             className={
-                              "text-xs leading-none tabular-nums opacity-60 " +
+                              "text-xs leading-tight tabular-nums opacity-60 " +
                               (gestapeld ? "truncate" : "shrink-0")
                             }
                             style={{ color: b.kleur?.tekst }}
