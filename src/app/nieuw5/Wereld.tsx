@@ -468,8 +468,8 @@ export function WereldHerken() {
       <SplatVeld
         className="z-[6]"
         items={[
-          { kleur: "#e6d9bd", seed: 6.7, plat: 0.92, style: { width: 440, right: "-10%", bottom: 140, transform: "rotate(-8deg)" }, tel: 4 },
-          { kleur: "#a6ccb7", seed: 2.4, plat: 0.9, style: { width: 720, left: "45%", top: 95, transform: "rotate(4deg)" }, tel: 2 },
+          { kleur: "#e6d9bd", seed: 6.7, plat: 0.92, style: { width: 440, right: "-10%", bottom: 48, transform: "rotate(-8deg)" }, tel: 4 },
+          { kleur: "#a6ccb7", seed: 2.4, plat: 0.86, style: { width: 700, left: "45%", top: 170, transform: "rotate(4deg)" }, tel: 2 },
           { kleur: "#98c1a9", seed: 3.9, plat: 0.92, style: { width: 420, left: "-21%", bottom: 100, transform: "rotate(5deg)" }, tel: 1 },
         ]}
       />
