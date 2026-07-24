@@ -33,8 +33,19 @@ export type RoosterSetup = {
   dagBegin?: Record<string, number>;
   dagEind?: Record<string, number>;
   // Eigen vakken bewaren hun kleur mee (bg + tx), standaardvakken niet: die
-  // halen we uit de vaste catalogus hieronder.
-  vakken?: { id: string; naam: string; bg?: string; tx?: string }[];
+  // halen we uit de vaste catalogus hieronder. blokken (lengtes per week) en de
+  // dagdeel-vlaggen gebruikt de generator om de lessen te verdelen.
+  vakken?: {
+    id: string;
+    naam: string;
+    bg?: string;
+    tx?: string;
+    blokken?: number[];
+    zwaar?: boolean;
+    middag?: boolean;
+    ontspan?: boolean;
+    ochtend?: boolean;
+  }[];
 };
 
 export type Basisrooster = {
@@ -86,10 +97,27 @@ const VAK_KLEUR_STANDAARD: Kleur = { bg: "#efeae0", tekst: "#5c5647" };
  * dan de kleur die een eigen vak zelf heeft meegekregen in de setup, en anders
  * een neutrale terugval.
  */
+/**
+ * De randkleur van een blok. Een (bijna-)witte achtergrond krijgt een iets
+ * duidelijkere grijze rand zodat het blok zichtbaar blijft tegen de witte
+ * pagina; gekleurde blokken houden een zachte rand.
+ */
+export function randKleur(bg?: string): string {
+  const h = (bg ?? "").replace("#", "");
+  if (h.length < 6) return "rgba(0,0,0,0.05)";
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  const licht = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+  return licht > 0.9 ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.05)";
+}
+
 export function kleurVoor(vak: string, setup: RoosterSetup): Kleur {
-  if (VAK_KLEUR[vak]) return VAK_KLEUR[vak];
+  // Een zelfgekozen kleur (bg + tx in de setup) wint altijd, ook voor een
+  // standaardvak; anders de vaste catalogus, en anders een neutrale terugval.
   const eigen = setup.vakken?.find((v) => v.id === vak);
   if (eigen?.bg && eigen?.tx) return { bg: eigen.bg, tekst: eigen.tx };
+  if (VAK_KLEUR[vak]) return VAK_KLEUR[vak];
   return VAK_KLEUR_STANDAARD;
 }
 

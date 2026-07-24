@@ -7,6 +7,7 @@ import {
   dagbeeld,
   maandagVan,
   plus,
+  randKleur,
   rasterGrenzen,
   schikDag,
   volledig,
@@ -322,7 +323,14 @@ function Weekraster({
                           "absolute overflow-hidden rounded-lg border border-black/5 bg-cream/70 px-1.5 py-0 " +
                           (gestapeld ? "flex flex-col" : "flex items-baseline gap-1.5")
                         }
-                        style={{ top, height: h, left, width: breedte, background: b.kleur?.bg }}
+                        style={{
+                          top,
+                          height: h,
+                          left,
+                          width: breedte,
+                          background: b.kleur?.bg,
+                          borderColor: randKleur(b.kleur?.bg),
+                        }}
                       >
                         <span
                           className={

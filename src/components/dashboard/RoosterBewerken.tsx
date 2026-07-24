@@ -9,11 +9,13 @@ import type {
 import {
   kleurVoor,
   naarBlokken,
+  randKleur,
   rasterGrenzen,
   schikDag,
   type Basisrooster,
   type RoosterSetup,
 } from "@/lib/planning/rooster";
+import { genereerLessen } from "@/lib/planning/genereer";
 import type { Roosterblok } from "@/lib/planning/types";
 
 // De bewerkstand van het basisrooster: je vaste lesweek als sjabloon (ma–vr,
@@ -53,6 +55,52 @@ function snap5(m: number): number {
   return Math.round(m / 5) * 5;
 }
 
+
+// De standaardvakken voor de instellingen: met een gebruikelijke lengte en het
+// dagdeel waarin ze bij voorkeur vallen (gebruikt door de generator). Gym en
+// pauze zitten hier niet in — die zijn vaste blokken, geen te verdelen les.
+const VAK_CATALOGUS: {
+  id: string;
+  naam: string;
+  duur: number;
+  ochtend?: boolean;
+  zwaar?: boolean;
+  middag?: boolean;
+  ontspan?: boolean;
+}[] = [
+  { id: "dagopening", naam: "Dagopening", duur: 15, ochtend: true },
+  { id: "rekenen", naam: "Rekenen", duur: 45, zwaar: true },
+  { id: "taal", naam: "Taal", duur: 45, zwaar: true },
+  { id: "spelling", naam: "Spelling", duur: 30, zwaar: true },
+  { id: "tlezen", naam: "Technisch lezen", duur: 30 },
+  { id: "blezen", naam: "Begrijpend lezen", duur: 45, zwaar: true, middag: true },
+  { id: "schrijven", naam: "Schrijven", duur: 30 },
+  { id: "wo", naam: "Wereldoriëntatie", duur: 45, middag: true },
+  { id: "engels", naam: "Engels", duur: 30 },
+  { id: "creatief", naam: "Creatief", duur: 60, ontspan: true, middag: true },
+  { id: "muziek", naam: "Muziek", duur: 30, ontspan: true, middag: true },
+  { id: "seo", naam: "Sociaal-emotioneel", duur: 30, middag: true },
+  { id: "verkeer", naam: "Verkeer", duur: 30, middag: true },
+  { id: "gym", naam: "Gym", duur: 45 },
+];
+
+// Kleuropties in de instellingen: wit (geen kleur) plus een frisse waaier. De
+// tekstkleur is telkens een leesbare donkere tint bij de achtergrond.
+const KLEUR_OPTIES: { bg: string; tekst: string }[] = [
+  { bg: "#ffffff", tekst: "#3a3a3a" }, // wit — geen kleur
+  { bg: "#9cc7ff", tekst: "#0d4a95" },
+  { bg: "#93dbf2", tekst: "#0a5a7a" },
+  { bg: "#7fdcd6", tekst: "#06534f" },
+  { bg: "#b6e88f", tekst: "#35701a" },
+  { bg: "#ffe873", tekst: "#6e5600" },
+  { bg: "#f7cf5e", tekst: "#6e5000" },
+  { bg: "#ffb066", tekst: "#7a3d00" },
+  { bg: "#ff8a7a", tekst: "#7a1e10" },
+  { bg: "#ff9fb0", tekst: "#8a1f3d" },
+  { bg: "#ffb3e6", tekst: "#8a1f74" },
+  { bg: "#cdb0ff", tekst: "#4d1e9c" },
+  { bg: "#e5e0d5", tekst: "#6f6a5c" }, // gedempt
+];
 
 // Kleuren voor een zelf toegevoegd vak — vivid, in dezelfde stijl als de rest.
 const EIGEN_KLEUREN: { bg: string; tx: string }[] = [
@@ -109,6 +157,14 @@ export default function RoosterBewerken({
     y: number;
     kant: "links" | "rechts";
   } | null>(null);
+  const [instellingenOpen, setInstellingenOpen] = useState(false);
+
+  // De vakkenlijst in de instellingen wijzigen (welke vakken, hoe vaak per week).
+  // Eigen vakken die niet in de catalogus staan, blijven onaangeroerd. Via pasToe
+  // zodat het ook ongedaan te maken is.
+  function zetVakken(nieuw: NonNullable<RoosterSetup["vakken"]>) {
+    pasToe((c) => ({ ...c, setup: { ...c.setup, vakken: nieuw } }));
+  }
 
   // Het rooster van je account ophalen zodra de bewerkstand opent.
   useEffect(() => {
@@ -240,6 +296,19 @@ export default function RoosterBewerken({
     setToevoegen(null);
   }
 
+  // De lessen opnieuw over de week verdelen (pauzes/gym en je na-schooltijd-taken
+  // blijven staan). Elke keer een andere mix; ongedaan te maken.
+  function opnieuwGenereren() {
+    pasToe((c) => {
+      // Gym is een gewoon te verdelen vak zodra je het instelt; dan houden we de
+      // oude vaste gym-blokken niet vast maar verdelen we ze opnieuw mee.
+      const gymGeregeld = (c.setup.vakken ?? []).some((v) => v.id === "gym");
+      const vaste = c.blokken.filter((b) => b.type === "vast" && !(gymGeregeld && b.vak === "gym"));
+      const taken = c.blokken.filter((b) => b.type === "taak");
+      return { ...c, blokken: [...vaste, ...taken, ...genereerLessen(c.setup, vaste)] };
+    });
+  }
+
   // Een hele dag kopiëren naar een of meer andere dagen. De doeldag(en) worden
   // vervangen door een kopie van de brondag (met nieuwe id's). Ideaal als je
   // ochtenden op elke dag hetzelfde opbouwt; daarna pas je alleen de rest aan.
@@ -318,39 +387,68 @@ export default function RoosterBewerken({
     <div className="flex flex-col gap-4">
       {/* Bewerk-balk: duidelijk dat je nu aan het aanpassen bent, met ongedaan
           maken, annuleren en handmatig opslaan. */}
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-brand/20 bg-brand-soft/50 px-4 py-3">
-        <span className="flex items-center gap-2 font-bold text-brand-dark">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 20h9" />
-            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-          </svg>
-          Je past je basisrooster aan
-        </span>
-        <span className="text-sm text-ink/55">Klik op een lege plek voor een nieuwe les.</span>
-        {vuil && <span className="text-xs font-semibold text-ink/45">Niet opgeslagen</span>}
+      <div className="flex flex-col gap-3 rounded-2xl border border-brand/20 bg-brand-soft/50 px-4 py-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="flex items-center gap-2 font-bold text-brand-dark">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            </svg>
+            Je past je basisrooster aan
+          </span>
+          <span className="text-sm text-ink/55">Klik op een lege plek voor een nieuwe les.</span>
+          {vuil && <span className="text-xs font-semibold text-ink/45">Niet opgeslagen</span>}
+        </div>
 
-        <span className="ml-auto flex items-center gap-2">
-          <button
-            onClick={ongedaan}
-            disabled={!geschiedenis.length}
-            className="rounded-xl border border-black/10 bg-white px-3.5 py-2 text-sm font-bold text-ink/70 transition-transform duration-150 hover:text-ink active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Ongedaan maken
-          </button>
-          <button
-            onClick={onKlaar}
-            className="rounded-xl border border-black/10 bg-white px-3.5 py-2 text-sm font-bold text-ink/70 transition-transform duration-150 hover:text-ink active:scale-[0.97]"
-          >
-            Annuleren
-          </button>
-          <button
-            onClick={() => opslaan(true)}
-            disabled={opslaanBezig}
-            className="rounded-xl bg-brand-dark px-4 py-2 text-sm font-bold text-white transition-transform duration-150 active:scale-[0.97] disabled:opacity-60"
-          >
-            {opslaanBezig ? "Bezig met opslaan…" : "Opslaan"}
-          </button>
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="flex items-center gap-1">
+            <button
+              onClick={opnieuwGenereren}
+              title="Opnieuw genereren — verdeel de lessen opnieuw over de week"
+              aria-label="Opnieuw genereren"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-black/10 bg-white text-brand-dark transition-transform duration-150 hover:bg-brand-soft active:scale-[0.96]"
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2.5l1.6 4.3 4.3 1.6-4.3 1.6L12 14.3l-1.6-4.3L6.1 8.4l4.3-1.6z" />
+                <path d="M18.5 13.5l.9 2.3 2.3.9-2.3.9-.9 2.3-.9-2.3-2.3-.9 2.3-.9z" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setInstellingenOpen(true)}
+              title="Vakken en instellingen"
+              aria-label="Instellingen"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-black/10 bg-white text-ink/60 transition-transform duration-150 hover:text-ink active:scale-[0.96]"
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+            </button>
+          </span>
+
+          <span className="ml-auto flex items-center gap-2">
+            <button
+              onClick={ongedaan}
+              disabled={!geschiedenis.length}
+              className="rounded-xl border border-black/10 bg-white px-3.5 py-2 text-sm font-bold text-ink/70 transition-transform duration-150 hover:text-ink active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Ongedaan maken
+            </button>
+            <button
+              onClick={onKlaar}
+              className="rounded-xl border border-black/10 bg-white px-3.5 py-2 text-sm font-bold text-ink/70 transition-transform duration-150 hover:text-ink active:scale-[0.97]"
+            >
+              Annuleren
+            </button>
+            <button
+              onClick={() => opslaan(true)}
+              disabled={opslaanBezig}
+              className="rounded-xl bg-brand-dark px-4 py-2 text-sm font-bold text-white transition-transform duration-150 active:scale-[0.97] disabled:opacity-60"
+            >
+              {opslaanBezig ? "Bezig met opslaan…" : "Opslaan"}
+            </button>
+          </span>
+        </div>
       </div>
 
       {fout && (
@@ -422,6 +520,312 @@ export default function RoosterBewerken({
           />
         </>
       )}
+
+      {/* Instellingen: welke vakken en hoe vaak per week. */}
+      {instellingenOpen && (
+        <VakkenInstellingen
+          vakken={concept?.setup.vakken ?? []}
+          setVakken={zetVakken}
+          verwijder={verwijderVak}
+          sluit={() => setInstellingenOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function VakkenInstellingen({
+  vakken,
+  setVakken,
+  verwijder,
+  sluit,
+}: {
+  vakken: NonNullable<RoosterSetup["vakken"]>;
+  setVakken: (v: NonNullable<RoosterSetup["vakken"]>) => void;
+  verwijder: (id: string) => void;
+  sluit: () => void;
+}) {
+  const [bewerkId, setBewerkId] = useState<string | null>(null);
+  const [bewerkNaam, setBewerkNaam] = useState("");
+  const [eigenNaam, setEigenNaam] = useState("");
+  const [paletVoor, setPaletVoor] = useState<{ id: string; x: number; y: number } | null>(null);
+
+  // Standaardvakken die nog niet in de lijst staan (om snel toe te voegen).
+  const nogTeKiezen = VAK_CATALOGUS.filter((k) => !vakken.some((v) => v.id === k.id));
+
+  function kiesKleur(id: string, opt: { bg: string; tekst: string }) {
+    setVakken(vakken.map((v) => (v.id === id ? { ...v, bg: opt.bg, tx: opt.tekst } : v)));
+    setPaletVoor(null);
+  }
+
+  // De te verdelen lesvakken (pauze hoort daar niet bij — dat is een vast blok).
+  const lesVakken = vakken.filter((v) => v.id !== "pauze");
+
+  function zetAantal(id: string, aantal: number) {
+    setVakken(
+      vakken.map((v) =>
+        v.id === id
+          ? { ...v, blokken: Array(Math.max(1, Math.min(10, aantal))).fill(v.blokken?.[0] ?? 45) }
+          : v,
+      ),
+    );
+  }
+
+  function zetDuur(id: string, duur: number) {
+    setVakken(
+      vakken.map((v) =>
+        v.id === id
+          ? { ...v, blokken: Array(v.blokken?.length ?? 1).fill(Math.max(10, Math.min(120, duur))) }
+          : v,
+      ),
+    );
+  }
+
+  function bewaarNaam() {
+    if (bewerkId) {
+      const t = bewerkNaam.trim();
+      if (t) setVakken(vakken.map((v) => (v.id === bewerkId ? { ...v, naam: t } : v)));
+    }
+    setBewerkId(null);
+  }
+
+  function voegStandaard(k: (typeof VAK_CATALOGUS)[number]) {
+    setVakken([
+      ...vakken,
+      {
+        id: k.id,
+        naam: k.naam,
+        blokken: [k.duur],
+        ochtend: k.ochtend,
+        zwaar: k.zwaar,
+        middag: k.middag,
+        ontspan: k.ontspan,
+      },
+    ]);
+  }
+
+  function voegEigen() {
+    const t = eigenNaam.trim();
+    if (!t) return;
+    const gebruikt = new Set(vakken.map((v) => v.bg));
+    const kl =
+      EIGEN_KLEUREN.find((k) => !gebruikt.has(k.bg)) ??
+      EIGEN_KLEUREN[vakken.length % EIGEN_KLEUREN.length];
+    setVakken([...vakken, { id: nieuwId(), naam: t, blokken: [45], bg: kl.bg, tx: kl.tx }]);
+    setEigenNaam("");
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/25 p-0 backdrop-blur-[2px] sm:items-center sm:p-6"
+      onClick={sluit}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Vakken instellen"
+        onClick={(e) => e.stopPropagation()}
+        className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-xl sm:rounded-3xl"
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-black/5 px-6 pb-4 pt-6">
+          <div>
+            <p className="font-serif text-2xl font-semibold text-ink">Vakken</p>
+            <p className="mt-1 text-sm text-ink/60">
+              Kies je vakken, hoe lang en hoe vaak per week. Klik daarna op het ✨ om opnieuw te
+              verdelen.
+            </p>
+          </div>
+          <button
+            onClick={sluit}
+            aria-label="Sluiten"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-black/10 text-ink/50 transition-transform duration-150 hover:text-ink active:scale-[0.96]"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-1 overflow-y-auto px-4 py-3">
+          {lesVakken.length === 0 && (
+            <p className="px-2 py-3 text-sm text-ink/50">
+              Nog geen vakken. Voeg er hieronder een toe.
+            </p>
+          )}
+          {lesVakken.map((v) => {
+            const kl = kleurVoor(v.id, { vakken });
+            const aantal = v.blokken?.length ?? 1;
+            const duur = v.blokken?.[0] ?? 45;
+            const bewerkt = bewerkId === v.id;
+            return (
+              <div key={v.id} className="flex items-center gap-2 rounded-xl bg-cream/50 px-2 py-1.5">
+                <button
+                  onClick={(e) => {
+                    const r = e.currentTarget.getBoundingClientRect();
+                    setPaletVoor({
+                      id: v.id,
+                      x: Math.min(r.left, window.innerWidth - 180),
+                      y: r.bottom + 6,
+                    });
+                  }}
+                  aria-label={`Kleur van ${v.naam} kiezen`}
+                  title="Kleur kiezen"
+                  className="h-4 w-4 shrink-0 rounded transition-transform hover:scale-110"
+                  style={{ background: kl.bg, boxShadow: `inset 0 0 0 1px ${kl.tekst}55` }}
+                />
+                {bewerkt ? (
+                  <input
+                    autoFocus
+                    value={bewerkNaam}
+                    onChange={(e) => setBewerkNaam(e.target.value)}
+                    onBlur={bewaarNaam}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") bewaarNaam();
+                      if (e.key === "Escape") setBewerkId(null);
+                    }}
+                    className="min-w-0 flex-1 rounded-md border border-black/15 px-1.5 py-0.5 text-sm font-semibold text-ink outline-none focus:border-brand-dark/40"
+                  />
+                ) : (
+                  <>
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">
+                      {v.naam}
+                    </span>
+                    <button
+                      onClick={() => {
+                        setBewerkId(v.id);
+                        setBewerkNaam(v.naam);
+                      }}
+                      aria-label={`${v.naam} hernoemen`}
+                      title="Naam wijzigen"
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-ink/35 transition-colors hover:bg-black/5 hover:text-ink"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                      </svg>
+                    </button>
+                  </>
+                )}
+                <span className="flex shrink-0 items-center gap-0.5">
+                  <button
+                    onClick={() => zetAantal(v.id, aantal - 1)}
+                    aria-label="Minder"
+                    className="flex h-6 w-6 items-center justify-center rounded-md border border-black/10 bg-white text-base font-bold text-ink/60 transition-transform duration-150 hover:text-ink active:scale-[0.94]"
+                  >
+                    –
+                  </button>
+                  <span className="min-w-[2rem] text-center text-xs tabular-nums text-ink/60">
+                    {aantal}×
+                  </span>
+                  <button
+                    onClick={() => zetAantal(v.id, aantal + 1)}
+                    aria-label="Meer"
+                    className="flex h-6 w-6 items-center justify-center rounded-md border border-black/10 bg-white text-base font-bold text-ink/60 transition-transform duration-150 hover:text-ink active:scale-[0.94]"
+                  >
+                    +
+                  </button>
+                </span>
+                <span className="flex shrink-0 items-center gap-0.5">
+                  <button
+                    onClick={() => zetDuur(v.id, duur - 5)}
+                    aria-label="Korter"
+                    className="flex h-6 w-6 items-center justify-center rounded-md border border-black/10 bg-white text-base font-bold text-ink/60 transition-transform duration-150 hover:text-ink active:scale-[0.94]"
+                  >
+                    –
+                  </button>
+                  <span className="min-w-[3.25rem] text-center text-xs tabular-nums text-ink/60">
+                    {duur} min
+                  </span>
+                  <button
+                    onClick={() => zetDuur(v.id, duur + 5)}
+                    aria-label="Langer"
+                    className="flex h-6 w-6 items-center justify-center rounded-md border border-black/10 bg-white text-base font-bold text-ink/60 transition-transform duration-150 hover:text-ink active:scale-[0.94]"
+                  >
+                    +
+                  </button>
+                </span>
+                <button
+                  onClick={() => verwijder(v.id)}
+                  aria-label={`${v.naam} weghalen`}
+                  title="Weghalen"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-ink/35 transition-colors hover:bg-black/5 hover:text-red-600"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                    <path d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Vak toevoegen: standaardvakken die er nog niet zijn, of een eigen vak. */}
+        <div className="border-t border-black/5 px-4 py-3">
+          {nogTeKiezen.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {nogTeKiezen.map((k) => (
+                <button
+                  key={k.id}
+                  onClick={() => voegStandaard(k)}
+                  className="rounded-lg border border-black/10 bg-white px-2.5 py-1 text-xs font-semibold text-ink/70 transition-colors hover:bg-cream/60 hover:text-ink"
+                >
+                  + {k.naam}
+                </button>
+              ))}
+            </div>
+          )}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              voegEigen();
+            }}
+            className="flex items-center gap-2"
+          >
+            <input
+              value={eigenNaam}
+              onChange={(e) => setEigenNaam(e.target.value)}
+              placeholder="Eigen vak…"
+              className="min-w-0 flex-1 rounded-lg border border-black/10 bg-white px-3 py-1.5 text-sm text-ink outline-none placeholder:text-ink/35 focus:border-brand-dark/40"
+            />
+            <button
+              type="submit"
+              className="rounded-lg bg-brand-dark px-3 py-1.5 text-sm font-bold text-white transition-transform duration-150 active:scale-[0.97]"
+            >
+              Toevoegen
+            </button>
+          </form>
+        </div>
+
+        <div className="border-t border-black/5 px-6 py-4">
+          <button
+            onClick={sluit}
+            className="w-full rounded-xl bg-brand-dark px-4 py-2.5 text-sm font-bold text-white transition-transform duration-150 active:scale-[0.98]"
+          >
+            Klaar
+          </button>
+        </div>
+
+        {/* Kleurpalet voor een vak — wit is "geen kleur". */}
+        {paletVoor && (
+          <>
+            <div className="fixed inset-0 z-[60]" onClick={() => setPaletVoor(null)} />
+            <div
+              style={{ left: paletVoor.x, top: paletVoor.y }}
+              className="fixed z-[61] grid grid-cols-5 gap-1.5 rounded-xl border border-black/10 bg-white p-2 shadow-xl"
+            >
+              {KLEUR_OPTIES.map((opt) => (
+                <button
+                  key={opt.bg}
+                  onClick={() => kiesKleur(paletVoor.id, opt)}
+                  aria-label={opt.bg === "#ffffff" ? "Wit (geen kleur)" : "Kleur kiezen"}
+                  className="h-6 w-6 rounded-md border border-black/15 transition-transform hover:scale-110"
+                  style={{ background: opt.bg }}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -1104,6 +1508,9 @@ function Bewerkraster({
                     width: breedte,
                     background: b.kleur?.bg,
                   };
+                  // Een (bijna-)wit blok krijgt een iets duidelijkere rand; het
+                  // gekozen blok houdt zijn brand-rand + ring.
+                  if (!actief) stijl.borderColor = randKleur(b.kleur?.bg);
                   if (s) {
                     stijl.zIndex = 50;
                     stijl.boxShadow = "0 10px 24px rgba(0,0,0,0.18)";
