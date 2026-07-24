@@ -314,22 +314,34 @@ weekplanning naar de begrippen hier), `POST /api/rooster`, het tabblad
 **Weekrooster** (`SchooljaarWeek.tsx`) met het agenda-strookje uit §3.6, en
 `RoosterOvernemen.tsx` dat een rooster uit localStorage aanbiedt over te nemen.
 
-**Besluit eigenaar (24-7): kijken en aanpassen scheiden.** Het weekrooster-
-tabblad blijft een rustig, alleen-lezen *overzicht* — je bewerkt er niet in.
-Aanpassen gebeurt in een apart **aanpasscherm**, bereikbaar via een knop
-rechtsboven ("Basisrooster aanpassen"); waar nog geen rooster is, wordt diezelfde
-knop het startpunt ("Maak je basisrooster") in plaats van het huidige
-overname-schermpje. Na opslaan kom je terug in het overzicht. Dit vervangt het
-eerdere idee "bewerken in het weekrooster zelf".
+**Besluit eigenaar (24-7, herzien): aanpassen in het scherm zelf, als aparte
+modus.** Het weekrooster is standaard een rustig, alleen-lezen *overzicht*. Een
+knop "Aanpassen" zet hetzelfde scherm in bewerkstand (verslepen, korter/langer,
+vak wisselen/toevoegen, opnieuw genereren); een "Klaar"-knop brengt je terug naar
+kijken. **Geen pagina-sprong** naar een los, anders ogend scherm — dat vond de
+eigenaar lelijk. De bestaande weekplanning-editor
+(`public/tools/weekplanning.html`) blijft voorlopig bruikbaar en slaat al bij je
+account op, maar wordt vervangen door een **native bewerkstand in het weekrooster
+zelf**, in de Avinka-stijl. Dit herziet zowel "bewerken in het weekrooster zelf"
+als het latere "apart aanpasscherm": inline mag, maar als expliciete modus, niet
+per ongeluk tijdens het kijken.
 
-Nog te doen in fase 2: het aanpasscherm bouwen en basis versus "deze week wijkt
-af" — de tabel `rooster_week` staat klaar maar wordt nog niet gebruikt.
-- Het aanpasscherm ís de bestaande weekplanning-editor
-  (`public/tools/weekplanning.html`): die kan al wizard, verslepen, korter/langer,
-  AI-generator en na-schooltijd. Niet opnieuw bouwen — aanhaken aan het platform
-  en aan de database koppelen. Niet langer een losse tool-tegel.
-- Opslag van localStorage naar de database (per gebruiker, per schooljaar), zodat
-  je rooster op school én thuis hetzelfde is.
+**Besluit eigenaar (24-7): "na schooltijd" hoort niet bij het basisrooster.** Het
+basisrooster is je vaste lesweek — **alléén het lesrooster**. Nakijken,
+gesprekken en overleg wisselen per dag en horen bij de dagweergave / agenda /
+takenlijst, niet bij het wekelijkse sjabloon. De na-schooltijd-strook is daarom
+uit het weekrooster gehaald.
+
+Gedaan (24-7): GET op `/api/rooster` (laden), de weekplanning-editor laadt/bewaart
+nu bij je account (met vangnet zodat een demo-rooster niet ongemerkt wordt
+opgeslagen, en localStorage als offline terugval), en de na-schooltijd-strook is
+uit het weekrooster verwijderd.
+
+Nog te doen in fase 2: de native bewerkstand in het weekrooster zelf, en basis
+versus "deze week wijkt af" — de tabel `rooster_week` staat klaar maar wordt nog
+niet gebruikt.
+- De API staat er (GET + POST `/api/rooster`); de native bewerkstand gebruikt
+  die straks in plaats van de losse tool.
 - Onderscheid **basis versus deze week** (§3.2), met terugzetten.
 - De jaarlaag wordt randvoorwaarde: studiedag/vakantie/gespreksavond zijn bekend.
 - Weekplanning verdwijnt als tool-tegel; bestaande roosters uit localStorage

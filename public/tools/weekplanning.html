@@ -284,7 +284,7 @@
 <body>
 <div class="wrap">
   <div class="topbar">
-    <a class="terug" href="/dashboard">← Terug naar dashboard</a>
+    <a class="terug" href="/dashboard/schooljaar">← Terug naar Mijn schooljaar</a>
     <span class="merk"><span class="dot">✓</span> Avinka</span>
   </div>
 
@@ -1510,8 +1510,37 @@ function voegLesToe(dag, start, vakId) {
 /* ── Undo, bewaren ──────────────────────────────────────────────────── */
 function duw(){ undoStack.push(JSON.stringify(state.blokken)); if(undoStack.length>40) undoStack.shift(); }
 function undo(){ if(!undoStack.length) return; state.blokken=JSON.parse(undoStack.pop()); bewaar(); tekenBeideGrids(); }
-function bewaar(){ try { localStorage.setItem(BEWAAR_SLEUTEL, JSON.stringify(state)); } catch(_){} }
+// Bewaren op twee plekken: altijd in deze browser (localStorage, ook offline),
+// en — als je in het platform bent ingelogd — ook bij je account, zodat je
+// rooster op school en thuis hetzelfde is. Het account-opslaan gaat pas aan
+// nádat het opstarten klaar is (serverSync), zodat een demo-rooster nooit
+// ongemerkt als jouw echte rooster wordt bewaard.
+let serverSync = false;
+let syncTimer = null;
+function syncNaarServer(){
+  if (!serverSync) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    try {
+      fetch('/api/rooster', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ rooster: state }),
+      }).catch(()=>{});
+    } catch(_){}
+  }, 800);
+}
+function bewaar(){ try { localStorage.setItem(BEWAAR_SLEUTEL, JSON.stringify(state)); } catch(_){} syncNaarServer(); }
 function laad(){ try { const s=localStorage.getItem(BEWAAR_SLEUTEL); if(s){ const o=JSON.parse(s); if(o&&o.setup&&o.blokken) return o; } } catch(_){} return null; }
+
+// Vangnet: verlaat je de pagina binnen de 800ms-vertraging, stuur dan de laatste
+// stand tóch nog even door met sendBeacon, zodat er niets verloren gaat.
+window.addEventListener('pagehide', () => {
+  if (!serverSync || !state || !state.setup) return;
+  try {
+    navigator.sendBeacon('/api/rooster', new Blob([JSON.stringify({ rooster: state })], { type: 'application/json' }));
+  } catch(_){}
+});
 
 /* ── Print ──────────────────────────────────────────────────────────── */
 function printen(){ window.print(); }
@@ -1681,19 +1710,34 @@ els('nieuw-vak').addEventListener('keydown', e => { if (e.key === 'Enter') { e.p
 ['dagopening','tlezen','rekenen','taal','spelling','wo','creatief'].forEach(id=>{ const v=VAK(id); gekozenVakken.set(id,{perWeek:v.perWeek,duur:v.duur}); });
 bouwVakwolk(); bouwVaklijst();
 if (window.avinkaVoorkeuren) avinkaVoorkeuren.ready.then(v => { if(v.standaardgroep){ const g=String(v.standaardgroep).match(/[1-8]/); if(g) els('groep').value=g[0]; } }).catch(()=>{});
-// eerder gemaakt rooster terugzetten (met migratie van oud formaat zonder dagBegin/dagEind)
-const bewaard = laad();
-if (bewaard && bewaard.setup) {
-  const su = bewaard.setup;
-  if (!su.dagEind) { su.dagEind = {}; (su.dagen||[]).forEach(d => su.dagEind[d] = su.eind); }
-  if (!su.dagBegin) { su.dagBegin = {}; (su.dagen||[]).forEach(d => su.dagBegin[d] = su.begin); }
-  herstelVakken(su);   // eigen vakken terug in VAKKEN (naam + kleur), anders kleine letter/grijs na herladen
-  state = bewaard; toonRooster();
-} else {
-  // TIJDELIJK (testfase): meteen een demo-rooster tonen om de functies te testen.
-  // Vervang dit door `toonStap(1);` om weer normaal bij de wizard te beginnen.
-  state = demoRooster(); bewaar(); toonRooster();
-}
+// Rooster terugzetten. Ben je in het platform ingelogd, dan wint het rooster van
+// je account; anders pakken we wat in deze browser staat (localStorage). De
+// migratie van oud formaat zonder dagBegin/dagEind blijft gelijk.
+(async () => {
+  let bewaard = null, ingelogd = false;
+  try {
+    const r = await fetch('/api/rooster', { headers: { 'Accept': 'application/json' } });
+    if (r.ok) {
+      ingelogd = true;
+      const d = await r.json().catch(() => null);
+      if (d && d.rooster && d.rooster.setup && Array.isArray(d.rooster.blokken)) bewaard = d.rooster;
+    }
+  } catch(_){}
+  if (!bewaard) bewaard = laad();
+  if (bewaard && bewaard.setup) {
+    const su = bewaard.setup;
+    if (!su.dagEind) { su.dagEind = {}; (su.dagen||[]).forEach(d => su.dagEind[d] = su.eind); }
+    if (!su.dagBegin) { su.dagBegin = {}; (su.dagen||[]).forEach(d => su.dagBegin[d] = su.begin); }
+    herstelVakken(su);   // eigen vakken terug in VAKKEN (naam + kleur), anders kleine letter/grijs na herladen
+    state = bewaard; toonRooster();
+  } else {
+    // TIJDELIJK (testfase): meteen een demo-rooster tonen om de functies te testen.
+    // Vervang dit door `toonStap(1);` om weer normaal bij de wizard te beginnen.
+    state = demoRooster(); bewaar(); toonRooster();
+  }
+  // Vanaf nu synct elke wijziging naar je account (alleen als je ingelogd bent).
+  serverSync = ingelogd;
+})();
 </script>
 </body>
 </html>

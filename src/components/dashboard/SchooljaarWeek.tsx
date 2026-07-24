@@ -104,6 +104,20 @@ export default function SchooljaarWeek({
             Naar deze week
           </button>
         )}
+        {/* Aanpassen doe je niet in dit overzicht, maar in het aanpasscherm (de
+            weekplanning-editor). Alleen bij een lopend jaar met een rooster. */}
+        {heeftRooster && !schooljaar.afgesloten && (
+          <a
+            href="/tools/weekplanning.html"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3.5 py-2 text-sm font-bold text-ink/80 transition-transform duration-150 hover:text-ink active:scale-[0.97]"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            </svg>
+            Basisrooster aanpassen
+          </a>
+        )}
       </div>
 
       {!heeftRooster ? (
@@ -294,42 +308,6 @@ function Weekraster({
           ))}
         </div>
 
-        {/* Na schooltijd: je eigen tijd, en waar de gesprekken uit je agenda thuishoren. */}
-        <div className="grid grid-cols-[3.5rem_repeat(5,minmax(0,1fr))] border-t border-black/5 bg-cream/30">
-          <div className="px-1 py-2 text-right text-xs font-semibold leading-tight text-ink/35">
-            na school
-          </div>
-          {dagen.map((d) => {
-            const taken = d.vrij ? [] : d.blokken.filter((b) => b.soort === "taak");
-            const naSchool = d.items.filter(
-              (i) => !i.heleDag && i.begin && minuten(i.begin) >= 13 * 60,
-            );
-            return (
-              <div key={d.datum} className="min-h-[3rem] border-l border-black/5 p-1">
-                {taken.map((b) => (
-                  <span
-                    key={b.id}
-                    className="mb-0.5 block truncate rounded-lg border border-dashed border-black/15 px-1.5 py-0.5 text-xs font-semibold text-ink/60"
-                  >
-                    {b.naam}
-                  </span>
-                ))}
-                {naSchool.map((i) => (
-                  <span
-                    key={i.id}
-                    title={`${i.titel}, ${i.begin}${i.eind ? ` tot ${i.eind}` : ""}`}
-                    className={
-                      "mb-0.5 block truncate rounded-md px-1.5 py-0.5 text-xs font-bold " +
-                      ETIKET[i.soort].stijl
-                    }
-                  >
-                    {i.begin} {i.titel}
-                  </span>
-                ))}
-              </div>
-            );
-          })}
-        </div>
       </div>
     </div>
   );

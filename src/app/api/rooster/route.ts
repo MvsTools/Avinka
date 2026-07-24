@@ -8,6 +8,32 @@ import { haalRegio } from "@/lib/planning";
 //
 // Er staan geen leerlingnamen in een rooster: alleen vakken, dagen en tijden.
 
+// Het rooster van je account ophalen, zodat de weekplanning-editor het kan laden
+// in plaats van uit de browser. Zonder ?schooljaar= pakken we het huidige jaar.
+export async function GET(verzoek: Request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ fout: "Log eerst in." }, { status: 401 });
+
+  const gevraagd = new URL(verzoek.url).searchParams.get("schooljaar");
+  const schooljaar =
+    gevraagd && /^\d{4}-\d{4}$/.test(gevraagd)
+      ? gevraagd
+      : schooljaarVoor(vandaag(), await haalRegio(supabase));
+
+  const { data } = await supabase
+    .from("basisrooster")
+    .select("data")
+    .eq("user_id", user.id)
+    .eq("schooljaar", schooljaar)
+    .maybeSingle();
+
+  const ruw = (data as { data?: unknown } | null)?.data ?? null;
+  return NextResponse.json({ rooster: isBasisrooster(ruw) ? ruw : null, schooljaar });
+}
+
 export async function POST(verzoek: Request) {
   const supabase = await createClient();
   const {
