@@ -314,11 +314,20 @@ weekplanning naar de begrippen hier), `POST /api/rooster`, het tabblad
 **Weekrooster** (`SchooljaarWeek.tsx`) met het agenda-strookje uit §3.6, en
 `RoosterOvernemen.tsx` dat een rooster uit localStorage aanbiedt over te nemen.
 
-Nog te doen in fase 2: bewerken in het weekrooster zelf (nu maak en wijzig je je
-rooster nog in `public/tools/weekplanning.html`), en basis versus "deze week
-wijkt af" — de tabel `rooster_week` staat klaar maar wordt nog niet gebruikt.
-- Van losse `public/tools/weekplanning.html` naar de Week-laag binnen Mijn
-  schooljaar; niet langer een tool.
+**Besluit eigenaar (24-7): kijken en aanpassen scheiden.** Het weekrooster-
+tabblad blijft een rustig, alleen-lezen *overzicht* — je bewerkt er niet in.
+Aanpassen gebeurt in een apart **aanpasscherm**, bereikbaar via een knop
+rechtsboven ("Basisrooster aanpassen"); waar nog geen rooster is, wordt diezelfde
+knop het startpunt ("Maak je basisrooster") in plaats van het huidige
+overname-schermpje. Na opslaan kom je terug in het overzicht. Dit vervangt het
+eerdere idee "bewerken in het weekrooster zelf".
+
+Nog te doen in fase 2: het aanpasscherm bouwen en basis versus "deze week wijkt
+af" — de tabel `rooster_week` staat klaar maar wordt nog niet gebruikt.
+- Het aanpasscherm ís de bestaande weekplanning-editor
+  (`public/tools/weekplanning.html`): die kan al wizard, verslepen, korter/langer,
+  AI-generator en na-schooltijd. Niet opnieuw bouwen — aanhaken aan het platform
+  en aan de database koppelen. Niet langer een losse tool-tegel.
 - Opslag van localStorage naar de database (per gebruiker, per schooljaar), zodat
   je rooster op school én thuis hetzelfde is.
 - Onderscheid **basis versus deze week** (§3.2), met terugzetten.
