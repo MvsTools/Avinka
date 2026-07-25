@@ -747,11 +747,14 @@ export default function RoosterBewerken({
  */
 function Teller({
   waarde,
+  achtervoegsel,
   label,
   minder,
   meer,
 }: {
   waarde: string;
+  /** Kort teken achter het getal, bijvoorbeeld de × van "5×". */
+  achtervoegsel?: string;
   label: string;
   minder: () => void;
   meer: () => void;
@@ -765,7 +768,10 @@ function Teller({
       </button>
       {/* Net breed genoeg voor drie cijfers, zodat de – en + dicht bij het getal
           staan en er toch niets verspringt bij 45 → 100. */}
-      <span className="min-w-[1.6rem] text-center text-sm tabular-nums text-ink/75">{waarde}</span>
+      <span className="min-w-[1.6rem] text-center text-sm tabular-nums text-ink/75">
+        {waarde}
+        {achtervoegsel && <span className="text-xs text-ink/45">{achtervoegsel}</span>}
+      </span>
       <button onClick={meer} aria-label={`${label} meer`} className={knop}>
         +
       </button>
@@ -963,6 +969,7 @@ function VakkenInstellingen({
                 )}
                 <Teller
                   waarde={String(aantal)}
+                  achtervoegsel="×"
                   label={`${v.naam} per week`}
                   minder={() => zetAantal(v.id, aantal - 1)}
                   meer={() => zetAantal(v.id, aantal + 1)}
