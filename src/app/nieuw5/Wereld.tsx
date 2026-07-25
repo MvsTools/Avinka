@@ -172,6 +172,18 @@ function SilhouetVliegtuig({ kleur, style, tel }: { kleur: string; style: CSSPro
   );
 }
 
+function SilhouetLiniaal({ kleur, veld, style, tel }: { kleur: string; veld: string; style: CSSProperties; tel?: number }) {
+  return (
+    <SilhouetWrap par={0.04} style={style} tel={tel}>
+      <svg viewBox="0 0 200 46" className="block w-full">
+        <rect width="200" height="46" rx="9" fill={kleur} />
+        {[20, 44, 68, 92, 116, 140, 164, 188].map((x, i) => (
+          <rect key={x} x={x} y="0" width="3.5" height={i % 2 ? 12 : 18} rx="1.5" fill={veld} />
+        ))}
+      </svg>
+    </SilhouetWrap>
+  );
+}
 
 /* Losse drijvende spikkels: een paar stipjes die heel traag omhoog zweven
    binnen een kleurveld, als stof in het licht. */
@@ -470,27 +482,9 @@ export function WereldFx() {
       .blobknop { border-radius: 2.1rem 1.3rem 2.2rem 1.4rem; transition: border-radius .45s cubic-bezier(.2,.7,.2,1), transform .2s ease, background-color .2s ease, box-shadow .2s ease; }
       .blobknop:hover { border-radius: 1.3rem 2.2rem 1.4rem 2.1rem; transform: translateY(-2px) rotate(-0.6deg); }
       .blobknop:active { transform: translateY(0) scale(.97); }
-      /* Het gesprek: bubbels poppen in vanaf hun "staart" (de hoek waar ze
-         uit de verzender komen, via --staart als transform-origin) — zelfde
-         entree als berichten in een echte berichten-app. Ze liften mee op
-         het bestaande data-reveal/is-in-systeem; de :not(.is-in) is nodig
-         omdat deze regel anders óók na binnenkomst zou winnen van de
-         algemene .is-in-regel (gelijke specificiteit, latere bron). */
-      .anim [data-reveal].bubbel:not(.is-in) {
-        transform: translateY(14px) scale(0.94);
-        transform-origin: var(--staart, 0% 100%);
-      }
-      /* De typ-indicator: drie stipjes die om de beurt even oplichten en
-         optillen, traag genoeg om rustig te blijven (1,3s per rondje). */
-      @keyframes wereld-tik {
-        0%, 55%, 100% { opacity: 0.3; translate: 0 0; }
-        25% { opacity: 0.85; translate: 0 -3px; }
-      }
-      .tikstip { animation: wereld-tik 1.3s ease-in-out infinite; }
       @media (prefers-reduced-motion: reduce) {
         .wereld-wieg, .wereld-drijf, .wereld-stip, .wereld-vlucht { animation: none; }
         .muiskaart { transform: none; }
-        .tikstip { animation: none; opacity: 0.5; }
       }
     `}</style>
   );
@@ -914,147 +908,154 @@ export function WereldRegie() {
   );
 }
 
-/* 6+7. Het gesprek: de maker en de ervaringen samen op één mintveld, als
-   één gesprek tussen leerkrachten. Product-UI is de bewezen taal van deze
-   site (de film, de toolkaarten), dus de ervaringen krijgen het medium
-   waarin ze straks écht binnenkomen: berichtjes. Michael opent het gesprek
-   (donkergroene bubbels, zijn foto als avatar), daarna een scheidingsregel
-   "Wat leerkrachten zeggen", en dan de plek waar hun antwoorden landen.
-   Zolang die er nog niet zijn staat daar een typ-indicator: de eerste
-   ervaring wordt — letterlijk — nu geschreven. Elke echte ervaring die er
-   straks bijkomt is een binnengekomen berichtje met naam en groep. */
-export function WereldGesprek({ fotoBestand }: { fotoBestand?: string }) {
-  const avatar = (
-    <span
-      className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-white/80"
-      style={{ background: MINT_DIEP }}
-      aria-hidden
-    >
-      {fotoBestand ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={`/${fotoBestand}`} alt="" className="h-full w-full object-cover" />
-      ) : (
-        <span className="font-display text-sm font-black" style={{ color: DONKER }}>M</span>
-      )}
-    </span>
-  );
-
+/* 6. De maker: mint-veld met liniaal-silhouet, één witte kaart. */
+export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
   return (
-    <section className="relative overflow-hidden" style={{ background: MINT }}>
-      <Golf kleur="#fcfbf7" flip vorm="kam" />
+    <section className="relative overflow-hidden">
+      {/* Het mintveld begon eerst bovenaan deze sectie, en dan zat de golf
+         maar een paar tientallen pixels onder de golf van de sectie erboven:
+         twee randen vlak op elkaar, waardoor het als één rommelige overgang
+         las. Nu begint de mint pas op de halve hoogte van de sectie — en
+         omdat de verticale padding hier symmetrisch is, valt dat precies
+         halverwege de kaart. De kaart ligt dus met zijn bovenkant op papier
+         en met zijn onderkant op mint, en de twee golven hebben ruimte.
+         (Spiegelbeeld van de regie-sectie, waar de mint juist bovenin zit.) */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 top-1/2" aria-hidden>
+        <div className="absolute inset-0" style={{ background: MINT }} />
+        <Golf kleur="#fcfbf7" flip vorm="kam" />
+      </div>
+      {/* De liniaal hoort in het mintveld te liggen, dus onderin de sectie. */}
+      <SilhouetLiniaal kleur={MINT_DIEP} veld={MINT} style={{ width: 460, left: -120, bottom: 150, transform: "rotate(-14deg)" }} />
 
-      <div className="relative z-10 mx-auto w-full max-w-2xl px-6 pb-36 pt-28 lg:pb-40 lg:pt-32">
-        <p data-reveal className="text-2xl" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
-          van een leerkracht, voor leerkrachten
-        </p>
-        <h2
+      <div className="relative z-10 mx-auto w-full max-w-4xl px-6 pb-32 pt-32 lg:pb-36 lg:pt-36">
+        {/* De kaart hoort nu bij de familie: organische radii, tonale rand en
+           het vinkje-badge op de bovenrand, net als de regie-kaartjes. Hij was
+           daarvoor een strak afgerond blok met drie lange alinea's, waardoor
+           hij als een lap tekst las in plaats van als een kennismaking. */}
+        <div
           data-reveal
-          className="mt-2 font-display text-3xl font-black leading-[1.06] tracking-tight [text-wrap:balance] sm:text-4xl"
-          style={{ color: DONKER }}
+          className="relative border-[2.5px] px-8 py-12 sm:px-14 sm:py-14"
+          style={{
+            /* niet puur wit: een warme papiertoon houdt de kaart in dezelfde
+               wereld als het gespikkelde papier van de pagina */
+            background: "#fffdf9",
+            borderRadius: "3.2rem 2.4rem 3.4rem 2.6rem / 2.6rem 3.4rem 2.4rem 3.2rem",
+            borderColor: KAART_RAND,
+            boxShadow: KAART_SCHADUW,
+            rotate: "-0.6deg",
+          }}
         >
-          Ik ben Michael. Net als jij sta ik voor de klas.
-        </h2>
-
-        {/* ── het gesprek ── */}
-        <div className="mt-12 flex flex-col">
-          <p data-reveal className="pr-14 text-right text-sm font-semibold text-ink/70">
-            Michael · leerkracht &amp; maker van Avinka
-          </p>
-
-          {/* zijn berichten: rechts, in het donkergroen van het slotveld.
-             Alleen het laatste bericht draagt de avatar, zoals in een echte
-             berichten-app; de eerdere bubbels laten die plek open. */}
-          <div data-reveal className="bubbel mt-3 flex justify-end pr-14" style={{ "--staart": "100% 100%" } as CSSProperties}>
-            <div
-              className="max-w-[85%] rounded-3xl rounded-br-md px-6 py-4 text-lg leading-7 text-white/95 shadow-[0_16px_30px_-18px_rgba(23,80,58,0.6)]"
-              style={{ background: DONKER }}
-            >
-              Ik weet hoeveel tijd er gaat naar rapporten, analyses en
-              verslagen. Daarom bouw ik hulpmiddelen die dat werk sneller en
-              eenvoudiger maken.
-            </div>
-          </div>
-          <div
-            data-reveal
-            className="bubbel mt-2 flex justify-end pr-14"
-            style={{ "--staart": "100% 100%", transitionDelay: "110ms" } as CSSProperties}
+          <Confetti punten={[{ x: "94%", y: "8%", r: 5, amber: true }, { x: "2%", y: "86%", r: 4 }]} />
+          <span
+            className="absolute left-[62%] top-[-18px] flex h-10 w-10 items-center justify-center rounded-2xl bg-brand shadow-md"
+            style={{ translate: "-50% 0", rotate: "8deg" }}
+            aria-hidden
           >
-            <div
-              className="max-w-[85%] rounded-3xl rounded-br-md px-6 py-4 text-lg leading-7 text-white/95 shadow-[0_16px_30px_-18px_rgba(23,80,58,0.6)]"
-              style={{ background: DONKER }}
-            >
-              Geen ingewikkelde techniek, wel zorgvuldig met de gegevens van je
-              leerlingen.
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="#fff" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
+          </span>
+
+          <div className="relative flex flex-col gap-10 sm:flex-row sm:items-stretch sm:gap-12">
+            {/* Portretkolom: de foto in een organische vorm in plaats van een
+               cirkel, met een zacht mintvlak dat er schuin onderuit steekt.
+               Naam en rol staan hier, niet onderaan de tekst: dan leest het
+               als een kennismaking en niet als een ondertekende brief. Het
+               naamblok wordt naar beneden geduwd (mt-auto), want anders bleef
+               er een groot leeg wit gat onder in de linkerhelft van de kaart. */}
+            <div className="flex shrink-0 flex-col sm:w-52">
+              <div className="relative h-32 w-32 sm:h-52 sm:w-52">
+                {/* het vlak steekt naar één kant uit, niet rondom: anders
+                   valt het samen met de foto en wordt het een ring */}
+                <span
+                  className="absolute -bottom-5 -left-6 -right-1 -top-1"
+                  style={{ background: MINT, borderRadius: VLAKVORMEN.kiezel, rotate: "-9deg" }}
+                  aria-hidden
+                />
+                <span
+                  className="relative flex h-full w-full items-center justify-center overflow-hidden"
+                  style={{ background: MINT_DIEP, borderRadius: VLAKVORMEN.ei, rotate: "3deg" }}
+                >
+                  {fotoBestand ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={`/${fotoBestand}`} alt="Michael van Spanje" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="font-display text-4xl font-black" style={{ color: DONKER }}>MvS</span>
+                  )}
+                </span>
+              </div>
+              <div className="mt-8 sm:mt-auto sm:pt-10">
+                <p className="text-3xl leading-none text-ink/85" style={{ fontFamily: "var(--font-hand)" }}>Michael</p>
+                <p className="mt-1.5 text-sm text-ink/60">Leerkracht &amp; maker van Avinka</p>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-2xl leading-none" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
+                van een leerkracht, voor leerkrachten
+              </p>
+              <h2 className="mt-3 font-display text-3xl font-black leading-[1.06] tracking-tight [text-wrap:balance] sm:text-4xl" style={{ color: DONKER }}>
+                Ik ben Michael. Net als jij sta ik voor de klas.
+              </h2>
+              <p className="mt-6 text-lg leading-8 text-ink/75">
+                Ik weet hoeveel tijd er gaat naar rapporten, analyses en
+                verslagen. Daarom bouw ik hulpmiddelen die dat werk sneller en
+                eenvoudiger maken. Geen ingewikkelde techniek, wel zorgvuldig
+                met de gegevens van je leerlingen.
+              </p>
+              <p className="mt-4 text-lg leading-8 text-ink/75">
+                Wat begon als een oplossing voor mijn eigen werk, werd een
+                bredere missie: laten zien dat slimmer werken juist eenvoudig
+                kan zijn.
+              </p>
+              {/* De slotregel was vet gedrukte tekst op wit en verdween
+                 daardoor in de rest van de kaart, terwijl het juist de zin is
+                 die je moet onthouden. Nu is het een eigen mintblok met een
+                 vinkje, in de vorm van de kaarten zelf: het geeft de kaart
+                 kleur én zet de zin apart als het punt van het verhaal. */}
+              <div
+                className="relative mt-8 px-7 py-6"
+                style={{ background: MINT, borderRadius: "2.4rem 1.6rem 2.2rem 1.5rem" }}
+              >
+                <span
+                  className="absolute -top-4 left-8 flex h-9 w-9 items-center justify-center rounded-2xl bg-brand shadow-md"
+                  style={{ rotate: "-8deg" }}
+                  aria-hidden
+                >
+                  <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" stroke="#fff" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
+                </span>
+                <p className="text-lg font-bold leading-8" style={{ color: DONKER }}>
+                  Goede leerkrachten horen hun tijd te besteden aan leerlingen,
+                  niet aan papierwerk.
+                </p>
+              </div>
             </div>
           </div>
-          <div
-            data-reveal
-            className="bubbel mt-2 flex items-end justify-end gap-3"
-            style={{ "--staart": "100% 100%", transitionDelay: "220ms" } as CSSProperties}
-          >
-            <div
-              className="max-w-[85%] rounded-3xl rounded-br-md px-6 py-4 text-lg font-bold leading-7 text-white shadow-[0_16px_30px_-18px_rgba(23,80,58,0.6)]"
-              style={{ background: DONKER }}
-            >
-              Goede leerkrachten horen hun tijd te besteden aan leerlingen,
-              niet aan papierwerk.
-            </div>
-            {avatar}
-          </div>
-
-          {/* ── de overgang naar de antwoorden ── */}
-          <div data-reveal className="mt-14 flex items-center gap-5">
-            <span className="h-px flex-1 bg-ink/15" aria-hidden />
-            <h3 className="font-display text-xl font-black tracking-tight sm:text-2xl" style={{ color: DONKER }}>
-              Wat leerkrachten zeggen
-            </h3>
-            <span className="h-px flex-1 bg-ink/15" aria-hidden />
-          </div>
-          <p data-reveal className="mx-auto mt-4 max-w-md text-center text-base leading-7 text-ink/75">
-            Deze zomer test een groep leerkrachten Avinka in de praktijk. Hun
-            ervaringen komen hier te staan, in hun eigen woorden.
-          </p>
-
-          {/* het antwoord dat onderweg is: een typ-indicator. De avatar is
-             nog een gestippelde open plek — die vult zich straks met de
-             eerste echte testleerkracht. */}
-          <div
-            data-reveal
-            className="bubbel mt-10 flex items-end gap-3"
-            style={{ "--staart": "0% 100%", transitionDelay: "140ms" } as CSSProperties}
-          >
-            <span
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-ink/30 text-lg text-ink/45"
-              aria-hidden
-            >
-              ?
-            </span>
-            <div
-              className="flex items-center gap-1.5 rounded-3xl rounded-bl-md bg-white/95 px-6 py-5 shadow-[0_16px_30px_-18px_rgba(23,80,58,0.4)]"
-              aria-label="De eerste ervaring wordt geschreven"
-              role="img"
-            >
-              <span className="tikstip h-2 w-2 rounded-full bg-ink/50" />
-              <span className="tikstip h-2 w-2 rounded-full bg-ink/50" style={{ animationDelay: "0.18s" }} />
-              <span className="tikstip h-2 w-2 rounded-full bg-ink/50" style={{ animationDelay: "0.36s" }} />
-            </div>
-          </div>
-          <p data-reveal className="mt-3 pl-14 text-sm font-semibold text-ink/70" style={{ transitionDelay: "220ms" }}>
-            de eerste ervaring wordt nu geschreven
-          </p>
-
-          {/* de belofte, als statusregel onder het gesprek */}
-          <p data-reveal className="mt-10 flex items-center justify-center gap-2 text-sm font-semibold text-ink/70">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand" aria-hidden>
-              <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
-            </span>
-            Geen verzonnen quotes. Dat beloven we.
-          </p>
         </div>
       </div>
+      {/* Geen golfrand hier: het mintveld loopt bewust door in de ervaringen-
+         sectie hieronder en gaat pas vlak boven de abonnementen terug naar
+         papier. Zelfde constructie als privacy → regie. */}
+    </section>
+  );
+}
 
-      {/* Bijna vlak: na het gesprek loopt de pagina rustig uit richting de
-         abonnementen, niet nog een keer deinen. */}
+/* 7. Ervaringen: eerlijk en licht. Staat op het mintveld dat bij de maker
+   begint; het veld loopt door tot vlak boven de abonnementen. Tijdelijk
+   weer de kale versie: het nieuwe ervaringen-concept wordt nog gekozen. */
+export function WereldErvaringen() {
+  return (
+    <section className="relative overflow-hidden" style={{ background: MINT }}>
+      <div className="relative z-10 mx-auto w-full max-w-3xl px-6 pb-40 pt-16 text-center lg:pb-44">
+        <h2 data-reveal className="font-display text-3xl font-black tracking-tight [text-wrap:balance]" style={{ color: DONKER }}>
+          Wat leerkrachten zeggen
+        </h2>
+        <p data-reveal className="mx-auto mt-5 max-w-xl text-lg leading-8 text-ink/75">
+          Deze zomer test een groep leerkrachten Avinka in de praktijk. Hun
+          ervaringen komen hier te staan, in hun eigen woorden. Geen verzonnen
+          quotes, dat beloven we.
+        </p>
+      </div>
+      {/* Bijna vlak: na het makers-verhaal hoort de pagina rustig uit te
+         lopen richting de abonnementen, niet nog een keer te deinen. */}
       <Golf kleur="#fcfbf7" vorm="rust" />
     </section>
   );

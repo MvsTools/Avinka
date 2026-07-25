@@ -26,7 +26,8 @@ import {
   WereldHerken,
   WereldPrivacy,
   WereldRegie,
-  WereldGesprek,
+  WereldMaker,
+  WereldErvaringen,
   WereldSlot,
 } from "./Wereld";
 
@@ -1081,9 +1082,11 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
            elkaar. ── */}
         <WereldRegie />
 
-        {/* ── 6+7. Het gesprek: de maker opent, de ervaringen van
-           leerkrachten antwoorden — één berichten-draad op het mintveld ── */}
-        <WereldGesprek fotoBestand={fotoBestand} />
+        {/* ── 6. De maker ── */}
+        <WereldMaker fotoBestand={fotoBestand} />
+
+        {/* ── 7. Ervaringen (nieuw concept volgt) ── */}
+        <WereldErvaringen />
 
         {/* ── 8. Prijzen ── */}
         <Prijzen />
