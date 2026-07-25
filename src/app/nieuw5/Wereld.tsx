@@ -172,45 +172,6 @@ function SilhouetVliegtuig({ kleur, style, tel }: { kleur: string; style: CSSPro
   );
 }
 
-/* ── Bord-materiaal: punaise en plakband ──────────────────────────────────
-   Het gereedschap van het prikbord bij de klasdeur. Allebei puur CSS: de
-   punaise is een bol kopje (radiale gradient + binnenste schaduw) met een
-   klein slagschaduwtje op het papier eronder; het plakband is een halfdoor-
-   zichtige strook met gekartelde afscheur-uiteinden via clip-path. */
-function Punaise({ kleur = "#2f9e6e", style }: { kleur?: string; style?: CSSProperties }) {
-  return (
-    <span className="pointer-events-none absolute z-20" style={style} aria-hidden>
-      <span className="absolute left-[3px] top-[11px] h-2 w-3.5 rounded-full bg-ink/20 blur-[2px]" />
-      <span
-        className="relative block h-4 w-4 rounded-full"
-        style={{
-          background: `radial-gradient(circle at 34% 28%, rgba(255,255,255,0.7) 0%, ${kleur} 45%, ${kleur} 68%, rgba(0,0,0,0.3) 125%)`,
-          boxShadow: "inset 0 -1.5px 2px rgba(0,0,0,0.3), 0 1px 2px rgba(23,80,58,0.35)",
-        }}
-      />
-    </span>
-  );
-}
-
-function Tape({ draai = -4, breed = 84, style }: { draai?: number; breed?: number; style?: CSSProperties }) {
-  return (
-    <span
-      className="tape pointer-events-none absolute z-20"
-      style={{
-        width: breed,
-        height: 27,
-        rotate: `${draai}deg`,
-        background:
-          "linear-gradient(105deg, rgba(249,244,232,0.62), rgba(249,244,232,0.86) 30%, rgba(249,244,232,0.66) 65%, rgba(249,244,232,0.86))",
-        boxShadow: "0 1px 2px rgba(23,80,58,0.14)",
-        clipPath:
-          "polygon(0 0, 100% 0, calc(100% - 5px) 25%, 100% 50%, calc(100% - 5px) 75%, 100% 100%, 0 100%, 5px 78%, 0 55%, 5px 25%)",
-        ...style,
-      }}
-      aria-hidden
-    />
-  );
-}
 
 /* Losse drijvende spikkels: een paar stipjes die heel traag omhoog zweven
    binnen een kleurveld, als stof in het licht. */
@@ -509,34 +470,27 @@ export function WereldFx() {
       .blobknop { border-radius: 2.1rem 1.3rem 2.2rem 1.4rem; transition: border-radius .45s cubic-bezier(.2,.7,.2,1), transform .2s ease, background-color .2s ease, box-shadow .2s ease; }
       .blobknop:hover { border-radius: 1.3rem 2.2rem 1.4rem 2.1rem; transform: translateY(-2px) rotate(-0.6deg); }
       .blobknop:active { transform: translateY(0) scale(.97); }
-      /* Het prikbord. Elk opgehangen ding (.briefje) draagt drie variabelen:
-         --rot (hoe scheef het hangt), --org (waar de punaise of het plakband
-         zit, dus het natuurlijke draaipunt) en --schaduw (zijn rustschaduw).
-         Hover pakt het briefje op: het draait recht om zijn eigen punaise,
-         komt 5px van het bord af en de schaduw wordt groter en zachter,
-         alsof het papier dichterbij komt. Het plakband rekt een fractie mee.
-         De buren zakken 2px terug het bord in. Sterke ease-out (Emil's
-         cubic-bezier(.23,1,.32,1)): het papier reageert meteen en komt zacht
-         tot rust. Alleen op echte muis-apparaten: op touch blijft een
-         aangetikte kaart anders scheef hangen. De draai en schaduw staan in
-         een var en niet inline, omdat een inline stijl altijd van een
-         hover-klasse zou winnen. */
-      .briefje {
-        rotate: var(--rot, 0deg);
-        transform-origin: var(--org, 50% 18px);
-        box-shadow: var(--schaduw, none);
-        transition: rotate .38s cubic-bezier(.23,1,.32,1), translate .38s cubic-bezier(.23,1,.32,1), box-shadow .38s cubic-bezier(.23,1,.32,1);
+      /* Het gesprek: bubbels poppen in vanaf hun "staart" (de hoek waar ze
+         uit de verzender komen, via --staart als transform-origin) — zelfde
+         entree als berichten in een echte berichten-app. Ze liften mee op
+         het bestaande data-reveal/is-in-systeem; de :not(.is-in) is nodig
+         omdat deze regel anders óók na binnenkomst zou winnen van de
+         algemene .is-in-regel (gelijke specificiteit, latere bron). */
+      .anim [data-reveal].bubbel:not(.is-in) {
+        transform: translateY(14px) scale(0.94);
+        transform-origin: var(--staart, 0% 100%);
       }
-      .tape { transition: scale .38s cubic-bezier(.23,1,.32,1); }
-      @media (hover: hover) and (pointer: fine) {
-        .briefje:hover { rotate: 0deg; translate: 0 -5px; box-shadow: 0 34px 52px -26px rgba(23,80,58,0.5); }
-        .briefje:hover .tape { scale: 1.05 1; }
-        .bordkolom:has(.briefje:hover) .briefje:not(:hover) { translate: 0 2px; }
+      /* De typ-indicator: drie stipjes die om de beurt even oplichten en
+         optillen, traag genoeg om rustig te blijven (1,3s per rondje). */
+      @keyframes wereld-tik {
+        0%, 55%, 100% { opacity: 0.3; translate: 0 0; }
+        25% { opacity: 0.85; translate: 0 -3px; }
       }
+      .tikstip { animation: wereld-tik 1.3s ease-in-out infinite; }
       @media (prefers-reduced-motion: reduce) {
         .wereld-wieg, .wereld-drijf, .wereld-stip, .wereld-vlucht { animation: none; }
         .muiskaart { transform: none; }
-        .briefje, .tape { transition: none; }
+        .tikstip { animation: none; opacity: 0.5; }
       }
     `}</style>
   );
@@ -960,207 +914,146 @@ export function WereldRegie() {
   );
 }
 
-/* 6+7. Het bord: de maker en de ervaringen samen op één mintveld, als het
-   prikbord naast de klasdeur. Dit is bewust géén nagebouwd kurkbord: het
-   mintveld zelf is het bord, en alleen het materiaal dat je erop hangt is
-   echt — papier, plakband, punaises, handschrift. Links hangt de brief van
-   Michael (schriftpapier uit een ringband, met zijn schoolfoto er los
-   overheen), rechts hangen de briefjes van collega's. Zolang er nog geen
-   echte ervaringen zijn hangt daar het gele testgroep-briefje, de belofte
-   op een papiersnipper, en een vrijgehouden plek waar de punaise al in het
-   bord zit. Elke echte ervaring die er straks bijkomt is letterlijk een
-   nieuw briefje ophangen.
+/* 6+7. Het gesprek: de maker en de ervaringen samen op één mintveld, als
+   één gesprek tussen leerkrachten. Product-UI is de bewezen taal van deze
+   site (de film, de toolkaarten), dus de ervaringen krijgen het medium
+   waarin ze straks écht binnenkomen: berichtjes. Michael opent het gesprek
+   (donkergroene bubbels, zijn foto als avatar), daarna een scheidingsregel
+   "Wat leerkrachten zeggen", en dan de plek waar hun antwoorden landen.
+   Zolang die er nog niet zijn staat daar een typ-indicator: de eerste
+   ervaring wordt — letterlijk — nu geschreven. Elke echte ervaring die er
+   straks bijkomt is een binnengekomen berichtje met naam en groep. */
+export function WereldGesprek({ fotoBestand }: { fotoBestand?: string }) {
+  const avatar = (
+    <span
+      className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-white/80"
+      style={{ background: MINT_DIEP }}
+      aria-hidden
+    >
+      {fotoBestand ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={`/${fotoBestand}`} alt="" className="h-full w-full object-cover" />
+      ) : (
+        <span className="font-display text-sm font-black" style={{ color: DONKER }}>M</span>
+      )}
+    </span>
+  );
 
-   De fysica: elk opgehangen ding heeft zijn eigen draai (--rot) en zijn
-   eigen draaipunt (--org, de plek van de punaise of het plakband). Hover
-   pakt het op: het draait recht om zijn punaise, komt een paar pixels van
-   het bord af en de schaduw groeit mee. De buren zakken een fractie terug.
-   Alles direct leesbaar zonder hover; de interactie is alleen gevoel. */
-export function WereldPrikbord({ fotoBestand }: { fotoBestand?: string }) {
   return (
     <section className="relative overflow-hidden" style={{ background: MINT }}>
       <Golf kleur="#fcfbf7" flip vorm="kam" />
 
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-36 pt-28 lg:pb-44 lg:pt-32">
-        <div className="grid gap-20 lg:grid-cols-[1.12fr_0.88fr] lg:gap-14">
-          {/* ── de brief van Michael ── */}
-          <article data-reveal className="relative lg:pr-6">
-            {/* de schoolfoto: een polaroid die los over de rand van de brief
-               hangt. Op mobiel staat hij erboven en overlapt hij de brief. */}
-            <figure
-              className="briefje relative z-20 mx-auto -mb-14 w-36 bg-white p-2.5 pb-2 sm:w-40 lg:absolute lg:-right-2 lg:-top-12 lg:mx-0 lg:mb-0"
-              style={{
-                "--rot": "-4.5deg",
-                "--org": "50% 16px",
-                "--schaduw": "0 20px 34px -18px rgba(23,80,58,0.5)",
-                borderRadius: 5,
-              } as CSSProperties}
-            >
-              <Tape draai={-3} breed={92} style={{ left: "50%", top: -13, translate: "-50%" }} />
-              <span
-                className="flex aspect-square w-full items-center justify-center overflow-hidden"
-                style={{ background: MINT_DIEP, borderRadius: 3 }}
-              >
-                {fotoBestand ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={`/${fotoBestand}`} alt="Michael van Spanje" className="h-full w-full object-cover" />
-                ) : (
-                  <span className="font-display text-3xl font-black" style={{ color: DONKER }}>MvS</span>
-                )}
-              </span>
-              <figcaption
-                className="pt-2 text-center text-xl leading-tight text-ink/80"
-                style={{ fontFamily: "var(--font-hand)" }}
-              >
-                meester Michael
-              </figcaption>
-            </figure>
+      <div className="relative z-10 mx-auto w-full max-w-2xl px-6 pb-36 pt-28 lg:pb-40 lg:pt-32">
+        <p data-reveal className="text-2xl" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
+          van een leerkracht, voor leerkrachten
+        </p>
+        <h2
+          data-reveal
+          className="mt-2 font-display text-3xl font-black leading-[1.06] tracking-tight [text-wrap:balance] sm:text-4xl"
+          style={{ color: DONKER }}
+        >
+          Ik ben Michael. Net als jij sta ik voor de klas.
+        </h2>
 
-            {/* schriftpapier: lijntjes om de 32px (exact de leading-8 van de
-               lopende tekst, zodat de zinnen écht op de lijntjes staan), een
-               rode kantlijn, en perforatie-gaatjes waar het mint van het bord
-               doorheen kijkt: een vel dat uit een ringband is gescheurd.
-               De kantlijn schuift mee met --kant (mobiel smaller). */}
+        {/* ── het gesprek ── */}
+        <div className="mt-12 flex flex-col">
+          <p data-reveal className="pr-14 text-right text-sm font-semibold text-ink/70">
+            Michael · leerkracht &amp; maker van Avinka
+          </p>
+
+          {/* zijn berichten: rechts, in het donkergroen van het slotveld.
+             Alleen het laatste bericht draagt de avatar, zoals in een echte
+             berichten-app; de eerdere bubbels laten die plek open. */}
+          <div data-reveal className="bubbel mt-3 flex justify-end pr-14" style={{ "--staart": "100% 100%" } as CSSProperties}>
             <div
-              className="briefje relative pb-10 pt-24 [--kant:2rem] sm:[--kant:3.5rem] lg:pt-14"
-              style={{
-                "--rot": "-0.8deg",
-                "--org": "20% 24px",
-                "--schaduw": "0 32px 55px -30px rgba(23,80,58,0.55)",
-                background: "#fffdf9",
-                backgroundImage: `linear-gradient(to right, transparent var(--kant), rgba(214,110,92,0.35) var(--kant), rgba(214,110,92,0.35) calc(var(--kant) + 1.5px), transparent calc(var(--kant) + 1.5px)), repeating-linear-gradient(to bottom, transparent 0, transparent 31px, rgba(52,86,120,0.08) 31px, rgba(52,86,120,0.08) 32px)`,
-                backgroundPosition: "0 0, 0 18px",
-                borderRadius: "10px 14px 12px 16px",
-              } as CSSProperties}
+              className="max-w-[85%] rounded-3xl rounded-br-md px-6 py-4 text-lg leading-7 text-white/95 shadow-[0_16px_30px_-18px_rgba(23,80,58,0.6)]"
+              style={{ background: DONKER }}
             >
-              <Tape draai={-5} breed={88} style={{ left: 26, top: -13 }} />
-              <Tape draai={4} breed={72} style={{ right: 34, top: -12 }} />
-              {/* perforatie-gaatjes, links van de kantlijn */}
-              {[92, 260, 428].map((top) => (
-                <span
-                  key={top}
-                  className="absolute left-[0.7rem] hidden h-4 w-4 rounded-full sm:left-[1.4rem] sm:block"
-                  style={{ top, background: MINT, boxShadow: "inset 0 1.5px 2.5px rgba(23,80,58,0.28)" }}
-                  aria-hidden
-                />
-              ))}
-
-              <div className="pl-[calc(var(--kant)+1.25rem)] pr-7 sm:pr-10">
-                <p className="text-2xl leading-8" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
-                  van een leerkracht, voor leerkrachten
-                </p>
-                {/* lg:pr houdt de kopregel uit de buurt van de polaroid die
-                   rechtsboven over de brief heen hangt */}
-                <h2
-                  className="mt-2 font-display text-3xl font-black leading-[1.06] tracking-tight [text-wrap:balance] sm:text-4xl lg:pr-36"
-                  style={{ color: DONKER }}
-                >
-                  Ik ben Michael. Net als jij sta ik voor de klas.
-                </h2>
-                <p className="mt-6 text-lg leading-8 text-ink/80">
-                  Ik weet hoeveel tijd er gaat naar rapporten, analyses en
-                  verslagen. Daarom bouw ik hulpmiddelen die dat werk sneller
-                  en eenvoudiger maken. Geen ingewikkelde techniek, wel
-                  zorgvuldig met de gegevens van je leerlingen.
-                </p>
-                <p className="mt-4 text-lg leading-8 text-ink/80">
-                  Wat begon als een oplossing voor mijn eigen werk, werd een
-                  bredere missie: laten zien dat slimmer werken juist eenvoudig
-                  kan zijn.
-                </p>
-                {/* de slotzin als aangestreepte zin: handschrift, groene inkt */}
-                <p className="mt-7 text-[1.55rem] leading-8" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
-                  goede leerkrachten horen hun tijd te besteden aan leerlingen,
-                  niet aan papierwerk.
-                </p>
-                <p className="mt-7 text-3xl leading-none text-ink/85" style={{ fontFamily: "var(--font-hand)" }}>
-                  Michael
-                </p>
-                <p className="mt-1.5 text-sm text-ink/60">Leerkracht &amp; maker van Avinka</p>
-              </div>
-            </div>
-          </article>
-
-          {/* ── de briefjes van collega's ── */}
-          <div className="bordkolom relative flex flex-col">
-            <h2
-              data-reveal
-              className="font-display text-3xl font-black tracking-tight [text-wrap:balance] sm:text-4xl"
-              style={{ color: DONKER }}
-            >
-              Wat leerkrachten zeggen
-            </h2>
-
-            {/* het gele briefje van de testgroep, aan een punaise */}
-            <div data-reveal className="mt-10 w-[19rem] max-w-full self-start" style={{ transitionDelay: "90ms" }}>
-              <div
-                className="briefje relative p-6 pb-7 pt-8"
-                style={{
-                  "--rot": "2.2deg",
-                  "--org": "50% 14px",
-                  "--schaduw": "0 24px 42px -26px rgba(23,80,58,0.5)",
-                  background: "#fdf3c4",
-                  borderRadius: "4px 22px 18px 20px",
-                } as CSSProperties}
-              >
-                <Punaise style={{ left: "50%", top: 7, translate: "-50% 0" }} />
-                <p className="text-xl leading-7 text-ink/85" style={{ fontFamily: "var(--font-hand)" }}>
-                  deze zomer test een groep leerkrachten Avinka in de praktijk.
-                  hun ervaringen komen hier te staan, in hun eigen woorden.
-                </p>
-              </div>
-            </div>
-
-            {/* de belofte, op een papiersnipper met plakband: afgemaakt met
-               een stempel, ons eigen afvink-motief */}
-            <div data-reveal className="z-10 -mt-4 w-64 max-w-full self-end lg:mr-2" style={{ transitionDelay: "180ms" }}>
-              <div
-                className="briefje relative p-6 pt-7"
-                style={{
-                  "--rot": "-2deg",
-                  "--org": "36px 14px",
-                  "--schaduw": "0 20px 38px -24px rgba(23,80,58,0.5)",
-                  background: "#fffdf9",
-                  borderRadius: "2px 14px 6px 16px",
-                } as CSSProperties}
-              >
-                <Tape draai={-6} breed={74} style={{ left: 12, top: -12 }} />
-                <p className="font-display text-xl font-black tracking-tight" style={{ color: DONKER }}>
-                  Geen verzonnen quotes.
-                </p>
-                <span
-                  className="mt-3 inline-block rounded-xl border-[3px] px-2.5 py-1 text-[0.68rem] font-black uppercase tracking-[0.14em]"
-                  style={{ rotate: "-4deg", borderColor: KOP, color: KOP, background: "#ffffffd9" }}
-                >
-                  ✓ beloofd
-                </span>
-              </div>
-            </div>
-
-            {/* de vrijgehouden plek: de punaise zit al in het bord, het
-               briefje moet nog komen. Bewust geen .briefje (er hangt niets
-               om op te pakken) en geen dichte vorm: alleen een gestippelde
-               omtrek waar het mint doorheen kijkt. */}
-            <div
-              data-reveal
-              className="relative mt-10 w-[19rem] max-w-full self-start p-6 pt-9 lg:ml-6 lg:mt-24"
-              style={{
-                transitionDelay: "270ms",
-                rotate: "0.9deg",
-                border: "2px dashed rgba(34,28,58,0.3)",
-                borderRadius: "8px 20px 12px 22px",
-              }}
-            >
-              <Punaise kleur="#f59e0b" style={{ left: "50%", top: 7, translate: "-50% 0" }} />
-              <p className="text-lg leading-7 text-ink/75" style={{ fontFamily: "var(--font-hand)" }}>
-                deze plek is vrijgehouden voor de eerste ervaring
-              </p>
+              Ik weet hoeveel tijd er gaat naar rapporten, analyses en
+              verslagen. Daarom bouw ik hulpmiddelen die dat werk sneller en
+              eenvoudiger maken.
             </div>
           </div>
+          <div
+            data-reveal
+            className="bubbel mt-2 flex justify-end pr-14"
+            style={{ "--staart": "100% 100%", transitionDelay: "110ms" } as CSSProperties}
+          >
+            <div
+              className="max-w-[85%] rounded-3xl rounded-br-md px-6 py-4 text-lg leading-7 text-white/95 shadow-[0_16px_30px_-18px_rgba(23,80,58,0.6)]"
+              style={{ background: DONKER }}
+            >
+              Geen ingewikkelde techniek, wel zorgvuldig met de gegevens van je
+              leerlingen.
+            </div>
+          </div>
+          <div
+            data-reveal
+            className="bubbel mt-2 flex items-end justify-end gap-3"
+            style={{ "--staart": "100% 100%", transitionDelay: "220ms" } as CSSProperties}
+          >
+            <div
+              className="max-w-[85%] rounded-3xl rounded-br-md px-6 py-4 text-lg font-bold leading-7 text-white shadow-[0_16px_30px_-18px_rgba(23,80,58,0.6)]"
+              style={{ background: DONKER }}
+            >
+              Goede leerkrachten horen hun tijd te besteden aan leerlingen,
+              niet aan papierwerk.
+            </div>
+            {avatar}
+          </div>
+
+          {/* ── de overgang naar de antwoorden ── */}
+          <div data-reveal className="mt-14 flex items-center gap-5">
+            <span className="h-px flex-1 bg-ink/15" aria-hidden />
+            <h3 className="font-display text-xl font-black tracking-tight sm:text-2xl" style={{ color: DONKER }}>
+              Wat leerkrachten zeggen
+            </h3>
+            <span className="h-px flex-1 bg-ink/15" aria-hidden />
+          </div>
+          <p data-reveal className="mx-auto mt-4 max-w-md text-center text-base leading-7 text-ink/75">
+            Deze zomer test een groep leerkrachten Avinka in de praktijk. Hun
+            ervaringen komen hier te staan, in hun eigen woorden.
+          </p>
+
+          {/* het antwoord dat onderweg is: een typ-indicator. De avatar is
+             nog een gestippelde open plek — die vult zich straks met de
+             eerste echte testleerkracht. */}
+          <div
+            data-reveal
+            className="bubbel mt-10 flex items-end gap-3"
+            style={{ "--staart": "0% 100%", transitionDelay: "140ms" } as CSSProperties}
+          >
+            <span
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-ink/30 text-lg text-ink/45"
+              aria-hidden
+            >
+              ?
+            </span>
+            <div
+              className="flex items-center gap-1.5 rounded-3xl rounded-bl-md bg-white/95 px-6 py-5 shadow-[0_16px_30px_-18px_rgba(23,80,58,0.4)]"
+              aria-label="De eerste ervaring wordt geschreven"
+              role="img"
+            >
+              <span className="tikstip h-2 w-2 rounded-full bg-ink/50" />
+              <span className="tikstip h-2 w-2 rounded-full bg-ink/50" style={{ animationDelay: "0.18s" }} />
+              <span className="tikstip h-2 w-2 rounded-full bg-ink/50" style={{ animationDelay: "0.36s" }} />
+            </div>
+          </div>
+          <p data-reveal className="mt-3 pl-14 text-sm font-semibold text-ink/70" style={{ transitionDelay: "220ms" }}>
+            de eerste ervaring wordt nu geschreven
+          </p>
+
+          {/* de belofte, als statusregel onder het gesprek */}
+          <p data-reveal className="mt-10 flex items-center justify-center gap-2 text-sm font-semibold text-ink/70">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand" aria-hidden>
+              <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
+            </span>
+            Geen verzonnen quotes. Dat beloven we.
+          </p>
         </div>
       </div>
 
-      {/* Bijna vlak: na het bord loopt de pagina rustig uit richting de
+      {/* Bijna vlak: na het gesprek loopt de pagina rustig uit richting de
          abonnementen, niet nog een keer deinen. */}
       <Golf kleur="#fcfbf7" vorm="rust" />
     </section>
