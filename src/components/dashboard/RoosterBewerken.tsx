@@ -755,9 +755,6 @@ function VakkenInstellingen({
   const [bewerkNaam, setBewerkNaam] = useState("");
   const [eigenNaam, setEigenNaam] = useState("");
   const [paletVoor, setPaletVoor] = useState<{ id: string; x: number; y: number } | null>(null);
-  // De aangetikte rij. Op een tablet is er geen muisaanwijzer, dus daar houdt een
-  // tik de knoppen van dat vak open.
-  const [actiefId, setActiefId] = useState<string | null>(null);
 
   // Standaardvakken die nog niet zijn ingesteld (om snel toe te voegen). Een vak
   // dat er alleen staat voor zijn kleur (geen `blokken`) telt niet als ingesteld.
@@ -874,18 +871,8 @@ function VakkenInstellingen({
             const aantal = v.blokken?.length ?? 1;
             const duur = v.blokken?.[0] ?? 45;
             const bewerkt = bewerkId === v.id;
-            // In rust laat een rij alleen kleur, naam en "5 × 45 min" zien. De
-            // knoppen komen tevoorschijn zodra je op de rij staat (muis of
-            // toetsenbord) of hem aantikt — dat laatste voor een tablet.
-            const actief = actiefId === v.id || bewerkt;
-            const alleenInRust = actief ? "hidden" : "group-hover:hidden group-focus-within:hidden";
-            const bijDeRij = actief ? "flex" : "hidden group-hover:flex group-focus-within:flex";
             return (
-              <div
-                key={v.id}
-                onClick={() => setActiefId(v.id)}
-                className="group flex items-center gap-2 rounded-xl px-2 py-1.5 transition-colors hover:bg-cream/60"
-              >
+              <div key={v.id} className="flex items-center gap-2 rounded-xl bg-cream/50 px-2 py-1.5">
                 <button
                   onClick={(e) => {
                     const r = e.currentTarget.getBoundingClientRect();
@@ -913,84 +900,74 @@ function VakkenInstellingen({
                     className="min-w-0 flex-1 rounded-md border border-black/15 px-1.5 py-0.5 text-sm font-semibold text-ink outline-none focus:border-brand-dark/40"
                   />
                 ) : (
-                  <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">
-                    {v.naam}
-                  </span>
-                )}
-
-                {/* De rechterkant is altijd even breed, zodat de naam niet
-                    verspringt zodra de knoppen verschijnen. */}
-                <div className="flex w-[15.5rem] shrink-0 items-center justify-end gap-1">
-                  <span className={"text-xs tabular-nums text-ink/50 " + alleenInRust}>
-                    {aantal} × {duur} min
-                  </span>
-                  <div className={"items-center gap-1 " + bijDeRij}>
-                    {!bewerkt && (
-                      <button
-                        onClick={() => {
-                          setBewerkId(v.id);
-                          setBewerkNaam(v.naam);
-                        }}
-                        aria-label={`${v.naam} hernoemen`}
-                        title="Naam wijzigen"
-                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-ink/35 transition-colors hover:bg-black/5 hover:text-ink"
-                      >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M12 20h9" />
-                          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                        </svg>
-                      </button>
-                    )}
-                    <span className="flex shrink-0 items-center gap-0.5">
-                      <button
-                        onClick={() => zetAantal(v.id, aantal - 1)}
-                        aria-label="Minder"
-                        className="flex h-6 w-6 items-center justify-center rounded-md border border-black/10 bg-white text-base font-bold text-ink/60 transition-transform duration-150 hover:text-ink active:scale-[0.94]"
-                      >
-                        –
-                      </button>
-                      <span className="min-w-[2rem] text-center text-xs tabular-nums text-ink/60">
-                        {aantal}×
-                      </span>
-                      <button
-                        onClick={() => zetAantal(v.id, aantal + 1)}
-                        aria-label="Meer"
-                        className="flex h-6 w-6 items-center justify-center rounded-md border border-black/10 bg-white text-base font-bold text-ink/60 transition-transform duration-150 hover:text-ink active:scale-[0.94]"
-                      >
-                        +
-                      </button>
-                    </span>
-                    <span className="flex shrink-0 items-center gap-0.5">
-                      <button
-                        onClick={() => zetDuur(v.id, duur - 5)}
-                        aria-label="Korter"
-                        className="flex h-6 w-6 items-center justify-center rounded-md border border-black/10 bg-white text-base font-bold text-ink/60 transition-transform duration-150 hover:text-ink active:scale-[0.94]"
-                      >
-                        –
-                      </button>
-                      <span className="min-w-[3.25rem] text-center text-xs tabular-nums text-ink/60">
-                        {duur} min
-                      </span>
-                      <button
-                        onClick={() => zetDuur(v.id, duur + 5)}
-                        aria-label="Langer"
-                        className="flex h-6 w-6 items-center justify-center rounded-md border border-black/10 bg-white text-base font-bold text-ink/60 transition-transform duration-150 hover:text-ink active:scale-[0.94]"
-                      >
-                        +
-                      </button>
+                  <>
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">
+                      {v.naam}
                     </span>
                     <button
-                      onClick={() => verwijder(v.id)}
-                      aria-label={`${v.naam} weghalen`}
-                      title="Weghalen"
-                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-ink/35 transition-colors hover:bg-black/5 hover:text-red-600"
+                      onClick={() => {
+                        setBewerkId(v.id);
+                        setBewerkNaam(v.naam);
+                      }}
+                      aria-label={`${v.naam} hernoemen`}
+                      title="Naam wijzigen"
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-ink/35 transition-colors hover:bg-black/5 hover:text-ink"
                     >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-                        <path d="M6 6l12 12M18 6L6 18" />
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
                       </svg>
                     </button>
-                  </div>
-                </div>
+                  </>
+                )}
+                <span className="flex shrink-0 items-center gap-0.5">
+                  <button
+                    onClick={() => zetAantal(v.id, aantal - 1)}
+                    aria-label="Minder"
+                    className="flex h-6 w-6 items-center justify-center rounded-md border border-black/10 bg-white text-base font-bold text-ink/60 transition-transform duration-150 hover:text-ink active:scale-[0.94]"
+                  >
+                    –
+                  </button>
+                  <span className="min-w-[2rem] text-center text-xs tabular-nums text-ink/60">
+                    {aantal}×
+                  </span>
+                  <button
+                    onClick={() => zetAantal(v.id, aantal + 1)}
+                    aria-label="Meer"
+                    className="flex h-6 w-6 items-center justify-center rounded-md border border-black/10 bg-white text-base font-bold text-ink/60 transition-transform duration-150 hover:text-ink active:scale-[0.94]"
+                  >
+                    +
+                  </button>
+                </span>
+                <span className="flex shrink-0 items-center gap-0.5">
+                  <button
+                    onClick={() => zetDuur(v.id, duur - 5)}
+                    aria-label="Korter"
+                    className="flex h-6 w-6 items-center justify-center rounded-md border border-black/10 bg-white text-base font-bold text-ink/60 transition-transform duration-150 hover:text-ink active:scale-[0.94]"
+                  >
+                    –
+                  </button>
+                  <span className="min-w-[3.25rem] text-center text-xs tabular-nums text-ink/60">
+                    {duur} min
+                  </span>
+                  <button
+                    onClick={() => zetDuur(v.id, duur + 5)}
+                    aria-label="Langer"
+                    className="flex h-6 w-6 items-center justify-center rounded-md border border-black/10 bg-white text-base font-bold text-ink/60 transition-transform duration-150 hover:text-ink active:scale-[0.94]"
+                  >
+                    +
+                  </button>
+                </span>
+                <button
+                  onClick={() => verwijder(v.id)}
+                  aria-label={`${v.naam} weghalen`}
+                  title="Weghalen"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-ink/35 transition-colors hover:bg-black/5 hover:text-red-600"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                    <path d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </button>
               </div>
             );
           })}
