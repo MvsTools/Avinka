@@ -170,6 +170,9 @@ export default function RoosterBewerken({
   // pagina (onderschepte link), een ander tabblad (guard) of terug naar het
   // overzicht (Annuleren). null valt terug op onKlaar.
   const [naDeWaarschuwing, setNaDeWaarschuwing] = useState<(() => void) | null>(null);
+  // Welke soort wijziging als laatste is gedaan, om doorlopend typen tot één
+  // stap in "ongedaan maken" samen te voegen (zie pasToe).
+  const laatsteStap = useRef<string | null>(null);
   const router = useRouter();
 
   // De guard registreren zolang er onopgeslagen wijzigingen zijn, zodat de
@@ -280,9 +283,15 @@ export default function RoosterBewerken({
 
   // Elke wijziging bewaart de vorige stand voor "ongedaan maken" en zet het
   // rooster op "niet opgeslagen". Nog niets naar de server: dat doe je zelf.
-  function pasToe(maak: (c: Basisrooster) => Basisrooster) {
+  //
+  // `stap` hoort bij wijzigingen die uit veel kleine beetjes bestaan, zoals het
+  // typen van een omschrijving. Blijft de stap dezelfde, dan groeien ze samen tot
+  // één stap in "ongedaan maken" — anders zou elke letter er een worden.
+  function pasToe(maak: (c: Basisrooster) => Basisrooster, stap?: string) {
     if (!concept) return;
-    setGeschiedenis((g) => [...g, concept]);
+    const doorgaan = stap != null && stap === laatsteStap.current;
+    if (!doorgaan) setGeschiedenis((g) => [...g, concept]);
+    laatsteStap.current = stap ?? null;
     setConcept(maak(concept));
     setVuil(true);
   }
@@ -403,6 +412,20 @@ export default function RoosterBewerken({
     }));
   }
 
+  // De eigen aantekening bij een blok ("Jeugdjournaal kijken"). Hoort bij dít
+  // blok en niet bij het vak, want de ene pauze is de andere niet.
+  function zetOmschrijving(id: string, tekst: string) {
+    pasToe(
+      (c) => ({
+        ...c,
+        blokken: c.blokken.map((b) =>
+          b.id === id ? { ...b, omschrijving: tekst.trim() ? tekst : undefined } : b,
+        ),
+      }),
+      "omschrijving:" + id,
+    );
+  }
+
   function verwijder(id: string) {
     pasToe((c) => ({ ...c, blokken: c.blokken.filter((b) => b.id !== id) }));
     setGekozen(null);
@@ -519,7 +542,7 @@ export default function RoosterBewerken({
     }
     const r = el.getBoundingClientRect();
     const breedte = 244;
-    const hoogteSchatting = 178;
+    const hoogteSchatting = 300; // inclusief een opengeklapt omschrijving-veld
     let x = r.right + 8;
     let kant: "links" | "rechts" = "rechts";
     if (x + breedte > window.innerWidth - 8) {
@@ -643,6 +666,7 @@ export default function RoosterBewerken({
         <>
           <div className="fixed inset-0 z-40" onClick={() => setGekozen(null)} />
           <Blokkaart
+            key={gekozenBlok.id}
             blok={gekozenBlok}
             x={gekozen.x}
             y={gekozen.y}
@@ -652,6 +676,7 @@ export default function RoosterBewerken({
             eindeEerder={() => wijzigEinde(gekozenBlok.id, -5)}
             eindeLater={() => wijzigEinde(gekozenBlok.id, 5)}
             zetKleur={(opt) => zetVakKleur(gekozenBlok.vak, gekozenBlok.naam, opt)}
+            zetOmschrijving={(tekst) => zetOmschrijving(gekozenBlok.id, tekst)}
             weghalen={() => verwijder(gekozenBlok.id)}
             sluit={() => setGekozen(null)}
           />
@@ -1279,6 +1304,7 @@ function Blokkaart({
   eindeEerder,
   eindeLater,
   zetKleur,
+  zetOmschrijving,
   weghalen,
   sluit,
 }: {
@@ -1291,6 +1317,7 @@ function Blokkaart({
   eindeEerder: () => void;
   eindeLater: () => void;
   zetKleur: (opt: { bg: string; tekst: string }) => void;
+  zetOmschrijving: (tekst: string) => void;
   weghalen: () => void;
   sluit: () => void;
 }) {
@@ -1298,6 +1325,9 @@ function Blokkaart({
   // de kant waar het blok staat.
   const [open, setOpen] = useState(false);
   const [paletOpen, setPaletOpen] = useState(false);
+  // Staat er al iets, dan staat het tekstveld meteen open — anders zie je je
+  // eigen aantekening niet als je het blok aanklikt.
+  const [tekstOpen, setTekstOpen] = useState(Boolean(blok.omschrijving));
   useEffect(() => setOpen(true), []);
   const duur = minuten(blok.eind) - minuten(blok.begin);
 
@@ -1343,6 +1373,47 @@ function Blokkaart({
       <div className="mt-3 flex flex-col gap-1.5">
         <TijdRij label="Begin" tijd={blok.begin} eerder={beginEerder} later={beginLater} />
         <TijdRij label="Einde" tijd={blok.eind} eerder={eindeEerder} later={eindeLater} />
+      </div>
+
+      {/* Eén knop voor je eigen aantekening bij dit blok. Klik en er klapt een
+          tekstveld open; klik nog eens en het gaat weer dicht. De tekst reist
+          mee met het basisrooster en komt terug in het weekrooster. */}
+      <div className="mt-1.5">
+        <button
+          onClick={() => setTekstOpen((o) => !o)}
+          aria-expanded={tekstOpen}
+          className="flex w-full items-center gap-2 rounded-xl bg-cream/60 px-2 py-1.5 text-left text-sm font-semibold text-ink/70 transition-colors hover:text-ink"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-ink/45">
+            <path d="M4 6h16M4 11h16M4 16h9" />
+          </svg>
+          <span className="min-w-0 flex-1 truncate">
+            {blok.omschrijving || "Omschrijving toevoegen"}
+          </span>
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={"shrink-0 text-ink/40 transition-transform " + (tekstOpen ? "rotate-180" : "")}
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </button>
+        {tekstOpen && (
+          <textarea
+            autoFocus={!blok.omschrijving}
+            value={blok.omschrijving ?? ""}
+            onChange={(e) => zetOmschrijving(e.target.value)}
+            rows={3}
+            placeholder="Bijvoorbeeld: Jeugdjournaal kijken"
+            className="mt-1 w-full resize-none rounded-xl border border-black/10 bg-white px-2 py-1.5 text-sm leading-6 text-ink outline-none placeholder:text-ink/35 focus:border-brand-dark/40"
+          />
+        )}
       </div>
 
       {/* Het kleurmenu, onder het vakje. De kleur hoort bij het vak, dus alle

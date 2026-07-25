@@ -76,6 +76,9 @@ export type Roosterblok = {
   naam: string;
   /** Zachte achtergrond + bijpassende tekstkleur, overgenomen uit de weekplanning. */
   kleur?: { bg: string; tekst: string };
+  /** Eigen aantekening bij dit blok ("Jeugdjournaal kijken"). Vrije tekst van de
+   *  leerkracht zelf, dus nooit leerlingnamen — dat blijft de afspraak. */
+  omschrijving?: string;
   /** Een les binnen schooltijd, of je eigen tijd erna. */
   soort: "les" | "taak";
 };

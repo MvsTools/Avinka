@@ -23,6 +23,8 @@ export type RoosterBlokRuw = {
   naam: string;
   /** "les" = tijdens schooltijd, "taak" = eigen tijd erna, "vast" = pauze of gym. */
   type?: string;
+  /** Eigen aantekening bij dit blok, door de leerkracht zelf getypt. */
+  omschrijving?: string;
 };
 
 export type RoosterSetup = {
@@ -158,6 +160,7 @@ export function naarBlokken(rooster: Basisrooster | null): Roosterblok[] {
       vak: b.vak,
       naam: b.naam,
       kleur: kleurVoor(b.vak, rooster.setup),
+      omschrijving: typeof b.omschrijving === "string" ? b.omschrijving : undefined,
       soort: b.type === "taak" ? ("taak" as const) : ("les" as const),
     }))
     .sort((a, b) => a.weekdag - b.weekdag || a.begin.localeCompare(b.begin));

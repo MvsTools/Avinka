@@ -13,7 +13,7 @@ import {
   volledig,
   weeknummer,
 } from "@/lib/planning";
-import type { Dagbeeld, PlanningBron } from "@/lib/planning";
+import type { Dagbeeld, PlanningBron, Roosterblok } from "@/lib/planning";
 import { ETIKET } from "./schooljaar-stijl";
 import SchooljaarDagkaart from "./SchooljaarDagkaart";
 import RoosterOvernemen from "./RoosterOvernemen";
@@ -62,6 +62,8 @@ export default function SchooljaarWeek({
   );
   const [dagkaart, setDagkaart] = useState<string | null>(null);
   const [bewerken, setBewerken] = useState(false);
+  // Het blok waarvan je de eigen aantekening leest.
+  const [blokInfo, setBlokInfo] = useState<Roosterblok | null>(null);
 
   // In de bewerkstand vervangt de editor het overzicht. Bij "Klaar" halen we de
   // server opnieuw op (router.refresh), zodat het overzicht je nieuwe rooster toont.
@@ -96,6 +98,51 @@ export default function SchooljaarWeek({
           groepen={groepen}
           sluit={() => setDagkaart(null)}
         />
+      )}
+
+      {/* Je eigen aantekening bij een blok, zoals je die in de bewerkstand hebt
+          getypt. Alleen lezen: aanpassen doe je in het basisrooster. */}
+      {blokInfo && (
+        <div
+          className="fixed inset-0 z-[70] flex items-end justify-center bg-ink/25 p-0 backdrop-blur-[2px] sm:items-center sm:p-6"
+          onClick={() => setBlokInfo(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Omschrijving bij ${blokInfo.naam}`}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-t-3xl bg-white p-5 shadow-xl sm:rounded-3xl"
+          >
+            <div className="flex items-start gap-3">
+              <span
+                className="mt-0.5 h-4 w-4 shrink-0 rounded"
+                style={{
+                  background: blokInfo.kleur?.bg,
+                  boxShadow: `inset 0 0 0 1px ${blokInfo.kleur?.tekst ?? "#000"}55`,
+                }}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="font-serif text-xl font-semibold text-ink">{blokInfo.naam}</p>
+                <p className="text-sm tabular-nums text-ink/55">
+                  {DAGNAMEN[blokInfo.weekdag]} · {blokInfo.begin}–{blokInfo.eind}
+                </p>
+              </div>
+              <button
+                onClick={() => setBlokInfo(null)}
+                aria-label="Sluiten"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-black/10 text-ink/50 transition-transform duration-150 hover:text-ink active:scale-[0.96]"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              </button>
+            </div>
+            <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-ink/80">
+              {blokInfo.omschrijving}
+            </p>
+          </div>
+        </div>
       )}
 
       <div className="flex flex-wrap items-center gap-3">
@@ -162,6 +209,7 @@ export default function SchooljaarWeek({
           rasterBegin={rasterBegin}
           hoogte={hoogte}
           opendag={setDagkaart}
+          openBlok={setBlokInfo}
         />
       )}
     </div>
@@ -174,12 +222,15 @@ function Weekraster({
   rasterBegin,
   hoogte,
   opendag,
+  openBlok,
 }: {
   dagen: Dagbeeld[];
   vandaag: string;
   rasterBegin: number;
   hoogte: number;
   opendag: (datum: string) => void;
+  /** Een blok met een eigen aantekening aangeklikt. */
+  openBlok: (blok: Roosterblok) => void;
 }) {
   // 1,7 pixel per minuut: een blok van 45 minuten wordt ~75 hoog. Ruim genoeg dat
   // ook een kort blok (10 min = 15px) zijn naam mét letterstaartjes (p/g/j) toont
@@ -318,13 +369,35 @@ function Weekraster({
                     const smal = n > 1;
                     const tijdTonen = !smal || h >= 30;
                     const gestapeld = smal && tijdTonen;
+                    // Heeft dit blok een eigen aantekening, dan kun je hem
+                    // aanklikken om die te lezen; een stipje verklapt dat er
+                    // meer in zit.
+                    const heeftTekst = Boolean(b.omschrijving);
                     return (
                       <div
                         key={b.id}
-                        title={`${b.naam} ${b.begin}–${b.eind}`}
+                        title={
+                          heeftTekst
+                            ? `${b.naam} ${b.begin}–${b.eind} — klik voor je omschrijving`
+                            : `${b.naam} ${b.begin}–${b.eind}`
+                        }
+                        onClick={heeftTekst ? () => openBlok(b) : undefined}
+                        role={heeftTekst ? "button" : undefined}
+                        tabIndex={heeftTekst ? 0 : undefined}
+                        onKeyDown={
+                          heeftTekst
+                            ? (e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  openBlok(b);
+                                }
+                              }
+                            : undefined
+                        }
                         className={
                           "absolute overflow-hidden rounded-lg border border-black/5 bg-cream/70 px-1.5 py-0 " +
-                          (gestapeld ? "flex flex-col" : "flex items-baseline gap-1.5")
+                          (gestapeld ? "flex flex-col" : "flex items-baseline gap-1.5") +
+                          (heeftTekst ? " cursor-pointer" : "")
                         }
                         style={{
                           top,
@@ -335,6 +408,13 @@ function Weekraster({
                           borderColor: randKleur(b.kleur?.bg),
                         }}
                       >
+                        {heeftTekst && (
+                          <span
+                            aria-hidden
+                            className="pointer-events-none absolute right-1 top-1 h-1.5 w-1.5 rounded-full opacity-50"
+                            style={{ background: b.kleur?.tekst }}
+                          />
+                        )}
                         <span
                           className={
                             "truncate text-xs font-bold leading-tight " +
