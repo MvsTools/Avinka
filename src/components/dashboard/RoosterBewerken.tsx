@@ -368,7 +368,16 @@ export default function RoosterBewerken({
     setVraagAfsluiten(false);
     setNaDeWaarschuwing(null);
     if (verlaatGuard) verlaatGuard.current = null;
-    (actie ?? onKlaar)();
+    if (actie) {
+      // Het rooster is bewaard, maar het scherm waar je heen gaat heeft de oude
+      // gegevens nog van de server. Zonder deze verversing zag je je wijziging
+      // pas nadat je opnieuw de bewerkstand in was geweest. onKlaar ververst
+      // zelf al, dus dat pad hoeft het niet nog een keer.
+      router.refresh();
+      actie();
+    } else {
+      onKlaar();
+    }
   }
 
   function sluitWaarschuwing() {
@@ -1410,8 +1419,7 @@ function Blokkaart({
             value={blok.omschrijving ?? ""}
             onChange={(e) => zetOmschrijving(e.target.value)}
             rows={3}
-            placeholder="Bijvoorbeeld: Jeugdjournaal kijken"
-            className="mt-1 w-full resize-none rounded-xl border border-black/10 bg-white px-2 py-1.5 text-sm leading-6 text-ink outline-none placeholder:text-ink/35 focus:border-brand-dark/40"
+            className="mt-1 w-full resize-none rounded-xl border border-black/10 bg-white px-2 py-1.5 text-sm leading-6 text-ink outline-none focus:border-brand-dark/40"
           />
         )}
       </div>
