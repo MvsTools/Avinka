@@ -27,9 +27,9 @@ import {
   WereldPrivacy,
   WereldRegie,
   WereldMaker,
-  WereldErvaringen,
   WereldSlot,
 } from "./Wereld";
+import { WereldPolaroids } from "./Polaroids";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -1085,8 +1085,10 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
         {/* ── 6. De maker ── */}
         <WereldMaker fotoBestand={fotoBestand} />
 
-        {/* ── 7. Ervaringen (nieuw concept volgt) ── */}
-        <WereldErvaringen />
+        {/* ── 7. Ervaringen: polaroids aan de levende draad. Onder deze
+           sectie is de plek gereserveerd voor de "Avinka in cijfers"-band
+           met live tellers, zodra er echte data is. ── */}
+        <WereldPolaroids />
 
         {/* ── 8. Prijzen ── */}
         <Prijzen />

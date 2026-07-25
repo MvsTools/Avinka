@@ -18,8 +18,8 @@ import type { CSSProperties, ReactNode } from "react";
    en de toolkaarten blijven ongemoeid: dat is al ons "filmisch realisme".
    Reveals liften mee op het data-reveal/is-in-systeem van Vierde.tsx. ───── */
 
-const MINT = "#cfe6d8";
-const MINT_DIEP = "#b5d8c4"; // silhouetten op mint
+export const MINT = "#cfe6d8";
+export const MINT_DIEP = "#b5d8c4"; // silhouetten op mint
 /* Achtergrondvlakken: bewust maar een paar procent van de ondergrond af.
    De rustigste sectie van de pagina (privacy) heeft óók een achtergrond-
    motief — de vliegtuigjes — en die werkt juist omdat je hem nauwelijks
@@ -29,8 +29,8 @@ const VLAK_MINT = "#c6dfcf"; // op een mintveld
 /* Nog een stap zachter, voor plekken waar meerdere vlakken bij elkaar staan:
    twee vormen naast elkaar tellen op en worden samen al snel te aanwezig. */
 const VLAK_MINT_ZACHT = "#cae2d3";
-const DONKER = "#17503a"; // slotveld + sticker
-const KOP = "#1e6b4d"; // koppen op licht veld (het "getinte" groen)
+export const DONKER = "#17503a"; // slotveld + sticker
+export const KOP = "#1e6b4d"; // koppen op licht veld (het "getinte" groen)
 
 /* Gespikkeld papier: kleine groene + amberen spikkels op bijna-wit. */
 export const SPECKLE_STIJL: CSSProperties = {
@@ -1031,31 +1031,8 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           </div>
         </div>
       </div>
-      {/* Geen golfrand hier: het mintveld loopt bewust door in de ervaringen-
-         sectie hieronder en gaat pas vlak boven de abonnementen terug naar
-         papier. Zelfde constructie als privacy → regie. */}
-    </section>
-  );
-}
-
-/* 7. Ervaringen: eerlijk en licht. Staat op het mintveld dat bij de maker
-   begint; het veld loopt door tot vlak boven de abonnementen. Tijdelijk
-   weer de kale versie: het nieuwe ervaringen-concept wordt nog gekozen. */
-export function WereldErvaringen() {
-  return (
-    <section className="relative overflow-hidden" style={{ background: MINT }}>
-      <div className="relative z-10 mx-auto w-full max-w-3xl px-6 pb-40 pt-16 text-center lg:pb-44">
-        <h2 data-reveal className="font-display text-3xl font-black tracking-tight [text-wrap:balance]" style={{ color: DONKER }}>
-          Wat leerkrachten zeggen
-        </h2>
-        <p data-reveal className="mx-auto mt-5 max-w-xl text-lg leading-8 text-ink/75">
-          Deze zomer test een groep leerkrachten Avinka in de praktijk. Hun
-          ervaringen komen hier te staan, in hun eigen woorden. Geen verzonnen
-          quotes, dat beloven we.
-        </p>
-      </div>
-      {/* Bijna vlak: na het makers-verhaal hoort de pagina rustig uit te
-         lopen richting de abonnementen, niet nog een keer te deinen. */}
+      {/* Het mintveld eindigt hier: de polaroid-sectie eronder staat op het
+         gespikkelde papier, zoals in de referentie. */}
       <Golf kleur="#fcfbf7" vorm="rust" />
     </section>
   );

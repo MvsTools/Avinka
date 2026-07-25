@@ -1,0 +1,652 @@
+"use client";
+
+import {
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
+import { DONKER, KOP, MINT, MINT_DIEP, KaartVlak, VLAK_PAPIER } from "./Wereld";
+
+/* ── De polaroids: wat leerkrachten zeggen ─────────────────────────────────
+   Ervaringen als instax-kaartjes aan één levende draad. Geen prikbord, geen
+   houten knijpers: een dunne, licht doorhangende lijn (familie van de golf-
+   overgangen) waar de kaartjes met een kort draadje aan hangen.
+
+   De fysica (desktop):
+   - elk kaartje hangt aan zijn eigen punt op de draad en wiegt daar heel
+     traag omheen, elk in zijn eigen ritme;
+   - hover: het kaartje komt naar voren en draait rustig recht;
+   - slepen: het kaartje schuift horizontaal langs de draad mee met je muis,
+     de draad buigt door onder het gewicht, en de buren wiegen na; loslaten
+     laat het terugveren naar zijn eigen plek met een nazwaai;
+   - klikken (zonder slepen): de kaart draait om en je leest de ervaring.
+
+   Mobiel is bewust géén verkleinde desktop maar een stapel foto's in je
+   hand: één grote polaroid tegelijk, omhoog vegen schuift de bovenste van
+   de stapel en de volgende komt eronder vandaan; tikken draait de kaart om.
+
+   Maten zijn die van echt instax mini-film: kaart 54×86 mm, beeld 46×62 mm
+   (dunne rand van 4 mm rondom, dikke onderrand van ±20 mm).
+
+   ⚠️ DEMO-INHOUD: de namen en quotes hieronder zijn VOORBEELDEN om het
+   ontwerp te beoordelen. Vóór live gaan vervangen door echte ervaringen uit
+   de zomertest — de site belooft "geen verzonnen quotes". ─────────────── */
+
+type Kaart = {
+  foto: string;
+  alt: string;
+  naam: string;
+  rol: string;
+  quote: string;
+  /* het woord (of de woorden) dat op de achterkant een groen streepje krijgt */
+  accent: string;
+  doodle: "hart" | "ster" | "smiley";
+  /* rustplek op de draad (percentage van de sectiebreedte) */
+  x: number;
+  /* lengte van het draadje tussen draad en kaart (px) — variatie hierin
+     geeft de verschillende hoogtes uit de referentie */
+  draad: number;
+  /* rusthoek */
+  rot: number;
+};
+
+const KAARTEN: Kaart[] = [
+  {
+    foto: "/nieuw5/foto/p36650154.jpg",
+    alt: "Leeg klaslokaal met houten tafeltjes en een groen schoolbord",
+    naam: "Marieke",
+    rol: "Groep 6",
+    quote: "Sinds ik Avinka gebruik ben ik een uur eerder klaar. Dat geeft me zoveel rust in mijn avond.",
+    accent: "rust",
+    doodle: "hart",
+    x: 8,
+    draad: 66,
+    rot: -4,
+  },
+  {
+    foto: "/nieuw5/foto/p30703810.jpg",
+    alt: "Kop koffie op een bureau met notitieboeken",
+    naam: "Joris",
+    rol: "IB'er",
+    quote: "De analyses geven me in één overzicht wat ik nodig heb om mijn groep goed te begeleiden.",
+    accent: "één overzicht",
+    doodle: "smiley",
+    x: 28.5,
+    draad: 128,
+    rot: 2.5,
+  },
+  {
+    foto: "/nieuw5/foto/p5905445.jpg",
+    alt: "Klaslokaal met whiteboard en een tafel vol schriften",
+    naam: "Sanne",
+    rol: "Groep 4",
+    quote: "Rapporten maken ging altijd ten koste van mijn avond. Nu heb ik die tijd terug voor mijn gezin.",
+    accent: "die tijd terug",
+    doodle: "ster",
+    x: 49,
+    draad: 84,
+    rot: -1.5,
+  },
+  {
+    foto: "/nieuw5/foto/p7054755.jpg",
+    alt: "Stapel kleurige schriften met een potlood",
+    naam: "Kim",
+    rol: "Groep 8",
+    quote: "Alles staat op één plek. Geen losse documenten meer, maar overzicht en structuur.",
+    accent: "op één plek",
+    doodle: "hart",
+    x: 69.5,
+    draad: 148,
+    rot: 3,
+  },
+  {
+    foto: "/nieuw5/foto/p5905441.jpg",
+    alt: "Whiteboard met stiften boven een tafel met nakijkwerk",
+    naam: "Eva",
+    rol: "Groep 5",
+    quote: "Ouderberichten schrijven gaat zoveel sneller en persoonlijker. Ouders reageren ook positiever!",
+    accent: "persoonlijker",
+    doodle: "smiley",
+    x: 90,
+    draad: 92,
+    rot: -2.6,
+  },
+];
+
+/* Instax mini-verhoudingen, als percentages van de kaartbreedte (54 mm):
+   rand 4/54 ≈ 7.4%, beeldhoogte 62/54 ≈ 114.8%, kaarthoogte 86/54 ≈ 159.3%. */
+const KAART_RATIO = 86 / 54;
+const RAND_PCT = "7.4%";
+const FOTO_RATIO = 46 / 62;
+
+function Doodle({ soort, kleur }: { soort: Kaart["doodle"]; kleur: string }) {
+  if (soort === "hart")
+    return (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke={kleur} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M12 20c-5-3.5-8-6.5-8-10a4 4 0 0 1 8-1.2A4 4 0 0 1 20 10c0 3.5-3 6.5-8 10Z" />
+      </svg>
+    );
+  if (soort === "ster")
+    return (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke={kleur} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="m12 3 2.6 5.6 6 .7-4.5 4.1 1.2 5.9L12 16.4l-5.3 2.9 1.2-5.9L3.4 9.3l6-.7L12 3Z" />
+      </svg>
+    );
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke={kleur} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8.5 14a4.5 4.5 0 0 0 7 0" />
+      <circle cx="9" cy="9.5" r="0.4" fill={kleur} />
+      <circle cx="15" cy="9.5" r="0.4" fill={kleur} />
+    </svg>
+  );
+}
+
+/* Eén instax-kaartje met voor- en achterkant. De flip zit op een binnenste
+   laag zodat de fysica (buitenste lagen) er nooit mee vecht. */
+function PolaroidKaart({
+  kaart, omgedraaid, klein = false,
+}: { kaart: Kaart; omgedraaid: boolean; klein?: boolean }) {
+  return (
+    <span className="pk-flipruimte block h-full w-full" style={{ perspective: "1200px" }}>
+      <span
+        className="pk-flip relative block h-full w-full"
+        style={{ transform: omgedraaid ? "rotateY(180deg)" : "rotateY(0deg)", transformStyle: "preserve-3d" }}
+      >
+        {/* voorkant: de foto met het dikke instax-onderschrift */}
+        <span
+          className="pk-zijde absolute inset-0 flex flex-col bg-white"
+          style={{ padding: RAND_PCT, paddingBottom: 0, backfaceVisibility: "hidden", borderRadius: 5 }}
+        >
+          <span className="relative block w-full overflow-hidden" style={{ aspectRatio: `${FOTO_RATIO}`, borderRadius: 2, background: MINT_DIEP }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={kaart.foto} alt={kaart.alt} className="absolute inset-0 h-full w-full object-cover" draggable={false} />
+            {/* het zachte glansje van instax-film over de foto */}
+            <span
+              className="pointer-events-none absolute inset-0"
+              style={{ background: "linear-gradient(112deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 32%)" }}
+              aria-hidden
+            />
+          </span>
+          <span className="flex flex-1 items-center justify-between gap-2 pl-1 pr-0.5">
+            <span className="min-w-0">
+              <span className={`block truncate leading-none text-ink/85 ${klein ? "text-xl" : "text-2xl"}`} style={{ fontFamily: "var(--font-hand)" }}>
+                {kaart.naam}
+              </span>
+              <span className={`mt-0.5 block leading-none text-ink/50 ${klein ? "text-[0.7rem]" : "text-xs"}`}>{kaart.rol}</span>
+            </span>
+            <Doodle soort={kaart.doodle} kleur={kaart.doodle === "ster" ? "#f59e0b" : "#2f9e6e"} />
+          </span>
+        </span>
+
+        {/* achterkant: de ervaring, handgeschreven */}
+        <span
+          className="pk-zijde absolute inset-0 flex flex-col bg-white"
+          style={{ padding: RAND_PCT, transform: "rotateY(180deg)", backfaceVisibility: "hidden", borderRadius: 5 }}
+        >
+          <span className="font-display text-4xl leading-none" style={{ color: MINT }} aria-hidden>
+            &ldquo;
+          </span>
+          <span className={`mt-1 block flex-1 pl-1 leading-6 text-ink/85 ${klein ? "text-lg" : "text-xl"}`} style={{ fontFamily: "var(--font-hand)" }}>
+            {kaart.quote.split(kaart.accent).map((deel, i, delen) => (
+              <span key={i}>
+                {deel}
+                {i < delen.length - 1 && (
+                  <span className="underline decoration-2 underline-offset-4" style={{ textDecorationColor: "#2f9e6e" }}>
+                    {kaart.accent}
+                  </span>
+                )}
+              </span>
+            ))}
+          </span>
+          <span className="flex items-end justify-between pb-2 pl-1">
+            <span>
+              <span className="block text-xl leading-none" style={{ fontFamily: "var(--font-hand)", color: KOP }}>{kaart.naam}</span>
+              <span className="mt-0.5 block text-xs leading-none text-ink/50">{kaart.rol}</span>
+            </span>
+            <Doodle soort={kaart.doodle} kleur={kaart.doodle === "ster" ? "#f59e0b" : "#2f9e6e"} />
+          </span>
+        </span>
+      </span>
+    </span>
+  );
+}
+
+/* ── Desktop: de levende draad ── */
+
+/* veer-integratie: één stap van een gedempte veer richting `doel` */
+function veer(huidig: number, snelheid: number, doel: number, k: number, d: number, dt: number): [number, number] {
+  const v = snelheid + (k * (doel - huidig) - d * snelheid) * dt;
+  return [huidig + v * dt, v];
+}
+
+type Fysica = {
+  x: number; vx: number; // horizontale positie t.o.v. rustplek
+  dip: number; vdip: number; // hoe ver het ophangpunt doorzakt
+  hoek: number; vhoek: number; // slingerhoek
+  til: number; vtil: number; // hover-lift 0..1
+};
+
+function DraadScene() {
+  const scene = useRef<HTMLDivElement>(null);
+  const draadPad = useRef<SVGPathElement>(null);
+  const kaartRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const draadjes = useRef<Array<SVGLineElement | null>>([]);
+  const knoopjes = useRef<Array<SVGCircleElement | null>>([]);
+  const [omgedraaid, setOmgedraaid] = useState<boolean[]>(() => KAARTEN.map(() => false));
+
+  /* alle bewegingsstaat buiten React om: 60×/s */
+  const fys = useRef<Fysica[]>(KAARTEN.map(() => ({ x: 0, vx: 0, dip: 0, vdip: 0, hoek: 0, vhoek: 0, til: 0, vtil: 0 })));
+  const sleep = useRef<{ i: number; startX: number; startPointerX: number; laatstePointerX: number; bewogen: boolean } | null>(null);
+  /* click vuurt pas ná pointerup, wanneer de sleepstatus al gewist is —
+     deze vlag onthoudt één tik lang dat de laatste beweging een sleep was */
+  const netGesleept = useRef(false);
+  const hoverI = useRef(-1);
+  const inBeeld = useRef(false);
+  const rustig = useRef(false); // prefers-reduced-motion
+
+  /* rust-y van de draad op positie x (fractie 0..1): lichte doorhang */
+  const draadY = (fx: number) => 30 + 30 * Math.sin(Math.PI * Math.min(1, Math.max(0, fx)));
+
+  useEffect(() => {
+    const el = scene.current;
+    if (!el) return;
+    rustig.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const io = new IntersectionObserver(([e]) => { inBeeld.current = e.isIntersecting; }, { rootMargin: "120px" });
+    io.observe(el);
+
+    let vorige = performance.now();
+    let raf = 0;
+
+    const stap = (t: number) => {
+      raf = requestAnimationFrame(stap);
+      const dt = Math.min(0.032, (t - vorige) / 1000);
+      vorige = t;
+      if (!inBeeld.current) return;
+
+      const breed = el.clientWidth;
+      const punten: Array<[number, number]> = [];
+
+      for (let i = 0; i < KAARTEN.length; i++) {
+        const f = fys.current[i];
+        const k = KAARTEN[i];
+        const isSleep = sleep.current?.i === i;
+
+        /* horizontaal: tijdens slepen strak achter de muis aan, daarna
+           terugveren naar de eigen plek met een lome veer */
+        const doelX = isSleep ? sleep.current!.laatstePointerX - sleep.current!.startPointerX + sleep.current!.startX : 0;
+        [f.x, f.vx] = veer(f.x, f.vx, doelX, isSleep ? 320 : 42, isSleep ? 34 : 9, dt);
+
+        /* het ophangpunt zakt door onder beweging (gewicht aan de draad) */
+        [f.dip, f.vdip] = veer(f.dip, f.vdip, 0, 130, 9.5, dt);
+
+        /* slingerhoek: veert naar de rusthoek; hover trekt hem recht */
+        const doelHoek = hoverI.current === i ? 0 : k.rot;
+        [f.hoek, f.vhoek] = veer(f.hoek, f.vhoek, doelHoek, 60, 4.6, dt);
+
+        /* hover-lift */
+        [f.til, f.vtil] = veer(f.til, f.vtil, hoverI.current === i ? 1 : 0, 170, 22, dt);
+
+        /* ambient: heel trage wieg, elk kaartje zijn eigen ritme */
+        const wieg = rustig.current ? 0 : Math.sin(t / (2600 + i * 340) + i * 1.7) * 0.7;
+
+        const rustX = (k.x / 100) * breed;
+        const hangX = rustX + f.x;
+        const hangY = draadY(hangX / breed) + f.dip;
+        punten.push([hangX, hangY]);
+
+        const kaartEl = kaartRefs.current[i];
+        if (kaartEl) {
+          kaartEl.style.transform =
+            `translate3d(${hangX}px, ${hangY + k.draad}px, 0) translateX(-50%) rotate(${f.hoek + wieg}deg) ` +
+            `translateY(${f.til * -7}px) scale(${1 + f.til * 0.045})`;
+          kaartEl.style.zIndex = hoverI.current === i || isSleep ? "40" : String(10 + i);
+        }
+        const lijn = draadjes.current[i];
+        if (lijn) {
+          lijn.setAttribute("x1", String(hangX));
+          lijn.setAttribute("y1", String(hangY));
+          lijn.setAttribute("x2", String(hangX));
+          lijn.setAttribute("y2", String(hangY + k.draad + f.til * -7));
+        }
+        const knoop = knoopjes.current[i];
+        if (knoop) {
+          knoop.setAttribute("cx", String(hangX));
+          knoop.setAttribute("cy", String(hangY));
+        }
+      }
+
+      /* de draad zelf: een vloeiende lijn door de ophangpunten heen */
+      if (draadPad.current) {
+        const alle: Array<[number, number]> = [[-30, 26], ...punten, [breed + 30, 26]];
+        let d = `M ${alle[0][0]} ${alle[0][1]}`;
+        for (let i = 0; i < alle.length - 1; i++) {
+          const p0 = alle[Math.max(0, i - 1)], p1 = alle[i], p2 = alle[i + 1], p3 = alle[Math.min(alle.length - 1, i + 2)];
+          d += ` C ${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)} ${(p1[1] + (p2[1] - p0[1]) / 6).toFixed(1)},`;
+          d += ` ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)} ${(p2[1] - (p3[1] - p1[1]) / 6).toFixed(1)},`;
+          d += ` ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+        }
+        draadPad.current.setAttribute("d", d);
+      }
+    };
+
+    raf = requestAnimationFrame(stap);
+    return () => { cancelAnimationFrame(raf); io.disconnect(); };
+  }, []);
+
+  /* pointer-gedrag: pas ná 6px beweging wordt het een sleep (anders kaapt
+     de sleep elke klik — zelfde les als bij de tool-galerij) */
+  const opPointerDown = (i: number) => (e: ReactPointerEvent) => {
+    if (rustig.current) return;
+    sleep.current = { i, startX: fys.current[i].x, startPointerX: e.clientX, laatstePointerX: e.clientX, bewogen: false };
+  };
+  const opPointerMove = (i: number) => (e: ReactPointerEvent) => {
+    const s = sleep.current;
+    if (!s || s.i !== i) return;
+    const afstand = Math.abs(e.clientX - s.startPointerX);
+    if (!s.bewogen && afstand > 6) {
+      s.bewogen = true;
+      (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    }
+    if (s.bewogen) {
+      const vorig = s.laatstePointerX;
+      s.laatstePointerX = e.clientX;
+      const dx = e.clientX - vorig;
+      /* het gewicht trekt de draad omlaag en de buren wiegen mee */
+      const f = fys.current[i];
+      f.vdip += Math.min(60, Math.abs(dx) * 14);
+      for (let j = 0; j < KAARTEN.length; j++) {
+        if (j === i) continue;
+        const afval = 1 / (1 + Math.abs(j - i));
+        fys.current[j].vdip += Math.abs(dx) * 4 * afval;
+        fys.current[j].vhoek += dx * 0.9 * afval;
+      }
+    }
+  };
+  const opPointerUp = (i: number) => () => {
+    const s = sleep.current;
+    if (!s || s.i !== i) return;
+    netGesleept.current = s.bewogen;
+    if (s.bewogen) {
+      /* nazwaai op het moment van loslaten */
+      fys.current[i].vhoek += fys.current[i].vx * 0.09;
+    }
+    sleep.current = null;
+  };
+  const opKlik = (i: number) => () => {
+    /* een sleep is geen klik */
+    if (netGesleept.current) {
+      netGesleept.current = false;
+      return;
+    }
+    setOmgedraaid((v) => v.map((o, j) => (j === i ? !o : o)));
+  };
+
+  return (
+    <div ref={scene} className="relative hidden h-[640px] lg:block" style={{ touchAction: "pan-y" }}>
+      {/* de draad + draadjes + knoopjes: één fijne inktlijn-familie */}
+      <svg className="pointer-events-none absolute inset-0 h-full w-full overflow-visible" aria-hidden>
+        <path ref={draadPad} fill="none" stroke={KOP} strokeOpacity="0.32" strokeWidth="1.5" />
+        {KAARTEN.map((k, i) => (
+          <g key={k.naam}>
+            <line ref={(r) => { draadjes.current[i] = r; }} stroke={KOP} strokeOpacity="0.28" strokeWidth="1.2" />
+            <circle ref={(r) => { knoopjes.current[i] = r; }} r="2.6" fill={KOP} fillOpacity="0.4" />
+          </g>
+        ))}
+      </svg>
+
+      {KAARTEN.map((k, i) => (
+        <div
+          key={k.naam}
+          ref={(r) => { kaartRefs.current[i] = r; }}
+          className="absolute left-0 top-0 w-[212px] will-change-transform"
+          style={{ height: 212 * KAART_RATIO, transformOrigin: "50% -8px", left: 0 }}
+          onPointerEnter={() => { hoverI.current = i; }}
+          onPointerLeave={() => { hoverI.current = -1; }}
+          onPointerDown={opPointerDown(i)}
+          onPointerMove={opPointerMove(i)}
+          onPointerUp={opPointerUp(i)}
+          onPointerCancel={() => { sleep.current = null; }}
+        >
+          <button
+            type="button"
+            onClick={opKlik(i)}
+            aria-expanded={omgedraaid[i]}
+            aria-label={omgedraaid[i] ? `Draai de foto van ${k.naam} terug` : `Lees de ervaring van ${k.naam} (${k.rol})`}
+            className="pk-schaduw block h-full w-full cursor-grab select-none rounded-[5px] text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand active:cursor-grabbing"
+          >
+            <PolaroidKaart kaart={k} omgedraaid={omgedraaid[i]} />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Mobiel: de stapel in je hand ── */
+
+function StapelScene() {
+  const [volgorde, setVolgorde] = useState<number[]>(() => KAARTEN.map((_, i) => i));
+  const [omgedraaid, setOmgedraaid] = useState<boolean[]>(() => KAARTEN.map(() => false));
+  const [vertrekkend, setVertrekkend] = useState(false);
+  const topRef = useRef<HTMLDivElement>(null);
+  const greep = useRef<{ startY: number; startX: number; laatsteY: number; laatsteT: number; snelheid: number; bewogen: boolean } | null>(null);
+  /* zelfde click-na-veeg-vlag als op desktop */
+  const netGeveegd = useRef(false);
+
+  const bovenste = volgorde[0];
+
+  const zetTransform = (dy: number, dx: number, animatie: string) => {
+    const el = topRef.current;
+    if (!el) return;
+    el.style.transition = animatie;
+    el.style.transform = `translate3d(${dx * 0.3}px, ${dy}px, 0) rotate(${dx * 0.04}deg)`;
+  };
+
+  const opDown = (e: ReactPointerEvent) => {
+    if (vertrekkend) return;
+    greep.current = { startY: e.clientY, startX: e.clientX, laatsteY: e.clientY, laatsteT: performance.now(), snelheid: 0, bewogen: false };
+  };
+  const opMove = (e: ReactPointerEvent) => {
+    const g = greep.current;
+    if (!g || vertrekkend) return;
+    const dy = e.clientY - g.startY;
+    const dx = e.clientX - g.startX;
+    if (!g.bewogen && Math.hypot(dx, dy) > 8) {
+      g.bewogen = true;
+      (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    }
+    if (g.bewogen) {
+      const nu = performance.now();
+      g.snelheid = (e.clientY - g.laatsteY) / Math.max(1, nu - g.laatsteT);
+      g.laatsteY = e.clientY;
+      g.laatsteT = nu;
+      /* omlaag slepen remt af: de stapel wil maar één kant op */
+      const gedempt = dy < 0 ? dy : dy * 0.25;
+      zetTransform(gedempt, dx, "none");
+    }
+  };
+  const opUp = (e: ReactPointerEvent) => {
+    const g = greep.current;
+    greep.current = null;
+    if (!g || vertrekkend) return;
+    netGeveegd.current = g.bewogen;
+    if (!g.bewogen) return; // klik → flip (via onClick)
+    const dy = e.clientY - g.startY;
+    const weg = dy < -90 || g.snelheid < -0.55;
+    if (weg) {
+      setVertrekkend(true);
+      zetTransform(-window.innerHeight * 0.9, e.clientX - g.startX, "transform 0.42s cubic-bezier(0.23, 1, 0.32, 1)");
+      window.setTimeout(() => {
+        setVolgorde((v) => [...v.slice(1), v[0]]);
+        setOmgedraaid((o) => o.map((val, i) => (i === bovenste ? false : val)));
+        const el = topRef.current;
+        if (el) {
+          el.style.transition = "none";
+          el.style.transform = "translate3d(0,0,0)";
+        }
+        setVertrekkend(false);
+      }, 430);
+    } else {
+      zetTransform(0, 0, "transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)");
+    }
+  };
+  const opKlik = () => {
+    if (netGeveegd.current || vertrekkend) {
+      netGeveegd.current = false;
+      return;
+    }
+    setOmgedraaid((v) => v.map((o, i) => (i === bovenste ? !o : o)));
+  };
+
+  const kaartBreed = "min(76vw, 300px)";
+
+  return (
+    <div className="lg:hidden">
+      <div className="relative mx-auto" style={{ width: kaartBreed, height: `calc(${kaartBreed} * ${KAART_RATIO} + 44px)`, touchAction: "none" }}>
+        {/* de stapel eronder: alleen de eerstvolgende twee, steeds iets
+           kleiner en lager — genoeg om de stapel te voelen */}
+        {[2, 1].map((diepte) => {
+          const idx = volgorde[diepte];
+          if (idx === undefined) return null;
+          return (
+            <div
+              key={KAARTEN[idx].naam}
+              className="pk-schaduw absolute left-0 top-0 h-full w-full rounded-[5px]"
+              style={{
+                transform: `translateY(${diepte * 16}px) scale(${1 - diepte * 0.055}) rotate(${diepte % 2 ? -2.4 : 2}deg)`,
+                transition: "transform 0.45s cubic-bezier(0.23, 1, 0.32, 1)",
+                zIndex: 5 - diepte,
+              }}
+              aria-hidden
+            >
+              <PolaroidKaart kaart={KAARTEN[idx]} omgedraaid={false} klein />
+            </div>
+          );
+        })}
+
+        {/* de bovenste kaart: vegen of tikken */}
+        <div
+          ref={topRef}
+          className="absolute left-0 top-0 h-full w-full will-change-transform"
+          style={{ zIndex: 10 }}
+          onPointerDown={opDown}
+          onPointerMove={opMove}
+          onPointerUp={opUp}
+          onPointerCancel={() => { greep.current = null; zetTransform(0, 0, "transform 0.5s cubic-bezier(0.23,1,0.32,1)"); }}
+        >
+          <button
+            type="button"
+            onClick={opKlik}
+            aria-expanded={omgedraaid[bovenste]}
+            aria-label={omgedraaid[bovenste] ? `Draai de foto van ${KAARTEN[bovenste].naam} terug` : `Lees de ervaring van ${KAARTEN[bovenste].naam} (${KAARTEN[bovenste].rol})`}
+            className="pk-schaduw block h-full w-full select-none rounded-[5px] text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
+          >
+            <PolaroidKaart kaart={KAARTEN[bovenste]} omgedraaid={omgedraaid[bovenste]} klein />
+          </button>
+        </div>
+      </div>
+
+      <p className="mt-6 text-center text-sm font-semibold text-ink/60">
+        tik om te lezen · veeg omhoog voor de volgende
+      </p>
+      <div className="mt-3 flex items-center justify-center gap-1.5" aria-hidden>
+        {KAARTEN.map((k, i) => (
+          <span
+            key={k.naam}
+            className="h-1.5 rounded-full transition-all duration-300"
+            style={{ width: bovenste === i ? 18 : 6, background: bovenste === i ? "#2f9e6e" : "rgba(34,28,58,0.2)" }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── De sectie ── */
+export function WereldPolaroids() {
+  return (
+    <section className="relative overflow-x-clip">
+      {/* de achtergrond uit de referentie is óns bestaande wereldje: het
+         gespikkelde papier met zachte vlakken in de hoeken en losse stipjes */}
+      <KaartVlak
+        kleur={VLAK_PAPIER}
+        vorm="schelp"
+        breedte={560}
+        hoogte={430}
+        style={{ left: "-9%", top: 40, transform: "rotate(-7deg)" }}
+        className="hidden lg:block"
+        tel={1}
+      />
+      <KaartVlak
+        kleur={VLAK_PAPIER}
+        vorm="koepel"
+        breedte={640}
+        hoogte={360}
+        style={{ right: "-11%", bottom: 20, transform: "rotate(5deg)" }}
+        className="hidden lg:block"
+        tel={4}
+      />
+
+      <div className="relative mx-auto w-full max-w-6xl px-6 pb-24 pt-24 lg:pb-28 lg:pt-28">
+        <div className="text-center">
+          <p data-reveal className="text-2xl" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
+            wat leerkrachten zeggen
+          </p>
+          <h2
+            data-reveal
+            className="mt-2 font-display text-[clamp(2.25rem,4.4vw,3.5rem)] font-black leading-[1.02] tracking-tight [text-wrap:balance]"
+            style={{ color: DONKER }}
+          >
+            Echte ervaringen{" "}
+            <span className="whitespace-nowrap" style={{ fontFamily: "var(--font-hand)", fontWeight: 400, color: "#2f9e6e" }}>
+              uit de praktijk
+            </span>
+          </h2>
+          <p data-reveal className="mx-auto mt-5 max-w-xl text-lg leading-8 text-ink/75">
+            Deze zomer test een groep leerkrachten Avinka in de praktijk. Hun
+            ervaringen komen hier te staan, in hun eigen woorden.
+          </p>
+        </div>
+
+        {/* het handgeschreven hintje met een boogpijltje naar de kaarten */}
+        <p
+          data-reveal
+          className="mt-8 hidden items-center gap-2 text-xl lg:flex"
+          style={{ fontFamily: "var(--font-hand)", color: KOP }}
+        >
+          klik op een foto om de ervaring te lezen
+          <svg viewBox="0 0 40 28" className="h-6 w-9" fill="none" stroke={KOP} strokeWidth="2" strokeLinecap="round" aria-hidden>
+            <path d="M2 4 C 14 6, 26 10, 32 22" />
+            <path d="M26 20 L 32.5 23 L 34 16" />
+          </svg>
+        </p>
+
+        <div data-reveal className="mt-4 lg:mt-0">
+          <DraadScene />
+          <div className="mt-10 lg:hidden">
+            <StapelScene />
+          </div>
+        </div>
+
+        {/* eerlijk zolang de zomertest loopt: dit zijn voorbeeldkaarten */}
+        <p className="mt-10 text-center text-sm font-semibold text-ink/55">
+          Dit zijn nog voorbeeld-ervaringen. De echte komen uit de zomertest.
+          Geen verzonnen quotes, dat beloven we.
+        </p>
+      </div>
+
+      <style>{`
+        .pk-schaduw { box-shadow: 0 18px 38px -20px rgba(23,80,58,0.45), 0 3px 8px -4px rgba(23,80,58,0.25); }
+        .pk-flip { transition: transform 0.65s cubic-bezier(0.3, 0.9, 0.25, 1); }
+        @media (prefers-reduced-motion: reduce) {
+          /* geen 3D-draai: de kanten faden over elkaar heen */
+          .pk-flip { transition: none; }
+          .pk-zijde { transition: opacity 0.3s ease; }
+        }
+      `}</style>
+    </section>
+  );
+}
