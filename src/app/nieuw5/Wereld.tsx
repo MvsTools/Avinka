@@ -482,9 +482,19 @@ export function WereldFx() {
       .blobknop { border-radius: 2.1rem 1.3rem 2.2rem 1.4rem; transition: border-radius .45s cubic-bezier(.2,.7,.2,1), transform .2s ease, background-color .2s ease, box-shadow .2s ease; }
       .blobknop:hover { border-radius: 1.3rem 2.2rem 1.4rem 2.1rem; transform: translateY(-2px) rotate(-0.6deg); }
       .blobknop:active { transform: translateY(0) scale(.97); }
+      /* De ervaringen-kaartjes komen bij hover recht te liggen en tillen op,
+         net als de regie-kaartjes. Alleen op echte muis-apparaten: op touch
+         vuurt hover af bij een tik en blijft de kaart daarna hangen. Exacte
+         eigenschappen, geen 'all', en een sterke ease-out zodat het meteen
+         reageert in plaats van traag op gang te komen. */
+      .ervaring-kaart { transition: transform .28s cubic-bezier(.23,1,.32,1), rotate .28s cubic-bezier(.23,1,.32,1), box-shadow .28s cubic-bezier(.23,1,.32,1); }
+      @media (hover: hover) and (pointer: fine) {
+        .ervaring-kaart:hover { transform: translateY(-6px); rotate: 0deg; }
+      }
       @media (prefers-reduced-motion: reduce) {
         .wereld-wieg, .wereld-drijf, .wereld-stip, .wereld-vlucht { animation: none; }
         .muiskaart { transform: none; }
+        .ervaring-kaart { transition: none; }
       }
     `}</style>
   );
@@ -936,7 +946,9 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           data-reveal
           className="relative border-[2.5px] px-8 py-12 sm:px-14 sm:py-14"
           style={{
-            background: "#ffffff",
+            /* niet puur wit: een warme papiertoon houdt de kaart in dezelfde
+               wereld als het gespikkelde papier van de pagina */
+            background: "#fffdf9",
             borderRadius: "3.2rem 2.4rem 3.4rem 2.6rem / 2.6rem 3.4rem 2.4rem 3.2rem",
             borderColor: KAART_RAND,
             boxShadow: KAART_SCHADUW,
@@ -1004,10 +1016,27 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                 bredere missie: laten zien dat slimmer werken juist eenvoudig
                 kan zijn.
               </p>
-              <p className="mt-6 text-lg font-bold leading-8" style={{ color: DONKER }}>
-                Goede leerkrachten horen hun tijd te besteden aan leerlingen,
-                niet aan papierwerk.
-              </p>
+              {/* De slotregel was vet gedrukte tekst op wit en verdween
+                 daardoor in de rest van de kaart, terwijl het juist de zin is
+                 die je moet onthouden. Nu is het een eigen mintblok met een
+                 vinkje, in de vorm van de kaarten zelf: het geeft de kaart
+                 kleur én zet de zin apart als het punt van het verhaal. */}
+              <div
+                className="relative mt-8 px-7 py-6"
+                style={{ background: MINT, borderRadius: "2.4rem 1.6rem 2.2rem 1.5rem" }}
+              >
+                <span
+                  className="absolute -top-4 left-8 flex h-9 w-9 items-center justify-center rounded-2xl bg-brand shadow-md"
+                  style={{ rotate: "-8deg" }}
+                  aria-hidden
+                >
+                  <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" stroke="#fff" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
+                </span>
+                <p className="text-lg font-bold leading-8" style={{ color: DONKER }}>
+                  Goede leerkrachten horen hun tijd te besteden aan leerlingen,
+                  niet aan papierwerk.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -1025,15 +1054,91 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
 export function WereldErvaringen() {
   return (
     <section className="relative overflow-hidden" style={{ background: MINT }}>
-      <div className="relative z-10 mx-auto w-full max-w-3xl px-6 pb-40 pt-16 text-center lg:pb-44">
-        <h2 data-reveal className="font-display text-3xl font-black tracking-tight [text-wrap:balance]" style={{ color: DONKER }}>
+      <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pb-28 pt-16 lg:pb-32">
+        <h2
+          data-reveal
+          className="text-center font-display text-3xl font-black tracking-tight [text-wrap:balance] sm:text-4xl"
+          style={{ color: DONKER }}
+        >
           Wat leerkrachten zeggen
         </h2>
-        <p data-reveal className="mx-auto mt-5 max-w-xl text-lg leading-8 text-ink/75">
-          Deze zomer test een groep leerkrachten Avinka in de praktijk. Hun
-          ervaringen komen hier te staan, in hun eigen woorden. Geen verzonnen
-          quotes, dat beloven we.
-        </p>
+
+        {/* Dit is een lege-toestand, geen quote-muur: er zijn nog geen
+           ervaringen en de belofte is juist dat we er geen verzinnen. De drie
+           kaarten vertellen dat eerlijk en zijn met opzet géén drieling: een
+           geeltje dat nog beschreven moet worden, een wit kaartje met de
+           uitleg, en een donkergroen kaartje met de belofte. Elk een eigen
+           kleur, formaat, draaiing en rol. */}
+        <div className="mt-12 grid items-start gap-7 md:grid-cols-3 lg:gap-8">
+          {/* 1. het geeltje dat nog leeg is */}
+          <div
+            data-reveal
+            className="ervaring-kaart relative p-7 md:mt-8"
+            style={{
+              background: "#fdf3c4",
+              borderRadius: "6px 26px 20px 24px",
+              boxShadow: "0 26px 52px -30px rgba(23,80,58,0.55)",
+              rotate: "-2.4deg",
+            }}
+          >
+            <p className="text-2xl leading-tight text-ink/80" style={{ fontFamily: "var(--font-hand)" }}>
+              hier komt de eerste ervaring
+            </p>
+            {/* lege schrijfregels: het geeltje ligt klaar, er staat nog niets op */}
+            <div className="mt-5 space-y-3.5" aria-hidden>
+              <span className="block h-px w-full bg-ink/15" />
+              <span className="block h-px w-full bg-ink/15" />
+              <span className="block h-px w-4/5 bg-ink/15" />
+            </div>
+            {/* ink/45 op dit gele vlak haalde maar 2,8:1; op /70 is het 5,7:1 */}
+            <p className="mt-6 text-sm font-semibold text-ink/70">Plek gereserveerd</p>
+          </div>
+
+          {/* 2. het witte kaartje met de uitleg: het grootst, want het draagt
+             de inhoud van deze sectie */}
+          <div
+            data-reveal
+            style={{
+              transitionDelay: "90ms",
+              background: "#fffdf9",
+              /* radii in rem, niet in procenten: met percentages bolt de boven-
+                 en onderrand op en wordt het een tonnetje in plaats van een
+                 kaart. Zelfde familie als de makerskaart. */
+              borderRadius: "2.8rem 2rem 2.6rem 2.2rem / 2.2rem 2.6rem 2rem 2.8rem",
+              borderColor: KAART_RAND,
+              boxShadow: KAART_SCHADUW,
+              rotate: "1.1deg",
+            }}
+            className="ervaring-kaart relative border-[2.5px] px-8 py-9"
+          >
+            <p className="text-lg leading-8 text-ink/80">
+              Deze zomer test een groep leerkrachten Avinka in de praktijk. Hun
+              ervaringen komen hier te staan, in hun eigen woorden.
+            </p>
+          </div>
+
+          {/* 3. de belofte, donkergroen: hetzelfde veld als het slot, zodat
+             er ook echt kleur in deze rij zit en het niet drie keer wit is */}
+          <div
+            data-reveal
+            style={{
+              transitionDelay: "180ms",
+              background: DONKER,
+              borderRadius: "2rem 2.8rem 2.2rem 2.6rem / 2.6rem 2rem 2.8rem 2.2rem",
+              boxShadow: "0 30px 60px -30px rgba(23,80,58,0.75)",
+              rotate: "-1.4deg",
+            }}
+            className="ervaring-kaart relative px-8 py-9 md:mt-14"
+          >
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15" aria-hidden>
+              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="#fff" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
+            </span>
+            <p className="mt-5 font-display text-2xl font-black leading-tight tracking-tight text-white [text-wrap:balance]">
+              Geen verzonnen quotes.
+            </p>
+            <p className="mt-2 text-lg leading-7 text-white/75">Dat beloven we.</p>
+          </div>
+        </div>
       </div>
       {/* Bijna vlak: na het makers-verhaal hoort de pagina rustig uit te
          lopen richting de abonnementen, niet nog een keer te deinen. */}
