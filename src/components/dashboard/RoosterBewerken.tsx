@@ -85,25 +85,43 @@ const VAK_CATALOGUS: {
   { id: "gym", naam: "Gym", duur: 45 },
 ];
 
-// Kleuropties in de instellingen: wit (geen kleur) plus een frisse waaier. De
-// tekstkleur is telkens een leesbare donkere tint bij de achtergrond.
-const KLEUR_OPTIES: { bg: string; tekst: string }[] = [
-  { bg: "#ffffff", tekst: "#3a3a3a" }, // wit — geen kleur
-  { bg: "#9cc7ff", tekst: "#0d4a95" },
-  { bg: "#93dbf2", tekst: "#0a5a7a" },
-  { bg: "#7fdcd6", tekst: "#06534f" },
-  { bg: "#b6e88f", tekst: "#35701a" },
-  { bg: "#ffe873", tekst: "#6e5600" },
-  { bg: "#f7cf5e", tekst: "#6e5000" },
-  { bg: "#ffb066", tekst: "#7a3d00" },
-  { bg: "#ff8a7a", tekst: "#7a1e10" },
-  { bg: "#ff9fb0", tekst: "#8a1f3d" },
-  { bg: "#ffb3e6", tekst: "#8a1f74" },
-  { bg: "#cdb0ff", tekst: "#4d1e9c" },
-  { bg: "#e5e0d5", tekst: "#6f6a5c" }, // gedempt
+// Kleuropties: wit (geen kleur) plus een waaier die ruim genoeg is om elk vak
+// zijn eigen kleur te geven. De tekstkleur is telkens een leesbare donkere tint
+// bij de achtergrond.
+//
+// Op volgorde van de kleurencirkel, en binnen een familie van licht naar dieper.
+// Dat laatste is bewust: voor rood-groen-kleurenblindheid is het verschil in
+// licht/donker de sleutel, niet de tint. De naam in het blok blijft het vangnet.
+const KLEUR_OPTIES: { bg: string; tekst: string; naam: string }[] = [
+  { bg: "#ffffff", tekst: "#3a3a3a", naam: "Wit (geen kleur)" },
+  { bg: "#e5e0d5", tekst: "#6f6a5c", naam: "Zand" },
+  { bg: "#d7dde3", tekst: "#47535e", naam: "Leigrijs" },
+  { bg: "#9cc7ff", tekst: "#0d4a95", naam: "Lichtblauw" },
+  { bg: "#6fb0f2", tekst: "#0a3f7d", naam: "Blauw" },
+  { bg: "#93dbf2", tekst: "#0a5a7a", naam: "Hemelsblauw" },
+  { bg: "#7fdcd6", tekst: "#06534f", naam: "Aqua" },
+  { bg: "#a8e6c9", tekst: "#10664a", naam: "Mint" },
+  { bg: "#74c78a", tekst: "#0f5e34", naam: "Diepgroen" },
+  { bg: "#b6e88f", tekst: "#35701a", naam: "Lichtgroen" },
+  { bg: "#cdd45a", tekst: "#4e5600", naam: "Olijf" },
+  { bg: "#d9cfa0", tekst: "#5f5320", naam: "Kaki" },
+  { bg: "#ffe873", tekst: "#6e5600", naam: "Geel" },
+  { bg: "#f7cf5e", tekst: "#6e5000", naam: "Goud" },
+  { bg: "#ffd2ab", tekst: "#8a4a12", naam: "Abrikoos" },
+  { bg: "#ffb066", tekst: "#7a3d00", naam: "Oranje" },
+  { bg: "#e0c3a0", tekst: "#6b4520", naam: "Zandbruin" },
+  { bg: "#ff8a7a", tekst: "#7a1e10", naam: "Rood" },
+  { bg: "#ff9fb0", tekst: "#8a1f3d", naam: "Koraalroze" },
+  { bg: "#f5c2dd", tekst: "#8a3a68", naam: "Oudroze" },
+  { bg: "#ffb3e6", tekst: "#8a1f74", naam: "Magenta" },
+  { bg: "#cdb0ff", tekst: "#4d1e9c", naam: "Paars" },
+  { bg: "#b8a6e0", tekst: "#43248f", naam: "Lavendel" },
+  { bg: "#aeb4f5", tekst: "#2f3aa5", naam: "Indigo" },
 ];
 
 // Kleuren voor een zelf toegevoegd vak — vivid, in dezelfde stijl als de rest.
+// We pakken telkens de eerstvolgende die nog niet in gebruik is, dus hoe langer
+// deze rij, hoe langer elk eigen vak vanzelf een eigen kleur krijgt.
 const EIGEN_KLEUREN: { bg: string; tx: string }[] = [
   { bg: "#c8f0d4", tx: "#1f7a4a" },
   { bg: "#ffd6cf", tx: "#b34433" },
@@ -113,6 +131,14 @@ const EIGEN_KLEUREN: { bg: string; tx: string }[] = [
   { bg: "#c2eeea", tx: "#0f7d75" },
   { bg: "#ffd4ea", tx: "#b32f74" },
   { bg: "#e2f0b8", tx: "#5f7a15" },
+  { bg: "#a8e6c9", tx: "#10664a" },
+  { bg: "#ffd2ab", tx: "#8a4a12" },
+  { bg: "#b8a6e0", tx: "#43248f" },
+  { bg: "#93dbf2", tx: "#0a5a7a" },
+  { bg: "#d9cfa0", tx: "#5f5320" },
+  { bg: "#f5c2dd", tx: "#8a3a68" },
+  { bg: "#d7dde3", tx: "#47535e" },
+  { bg: "#cdd45a", tx: "#4e5600" },
 ];
 
 /** Een uniek id voor een nieuw blok. */
@@ -969,7 +995,9 @@ function VakkenInstellingen({
                     const r = e.currentTarget.getBoundingClientRect();
                     setPaletVoor({
                       id: v.id,
-                      x: Math.min(r.left, window.innerWidth - 180),
+                      // 200 = de breedte van het palet (6 vakjes) plus wat lucht,
+                      // zodat het niet half buiten beeld valt.
+                      x: Math.min(r.left, window.innerWidth - 200),
                       y: r.bottom + 6,
                     });
                   }}
@@ -1084,13 +1112,14 @@ function VakkenInstellingen({
             <div className="fixed inset-0 z-[60]" onClick={() => setPaletVoor(null)} />
             <div
               style={{ left: paletVoor.x, top: paletVoor.y }}
-              className="fixed z-[61] grid grid-cols-5 gap-1.5 rounded-xl border border-black/10 bg-white p-2 shadow-xl"
+              className="fixed z-[61] grid grid-cols-6 gap-1.5 rounded-xl border border-black/10 bg-white p-2 shadow-xl"
             >
               {KLEUR_OPTIES.map((opt) => (
                 <button
                   key={opt.bg}
                   onClick={() => kiesKleur(paletVoor.id, opt)}
-                  aria-label={opt.bg === "#ffffff" ? "Wit (geen kleur)" : "Kleur kiezen"}
+                  aria-label={opt.naam}
+                  title={opt.naam}
                   className="h-6 w-6 rounded-md border border-black/15 transition-transform hover:scale-110"
                   style={{ background: opt.bg }}
                 />
@@ -1429,7 +1458,7 @@ function Blokkaart({
       {paletOpen && (
         <>
           <div className="fixed inset-0 z-[55]" onClick={() => setPaletOpen(false)} />
-          <div className="absolute left-3 top-11 z-[56] grid grid-cols-5 gap-1.5 rounded-xl border border-black/10 bg-white p-2 shadow-xl">
+          <div className="absolute left-3 top-11 z-[56] grid grid-cols-6 gap-1.5 rounded-xl border border-black/10 bg-white p-2 shadow-xl">
             {KLEUR_OPTIES.map((opt) => (
               <button
                 key={opt.bg}
@@ -1437,7 +1466,8 @@ function Blokkaart({
                   zetKleur(opt);
                   setPaletOpen(false);
                 }}
-                aria-label={opt.bg === "#ffffff" ? "Wit (geen kleur)" : "Kleur kiezen"}
+                aria-label={opt.naam}
+                title={opt.naam}
                 className="h-6 w-6 rounded-md border border-black/15 transition-transform hover:scale-110"
                 style={{ background: opt.bg }}
               />
