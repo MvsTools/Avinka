@@ -416,6 +416,19 @@ export default function RoosterBewerken({
     [concept],
   );
   const gekozenBlok = gekozen ? lessen.find((b) => b.id === gekozen.id) ?? null : null;
+
+  // De andere blokken van hetzelfde vak. Hebben die nu al dezelfde omschrijving,
+  // dan staat het vinkje "bij alle …-blokken" de volgende keer vanzelf goed —
+  // zo voelt het alsof de keuze onthouden is, zonder hem ergens te bewaren.
+  const zelfdeVak = gekozenBlok
+    ? (concept?.blokken ?? []).filter((b) => b.vak === gekozenBlok.vak)
+    : [];
+  // Alleen als er echt iets gedeeld wordt: staan ze allemaal leeg, dan begint het
+  // vinkje uit. Anders zou je eerste aantekening ongevraagd overal landen.
+  const overalGelijk =
+    zelfdeVak.length > 1 &&
+    Boolean(gekozenBlok?.omschrijving?.trim()) &&
+    zelfdeVak.every((b) => (b.omschrijving ?? "") === (gekozenBlok?.omschrijving ?? ""));
   const vakkenLijst =
     concept?.setup.vakken && concept.setup.vakken.length > 0
       ? concept.setup.vakken
@@ -447,17 +460,27 @@ export default function RoosterBewerken({
     }));
   }
 
-  // De eigen aantekening bij een blok ("Jeugdjournaal kijken"). Hoort bij dít
-  // blok en niet bij het vak, want de ene pauze is de andere niet.
-  function zetOmschrijving(id: string, tekst: string) {
+  // De eigen aantekening bij een blok ("Jeugdjournaal kijken"). Standaard hoort
+  // die bij dít blok, want de ene pauze is de andere niet. Met `overal` schrijf
+  // je hem in één keer bij elk blok van hetzelfde vak, zodat bijvoorbeeld al je
+  // rekenlessen dezelfde omschrijving hebben.
+  function zetOmschrijving(id: string, tekst: string, overal: boolean) {
+    const nieuw = tekst.trim() ? tekst : undefined;
     pasToe(
-      (c) => ({
-        ...c,
-        blokken: c.blokken.map((b) =>
-          b.id === id ? { ...b, omschrijving: tekst.trim() ? tekst : undefined } : b,
-        ),
-      }),
-      "omschrijving:" + id,
+      (c) => {
+        const bron = c.blokken.find((b) => b.id === id);
+        return {
+          ...c,
+          blokken: c.blokken.map((b) =>
+            b.id === id || (overal && bron && b.vak === bron.vak)
+              ? { ...b, omschrijving: nieuw }
+              : b,
+          ),
+        };
+      },
+      // Doorlopend typen blijft één stap in "ongedaan maken"; het aan- of
+      // uitzetten van "bij alle blokken" wordt bewust wél een eigen stap.
+      `omschrijving:${overal ? "vak" : "blok"}:${id}`,
     );
   }
 
@@ -577,7 +600,7 @@ export default function RoosterBewerken({
     }
     const r = el.getBoundingClientRect();
     const breedte = 244;
-    const hoogteSchatting = 300; // inclusief een opengeklapt omschrijving-veld
+    const hoogteSchatting = 325; // inclusief een opengeklapt omschrijving-veld
     let x = r.right + 8;
     let kant: "links" | "rechts" = "rechts";
     if (x + breedte > window.innerWidth - 8) {
@@ -711,7 +734,9 @@ export default function RoosterBewerken({
             eindeEerder={() => wijzigEinde(gekozenBlok.id, -5)}
             eindeLater={() => wijzigEinde(gekozenBlok.id, 5)}
             zetKleur={(opt) => zetVakKleur(gekozenBlok.vak, gekozenBlok.naam, opt)}
-            zetOmschrijving={(tekst) => zetOmschrijving(gekozenBlok.id, tekst)}
+            zetOmschrijving={(tekst, overal) => zetOmschrijving(gekozenBlok.id, tekst, overal)}
+            aantalZelfdeVak={zelfdeVak.length}
+            overalGelijk={overalGelijk}
             weghalen={() => verwijder(gekozenBlok.id)}
             sluit={() => setGekozen(null)}
           />
@@ -1343,6 +1368,8 @@ function Blokkaart({
   eindeLater,
   zetKleur,
   zetOmschrijving,
+  aantalZelfdeVak,
+  overalGelijk,
   weghalen,
   sluit,
 }: {
@@ -1355,7 +1382,11 @@ function Blokkaart({
   eindeEerder: () => void;
   eindeLater: () => void;
   zetKleur: (opt: { bg: string; tekst: string }) => void;
-  zetOmschrijving: (tekst: string) => void;
+  zetOmschrijving: (tekst: string, overal: boolean) => void;
+  /** Aantal blokken van hetzelfde vak, inclusief dit blok. */
+  aantalZelfdeVak: number;
+  /** Hebben die blokken nu al allemaal dezelfde omschrijving? */
+  overalGelijk: boolean;
   weghalen: () => void;
   sluit: () => void;
 }) {
@@ -1366,6 +1397,9 @@ function Blokkaart({
   // Staat er al iets, dan staat het tekstveld meteen open — anders zie je je
   // eigen aantekening niet als je het blok aanklikt.
   const [tekstOpen, setTekstOpen] = useState(Boolean(blok.omschrijving));
+  // Geldt de omschrijving voor alle blokken van dit vak? Stond hij al overal
+  // gelijk, dan begint het vinkje aan.
+  const [overal, setOveral] = useState(overalGelijk);
   useEffect(() => setOpen(true), []);
   const duur = minuten(blok.eind) - minuten(blok.begin);
 
@@ -1443,13 +1477,36 @@ function Blokkaart({
           </svg>
         </button>
         {tekstOpen && (
-          <textarea
-            autoFocus={!blok.omschrijving}
-            value={blok.omschrijving ?? ""}
-            onChange={(e) => zetOmschrijving(e.target.value)}
-            rows={3}
-            className="mt-1 w-full resize-none rounded-xl border border-black/10 bg-white px-2 py-1.5 text-sm leading-6 text-ink outline-none focus:border-brand-dark/40"
-          />
+          <>
+            <textarea
+              autoFocus={!blok.omschrijving}
+              value={blok.omschrijving ?? ""}
+              onChange={(e) => zetOmschrijving(e.target.value, overal)}
+              rows={3}
+              className="mt-1 w-full resize-none rounded-xl border border-black/10 bg-white px-2 py-1.5 text-sm leading-6 text-ink outline-none focus:border-brand-dark/40"
+            />
+            {/* Alleen zinvol als dit vak vaker in de week staat. */}
+            {aantalZelfdeVak > 1 && (
+              <label className="mt-1 flex cursor-pointer items-center gap-2 px-0.5 text-xs text-ink/60">
+                <input
+                  type="checkbox"
+                  checked={overal}
+                  onChange={(e) => {
+                    setOveral(e.target.checked);
+                    // Staat er al iets, dan meteen doorzetten zodat je het effect
+                    // direct ziet. Is het veld leeg, dan wissen we niet stiekem
+                    // de aantekeningen van de andere blokken.
+                    if (e.target.checked && blok.omschrijving?.trim())
+                      zetOmschrijving(blok.omschrijving, true);
+                  }}
+                  className="h-3.5 w-3.5 shrink-0 rounded border-black/20 accent-brand"
+                />
+                <span className="min-w-0 truncate">
+                  Bij alle {aantalZelfdeVak} {blok.naam}-blokken
+                </span>
+              </label>
+            )}
+          </>
         )}
       </div>
 
