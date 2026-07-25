@@ -26,8 +26,7 @@ import {
   WereldHerken,
   WereldPrivacy,
   WereldRegie,
-  WereldMaker,
-  WereldErvaringen,
+  WereldPrikbord,
   WereldSlot,
 } from "./Wereld";
 
@@ -1082,11 +1081,9 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
            elkaar. ── */}
         <WereldRegie />
 
-        {/* ── 6. De maker ── */}
-        <WereldMaker fotoBestand={fotoBestand} />
-
-        {/* ── 7. Eerlijk over ervaringen ── */}
-        <WereldErvaringen />
+        {/* ── 6+7. Het bord: de brief van de maker en de briefjes van
+           collega's samen op één prikbord-veld ── */}
+        <WereldPrikbord fotoBestand={fotoBestand} />
 
         {/* ── 8. Prijzen ── */}
         <Prijzen />
