@@ -577,6 +577,31 @@ export function WereldHerken() {
           { kleur: VLAK_MINT, seed: 2.4, plat: 0.86, style: { width: 700, left: "45%", top: 170, transform: "rotate(4deg)" }, tel: 2 },
         ]}
       />
+      {/* Elk mintveld heeft zijn eigen schoolgerei-silhouet — een vliegtuigje
+         bij privacy, een liniaal bij de maker — maar dit veld was het zijne
+         kwijtgeraakt toen de verf-klodders kwamen. Het potlood staat weer waar
+         het hoort: in de linkerkolom, onder de kop, waar de sticky tekst
+         wegloopt en een groot gat achterlaat. Daarachter een zacht kaartvlak,
+         zodat de hoek twee lagen krijgt in plaats van één los voorwerp. */}
+      <KaartVlak
+        kleur={VLAK_MINT}
+        radius="52% 48% 42% 58% / 56% 42% 58% 44%"
+        breedte={620}
+        hoogte={420}
+        style={{ left: "-14%", bottom: 90, transform: "rotate(6deg)" }}
+        className="z-[6] hidden lg:block"
+        tel={5}
+      />
+      {/* Zelfde maat en tint als het vliegtuigje in de privacysectie (380px,
+         MINT_DIEP): op 500px werd het silhouet een raket in plaats van een
+         potlood, en het liep aan de linkerkant uit beeld waardoor de gum
+         wegviel en je niet meer zag wát het was. Helemaal in beeld houden. */}
+      <SilhouetPotlood
+        kleur={MINT_DIEP}
+        style={{ width: 380, left: "4%", bottom: 200, transform: "rotate(-17deg)" }}
+        className="z-[6] hidden lg:block"
+        tel={3}
+      />
       <Drijvers punten={[{ x: "46%", y: "88%", amber: true, tel: 2 }, { x: "88%", y: "80%", tel: 4 }]} />
 
       <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pb-28 pt-32 lg:pb-36 lg:pt-40">
@@ -828,6 +853,20 @@ export function WereldRegie() {
         style={{ left: "-10%", top: -30, transform: "rotate(5deg)" }}
         className="z-[6] hidden lg:block"
         tel={2}
+      />
+      {/* De mintband bóven de kaartjes was een leeg lint over de volle
+         breedte. Een tweede, veel plattere kaartvorm rechts vult hem en maakt
+         er een gelaagd veld van. Hij steekt bewust naar boven uit de sectie:
+         de mint loopt daar toch door vanuit de privacysectie, dus zo hangen
+         de twee stukken visueel aan elkaar. */}
+      <KaartVlak
+        kleur={VLAK_MINT}
+        radius="58% 42% 48% 52% / 54% 46% 54% 46%"
+        breedte={780}
+        hoogte={360}
+        style={{ right: "-12%", top: -150, transform: "rotate(-5deg)" }}
+        className="z-[6] hidden lg:block"
+        tel={4}
       />
 
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pt-10 pb-16 lg:pt-12 lg:pb-20">
