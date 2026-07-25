@@ -1060,9 +1060,9 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
              tint-op-tint — en verder niets. */}
           <KaartVlak
             kleur={VLAK_PAPIER}
-            radius="52% 48% 42% 58% / 56% 42% 58% 44%"
-            breedte={780}
-            hoogte={560}
+            vorm="kiezel"
+            breedte={940}
+            hoogte={430}
             style={{ left: "-8%", top: 90, transform: "rotate(-4deg)" }}
             className="-z-10 hidden lg:block"
             tel={3}

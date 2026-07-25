@@ -35,6 +35,20 @@ export const SPECKLE_STIJL: CSSProperties = {
   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='190' height='190'%3E%3Cg fill='%232f9e6e' opacity='0.11'%3E%3Ccircle cx='12' cy='20' r='1.6'/%3E%3Ccircle cx='48' cy='8' r='1.1'/%3E%3Ccircle cx='92' cy='30' r='1.7'/%3E%3Ccircle cx='142' cy='14' r='1.2'/%3E%3Ccircle cx='176' cy='44' r='1.4'/%3E%3Ccircle cx='26' cy='72' r='1.3'/%3E%3Ccircle cx='72' cy='58' r='1.6'/%3E%3Ccircle cx='120' cy='78' r='1.1'/%3E%3Ccircle cx='162' cy='94' r='1.5'/%3E%3Ccircle cx='8' cy='120' r='1.4'/%3E%3Ccircle cx='54' cy='134' r='1.7'/%3E%3Ccircle cx='98' cy='114' r='1.2'/%3E%3Ccircle cx='138' cy='146' r='1.4'/%3E%3Ccircle cx='178' cy='128' r='1.1'/%3E%3Ccircle cx='30' cy='168' r='1.5'/%3E%3Ccircle cx='86' cy='160' r='1.3'/%3E%3Ccircle cx='128' cy='176' r='1.6'/%3E%3C/g%3E%3Cg fill='%23f59e0b' opacity='0.09'%3E%3Ccircle cx='66' cy='28' r='1.3'/%3E%3Ccircle cx='152' cy='62' r='1.4'/%3E%3Ccircle cx='20' cy='98' r='1.2'/%3E%3Ccircle cx='112' cy='142' r='1.5'/%3E%3Ccircle cx='58' cy='100' r='1.1'/%3E%3C/g%3E%3C/svg%3E")`,
 };
 
+/* Vijf duidelijk verschillende organische vormen voor de achtergrondvlakken.
+   Ze komen allemaal uit dezelfde familie als onze kaarten (ongelijke acht-
+   waarden-radii), maar met opzet ver uit elkaar getrokken: steeds dezelfde
+   ovaal herhalen leest als één vorm die je vijf keer ziet. In combinatie met
+   een andere breedte/hoogte-verhouding en een andere draaiing per plek is
+   geen van de vlakken hetzelfde. */
+const VLAKVORMEN = {
+  ei: "72% 28% 58% 42% / 44% 56% 42% 58%",
+  kiezel: "38% 62% 46% 54% / 63% 37% 62% 38%",
+  koepel: "52% 48% 46% 54% / 76% 74% 26% 24%",
+  wig: "24% 76% 70% 30% / 66% 34% 68% 32%",
+  schelp: "62% 38% 34% 66% / 36% 62% 40% 64%",
+} as const;
+
 /* Witte kaart met grote ronding: dé kaartvorm van deze wereld. */
 const KAART =
   "rounded-[2.5rem] bg-white shadow-[0_36px_80px_-48px_rgba(23,80,58,0.55)] ring-1 ring-ink/[0.04]";
@@ -134,20 +148,6 @@ function SilhouetWrap({
         {children}
       </span>
     </span>
-  );
-}
-
-function SilhouetPotlood({ kleur, style, tel, className }: { kleur: string; style: CSSProperties; tel?: number; className?: string }) {
-  return (
-    <SilhouetWrap par={0.05} style={style} tel={tel} className={className}>
-      <svg viewBox="0 0 120 26" className="block w-full">
-        <g fill={kleur}>
-          <rect x="4" y="5" width="84" height="16" rx="3" />
-          <path d="M88 5 L114 13 L88 21 Z" />
-          <rect x="-4" y="5" width="12" height="16" rx="5" />
-        </g>
-      </svg>
-    </SilhouetWrap>
   );
 }
 
@@ -358,16 +358,17 @@ export function SplatVeld({
    site zelf in plaats van een gast van buiten, en omdat het contrast met de
    ondergrond klein is, kan hij nooit met de tekst gaan concurreren.
 
-   `radius` komt bewust uit dezelfde reeks als de regie-kaartjes verderop. */
+   `vorm` kiest uit VLAKVORMEN: elke plek op de pagina krijgt een andere, want
+   dezelfde ovaal vijf keer herhalen leest als één vorm en niet als een taal. */
 export function KaartVlak({
-  kleur, radius, breedte, hoogte, style, tel, className = "",
+  kleur, vorm, breedte, hoogte, style, tel, className = "",
 }: {
-  kleur: string; radius: string; breedte: number; hoogte: number;
+  kleur: string; vorm: keyof typeof VLAKVORMEN; breedte: number; hoogte: number;
   style: CSSProperties; tel?: number; className?: string;
 }) {
   return (
     <SilhouetWrap par={0.022} style={style} tel={tel} className={className}>
-      <span className="block" style={{ width: breedte, height: hoogte, background: kleur, borderRadius: radius }} />
+      <span className="block" style={{ width: breedte, height: hoogte, background: kleur, borderRadius: VLAKVORMEN[vorm] }} />
     </SilhouetWrap>
   );
 }
@@ -498,13 +499,13 @@ export function WereldIntro() {
          nog een uitvergrote kaartvorm achter — de vorm van de site zelf. */}
       <KaartVlak
         kleur={VLAK_PAPIER}
-        radius="58% 42% 48% 52% / 54% 46% 54% 46%"
         breedte={620}
         hoogte={430}
         /* bewust hoger en schuiner dan de golf eronder: anders lopen de
            onderrand van dit vlak en de golfrand bijna evenwijdig en wordt
            het één brede band in plaats van twee losse lagen */
         style={{ right: "-6%", top: -60, transform: "rotate(-11deg)" }}
+        vorm="ei"
         className="hidden lg:block"
         tel={1}
       />
@@ -577,28 +578,27 @@ export function WereldHerken() {
           { kleur: VLAK_MINT, seed: 2.4, plat: 0.86, style: { width: 700, left: "45%", top: 170, transform: "rotate(4deg)" }, tel: 2 },
         ]}
       />
-      {/* Elk mintveld heeft zijn eigen schoolgerei-silhouet — een vliegtuigje
-         bij privacy, een liniaal bij de maker — maar dit veld was het zijne
-         kwijtgeraakt toen de verf-klodders kwamen. Het potlood staat weer waar
-         het hoort: in de linkerkolom, onder de kop, waar de sticky tekst
-         wegloopt en een groot gat achterlaat. Daarachter een zacht kaartvlak,
-         zodat de hoek twee lagen krijgt in plaats van één los voorwerp. */}
+      {/* De linkerkolom loopt leeg zodra de sticky kop wegscrollt. Hier stond
+         even een potlood-silhouet, maar dat werd op deze schaal geen potlood
+         meer — een liggende balk met een punt leest als een raket. Twee
+         achtergrondvlakken doen het hier beter, en met opzet in twee heel
+         verschillende verhoudingen: een lange lage eronder en een hogere,
+         smallere erboven, zodat het niet één herhaalde ovaal is. */}
       <KaartVlak
         kleur={VLAK_MINT}
-        radius="52% 48% 42% 58% / 56% 42% 58% 44%"
-        breedte={620}
-        hoogte={420}
-        style={{ left: "-14%", bottom: 90, transform: "rotate(6deg)" }}
+        vorm="koepel"
+        breedte={780}
+        hoogte={300}
+        style={{ left: "-16%", bottom: 110, transform: "rotate(7deg)" }}
         className="z-[6] hidden lg:block"
         tel={5}
       />
-      {/* Zelfde maat en tint als het vliegtuigje in de privacysectie (380px,
-         MINT_DIEP): op 500px werd het silhouet een raket in plaats van een
-         potlood, en het liep aan de linkerkant uit beeld waardoor de gum
-         wegviel en je niet meer zag wát het was. Helemaal in beeld houden. */}
-      <SilhouetPotlood
-        kleur={MINT_DIEP}
-        style={{ width: 380, left: "4%", bottom: 200, transform: "rotate(-17deg)" }}
+      <KaartVlak
+        kleur={VLAK_MINT}
+        vorm="schelp"
+        breedte={420}
+        hoogte={480}
+        style={{ left: "9%", bottom: 250, transform: "rotate(-13deg)" }}
         className="z-[6] hidden lg:block"
         tel={3}
       />
@@ -847,10 +847,10 @@ export function WereldRegie() {
          alleen veel groter en veel zachter. */}
       <KaartVlak
         kleur={VLAK_MINT}
-        radius="42% 58% 58% 42% / 46% 44% 56% 54%"
-        breedte={640}
-        hoogte={470}
-        style={{ left: "-10%", top: -30, transform: "rotate(5deg)" }}
+        vorm="wig"
+        breedte={470}
+        hoogte={560}
+        style={{ left: "-8%", top: -30, transform: "rotate(5deg)" }}
         className="z-[6] hidden lg:block"
         tel={2}
       />
@@ -861,9 +861,9 @@ export function WereldRegie() {
          de twee stukken visueel aan elkaar. */}
       <KaartVlak
         kleur={VLAK_MINT}
-        radius="58% 42% 48% 52% / 54% 46% 54% 46%"
-        breedte={780}
-        hoogte={360}
+        vorm="kiezel"
+        breedte={860}
+        hoogte={330}
         style={{ right: "-12%", top: -150, transform: "rotate(-5deg)" }}
         className="z-[6] hidden lg:block"
         tel={4}
@@ -913,10 +913,21 @@ export function WereldRegie() {
 /* 6. De maker: mint-veld met liniaal-silhouet, één witte kaart. */
 export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
   return (
-    <section className="relative overflow-hidden" style={{ background: MINT }}>
-      {/* Eén hoge kam links, precies boven het liniaal-silhouet. */}
-      <Golf kleur="#fcfbf7" flip vorm="kam" />
-      <SilhouetLiniaal kleur={MINT_DIEP} veld={MINT} style={{ width: 460, left: -120, top: 165, transform: "rotate(-14deg)" }} />
+    <section className="relative overflow-hidden">
+      {/* Het mintveld begon eerst bovenaan deze sectie, en dan zat de golf
+         maar een paar tientallen pixels onder de golf van de sectie erboven:
+         twee randen vlak op elkaar, waardoor het als één rommelige overgang
+         las. Nu begint de mint pas op de halve hoogte van de sectie — en
+         omdat de verticale padding hier symmetrisch is, valt dat precies
+         halverwege de kaart. De kaart ligt dus met zijn bovenkant op papier
+         en met zijn onderkant op mint, en de twee golven hebben ruimte.
+         (Spiegelbeeld van de regie-sectie, waar de mint juist bovenin zit.) */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 top-1/2" aria-hidden>
+        <div className="absolute inset-0" style={{ background: MINT }} />
+        <Golf kleur="#fcfbf7" flip vorm="kam" />
+      </div>
+      {/* De liniaal hoort in het mintveld te liggen, dus onderin de sectie. */}
+      <SilhouetLiniaal kleur={MINT_DIEP} veld={MINT} style={{ width: 460, left: -120, bottom: 150, transform: "rotate(-14deg)" }} />
 
       <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pb-32 pt-32 lg:pb-36 lg:pt-36">
         <div data-reveal className={`${KAART} relative overflow-hidden px-8 py-14 sm:px-14`}>
@@ -991,7 +1002,18 @@ export function WereldSlot() {
     <section className="relative overflow-hidden" style={{ background: DONKER }}>
       <Golf kleur="#fcfbf7" flip />
       <SilhouetVliegtuig kleur="#ffffff" style={{ width: 300, right: -40, top: 60, transform: "rotate(14deg)", opacity: 0.05 }} tel={1} />
-      <SilhouetPotlood kleur="#ffffff" style={{ width: 380, left: -90, bottom: 60, transform: "rotate(-18deg)", opacity: 0.04 }} tel={2} />
+      {/* Ook hier stond een potlood-silhouet; op deze schaal en bij dit lage
+         contrast was er geen potlood meer in te herkennen, alleen een wig.
+         Een organisch vlak doet hetzelfde werk en hoort bij de rest. */}
+      <KaartVlak
+        kleur="rgba(255,255,255,0.05)"
+        vorm="schelp"
+        breedte={620}
+        hoogte={380}
+        style={{ left: "-8%", bottom: 40, transform: "rotate(-9deg)" }}
+        className="hidden lg:block"
+        tel={2}
+      />
 
       <div className="relative z-10 mx-auto w-full max-w-3xl px-6 pb-32 pt-36 text-center">
         <Confetti punten={[{ x: "16%", y: "18%", r: 4, amber: true }, { x: "82%", y: "12%", r: 5 }, { x: "90%", y: "70%", r: 4, amber: true }]} />
