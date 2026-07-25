@@ -19,7 +19,8 @@ import Prijzen from "@/components/Prijzen";
 import { PROEF_DAGEN } from "@/lib/abonnement";
 import {
   SPECKLE_STIJL,
-  SplatVeld,
+  KaartVlak,
+  VLAK_PAPIER,
   WereldFx,
   WereldIntro,
   WereldHerken,
@@ -1051,16 +1052,20 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           id="tools"
           className="relative isolate overflow-hidden pb-24 pt-6 scroll-mt-20"
         >
-          {/* Verf-klodders als terugkerend achtergrondmotief, hier áchter de
-             tool-kaarten (negatieve z in deze geïsoleerde sectie), in rustige
-             tinten en steeds andere vorm/grootte. */}
-          <SplatVeld
-            className="-z-10"
-            items={[
-              { kleur: "#cfe4d6", seed: 5.1, plat: 0.9, style: { width: 700, left: "2%", top: 110, transform: "rotate(-5deg)" }, tel: 3 },
-              { kleur: "#ecdfc6", seed: 8.3, plat: 0.9, style: { width: 460, right: "-6%", bottom: 60, transform: "rotate(7deg)" }, tel: 5 },
-              { kleur: "#d7e6db", seed: 2.0, plat: 0.92, style: { width: 440, left: "32%", bottom: 100, transform: "rotate(4deg)" }, tel: 1 },
-            ]}
+          {/* Hier stonden drie verf-klodders achter de kaarten. Die kaarten
+             zijn zelf al het kleurrijkste van de hele pagina (donker, groen,
+             amber), dus een drukke achtergrond ging ermee concurreren in
+             plaats van hem te dragen. Er ligt nu één uitvergrote kaartvorm
+             links — dezelfde blob-vorm als de kaarten zelf, alleen enorm en
+             tint-op-tint — en verder niets. */}
+          <KaartVlak
+            kleur={VLAK_PAPIER}
+            radius="52% 48% 42% 58% / 56% 42% 58% 44%"
+            breedte={780}
+            hoogte={560}
+            style={{ left: "-8%", top: 90, transform: "rotate(-4deg)" }}
+            className="-z-10 hidden lg:block"
+            tel={3}
           />
           <ToolRail />
         </section>

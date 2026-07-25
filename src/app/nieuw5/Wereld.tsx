@@ -20,6 +20,12 @@ import type { CSSProperties, ReactNode } from "react";
 
 const MINT = "#cfe6d8";
 const MINT_DIEP = "#b5d8c4"; // silhouetten op mint
+/* Achtergrondvlakken: bewust maar een paar procent van de ondergrond af.
+   De rustigste sectie van de pagina (privacy) heeft óók een achtergrond-
+   motief — de vliegtuigjes — en die werkt juist omdat je hem nauwelijks
+   ziet. Dat is de maat voor alle vlakken hieronder. */
+export const VLAK_PAPIER = "#f2f4ed"; // op het gespikkelde papier
+const VLAK_MINT = "#c6dfcf"; // op een mintveld
 const DONKER = "#17503a"; // slotveld + sticker
 const KOP = "#1e6b4d"; // koppen op licht veld (het "getinte" groen)
 
@@ -33,8 +39,61 @@ export const SPECKLE_STIJL: CSSProperties = {
 const KAART =
   "rounded-[2.5rem] bg-white shadow-[0_36px_80px_-48px_rgba(23,80,58,0.55)] ring-1 ring-ink/[0.04]";
 
-/* ── Golf-overgang tussen twee kleurvelden ── */
-function Golf({ kleur, flip = false }: { kleur: string; flip?: boolean }) {
+/* ── Golf-overgang tussen twee kleurvelden ──
+   Elke overgang op de pagina heeft nu een EIGEN golf. Dat is een bewuste
+   koerswijziging: eerst deelden alle zeven overgangen letterlijk hetzelfde
+   pad, waardoor de decoratie erbovenop de afwisseling moest leveren (vandaar
+   dat er negen verf-klodders stonden). De golf is de eigen sectietaal van de
+   site, dus die mag het verschil dragen — dan hoeft er veel minder bij.
+
+   De y in de paden is de hoogte van de golflijn binnen een viewBox van 110
+   hoog: KLEINE y = het gevulde veld komt hoog in de strook, GROTE y = het
+   blijft laag. `flip` spiegelt dat verticaal, dus bij een flip-golf hangt het
+   vórige veld juist diep naar beneden waar de y klein is. */
+/* De paden worden BEREKEND, niet met de hand getekend: y is een rechte
+   helling van `start` naar `eind` met daar een sinus overheen. Dat is met
+   opzet — een met de hand getekende helling werd meteen een strakke wig en
+   verloor het golfkarakter, en losse bezier-punten knikken zodra ze ongelijk
+   verdeeld liggen. Als functie van x kan dat allebei niet gebeuren: het blijft
+   altijd een golf, en de helling en de deining zijn los te regelen. */
+function maakGolf({
+  start, eind, amp = 20, golven = 1.2, fase = 0,
+}: { start: number; eind: number; amp?: number; golven?: number; fase?: number }) {
+  const N = 24;
+  const p: Array<[number, number]> = [];
+  for (let i = 0; i <= N; i++) {
+    const t = i / N;
+    p.push([t * 1440, start + (eind - start) * t + amp * Math.sin(t * Math.PI * 2 * golven + fase)]);
+  }
+  const P = (i: number) => p[Math.max(0, Math.min(N, i))];
+  let d = `M ${P(0)[0].toFixed(1)} ${P(0)[1].toFixed(1)}`;
+  for (let i = 0; i < N; i++) {
+    const p0 = P(i - 1), p1 = P(i), p2 = P(i + 1), p3 = P(i + 2);
+    d += ` C ${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)} ${(p1[1] + (p2[1] - p0[1]) / 6).toFixed(1)},`;
+    d += ` ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)} ${(p2[1] - (p3[1] - p1[1]) / 6).toFixed(1)},`;
+    d += ` ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+  }
+  return `${d} L1440 111 L0 111 Z`;
+}
+
+const GOLVEN = {
+  /* de oorspronkelijke: rustige dubbele deining, vlak */
+  zacht: maakGolf({ start: 62, eind: 56, amp: 26, golven: 1.15, fase: 0.4 }),
+  /* deint gewoon door, maar loopt onderweg flink op naar rechts */
+  oploopLinks: maakGolf({ start: 26, eind: 90, amp: 19, golven: 1.35, fase: 1.2 }),
+  /* dezelfde deining, andere kant op */
+  oploopRechts: maakGolf({ start: 90, eind: 26, amp: 19, golven: 1.35, fase: 2.6 }),
+  /* zakt in het midden ver weg, komt aan beide randen hoog terug */
+  hapMidden: maakGolf({ start: 36, eind: 32, amp: 34, golven: 0.5, fase: 0 }),
+  /* bijna vlak, alleen een trage deining */
+  rust: maakGolf({ start: 76, eind: 72, amp: 11, golven: 1.45, fase: 0.9 }),
+  /* één hoge kam op het linkerderde, daarna lang uitlopend */
+  kam: maakGolf({ start: 72, eind: 64, amp: 32, golven: 0.7, fase: -2.67 }),
+} as const;
+
+function Golf({
+  kleur, flip = false, vorm = "zacht", hoogte = "h-[60px] sm:h-[96px]",
+}: { kleur: string; flip?: boolean; vorm?: keyof typeof GOLVEN; hoogte?: string }) {
   /* Zonder flip: onderin de sectie, gevuld met de kleur van het vólgende veld.
      Met flip: bovenin de sectie, gevuld met de kleur van het vórige veld —
      dat veld hapt dan golvend deze sectie in. Beide blijven binnen de sectie,
@@ -48,13 +107,10 @@ function Golf({ kleur, flip = false }: { kleur: string; flip?: boolean }) {
       <svg
         viewBox="0 0 1440 110"
         preserveAspectRatio="none"
-        className="block h-[60px] w-full sm:h-[96px]"
+        className={`block w-full ${hoogte}`}
         style={flip ? { transform: "scaleY(-1)" } : undefined}
       >
-        <path
-          d="M0 62 C 230 108, 500 16, 760 46 C 1000 74, 1240 112, 1440 54 L1440 111 L0 111 Z"
-          fill={kleur}
-        />
+        <path d={GOLVEN[vorm]} fill={kleur} />
       </svg>
     </div>
   );
@@ -212,8 +268,8 @@ function SilhouetBoek({ kleur, style, tel, className }: { kleur: string; style: 
    geen hydration-mismatch), zodat elke klodder uniek maar reproduceerbaar is.
    De randen worden met een gesloten Catmull-Rom-spline vloeiend gemaakt. */
 function SilhouetSplat({
-  kleur, seed = 0, punten = 20, plat = 0.7, style, tel, className,
-}: { kleur: string; seed?: number; punten?: number; plat?: number; style: CSSProperties; tel?: number; className?: string }) {
+  kleur, seed = 0, punten = 26, plat = 0.7, vinger = 1.16, style, tel, className,
+}: { kleur: string; seed?: number; punten?: number; plat?: number; vinger?: number; style: CSSProperties; tel?: number; className?: string }) {
   // Vorm rond de oorsprong (0,0); `plat` drukt de Y in zodat de klodder
   // breder-dan-hoog wordt. De viewBox wordt exact op de vorm gezet, zodat de
   // gerenderde hoogte voorspelbaar ≈ breedte × plat is (nette plaatsing,
@@ -222,13 +278,16 @@ function SilhouetSplat({
   const rawPts: Array<[number, number]> = [];
   for (let i = 0; i < N; i++) {
     const ang = (i / N) * Math.PI * 2;
-    let r = base * (1 + 0.30 * Math.sin(i * 1.3 + seed) + 0.17 * Math.sin(i * 2.7 + seed * 1.7) + 0.1 * Math.sin(i * 4.1 + seed * 0.6));
-    // af en toe een langere "vinger" waar de verf is uitgelopen
-    if ((i + Math.round(seed * 3)) % 6 === 0) r *= 1.52;
+    let r = base * (1 + 0.19 * Math.sin(i * 1.3 + seed) + 0.11 * Math.sin(i * 2.7 + seed * 1.7) + 0.06 * Math.sin(i * 4.1 + seed * 0.6));
+    // af en toe een langere "vinger" waar de verf is uitgelopen. Standaard
+    // bleef die op 1,52 staan en dan wordt het geen gevallen klodder maar een
+    // ster: spitse punten die als pootjes onder de kaarten vandaan steken.
+    // Met meer punten en een zachtere uitloop blijft het een ronde vlek.
+    if ((i + Math.round(seed * 3)) % 7 === 0) r *= vinger;
     rawPts.push([r * Math.cos(ang), r * Math.sin(ang)]);
   }
   const rawDrops: Array<[number, number, number]> = [];
-  for (let k = 0; k < 4; k++) {
+  for (let k = 0; k < 3; k++) {
     const ang = seed * 0.9 + k * 1.9;
     const dist = base * (1.5 + 0.28 * Math.sin(k * 2 + seed));
     const rr = 5 + 6 * Math.abs(Math.sin(k * 3 + seed * 1.4));
@@ -287,6 +346,29 @@ export function SplatVeld({
         <SilhouetSplat key={i} kleur={it.kleur} seed={it.seed} plat={it.plat} style={it.style} tel={it.tel} />
       ))}
     </div>
+  );
+}
+
+/* ── De uitvergrote kaartvorm ──────────────────────────────────────────────
+   Het achtergrondmotief dat wél van deze site is. Een verf-klodder komt uit
+   een schildersatelier en heeft met een werkplek voor leerkrachten niets te
+   maken; deze vorm is letterlijk de blob-vorm van onze eigen kaarten en van
+   de klodder-knop — dezelfde ongelijke acht-waarden-radii, alleen tien keer
+   zo groot en tint-op-tint. De achtergrond is daarmee een vergroting van de
+   site zelf in plaats van een gast van buiten, en omdat het contrast met de
+   ondergrond klein is, kan hij nooit met de tekst gaan concurreren.
+
+   `radius` komt bewust uit dezelfde reeks als de regie-kaartjes verderop. */
+export function KaartVlak({
+  kleur, radius, breedte, hoogte, style, tel, className = "",
+}: {
+  kleur: string; radius: string; breedte: number; hoogte: number;
+  style: CSSProperties; tel?: number; className?: string;
+}) {
+  return (
+    <SilhouetWrap par={0.022} style={style} tel={tel} className={className}>
+      <span className="block" style={{ width: breedte, height: hoogte, background: kleur, borderRadius: radius }} />
+    </SilhouetWrap>
   );
 }
 
@@ -410,9 +492,22 @@ export function WereldIntro() {
     // verf-klodder mag verticaal naar boven uitsteken in de papieren
     // ademruimte erboven (naadloos, zelfde papier) zodat hij groter kan.
     <section className="relative overflow-x-clip">
-      {/* De verf-klodder ligt onder de RECHTER tekst; de schoolgerei-icoontjes
-         staan links. (Omgewisseld t.o.v. de standaard-opzet.) */}
-      <SilhouetSplat kleur="#d3e5da" seed={9.2} plat={0.9} style={{ width: 520, right: "1%", top: -72, transform: "rotate(5deg)" }} className="hidden lg:block" tel={1} />
+      {/* Hier stond een verf-klodder onder de rechter alinea, maar die las als
+         een cartoon-explosie. Nu draagt de golf naar de sectie hieronder die
+         hoek (het mintveld loopt daar rechts flink omhoog) en ligt er alleen
+         nog een uitvergrote kaartvorm achter — de vorm van de site zelf. */}
+      <KaartVlak
+        kleur={VLAK_PAPIER}
+        radius="58% 42% 48% 52% / 54% 46% 54% 46%"
+        breedte={620}
+        hoogte={430}
+        /* bewust hoger en schuiner dan de golf eronder: anders lopen de
+           onderrand van dit vlak en de golfrand bijna evenwijdig en wordt
+           het één brede band in plaats van twee losse lagen */
+        style={{ right: "-6%", top: -60, transform: "rotate(-11deg)" }}
+        className="hidden lg:block"
+        tel={1}
+      />
       <SilhouetGum kleur="#dcebe2" style={{ width: 130, left: "4%", top: 40, transform: "rotate(14deg)" }} tel={2} />
       <SilhouetBoek kleur="#e9e2cf" style={{ width: 170, left: "10%", bottom: 52, transform: "rotate(-8deg)", opacity: 0.8 }} />
 
@@ -464,13 +559,22 @@ const PIJN = [
 export function WereldHerken() {
   return (
     <section className="relative overflow-hidden" style={{ background: MINT }}>
-      <Golf kleur="#fcfbf7" flip />
+      {/* Deze overgang is de grootste van de pagina: het papier hangt links
+         diep door en trekt zich rechts helemaal terug, zodat het mintveld aan
+         de rechterkant flink omhoog loopt — precies achter de intro-alinea
+         die daarboven eindigt. Dat vult die hoek met de eigen sectietaal in
+         plaats van met een losse vlek. De onderrand van deze sectie loopt
+         dezelfde kant op, waardoor het hele mintveld een schuine band wordt. */}
+      <Golf kleur="#fcfbf7" flip vorm="oploopLinks" hoogte="h-[80px] sm:h-[140px]" />
+      {/* Van drie klodders naar één. De twee die weg zijn: een zandkleurige
+         rechtsonder (twee accentkleuren in één beeld vechten met elkaar) en
+         een kleine linksonder. Wat overblijft is de grote, nu in dezelfde
+         kleurfamilie als het veld eronder: dit is de plek waar de vlek een
+         uitzondering mag zijn, niet het behang van de hele pagina. */}
       <SplatVeld
         className="z-[6]"
         items={[
-          { kleur: "#e6d9bd", seed: 6.7, plat: 0.92, style: { width: 440, right: "-10%", bottom: 48, transform: "rotate(-8deg)" }, tel: 4 },
-          { kleur: "#a6ccb7", seed: 2.4, plat: 0.86, style: { width: 700, left: "45%", top: 170, transform: "rotate(4deg)" }, tel: 2 },
-          { kleur: "#98c1a9", seed: 3.9, plat: 0.92, style: { width: 420, left: "-21%", bottom: 100, transform: "rotate(5deg)" }, tel: 1 },
+          { kleur: VLAK_MINT, seed: 2.4, plat: 0.86, style: { width: 700, left: "45%", top: 170, transform: "rotate(4deg)" }, tel: 2 },
         ]}
       />
       <Drijvers punten={[{ x: "46%", y: "88%", amber: true, tel: 2 }, { x: "88%", y: "80%", tel: 4 }]} />
@@ -527,7 +631,9 @@ export function WereldHerken() {
           </div>
         </div>
       </div>
-      <Golf kleur="#fcfbf7" />
+      {/* Zelfde helling als de bovenrand: het papier komt links hoog terug en
+         blijft rechts laag, zodat het mintveld als geheel schuin oploopt. */}
+      <Golf kleur="#fcfbf7" vorm="oploopLinks" />
     </section>
   );
 }
@@ -539,7 +645,10 @@ const KLAS = ["Sofie", "Daan", "Iris", "Mees", "Noor"];
 export function WereldPrivacy() {
   return (
     <section className="relative overflow-hidden" style={{ background: MINT }}>
-      <Golf kleur="#fcfbf7" flip />
+      {/* Dit mintveld helt bewust de ándere kant op dan dat van "Herken je
+         dit?", zodat de twee groene banden op de pagina elkaars spiegel zijn
+         in plaats van een herhaling. */}
+      <Golf kleur="#fcfbf7" flip vorm="oploopRechts" hoogte="h-[70px] sm:h-[118px]" />
       <SilhouetVliegtuig kleur={MINT_DIEP} style={{ width: 380, right: -60, top: 135, transform: "rotate(10deg)" }} />
       <SilhouetVliegtuig kleur={MINT_DIEP} style={{ width: 150, left: "8%", bottom: 150, transform: "rotate(-16deg)", opacity: 0.6 }} tel={1} />
       {/* een klein vliegtuigje glijdt heel traag door het veld */}
@@ -700,17 +809,26 @@ export function WereldRegie() {
          mobiel met het midden van de gestapelde kaartjes). */}
       <div className="pointer-events-none absolute inset-x-0 top-0 bottom-1/2 overflow-hidden" aria-hidden>
         <div className="absolute inset-0" style={{ background: MINT }} />
-        <Golf kleur="#fcfbf7" />
+        {/* Hier zakt de mint in het midden juist ver door, tussen de twee
+           buitenste kaartjes langs: een derde soort golf, geen herhaling. */}
+        <Golf kleur="#fcfbf7" vorm="hapMidden" />
       </div>
 
-      {/* Twee grote, grillige verf-klodders (splats) — alsof er echt een paar
-         klodders op het papier zijn gevallen: onregelmatige randen, uitlopers
-         en losse satelliet-druppels. Groot en speels; deels achter/onder de
-         kaarten vandaan. Eén tint-op-tint groen (linksboven, op de mint), één
-         warm zand-getint (rechtsonder, deels onder de kaarten op het papier).
-         Mobiel: verborgen. */}
-      <SilhouetSplat kleur="#a6ccb7" seed={1.2} plat={0.88} style={{ width: 600, left: "-6%", top: -60, transform: "rotate(-4deg)" }} className="z-[6] hidden lg:block" tel={2} />
-      <SilhouetSplat kleur="#e7dcc2" seed={4.8} plat={0.9} style={{ width: 540, right: "-6%", top: -30, transform: "rotate(7deg)" }} className="z-[6] hidden lg:block" tel={5} />
+      {/* Hier stonden twee grote klodders, één groene en één zandkleurige. Op
+         deze plek in de pagina hoort rust: de punten staken als pootjes onder
+         de drie witte kaartjes vandaan en er vochten twee accentkleuren om
+         aandacht. Er ligt nu één uitvergrote kaartvorm links, in dezelfde
+         kleurfamilie als de mint eromheen — de vorm van de kaartjes zelf,
+         alleen veel groter en veel zachter. */}
+      <KaartVlak
+        kleur={VLAK_MINT}
+        radius="42% 58% 58% 42% / 46% 44% 56% 54%"
+        breedte={640}
+        hoogte={470}
+        style={{ left: "-10%", top: -30, transform: "rotate(5deg)" }}
+        className="z-[6] hidden lg:block"
+        tel={2}
+      />
 
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pt-10 pb-16 lg:pt-12 lg:pb-20">
         <Confetti punten={[{ x: "0%", y: "8%", r: 4, amber: true }, { x: "99%", y: "84%", r: 4 }, { x: "52%", y: "-2%", r: 3 }]} />
@@ -757,7 +875,8 @@ export function WereldRegie() {
 export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
   return (
     <section className="relative overflow-hidden" style={{ background: MINT }}>
-      <Golf kleur="#fcfbf7" flip />
+      {/* Eén hoge kam links, precies boven het liniaal-silhouet. */}
+      <Golf kleur="#fcfbf7" flip vorm="kam" />
       <SilhouetLiniaal kleur={MINT_DIEP} veld={MINT} style={{ width: 460, left: -120, top: 165, transform: "rotate(-14deg)" }} />
 
       <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pb-32 pt-32 lg:pb-36 lg:pt-36">
@@ -804,7 +923,9 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           </div>
         </div>
       </div>
-      <Golf kleur="#fcfbf7" />
+      {/* Bijna vlak: na het lange makers-verhaal hoort de pagina rustig uit
+         te lopen, niet nog een keer te deinen. */}
+      <Golf kleur="#fcfbf7" vorm="rust" />
     </section>
   );
 }
