@@ -45,8 +45,10 @@ export function genereerLessen(setup: RoosterSetup, vaste: RoosterBlokRuw[]): Ro
   const de = (d: string) => setup.dagEind?.[d] ?? eind;
 
   // Per vak: lengte, hoe vaak per week, en het voorkeursdagdeel. Pauze is vast.
+  // Een vak zonder `blokken` staat alleen in de lijst omdat er een kleur voor is
+  // gekozen; dat is geen ingesteld lesvak en verdelen we dus ook niet.
   const vakken: Vak[] = (setup.vakken ?? [])
-    .filter((v) => v.id !== "pauze")
+    .filter((v) => v.id !== "pauze" && (v.blokken?.length ?? 0) > 0)
     .map((v) => ({
       vak: v.id,
       naam: v.naam,

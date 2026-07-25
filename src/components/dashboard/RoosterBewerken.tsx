@@ -187,6 +187,27 @@ export default function RoosterBewerken({
     };
   }, [vuil, verlaatGuard]);
 
+  // De kleur van een vak wijzigen vanuit het blok zelf. Een kleur hoort bij het
+  // vak en niet bij één les, dus alle blokken van hetzelfde vak kleuren mee.
+  // Staat het vak nog niet in je vakkenlijst, dan zetten we er alleen een
+  // kleur-regel voor neer: zonder `blokken` telt zo'n regel niet mee bij het
+  // opnieuw verdelen en verandert er dus niets anders aan je rooster.
+  function zetVakKleur(vakId: string, naam: string, opt: { bg: string; tekst: string }) {
+    pasToe((c) => {
+      const lijst = c.setup.vakken ?? [];
+      const bestaat = lijst.some((v) => v.id === vakId);
+      return {
+        ...c,
+        setup: {
+          ...c.setup,
+          vakken: bestaat
+            ? lijst.map((v) => (v.id === vakId ? { ...v, bg: opt.bg, tx: opt.tekst } : v))
+            : [...lijst, { id: vakId, naam, bg: opt.bg, tx: opt.tekst }],
+        },
+      };
+    });
+  }
+
   // De vakkenlijst in de instellingen wijzigen (welke vakken, hoe vaak per week).
   // Eigen vakken die niet in de catalogus staan, blijven onaangeroerd. Via pasToe
   // zodat het ook ongedaan te maken is.
@@ -377,7 +398,12 @@ export default function RoosterBewerken({
       ...c,
       setup: {
         ...c.setup,
-        vakken: [...(c.setup.vakken ?? []), { id: vakId, naam: t, bg: kl.bg, tx: kl.tx }],
+        // Met `blokken` telt het nieuwe vak meteen mee bij het opnieuw verdelen,
+        // met de lengte die je hier tekende.
+        vakken: [
+          ...(c.setup.vakken ?? []),
+          { id: vakId, naam: t, blokken: [duur], bg: kl.bg, tx: kl.tx },
+        ],
       },
       blokken: [
         ...c.blokken,
@@ -393,7 +419,12 @@ export default function RoosterBewerken({
     pasToe((c) => {
       // Gym is een gewoon te verdelen vak zodra je het instelt; dan houden we de
       // oude vaste gym-blokken niet vast maar verdelen we ze opnieuw mee.
-      const gymGeregeld = (c.setup.vakken ?? []).some((v) => v.id === "gym");
+      // "Geregeld" betekent: als lesvak ingesteld (met blokken). Een gym-regel die
+      // er alleen staat voor zijn kleur telt niet mee — anders zouden de vaste
+      // gymblokken verdwijnen zonder dat er nieuwe voor terugkomen.
+      const gymGeregeld = (c.setup.vakken ?? []).some(
+        (v) => v.id === "gym" && (v.blokken?.length ?? 0) > 0,
+      );
       const vaste = c.blokken.filter((b) => b.type === "vast" && !(gymGeregeld && b.vak === "gym"));
       const taken = c.blokken.filter((b) => b.type === "taak");
       return { ...c, blokken: [...vaste, ...taken, ...genereerLessen(c.setup, vaste)] };
@@ -498,7 +529,9 @@ export default function RoosterBewerken({
               aria-label="Opnieuw genereren"
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-black/10 bg-white text-brand-dark transition-transform duration-150 hover:bg-brand-soft active:scale-[0.96]"
             >
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+              {/* Het sterretje vult de knop nu bijna helemaal, anders zie je hem
+                  nauwelijks. */}
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2.5l1.6 4.3 4.3 1.6-4.3 1.6L12 14.3l-1.6-4.3L6.1 8.4l4.3-1.6z" />
                 <path d="M18.5 13.5l.9 2.3 2.3.9-2.3.9-.9 2.3-.9-2.3-2.3-.9 2.3-.9z" />
               </svg>
@@ -592,6 +625,7 @@ export default function RoosterBewerken({
             beginLater={() => wijzigBegin(gekozenBlok.id, 5)}
             eindeEerder={() => wijzigEinde(gekozenBlok.id, -5)}
             eindeLater={() => wijzigEinde(gekozenBlok.id, 5)}
+            zetKleur={(opt) => zetVakKleur(gekozenBlok.vak, gekozenBlok.naam, opt)}
             weghalen={() => verwijder(gekozenBlok.id)}
             sluit={() => setGekozen(null)}
           />
@@ -689,8 +723,11 @@ function VakkenInstellingen({
   const [eigenNaam, setEigenNaam] = useState("");
   const [paletVoor, setPaletVoor] = useState<{ id: string; x: number; y: number } | null>(null);
 
-  // Standaardvakken die nog niet in de lijst staan (om snel toe te voegen).
-  const nogTeKiezen = VAK_CATALOGUS.filter((k) => !vakken.some((v) => v.id === k.id));
+  // Standaardvakken die nog niet zijn ingesteld (om snel toe te voegen). Een vak
+  // dat er alleen staat voor zijn kleur (geen `blokken`) telt niet als ingesteld.
+  const nogTeKiezen = VAK_CATALOGUS.filter(
+    (k) => !vakken.some((v) => v.id === k.id && (v.blokken?.length ?? 0) > 0),
+  );
 
   function kiesKleur(id: string, opt: { bg: string; tekst: string }) {
     setVakken(vakken.map((v) => (v.id === id ? { ...v, bg: opt.bg, tx: opt.tekst } : v)));
@@ -698,7 +735,9 @@ function VakkenInstellingen({
   }
 
   // De te verdelen lesvakken (pauze hoort daar niet bij — dat is een vast blok).
-  const lesVakken = vakken.filter((v) => v.id !== "pauze");
+  // Een vak zonder `blokken` staat alleen in de lijst omdat er een kleur voor is
+  // gekozen bij een blok; dat is hier nog geen ingesteld vak.
+  const lesVakken = vakken.filter((v) => v.id !== "pauze" && (v.blokken?.length ?? 0) > 0);
 
   function zetAantal(id: string, aantal: number) {
     setVakken(
@@ -729,18 +768,21 @@ function VakkenInstellingen({
   }
 
   function voegStandaard(k: (typeof VAK_CATALOGUS)[number]) {
-    setVakken([
-      ...vakken,
-      {
-        id: k.id,
-        naam: k.naam,
-        blokken: [k.duur],
-        ochtend: k.ochtend,
-        zwaar: k.zwaar,
-        middag: k.middag,
-        ontspan: k.ontspan,
-      },
-    ]);
+    // Stond het vak er al alleen voor zijn kleur? Dan die kleur bewaren en er een
+    // echt ingesteld vak van maken, in plaats van een tweede regel erbij.
+    const bestaand = vakken.find((v) => v.id === k.id);
+    const nieuw = {
+      id: k.id,
+      naam: bestaand?.naam ?? k.naam,
+      blokken: [k.duur],
+      ochtend: k.ochtend,
+      zwaar: k.zwaar,
+      middag: k.middag,
+      ontspan: k.ontspan,
+      bg: bestaand?.bg,
+      tx: bestaand?.tx,
+    };
+    setVakken(bestaand ? vakken.map((v) => (v.id === k.id ? nieuw : v)) : [...vakken, nieuw]);
   }
 
   function voegEigen() {
@@ -1178,6 +1220,7 @@ function Blokkaart({
   beginLater,
   eindeEerder,
   eindeLater,
+  zetKleur,
   weghalen,
   sluit,
 }: {
@@ -1189,12 +1232,14 @@ function Blokkaart({
   beginLater: () => void;
   eindeEerder: () => void;
   eindeLater: () => void;
+  zetKleur: (opt: { bg: string; tekst: string }) => void;
   weghalen: () => void;
   sluit: () => void;
 }) {
   // Even openvouwen: klein en doorzichtig beginnen, dan op ware grootte, vanuit
   // de kant waar het blok staat.
   const [open, setOpen] = useState(false);
+  const [paletOpen, setPaletOpen] = useState(false);
   useEffect(() => setOpen(true), []);
   const duur = minuten(blok.eind) - minuten(blok.begin);
 
@@ -1208,14 +1253,21 @@ function Blokkaart({
         (open ? "scale-100 opacity-100" : "scale-95 opacity-0")
       }
     >
-      {/* Kopregel altijd op één regel: naam kort af, tijd blijft ernaast. */}
+      {/* Kopregel altijd op één regel: naam kort af, tijd blijft ernaast. Het
+          vakje ervoor toont de kleur van dit vak; klik erop om hem te wijzigen. */}
       <div className="flex items-center gap-2">
-        <span
-          className="min-w-0 flex-1 truncate rounded-lg px-2 py-1 text-sm font-bold"
-          style={{ background: blok.kleur?.bg, color: blok.kleur?.tekst }}
-        >
-          {blok.naam}
-        </span>
+        <button
+          onClick={() => setPaletOpen((o) => !o)}
+          aria-label={`Kleur van ${blok.naam} kiezen`}
+          aria-expanded={paletOpen}
+          title="Kleur kiezen"
+          className="h-6 w-6 shrink-0 rounded-md transition-transform hover:scale-110 active:scale-95"
+          style={{
+            background: blok.kleur?.bg,
+            boxShadow: `inset 0 0 0 1px ${blok.kleur?.tekst ?? "#000"}55`,
+          }}
+        />
+        <span className="min-w-0 flex-1 truncate text-sm font-bold text-ink">{blok.naam}</span>
         <span className="shrink-0 text-sm tabular-nums text-ink/55">{duur} min</span>
         <button
           onClick={sluit}
@@ -1234,6 +1286,28 @@ function Blokkaart({
         <TijdRij label="Begin" tijd={blok.begin} eerder={beginEerder} later={beginLater} />
         <TijdRij label="Einde" tijd={blok.eind} eerder={eindeEerder} later={eindeLater} />
       </div>
+
+      {/* Het kleurmenu, onder het vakje. De kleur hoort bij het vak, dus alle
+          blokken van dit vak kleuren meteen mee. Wit = geen kleur. */}
+      {paletOpen && (
+        <>
+          <div className="fixed inset-0 z-[55]" onClick={() => setPaletOpen(false)} />
+          <div className="absolute left-3 top-11 z-[56] grid grid-cols-5 gap-1.5 rounded-xl border border-black/10 bg-white p-2 shadow-xl">
+            {KLEUR_OPTIES.map((opt) => (
+              <button
+                key={opt.bg}
+                onClick={() => {
+                  zetKleur(opt);
+                  setPaletOpen(false);
+                }}
+                aria-label={opt.bg === "#ffffff" ? "Wit (geen kleur)" : "Kleur kiezen"}
+                className="h-6 w-6 rounded-md border border-black/15 transition-transform hover:scale-110"
+                style={{ background: opt.bg }}
+              />
+            ))}
+          </div>
+        </>
+      )}
 
       <button
         onClick={weghalen}
