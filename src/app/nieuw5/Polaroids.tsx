@@ -232,6 +232,7 @@ function DraadScene() {
   const scene = useRef<HTMLDivElement>(null);
   const draadPad = useRef<SVGPathElement>(null);
   const kaartRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const binnenRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const draadjes = useRef<Array<SVGLineElement | null>>([]);
   const knoopjes = useRef<Array<SVGCircleElement | null>>([]);
   const [omgedraaid, setOmgedraaid] = useState<boolean[]>(() => KAARTEN.map(() => false));
@@ -267,17 +268,22 @@ function DraadScene() {
       if (!inBeeld.current) return;
 
       const breed = el.clientWidth;
-      const punten: Array<[number, number]> = [];
 
+      /* ── 1. veren integreren ── */
       for (let i = 0; i < KAARTEN.length; i++) {
         const f = fys.current[i];
         const k = KAARTEN[i];
         const isSleep = sleep.current?.i === i;
 
         /* horizontaal: tijdens slepen strak achter de muis aan, daarna
-           terugveren naar de eigen plek met een lome veer */
-        const doelX = isSleep ? sleep.current!.laatstePointerX - sleep.current!.startPointerX + sleep.current!.startX : 0;
-        [f.x, f.vx] = veer(f.x, f.vx, doelX, isSleep ? 320 : 42, isSleep ? 34 : 9, dt);
+           terugveren naar de eigen plek. De terugveer is bewust wat lichter
+           gedempt: het kaartje mag doorschieten voorbij zijn rustplek, en
+           precies dán tikt het zijn buurman aan — de waslijn-botsing. */
+        const rustX = (k.x / 100) * breed;
+        let doelX = isSleep ? sleep.current!.laatstePointerX - sleep.current!.startPointerX + sleep.current!.startX : 0;
+        /* niet voorbij de randen van de scène te slepen */
+        if (isSleep) doelX = Math.max(24 - rustX, Math.min(breed - 24 - rustX, doelX));
+        [f.x, f.vx] = veer(f.x, f.vx, doelX, isSleep ? 320 : 40, isSleep ? 34 : 7.5, dt);
 
         /* het ophangpunt zakt door onder beweging (gewicht aan de draad) */
         [f.dip, f.vdip] = veer(f.dip, f.vdip, 0, 130, 9.5, dt);
@@ -288,28 +294,88 @@ function DraadScene() {
 
         /* hover-lift */
         [f.til, f.vtil] = veer(f.til, f.vtil, hoverI.current === i ? 1 : 0, 170, 22, dt);
+      }
+
+      /* ── 2. botsingen: kaartjes duwen elkaar zoals aan een echte lijn ──
+         Twee kaarten raken elkaar zodra hun middens dichterbij komen dan
+         één kaartbreedte. De geduwde kaart krijgt de klap mee: hij schuift
+         op (positie), neemt vaart over (vx) en slingert op van de tik
+         (vhoek), en de draad dipt even door. Omdat elk paar apart wordt
+         opgelost, ontstaat de kettingreactie vanzelf: kaart 5 raakt 4,
+         4 raakt 3... Twee passes (heen en terug) zodat een duw in één
+         frame netjes door de rij loopt. */
+      const RAAK = 216; // kaart is 212 breed; 4px "voelbare" rand
+      const losOp = (a: number, b: number) => {
+        const fa = fys.current[a], fb = fys.current[b];
+        const posA = (KAARTEN[a].x / 100) * breed + fa.x;
+        const posB = (KAARTEN[b].x / 100) * breed + fb.x;
+        const afstand = posB - posA;
+        if (afstand >= RAAK) return;
+        const overlap = RAAK - afstand;
+        const aVast = sleep.current?.i === a;
+        const bVast = sleep.current?.i === b;
+        /* uit elkaar duwen: een vastgehouden kaart wijkt niet */
+        if (aVast && !bVast) fb.x += overlap;
+        else if (bVast && !aVast) fa.x -= overlap;
+        else { fa.x -= overlap / 2; fb.x += overlap / 2; }
+        /* de klap: vaart die de een op de ander overdraagt */
+        const vRel = fa.vx - fb.vx;
+        if (vRel > 0) {
+          const stoot = Math.min(1000, vRel);
+          if (!bVast) {
+            fb.vx += stoot * 0.85;
+            fb.vhoek += Math.min(130, stoot * 0.1); // opslingeren van de tik
+            fb.vdip += Math.min(55, stoot * 0.06);
+          }
+          if (!aVast) {
+            fa.vx -= stoot * 0.55;
+            fa.vhoek -= Math.min(90, stoot * 0.06);
+            fa.vdip += Math.min(40, stoot * 0.04);
+          }
+        }
+      };
+      for (let i = 0; i < KAARTEN.length - 1; i++) losOp(i, i + 1);
+      for (let i = KAARTEN.length - 2; i >= 0; i--) losOp(i, i + 1);
+
+      /* ── 3. tekenen ── */
+      const punten: Array<[number, number]> = [];
+      for (let i = 0; i < KAARTEN.length; i++) {
+        const f = fys.current[i];
+        const k = KAARTEN[i];
+        const isSleep = sleep.current?.i === i;
 
         /* ambient: heel trage wieg, elk kaartje zijn eigen ritme */
         const wieg = rustig.current ? 0 : Math.sin(t / (2600 + i * 340) + i * 1.7) * 0.7;
+        const totHoek = f.hoek + wieg;
 
         const rustX = (k.x / 100) * breed;
         const hangX = rustX + f.x;
         const hangY = draadY(hangX / breed) + f.dip;
         punten.push([hangX, hangY]);
 
+        /* de kaart slingert om zijn punt óp de draad (transform-origin ligt
+           draadlengte boven de kaart), dus het draadje scharniert mee: de
+           kaarttop hangt op hoek `totHoek` onder het ophangpunt */
         const kaartEl = kaartRefs.current[i];
         if (kaartEl) {
           kaartEl.style.transform =
-            `translate3d(${hangX}px, ${hangY + k.draad}px, 0) translateX(-50%) rotate(${f.hoek + wieg}deg) ` +
-            `translateY(${f.til * -7}px) scale(${1 + f.til * 0.045})`;
+            `translate3d(${hangX}px, ${hangY + k.draad}px, 0) translateX(-50%) rotate(${totHoek}deg)`;
           kaartEl.style.zIndex = hoverI.current === i || isSleep ? "40" : String(10 + i);
         }
+        /* de hover-lift zit op de binnenste laag, zodat schaal en lift in
+           de as van de kaart gebeuren en niet om het draaipunt op de draad */
+        const binnen = binnenRefs.current[i];
+        if (binnen) {
+          binnen.style.transform = `translateY(${f.til * -7}px) scale(${1 + f.til * 0.045})`;
+        }
+        const rad = (totHoek * Math.PI) / 180;
+        const lente = k.draad + f.til * -7;
         const lijn = draadjes.current[i];
         if (lijn) {
           lijn.setAttribute("x1", String(hangX));
           lijn.setAttribute("y1", String(hangY));
-          lijn.setAttribute("x2", String(hangX));
-          lijn.setAttribute("y2", String(hangY + k.draad + f.til * -7));
+          lijn.setAttribute("x2", (hangX + Math.sin(rad) * lente).toFixed(1));
+          lijn.setAttribute("y2", (hangY + Math.cos(rad) * lente).toFixed(1));
         }
         const knoop = knoopjes.current[i];
         if (knoop) {
@@ -402,7 +468,9 @@ function DraadScene() {
           key={k.naam}
           ref={(r) => { kaartRefs.current[i] = r; }}
           className="absolute left-0 top-0 w-[212px] will-change-transform"
-          style={{ height: 212 * KAART_RATIO, transformOrigin: "50% -8px", left: 0 }}
+          /* het draaipunt ligt óp de draad (draadlengte boven de kaart), dus
+             kaart én draadje slingeren samen om het ophangpunt */
+          style={{ height: 212 * KAART_RATIO, transformOrigin: `50% ${-k.draad}px`, left: 0 }}
           onPointerEnter={() => { hoverI.current = i; }}
           onPointerLeave={() => { hoverI.current = -1; }}
           onPointerDown={opPointerDown(i)}
@@ -412,10 +480,11 @@ function DraadScene() {
         >
           <button
             type="button"
+            ref={(r) => { binnenRefs.current[i] = r; }}
             onClick={opKlik(i)}
             aria-expanded={omgedraaid[i]}
             aria-label={omgedraaid[i] ? `Draai de foto van ${k.naam} terug` : `Lees de ervaring van ${k.naam} (${k.rol})`}
-            className="pk-schaduw block h-full w-full cursor-grab select-none rounded-[5px] text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand active:cursor-grabbing"
+            className="pk-schaduw block h-full w-full cursor-grab select-none rounded-[5px] text-left will-change-transform focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand active:cursor-grabbing"
           >
             <PolaroidKaart kaart={k} omgedraaid={omgedraaid[i]} />
           </button>
