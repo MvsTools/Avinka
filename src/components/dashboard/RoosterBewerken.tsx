@@ -296,7 +296,12 @@ export default function RoosterBewerken({
   }
 
   async function opslaan(): Promise<boolean> {
-    if (!concept) return true;
+    // Zonder geladen rooster valt er niets te bewaren. Dat mag nooit stilletjes
+    // als "opgeslagen" gelden: dan sluit de bewerkstand alsof alles goed ging.
+    if (!concept) {
+      setFout("Er is nog geen rooster om op te slaan. Ververs de pagina en probeer het opnieuw.");
+      return false;
+    }
     setOpslaanBezig(true);
     setFout(null);
     try {
@@ -305,11 +310,32 @@ export default function RoosterBewerken({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rooster: concept, schooljaar }),
       });
-      if (!antwoord.ok) throw new Error();
+      if (!antwoord.ok) {
+        // Zeg erbij wat er misging. Ging het eerder mis, dan was het altijd
+        // dezelfde zin en wist niemand waar het aan lag.
+        if (antwoord.status === 401) {
+          setFout(
+            "Je bent uitgelogd, daarom kon het rooster niet worden bewaard. Log in een nieuw " +
+              "tabblad opnieuw in en klik hier daarna nog eens op Opslaan — je wijzigingen blijven staan.",
+          );
+          return false;
+        }
+        const reden = await antwoord
+          .json()
+          .then((d) => (typeof d?.fout === "string" ? d.fout : ""))
+          .catch(() => "");
+        setFout(
+          `Opslaan is niet gelukt. ${reden || "De server gaf geen reden."} (code ${antwoord.status})`,
+        );
+        return false;
+      }
       setVuil(false);
       return true;
     } catch {
-      setFout("Opslaan is niet gelukt. Probeer het nog eens.");
+      setFout(
+        "Opslaan is niet gelukt: geen verbinding met de server. Controleer je internet en " +
+          "probeer het nog eens — je wijzigingen blijven staan.",
+      );
       return false;
     } finally {
       setOpslaanBezig(false);
@@ -679,6 +705,13 @@ export default function RoosterBewerken({
             <p className="mt-2 text-sm leading-6 text-ink/70">
               Je hebt wijzigingen aan je basisrooster die nog niet zijn opgeslagen. Wat wil je doen?
             </p>
+            {/* Mislukt het opslaan hiervandaan, dan hoort de reden hier te staan:
+                de melding in het scherm erachter zie je niet. */}
+            {fout && (
+              <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm leading-6 font-semibold text-red-800">
+                {fout}
+              </p>
+            )}
             <div className="mt-5 flex flex-wrap justify-end gap-2">
               <button
                 onClick={sluitWaarschuwing}
