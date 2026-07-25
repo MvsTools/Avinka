@@ -763,7 +763,9 @@ function Teller({
       <button onClick={minder} aria-label={`${label} minder`} className={knop}>
         –
       </button>
-      <span className="min-w-[2.25rem] text-center text-sm tabular-nums text-ink/75">{waarde}</span>
+      {/* Net breed genoeg voor drie cijfers, zodat de – en + dicht bij het getal
+          staan en er toch niets verspringt bij 45 → 100. */}
+      <span className="min-w-[1.6rem] text-center text-sm tabular-nums text-ink/75">{waarde}</span>
       <button onClick={meer} aria-label={`${label} meer`} className={knop}>
         +
       </button>
