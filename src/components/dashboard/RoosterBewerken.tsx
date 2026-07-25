@@ -759,8 +759,11 @@ function Teller({
   minder: () => void;
   meer: () => void;
 }) {
+  // Smaller dan hoog en met een klein negatief marge-tje: de tekens kruipen zo
+  // tegen het getal aan, waardoor er juist rúímte valt tussen de twee tellers.
+  // De knop blijft even hoog, dus goed te raken.
   const knop =
-    "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-lg leading-none text-ink/30 transition-colors hover:bg-black/5 hover:text-ink active:scale-95";
+    "-mx-0.5 flex h-7 w-6 shrink-0 items-center justify-center rounded-md text-lg leading-none text-ink/30 transition-colors hover:bg-black/5 hover:text-ink active:scale-95";
   return (
     <span className="flex w-24 shrink-0 items-center justify-center">
       <button onClick={minder} aria-label={`${label} minder`} className={knop}>
@@ -768,7 +771,7 @@ function Teller({
       </button>
       {/* Net breed genoeg voor drie cijfers, zodat de – en + dicht bij het getal
           staan en er toch niets verspringt bij 45 → 100. */}
-      <span className="min-w-[1.6rem] text-center text-sm tabular-nums text-ink/75">
+      <span className="min-w-[1.5rem] text-center text-sm tabular-nums text-ink/75">
         {waarde}
         {achtervoegsel && <span className="text-xs text-ink/45">{achtervoegsel}</span>}
       </span>
