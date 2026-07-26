@@ -225,10 +225,7 @@ const DUW_MAX = 90;
 const DUW_MAXHOEK = 9;
 const DUW_DEMPING = 9;
 
-/* en hoeveel daarvan er via de draad doorloopt naar de buren: hoe ver de
-   lijn doorzakt onder je hand, en hoe hard de kaarten ernaast meewiegen */
-const RIMPEL_DIP = 6;
-const RIMPEL_DIPMAX = 40;
+/* en hoe hard de kaarten ernaast meewiegen van die duw */
 const RIMPEL_HOEK = 0.35;
 
 /* veer-integratie: één stap van een gedempte veer richting `doel` */
@@ -329,15 +326,21 @@ function DraadScene() {
         [f.til, f.vtil] = veer(f.til, f.vtil, hoverI.current === i ? 1 : 0, 170, 22, dt);
       }
 
-      /* ── 2. botsingen: kaartjes duwen elkaar zoals aan een echte lijn ──
-         Twee kaarten raken elkaar zodra hun middens dichterbij komen dan
-         één kaartbreedte. De geduwde kaart krijgt de klap mee: hij schuift
-         op (positie), neemt vaart over (vx) en slingert op van de tik
-         (vhoek), en de draad dipt even door. Omdat elk paar apart wordt
-         opgelost, ontstaat de kettingreactie vanzelf: kaart 5 raakt 4,
-         4 raakt 3... Twee passes (heen en terug) zodat een duw in één
-         frame netjes door de rij loopt. */
-      const RAAK = 216; // kaart is 212 breed; 4px "voelbare" rand
+      /* ── 2. botsingen: één tik die doortikt, als dominostenen ────────────
+         De aangetikte kaart moet WEGSCHIETEN, niet meegeduwd worden. Twee
+         dingen maken dat verschil:
+         - `RAAK` staat ruim onder de onderlinge afstand (226px), zodat er
+           eerst een stuk vrije baan is. Stond die vlak eronder, dan zat je
+           al na 11px tegen je buurman aan en schoof je de hele rij als één
+           blok voor je uit.
+         - de tik is ELASTISCH (`WEGTIK` > 1): de geraakte kaart krijgt méér
+           vaart mee dan de duwende kaart heeft, dus hij laat los, vliegt
+           vooruit en tikt op zijn beurt de volgende aan. Op 0,85 bleef hij
+           per definitie tegen je aan plakken en kwam er nooit een tweede tik.
+         Twee passes (heen en terug) zodat een tik in hetzelfde frame de hele
+         rij door kan lopen. */
+      const RAAK = 188;
+      const WEGTIK = 1.45;
       const losOp = (a: number, b: number) => {
         const fa = fys.current[a], fb = fys.current[b];
         const posA = (KAARTEN[a].x / 100) * breed + fa.x;
@@ -356,19 +359,17 @@ function DraadScene() {
         if (vRel > 0) {
           const stoot = Math.min(1000, vRel);
           if (!bVast) {
-            fb.vx += stoot * 0.85;
+            fb.vx += stoot * WEGTIK;
             /* b wordt naar RECHTS getikt, dus zijn onderkant moet ook naar
                rechts: dat is een negatieve hoek (zie de afspraak bij
                `doelHoek`). Stond hier op plus, waardoor een aangetikt kaartje
                de kant op zwaaide waar de klap NIET vandaan kwam. */
             fb.vhoek -= Math.min(130, stoot * 0.1);
-            fb.vdip += Math.min(55, stoot * 0.06);
           }
           if (!aVast) {
             fa.vx -= stoot * 0.55;
             /* a stuitert terug naar links, dus positief */
             fa.vhoek += Math.min(90, stoot * 0.06);
-            fa.vdip += Math.min(40, stoot * 0.04);
           }
         }
       };
@@ -463,17 +464,15 @@ function DraadScene() {
       if (vorig === null) return;
       const dx = e.clientX - vorig;
       duw.current = Math.max(-DUW_MAX, Math.min(DUW_MAX, duw.current + dx));
-      /* de duw loopt over de draad door: de lijn zakt onder de kaart die je
-         aanraakt iets door en de buren wiegen mee. Bewust een strakkere
-         afval dan bij slepen (0,45 per kaart i.p.v. 1/afstand): een streek
-         langs een kaart is lichter dan hem echt beetpakken, dus de rimpel
-         sterft na twee kaarten uit in plaats van de hele rij mee te nemen. */
-      fys.current[i].vdip += Math.min(RIMPEL_DIPMAX, Math.abs(dx) * RIMPEL_DIP);
+      /* de duw loopt over de draad door naar de buren. De DRAAD zelf blijft
+         hierbij bewust stil: die zag er te onrustig uit als hij ook al ging
+         golven zodra je er alleen maar met je muis overheen ging. Alleen de
+         kaarten reageren, met een strakkere afval dan bij slepen (0,45 per
+         kaart i.p.v. 1/afstand): een streek langs een kaart is lichter dan
+         hem echt beetpakken, dus de rimpel sterft na twee kaarten uit. */
       for (let j = 0; j < KAARTEN.length; j++) {
         if (j === i) continue;
-        const afval = Math.pow(0.45, Math.abs(j - i));
-        fys.current[j].vdip += Math.abs(dx) * RIMPEL_DIP * 0.3 * afval;
-        fys.current[j].vhoek -= dx * RIMPEL_HOEK * afval;
+        fys.current[j].vhoek -= dx * RIMPEL_HOEK * Math.pow(0.45, Math.abs(j - i));
       }
       return;
     }
@@ -486,16 +485,18 @@ function DraadScene() {
       const vorig = s.laatstePointerX;
       s.laatstePointerX = e.clientX;
       const dx = e.clientX - vorig;
-      /* het gewicht trekt de draad omlaag en de buren wiegen mee */
+      /* Het gewicht trekt de draad omlaag — maar ALLEEN onder de kaart die
+         je vasthebt. De buren dipten eerst ook mee, en dan golfde de hele
+         lijn bij elke sleep; dat werd te onrustig voor iets wat verder een
+         rustige, stille lijn hoort te zijn. De buren wiegen nu wel, ze
+         hangen alleen aan een draad die stil blijft liggen. */
       const f = fys.current[i];
       f.vdip += Math.min(60, Math.abs(dx) * 14);
       for (let j = 0; j < KAARTEN.length; j++) {
         if (j === i) continue;
-        const afval = 1 / (1 + Math.abs(j - i));
-        fys.current[j].vdip += Math.abs(dx) * 4 * afval;
         /* MIN, niet plus: met een plus wiegden de buren juist wég van de
            kant waarop je sleepte (zie de teken-afspraak bij `doelHoek`) */
-        fys.current[j].vhoek -= dx * 0.9 * afval;
+        fys.current[j].vhoek -= dx * 0.9 * (1 / (1 + Math.abs(j - i)));
       }
     }
   };
