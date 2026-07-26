@@ -21,8 +21,9 @@ import type { CSSProperties, ReactNode } from "react";
 /* MINT was de eigenaar op alle mintvelden te donker; MINT_LICHT is nu de
    echte veldkleur van de pagina (Herken, Privacy, Regie, Maker, Ervaringen).
    MINT zelf blijft in gebruik als DIEPERE tint-op-tint-accent bovenop dat
-   lichte veld (het mintblok/quote-blokje in de makerskaart + de linker
-   bubbel in de ervaringen-sectie, die moest juist donkerder blijven). */
+   lichte veld, maar alleen nog op witte kaarten (het mintblok/quote-blokje
+   in de makerskaart) — niet meer op het veld zelf: dat bleek daar tóch te
+   donker. */
 export const MINT = "#cfe6d8";
 export const MINT_LICHT = "#ecf6f0";
 /* Alle tint-op-tint-accenten die BOVENOP het mintveld liggen (silhouetten,
