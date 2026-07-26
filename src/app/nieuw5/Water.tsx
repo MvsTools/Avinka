@@ -5,94 +5,134 @@ import { Golf, MINT_LICHT } from "./Wereld";
 
 /* ── De privacysectie: onder de oppervlakte ────────────────────────────────
    Eén filmisch moment in plaats van een uitlegblok met kaartjes. De belofte
-   wordt niet verteld maar VOORGEDAAN, in zes beats die aan je scrollpositie
-   hangen:
+   wordt niet verteld maar voorgedaan.
 
-     1. RUST      spiegelglad water, alleen licht en diepte
-     2. AANRAKING je muis maakt rimpels; waar je raakt komt heel even één
-                  woord boven — laat je los, dan zakt het weer weg
-     3. LAGEN     het water wordt helderder: er blijkt van alles te drijven,
-                  op verschillende dieptes, nooit alles tegelijk leesbaar
-     4. MASKER    een lichtbundel zakt het water in. Binnen de bundel zie je
-                  wat er van jouw apparaat vertrekt: elke naam is daar al
-                  vervangen door een schuilnaam
-     5. STROMING  de stroom trekt aan, de woorden lossen op — niets blijft
-     6. BOODSCHAP het water valt stil en de kop komt boven
+   DE CAMERA IS HET HELE VERSCHIL. De eerste versie zette je op een boot die
+   naar een verre horizon keek: alles gebeurde ver weg en klein, en een leeg
+   vlak met een harde horizon leest als CGI. Nu duik je er middenin. Je zakt
+   door het oppervlak heen, dat wordt een plafond bóven je, en vanaf dat
+   moment hang je in de waterkolom met de dingen op armlengte.
 
-   ⚠️ Beat 4 wijkt bewust af van de referentie-storyboard. Daar was het
+   DE MECHANIEK IS DE SCROLL, NIET DE MUIS. In de eerste versie volgde de
+   lichtbundel je cursor, waardoor wie gewoon doorscrolde het belangrijkste
+   moment nooit zag. Nu veegt een lichtbundel op je scrollpositie door het
+   water: waar hij overheen trekt licht een woord op, en zodra hij verder is
+   valt het terug in het donker. Je hoeft niet uit te leggen dat informatie
+   alleen zichtbaar is als er licht op valt — je ziet het gebeuren.
+
+   De beats, met links een kolom die per beat één zin toont:
+     intro   de zon op het oppervlak — het scharnier met het lichte papier
+     duik    je zakt erdoorheen, het oppervlak wordt een plafond
+     01      de bundel veegt: wat je invult, blijft bij jou
+     02      dezelfde veeg, maar nu klappen de namen om naar schuilnamen
+     03      de bundels doven, alles lost op
+     slot    één zin in het donker
+
+   ⚠️ Beat 02 wijkt bewust af van de referentie-storyboard. Daar was het
    "zichtbaar voor de juiste mensen", een verhaal over rollen en rechten. Dat
-   is niet wat Avinka doet: hier gaan namen nóóit mee, ze worden op het
-   apparaat zelf vervangen. De sectie mag geen belofte tonen die we niet
-   waarmaken (zie het juristentraject).
+   is niet wat Avinka doet: namen gaan nooit mee, ze worden op het apparaat
+   zelf vervangen. De sectie mag geen belofte tonen die we niet waarmaken.
 
-   Het water is een WebGL-shader en geen plaatje of tekening. Dat is een
-   bewuste keuze: eerdere pogingen om een fysieke wereld met CSS ná te tekenen
-   liepen twee keer stuk op "dit is Paint, geen film". Zonneschittering op
-   golven is nu juist iets wat je niet tekent maar uitrekent — per pixel de
-   golfhelling bepalen en kijken of die de zon precies jouw kant op kaatst.
-   Daar komt de glinsterbaan vanzelf uit, inclusief het uitwaaieren naar de
-   kijker toe.
+   Waarom dit als foto oogt en niet als tekening — vier dingen die niets met
+   golven te maken hebben:
+     1. KLEURABSORPTIE. Water eet eerst rood, dan oranje. Die verschuiving
+        met de diepte is dé aanwijzing dat je naar water kijkt.
+     2. SNELL'S WINDOW. Van onderaf zie je de hele lucht samengeperst in een
+        kegel van 48,6°; daarbuiten spiegelt het oppervlak de donkere diepte.
+        Dat is de meest herkenbare vorm van onderwaterfotografie die er is.
+     3. GODRAYS met de rimpeling van het oppervlak erin flikkerend, opgeteld
+        langs de kijkstraal (echt volumetrisch, geen geschilderde streep).
+     4. SCHERPTEDIEPTE op de zwevende deeltjes. Een camera die niet alles
+        scherp heeft, leest onmiddellijk als een echte camera.  ─────────── */
 
-   De zon is ook het scharnier met de rest van de pagina: bovenin loopt de
-   lucht exact door in het crème van het papier erboven, verderop verhit hij
-   naar goud en daaronder begint het water. Er is dus geen naad tussen de
-   lichte pagina en het donker — het licht kantelt gewoon.  ────────────── */
-
-/* De perspectiefafspraak, gedeeld door shader en woorden. Zonder dat de twee
-   exact hetzelfde rekenen, drijven de woorden niet ín het water maar erboven.
-     sy = schermhoogte 0 (boven) .. 1 (onder)
-     HORIZON = waar het water begint
-     b   = hoe ver onder de horizon
-     dist = afstand tot de kijker; b -> 0 is oneindig ver (de horizon zelf)
-   De omkering (van afstand naar schermpositie) staat in `naarScherm`. */
-const HORIZON = 0.3;
-const DIEPTE_C = 0.7; // dist * b = DIEPTE_C
-const SPREIDING = 2.0;
 /* GLSL ES kent geen impliciete int-naar-float: een `2` uit JS zou hier een
-   compileerfout geven. Daarom altijd via toFixed de punt erin houden. */
+   compileerfout geven. Daarom alles via toFixed. */
 const glf = (n: number) => n.toFixed(4);
 
-function naarScherm(wx: number, dist: number) {
-  const b = DIEPTE_C / dist;
-  return { sx: 0.5 + wx / (dist * SPREIDING), sy: HORIZON + b };
+/* ── De camera ──
+   Gedeeld door shader en DOM. Zonder dat die twee exact hetzelfde rekenen,
+   hangen de woorden niet ín het water maar erboven. */
+const FOCUS = 0.85; // brandpuntsafstand; hoger = smallere kijkhoek
+const DUIK_DIEPTE = -1.75; // waar de camera onder water uitkomt
+
+/* De camera KANTELT tijdens de duik. Boven water kijk je iets omlaag, zodat
+   de horizon hoog staat en je vooral water ziet. Onder water kantelt hij
+   omhoog naar het oppervlak — en dat is nodig ook: Snell's window begint pas
+   bij 48,6° van recht omhoog, dus met een horizontale blik zie je het nooit
+   en houd je alleen een grauwe band over. Het meekantelen is bovendien wat
+   de duik filmisch maakt: je kijkt terug naar het licht waar je vandaan komt. */
+const PITCH_BOVEN = 0.17;
+const PITCH_ONDER = -0.32;
+
+function rotX(y: number, z: number, a: number) {
+  const c = Math.cos(a);
+  const s = Math.sin(a);
+  return { y: y * c - z * s, z: y * s + z * c };
 }
 
-/* De woorden die onder de oppervlakte drijven. Twee soorten: voornamen (die
-   in de bundel een schuilnaam krijgen) en gegevenssoorten (die daar gewoon
-   oplossen). `dist` is de afstand tot de kijker, `wx` de plek links/rechts. */
+/* Wereldpunt -> schermpositie (0..1), plus de afstand tot de camera. */
+function naarScherm(
+  wx: number,
+  wy: number,
+  wz: number,
+  camY: number,
+  pitch: number,
+  aspect: number,
+) {
+  const r = rotX(wy - camY, wz, -pitch);
+  if (r.z <= 0.05) return null;
+  const uvx = (FOCUS * wx) / r.z;
+  const uvy = (FOCUS * r.y) / r.z;
+  return {
+    sx: 0.5 + uvx / aspect,
+    sy: 0.5 - uvy,
+    afstand: Math.hypot(wx, r.y, r.z),
+  };
+}
+
+/* ── Wat er in het water hangt ──
+   Voornamen krijgen in de tweede veeg een schuilnaam; gegevenssoorten lossen
+   daar gewoon op. De posities staan bewust uit elkaar in x, want de bundel
+   veegt van links naar rechts en moet ze één voor één aandoen. */
 type Woord = {
   tekst: string;
   masker?: string;
   wx: number;
-  dist: number;
-  /* per woord een eigen tempo zodat ze niet als groep bewegen */
-  tel: number;
-  /* Op een smal scherm past maar de helft: twaalf woorden vielen daar over
-     elkaar én over de glinsterbaan heen, en dan is er niets meer te lezen.
-     Deze selectie houdt het verhaal heel — genoeg namen om de maskering te
-     laten zien, genoeg gegevenssoorten om de lading te voelen. */
+  wy: number;
+  wz: number;
+  /* Op een smal scherm past maar de helft: anders vallen ze over elkaar en
+     is er niets meer te lezen. */
   mobiel?: boolean;
 };
 
 const WOORDEN: Woord[] = [
-  { tekst: "Sofie", masker: "leerling A", wx: -0.5, dist: 1.35, tel: 0, mobiel: true },
-  { tekst: "toetsresultaten", wx: 0.66, dist: 1.6, tel: 3 },
-  { tekst: "Daan", masker: "leerling B", wx: 0.1, dist: 1.15, tel: 6, mobiel: true },
-  { tekst: "gespreksverslag", wx: -1.15, dist: 2.0, tel: 1, mobiel: true },
-  { tekst: "Iris", masker: "leerling C", wx: 1.15, dist: 2.2, tel: 4, mobiel: true },
-  { tekst: "rapportcijfers", wx: -0.3, dist: 2.55, tel: 7, mobiel: true },
-  { tekst: "Mees", masker: "leerling D", wx: -1.6, dist: 2.8, tel: 2 },
-  { tekst: "leerlingnummer", wx: 1.75, dist: 3.1, tel: 5, mobiel: true },
-  { tekst: "Noor", masker: "leerling E", wx: 0.6, dist: 3.4, tel: 8 },
-  { tekst: "absenties", wx: -1.05, dist: 3.75, tel: 9 },
-  { tekst: "onderzoeksverslag", wx: 1.9, dist: 4.1, tel: 10 },
-  { tekst: "Yassin", masker: "leerling F", wx: -2.1, dist: 4.5, tel: 11 },
+  { tekst: "Sofie", masker: "leerling A", wx: -4.6, wy: -1.6, wz: 5.2, mobiel: true },
+  { tekst: "toetsresultaten", wx: -3.5, wy: -3.4, wz: 6.8 },
+  { tekst: "Daan", masker: "leerling B", wx: -2.4, wy: -0.9, wz: 4.4, mobiel: true },
+  { tekst: "gespreksverslag", wx: -1.5, wy: -3.9, wz: 7.6, mobiel: true },
+  { tekst: "Iris", masker: "leerling C", wx: -0.5, wy: -2.1, wz: 5.0, mobiel: true },
+  { tekst: "rapportcijfers", wx: 0.6, wy: -4.3, wz: 8.4 },
+  { tekst: "Mees", masker: "leerling D", wx: 1.6, wy: -1.3, wz: 4.8, mobiel: true },
+  { tekst: "leerlingnummer", wx: 2.6, wy: -3.6, wz: 7.0, mobiel: true },
+  { tekst: "Noor", masker: "leerling E", wx: 3.6, wy: -2.4, wz: 5.6, mobiel: true },
+  { tekst: "absenties", wx: 4.6, wy: -4.0, wz: 8.0 },
+  { tekst: "Yassin", masker: "leerling F", wx: 5.4, wy: -1.5, wz: 6.2 },
 ];
 
-/* ── De shader ──
-   Camera in de oorsprong, water als vlak eronder. Voor elke pixel onder de
-   horizon zoeken we het punt op het water, bepalen daar de golfhelling en
-   kijken hoeveel van de zon die helling naar de kijker kaatst. */
+/* Zwevende deeltjes. Ze doen twee dingen tegelijk: ze maken het water zicht-
+   baar (zonder iets in het water is er geen water) en ze leveren de scherpte-
+   diepte, want de dichtstbijzijnde staan onscherp. */
+const DEELTJES = Array.from({ length: 34 }, (_, i) => {
+  const g = (n: number, m: number) => ((i * n) % m) / m;
+  return {
+    wx: -7 + g(37, 29) * 14,
+    wy: -0.4 - g(53, 31) * 4.6,
+    wz: 2.6 + g(71, 23) * 8.5,
+    tempo: 0.5 + g(29, 17) * 1.1,
+    fase: g(43, 19) * 6.28,
+  };
+});
+
 const VERT = `
 attribute vec2 aPos;
 void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
@@ -103,33 +143,28 @@ precision highp float;
 
 uniform vec2  uRes;
 uniform float uTijd;
-uniform float uHelder;   // 0 = ondoorzichtig, 1 = je kijkt het water in
-uniform float uBundel;   // sterkte van de lichtbundel
-uniform float uBundelX;  // wereld-x van de bundel
-uniform float uStroom;   // hoe hard de stroming trekt
-uniform float uKalm;     // beat 6: het water valt stil en wordt weer ondoorzichtig
-uniform float uRustig;   // 1 = prefers-reduced-motion: alles stil
-uniform vec4  uRimpels[8]; // xy = wereldpositie, z = starttijd, w = kracht
+uniform float uCamY;    // camerahoogte: + boven water, - eronder
+uniform float uVeeg;    // wereld-x van de hoofdbundel
+uniform float uBundels; // sterkte van de bundels
+uniform float uDoezel;  // de troebele flits op het moment dat je erdoorheen gaat
+uniform float uKalm;    // het water valt stil en sluit zich
+uniform float uPitch;   // de camera kantelt omhoog tijdens de duik
+uniform float uRustig;  // prefers-reduced-motion
 
-const float HORIZON = ${glf(HORIZON)};
-const float DIEPTE_C = ${glf(DIEPTE_C)};
-const float SPREIDING = ${glf(SPREIDING)};
+const float FOCUS = ${glf(FOCUS)};
 
 /* De zon staat laag en net rechts van het midden — dezelfde hoek als het
    licht op de rest van de pagina, zodat het één ruimte blijft. */
 const float ZON_X = 0.62;
 const vec3  ZON_KLEUR = vec3(1.0, 0.94, 0.78);
 const vec3  PAPIER = vec3(0.988, 0.984, 0.969); // #fcfbf7, de pagina erboven
-const vec3  DIEP = vec3(0.012, 0.055, 0.042);   // donkergroen, geen blauw
-const vec3  ONDIEP = vec3(0.043, 0.176, 0.132);
 
-/* ── Golfhoogte ──
-   Eerst met optellende sinussen gedaan; dat gaf een zichtbaar geweven raster
-   in plaats van water, want twee gekruiste sinussen zijn nu eenmaal ruitjes.
-   Nu waardeRuis met domain warping: het meetpunt wordt eerst zélf verschoven
-   door een tragere ruis. Daardoor kan er per definitie geen patroon ontstaan,
-   en krijgen de golffronten die grillige, onderling botsende vorm die echt
-   open water heeft. */
+/* Onderwaterkleuren. Het verloop van ondiep naar diep is precies de
+   absorptie: het warme licht verdwijnt als eerste. */
+const vec3 ONDIEP = vec3(0.13, 0.40, 0.30);
+const vec3 DIEP   = vec3(0.020, 0.110, 0.104);
+const vec3 AFGROND= vec3(0.006, 0.045, 0.055);
+
 float hash(vec2 p) {
   p = fract(p * vec2(127.31, 311.7));
   p += dot(p, p + 42.17);
@@ -147,21 +182,19 @@ float ruis(vec2 p) {
   return mix(mix(a, b, u.x), mix(c, d, u.x), u.y) * 2.0 - 1.0;
 }
 
+/* Golfhoogte met domain warping. Optellende sinussen geven altijd een
+   zichtbaar geweven raster — twee gekruiste sinussen zijn nu eenmaal
+   ruitjes. Door het meetpunt eerst zélf te verschuiven met een tragere ruis
+   kan er per definitie geen patroon ontstaan. */
 float golfhoogte(vec2 p, float t) {
-  /* de warp: hierdoor lopen de golffronten nooit recht */
   vec2 warp = vec2(
     ruis(p * 0.30 + vec2(t * 0.05, 0.0)),
     ruis(p * 0.30 + vec2(0.0, t * 0.042) + 19.7)
   );
-  /* De schaal bepaalt hoeveel golven er dichtbij in beeld passen. Op 1.15
-     stond er onderin maar één of twee golven over de volle breedte, waardoor
-     het daar een gladde plas werd in plaats van water. */
   vec2 q = p * 2.9 + warp * 1.05;
-
   float h = 0.0;
   float amp = 0.52;
   float freq = 1.0;
-  /* elke octaaf een slag gedraaid, anders liggen ze toch weer op één as */
   mat2 draai = mat2(0.864, -0.504, 0.504, 0.864);
   for (int i = 0; i < 4; i++) {
     float fi = float(i);
@@ -170,158 +203,243 @@ float golfhoogte(vec2 p, float t) {
     freq *= 2.07;
     amp *= 0.50;
   }
-
-  /* de rimpels van je muis: ringen die uitdijen en uitdoven */
-  for (int i = 0; i < 8; i++) {
-    vec4 r = uRimpels[i];
-    if (r.w > 0.001) {
-      float leeftijd = uTijd - r.z;
-      if (leeftijd > 0.0 && leeftijd < 5.0) {
-        float d = distance(p, r.xy);
-        float straal = leeftijd * 1.9;
-        float band = exp(-pow((d - straal) * 1.6, 2.0));
-        h += sin((d - straal) * 7.0) * band * exp(-leeftijd * 0.75) * r.w * 0.40;
-      }
-    }
-  }
   return h;
 }
 
-void main() {
-  vec2 sp = gl_FragCoord.xy / uRes;
-  float sx = sp.x;
-  float sy = 1.0 - sp.y; // 0 boven, 1 onder
+/* Caustics: het dansende lichtnet. Geribbelde ruis (1 - |ruis|) tot een hoge
+   macht geeft precies die dunne heldere aders met donker ertussen. */
+float caustic(vec2 p, float t) {
+  float c = 0.0;
+  float amp = 1.0;
+  for (int i = 0; i < 2; i++) {
+    float fi = float(i);
+    float n = ruis(p * (1.0 + fi * 2.4) + vec2(t * 0.24, -t * 0.19) * (1.0 + fi));
+    c += (1.0 - abs(n)) * amp;
+    amp *= 0.62;
+  }
+  return pow(clamp(c / 1.62, 0.0, 1.0), 4.5);
+}
 
+vec3 draaiX(vec3 v, float a) {
+  float c = cos(a), s = sin(a);
+  return vec3(v.x, v.y * c - v.z * s, v.y * s + v.z * c);
+}
+
+/* De lucht zoals je hem van bovenaf ziet: loopt bovenin door in het papier
+   van de pagina en verhit naar de horizon toe tot goud, met de zon erin. */
+vec3 luchtKleur(vec3 D) {
+  float f = clamp(1.0 - D.y * 2.6, 0.0, 1.0); // 1 aan de horizon, 0 recht omhoog
+  vec3 k = mix(PAPIER, vec3(1.0, 0.90, 0.66), pow(f, 1.5));
+  float dx = (D.x - (ZON_X - 0.5) * 1.6) * 2.0;
+  float dy = D.y * 4.0;
+  float gloed = exp(-(dx * dx + dy * dy) * 2.6);
+  k = mix(k, vec3(1.0), clamp(gloed * 1.3, 0.0, 1.0));
+  return k;
+}
+
+void main() {
+  vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
   float t = uTijd * (1.0 - uRustig * 0.98);
 
-  /* ── boven de horizon: de lucht die uit het papier ontstaat ── */
-  if (sy < HORIZON) {
-    float f = sy / HORIZON;              // 0 bovenaan, 1 aan de horizon
-    /* van het papier van de pagina naar warm goud vlak boven het water */
-    vec3 lucht = mix(PAPIER, vec3(1.0, 0.90, 0.66), pow(f, 1.5));
-    /* de zon zelf: een felle kern precies op de horizon, breed uitwaaierend */
-    float dx = (sx - ZON_X) * 1.9;
-    float dy = (HORIZON - sy) * 3.4;
-    float gloed = exp(-(dx * dx + dy * dy) * 3.2);
-    lucht = mix(lucht, vec3(1.0), clamp(gloed * 1.25, 0.0, 1.0));
-    /* een horizontale waas vlak boven het water, zoals warme lucht doet */
-    lucht = mix(lucht, vec3(1.0, 0.96, 0.86), pow(f, 7.0) * 0.75);
-    gl_FragColor = vec4(lucht, 1.0);
-    return;
-  }
+  vec3 D = normalize(vec3(uv.x, uv.y, FOCUS));
+  D = draaiX(D, uPitch);
 
-  /* ── onder de horizon: het water ── */
-  float b = sy - HORIZON;
-  float dist = DIEPTE_C / max(b, 0.0012);
-  float wx = (sx - 0.5) * dist * SPREIDING;
-  vec2 w = vec2(wx, dist);
-
-  /* Hoge golffrequenties doven uit met de afstand. Zonder dat gaat het in de
-     verte ruisen: daar vallen meerdere golven binnen één pixel. */
-  float demping = 1.0 / (1.0 + dist * dist * 0.055);
-
-  /* de meetafstand voor de helling groeit mee met de afstand, zodat we in de
-     verte over een groter stuk water uitmiddelen in plaats van te flikkeren */
-  float e = 0.02 * max(1.0, dist * 0.8);
-  float h0 = golfhoogte(w, t);
-  float hx = golfhoogte(w + vec2(e, 0.0), t);
-  float hz = golfhoogte(w + vec2(0.0, e), t);
-  /* aan het eind gaat de deining eruit: het water wordt spiegelglad */
-  float amp = (0.055 + uStroom * 0.05) * demping * (1.0 - uKalm * 0.62);
-  vec3 N = normalize(vec3(-(hx - h0) / e * amp, 1.0, -(hz - h0) / e * amp));
-
-  /* kijkrichting terug naar de camera (die op hoogte 1 in de oorsprong staat) */
-  vec3 P = vec3(wx, -1.0, dist);
-  vec3 V = normalize(-P);
   /* de zon als ver licht, laag boven de horizon */
-  vec3 L = normalize(vec3((ZON_X - 0.5) * 2.2, 0.165, 1.0));
-  vec3 Hv = normalize(V + L);
+  vec3 L = normalize(vec3((ZON_X - 0.5) * 2.2, 0.34, 1.0));
 
-  /* Drie lobben in plaats van twee. De scherpe geeft de losse vonken, de
-     middelste laat de baan naar de kijker toe uitwaaieren (met alleen een
-     harde lob stopte de glinsterbaan halverwege), de brede legt er een
-     zachte gloed omheen. */
-  float basis = max(dot(N, Hv), 0.0);
-  float spec = pow(basis, 340.0);
-  float specMidden = pow(basis, 70.0) * 0.34;
-  float specZacht = pow(basis, 16.0) * 0.13;
+  vec3 kleur;
 
-  /* fresnel: vlak onder de horizon kijk je scherend en spiegelt het water
-     bijna alles, dichtbij kijk je erin */
-  float fres = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 4.0);
-  fres = clamp(fres, 0.03, 1.0);
+  if (uCamY > 0.0) {
+    /* ══ BOVEN WATER ══ */
+    if (D.y >= -0.002) {
+      kleur = luchtKleur(D);
+    } else {
+      float afstand = uCamY / (-D.y);
+      vec2 P = vec2(D.x * afstand, D.z * afstand);
+      float demping = 1.0 / (1.0 + afstand * afstand * 0.055);
+      float e = 0.02 * max(1.0, afstand * 0.8);
+      float h0 = golfhoogte(P, t);
+      float hx = golfhoogte(P + vec2(e, 0.0), t);
+      float hz = golfhoogte(P + vec2(0.0, e), t);
+      float amp = 0.055 * demping;
+      vec3 N = normalize(vec3(-(hx - h0) / e * amp, 1.0, -(hz - h0) / e * amp));
+      vec3 V = -D;
+      vec3 Hv = normalize(V + L);
+      float basis = max(dot(N, Hv), 0.0);
+      float spec = pow(basis, 340.0) * 2.4 + pow(basis, 70.0) * 0.34 + pow(basis, 16.0) * 0.13;
+      float fres = clamp(pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 4.0), 0.03, 1.0);
+      vec3 spiegel = mix(vec3(0.62, 0.66, 0.56), vec3(1.0, 0.92, 0.75), 0.45);
+      kleur = mix(DIEP, ONDIEP, clamp(1.0 - afstand * 0.12, 0.0, 1.0));
+      kleur = mix(kleur, spiegel, fres * 0.5);
+      kleur += ZON_KLEUR * spec * (0.4 + 0.6 * exp(-afstand * 0.05));
+    }
+  } else {
+    /* ══ ONDER WATER ══ */
+    float diepte = -uCamY;
 
-  /* De basiskleur. De spiegeling was eerst bijna wit, waardoor het water
-     grijs werd in plaats van groen; hij houdt nu de warme tint van de lucht
-     vast en mengt maar half zo sterk in. */
-  vec3 spiegel = mix(vec3(0.62, 0.66, 0.56), vec3(1.0, 0.92, 0.75), 0.45);
-  vec3 kleur = mix(DIEP, ONDIEP, clamp(1.0 - dist * 0.12, 0.0, 1.0));
-  kleur = mix(kleur, spiegel, fres * 0.5);
+    if (D.y > 0.004) {
+      /* de straal gaat omhoog en raakt het oppervlak van onderaf */
+      float afstand = diepte / D.y;
+      vec2 P = vec2(D.x * afstand, D.z * afstand);
+      float e = 0.05;
+      float h0 = golfhoogte(P * 0.7, t);
+      float hx = golfhoogte(P * 0.7 + vec2(e, 0.0), t);
+      float hz = golfhoogte(P * 0.7 + vec2(0.0, e), t);
+      /* de rimpeling verstoort de hoek waaronder je naar buiten kijkt: dát
+         laat de rand van Snell's window golven, en dat is het detail waaraan
+         je onderwaterbeelden herkent */
+      float golving = 0.16 / (1.0 + afstand * 0.25);
+      vec3 Dv = normalize(D + vec3((hx - h0) / e, 0.0, (hz - h0) / e) * golving);
 
-  /* als het water helderder wordt zie je de diepte eronder: een zachte gloed
-     die van onderaf komt, sterker naar de kijker toe */
-  float onderlicht = uHelder * exp(-dist * 0.22) * 0.5;
-  kleur += vec3(0.05, 0.20, 0.15) * onderlicht;
+      /* Snell's window: binnen 48,6° van recht omhoog zie je de lucht,
+         daarbuiten spiegelt het oppervlak de diepte terug */
+      float hoek = acos(clamp(Dv.y, 0.0, 1.0));
+      float raam = smoothstep(1.20, 0.52, hoek);
 
-  /* de glinsterbaan van de zon */
-  kleur += ZON_KLEUR * (spec * 2.4 + specMidden + specZacht)
-         * (0.4 + 0.6 * exp(-dist * 0.05)) * (1.0 - uKalm * 0.72);
+      /* de lucht samengeperst in die kegel */
+      vec3 buiten = luchtKleur(normalize(vec3(Dv.x * 1.9, max(Dv.y, 0.05) * 0.55 + 0.10, Dv.z * 1.9)));
+      /* het licht van de zon dat door het raam breekt */
+      float zonBreking = pow(max(dot(Dv, L), 0.0), 90.0);
+      buiten += ZON_KLEUR * zonBreking * 2.2;
 
-  /* ── de lichtbundel ──
-     Een kegel die vanaf de horizon het water in zakt. Binnen de kegel wordt
-     het water lichter, zodat wat daar drijft leesbaar is. */
-  if (uBundel > 0.001) {
-    float straal = 0.80 + dist * 0.26;
-    float d = abs(wx - uBundelX);
-    /* twee kegels over elkaar: een heldere kern met een zachte zoom eromheen,
-       anders leest het als een vlek en niet als licht dat het water in valt */
-    float kern = smoothstep(straal * 0.62, 0.0, d);
-    float zoom = smoothstep(straal * 1.5, straal * 0.2, d);
-    float diepteval = smoothstep(0.0, 1.4, dist) * smoothstep(9.0, 3.2, dist);
-    float bundel = diepteval * uBundel;
-    /* de bundel schemert mee met de golven, anders is het een dode vlek */
-    bundel *= 0.80 + 0.20 * sin(h0 * 3.0 + t * 1.6);
-    kleur += vec3(0.62, 0.95, 0.80) * kern * bundel * 0.62;
-    kleur += vec3(0.40, 0.78, 0.62) * zoom * bundel * 0.30;
+      vec3 spiegeling = mix(DIEP, AFGROND, clamp(afstand * 0.05, 0.0, 1.0));
+      /* onder de spiegelende rand danst het caustic-net mee */
+      spiegeling += vec3(0.10, 0.30, 0.26) * caustic(P * 0.55, t) * 0.5;
+
+      kleur = mix(spiegeling, buiten, raam);
+      /* Absorptie: hoe verder door het water, hoe meer er wegvalt. Stond op
+         0.13 en dat vrat vrijwel het hele beeld op — klopt natuurkundig maar
+         levert een zwarte brij. 0.075 houdt de diepte zichtbaar. */
+      kleur = mix(kleur, DIEP, clamp(1.0 - exp(-afstand * 0.075), 0.0, 1.0));
+    } else {
+      /* de straal gaat naar beneden: alleen nog diepte */
+      float val = clamp(-D.y * 2.2, 0.0, 1.0);
+      kleur = mix(DIEP, AFGROND, val);
+    }
+
+    /* Verstrooiing: water gloeit zelf, want elk deeltje erin kaatst licht van
+       boven terug. Zonder dit is de kolom een zwart gat en zie je geen water
+       maar leegte. */
+    kleur += ONDIEP * 0.17 * exp(uCamY * 0.30) * (0.45 + 0.55 * smoothstep(-0.5, 0.6, D.y));
+
+    /* ── de lichtbundels ──
+       Echt volumetrisch: we lopen de kijkstraal af en tellen op hoeveel licht
+       er op elk punt naar binnen valt. Waar het licht het oppervlak passeert
+       staat het caustic-net, dus de bundels flikkeren vanzelf mee met de
+       golven in plaats van dat het geschilderde strepen worden. */
+    float straal = 0.0;
+    for (int i = 0; i < 10; i++) {
+      float s = (float(i) + 0.5) / 10.0;
+      float afst = s * s * 15.0; // dichterbij fijner bemonsteren
+      vec3 Q = vec3(D.x * afst, uCamY + D.y * afst, D.z * afst);
+      if (Q.y < 0.0 && Q.y > -7.0) {
+        /* waar kwam dit licht het water binnen? */
+        vec2 intree = vec2(Q.x, Q.z) + vec2(L.x, L.z) * (-Q.y) / L.y;
+        float c = caustic(intree * 0.42, t);
+        /* de hoofdbundel: een brede kolom die met je scroll opzij veegt */
+        float hoofd = exp(-pow((Q.x - uVeeg) / 0.95, 2.0));
+        float bijdrage = c * (0.16 + hoofd * 2.2);
+        /* dieper = zwakker, en verder weg = uitgedoofd door het water zelf */
+        bijdrage *= exp(Q.y * 0.42) * exp(-afst * 0.11);
+        straal += bijdrage;
+      }
+    }
+    straal *= uBundels * 0.40;
+    /* Filmische rolloff. Zonder dit brandt de bundel bij elke tuning vroeg of
+       laat uit tot wit — en dan is de tekst eroverheen onleesbaar. Zo loopt
+       hij altijd zacht naar zijn maximum toe, hoe fel de bron ook staat. */
+    straal = straal / (1.0 + straal);
+    /* schuin omhoog kijkend zie je de bundels het langst: daar val je met de
+       blik langs de kolom mee in plaats van er dwars doorheen */
+    straal *= 0.55 + 0.45 * smoothstep(-0.3, 0.5, D.y);
+    kleur += vec3(0.66, 0.98, 0.72) * straal;
   }
 
-  /* helemaal onderin het beeld dooft alles naar het diepe donker */
-  kleur = mix(kleur, DIEP, smoothstep(0.72, 1.0, sy) * 0.55);
+  /* ── het moment dat je erdoorheen gaat ──
+     Vlak bij de waterlijn wordt het beeld troebel en licht: schuim, belletjes
+     en een lens die even niets scherp krijgt. Dat is precies wat een echte
+     camera doet, en het dekt meteen het rekenkundig lelijke moment af waarop
+     de camera exact op het wateroppervlak staat. */
+  if (uDoezel > 0.001) {
+    float schuim = caustic(uv * 5.5 + vec2(0.0, t * 0.6), t * 2.0);
+    float belletjes = pow(max(0.0, ruis(uv * 22.0 + vec2(t * 1.4, -t * 2.1))), 2.0);
+    vec3 troebel = mix(vec3(0.72, 0.88, 0.82), vec3(1.0, 0.98, 0.92), schuim);
+    kleur = mix(kleur, troebel + belletjes * 0.35, uDoezel);
+  }
 
-  /* Beat 6: het water wordt weer ondoorzichtig en donker. Dat is niet alleen
-     het einde van het verhaal ("er is niets meer te zien") maar ook wat de
-     slotkop leesbaar maakt — die stond eerst dwars over de glinsterbaan. */
-  kleur = mix(kleur, DIEP * 1.15, uKalm * 0.5);
+  /* het water sluit zich weer aan het eind */
+  kleur = mix(kleur, AFGROND, uKalm * 0.62);
+
+  /* filmkorrel: het laatste zetje van render naar opname */
+  float korrel = (hash(gl_FragCoord.xy + fract(t) * 91.7) - 0.5) * 0.030;
+  kleur += korrel;
+
+  /* vignet */
+  float vig = 1.0 - 0.30 * dot(uv, uv);
+  kleur *= vig;
 
   gl_FragColor = vec4(kleur, 1.0);
 }
 `;
 
-/* De beats, uitgedrukt in scrollvoortgang. */
+/* ── De choreografie ──
+   Alles hangt aan de scrollpositie, niets aan de muis. */
 function fasen(p: number) {
   const tussen = (a: number, b: number) => Math.min(1, Math.max(0, (p - a) / (b - a)));
+  const duik = tussen(0.14, 0.30);
+  /* de camera zakt van boven het water naar de kolom eronder, en kantelt
+     onderweg omhoog naar het licht waar hij vandaan komt */
+  const camY = 0.85 + (DUIK_DIEPTE - 0.85) * duik;
+  const pitch = PITCH_BOVEN + (PITCH_ONDER - PITCH_BOVEN) * duik;
+  /* de troebele flits precies rond de waterlijn */
+  const bijLijn = Math.max(0, 1 - Math.abs(camY) / 0.55);
+
+  /* twee vegen: de eerste laat zien wat er ligt, de tweede wat er weggaat */
+  const veeg1 = tussen(0.32, 0.52);
+  const veeg2 = tussen(0.56, 0.78);
+  const tweede = veeg2 > 0;
+  const veeg = -7.5 + (tweede ? veeg2 : veeg1) * 15;
+
+  /* de bundel dooft tussen de twee vegen door, zodat het terugspringen naar
+     links onzichtbaar blijft */
+  const bundels =
+    Math.min(1, tussen(0.30, 0.35) - tussen(0.50, 0.545) + tussen(0.555, 0.60)) *
+    (1 - tussen(0.78, 0.88));
+
   return {
-    /* het water wordt helder en de woorden komen tevoorschijn */
-    helder: tussen(0.26, 0.46) * (1 - tussen(0.76, 0.92)),
-    /* de lichtbundel zakt in en trekt weer weg */
-    bundel: tussen(0.46, 0.58) * (1 - tussen(0.66, 0.78)),
-    /* de stroming die de woorden meeneemt */
-    stroom: tussen(0.64, 0.86),
-    /* het water valt stil en wordt weer ondoorzichtig */
-    kalm: tussen(0.78, 0.93),
-    /* alles is opgelost, de kop komt boven */
-    slot: tussen(0.84, 0.97),
-    /* de uitnodiging om te bewegen, alleen in het begin */
-    hint: tussen(0.06, 0.14) * (1 - tussen(0.24, 0.34)),
+    camY,
+    pitch,
+    duik,
+    doezel: bijLijn * 0.92,
+    veeg,
+    bundels: Math.max(0, bundels),
+    maskeer: p > 0.545,
+    kalm: tussen(0.80, 0.93),
+    /* welke zin er links staat */
+    intro: 1 - tussen(0.16, 0.26),
+    beat1: tussen(0.30, 0.36) * (1 - tussen(0.50, 0.56)),
+    beat2: tussen(0.56, 0.62) * (1 - tussen(0.74, 0.80)),
+    beat3: tussen(0.78, 0.84) * (1 - tussen(0.86, 0.90)),
+    slot: tussen(0.88, 0.96),
+    /* de oever waarmee we weer naar het licht gaan */
+    oever: tussen(0.90, 0.99),
   };
 }
+
+const BEATS = [
+  { nr: "01", zin: "Wat je invult, blijft bij jou." },
+  { nr: "02", zin: "En wat er weggaat, is gemaskeerd." },
+  { nr: "03", zin: "Daarna is het weg. Wij bewaren het niet." },
+];
 
 export function WereldWater() {
   const buiten = useRef<HTMLDivElement>(null);
   const doek = useRef<HTMLCanvasElement>(null);
   const woordRefs = useRef<Array<HTMLSpanElement | null>>([]);
-  const kopRef = useRef<HTMLDivElement>(null);
-  const hintRef = useRef<HTMLParagraphElement>(null);
+  const stofRefs = useRef<Array<HTMLSpanElement | null>>([]);
+  const introRef = useRef<HTMLDivElement>(null);
+  const beatRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const slotRef = useRef<HTMLDivElement>(null);
   const oeverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -332,14 +450,11 @@ export function WereldWater() {
     const rustig = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const gl = canvas.getContext("webgl", { antialias: false, alpha: false });
     if (!gl) {
-      /* Geen WebGL: dan blijft de CSS-achtergrond van het doek staan (een
-         verloop in dezelfde kleuren). De tekst werkt gewoon. */
       canvas.style.background =
-        "linear-gradient(#fcfbf7 0%, #ffe9bd 28%, #0f3a2c 34%, #041008 100%)";
+        "linear-gradient(#fcfbf7 0%, #ffe9bd 22%, #0d3b31 34%, #02090c 100%)";
       return;
     }
 
-    /* ── programma ── */
     const maak = (soort: number, bron: string) => {
       const s = gl.createShader(soort)!;
       gl.shaderSource(s, bron);
@@ -365,27 +480,24 @@ export function WereldWater() {
     const u = {
       res: gl.getUniformLocation(prog, "uRes"),
       tijd: gl.getUniformLocation(prog, "uTijd"),
-      helder: gl.getUniformLocation(prog, "uHelder"),
-      bundel: gl.getUniformLocation(prog, "uBundel"),
-      bundelX: gl.getUniformLocation(prog, "uBundelX"),
-      stroom: gl.getUniformLocation(prog, "uStroom"),
+      camY: gl.getUniformLocation(prog, "uCamY"),
+      veeg: gl.getUniformLocation(prog, "uVeeg"),
+      bundels: gl.getUniformLocation(prog, "uBundels"),
+      doezel: gl.getUniformLocation(prog, "uDoezel"),
       kalm: gl.getUniformLocation(prog, "uKalm"),
+      pitch: gl.getUniformLocation(prog, "uPitch"),
       rustig: gl.getUniformLocation(prog, "uRustig"),
-      /* array-uniform: WebGL 1 wil hier de eerste index expliciet zien */
-      rimpels: gl.getUniformLocation(prog, "uRimpels[0]"),
     };
     gl.uniform1f(u.rustig, rustig ? 1 : 0);
 
-    /* ── maat ──
-       De devicePixelRatio wordt afgetopt op 1.5. Een shader die per pixel
-       zes golfoctaven en acht rimpels uitrekent is op een 4K-scherm anders
-       zomaar vier keer zo duur, en het verschil zie je bij water niet. */
+    /* De volumetrische bundels kosten tien monsters per pixel. Ze zijn zacht,
+       dus we tekenen bewust onder schermresolutie en laten de browser
+       opschalen — dat scheelt ruim de helft van het werk en je ziet het niet. */
+    let aspect = 1;
     const meet = () => {
-      /* 0.8: we tekenen bewust onder schermresolutie en laten de browser
-         opschalen. Bij water ziet niemand dat — het is toch een zachte,
-         bewegende textuur — maar het scheelt bijna de helft van het werk. */
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5) * 0.8;
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5) * 0.7;
       const r = canvas.getBoundingClientRect();
+      aspect = r.width / Math.max(1, r.height);
       canvas.width = Math.max(1, Math.round(r.width * dpr));
       canvas.height = Math.max(1, Math.round(r.height * dpr));
       gl.viewport(0, 0, canvas.width, canvas.height);
@@ -395,53 +507,9 @@ export function WereldWater() {
     const ro = new ResizeObserver(meet);
     ro.observe(canvas);
 
-    /* ── rimpels ──
-       Acht plekken, steeds de oudste hergebruikt. De positie wordt van het
-       scherm naar het waterVLAK omgerekend, zodat een rimpel in de verte
-       vanzelf smal en plat is en dichtbij breed — precies zoals perspectief
-       hoort te werken. */
-    const rimpels = new Float32Array(8 * 4);
-    let volgende = 0;
-    let laatsteRimpel = -1;
-    const raak = (klantX: number, klantY: number, kracht: number) => {
-      const r = canvas.getBoundingClientRect();
-      const sx = (klantX - r.left) / r.width;
-      const sy = (klantY - r.top) / r.height;
-      if (sy < HORIZON + 0.005 || sy > 1 || sx < 0 || sx > 1) return;
-      const dist = DIEPTE_C / (sy - HORIZON);
-      if (dist > 14) return;
-      const wx = (sx - 0.5) * dist * SPREIDING;
-      const i = volgende % 8;
-      rimpels[i * 4] = wx;
-      rimpels[i * 4 + 1] = dist;
-      rimpels[i * 4 + 2] = klok();
-      rimpels[i * 4 + 3] = kracht;
-      volgende++;
-      wek();
-    };
-
     const start = performance.now();
     const klok = () => (performance.now() - start) / 1000;
 
-    let muisX = -999;
-    let muisY = -999;
-    const opMuis = (e: PointerEvent) => {
-      muisX = e.clientX;
-      muisY = e.clientY;
-      const nu = klok();
-      /* niet elke pixel een rimpel: dat wordt soep. Ongeveer 12 per seconde. */
-      if (nu - laatsteRimpel > 0.085) {
-        laatsteRimpel = nu;
-        raak(e.clientX, e.clientY, 1);
-      }
-    };
-    const opKlik = (e: PointerEvent) => raak(e.clientX, e.clientY, 2.2);
-    if (!rustig) {
-      sectie.addEventListener("pointermove", opMuis, { passive: true });
-      sectie.addEventListener("pointerdown", opKlik, { passive: true });
-    }
-
-    /* ── scrollvoortgang ── */
     let voortgang = 0;
     const meetVoortgang = () => {
       const r = sectie.getBoundingClientRect();
@@ -449,9 +517,99 @@ export function WereldWater() {
       voortgang = loop <= 0 ? 0 : Math.min(1, Math.max(0, -r.top / loop));
     };
 
-    /* ── de lus ──
-       Draait alleen als de sectie in beeld is. Buiten beeld staat alles stil,
-       dus dit stuk kost niets zolang je er niet bent. */
+    /* ── de woorden en het stof ──
+       Ze staan als gewone DOM in het water: scherp, selecteerbaar en met een
+       echte blur voor de scherptediepte. Hun plek komt uit precies dezelfde
+       cameraberekening als de shader. */
+    const tekenLagen = (t: number, f: ReturnType<typeof fasen>) => {
+      WOORDEN.forEach((wo, i) => {
+        const el = woordRefs.current[i];
+        if (!el) return;
+        /* traag meedrijven met de stroming */
+        const drift = Math.sin(t * 0.18 + i * 1.7) * 0.16;
+        const pos = naarScherm(wo.wx + drift, wo.wy, wo.wz, f.camY, f.pitch, aspect);
+        if (!pos || pos.sx < -0.3 || pos.sx > 1.3 || pos.sy < -0.2 || pos.sy > 1.2) {
+          el.style.opacity = "0";
+          return;
+        }
+
+        /* Hoeveel licht valt er op dit woord? Exact dezelfde bundelvorm als
+           in de shader, dus wat je ziet oplichten klopt met waar het licht
+           daadwerkelijk staat. */
+        const inBundel = Math.exp(-Math.pow((wo.wx + drift - f.veeg) / 0.95, 2));
+        const licht = inBundel * f.bundels;
+
+        /* Alleen belicht is leesbaar; daarbuiten zakt het terug. Maar het
+           water is licht, dus een onbelicht woord verdwijnt niet in het zwart
+           — het wordt juist een donkere schim. Dat is ook fysiek kloppend:
+           zonder licht erop zie je alleen een silhouet. */
+        const dekking = Math.max(0, Math.min(1, 0.28 + licht * 1.4));
+        const wazig = (1 - Math.min(1, licht * 1.5)) * 4.5 + 0.4;
+
+        /* schaal volgt het perspectief */
+        const schaal = Math.max(0.34, 5.0 / pos.afstand);
+
+        el.style.opacity = String(dekking * (1 - f.kalm));
+        el.style.left = `${pos.sx * 100}%`;
+        el.style.top = `${pos.sy * 100}%`;
+        el.style.filter = `blur(${wazig.toFixed(2)}px)`;
+        el.style.transform = `translate(-50%, -50%) scale(${schaal.toFixed(3)})`;
+
+        /* in de tweede veeg klapt de naam om naar de schuilnaam */
+        const gemaskeerd = f.maskeer && !!wo.masker && licht > 0.12;
+        const wil = gemaskeerd ? wo.masker! : wo.tekst;
+        if (el.dataset.nu !== wil) {
+          el.dataset.nu = wil;
+          el.textContent = wil;
+        }
+        /* onbelicht = donkere schim tegen het lichte water, belicht = helder
+           en warm, alsof de bundel hem echt aanstraalt */
+        const helderheid = Math.min(1, licht * 1.5);
+        el.style.color = gemaskeerd
+          ? `color-mix(in srgb, #06231d ${(100 - helderheid * 100).toFixed(0)}%, #ccffe6)`
+          : `color-mix(in srgb, #06231d ${(100 - helderheid * 100).toFixed(0)}%, #ffffff)`;
+        el.style.textShadow = `0 0 ${(10 + helderheid * 26).toFixed(0)}px rgba(120,255,214,${(helderheid * 0.55).toFixed(2)})`;
+      });
+
+      DEELTJES.forEach((d, i) => {
+        const el = stofRefs.current[i];
+        if (!el) return;
+        /* stof zweeft langzaam omhoog en dwarrelt een beetje */
+        const op = ((t * 0.05 * d.tempo + d.fase) % 1) * 4.4;
+        const wy = d.wy + op - 2.2;
+        const wx = d.wx + Math.sin(t * 0.22 * d.tempo + d.fase) * 0.35;
+        const pos = naarScherm(wx, wy, d.wz, f.camY, f.pitch, aspect);
+        if (!pos || pos.sx < -0.1 || pos.sx > 1.1 || pos.sy < -0.1 || pos.sy > 1.1) {
+          el.style.opacity = "0";
+          return;
+        }
+        const inBundel = Math.exp(-Math.pow((wx - f.veeg) / 1.6, 2));
+        /* stof is er altijd, maar licht pas echt op in de bundel */
+        const helder = 0.1 + inBundel * f.bundels * 0.85;
+        /* scherptediepte: dichtbij onscherp, dat verraadt een echte lens */
+        const onscherp = Math.max(0, (5.2 - pos.afstand) * 0.75);
+        const maat = Math.max(1.2, 9 / pos.afstand);
+        el.style.opacity = String(helder * (1 - f.duik * 0.0) * (1 - f.kalm) * 0.9);
+        el.style.left = `${pos.sx * 100}%`;
+        el.style.top = `${pos.sy * 100}%`;
+        el.style.width = `${maat.toFixed(1)}px`;
+        el.style.height = `${maat.toFixed(1)}px`;
+        el.style.filter = `blur(${onscherp.toFixed(2)}px)`;
+      });
+
+      const zet = (el: HTMLElement | null, v: number, y = 18) => {
+        if (!el) return;
+        el.style.opacity = String(v);
+        el.style.transform = `translateY(${((1 - v) * y).toFixed(1)}px)`;
+      };
+      zet(introRef.current, f.intro);
+      beatRefs.current.forEach((el, i) =>
+        zet(el, [f.beat1, f.beat2, f.beat3][i] ?? 0),
+      );
+      zet(slotRef.current, f.slot);
+      if (oeverRef.current) oeverRef.current.style.opacity = String(f.oever);
+    };
+
     let raf = 0;
     let inBeeld = false;
     const stap = () => {
@@ -461,123 +619,21 @@ export function WereldWater() {
       const t = klok();
 
       gl.uniform1f(u.tijd, t);
-      gl.uniform1f(u.helder, f.helder);
-      gl.uniform1f(u.bundel, f.bundel);
-      gl.uniform1f(u.stroom, f.stroom);
+      gl.uniform1f(u.camY, f.camY);
+      gl.uniform1f(u.veeg, f.veeg);
+      gl.uniform1f(u.bundels, f.bundels);
+      gl.uniform1f(u.doezel, f.doezel);
       gl.uniform1f(u.kalm, f.kalm);
-      /* de bundel volgt je muis, maar traag en alleen als je in beeld bent */
-      const r = canvas.getBoundingClientRect();
-      const msx = (muisX - r.left) / Math.max(1, r.width);
-      const msy = (muisY - r.top) / Math.max(1, r.height);
-      let bundelX = 0;
-      if (msy > HORIZON && msy < 1 && msx > 0 && msx < 1) {
-        const d = DIEPTE_C / (msy - HORIZON);
-        bundelX = (msx - 0.5) * d * SPREIDING;
-      }
-      gl.uniform1f(u.bundelX, bundelX);
-      gl.uniform4fv(u.rimpels, rimpels);
+      gl.uniform1f(u.pitch, f.pitch);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
 
-      tekenWoorden(t, f, r);
+      tekenLagen(t, f);
 
       if (inBeeld && !rustig) raf = requestAnimationFrame(stap);
     };
     const wek = () => {
       if (!raf && inBeeld) raf = requestAnimationFrame(stap);
     };
-
-    /* ── de woorden ──
-       Ze staan als gewone tekst in de DOM (dus scherp en selecteerbaar), maar
-       hun plek komt uit dezelfde perspectiefberekening als de shader. Blur en
-       dekking vertellen de diepte: hoe verder weg, hoe onleesbaarder. */
-    const tekenWoorden = (t: number, f: ReturnType<typeof fasen>, r: DOMRect) => {
-      const msx = (muisX - r.left) / Math.max(1, r.width);
-      const msy = (muisY - r.top) / Math.max(1, r.height);
-      let muisW: { wx: number; dist: number } | null = null;
-      if (msy > HORIZON && msy < 1 && msx > 0 && msx < 1) {
-        const d = DIEPTE_C / (msy - HORIZON);
-        muisW = { wx: (msx - 0.5) * d * SPREIDING, dist: d };
-      }
-
-      WOORDEN.forEach((wo, i) => {
-        const el = woordRefs.current[i];
-        if (!el) return;
-
-        /* de stroming draagt de woorden mee en trekt ze uit elkaar */
-        const drift = Math.sin(t * 0.22 + wo.tel * 1.3) * 0.22 + f.stroom * (1.1 + wo.tel * 0.08);
-        const wx = wo.wx + drift;
-        const dist = wo.dist + Math.sin(t * 0.17 + wo.tel) * 0.06;
-        const { sx, sy } = naarScherm(wx, dist);
-
-        /* buiten beeld: niet tekenen */
-        if (sx < -0.25 || sx > 1.25 || sy > 1.04) {
-          el.style.opacity = "0";
-          return;
-        }
-
-        /* Hoe zichtbaar is dit woord?
-           - `helder`: de fase waarin het water doorzichtig wordt
-           - de rimpel onder je muis licht het lokaal even op
-           - de bundel maakt het scherp leesbaar
-           - de stroming lost het weer op */
-        let zicht = f.helder * (1 - Math.min(1, (dist - 1) / 5.5) * 0.55);
-
-        let nabij = 0;
-        if (muisW) {
-          const d = Math.hypot(wx - muisW.wx, dist - muisW.dist);
-          nabij = Math.max(0, 1 - d / 1.5);
-        }
-        /* in beat 2 is de aanraking het enige dat iets laat zien */
-        zicht = Math.max(zicht, nabij * (0.35 + 0.65 * f.helder));
-
-        const inBundel = f.bundel > 0.01 ? Math.max(0, 1 - Math.abs(wx - bundelXVanMuis(muisW)) / (0.85 + dist * 0.3)) : 0;
-        const bundelKracht = inBundel * f.bundel * (dist < 8 ? 1 : 0);
-
-        const oplossen = Math.min(1, f.stroom * 1.25);
-        const dekking = Math.max(0, Math.min(1, (zicht * 1.15 + bundelKracht * 0.9) * (1 - oplossen)));
-
-        /* Scherpte. Stond eerst op factor 7, waardoor de woorden in de
-           lagen-beat vlekken bleven in plaats van woorden: je moet kunnen
-           LEZEN dat er gegevens drijven, anders mist de scène zijn punt.
-           Onder water blijft een restje waas altijd staan. */
-        const wazig = (1 - Math.min(1, zicht + bundelKracht)) * 4.2 + 0.5 + oplossen * 9;
-
-        /* grootte volgt het perspectief */
-        const schaal = Math.max(0.5, 1.5 / dist);
-
-        el.style.opacity = String(dekking);
-        el.style.left = `${sx * 100}%`;
-        el.style.top = `${sy * 100}%`;
-        el.style.filter = `blur(${wazig.toFixed(2)}px)`;
-        el.style.transform =
-          `translate(-50%, -50%) scale(${schaal.toFixed(3)}) ` +
-          `skewX(${(Math.sin(t * 0.9 + wo.tel) * 3 * (1 - bundelKracht)).toFixed(2)}deg)`;
-
-        /* in de bundel verschijnt de schuilnaam in plaats van de echte naam */
-        const gemaskeerd = bundelKracht > 0.45 && wo.masker;
-        const wil = gemaskeerd ? wo.masker! : wo.tekst;
-        if (el.dataset.nu !== wil) {
-          el.dataset.nu = wil;
-          el.textContent = wil;
-        }
-        el.style.color = gemaskeerd ? "#c8f5dd" : "#eafaf2";
-        el.style.letterSpacing = gemaskeerd ? "0.04em" : "0em";
-        /* een zachte gloed eromheen: onder water heeft licht geen harde rand,
-           en het tilt de tekst los van het donkere groen */
-        el.style.textShadow = `0 0 ${(14 * (1 - bundelKracht) + 6).toFixed(0)}px rgba(10,40,30,0.85)`;
-      });
-
-      if (kopRef.current) {
-        kopRef.current.style.opacity = String(f.slot);
-        kopRef.current.style.transform = `translateY(${(1 - f.slot) * 26}px)`;
-      }
-      if (hintRef.current) hintRef.current.style.opacity = String(f.hint);
-      /* de oever komt pas aan het eind in beeld: hij is de overgang terug naar
-         het lichte mintveld van de sectie hieronder */
-      if (oeverRef.current) oeverRef.current.style.opacity = String(f.slot);
-    };
-
-    const bundelXVanMuis = (m: { wx: number; dist: number } | null) => (m ? m.wx : 0);
 
     const io = new IntersectionObserver(
       ([e]) => {
@@ -591,7 +647,7 @@ export function WereldWater() {
     const opScroll = () => wek();
     window.addEventListener("scroll", opScroll, { passive: true });
 
-    /* één frame tekenen, ook bij reduced motion (dan blijft het stilstaan) */
+    /* één frame tekenen, ook bij reduced motion */
     meetVoortgang();
     inBeeld = true;
     stap();
@@ -602,17 +658,29 @@ export function WereldWater() {
       io.disconnect();
       ro.disconnect();
       window.removeEventListener("scroll", opScroll);
-      sectie.removeEventListener("pointermove", opMuis);
-      sectie.removeEventListener("pointerdown", opKlik);
     };
   }, []);
 
   return (
-    <section ref={buiten} className="relative" style={{ height: "340vh" }} aria-label="Privacy">
+    <section ref={buiten} className="relative" style={{ height: "420vh" }} aria-label="Privacy">
       <div className="sticky top-0 h-screen overflow-hidden">
         <canvas ref={doek} className="absolute inset-0 h-full w-full" aria-hidden />
 
-        {/* de woorden onder de oppervlakte */}
+        {/* het stof in het water */}
+        <div className="pointer-events-none absolute inset-0" aria-hidden>
+          {DEELTJES.map((_, i) => (
+            <span
+              key={i}
+              ref={(r) => {
+                stofRefs.current[i] = r;
+              }}
+              className="absolute rounded-full bg-[#d8fbee] opacity-0"
+              style={{ transform: "translate(-50%, -50%)" }}
+            />
+          ))}
+        </div>
+
+        {/* de woorden die in het water hangen */}
         <div className="pointer-events-none absolute inset-0" aria-hidden>
           {WOORDEN.map((w, i) => (
             <span
@@ -630,41 +698,67 @@ export function WereldWater() {
           ))}
         </div>
 
-        {/* de uitnodiging, alleen in het begin */}
-        <p
-          ref={hintRef}
-          className="pointer-events-none absolute bottom-16 left-1/2 -translate-x-1/2 text-center text-lg opacity-0 sm:text-xl"
-          style={{ fontFamily: "var(--font-hand)", color: "#cfe9dc" }}
-        >
-          beweeg je muis over het water
-        </p>
+        {/* ── De tekstkolom, links, in het water ──
+           Per beat één zin, zodat er nooit een moment is waarop je wel iets
+           moois ziet maar niet weet wat het betekent. Alles staat op dezelfde
+           plek: het is één stem die doorpraat, geen losse blokjes. */}
+        <div className="pointer-events-none absolute inset-0">
+          {/* Een zachte schaduw aan de linkerkant. Het water is levend en soms
+             fel — zonder dit hangt de leesbaarheid van de kop af van waar de
+             lichtbundel toevallig staat, en dat is geen ontwerp maar geluk. */}
+          <div
+            className="absolute inset-y-0 left-0 w-full sm:w-3/5"
+            style={{
+              background:
+                "linear-gradient(to right, rgba(2,20,16,0.72) 0%, rgba(2,20,16,0.5) 38%, rgba(2,20,16,0) 100%)",
+            }}
+            aria-hidden
+          />
+          <div className="relative mx-auto flex h-full w-full max-w-6xl items-center px-6">
+            <div className="relative w-full max-w-md sm:max-w-lg">
+              <div ref={introRef} className="absolute inset-x-0 top-1/2 -translate-y-1/2">
+                <p className="text-2xl" style={{ fontFamily: "var(--font-hand)", color: "#8fd9b4" }}>
+                  privacy voorop
+                </p>
+                <h2 className="mt-3 font-display text-[clamp(2rem,4.4vw,3.5rem)] font-black leading-[1.03] tracking-tight text-white [text-wrap:balance]">
+                  Er is één ding dat we bewust niet doen.
+                </h2>
+              </div>
 
-        {/* De oever: dezelfde golfvorm als de rest van de pagina, in de kleur
-           van het mintveld waar de volgende sectie mee begint. Hij verschijnt
-           pas in de laatste beat, zodat het water niet abrupt op een rand
-           eindigt maar je er als het ware weer uit stapt. */}
-        <div ref={oeverRef} className="pointer-events-none absolute inset-0 opacity-0" aria-hidden>
-          <Golf kleur={MINT_LICHT} vorm="rust" hoogte="h-[70px] sm:h-[110px]" />
+              {BEATS.map((b, i) => (
+                <div
+                  key={b.nr}
+                  ref={(r) => {
+                    beatRefs.current[i] = r;
+                  }}
+                  className="absolute inset-x-0 top-1/2 -translate-y-1/2 opacity-0"
+                >
+                  <p className="font-display text-sm font-black tracking-[0.3em]" style={{ color: "#6fcfa2" }}>
+                    {b.nr}
+                  </p>
+                  <p className="mt-3 font-display text-[clamp(1.6rem,3.4vw,2.6rem)] font-black leading-[1.08] tracking-tight text-white [text-wrap:balance]">
+                    {b.zin}
+                  </p>
+                </div>
+              ))}
+
+              <div ref={slotRef} className="absolute inset-x-0 top-1/2 -translate-y-1/2 opacity-0">
+                <p className="font-display text-[clamp(1.7rem,3.6vw,2.8rem)] font-black leading-[1.08] tracking-tight text-white [text-wrap:balance]">
+                  Namen blijven thuis.
+                </p>
+                <p className="mt-5 text-lg leading-8 text-white/70">
+                  Op jouw apparaat wordt elke naam vervangen door een schuilnaam,
+                  nog vóór er iets wordt verstuurd. Gegevens van leerlingen
+                  bewaren we niet.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* de boodschap, helemaal aan het eind */}
-        <div
-          ref={kopRef}
-          className="absolute inset-x-0 bottom-0 top-auto px-6 pb-[14vh] opacity-0 sm:pb-[16vh]"
-        >
-          <div className="mx-auto w-full max-w-4xl text-center">
-            <p className="text-2xl" style={{ fontFamily: "var(--font-hand)", color: "#8fd9b4" }}>
-              privacy voorop
-            </p>
-            <h2 className="mt-3 font-display text-[clamp(2.1rem,5.2vw,4.2rem)] font-black leading-[1.02] tracking-tight text-white [text-wrap:balance]">
-              Er is één ding dat we bewust niet doen.
-            </h2>
-            <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-white/75 sm:text-xl sm:leading-9">
-              Gegevens van leerlingen bewaren we niet, en hun namen gaan nooit
-              naar de AI. Op jouw apparaat wordt elke naam vervangen door een
-              schuilnaam, nog vóór er iets wordt verstuurd.
-            </p>
-          </div>
+        {/* de oever: de overgang terug naar het lichte mintveld eronder */}
+        <div ref={oeverRef} className="pointer-events-none absolute inset-0 opacity-0" aria-hidden>
+          <Golf kleur={MINT_LICHT} vorm="rust" hoogte="h-[70px] sm:h-[110px]" />
         </div>
       </div>
     </section>
