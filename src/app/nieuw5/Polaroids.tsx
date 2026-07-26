@@ -687,10 +687,11 @@ export function WereldPolaroids() {
     <section className="relative overflow-x-clip">
       {/* Het mintveld van de makers-sectie hierboven (WereldMaker) loopt hier
          gewoon door — zelfde MINT-tint, dus geen naad op de sectiegrens —
-         en krijgt nu pas zijn eigen speelse zaagtand-overgang terug naar het
-         gespikkelde papier. Was voorheen een dun lijntje vlak achter de
-         makerskaart; ligt nu veel groter en reikt tot in het intro-tekstblok
-         van deze sectie. */}
+         en krijgt hier zijn eigen golf terug naar het gespikkelde papier.
+         Was voorheen een dun lijntje vlak achter de makerskaart; ligt nu
+         veel groter en reikt tot in het intro-tekstblok van deze sectie.
+         De golf zelf loopt bewust niet vlak links-rechts: hij zakt naar
+         rechts een flink stuk dieper weg dan waar hij links begint. */}
       <div
         className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[300px] overflow-hidden sm:h-[380px] lg:h-[480px]"
         aria-hidden

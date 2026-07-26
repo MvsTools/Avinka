@@ -98,28 +98,6 @@ function maakGolf({
   return `${d} L1440 111 L0 111 Z`;
 }
 
-/* Speelse zigzag-overgang: zelfde gedachte als de golf hierboven (BEREKEND,
-   geen losse punten), maar met rechte segmenten in plaats van een curve —
-   de schets van de eigenaar was een getekende zaagtand, geen vloeiende
-   deining. De tandhoogte varieert bewust (geen twee tanden precies gelijk),
-   dat houdt het speels in plaats van metronomisch. */
-function maakZigzag({
-  start, eind, amp = 30, tanden = 8, fase = 0,
-}: { start: number; eind: number; amp?: number; tanden?: number; fase?: number }) {
-  const N = tanden * 2;
-  const p: Array<[number, number]> = [];
-  for (let i = 0; i <= N; i++) {
-    const t = i / N;
-    const basis = start + (eind - start) * t;
-    const kant = i % 2 === 0 ? -1 : 1;
-    const variatie = 0.66 + 0.34 * Math.sin(i * 2.3 + fase);
-    p.push([t * 1440, basis + kant * amp * variatie]);
-  }
-  let d = `M ${p[0][0].toFixed(1)} ${p[0][1].toFixed(1)}`;
-  for (let i = 1; i < p.length; i++) d += ` L ${p[i][0].toFixed(1)} ${p[i][1].toFixed(1)}`;
-  return `${d} L1440 111 L0 111 Z`;
-}
-
 const GOLVEN = {
   /* de oorspronkelijke: rustige dubbele deining, vlak */
   zacht: maakGolf({ start: 62, eind: 56, amp: 26, golven: 1.15, fase: 0.4 }),
@@ -133,8 +111,12 @@ const GOLVEN = {
   rust: maakGolf({ start: 76, eind: 72, amp: 11, golven: 1.45, fase: 0.9 }),
   /* één hoge kam op het linkerderde, daarna lang uitlopend */
   kam: maakGolf({ start: 72, eind: 64, amp: 32, golven: 0.7, fase: -2.67 }),
-  /* de speelse zaagtand-overgang naar de ervaringen-sectie */
-  speels: maakZigzag({ start: 58, eind: 44, amp: 30, tanden: 7, fase: 0.8 }),
+  /* de overgang naar de ervaringen-sectie: dezelfde ronde, vloeiende golf
+     als de rest van de pagina (geen zaagtand), maar zonder dat de deining
+     netjes rond hetzelfde niveau links-rechts blijft hangen — hij zakt
+     nadrukkelijk weg naar rechts, zodat het mintveld daar veel dieper
+     doorloopt dan aan de linkerkant. */
+  speels: maakGolf({ start: 22, eind: 92, amp: 17, golven: 1.3, fase: 0.5 }),
 } as const;
 
 export function Golf({
