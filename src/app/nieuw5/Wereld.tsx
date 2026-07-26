@@ -19,6 +19,10 @@ import type { CSSProperties, ReactNode } from "react";
    Reveals liften mee op het data-reveal/is-in-systeem van Vierde.tsx. ───── */
 
 export const MINT = "#cfe6d8";
+/* Lichtere proefkleur voor het mintveld achter de makerskaart + ervaringen-
+   sectie — eigenaar wil zien hoe dat oogt. Alleen daar gebruikt, de rest
+   van de pagina staat nog op de gewone MINT. */
+export const MINT_LICHT = "#e0efe6";
 export const MINT_DIEP = "#b5d8c4"; // silhouetten op mint
 /* Achtergrondvlakken: bewust maar een paar procent van de ondergrond af.
    De rustigste sectie van de pagina (privacy) heeft óók een achtergrond-
@@ -927,11 +931,11 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
          en met zijn onderkant op mint, en de twee golven hebben ruimte.
          (Spiegelbeeld van de regie-sectie, waar de mint juist bovenin zit.) */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 top-1/2" aria-hidden>
-        <div className="absolute inset-0" style={{ background: MINT }} />
+        <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
         <Golf kleur="#fcfbf7" flip vorm="kam" />
       </div>
       {/* De liniaal hoort in het mintveld te liggen, dus onderin de sectie. */}
-      <SilhouetLiniaal kleur={MINT_DIEP} veld={MINT} style={{ width: 460, left: -120, bottom: 150, transform: "rotate(-14deg)" }} />
+      <SilhouetLiniaal kleur={MINT_DIEP} veld={MINT_LICHT} style={{ width: 460, left: -120, bottom: 150, transform: "rotate(-14deg)" }} />
 
       <div className="relative z-10 mx-auto w-full max-w-4xl px-6 pb-32 pt-32 lg:pb-36 lg:pt-36">
         {/* De kaart hoort nu bij de familie: organische radii, tonale rand en

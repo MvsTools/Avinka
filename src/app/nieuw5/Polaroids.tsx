@@ -6,7 +6,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { DONKER, Golf, KOP, MINT, MINT_DIEP, KaartVlak, VLAK_PAPIER } from "./Wereld";
+import { DONKER, Golf, KOP, MINT, MINT_LICHT, MINT_DIEP, KaartVlak, VLAK_PAPIER } from "./Wereld";
 
 /* ── De polaroids: wat leerkrachten zeggen ─────────────────────────────────
    Ervaringen als instax-kaartjes aan één levende draad. Geen prikbord, geen
@@ -696,7 +696,7 @@ export function WereldPolaroids() {
         className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[300px] overflow-hidden sm:h-[380px] lg:h-[480px]"
         aria-hidden
       >
-        <div className="absolute inset-0" style={{ background: MINT }} />
+        <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
         <Golf kleur="#fcfbf7" vorm="speels" hoogte="h-[90px] sm:h-[130px] lg:h-[170px]" />
       </div>
 
