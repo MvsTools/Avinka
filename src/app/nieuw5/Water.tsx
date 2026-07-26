@@ -347,8 +347,8 @@ void main() {
        staat het caustic-net, dus de bundels flikkeren vanzelf mee met de
        golven in plaats van dat het geschilderde strepen worden. */
     float straal = 0.0;
-    for (int i = 0; i < 10; i++) {
-      float s = (float(i) + 0.5) / 10.0;
+    for (int i = 0; i < 8; i++) {
+      float s = (float(i) + 0.5) / 8.0;
       float afst = s * s * 15.0; // dichterbij fijner bemonsteren
       vec3 Q = vec3(D.x * afst, uCamY + D.y * afst, D.z * afst);
       if (Q.y < 0.0 && Q.y > -7.0) {
@@ -511,14 +511,22 @@ export function WereldWater() {
     };
     gl.uniform1f(u.rustig, rustig ? 1 : 0);
 
-    /* De volumetrische bundels kosten tien monsters per pixel. Ze zijn zacht,
-       dus we tekenen bewust onder schermresolutie en laten de browser
-       opschalen — dat scheelt ruim de helft van het werk en je ziet het niet. */
+    /* Hoe fijn we tekenen. De volumetrische bundels kosten acht monsters per
+       pixel, dus dit is verreweg de duurste knop die we hebben. Water is een
+       zachte, bewegende textuur, dus onder schermresolutie tekenen en laten
+       opschalen ziet niemand — maar het scheelt ruim de helft van het werk.
+       Loopt het toch niet soepel, dan zakt deze waarde vanzelf verder (zie de
+       bewaking onderin de lus): beter een tikje grover dan schokkerig. */
     let aspect = 1;
+    let stageB = 1;
+    let stageH = 1;
+    let tekenSchaal = 0.7;
     const meet = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5) * 0.7;
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5) * tekenSchaal;
       const r = canvas.getBoundingClientRect();
       aspect = r.width / Math.max(1, r.height);
+      stageB = r.width;
+      stageH = r.height;
       canvas.width = Math.max(1, Math.round(r.width * dpr));
       canvas.height = Math.max(1, Math.round(r.height * dpr));
       gl.viewport(0, 0, canvas.width, canvas.height);
@@ -542,6 +550,16 @@ export function WereldWater() {
        Ze staan als gewone DOM in het water: scherp, selecteerbaar en met een
        echte blur voor de scherptediepte. Hun plek komt uit precies dezelfde
        cameraberekening als de shader. */
+    /* Alleen schrijven als er echt iets verandert. Een style-toewijzing is
+       niet gratis: de browser moet de regel opnieuw verwerken, ook als de
+       waarde identiek is. Met 45 elementen per frame telt dat op. */
+    const laatst = new Map<string, string>();
+    const zetStijl = (el: HTMLElement, sleutel: string, eigenschap: string, waarde: string) => {
+      if (laatst.get(sleutel) === waarde) return;
+      laatst.set(sleutel, waarde);
+      el.style.setProperty(eigenschap, waarde);
+    };
+
     const tekenLagen = (t: number, f: ReturnType<typeof fasen>) => {
       WOORDEN.forEach((wo, i) => {
         const el = woordRefs.current[i];
@@ -550,7 +568,7 @@ export function WereldWater() {
         const drift = Math.sin(t * 0.18 + i * 1.7) * 0.16;
         const pos = naarScherm(wo.wx + drift, wo.wy, wo.wz, f.camY, f.pitch, aspect);
         if (!pos || pos.sx < -0.3 || pos.sx > 1.3 || pos.sy < -0.2 || pos.sy > 1.2) {
-          el.style.opacity = "0";
+          zetStijl(el, `w${i}o`, "opacity", "0");
           return;
         }
 
@@ -560,21 +578,24 @@ export function WereldWater() {
         const inBundel = Math.exp(-Math.pow((wo.wx + drift - f.veeg) / 0.95, 2));
         const licht = inBundel * f.bundels;
 
-        /* Alleen belicht is leesbaar; daarbuiten zakt het terug. Maar het
-           water is licht, dus een onbelicht woord verdwijnt niet in het zwart
-           — het wordt juist een donkere schim. Dat is ook fysiek kloppend:
-           zonder licht erop zie je alleen een silhouet. */
         const dekking = Math.max(0, Math.min(1, licht * 1.75 - 0.06));
-        const wazig = (1 - Math.min(1, licht * 1.9)) * 2.2 + 0.15;
-
-        /* schaal volgt het perspectief */
+        /* Blur afgerond op halve pixels. Een veranderende blur dwingt de
+           browser het element opnieuw te rasteren; op elke frame een nieuwe
+           waarde is precies waar het scrollen van ging haperen. */
+        const wazig = Math.round(((1 - Math.min(1, licht * 1.9)) * 2.2 + 0.15) * 2) / 2;
         const schaal = Math.max(0.34, 5.0 / pos.afstand);
 
-        el.style.opacity = String(dekking * (1 - f.kalm));
-        el.style.left = `${pos.sx * 100}%`;
-        el.style.top = `${pos.sy * 100}%`;
-        el.style.filter = `blur(${wazig.toFixed(2)}px)`;
-        el.style.transform = `translate(-50%, -50%) scale(${schaal.toFixed(3)})`;
+        zetStijl(el, `w${i}o`, "opacity", (dekking * (1 - f.kalm)).toFixed(3));
+        /* transform in plaats van left/top: dat scheelt een layout per
+           element per frame en draait op de compositor */
+        zetStijl(
+          el,
+          `w${i}t`,
+          "transform",
+          `translate3d(${(pos.sx * stageB).toFixed(1)}px, ${(pos.sy * stageH).toFixed(1)}px, 0)` +
+            ` translate(-50%, -50%) scale(${schaal.toFixed(2)})`,
+        );
+        zetStijl(el, `w${i}f`, "filter", `blur(${wazig}px)`);
 
         /* in de tweede veeg klapt de naam om naar de schuilnaam */
         const gemaskeerd = f.maskeer && !!wo.masker && licht > 0.12;
@@ -583,13 +604,20 @@ export function WereldWater() {
           el.dataset.nu = wil;
           el.textContent = wil;
         }
-        /* onbelicht = donkere schim tegen het lichte water, belicht = helder
-           en warm, alsof de bundel hem echt aanstraalt */
-        const helderheid = Math.min(1, licht * 1.5);
-        el.style.color = gemaskeerd
-          ? `color-mix(in srgb, #06231d ${(100 - helderheid * 100).toFixed(0)}%, #ccffe6)`
-          : `color-mix(in srgb, #06231d ${(100 - helderheid * 100).toFixed(0)}%, #ffffff)`;
-        el.style.textShadow = `0 0 ${(10 + helderheid * 26).toFixed(0)}px rgba(120,255,214,${(helderheid * 0.55).toFixed(2)})`;
+        /* onbelicht = donkere schim tegen het lichte water, belicht = helder */
+        const helderheid = Math.round(Math.min(1, licht * 1.5) * 20) / 20;
+        zetStijl(
+          el,
+          `w${i}c`,
+          "color",
+          `color-mix(in srgb, #06231d ${(100 - helderheid * 100).toFixed(0)}%, ${gemaskeerd ? "#ccffe6" : "#ffffff"})`,
+        );
+        zetStijl(
+          el,
+          `w${i}s`,
+          "text-shadow",
+          `0 0 ${(10 + helderheid * 26).toFixed(0)}px rgba(120,255,214,${(helderheid * 0.55).toFixed(2)})`,
+        );
       });
 
       DEELTJES.forEach((d, i) => {
@@ -601,21 +629,24 @@ export function WereldWater() {
         const wx = d.wx + Math.sin(t * 0.22 * d.tempo + d.fase) * 0.35;
         const pos = naarScherm(wx, wy, d.wz, f.camY, f.pitch, aspect);
         if (!pos || pos.sx < -0.1 || pos.sx > 1.1 || pos.sy < -0.1 || pos.sy > 1.1) {
-          el.style.opacity = "0";
+          zetStijl(el, `d${i}o`, "opacity", "0");
           return;
         }
         const inBundel = Math.exp(-Math.pow((wx - f.veeg) / 1.6, 2));
-        /* stof is er altijd, maar licht pas echt op in de bundel */
         const helder = 0.1 + inBundel * f.bundels * 0.85;
-        /* scherptediepte: dichtbij onscherp, dat verraadt een echte lens */
-        const onscherp = Math.max(0, (5.2 - pos.afstand) * 0.75);
-        const maat = Math.max(1.2, 9 / pos.afstand);
-        el.style.opacity = String(helder * (1 - f.duik * 0.0) * (1 - f.kalm) * 0.9);
-        el.style.left = `${pos.sx * 100}%`;
-        el.style.top = `${pos.sy * 100}%`;
-        el.style.width = `${maat.toFixed(1)}px`;
-        el.style.height = `${maat.toFixed(1)}px`;
-        el.style.filter = `blur(${onscherp.toFixed(2)}px)`;
+        /* De scherptediepte zit in de vorm zelf (een uitdovend radiaal
+           verloop) en niet in een blur-filter. Vierendertig elementen met een
+           veranderend filter waren de duurste post van de hele sectie; als
+           vorm kost hetzelfde effect niets. */
+        const maat = Math.max(1.2, 9 / pos.afstand) * (1 + Math.max(0, 5.2 - pos.afstand) * 0.5);
+        zetStijl(el, `d${i}o`, "opacity", (helder * (1 - f.kalm) * 0.9).toFixed(3));
+        zetStijl(
+          el,
+          `d${i}t`,
+          "transform",
+          `translate3d(${(pos.sx * stageB).toFixed(1)}px, ${(pos.sy * stageH).toFixed(1)}px, 0)` +
+            ` translate(-50%, -50%) scale(${(maat / 10).toFixed(2)})`,
+        );
       });
 
       const zet = (el: HTMLElement | null, v: number, y = 18) => {
@@ -638,6 +669,9 @@ export function WereldWater() {
 
     let raf = 0;
     let inBeeld = false;
+    let traagheid = 16.7;
+    let vorigFrame = 0;
+    let teruggeschakeld = false;
     const stap = () => {
       raf = 0;
       meetVoortgang();
@@ -654,6 +688,23 @@ export function WereldWater() {
       gl.drawArrays(gl.TRIANGLES, 0, 3);
 
       tekenLagen(t, f);
+
+      /* Zelfbewaking: loopt het aanhoudend te traag, dan tekenen we grover.
+         Eén keer terugschakelen is genoeg, anders gaat het pendelen. De
+         eerste anderhalve seconde tellen niet mee — dan staat de pagina nog
+         van alles op te starten en meet je niet de sectie maar de drukte. */
+      if (!teruggeschakeld) {
+        const nu = performance.now();
+        if (vorigFrame > 0) {
+          traagheid = traagheid * 0.9 + (nu - vorigFrame) * 0.1;
+          if (traagheid > 26 && t > 1.5) {
+            teruggeschakeld = true;
+            tekenSchaal = 0.45;
+            meet();
+          }
+        }
+        vorigFrame = nu;
+      }
 
       if (inBeeld && !rustig) raf = requestAnimationFrame(stap);
     };
@@ -714,8 +765,15 @@ export function WereldWater() {
               ref={(r) => {
                 stofRefs.current[i] = r;
               }}
-              className="absolute rounded-full bg-[#d8fbee] opacity-0"
-              style={{ transform: "translate(-50%, -50%)" }}
+              /* Vaste maat van 10px; de diepte zit in de scale van de
+                 transform. De zachte rand komt uit het radiale verloop zelf
+                 en niet uit een blur-filter, want dat laatste moest anders
+                 elke frame opnieuw gerasterd worden. */
+              className="absolute left-0 top-0 h-[10px] w-[10px] rounded-full opacity-0 will-change-transform"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(216,251,238,0.95) 0%, rgba(216,251,238,0.55) 38%, rgba(216,251,238,0) 72%)",
+              }}
             />
           ))}
         </div>
@@ -728,7 +786,7 @@ export function WereldWater() {
               ref={(r) => {
                 woordRefs.current[i] = r;
               }}
-              className={`absolute whitespace-nowrap text-3xl font-semibold opacity-0 will-change-[transform,opacity,filter] sm:text-4xl ${
+              className={`absolute left-0 top-0 whitespace-nowrap text-3xl font-semibold opacity-0 will-change-[transform,opacity] sm:text-4xl ${
                 w.mobiel ? "" : "hidden sm:block"
               }`}
               style={{ fontFamily: "var(--font-hand)" }}
@@ -811,8 +869,25 @@ export function WereldWater() {
         <div ref={oeverRef} className="pointer-events-none absolute inset-0 opacity-0" aria-hidden>
           <div
             className="absolute inset-x-0 bottom-0 h-[42vh]"
+            /* De stops lopen bewust NIET lineair. Een verloop dat op een
+               vaste hoogte klaar is met veranderen, geeft daar een knik in
+               de helling — en die zie je als een streep, ook al is de kleur
+               aan beide kanten exact gelijk (gemeten: 236,246,240 boven én
+               onder). Door de laatste stops steeds dichter op elkaar te
+               zetten dooft de verandering uit in plaats van dat hij stopt. */
             style={{
-              background: `linear-gradient(to bottom, rgba(236,246,240,0) 0%, rgba(236,246,240,0.34) 46%, ${MINT_LICHT} 88%)`,
+              background:
+                "linear-gradient(to bottom," +
+                " rgba(236,246,240,0) 0%," +
+                " rgba(236,246,240,0.05) 26%," +
+                " rgba(236,246,240,0.18) 45%," +
+                " rgba(236,246,240,0.38) 59%," +
+                " rgba(236,246,240,0.60) 70%," +
+                " rgba(236,246,240,0.79) 79%," +
+                " rgba(236,246,240,0.91) 86%," +
+                " rgba(236,246,240,0.97) 92%," +
+                " rgba(236,246,240,0.995) 96%," +
+                " rgba(236,246,240,1) 100%)",
             }}
           />
           <Golf kleur={MINT_LICHT} vorm="rust" hoogte="h-[70px] sm:h-[110px]" />
