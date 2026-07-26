@@ -267,19 +267,38 @@ void main() {
       vec3 Hv = normalize(V + L);
       float basis = max(dot(N, Hv), 0.0);
       float spec = pow(basis, 340.0) * 2.4 + pow(basis, 70.0) * 0.34 + pow(basis, 16.0) * 0.13;
-      float fres = clamp(pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 4.0), 0.03, 1.0);
-      vec3 spiegel = mix(vec3(0.62, 0.66, 0.56), vec3(1.0, 0.92, 0.75), 0.45);
+      float fres = clamp(pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 5.0), 0.02, 1.0);
+      /* Het water spiegelt de ECHTE lucht in de weerkaatste richting, en niet
+         een vaste grijze kleur. Dat is wat een zee zijn toonverloop geeft:
+         vlakbij de horizon kijk je scherend en zie je bijna alleen lucht,
+         dichtbij kijk je juist het water in. Met een vaste spiegelkleur blijft
+         het een plat, dof vlak -- en dan lijkt het niet op water. */
+      vec3 R = reflect(D, N);
+      vec3 spiegel = luchtKleur(vec3(R.x, max(R.y, 0.0), R.z));
       kleur = mix(DIEP, ONDIEP, clamp(1.0 - afstand * 0.12, 0.0, 1.0));
-      kleur = mix(kleur, spiegel, fres * 0.5);
+      kleur = mix(kleur, spiegel, fres * 0.92);
       kleur += ZON_KLEUR * spec * (0.4 + 0.6 * exp(-afstand * 0.05));
+      /* Nevel. Op afstand loopt het water op in de lucht, waardoor de horizon
+         een overgang wordt in plaats van een mesrand. Zonder dit staat er een
+         kaarsrechte scheidslijn tussen zee en lucht en dat is precies wat een
+         echte foto nooit heeft. */
+      float nevel = 1.0 - exp(-afstand * 0.032);
+      kleur = mix(kleur, luchtKleur(vec3(D.x, 0.015, D.z)), nevel * 0.85);
     }
   } else {
     /* ══ ONDER WATER ══ */
     float diepte = -uCamY;
 
-    if (D.y > 0.004) {
+    /* De diepte onder je: altijd uitrekenen, ook als de straal omhoog gaat.
+       Hij is namelijk nodig om de horizon in te blenden. Stond dat in een
+       else-tak, dan botsten de twee takken pal op de horizonlijn tegen elkaar
+       en trok er een zichtbare streep dwars door het beeld. */
+    float val = clamp(-D.y * 2.2, 0.0, 1.0);
+    vec3 diepKleur = mix(DIEP, AFGROND, val);
+
+    if (D.y > 0.0004) {
       /* de straal gaat omhoog en raakt het oppervlak van onderaf */
-      float afstand = diepte / D.y;
+      float afstand = diepte / max(D.y, 0.0004);
       vec2 P = vec2(D.x * afstand, D.z * afstand);
       float e = 0.05;
       float h0 = golfhoogte(P * 0.7, t);
@@ -311,10 +330,10 @@ void main() {
          0.13 en dat vrat vrijwel het hele beeld op — klopt natuurkundig maar
          levert een zwarte brij. 0.075 houdt de diepte zichtbaar. */
       kleur = mix(kleur, DIEP, clamp(1.0 - exp(-afstand * 0.075), 0.0, 1.0));
+      /* en vlak bij de horizon vloeit hij over in de diepte eronder */
+      kleur = mix(diepKleur, kleur, smoothstep(0.0, 0.055, D.y));
     } else {
-      /* de straal gaat naar beneden: alleen nog diepte */
-      float val = clamp(-D.y * 2.2, 0.0, 1.0);
-      kleur = mix(DIEP, AFGROND, val);
+      kleur = diepKleur;
     }
 
     /* Verstrooiing: water gloeit zelf, want elk deeltje erin kaatst licht van
@@ -371,11 +390,11 @@ void main() {
   kleur = mix(kleur, AFGROND, uKalm * 0.62);
 
   /* filmkorrel: het laatste zetje van render naar opname */
-  float korrel = (hash(gl_FragCoord.xy + fract(t) * 91.7) - 0.5) * 0.030;
+  float korrel = (hash(gl_FragCoord.xy + fract(t) * 91.7) - 0.5) * 0.020;
   kleur += korrel;
 
   /* vignet */
-  float vig = 1.0 - 0.30 * dot(uv, uv);
+  float vig = 1.0 - 0.14 * dot(uv, uv);
   kleur *= vig;
 
   gl_FragColor = vec4(kleur, 1.0);
@@ -441,6 +460,8 @@ export function WereldWater() {
   const beatRefs = useRef<Array<HTMLDivElement | null>>([]);
   const slotRef = useRef<HTMLDivElement>(null);
   const oeverRef = useRef<HTMLDivElement>(null);
+  const randBovenRef = useRef<HTMLDivElement>(null);
+  const scrimRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const canvas = doek.current;
@@ -543,8 +564,8 @@ export function WereldWater() {
            water is licht, dus een onbelicht woord verdwijnt niet in het zwart
            — het wordt juist een donkere schim. Dat is ook fysiek kloppend:
            zonder licht erop zie je alleen een silhouet. */
-        const dekking = Math.max(0, Math.min(1, 0.28 + licht * 1.4));
-        const wazig = (1 - Math.min(1, licht * 1.5)) * 4.5 + 0.4;
+        const dekking = Math.max(0, Math.min(1, licht * 1.75 - 0.06));
+        const wazig = (1 - Math.min(1, licht * 1.9)) * 2.2 + 0.15;
 
         /* schaal volgt het perspectief */
         const schaal = Math.max(0.34, 5.0 / pos.afstand);
@@ -608,6 +629,11 @@ export function WereldWater() {
       );
       zet(slotRef.current, f.slot);
       if (oeverRef.current) oeverRef.current.style.opacity = String(f.oever);
+      /* het papier boven het water hoort weg zodra je eronder zit */
+      if (randBovenRef.current)
+        randBovenRef.current.style.opacity = String(Math.max(0, 1 - f.duik * 1.35));
+      /* de leesbaarheidsschaduw hoort alleen onder water te bestaan */
+      if (scrimRef.current) scrimRef.current.style.opacity = String(f.duik);
     };
 
     let raf = 0;
@@ -666,6 +692,20 @@ export function WereldWater() {
       <div className="sticky top-0 h-screen overflow-hidden">
         <canvas ref={doek} className="absolute inset-0 h-full w-full" aria-hidden />
 
+        {/* De overgang aan de bovenkant. De sectie begon met een kaarsrechte
+           lijn waar het crème papier ophield en het doek begon. Deze band laat
+           het papier van de pagina in de lucht overlopen, en verdwijnt zodra
+           je onder water bent — daar hoort geen papier meer boven te zitten. */}
+        <div
+          ref={randBovenRef}
+          className="pointer-events-none absolute inset-x-0 top-0 h-[26vh]"
+          style={{
+            background:
+              "linear-gradient(to bottom, #fcfbf7 0%, rgba(252,251,247,0.86) 34%, rgba(252,251,247,0) 100%)",
+          }}
+          aria-hidden
+        />
+
         {/* het stof in het water */}
         <div className="pointer-events-none absolute inset-0" aria-hidden>
           {DEELTJES.map((_, i) => (
@@ -703,14 +743,21 @@ export function WereldWater() {
            moois ziet maar niet weet wat het betekent. Alles staat op dezelfde
            plek: het is één stem die doorpraat, geen losse blokjes. */}
         <div className="pointer-events-none absolute inset-0">
-          {/* Een zachte schaduw aan de linkerkant. Het water is levend en soms
+          {/* Een zachte schaduw achter de tekst. Het water is levend en soms
              fel — zonder dit hangt de leesbaarheid van de kop af van waar de
-             lichtbundel toevallig staat, en dat is geen ontwerp maar geluk. */}
+             lichtbundel toevallig staat, en dat is geen ontwerp maar geluk.
+
+             Het was eerst een verloop over de volle hoogte, en dat was precies
+             de dader van de lelijke bovenrand: hij maakte de linkerbovenhoek
+             donker terwijl daarboven het crème papier ligt. Nu is het een
+             ovaal dat aan alle kanten uitdooft, en hij komt pas op als je
+             onder water bent — boven water is er niets om tegen te beschermen. */}
           <div
-            className="absolute inset-y-0 left-0 w-full sm:w-3/5"
+            ref={scrimRef}
+            className="absolute inset-0 opacity-0"
             style={{
               background:
-                "linear-gradient(to right, rgba(2,20,16,0.72) 0%, rgba(2,20,16,0.5) 38%, rgba(2,20,16,0) 100%)",
+                "radial-gradient(58% 52% at 24% 50%, rgba(2,20,16,0.78) 0%, rgba(2,20,16,0.42) 48%, rgba(2,20,16,0) 78%)",
             }}
             aria-hidden
           />
@@ -757,7 +804,17 @@ export function WereldWater() {
         </div>
 
         {/* de oever: de overgang terug naar het lichte mintveld eronder */}
+        {/* En de overgang terug. De golf alleen zette een harde rand tegen het
+           donkere water; deze band laat het water er eerst naartoe oplopen,
+           zodat je uit het donker omhoog komt in plaats van dat het afgeknipt
+           wordt. */}
         <div ref={oeverRef} className="pointer-events-none absolute inset-0 opacity-0" aria-hidden>
+          <div
+            className="absolute inset-x-0 bottom-0 h-[42vh]"
+            style={{
+              background: `linear-gradient(to bottom, rgba(236,246,240,0) 0%, rgba(236,246,240,0.34) 46%, ${MINT_LICHT} 88%)`,
+            }}
+          />
           <Golf kleur={MINT_LICHT} vorm="rust" hoogte="h-[70px] sm:h-[110px]" />
         </div>
       </div>
