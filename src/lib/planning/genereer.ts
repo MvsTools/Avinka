@@ -10,6 +10,10 @@
 //    middag.
 //  - Pauzes (en al geplaatste vaste blokken) blijven staan; geen overlap; maximaal
 //    één keer hetzelfde vak per dag.
+//  - Wat de leerkracht zelf met een slotje heeft vastgezet ("altijd om 9 uur
+//    rekenen") zit in `vaste` en blijft dus staan. Zo'n vastgezette les telt mee
+//    voor het aantal keer per week: staat rekenen 4× in je instellingen en heb je
+//    er één vastgezet, dan verdelen we er nog drie.
 //  - Binnen gelijke prioriteit en bij de dagkeuze schudden we, zodat elke keer
 //    "opnieuw genereren" een andere — maar nog steeds nette — variant geeft.
 
@@ -37,6 +41,10 @@ type Vak = {
   middag: boolean;
 };
 
+/**
+ * @param vaste Alles wat blijft staan: pauzes, vaste blokken, én de lessen die de
+ *   leerkracht zelf met een slotje heeft vastgezet.
+ */
 export function genereerLessen(setup: RoosterSetup, vaste: RoosterBlokRuw[]): RoosterBlokRuw[] {
   const dagen = husselen((setup.dagen ?? DAGEN).filter((d) => DAGEN.includes(d)));
   const begin = setup.begin ?? 8 * 60 + 30;
@@ -109,7 +117,11 @@ export function genereerLessen(setup: RoosterSetup, vaste: RoosterBlokRuw[]): Ro
   for (const v of gesorteerd) {
     const deel: "ochtend" | "middag" | null =
       v.ochtend || v.zwaar || (isLezen(v) && v.count >= 4) ? "ochtend" : v.middag ? "middag" : null;
-    let rest = v.count;
+    // Een vastgezette les van dit vak staat er al: die telt mee, dus daar hoeven
+    // we er eentje minder van te verdelen. Staan er meer vastgezet dan je er per
+    // week wilde, dan komt er niets bij (nooit een negatief aantal).
+    const alVast = vaste.filter((b) => b.type === "les" && b.vak === v.vak).length;
+    let rest = Math.max(0, v.count - alVast);
 
     // 1) Zoek één vaste tijd waar dit vak op zo veel mogelijk dagen past. Zo komt
     //    het elke dag op dezelfde tijd (herkenbare structuur). De vroegste tijd

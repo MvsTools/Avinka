@@ -25,6 +25,9 @@ export type RoosterBlokRuw = {
   type?: string;
   /** Eigen aantekening bij dit blok, door de leerkracht zelf getypt. */
   omschrijving?: string;
+  /** Het slotje: dit blok staat vast op zijn tijd. Niet gezet = de standaard van
+   *  `staatVast` (pauzes vast, de rest los). */
+  opSlot?: boolean;
 };
 
 export type RoosterSetup = {
@@ -123,6 +126,82 @@ export function kleurVoor(vak: string, setup: RoosterSetup): Kleur {
   return VAK_KLEUR_STANDAARD;
 }
 
+/**
+ * Staat dit blok vast op zijn tijd? Dat is het slotje uit de bewerkstand, en het
+ * betekent overal hetzelfde: dit blok schuift niet, het ruilt niet van plek, en
+ * het blijft staan als je de lessen opnieuw verdeelt. Wat je erop loslaat komt
+ * ernaast te staan.
+ *
+ * Pauzes staan standaard vast: dat zijn de ankers van de schooldag, en zo hoeft
+ * niemand ze eerst zelf vast te zetten. Haal je er zelf het slotje af, dan is dat
+ * expliciet `opSlot: false` en wint jouw keuze.
+ */
+export function staatVast(blok: { vak: string; opSlot?: boolean }): boolean {
+  return blok.opSlot ?? blok.vak === "pauze";
+}
+
+/** Een blok zoals de ruil-rekensom het nodig heeft: welke dag, van wanneer, hoe lang. */
+export type RuilBlok = { id: string; weekdag: number; start: number; duur: number };
+/** Waar een blok na de ruil terechtkomt. */
+export type RuilPlek = { weekdag: number; start: number; duur: number };
+
+/**
+ * Hoeveel minuten er vanaf `start` aaneengesloten vrij zijn op die dag. Volgt er
+ * niets meer, dan is er ruimte tot het eind van de dag: het raster groeit vanzelf
+ * mee met je blokken.
+ */
+function ruimteVanaf(blokken: RuilBlok[], weekdag: number, start: number): number {
+  let eind = Infinity;
+  for (const b of blokken) {
+    if (b.weekdag !== weekdag) continue;
+    if (b.start >= start) eind = Math.min(eind, b.start);
+    // Een blok dat al lóópt op dit tijdstip (kan bij twee lessen naast elkaar):
+    // dan is hier niets vrij.
+    else if (b.start + b.duur > start) return 0;
+  }
+  return eind === Infinity ? 24 * 60 - start : eind - start;
+}
+
+/**
+ * Twee blokken van moment wisselen. De regel in één zin: ieder houdt zijn eigen
+ * lengte, en past een blok niet in zijn nieuwe plek, dan wordt alleen dát blok
+ * korter. De rest van de dag blijft precies staan — nooit doorschuiven, want dan
+ * verzet één sleepactie ineens je hele middag.
+ *
+ * Is een blok korter dan de plek waar het heen gaat, dan blijft er gewoon wat
+ * ruimte over. Die zie je staan en kun je zelf oprekken.
+ *
+ * `null` = ruilen kan hier niet (te weinig ruimte voor een blok van 10 minuten).
+ */
+export function berekenRuil(
+  blokken: RuilBlok[],
+  aId: string,
+  bId: string,
+): { a: RuilPlek; b: RuilPlek } | null {
+  if (aId === bId) return null;
+  const a = blokken.find((x) => x.id === aId);
+  const b = blokken.find((x) => x.id === bId);
+  if (!a || !b) return null;
+  // De twee ruilers zelf staan de ruil niet in de weg, want ze gaan allebei weg.
+  // Maar hun nieuwe begintijd is wél een grens: staan ze op dezelfde dag, dan mag
+  // het ene blok niet over de nieuwe plek van het andere heen groeien. Daarom
+  // zetten we op de plek die vrijkomt een streepje (lengte 0) neer.
+  const anderen = blokken.filter((x) => x.id !== aId && x.id !== bId);
+  const grens = (x: RuilBlok): RuilBlok => ({
+    id: "grens",
+    weekdag: x.weekdag,
+    start: x.start,
+    duur: 0,
+  });
+  const aDuur = Math.min(a.duur, ruimteVanaf([...anderen, grens(a)], b.weekdag, b.start));
+  const bDuur = Math.min(b.duur, ruimteVanaf([...anderen, grens(b)], a.weekdag, a.start));
+  if (aDuur < 10 || bDuur < 10) return null;
+  return {
+    a: { weekdag: b.weekdag, start: b.start, duur: aDuur },
+    b: { weekdag: a.weekdag, start: a.start, duur: bDuur },
+  };
+}
+
 /** "ma" → 0, "vr" → 4. Geeft -1 voor iets wat we niet kennen. */
 export function dagNummer(dag: string): number {
   return DAGEN.indexOf(String(dag).toLowerCase().slice(0, 2));
@@ -161,6 +240,7 @@ export function naarBlokken(rooster: Basisrooster | null): Roosterblok[] {
       naam: b.naam,
       kleur: kleurVoor(b.vak, rooster.setup),
       omschrijving: typeof b.omschrijving === "string" ? b.omschrijving : undefined,
+      opSlot: staatVast(b),
       soort: b.type === "taak" ? ("taak" as const) : ("les" as const),
     }))
     .sort((a, b) => a.weekdag - b.weekdag || a.begin.localeCompare(b.begin));

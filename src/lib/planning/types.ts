@@ -79,6 +79,9 @@ export type Roosterblok = {
   /** Eigen aantekening bij dit blok ("Jeugdjournaal kijken"). Vrije tekst van de
    *  leerkracht zelf, dus nooit leerlingnamen — dat blijft de afspraak. */
   omschrijving?: string;
+  /** Staat dit blok vast op zijn tijd (het slotje)? Al uitgerekend, inclusief de
+   *  pauzes die standaard vaststaan. Zie `staatVast` in rooster.ts. */
+  opSlot?: boolean;
   /** Een les binnen schooltijd, of je eigen tijd erna. */
   soort: "les" | "taak";
 };

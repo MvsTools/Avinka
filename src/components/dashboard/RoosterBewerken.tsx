@@ -8,13 +8,16 @@ import type {
   PointerEvent as ReactPointerEvent,
 } from "react";
 import {
+  berekenRuil,
   kleurVoor,
   naarBlokken,
   randKleur,
   rasterGrenzen,
   schikDag,
+  staatVast,
   type Basisrooster,
   type RoosterSetup,
+  type RuilPlek,
 } from "@/lib/planning/rooster";
 import { genereerLessen } from "@/lib/planning/genereer";
 import type { Roosterblok } from "@/lib/planning/types";
@@ -160,6 +163,32 @@ function tijdTekst(m: number): string {
   return `${String(u).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
 }
 
+/**
+ * Het slotje: dicht = dit blok staat vast op zijn tijd, open = het mag schuiven.
+ * Eén tekening voor het knopje in de balk én de slotjes in de blokken zelf, zodat
+ * je ze meteen bij elkaar plaatst.
+ */
+function SlotIcoon({ dicht, grootte = 14 }: { dicht: boolean; grootte?: number }) {
+  return (
+    <svg
+      width={grootte}
+      height={grootte}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.1"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="4" y="10.5" width="16" height="10.5" rx="2.5" />
+      {/* Bij een open slotje zwaait de beugel opzij; dat verschil zie je ook in
+          een klein blokje nog. */}
+      {dicht ? <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" /> : <path d="M8 10.5V7a4 4 0 0 1 7.8-1.2" />}
+    </svg>
+  );
+}
+
 type Gekozen = { id: string; x: number; y: number; kant: "links" | "rechts" };
 
 export default function RoosterBewerken({
@@ -191,6 +220,13 @@ export default function RoosterBewerken({
     kant: "links" | "rechts";
   } | null>(null);
   const [instellingenOpen, setInstellingenOpen] = useState(false);
+  // De slotstand: zolang die aan staat klik je blokken vast of los, en doe je
+  // verder niets anders. Buiten die stand kun je niet per ongeluk aan een slotje
+  // zitten — daar is het juist voor bedoeld.
+  const [slotstand, setSlotstand] = useState(false);
+  // Het zinnetje dat verschijnt als je aan een vastgezet blok trekt. Zonder die
+  // uitleg lijkt het rooster stuk ("hij doet niks").
+  const [slotHint, setSlotHint] = useState<string | null>(null);
   const [vraagAfsluiten, setVraagAfsluiten] = useState(false);
   // Wat er moet gebeuren zodra de waarschuwing is afgehandeld: naar een andere
   // pagina (onderschepte link), een ander tabblad (guard) of terug naar het
@@ -237,6 +273,30 @@ export default function RoosterBewerken({
     });
   }
 
+  // Het slotje van één blok om- of afzetten (alleen in de slotstand). We schrijven
+  // de keuze altijd voluit weg, ook als hij gelijk is aan de standaard: haal je
+  // het slotje van een pauze, dan staat er `opSlot: false` en blijft dat zo.
+  function wisselSlot(id: string) {
+    pasToe((c) => ({
+      ...c,
+      blokken: c.blokken.map((b) => (b.id === id ? { ...b, opSlot: !staatVast(b) } : b)),
+    }));
+  }
+
+  // Twee blokken van moment wisselen (na het slepen). De plekken zijn al
+  // uitgerekend door berekenRuil; hier zetten we ze in één stap neer, zodat
+  // "ongedaan maken" de hele ruil in één keer terugdraait.
+  function ruilBlokken(aId: string, bId: string, plek: { a: RuilPlek; b: RuilPlek }) {
+    pasToe((c) => ({
+      ...c,
+      blokken: c.blokken.map((b) => {
+        const nieuw = b.id === aId ? plek.a : b.id === bId ? plek.b : null;
+        if (!nieuw) return b;
+        return { ...b, dag: DAG_ID[nieuw.weekdag], start: nieuw.start, duur: nieuw.duur };
+      }),
+    }));
+  }
+
   // De vakkenlijst in de instellingen wijzigen (welke vakken, hoe vaak per week).
   // Eigen vakken die niet in de catalogus staan, blijven onaangeroerd. Via pasToe
   // zodat het ook ongedaan te maken is.
@@ -266,6 +326,14 @@ export default function RoosterBewerken({
       levend = false;
     };
   }, [schooljaar]);
+
+  // Het hint-zinnetje bij een vastgezet blok verdwijnt vanzelf weer: het is een
+  // duwtje in de goede richting, geen melding die je moet wegklikken.
+  useEffect(() => {
+    if (!slotHint) return;
+    const t = setTimeout(() => setSlotHint(null), 6000);
+    return () => clearTimeout(t);
+  }, [slotHint]);
 
   // Waarschuw ook als je de pagina zelf verlaat (verversen/sluiten) met
   // niet-opgeslagen wijzigingen.
@@ -538,9 +606,17 @@ export default function RoosterBewerken({
       const gymGeregeld = (c.setup.vakken ?? []).some(
         (v) => v.id === "gym" && (v.blokken?.length ?? 0) > 0,
       );
-      const vaste = c.blokken.filter((b) => b.type === "vast" && !(gymGeregeld && b.vak === "gym"));
+      // Alles wat blijft staan: de vaste blokken én elke les met een slotje. Een
+      // slotje wint altijd, ook bij gym: heb je één gymles zelf vastgezet op
+      // dinsdagochtend, dan blijft die staan terwijl de rest opnieuw verdeeld
+      // wordt.
+      const blijft = c.blokken.filter(
+        (b) =>
+          b.type !== "taak" &&
+          (staatVast(b) || (b.type === "vast" && !(gymGeregeld && b.vak === "gym"))),
+      );
       const taken = c.blokken.filter((b) => b.type === "taak");
-      return { ...c, blokken: [...vaste, ...taken, ...genereerLessen(c.setup, vaste)] };
+      return { ...c, blokken: [...blijft, ...taken, ...genereerLessen(c.setup, blijft)] };
     });
   }
 
@@ -650,7 +726,10 @@ export default function RoosterBewerken({
               </svg>
             </button>
             <button
-              onClick={() => setInstellingenOpen(true)}
+              onClick={() => {
+                setSlotstand(false);
+                setInstellingenOpen(true);
+              }}
               title="Vakken en instellingen"
               aria-label="Instellingen"
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-black/10 bg-white text-ink/60 transition-transform duration-150 hover:text-ink active:scale-[0.96]"
@@ -659,6 +738,28 @@ export default function RoosterBewerken({
                 <circle cx="12" cy="12" r="3" />
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
               </svg>
+            </button>
+            {/* De slotstand. Zolang die aan staat klik je blokken vast of los;
+                daarbuiten kun je er niet aan zitten. Zo kan één sleepactie nooit
+                per ongeluk je pauzes of je vaste gymuur verzetten. */}
+            <button
+              onClick={() => {
+                setGekozen(null);
+                setToevoegen(null);
+                setSlotHint(null);
+                setSlotstand((s) => !s);
+              }}
+              title="Blokken vastzetten op hun tijd"
+              aria-label="Blokken vastzetten"
+              aria-pressed={slotstand}
+              className={
+                "flex h-9 w-9 items-center justify-center rounded-xl border transition-transform duration-150 active:scale-[0.96] " +
+                (slotstand
+                  ? "border-brand-dark bg-brand-dark text-white"
+                  : "border-black/10 bg-white text-ink/60 hover:text-ink")
+              }
+            >
+              <SlotIcoon dicht={slotstand} grootte={17} />
             </button>
           </span>
 
@@ -692,6 +793,28 @@ export default function RoosterBewerken({
             </button>
           </span>
         </div>
+
+        {/* Uitleg bij de slotstand, en daarbuiten het zinnetje dat verschijnt als
+            je aan een vastgezet blok trekt. */}
+        {slotstand ? (
+          <p className="flex items-start gap-2 text-sm leading-6 text-brand-dark">
+            <span className="mt-1 shrink-0">
+              <SlotIcoon dicht grootte={15} />
+            </span>
+            <span>
+              Klik een blok aan om het vast te zetten of weer los te maken. Een vastgezet blok
+              schuift niet, ruilt niet en blijft staan als je opnieuw verdeelt. Klaar? Klik nog
+              eens op het slotje.
+            </span>
+          </p>
+        ) : slotHint ? (
+          <p className="flex items-start gap-2 text-sm leading-6 text-ink/70">
+            <span className="mt-1 shrink-0 text-ink/45">
+              <SlotIcoon dicht grootte={15} />
+            </span>
+            <span>{slotHint}</span>
+          </p>
+        ) : null}
       </div>
 
       {fout && (
@@ -712,6 +835,14 @@ export default function RoosterBewerken({
           gekozenId={gekozen?.id ?? null}
           kies={kies}
           zetBlok={zetBlok}
+          slotstand={slotstand}
+          wisselSlot={wisselSlot}
+          ruil={ruilBlokken}
+          meldVast={(naam) =>
+            setSlotHint(
+              `${naam} staat vast op deze tijd. Klik op het slotje bovenin om het los te maken.`,
+            )
+          }
           kopieerDag={kopieerDag}
           nieuwOp={(weekdag, start, duur, x, y, kant) => {
             setGekozen(null);
@@ -1434,6 +1565,15 @@ function Blokkaart({
           }}
         />
         <span className="min-w-0 flex-1 truncate text-sm font-bold text-ink">{blok.naam}</span>
+        {/* Staat dit blok vast, dan zie je hier waarom het niet meesleept. */}
+        {blok.opSlot && (
+          <span
+            className="shrink-0 text-ink/45"
+            title="Dit blok staat vast op zijn tijd. Los te maken via het slotje bovenin."
+          >
+            <SlotIcoon dicht grootte={13} />
+          </span>
+        )}
         <span className="shrink-0 text-sm tabular-nums text-ink/55">{duur} min</span>
         <button
           onClick={sluit}
@@ -1560,10 +1700,26 @@ type Sleep = {
   duur: number;
   dx: number;
   dy: number;
+  /** Wordt dit slepen een ruil? Dan hangt hier het blok waarmee je wisselt. */
+  ruil?: {
+    id: string;
+    naam: string;
+    /** De lengte die het gesleepte blok zelf had; verschilt die van `duur`, dan
+     *  wordt het blok korter gemaakt omdat het anders niet past. */
+    eigenDuur: number;
+    plek: { a: RuilPlek; b: RuilPlek };
+  };
+  /** Het blok waar je overheen zweeft dat vaststaat: dan komt het ernaast. */
+  naast?: string;
+  /** Waar de muis staat, voor het hintje naast de cursor. */
+  px: number;
+  py: number;
 };
 type Drag = {
   id: string;
-  modus: "verplaats" | "top" | "onder";
+  naam: string;
+  /** "vast" = dit blok heeft een slotje en verschuift dus niet. */
+  modus: "verplaats" | "top" | "onder" | "vast";
   startX: number;
   startY: number;
   origStart: number;
@@ -1578,6 +1734,10 @@ function Bewerkraster({
   gekozenId,
   kies,
   zetBlok,
+  slotstand,
+  wisselSlot,
+  ruil,
+  meldVast,
   kopieerDag,
   nieuwOp,
   voorbeeld,
@@ -1586,6 +1746,12 @@ function Bewerkraster({
   gekozenId: string | null;
   kies: (id: string, el: HTMLElement) => void;
   zetBlok: (id: string, w: { weekdag?: number; start?: number; duur?: number }) => void;
+  /** In de slotstand klik je alleen slotjes aan en uit; verder doet het raster niets. */
+  slotstand: boolean;
+  wisselSlot: (id: string) => void;
+  ruil: (aId: string, bId: string, plek: { a: RuilPlek; b: RuilPlek }) => void;
+  /** Melden dat je aan een vastgezet blok trekt, zodat het niet stuk lijkt. */
+  meldVast: (naam: string) => void;
   kopieerDag: (bron: number, doelen: number[]) => void;
   nieuwOp: (
     weekdag: number,
@@ -1613,6 +1779,19 @@ function Bewerkraster({
   if (rasterBegin % 60 !== 0) ankers.push(rasterBegin);
   if (rasterTot % 60 !== 0) ankers.push(rasterTot);
   const tijdstippen = [...uren, ...ankers].sort((a, b) => a - b);
+
+  // Dezelfde blokken in de vorm waarin de ruil-rekensom ze wil: dag, begintijd en
+  // lengte in minuten.
+  const ruilLijst = useMemo(
+    () =>
+      lessen.map((b) => ({
+        id: b.id,
+        weekdag: b.weekdag,
+        start: minuten(b.begin),
+        duur: minuten(b.eind) - minuten(b.begin),
+      })),
+    [lessen],
+  );
 
   // Slepen: verplaatsen (naar een andere dag/tijd) of aan de boven-/onderrand
   // trekken (korter/langer). We snappen op 5 minuten en houden de live-stand in
@@ -1664,6 +1843,11 @@ function Bewerkraster({
     if (e.button > 0) return;
     e.preventDefault();
     setHover(null);
+    // In de slotstand doe je maar één ding: een blok vastzetten of losmaken.
+    if (slotstand) {
+      wisselSlot(b.id);
+      return;
+    }
     const el = e.currentTarget as HTMLElement;
     const rect = el.getBoundingClientRect();
     const offsetY = e.clientY - rect.top;
@@ -1672,10 +1856,14 @@ function Bewerkraster({
       if (offsetY <= RAND) modus = "top";
       else if (offsetY >= rect.height - RAND) modus = "onder";
     }
+    // Een vastgezet blok schuift niet en wordt ook niet langer of korter. We
+    // volgen de muis wel, zodat we kunnen uitleggen waarom er niets gebeurt.
+    if (b.opSlot) modus = "vast";
     const origStart = minuten(b.begin);
     const origDuur = minuten(b.eind) - minuten(b.begin);
     dragRef.current = {
       id: b.id,
+      naam: b.naam,
       modus,
       startX: e.clientX,
       startY: e.clientY,
@@ -1685,18 +1873,52 @@ function Bewerkraster({
       origWeekdag: b.weekdag,
       bewogen: false,
     };
-    el.style.cursor = modus === "verplaats" ? "grabbing" : "ns-resize";
+    el.style.cursor =
+      modus === "vast" ? "not-allowed" : modus === "verplaats" ? "grabbing" : "ns-resize";
     try {
       el.setPointerCapture(e.pointerId);
     } catch {}
+  }
+
+  /**
+   * Het blok waar de muis boven hangt, in die dagkolom. Dat is de kandidaat om
+   * mee te ruilen. Staan er twee lessen naast elkaar, dan kiezen we die van de
+   * kolom waar je muis echt boven staat.
+   */
+  function blokOnderMuis(weekdag: number, clientX: number, clientY: number, eigenId: string) {
+    const rect = gridRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+    const t = tijdBijMuis(clientY, rect);
+    const dagBlokken = lessen.filter((b) => b.weekdag === weekdag);
+    const raak = dagBlokken.filter(
+      (b) => b.id !== eigenId && minuten(b.begin) <= t && t < minuten(b.eind),
+    );
+    if (raak.length <= 1) return raak[0] ?? null;
+    const k = kolommen();
+    const schik = schikDag(dagBlokken);
+    const links = k.linkerkant + weekdag * k.breedte;
+    return (
+      raak.find((b) => {
+        const s = schik.get(b.id);
+        if (!s) return false;
+        const kolBreedte = k.breedte / s.n;
+        const van = links + s.kol * kolBreedte;
+        return clientX >= van && clientX < van + kolBreedte;
+      }) ?? raak[0]
+    );
   }
 
   function beweeg(e: ReactPointerEvent) {
     const d = dragRef.current;
     if (!d) {
       // Niet aan het slepen: het handje wordt een sleeppijltje op de randen,
-      // zodat je ziet waar je kunt trekken om korter/langer te maken.
+      // zodat je ziet waar je kunt trekken om korter/langer te maken. In de
+      // slotstand sleep je niets, dus dan ook geen pijltje.
       const el = e.currentTarget as HTMLElement;
+      if (slotstand) {
+        el.style.cursor = "";
+        return;
+      }
       const rect = el.getBoundingClientRect();
       const offsetY = e.clientY - rect.top;
       const opRand = rect.height >= 24 && (offsetY <= RAND || offsetY >= rect.height - RAND);
@@ -1707,11 +1929,37 @@ function Bewerkraster({
     const dy = e.clientY - d.startY;
     if (!d.bewogen && Math.abs(dx) + Math.abs(dy) > 4) d.bewogen = true;
     if (!d.bewogen) return;
+    // Trek je aan een vastgezet blok, dan vertellen we waarom het blijft staan.
+    if (d.modus === "vast") {
+      meldVast(d.naam);
+      return;
+    }
     const dyMin = snap5(dy / PX);
     if (d.modus === "verplaats") {
       const k = kolommen();
       let dag = k.breedte ? Math.floor((e.clientX - k.linkerkant) / k.breedte) : d.origWeekdag;
       dag = Math.max(0, Math.min(4, dag));
+      // Hangt de muis boven een ander blok, dan wordt dit een ruil: de twee
+      // wisselen van moment. Het gesleepte blok klikt vast op de begintijd van
+      // de ander, zodat je precies ziet wat er gaat gebeuren. Een blok met een
+      // slotje ruilt niet mee; daar kom je gewoon naast te staan.
+      const onder = blokOnderMuis(dag, e.clientX, e.clientY, d.id);
+      const plek = onder && !onder.opSlot ? berekenRuil(ruilLijst, d.id, onder.id) : null;
+      if (onder && plek) {
+        setSleep({
+          id: d.id,
+          modus: "verplaats",
+          weekdag: plek.a.weekdag,
+          start: plek.a.start,
+          duur: plek.a.duur,
+          dx: (plek.a.weekdag - d.origWeekdag) * k.breedte,
+          dy: (plek.a.start - d.origStart) * PX,
+          ruil: { id: onder.id, naam: onder.naam, eigenDuur: d.origDuur, plek },
+          px: e.clientX,
+          py: e.clientY,
+        });
+        return;
+      }
       const start = Math.max(0, d.origStart + dyMin);
       setSleep({
         id: d.id,
@@ -1721,13 +1969,36 @@ function Bewerkraster({
         duur: d.origDuur,
         dx: (dag - d.origWeekdag) * k.breedte,
         dy: (start - d.origStart) * PX,
+        naast: onder?.opSlot ? onder.naam : undefined,
+        px: e.clientX,
+        py: e.clientY,
       });
     } else if (d.modus === "top") {
       const start = Math.min(d.origEind - 10, Math.max(0, d.origStart + dyMin));
-      setSleep({ id: d.id, modus: "top", weekdag: d.origWeekdag, start, duur: d.origEind - start, dx: 0, dy: 0 });
+      setSleep({
+        id: d.id,
+        modus: "top",
+        weekdag: d.origWeekdag,
+        start,
+        duur: d.origEind - start,
+        dx: 0,
+        dy: 0,
+        px: e.clientX,
+        py: e.clientY,
+      });
     } else {
       const duur = Math.max(10, Math.min(180, d.origDuur + dyMin));
-      setSleep({ id: d.id, modus: "onder", weekdag: d.origWeekdag, start: d.origStart, duur, dx: 0, dy: 0 });
+      setSleep({
+        id: d.id,
+        modus: "onder",
+        weekdag: d.origWeekdag,
+        start: d.origStart,
+        duur,
+        dx: 0,
+        dy: 0,
+        px: e.clientX,
+        py: e.clientY,
+      });
     }
   }
 
@@ -1742,13 +2013,20 @@ function Bewerkraster({
     if (!d) return;
     const s = sleepRef.current;
     setSleep(null);
+    // Een vastgezet blok verschuift niet. Klikte je alleen even, dan gaat het
+    // kaartje wel gewoon open: je kunt er nog van alles aan wijzigen.
+    if (d.modus === "vast") {
+      if (!d.bewogen) kies(b.id, e.currentTarget as HTMLElement);
+      return;
+    }
     // Niet echt gesleept? Dan telt het als een klik: open het kaartje.
     if (!d.bewogen || !s) {
       kies(b.id, e.currentTarget as HTMLElement);
       return;
     }
     sleepEinde.current = performance.now();
-    zetBlok(s.id, { weekdag: s.weekdag, start: s.start, duur: s.duur });
+    if (s.ruil) ruil(s.id, s.ruil.id, s.ruil.plek);
+    else zetBlok(s.id, { weekdag: s.weekdag, start: s.start, duur: s.duur });
   }
 
   // De ruwe (ongesnapte) tijd bij een verticale muispositie; het snappen gebeurt
@@ -1785,7 +2063,7 @@ function Bewerkraster({
 
   // Muis over de lege ruimte: alvast een plek tonen onder de cursor.
   function beweegLeeg(e: ReactMouseEvent, weekdag: number) {
-    if (dragRef.current) return;
+    if (dragRef.current || slotstand) return;
     if (e.target !== e.currentTarget) {
       setHover(null);
       return;
@@ -1803,6 +2081,7 @@ function Bewerkraster({
 
   // Klik op een lege plek in een dagkolom → een nieuw vak toevoegen op die tijd.
   function klikLeeg(e: ReactMouseEvent, weekdag: number) {
+    if (slotstand) return; // in de slotstand voeg je niets toe, je klikt alleen slotjes
     if (e.target !== e.currentTarget) return; // alleen de lege achtergrond, geen blok
     if (performance.now() - sleepEinde.current < 250) return; // net gesleept: geen toevoeg
     const T = tijdBijMuis(e.clientY, (e.currentTarget as HTMLElement).getBoundingClientRect());
@@ -1885,6 +2164,15 @@ function Bewerkraster({
             // Het voorbeeld precies zo hoog als de vrije ruimte (geen minimum van
             // 17), anders zou het bij een korte gap over de les eronder vallen.
             const spookH = spook ? Math.max(6, spook.duur * PX - 2) : 0;
+            // Ruil je met een blok uit deze kolom, dan tekenen we alvast waar dat
+            // blok terechtkomt: op de plek die het gesleepte blok achterlaat.
+            const ruilSpook =
+              sleep?.ruil && sleep.ruil.plek.b.weekdag === weekdag
+                ? {
+                    plek: sleep.ruil.plek.b,
+                    blok: lessen.find((x) => x.id === sleep.ruil?.id) ?? null,
+                  }
+                : null;
             return (
               <div
                 key={weekdag}
@@ -1926,7 +2214,10 @@ function Bewerkraster({
                   const s = sleep && sleep.id === b.id ? sleep : null;
                   const herschaal = s !== null && s.modus !== "verplaats";
                   const startMin = herschaal ? s.start : minuten(b.begin);
-                  const duurMin = herschaal ? s.duur : minuten(b.eind) - minuten(b.begin);
+                  // De lengte komt altijd uit de sleep-stand: bij een ruil die niet
+                  // helemaal past, krimpt het blok al tijdens het slepen mee, zodat
+                  // je vóór het loslaten ziet wat je krijgt.
+                  const duurMin = s ? s.duur : minuten(b.eind) - minuten(b.begin);
                   const top = (startMin - rasterBegin) * PX + BOVEN;
                   // Echte hoogte (geen minimum van 17), anders steekt een kort blok
                   // over zijn buuronder heen. Tekst die niet past, wordt afgekapt.
@@ -1959,15 +2250,34 @@ function Bewerkraster({
                     stijl.boxShadow = "0 10px 24px rgba(0,0,0,0.18)";
                     if (s.modus === "verplaats") stijl.transform = `translate(${s.dx}px, ${s.dy}px)`;
                   }
+                  // Dit blok gaat ruilen met het blok dat je sleept: laat het
+                  // vervagen, want het is onderweg naar de andere plek.
+                  const gaatRuilen = sleep?.ruil?.id === b.id;
+                  if (gaatRuilen) stijl.opacity = 0.3;
+                  // Het slotje: in de slotstand op elk blok (open of dicht, want
+                  // dan ben je ze aan het zetten), daarbuiten alleen op de blokken
+                  // die echt vaststaan.
+                  const slotTonen = slotstand || b.opSlot;
                   return (
                     <button
                       key={b.id}
                       onPointerDown={(e) => omlaag(e, b)}
                       onPointerMove={beweeg}
                       onPointerUp={(e) => omhoog(e, b)}
-                      title={`${b.naam} ${b.begin}–${b.eind}`}
+                      title={
+                        slotstand
+                          ? b.opSlot
+                            ? `${b.naam} staat vast. Klik om los te maken.`
+                            : `${b.naam} vastzetten op deze tijd`
+                          : `${b.naam} ${b.begin}–${b.eind}`
+                      }
                       className={
-                        "group absolute cursor-grab touch-none select-none overflow-hidden rounded-lg border px-1.5 py-0 text-left transition-shadow active:cursor-grabbing " +
+                        "group absolute touch-none select-none overflow-hidden rounded-lg border px-1.5 py-0 text-left transition-shadow " +
+                        (slotstand
+                          ? "cursor-pointer "
+                          : b.opSlot
+                            ? "cursor-default "
+                            : "cursor-grab active:cursor-grabbing ") +
                         (gestapeld ? "flex flex-col " : "flex items-baseline gap-1.5 ") +
                         (actief
                           ? "border-brand-dark ring-2 ring-brand-dark/40"
@@ -1975,14 +2285,28 @@ function Bewerkraster({
                       }
                       style={stijl}
                     >
+                      {/* Slotje en naam vormen samen één groepje, zodat de tijd
+                          ernaast blijft staan en er nooit iets overheen valt. */}
                       <span
                         className={
-                          "truncate text-xs font-bold leading-tight " +
-                          (tijdTonen && !smal ? "min-w-0 flex-1" : "")
+                          "flex min-w-0 items-center gap-1 " +
+                          (tijdTonen && !smal ? "flex-1" : "")
                         }
-                        style={{ color: b.kleur?.tekst }}
                       >
-                        {b.naam}
+                        {slotTonen && (
+                          <span
+                            className={"shrink-0 " + (b.opSlot ? "opacity-75" : "opacity-30")}
+                            style={{ color: b.kleur?.tekst }}
+                          >
+                            <SlotIcoon dicht={Boolean(b.opSlot)} grootte={12} />
+                          </span>
+                        )}
+                        <span
+                          className="truncate text-xs font-bold leading-tight"
+                          style={{ color: b.kleur?.tekst }}
+                        >
+                          {b.naam}
+                        </span>
                       </span>
                       {tijdTonen && (
                         <span
@@ -1995,8 +2319,10 @@ function Bewerkraster({
                           {toonBegin}
                         </span>
                       )}
-                      {/* Sleepgrepen boven en onder (bij hover) om te verlengen. */}
-                      {h >= 24 && (
+                      {/* Sleepgrepen boven en onder (bij hover) om te verlengen.
+                          Een vastgezet blok rek je niet uit, dus dan ook geen
+                          grepen. */}
+                      {h >= 24 && !b.opSlot && !slotstand && (
                         <>
                           <span className="pointer-events-none absolute left-1/2 top-0.5 h-1 w-6 -translate-x-1/2 rounded-full bg-black/20 opacity-0 transition-opacity group-hover:opacity-100" />
                           <span className="pointer-events-none absolute bottom-0.5 left-1/2 h-1 w-6 -translate-x-1/2 rounded-full bg-black/20 opacity-0 transition-opacity group-hover:opacity-100" />
@@ -2027,6 +2353,34 @@ function Bewerkraster({
                     </span>
                   </div>
                 )}
+
+                {/* Waar het blok terechtkomt waarmee je ruilt: in de eigen kleur,
+                    met een streepjesrand omdat het nog niet vastligt. Zo zie je de
+                    hele ruil vóór je loslaat. */}
+                {ruilSpook && (
+                  <div
+                    className="pointer-events-none absolute left-1 right-1 z-40 flex items-baseline gap-1.5 overflow-hidden rounded-lg border-2 border-dashed px-1.5"
+                    style={{
+                      top: (ruilSpook.plek.start - rasterBegin) * PX + BOVEN,
+                      height: Math.max(6, ruilSpook.plek.duur * PX - 2),
+                      borderColor: ruilSpook.blok?.kleur?.tekst ?? "rgba(0,0,0,0.4)",
+                      background: ruilSpook.blok?.kleur?.bg ?? "#ffffff",
+                    }}
+                  >
+                    <span
+                      className="min-w-0 flex-1 truncate text-xs font-bold leading-tight"
+                      style={{ color: ruilSpook.blok?.kleur?.tekst }}
+                    >
+                      {ruilSpook.blok?.naam}
+                    </span>
+                    <span
+                      className="shrink-0 text-xs leading-tight tabular-nums opacity-60"
+                      style={{ color: ruilSpook.blok?.kleur?.tekst }}
+                    >
+                      {tijdTekst(ruilSpook.plek.start)}
+                    </span>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -2044,6 +2398,33 @@ function Bewerkraster({
         </div>
       </div>
     </div>
+
+      {/* Het hintje bij je muis tijdens het slepen: wat er gebeurt als je nú
+          loslaat. Wordt een blok korter gemaakt omdat het anders niet past, dan
+          staat dat er meteen bij. */}
+      {sleep && (sleep.ruil || sleep.naast) && (
+        <div
+          className="pointer-events-none fixed z-[60] rounded-xl bg-ink px-2.5 py-1.5 text-xs font-semibold leading-5 text-white shadow-lg"
+          style={{
+            left: Math.max(8, Math.min(sleep.px + 16, window.innerWidth - 240)),
+            top: sleep.py + 18,
+          }}
+        >
+          {sleep.ruil ? (
+            <>
+              Ruilen met {sleep.ruil.naam}
+              {sleep.duur !== sleep.ruil.eigenDuur && (
+                <span className="opacity-70">
+                  {" · "}
+                  {sleep.ruil.eigenDuur} → {sleep.duur} min
+                </span>
+              )}
+            </>
+          ) : (
+            <>Komt ernaast, {sleep.naast} staat vast</>
+          )}
+        </div>
+      )}
 
       {kopieer && (
         <>
