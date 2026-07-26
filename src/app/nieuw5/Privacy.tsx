@@ -1,415 +1,546 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useRef } from "react";
 import { DONKER, Golf, KOP, MINT_LICHT, KaartVlak, VLAK_MINT } from "./Wereld";
 
 /* ── De privacysectie: DE GRENS ────────────────────────────────────────────
-   Eén beeld draagt deze sectie: een verticale lijn, en dat is de rand van
-   jouw apparaat. Links staat wat jij schrijft, rechts wat er weggaat. De
-   namen steken die grens over — en veranderen precies op de lijn.
+   Je kunt hier zelf proberen iets naar buiten te slepen. Namen glippen er
+   doorheen, maar hun naam wordt er op de grens vanaf geschraapt. Gegevens van
+   leerlingen komen er niet doorheen, hoe hard je ook trekt.
 
-   WAT ER HIERVOOR MIS GING, en waarom dit anders is:
-   1. De vorige versie toonde het maskeren als een TOESTAND: twee panelen die
-      allebei al af waren. Het moment waarop een naam verdwijnt is nou juist
-      het hele punt, en dat zag je dus nooit gebeuren. Nu is het een
-      GEBEURTENIS: de naam laat los, vliegt, en klapt óp de grens om.
-   2. Er stond veel te veel. Kop, alinea, label, veld, twee panelen, een
-      voetnoot, drie stappen en een lege plek — acht blokken voor één belofte.
-      Nu: de kop, het beeld, en één slotzin.
-   3. Er gebeurde niets bij scrollen of hoveren. Nu drijft de hele oversteek
-      op je scrollpositie, licht de grens op waar een naam hem raakt, en kun
-      je met je muis over een naam gaan om vooruit te zien wat ermee gebeurt.
+   Dat is de belofte als natuurkunde in plaats van als tekst: je leest niet
+   dát het niet kan, je merkt dat het niet lukt.
 
-   De tweede helft van de belofte staat eronder: de gegevens die de grens niet
-   eens halen. Die duwen ertegenaan en blijven liggen.
+   WAAROM ZO — geleerd van de polaroids, het enige stuk van deze pagina dat
+   echt van ons is. Wat die bijzonder maakte was niet het plaatje maar het
+   gedrag: een echte slinger, met een tempo dat uit zijn eigen draadlengte
+   volgde, en je kon eraan zitten. Diezelfde vier dingen zitten hier in:
+   - de GRENS IS EEN MEMBRAAN, geen lijn. Hij staat strak en buigt door waar
+     je iets tegenaan duwt — hetzelfde soort eigenschap als de doorzakkende
+     waslijn: één stuk natuurkunde waar alles op reageert;
+   - de kaartjes hebben MASSA. Een naamkaartje is licht, een dossier zwaar en
+     traag. Dat verschil voel je in het slepen en het vertelt de regel al
+     voordat je hem leest;
+   - de naam wordt er op de grens LETTERLIJK AFGESCHRAAPT: de letters blijven
+     aan jouw kant achter, vallen terug en lossen op. Het kaartje komt er aan
+     de andere kant uit met alleen nog een schuilnaam;
+   - wat over is, kan niet meer terug. Ook van de andere kant houdt het
+     membraan hem tegen. Weg is weg.
 
-   ⚠️ Het maskeren is ECHT en gebeurt in de browser: hele woorden,
-   hoofdletter-ongevoelig, dezelfde regel als public/avinka-masking.js. Er
-   gaat hier niets de deur uit — gemeten: nul netwerkverzoeken. Die nul is de
-   sectie. Komt er ooit iets bij dat wél verstuurt, dan klopt het niet meer. */
+   De rAF-lus slaapt zodra alles stilligt (les van de polaroids: 60x per
+   seconde naar de DOM schrijven terwijl niemand kijkt is zonde), en alles
+   gaat via transform zodat er geen layout per frame nodig is (les van het
+   water, waar left/top het scrollen liet haperen).
 
-const STANDAARD = "Sofie, Daan, Iris";
-const SCHUILNAAM = (i: number) => `leerling ${String.fromCharCode(65 + i)}`;
+   ⚠️ De schuilnamen hebben dezelfde vorm als in de echte maskeerlaag
+   (public/avinka-masking.js). Er gaat op deze pagina niets de deur uit. ── */
 
-/* Wat de grens niet haalt. Dit is de andere helft van de belofte: namen gaan
-   gemaskeerd mee, maar dít gaat helemaal niet mee. */
-const BLIJFT = ["toetsresultaten", "gespreksverslagen", "rapportcijfers"];
+type Kaartje = {
+  id: string;
+  soort: "naam" | "dossier";
+  tekst: string;
+  masker?: string;
+  /* thuisplek links: fractie van de halve breedte, en van de hoogte */
+  hx: number;
+  hy: number;
+  /* waar een overgestoken naamkaartje neerkomt, fractie van de rechterhelft */
+  ux: number;
+  uy: number;
+  rot: number;
+  /* zwaarder = trager achter je vinger aan, en veert harder terug */
+  massa: number;
+  /* Eigen plek op een smal scherm. Met de bureaublad-posities vielen de
+     kaartjes daar over elkaar heen: de helft is dan nog geen 170px breed. */
+  mhx: number;
+  mhy: number;
+  /* op een smal scherm laten we er eentje weg, anders is het te vol */
+  wegOpSmal?: boolean;
+};
 
-/* De zin waarin de namen staan. Bewust een echte rapportzin: zo zie je dat
-   het verhaal heel blijft en alleen de naam verandert. */
-function maakDelen(namen: string[]) {
-  const staarten = [
-    " liet dit halfjaar een mooie groei zien bij spelling. ",
-    " werkt geconcentreerder dan eerst. En ",
-    " durft steeds vaker iets te vragen.",
-  ];
-  return namen.map((naam, i) => ({ naam, staart: staarten[i] ?? " " }));
-}
+const KAARTJES: Kaartje[] = [
+  { id: "sofie", soort: "naam", tekst: "Sofie", masker: "leerling A", hx: 0.24, hy: 0.22, ux: 0.30, uy: 0.20, rot: -4, massa: 1, mhx: 0.36, mhy: 0.10 },
+  { id: "daan", soort: "naam", tekst: "Daan", masker: "leerling B", hx: 0.66, hy: 0.62, ux: 0.62, uy: 0.56, rot: 3, massa: 1, mhx: 0.34, mhy: 0.47 },
+  { id: "iris", soort: "naam", tekst: "Iris", masker: "leerling C", hx: 0.28, hy: 0.84, ux: 0.34, uy: 0.86, rot: -2, massa: 1, mhx: 0.36, mhy: 0.86 },
+  { id: "toets", soort: "dossier", tekst: "toetsresultaten", hx: 0.62, hy: 0.18, ux: 0, uy: 0, rot: 2.5, massa: 2.6, mhx: 0.52, mhy: 0.28 },
+  { id: "gesprek", soort: "dossier", tekst: "gespreksverslagen", hx: 0.26, hy: 0.52, ux: 0, uy: 0, rot: -3, massa: 2.9, mhx: 0.52, mhy: 0.66 },
+  { id: "rapport", soort: "dossier", tekst: "rapportcijfers", hx: 0.70, hy: 0.90, ux: 0, uy: 0, rot: 1.5, massa: 2.4, mhx: 0.5, mhy: 0.5, wegOpSmal: true },
+];
 
-function soepel(t: number) {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-}
-const klem = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+type Fysica = {
+  x: number; y: number;
+  vx: number; vy: number;
+  plet: number; // hoe hard het tegen het membraan wordt geduwd, 0..1
+  over: boolean;
+};
+
+const klem = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 
 export function WereldPrivacy() {
-  const [invoer, setInvoer] = useState(STANDAARD);
-  const [zweef, setZweef] = useState(-1);
-
-  const sectie = useRef<HTMLElement>(null);
-  const vanRefs = useRef<Array<HTMLSpanElement | null>>([]);
-  const naarRefs = useRef<Array<HTMLSpanElement | null>>([]);
-  const vliegRefs = useRef<Array<HTMLSpanElement | null>>([]);
-  const gloedRef = useRef<HTMLDivElement>(null);
-  const blijftRefs = useRef<Array<HTMLSpanElement | null>>([]);
-  const lijnRef = useRef<HTMLDivElement>(null);
-  /* De laag waarin de namen vliegen. ALLE posities worden hiertegen gemeten:
-     de vliegende kopieën staan hierin, dus meten tegen de sectie leverde een
-     verschuiving op ter grootte van de afstand tussen sectie en raster — de
-     namen landden dan netjes een paar honderd pixels naast hun doel. */
-  const beeldRef = useRef<HTMLDivElement>(null);
-
-  const namen = useMemo(() => {
-    const gevonden = Array.from(
-      new Map(
-        invoer
-          .split(/[,;\n]+/)
-          .flatMap((d) => d.trim().split(/\s+/))
-          .map((d) => d.trim())
-          .filter((d) => d.length > 1)
-          .map((d) => [d.toLowerCase(), d]),
-      ).values(),
-    ).slice(0, 3);
-    return gevonden.length ? gevonden : ["Sofie", "Daan", "Iris"];
-  }, [invoer]);
-
-  const delen = useMemo(() => maakDelen(namen), [namen]);
-
-  /* ── de oversteek ──
-     De posities worden gemeten (niet geraden): waar staat de naam links, waar
-     is zijn plek rechts. Daartussen vliegt een kopie. Meten gebeurt bij
-     layout en bij resize, nooit per frame — dat zou elke frame een layout
-     forceren en precies het gehaper opleveren dat we eerder hadden. */
-  const posities = useRef<Array<{ x1: number; y1: number; x2: number; y2: number }>>([]);
-  const meet = useCallback(() => {
-    const el = beeldRef.current;
-    if (!el) return;
-    const basis = el.getBoundingClientRect();
-    posities.current = namen.map((_, i) => {
-      const a = vanRefs.current[i]?.getBoundingClientRect();
-      const b = naarRefs.current[i]?.getBoundingClientRect();
-      if (!a || !b) return { x1: 0, y1: 0, x2: 0, y2: 0 };
-      return {
-        x1: a.left - basis.left + a.width / 2,
-        y1: a.top - basis.top + a.height / 2,
-        x2: b.left - basis.left + b.width / 2,
-        y2: b.top - basis.top + b.height / 2,
-      };
-    });
-  }, [namen]);
-
-  useLayoutEffect(() => {
-    meet();
-  }, [meet]);
+  const scene = useRef<HTMLDivElement>(null);
+  const kaartRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const naamRefs = useRef<Array<HTMLSpanElement | null>>([]);
+  const schraapRefs = useRef<Array<HTMLSpanElement | null>>([]);
+  const membraanRef = useRef<SVGPathElement>(null);
+  const hintRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
-    const el = sectie.current;
-    if (!el) return;
+    const veld = scene.current;
+    if (!veld) return;
 
-    /* Geen state maar een gewone variabele: dit wordt alleen in de teken-lus
-       gelezen en hoeft nooit een render te veroorzaken. */
     const rustig = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    /* Pas meten als de layout écht klaar is. Meten in een layout-effect gaat
-       mis: de webfonts zijn dan nog niet geladen, de regels breken daarna
-       anders, en de landingsplekken verschuiven — waardoor de namen naast hun
-       doel terechtkwamen. Daarom meten we lui, bij het eerste tekenmoment,
-       en opnieuw zodra de fonts binnen zijn of de maat verandert. */
+    let B = 0;
+    let H = 0;
+    const grens = () => B / 2;
+
+    const fys: Fysica[] = KAARTJES.map(() => ({ x: 0, y: 0, vx: 0, vy: 0, plet: 0, over: false }));
+
+    let smal = false;
+    const thuis = (i: number) => {
+      const k = KAARTJES[i];
+      if (fys[i].over) return { x: grens() + k.ux * (B / 2), y: k.uy * H };
+      const fx = smal ? k.mhx : k.hx;
+      const fy = smal ? k.mhy : k.hy;
+      return { x: fx * (B / 2), y: fy * H };
+    };
+
+    /* De halve breedte van elk kaartje wordt GEMETEN en niet aangenomen. Met
+       een vaste waarde klopte het op mobiel niet meer: daar zijn de kaartjes
+       kleiner, en een dossier bleek breder dan zijn eigen helft van de scène. */
+    const halven: number[] = KAARTJES.map(() => 50);
     let gemeten = false;
+    const meet = () => {
+      const r = veld.getBoundingClientRect();
+      const eerste = B === 0;
+      B = r.width;
+      H = r.height;
+      smal = B < 520;
+      kaartRefs.current.forEach((el, i) => {
+        if (el) halven[i] = el.offsetWidth / 2;
+      });
+      if (eerste) {
+        fys.forEach((f, i) => {
+          const t = thuis(i);
+          f.x = t.x;
+          f.y = t.y;
+        });
+      }
+      gemeten = true;
+    };
+    meet();
+
     const ro = new ResizeObserver(() => {
-      gemeten = false;
+      meet();
       wek();
     });
-    ro.observe(el);
-    document.fonts?.ready.then(() => {
-      gemeten = false;
+    ro.observe(veld);
+
+    /* ── slepen ──
+       Eén luisteraar op de scène in plaats van zes losse handlers: welk
+       kaartje je pakt staat in een data-attribuut. */
+    let sleep: { i: number; dx: number; dy: number } | null = null;
+    let muisX = 0;
+    let muisY = 0;
+    /* Het voordoen is een GESTUURDE beweging en geen zetje. Een impuls werkt
+       hier niet: de terugveer haalt er binnen veertig pixels alles weer uit,
+       dus het kaartje kwam nooit bij de grens. Nu wordt het kaartje even
+       "vastgehouden" alsof er iemand aan trekt, en daarna losgelaten. */
+    let demo: { i: number; t: number } | null = null;
+
+    const opDown = (e: PointerEvent) => {
+      const doel = (e.target as HTMLElement).closest<HTMLElement>("[data-kaart]");
+      if (!doel) return;
+      const i = Number(doel.dataset.kaart);
+      const r = veld.getBoundingClientRect();
+      muisX = e.clientX - r.left;
+      muisY = e.clientY - r.top;
+      sleep = { i, dx: muisX - fys[i].x, dy: muisY - fys[i].y };
+      demo = null;
+      doel.setPointerCapture?.(e.pointerId);
+      if (hintRef.current) hintRef.current.style.opacity = "0";
       wek();
-    });
+    };
+    const opMove = (e: PointerEvent) => {
+      if (!sleep) return;
+      const r = veld.getBoundingClientRect();
+      muisX = e.clientX - r.left;
+      muisY = e.clientY - r.top;
+      wek();
+    };
+    const opUp = () => {
+      sleep = null;
+      wek();
+    };
+    veld.addEventListener("pointerdown", opDown);
+    window.addEventListener("pointermove", opMove, { passive: true });
+    window.addEventListener("pointerup", opUp, { passive: true });
+    window.addEventListener("pointercancel", opUp, { passive: true });
+
+    /* de letters die op de grens achterblijven */
+    const schraap: Array<{ t: number; x: number; y: number } | null> = KAARTJES.map(() => null);
 
     let raf = 0;
-    const teken = () => {
-      raf = 0;
-      if (!gemeten) {
-        meet();
-        gemeten = true;
+    let vorige = performance.now();
+
+    const inRust = () => {
+      if (sleep || demo) return false;
+      for (let i = 0; i < KAARTJES.length; i++) {
+        if (smal && KAARTJES[i].wegOpSmal) continue;
+        const f = fys[i];
+        const t = thuis(i);
+        if (Math.abs(f.x - t.x) > 0.3 || Math.abs(f.y - t.y) > 0.3) return false;
+        if (Math.abs(f.vx) > 0.4 || Math.abs(f.vy) > 0.4) return false;
+        if (f.plet > 0.004) return false;
+        if (schraap[i]) return false;
       }
-      const r = el.getBoundingClientRect();
-      /* De oversteek loopt terwijl de sectie door beeld komt. Geen sticky en
-         geen extra schermlengte: die maakten de pagina eerder alleen maar
-         langer zonder dat er iets bij kwam. */
-      const p = klem((window.innerHeight * 0.78 - r.top) / (r.height * 0.62));
+      return true;
+    };
 
-      const beeld = beeldRef.current?.getBoundingClientRect();
-      const lijnX =
-        lijnRef.current && beeld
-          ? lijnRef.current.getBoundingClientRect().left - beeld.left
-          : 0;
+    const stap = (nu: number) => {
+      const dt = Math.min(0.032, (nu - vorige) / 1000);
+      vorige = nu;
+      if (!gemeten) meet();
 
-      let gloedSterkte = 0;
-      let gloedY = 0;
+      const G = grens();
+      let bocht = 0;
+      let bochtY = H / 2;
 
-      namen.forEach((naam, i) => {
-        const vlieg = vliegRefs.current[i];
-        const van = vanRefs.current[i];
-        const pos = posities.current[i];
-        if (!vlieg || !pos) return;
+      if (demo) {
+        demo.t += dt;
+        if (demo.t > 1.45) demo = null;
+      }
 
-        /* elke naam vertrekt iets later, zodat het een reeks wordt en geen
-           groepssprong */
-        const start = 0.1 + i * 0.15;
-        const t = rustig ? 1 : klem((p - start) / 0.34);
-        const e = soepel(t);
+      for (let i = 0; i < KAARTJES.length; i++) {
+        const k = KAARTJES[i];
+        if (smal && k.wegOpSmal) continue;
+        const f = fys[i];
+        const t = thuis(i);
+        const half = halven[i];
 
-        const x = pos.x1 + (pos.x2 - pos.x1) * e;
-        const y = pos.y1 + (pos.y2 - pos.y1) * e;
-        /* een lichte boog: hij wordt opgetild en weer neergezet */
-        const boog = Math.sin(e * Math.PI) * -26;
+        /* Hoe hard je tegen het membraan duwt. Dit is de afstand tussen waar
+           je vinger het kaartje naartoe TREKT en waar het membraan het
+           tegenhoudt — niet de restoverschrijding na het klemmen. Dat laatste
+           is per frame maar een paar pixels, waardoor de doorbuiging
+           onzichtbaar bleef. */
+        let druk = 0;
 
-        vlieg.style.transform = `translate3d(${x.toFixed(1)}px, ${(y + boog).toFixed(1)}px, 0) translate(-50%, -50%)`;
-        vlieg.style.opacity = t > 0.02 ? "1" : "0";
-
-        /* de omslag gebeurt precies op de grens */
-        const overGrens = x >= lijnX;
-        vlieg.dataset.gemaskeerd = overGrens ? "ja" : "nee";
-        const wil = overGrens ? SCHUILNAAM(i) : naam;
-        if (vlieg.textContent !== wil) vlieg.textContent = wil;
-
-        /* De naam links BLIJFT staan. Hij verdween eerst helemaal, en dan las
-           het als "je tekst is gewist" — terwijl er in werkelijkheid alleen
-           een kopie vertrekt; jouw eigen tekst houdt de naam gewoon. Hij dipt
-           dus even weg terwijl de kopie onderweg is en komt daarna terug. */
-        if (van) van.style.opacity = (1 - 0.62 * Math.sin(klem(t) * Math.PI)).toFixed(2);
-
-        /* de grens licht op waar hij geraakt wordt */
-        const raakt = 1 - Math.min(1, Math.abs(x - lijnX) / 90);
-        if (raakt > gloedSterkte && t > 0 && t < 1) {
-          gloedSterkte = raakt;
-          gloedY = y;
+        if (sleep?.i === i || demo?.i === i) {
+          /* achter je vinger aan, maar de massa remt: een dossier sleept
+             merkbaar zwaarder dan een naamkaartje */
+          let doelX: number;
+          let doelY: number;
+          if (sleep?.i === i) {
+            doelX = muisX - sleep.dx;
+            doelY = muisY - sleep.dy;
+          } else {
+            /* het voorgedane trekje: rustig naar net voorbij de grens */
+            const v = Math.min(1, demo!.t / 1.15);
+            const zacht = v < 0.5 ? 2 * v * v : 1 - Math.pow(-2 * v + 2, 2) / 2;
+            doelX = t.x + (G + 70 - t.x) * zacht;
+            doelY = t.y;
+          }
+          druk = Math.max(0, doelX + half - G);
+          const stijf = 240 / k.massa;
+          f.vx += ((doelX - f.x) * stijf) * dt;
+          f.vy += ((doelY - f.y) * stijf) * dt;
+          f.vx *= Math.pow(0.0025, dt);
+          f.vy *= Math.pow(0.0025, dt);
+        } else {
+          /* terugveren naar zijn plek, met nazwaai */
+          const stijf = 54 / k.massa;
+          f.vx += ((t.x - f.x) * stijf - f.vx * 8.6) * dt;
+          f.vy += ((t.y - f.y) * stijf - f.vy * 8.6) * dt;
         }
-      });
 
-      if (gloedRef.current) {
-        gloedRef.current.style.opacity = (gloedSterkte * 0.9).toFixed(2);
-        gloedRef.current.style.transform = `translate3d(-50%, ${gloedY.toFixed(0)}px, 0) translateY(-50%) scaleY(${(0.6 + gloedSterkte * 0.9).toFixed(2)})`;
+        f.x += f.vx * dt;
+        f.y += f.vy * dt;
+
+        /* ── het membraan ── */
+        if (k.soort === "dossier") {
+          /* komt er niet doorheen: het membraan buigt door, het kaartje wordt
+             platgeduwd, en het duwt terug */
+          if (f.x + half > G) {
+            f.x = G - half;
+            f.vx = Math.min(f.vx, 0);
+          }
+          if (druk > 0) {
+            /* het membraan geeft mee, het dossier wordt platter, en zodra je
+               loslaat schiet het terug */
+            f.plet = Math.min(1, druk / 120);
+            if (druk > bocht) {
+              bocht = druk;
+              bochtY = f.y;
+            }
+          }
+        } else if (!f.over) {
+          /* een naam mag erdoor, maar loopt er vlak voor stroperig — dat
+             hobbeltje is wat je in je vingers voelt */
+          const afstand = G - (f.x + half);
+          if (afstand < 46 && afstand > 0) {
+            f.vx *= 0.87;
+            const duw = (46 - afstand) * 0.8 + druk * 0.5;
+            if (duw > bocht) {
+              bocht = duw;
+              bochtY = f.y;
+            }
+          }
+          if (f.x + half >= G) {
+            f.over = true;
+            f.vx *= 1.3; // het plopje erdoorheen
+            schraap[i] = { t: 0, x: G, y: f.y };
+          }
+        } else {
+          /* weg is weg: van de overkant houdt het membraan hem ook tegen */
+          if (f.x - half < G) {
+            f.x = G + half;
+            f.vx = Math.max(f.vx, 8);
+            f.plet = Math.min(1, f.plet + 0.06);
+          }
+        }
+
+        /* loslaten = de pletting dooft uit (tijdens duwen wordt hij elke frame
+           opnieuw uit de druk gezet, dus dan heeft dit geen effect) */
+        if (druk <= 0) f.plet *= Math.pow(0.02, dt);
+        f.x = klem(f.x, half, B - half);
+        f.y = klem(f.y, 34, H - 34);
+
+        const el = kaartRefs.current[i];
+        if (el) {
+          const kantel = klem(f.vx * 0.05, -14, 14);
+          el.style.transform =
+            `translate3d(${f.x.toFixed(1)}px, ${f.y.toFixed(1)}px, 0) translate(-50%, -50%)` +
+            ` rotate(${(k.rot + kantel).toFixed(1)}deg)` +
+            ` scale(${(1 - f.plet * 0.11).toFixed(3)}, ${(1 + f.plet * 0.17).toFixed(3)})`;
+          el.style.zIndex = sleep?.i === i ? "40" : String(10 + i);
+        }
+        const naam = naamRefs.current[i];
+        if (naam && k.soort === "naam") {
+          const wil = f.over ? k.masker! : k.tekst;
+          if (naam.textContent !== wil) naam.textContent = wil;
+          if (naam.dataset.gemaskeerd !== (f.over ? "ja" : "nee")) {
+            naam.dataset.gemaskeerd = f.over ? "ja" : "nee";
+          }
+        }
       }
 
-      /* de gegevens die de grens niet halen: ze duwen ertegenaan en blijven */
-      blijftRefs.current.forEach((el2, i) => {
-        if (!el2) return;
-        const start = 0.22 + i * 0.1;
-        const t = rustig ? 1 : klem((p - start) / 0.3);
-        const duw = Math.sin(soepel(t) * Math.PI) * 22;
-        el2.style.transform = `translate3d(${duw.toFixed(1)}px, 0, 0)`;
-        el2.style.setProperty("--gestopt", t > 0.55 ? "1" : "0");
-      });
+      /* de achtergebleven letters vallen terug en lossen op */
+      for (let i = 0; i < KAARTJES.length; i++) {
+        const s = schraap[i];
+        const el = schraapRefs.current[i];
+        if (!el) continue;
+        if (!s) {
+          if (el.style.opacity !== "0") el.style.opacity = "0";
+          continue;
+        }
+        s.t += dt;
+        const v = s.t / 1.15;
+        if (v >= 1) {
+          schraap[i] = null;
+          el.style.opacity = "0";
+          continue;
+        }
+        el.style.opacity = (1 - v * v).toFixed(2);
+        el.style.transform =
+          `translate3d(${(s.x - 30 - v * 34).toFixed(1)}px, ${(s.y + v * v * 96).toFixed(1)}px, 0)` +
+          ` translate(-50%, -50%) rotate(${(-v * 30).toFixed(1)}deg)`;
+      }
+
+      if (membraanRef.current) {
+        const b = Math.min(64, bocht * 0.62);
+        membraanRef.current.setAttribute("d", `M ${G} 0 Q ${(G + b).toFixed(1)} ${bochtY.toFixed(1)} ${G} ${H}`);
+        membraanRef.current.style.strokeOpacity = (0.38 + Math.min(0.5, b / 70)).toFixed(2);
+      }
+
+      if (inRust()) {
+        raf = 0;
+        return;
+      }
+      raf = requestAnimationFrame(stap);
     };
 
     const wek = () => {
-      if (!raf) raf = requestAnimationFrame(teken);
+      if (raf || rustig) return;
+      vorige = performance.now();
+      raf = requestAnimationFrame(stap);
     };
-    window.addEventListener("scroll", wek, { passive: true });
-    window.addEventListener("resize", wek);
-    teken();
+
+    /* Eén keer voordoen. Niet iedereen sleept uit zichzelf, en als je het
+       niet probeert mis je de hele sectie. */
+    let voorgedaan = false;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting || voorgedaan || rustig) return;
+        voorgedaan = true;
+        window.setTimeout(() => {
+          demo = { i: 0, t: 0 };
+          if (hintRef.current) hintRef.current.style.opacity = "1";
+          wek();
+        }, 750);
+      },
+      { rootMargin: "-14% 0px" },
+    );
+    io.observe(veld);
+
+    stap(performance.now());
+    if (rustig) {
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+    }
 
     return () => {
       if (raf) cancelAnimationFrame(raf);
       ro.disconnect();
-      window.removeEventListener("scroll", wek);
-      window.removeEventListener("resize", wek);
+      io.disconnect();
+      veld.removeEventListener("pointerdown", opDown);
+      window.removeEventListener("pointermove", opMove);
+      window.removeEventListener("pointerup", opUp);
+      window.removeEventListener("pointercancel", opUp);
     };
-  }, [namen, meet]);
+  }, []);
 
   return (
-    <section
-      ref={sectie}
-      className="relative overflow-hidden"
-      style={{ background: MINT_LICHT }}
-      aria-label="Privacy"
-    >
+    <section className="relative overflow-hidden" style={{ background: MINT_LICHT }} aria-label="Privacy">
       <Golf kleur="#fcfbf7" flip vorm="oploopRechts" hoogte="h-[70px] sm:h-[118px]" />
       <KaartVlak
         kleur={VLAK_MINT}
         vorm="koepel"
-        breedte={760}
-        hoogte={360}
-        style={{ right: "-15%", top: 90, transform: "rotate(-5deg)" }}
+        breedte={720}
+        hoogte={340}
+        style={{ right: "-16%", top: 80, transform: "rotate(-5deg)" }}
         className="hidden lg:block"
         tel={3}
       />
 
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-28 pt-28 lg:pb-32 lg:pt-32">
-        <h2
-          data-reveal
-          className="max-w-2xl font-display text-[clamp(2.1rem,4.4vw,3.4rem)] font-black leading-[1.03] tracking-tight [text-wrap:balance]"
-          style={{ color: DONKER }}
-        >
-          Namen komen hier niet voorbij.
-        </h2>
-
-        {/* ── het beeld ── */}
-        <div ref={beeldRef} className="relative mt-14 grid gap-10 md:grid-cols-2 md:gap-0">
-          {/* de grens zelf */}
-          <div
-            ref={lijnRef}
-            className="pointer-events-none absolute left-1/2 top-0 hidden h-full w-px md:block"
-            style={{ background: "linear-gradient(to bottom, transparent, rgba(30,107,77,0.45) 12%, rgba(30,107,77,0.45) 88%, transparent)" }}
-            aria-hidden
+        <div className="max-w-2xl">
+          <p data-reveal className="text-2xl" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
+            privacy voorop
+          </p>
+          <h2
+            data-reveal
+            className="mt-2 font-display text-[clamp(2.1rem,4.4vw,3.4rem)] font-black leading-[1.03] tracking-tight [text-wrap:balance]"
+            style={{ color: DONKER }}
           >
-            {/* de plek waar een naam de grens raakt, licht op */}
-            <div
-              ref={gloedRef}
-              className="absolute left-1/2 top-0 h-24 w-24 rounded-full opacity-0"
-              style={{
-                background:
-                  "radial-gradient(circle, rgba(47,158,110,0.55) 0%, rgba(47,158,110,0.18) 45%, rgba(47,158,110,0) 72%)",
-              }}
-            />
-          </div>
-
-          {/* links: wat jij schrijft */}
-          <div className="md:pr-12">
-            <p className="text-[0.68rem] font-bold uppercase tracking-[0.16em] text-ink/45">
-              Op jouw apparaat
-            </p>
-            <p className="mt-4 text-xl leading-9 text-ink/85 sm:text-2xl sm:leading-10">
-              {delen.map((d, i) => (
-                <span key={i}>
-                  <span
-                    ref={(r) => {
-                      vanRefs.current[i] = r;
-                    }}
-                    onMouseEnter={() => setZweef(i)}
-                    onMouseLeave={() => setZweef(-1)}
-                    className="cursor-default font-bold underline decoration-2 underline-offset-4"
-                    style={{ textDecorationColor: "#f59e0b" }}
-                  >
-                    {zweef === i ? SCHUILNAAM(i) : d.naam}
-                  </span>
-                  {d.staart}
-                </span>
-              ))}
-            </p>
-
-            <label className="mt-8 flex flex-wrap items-center gap-3 text-base text-ink/55">
-              <span>Typ je eigen klas:</span>
-              <input
-                value={invoer}
-                onChange={(e) => setInvoer(e.target.value)}
-                spellCheck={false}
-                autoComplete="off"
-                placeholder={STANDAARD}
-                aria-label="Namen van leerlingen uit je klas"
-                className="min-w-[12rem] flex-1 rounded-xl border-[2px] border-[#cfe0d6] bg-white/70 px-4 py-2 text-base text-ink outline-none transition focus:border-brand focus:bg-white focus:ring-4 focus:ring-brand/15"
-              />
-            </label>
-          </div>
-
-          {/* rechts: wat er weggaat */}
-          <div className="md:pl-12">
-            <p className="text-[0.68rem] font-bold uppercase tracking-[0.16em]" style={{ color: KOP }}>
-              Wat de AI ontvangt
-            </p>
-            <p className="mt-4 text-xl leading-9 text-ink/85 sm:text-2xl sm:leading-10">
-              {delen.map((d, i) => (
-                <span key={i}>
-                  {/* de lege plek waar de schuilnaam neerkomt */}
-                  <span
-                    ref={(r) => {
-                      naarRefs.current[i] = r;
-                    }}
-                    className="inline-block rounded-md align-baseline"
-                    style={{
-                      minWidth: `${SCHUILNAAM(i).length * 0.56}em`,
-                      background: "rgba(47,158,110,0.10)",
-                    }}
-                  >
-                    {/* Op een smal scherm vliegt er niets (de laag hieronder
-                       staat op md:block), dus daar hoort de schuilnaam er
-                       gewoon te staan — anders blijft het vakje eeuwig leeg. */}
-                    <span className="px-1.5 font-bold text-[#1e6b4d] md:hidden">
-                      {SCHUILNAAM(i)}
-                    </span>
-                    <span className="hidden md:inline" style={{ height: "1.1em" }} />
-                  </span>
-                  {d.staart}
-                </span>
-              ))}
-            </p>
-          </div>
-
-          {/* de vliegende namen */}
-          <div className="pointer-events-none absolute inset-0 hidden md:block" aria-hidden>
-            {namen.map((naam, i) => (
-              <span
-                key={i}
-                ref={(r) => {
-                  vliegRefs.current[i] = r;
-                }}
-                data-gemaskeerd="nee"
-                className="absolute left-0 top-0 whitespace-nowrap rounded-md px-1.5 text-xl font-bold opacity-0 will-change-transform sm:text-2xl [&[data-gemaskeerd='ja']]:bg-brand/12 [&[data-gemaskeerd='ja']]:text-[#1e6b4d] [&[data-gemaskeerd='nee']]:text-ink"
-              >
-                {naam}
-              </span>
-            ))}
-          </div>
+            Er is één ding dat we bewust niet doen.
+          </h2>
+          <p data-reveal style={{ transitionDelay: "80ms" }} className="mt-6 text-xl leading-9 text-ink/75">
+            Gegevens van leerlingen bewaren we niet. En hun namen gaan nooit
+            naar de AI: die worden op jouw eigen apparaat vervangen door een
+            schuilnaam, nog vóór er iets wordt verstuurd.
+          </p>
         </div>
 
-        {/* ── wat de grens niet eens haalt ── */}
-        <div className="mt-16 flex flex-wrap items-center gap-x-3 gap-y-4">
-          <span className="text-base text-ink/55">En dit gaat helemaal niet mee:</span>
-          {BLIJFT.map((b, i) => (
+        <p
+          ref={hintRef}
+          className="mt-12 flex items-center gap-2 text-xl opacity-0 transition-opacity duration-700"
+          style={{ fontFamily: "var(--font-hand)", color: KOP }}
+        >
+          sleep maar eens iets naar de overkant
+          <svg viewBox="0 0 40 28" className="h-6 w-9" fill="none" stroke={KOP} strokeWidth="2" strokeLinecap="round" aria-hidden>
+            <path d="M2 4 C 14 6, 26 10, 32 22" />
+            <path d="M26 20 L 32.5 23 L 34 16" />
+          </svg>
+        </p>
+
+        {/* ── de scène ── */}
+        <div
+          ref={scene}
+          className="relative mt-4 h-[540px] touch-none select-none sm:h-[470px]"
+        >
+          <p className="pointer-events-none absolute left-0 top-0 text-[0.68rem] font-bold uppercase tracking-[0.16em] text-ink/40">
+            Op jouw apparaat
+          </p>
+          <p
+            className="pointer-events-none absolute right-0 top-0 text-[0.68rem] font-bold uppercase tracking-[0.16em]"
+            style={{ color: KOP }}
+          >
+            Wat er weggaat
+          </p>
+
+          {/* het membraan: geen getekende lijn maar iets dat gespannen staat */}
+          <svg className="pointer-events-none absolute inset-0 h-full w-full overflow-visible" aria-hidden>
+            <path
+              ref={membraanRef}
+              fill="none"
+              stroke={KOP}
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeDasharray="2 10"
+              strokeOpacity="0.38"
+            />
+          </svg>
+
+          {/* de letters die op de grens achterblijven */}
+          {KAARTJES.map((k, i) => (
             <span
-              key={b}
+              key={`s-${k.id}`}
               ref={(r) => {
-                blijftRefs.current[i] = r;
+                schraapRefs.current[i] = r;
               }}
-              className="grens-chip relative rounded-full border-[2px] px-4 py-1.5 text-base font-semibold will-change-transform"
-              style={{ borderColor: "#cfe0d6", color: "#1e6b4d", background: "rgba(255,255,255,0.6)" }}
+              className="pointer-events-none absolute left-0 top-0 whitespace-nowrap text-2xl opacity-0"
+              style={{ fontFamily: "var(--font-hand)", color: "#a07c14" }}
+              aria-hidden
             >
-              {b}
+              {k.tekst}
             </span>
+          ))}
+
+          {/* de kaartjes */}
+          {KAARTJES.map((k, i) => (
+            <div
+              key={k.id}
+              data-kaart={i}
+              ref={(r) => {
+                kaartRefs.current[i] = r;
+              }}
+              className={`absolute left-0 top-0 cursor-grab will-change-transform active:cursor-grabbing ${
+                k.wegOpSmal ? "hidden sm:block" : ""
+              }`}
+            >
+              {k.soort === "naam" ? (
+                /* Naamkaartje: licht, warm, handgeschreven — zoals het kaartje
+                   op een bakje of boven aan een werkblad. */
+                <span
+                  className="flex h-[48px] w-[88px] items-center justify-center rounded-[14px] sm:h-[56px] sm:w-[108px] border-[2.5px] bg-white shadow-[-4px_12px_26px_-14px_rgba(23,80,58,0.55)]"
+                  style={{ borderColor: "#d4e5dc" }}
+                >
+                  <span
+                    ref={(r) => {
+                      naamRefs.current[i] = r;
+                    }}
+                    data-gemaskeerd="nee"
+                    className="text-[1.15rem] leading-none transition-[font-size] duration-200 sm:text-[1.4rem] [&[data-gemaskeerd='ja']]:text-[0.82rem] sm:[&[data-gemaskeerd='ja']]:text-[0.98rem] [&[data-gemaskeerd='ja']]:font-bold"
+                    style={{ fontFamily: "var(--font-hand)", color: DONKER }}
+                  >
+                    {k.tekst}
+                  </span>
+                </span>
+              ) : (
+                /* Dossier: zwaarder, met een tab en liniaallijntjes. Dit is het
+                   soort ding dat er helemaal niet uit gaat. */
+                <span className="relative block w-[122px] pt-2.5 sm:w-[164px]">
+                  <span className="absolute left-3 top-0 h-3 w-16 rounded-t-[7px]" style={{ background: "#dfe9dc" }} />
+                  <span
+                    className="relative block rounded-[10px] border-[2.5px] px-3.5 py-3 shadow-[-4px_12px_26px_-14px_rgba(23,80,58,0.55)]"
+                    style={{ background: "#f7f5ee", borderColor: "#d4e5dc" }}
+                  >
+                    <span className="block text-[0.72rem] font-bold leading-tight sm:text-[0.84rem]" style={{ color: "#3c5147" }}>
+                      {k.tekst}
+                    </span>
+                    <span className="mt-2 block h-[3px] w-3/4 rounded-full bg-ink/10" />
+                    <span className="mt-1.5 block h-[3px] w-1/2 rounded-full bg-ink/10" />
+                  </span>
+                </span>
+              )}
+            </div>
           ))}
         </div>
 
-        <p data-reveal className="mt-10 max-w-xl text-lg leading-8 text-ink/70">
-          Dit gebeurt in je eigen browser, nog voor er iets verstuurd wordt.
-          Gegevens van leerlingen bewaren we niet.
+        <p className="mt-8 max-w-xl text-lg leading-8 text-ink/70">
+          Een naam glipt erdoor, maar laat zijn naam aan deze kant achter.
+          Gegevens van leerlingen komen er helemaal niet doorheen.
         </p>
       </div>
-
-      <style>{`
-        /* het streepje dat door een chip valt zodra hij is tegengehouden */
-        .grens-chip::after {
-          content: "";
-          position: absolute;
-          left: 12%;
-          right: 12%;
-          top: 50%;
-          height: 2px;
-          background: #1e6b4d;
-          border-radius: 2px;
-          transform: scaleX(var(--gestopt, 0));
-          transform-origin: left center;
-          transition: transform .45s cubic-bezier(.2,.7,.2,1);
-          opacity: .55;
-        }
-      `}</style>
     </section>
   );
 }
