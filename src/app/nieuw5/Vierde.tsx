@@ -20,6 +20,7 @@ import { PROEF_DAGEN } from "@/lib/abonnement";
 import {
   SPECKLE_STIJL,
   KaartVlak,
+  Lichtbron,
   VLAK_PAPIER,
   WereldFx,
   WereldIntro,
@@ -1035,6 +1036,11 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
         {/* De effecten-motor: wieg-animaties, scroll-parallax en muis-diepte. */}
         <WereldFx />
 
+        {/* De lichtbron waar alle schaduwen op deze pagina bij horen. Staat
+           binnen <main> zodat hij bij de body hoort en niet bij de film: die
+           heeft zijn eigen avond-naar-dag-belichting. */}
+        <Lichtbron />
+
         {/* ── 1. Wat Avinka is: kalm op het gespikkelde papier. ── */}
         <WereldIntro />
 
@@ -1103,7 +1109,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
               {FAQ.slice(0, 4).map((item) => (
                 <details
                   key={item.vraag}
-                  className="group/faq rounded-2xl border border-black/5 bg-white p-6 shadow-[0_18px_40px_-34px_rgba(23,80,58,0.5)]"
+                  className="group/faq rounded-2xl border border-black/5 bg-white p-6 shadow-[-7px_18px_40px_-34px_rgba(23,80,58,0.5)]"
                 >
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-lg text-lg font-bold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
                     {item.vraag}
@@ -1123,7 +1129,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                   {FAQ.slice(4).map((item) => (
                     <details
                       key={item.vraag}
-                      className="group/faq rounded-2xl border border-black/5 bg-white p-6 shadow-[0_18px_40px_-34px_rgba(23,80,58,0.5)]"
+                      className="group/faq rounded-2xl border border-black/5 bg-white p-6 shadow-[-7px_18px_40px_-34px_rgba(23,80,58,0.5)]"
                     >
                       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-lg text-lg font-bold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
                         {item.vraag}
@@ -1382,7 +1388,7 @@ function PapierStapel({ spiegel = false }: { spiegel?: boolean }) {
               "--vel-wacht": `${vel.wacht}s`,
             } as CSSProperties
           }
-          className={`stapelvel absolute inset-0 rounded-2xl ring-1 shadow-[0_8px_20px_-16px_rgba(34,28,58,0.5)] ${vel.vulling} ${vel.rand}`}
+          className={`stapelvel absolute inset-0 rounded-2xl ring-1 shadow-[-3px_8px_20px_-16px_rgba(34,28,58,0.5)] ${vel.vulling} ${vel.rand}`}
         />
       ))}
     </div>
@@ -1403,7 +1409,7 @@ function BewaarKaart() {
   return (
     <div data-reveal className="kaartblok relative w-full max-w-xs">
       <PapierStapel />
-      <div className="relative rounded-2xl bg-white p-6 shadow-[0_26px_60px_-28px_rgba(34,28,58,0.45)] ring-1 ring-black/5">
+      <div className="relative rounded-2xl bg-white p-6 shadow-[-10px_26px_60px_-28px_rgba(34,28,58,0.45)] ring-1 ring-black/5">
       <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-ink/45">
         Wat we wel bewaren
       </p>
@@ -1451,7 +1457,7 @@ function KlassenlijstKaart() {
   return (
     <div data-reveal className="kaartblok relative w-full max-w-xs lg:ml-auto">
       <PapierStapel spiegel />
-      <div className="relative rounded-2xl bg-white p-6 shadow-[0_26px_60px_-28px_rgba(34,28,58,0.45)] ring-1 ring-black/5">
+      <div className="relative rounded-2xl bg-white p-6 shadow-[-10px_26px_60px_-28px_rgba(34,28,58,0.45)] ring-1 ring-black/5">
       <div className="flex items-baseline justify-between gap-3">
         <p className="font-display text-lg font-black tracking-tight">Groep 5</p>
         <p className="text-xs text-ink/50">{KLAS.length + KLAS_REST} leerlingen</p>
@@ -2459,7 +2465,7 @@ function StijlBlok() {
       @media (hover: hover) and (pointer: fine) {
         .kaart-knop:hover {
           transform: scale(1.035) translateY(-6px);
-          box-shadow: 0 22px 45px -20px rgb(34 28 58 / 0.45);
+          box-shadow: -9px 22px 45px -20px rgb(34 28 58 / 0.45);
         }
         .kaart-knop:hover .kaart-hint { opacity: 1; }
         .kaart-knop:hover .kaart-hint > span { transform: translateY(0); }

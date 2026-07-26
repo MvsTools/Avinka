@@ -62,14 +62,32 @@ const VLAKVORMEN = {
   schelp: "62% 38% 34% 66% / 36% 62% 40% 64%",
 } as const;
 
+/* ── ÉÉN LICHTBRON VOOR DE HELE PAGINA ────────────────────────────────────
+   Het licht valt van rechtsboven. Dat is geen decoratie maar een afspraak:
+   élke schaduw op deze pagina valt daardoor naar linksonder, met dezelfde
+   verhouding tussen de horizontale en verticale verschuiving. Daarvóór stond
+   iedere schaduw recht naar beneden (x = 0), wat betekent dat elke kaart zijn
+   eigen lampje boven zich had. Met één richting wordt de pagina één RUIMTE
+   waarin dingen liggen, in plaats van een verzameling losse vlakken.
+
+   Er komt hiervoor geen enkel nieuw element bij; het richt alleen wat er al
+   staat. De bijbehorende lichtplas zelf staat in `Lichtbron` onderaan.
+
+   Vuistregel: x ≈ -0,4 × y. Verder dan dat gaat het als een lage avondzon
+   lezen en wordt het theater; minder is niet meer te zien. */
+const SCHADUW_HELLING = 0.4;
+export function schaduw(y: number, blur: number, spread: number, alpha: number, kleur = "23,80,58") {
+  return `${-Math.round(y * SCHADUW_HELLING)}px ${y}px ${blur}px ${spread}px rgba(${kleur},${alpha})`;
+}
+
 /* Rand en schaduw van de organische kaarten (regie-kaartjes én de makers-
    kaart), zodat die twee gegarandeerd hetzelfde aanvoelen. */
 const KAART_RAND = "#d4e5dc";
-const KAART_SCHADUW = "0 34px 66px -34px rgba(23,80,58,0.6)";
+const KAART_SCHADUW = schaduw(34, 66, -34, 0.6);
 
 /* Witte kaart met grote ronding: dé kaartvorm van deze wereld. */
 const KAART =
-  "rounded-[2.5rem] bg-white shadow-[0_36px_80px_-48px_rgba(23,80,58,0.55)] ring-1 ring-ink/[0.04]";
+  "rounded-[2.5rem] bg-white shadow-[-14px_36px_80px_-48px_rgba(23,80,58,0.55)] ring-1 ring-ink/[0.04]";
 
 /* ── Golf-overgang tussen twee kleurvelden ──
    Elke overgang op de pagina heeft nu een EIGEN golf. Dat is een bewuste
@@ -737,7 +755,7 @@ export function WereldPrivacy() {
 
             <div
               data-reveal
-              className="relative z-10 overflow-hidden bg-white shadow-[0_36px_80px_-48px_rgba(23,80,58,0.55)] ring-1 ring-ink/[0.04]"
+              className="relative z-10 overflow-hidden bg-white shadow-[-14px_36px_80px_-48px_rgba(23,80,58,0.55)] ring-1 ring-ink/[0.04]"
               style={{ borderRadius: "2.6rem 3.4rem 2.9rem 3.6rem" }}
             >
               {/* donkergroene kopband, zoals de stevige kaartkoppen van de referentie */}
@@ -784,7 +802,7 @@ export function WereldPrivacy() {
             <div
               data-reveal
               style={{ transitionDelay: "140ms", background: "#fdf3c4", borderRadius: "4px 22px 18px 20px" }}
-              className="relative z-20 mt-5 w-full rotate-0 p-6 shadow-[0_28px_55px_-30px_rgba(23,80,58,0.5)] sm:absolute sm:-bottom-8 sm:-right-16 sm:mt-0 sm:w-60 sm:rotate-[3deg]"
+              className="relative z-20 mt-5 w-full rotate-0 p-6 shadow-[-11px_28px_55px_-30px_rgba(23,80,58,0.5)] sm:absolute sm:-bottom-8 sm:-right-16 sm:mt-0 sm:w-60 sm:rotate-[3deg]"
             >
               <p className="text-lg leading-tight text-ink/85" style={{ fontFamily: "var(--font-hand)" }}>wat we bewaren:</p>
               <ul className="mt-2 space-y-1">
@@ -1052,6 +1070,46 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
          voort (zelfde MINT-tint, dus geen naad op de overgang). Daar krijgt
          het pas zijn eigen speelse zaagtand-overgang terug naar papier. */}
     </section>
+  );
+}
+
+/* ── De lichtplas ─────────────────────────────────────────────────────────
+   De tweede helft van "één lichtbron": de bron zelf. Eén warme plas licht
+   die hoort bij de schaduwrichting hierboven (zie SCHADUW_HELLING).
+
+   Drie keuzes die hem rustig houden:
+   1. De kern ligt BUITEN beeld (rechtsboven, net voorbij de hoek). Je ziet
+      dus nooit een cirkel of een hotspot, alleen de uitloop ervan — precies
+      zoals licht dat door een raam naar binnen valt. Zodra je de bron zelf
+      ziet, wordt het een vorm en dan is het decoratie.
+   2. Hij staat VAST aan het scherm. Daardoor beweegt er niets: het is de
+      pagina die onder het licht door schuift, niet het licht dat over de
+      pagina kruipt. Elke sectie wordt op dezelfde manier belicht en dat is
+      precies wat "één ruimte" betekent.
+   3. Zeer lage dekking, en warm in plaats van wit. De pagina is koel (mint
+      op mint); dit is het enige dat er warmte in brengt.
+
+   Dat "vast aan het scherm" gebeurt met `background-attachment: fixed` en
+   NIET met `position: fixed`. Een fixed element negeert namelijk waar zijn
+   ouder staat en legde de warme waas dus ook over de film bovenaan — die
+   werd daar olijfgroen en verloor zijn eigen avond-naar-dag-belichting. Met
+   background-attachment blijft de plas in schermcoördinaten staan, maar is
+   hij alleen te zien binnen dit element (de body). iOS Safari negeert de
+   eigenschap; daar schuift de plas gewoon mee, wat prima degradeert.
+
+   Ligt boven de sectie-achtergronden maar onder de vaste bovenbalk (z-40),
+   zodat de groene knop rechtsboven scherp blijft. */
+export function Lichtbron() {
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 z-30"
+      aria-hidden
+      style={{
+        background:
+          "radial-gradient(75vw 85vh at 94% -14%, rgba(255,241,206,0.26), rgba(255,241,206,0.11) 45%, rgba(255,241,206,0) 74%)",
+        backgroundAttachment: "fixed",
+      }}
+    />
   );
 }
 

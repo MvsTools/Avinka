@@ -776,7 +776,9 @@ export function WereldPolaroids() {
       </div>
 
       <style>{`
-        .pk-schaduw { box-shadow: 0 18px 38px -20px rgba(23,80,58,0.45), 0 3px 8px -4px rgba(23,80,58,0.25); }
+        /* schaduw naar linksonder: de pagina heeft één lichtbron rechtsboven
+           (zie SCHADUW_HELLING in Wereld.tsx) */
+        .pk-schaduw { box-shadow: -7px 18px 38px -20px rgba(23,80,58,0.45), -1px 3px 8px -4px rgba(23,80,58,0.25); }
         .pk-flip { transition: transform 0.65s cubic-bezier(0.3, 0.9, 0.25, 1); }
         @media (prefers-reduced-motion: reduce) {
           /* geen 3D-draai: de kanten faden over elkaar heen */
