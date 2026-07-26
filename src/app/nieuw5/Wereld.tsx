@@ -18,10 +18,11 @@ import type { CSSProperties, ReactNode } from "react";
    en de toolkaarten blijven ongemoeid: dat is al ons "filmisch realisme".
    Reveals liften mee op het data-reveal/is-in-systeem van Vierde.tsx. ───── */
 
+/* MINT was de eigenaar op alle vier de mintvelden te donker; MINT_LICHT is
+   nu de echte veldkleur van de pagina (Herken, Privacy, Regie, Maker,
+   Ervaringen). MINT zelf blijft in gebruik als DIEPERE tint-op-tint-accent
+   bovenop dat lichte veld (het mintblok/quote-blokje in de makerskaart). */
 export const MINT = "#cfe6d8";
-/* Lichtere proefkleur voor het mintveld achter de makerskaart + ervaringen-
-   sectie — eigenaar wil zien hoe dat oogt. Alleen daar gebruikt, de rest
-   van de pagina staat nog op de gewone MINT. */
 export const MINT_LICHT = "#ecf6f0";
 export const MINT_DIEP = "#b5d8c4"; // silhouetten op mint
 /* Achtergrondvlakken: bewust maar een paar procent van de ondergrond af.
@@ -577,7 +578,7 @@ const PIJN = [
 
 export function WereldHerken() {
   return (
-    <section className="relative overflow-hidden" style={{ background: MINT }}>
+    <section className="relative overflow-hidden" style={{ background: MINT_LICHT }}>
       {/* Deze overgang is de grootste van de pagina: het papier hangt links
          diep door en trekt zich rechts helemaal terug, zodat het mintveld aan
          de rechterkant flink omhoog loopt — precies achter de intro-alinea
@@ -677,7 +678,7 @@ const KLAS = ["Sofie", "Daan", "Iris", "Mees", "Noor"];
 
 export function WereldPrivacy() {
   return (
-    <section className="relative overflow-hidden" style={{ background: MINT }}>
+    <section className="relative overflow-hidden" style={{ background: MINT_LICHT }}>
       {/* Dit mintveld helt bewust de ándere kant op dan dat van "Herken je
          dit?", zodat de twee groene banden op de pagina elkaars spiegel zijn
          in plaats van een herhaling. */}
@@ -841,7 +842,7 @@ export function WereldRegie() {
          valt die halve hoogte samen met het midden van de kaartjesrij (en op
          mobiel met het midden van de gestapelde kaartjes). */}
       <div className="pointer-events-none absolute inset-x-0 top-0 bottom-1/2 overflow-hidden" aria-hidden>
-        <div className="absolute inset-0" style={{ background: MINT }} />
+        <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
         {/* Hier zakt de mint in het midden juist ver door, tussen de twee
            buitenste kaartjes langs: een derde soort golf, geen herhaling. */}
         <Golf kleur="#fcfbf7" vorm="hapMidden" />
