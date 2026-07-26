@@ -408,21 +408,25 @@ function Weekraster({
                           borderColor: randKleur(b.kleur?.bg),
                         }}
                       >
-                        {heeftTekst && (
-                          <span
-                            aria-hidden
-                            className="pointer-events-none absolute right-1 top-1 h-1.5 w-1.5 rounded-full opacity-50"
-                            style={{ background: b.kleur?.tekst }}
-                          />
-                        )}
                         <span
                           className={
-                            "truncate text-xs font-bold leading-tight " +
-                            (tijdTonen && !smal ? "min-w-0 flex-1" : "")
+                            "flex min-w-0 items-baseline gap-1 " +
+                            (tijdTonen && !smal ? "flex-1" : "")
                           }
-                          style={{ color: b.kleur?.tekst }}
                         >
-                          {b.naam}
+                          <span
+                            className="truncate text-xs font-bold leading-tight"
+                            style={{ color: b.kleur?.tekst }}
+                          >
+                            {b.naam}
+                          </span>
+                          {heeftTekst && (
+                            <span
+                              aria-hidden
+                              className="h-1.5 w-1.5 shrink-0 rounded-full opacity-50"
+                              style={{ background: b.kleur?.tekst }}
+                            />
+                          )}
                         </span>
                         {tijdTonen && (
                           <span

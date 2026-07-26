@@ -420,8 +420,14 @@ export default function RoosterBewerken({
   // De andere blokken van hetzelfde vak. Hebben die nu al dezelfde omschrijving,
   // dan staat het vinkje "bij alle …-blokken" de volgende keer vanzelf goed —
   // zo voelt het alsof de keuze onthouden is, zonder hem ergens te bewaren.
+  // Let op: pauzeblokken delen allemaal `vak: "pauze"` (zie weekplanning.html) en
+  // zijn alleen via `naam` uit elkaar te houden ("Eten en drinken" vs. "Buiten
+  // spelen"), dus die moet hier ook mee matchen — anders telt "alle blokken"
+  // per ongeluk ook de andere pauzesoort mee.
   const zelfdeVak = gekozenBlok
-    ? (concept?.blokken ?? []).filter((b) => b.vak === gekozenBlok.vak)
+    ? (concept?.blokken ?? []).filter(
+        (b) => b.vak === gekozenBlok.vak && b.naam === gekozenBlok.naam,
+      )
     : [];
   // Alleen als er echt iets gedeeld wordt: staan ze allemaal leeg, dan begint het
   // vinkje uit. Anders zou je eerste aantekening ongevraagd overal landen.
@@ -472,7 +478,7 @@ export default function RoosterBewerken({
         return {
           ...c,
           blokken: c.blokken.map((b) =>
-            b.id === id || (overal && bron && b.vak === bron.vak)
+            b.id === id || (overal && bron && b.vak === bron.vak && b.naam === bron.naam)
               ? { ...b, omschrijving: nieuw }
               : b,
           ),
