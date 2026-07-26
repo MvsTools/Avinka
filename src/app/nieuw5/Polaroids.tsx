@@ -225,6 +225,12 @@ const DUW_MAX = 90;
 const DUW_MAXHOEK = 9;
 const DUW_DEMPING = 9;
 
+/* en hoeveel daarvan er via de draad doorloopt naar de buren: hoe ver de
+   lijn doorzakt onder je hand, en hoe hard de kaarten ernaast meewiegen */
+const RIMPEL_DIP = 6;
+const RIMPEL_DIPMAX = 40;
+const RIMPEL_HOEK = 0.35;
+
 /* veer-integratie: één stap van een gedempte veer richting `doel` */
 function veer(huidig: number, snelheid: number, doel: number, k: number, d: number, dt: number): [number, number] {
   const v = snelheid + (k * (doel - huidig) - d * snelheid) * dt;
@@ -351,12 +357,17 @@ function DraadScene() {
           const stoot = Math.min(1000, vRel);
           if (!bVast) {
             fb.vx += stoot * 0.85;
-            fb.vhoek += Math.min(130, stoot * 0.1); // opslingeren van de tik
+            /* b wordt naar RECHTS getikt, dus zijn onderkant moet ook naar
+               rechts: dat is een negatieve hoek (zie de afspraak bij
+               `doelHoek`). Stond hier op plus, waardoor een aangetikt kaartje
+               de kant op zwaaide waar de klap NIET vandaan kwam. */
+            fb.vhoek -= Math.min(130, stoot * 0.1);
             fb.vdip += Math.min(55, stoot * 0.06);
           }
           if (!aVast) {
             fa.vx -= stoot * 0.55;
-            fa.vhoek -= Math.min(90, stoot * 0.06);
+            /* a stuitert terug naar links, dus positief */
+            fa.vhoek += Math.min(90, stoot * 0.06);
             fa.vdip += Math.min(40, stoot * 0.04);
           }
         }
@@ -450,7 +461,20 @@ function DraadScene() {
       const vorig = vorigeHoverX.current;
       vorigeHoverX.current = e.clientX;
       if (vorig === null) return;
-      duw.current = Math.max(-DUW_MAX, Math.min(DUW_MAX, duw.current + (e.clientX - vorig)));
+      const dx = e.clientX - vorig;
+      duw.current = Math.max(-DUW_MAX, Math.min(DUW_MAX, duw.current + dx));
+      /* de duw loopt over de draad door: de lijn zakt onder de kaart die je
+         aanraakt iets door en de buren wiegen mee. Bewust een strakkere
+         afval dan bij slepen (0,45 per kaart i.p.v. 1/afstand): een streek
+         langs een kaart is lichter dan hem echt beetpakken, dus de rimpel
+         sterft na twee kaarten uit in plaats van de hele rij mee te nemen. */
+      fys.current[i].vdip += Math.min(RIMPEL_DIPMAX, Math.abs(dx) * RIMPEL_DIP);
+      for (let j = 0; j < KAARTEN.length; j++) {
+        if (j === i) continue;
+        const afval = Math.pow(0.45, Math.abs(j - i));
+        fys.current[j].vdip += Math.abs(dx) * RIMPEL_DIP * 0.3 * afval;
+        fys.current[j].vhoek -= dx * RIMPEL_HOEK * afval;
+      }
       return;
     }
     const afstand = Math.abs(e.clientX - s.startPointerX);
@@ -469,7 +493,9 @@ function DraadScene() {
         if (j === i) continue;
         const afval = 1 / (1 + Math.abs(j - i));
         fys.current[j].vdip += Math.abs(dx) * 4 * afval;
-        fys.current[j].vhoek += dx * 0.9 * afval;
+        /* MIN, niet plus: met een plus wiegden de buren juist wég van de
+           kant waarop je sleepte (zie de teken-afspraak bij `doelHoek`) */
+        fys.current[j].vhoek -= dx * 0.9 * afval;
       }
     }
   };
