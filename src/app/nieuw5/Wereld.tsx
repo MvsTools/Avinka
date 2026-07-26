@@ -22,7 +22,7 @@ export const MINT = "#cfe6d8";
 /* Lichtere proefkleur voor het mintveld achter de makerskaart + ervaringen-
    sectie — eigenaar wil zien hoe dat oogt. Alleen daar gebruikt, de rest
    van de pagina staat nog op de gewone MINT. */
-export const MINT_LICHT = "#e0efe6";
+export const MINT_LICHT = "#e6f2ec";
 export const MINT_DIEP = "#b5d8c4"; // silhouetten op mint
 /* Achtergrondvlakken: bewust maar een paar procent van de ondergrond af.
    De rustigste sectie van de pagina (privacy) heeft óók een achtergrond-
