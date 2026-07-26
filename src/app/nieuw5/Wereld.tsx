@@ -22,14 +22,14 @@ export const MINT = "#cfe6d8";
 /* Lichtere proefkleur voor het mintveld achter de makerskaart + ervaringen-
    sectie — eigenaar wil zien hoe dat oogt. Alleen daar gebruikt, de rest
    van de pagina staat nog op de gewone MINT. */
-export const MINT_LICHT = "#e6f2ec";
+export const MINT_LICHT = "#ecf6f0";
 export const MINT_DIEP = "#b5d8c4"; // silhouetten op mint
 /* Achtergrondvlakken: bewust maar een paar procent van de ondergrond af.
    De rustigste sectie van de pagina (privacy) heeft óók een achtergrond-
    motief — de vliegtuigjes — en die werkt juist omdat je hem nauwelijks
    ziet. Dat is de maat voor alle vlakken hieronder. */
 export const VLAK_PAPIER = "#f2f4ed"; // op het gespikkelde papier
-const VLAK_MINT = "#c6dfcf"; // op een mintveld
+export const VLAK_MINT = "#c6dfcf"; // op een mintveld
 /* Nog een stap zachter, voor plekken waar meerdere vlakken bij elkaar staan:
    twee vormen naast elkaar tellen op en worden samen al snel te aanwezig. */
 const VLAK_MINT_ZACHT = "#cae2d3";

@@ -6,7 +6,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { DONKER, Golf, KOP, MINT, MINT_LICHT, MINT_DIEP, KaartVlak, VLAK_PAPIER } from "./Wereld";
+import { DONKER, Golf, KOP, MINT, MINT_LICHT, MINT_DIEP, KaartVlak, VLAK_MINT, VLAK_PAPIER } from "./Wereld";
 
 /* ── De polaroids: wat leerkrachten zeggen ─────────────────────────────────
    Ervaringen als instax-kaartjes aan één levende draad. Geen prikbord, geen
@@ -701,9 +701,13 @@ export function WereldPolaroids() {
       </div>
 
       {/* de achtergrond uit de referentie is óns bestaande wereldje: het
-         gespikkelde papier met zachte vlakken in de hoeken en losse stipjes */}
+         gespikkelde papier met zachte vlakken in de hoeken en losse stipjes.
+         Dit linker vlak ligt grotendeels op het mintveld hierboven, dus die
+         krijgt VLAK_MINT (het tint-op-tint-token "op een mintveld") in
+         plaats van VLAK_PAPIER — anders verdwijnt hij tegen de lichtere
+         mint. Op eigen verzoek bewust een tikje donkerder, niet lichter. */}
       <KaartVlak
-        kleur={VLAK_PAPIER}
+        kleur={VLAK_MINT}
         vorm="schelp"
         breedte={560}
         hoogte={430}
