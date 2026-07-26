@@ -1,249 +1,415 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { DONKER, Golf, KOP, MINT, MINT_LICHT, KaartVlak, VLAK_MINT } from "./Wereld";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { DONKER, Golf, KOP, MINT_LICHT, KaartVlak, VLAK_MINT } from "./Wereld";
 
-/* ── De privacysectie: bewijs het, vertel het niet ─────────────────────────
-   Wat hier stond is drie keer gesneuveld: een uitlegblok met kaartjes ("die
-   vind ik vreselijk"), en twee keer een filmische scène — laatst een duik
-   onder water. Die laatste was mooi maar geleend: water heeft niets met
-   leerkrachten te maken, en dat voel je.
+/* ── De privacysectie: DE GRENS ────────────────────────────────────────────
+   Eén beeld draagt deze sectie: een verticale lijn, en dat is de rand van
+   jouw apparaat. Links staat wat jij schrijft, rechts wat er weggaat. De
+   namen steken die grens over — en veranderen precies op de lijn.
 
-   Het onderzoek naar hoe anderen dit doen gaf een duidelijk beeld. De norm is
-   saai en voor ons ook niet bruikbaar: genummerde stappen (Apple), badges met
-   SOC 2 / ISO naast de knop (die hebben we niet, en suggereren mag niet zolang
-   het juristentraject loopt), en vergelijkingstabellen. In het onderwijs doet
-   niemand iets bijzonders; privacy is daar een beleidsdocument.
+   WAT ER HIERVOOR MIS GING, en waarom dit anders is:
+   1. De vorige versie toonde het maskeren als een TOESTAND: twee panelen die
+      allebei al af waren. Het moment waarop een naam verdwijnt is nou juist
+      het hele punt, en dat zag je dus nooit gebeuren. Nu is het een
+      GEBEURTENIS: de naam laat los, vliegt, en klapt óp de grens om.
+   2. Er stond veel te veel. Kop, alinea, label, veld, twee panelen, een
+      voetnoot, drie stappen en een lege plek — acht blokken voor één belofte.
+      Nu: de kop, het beeld, en één slotzin.
+   3. Er gebeurde niets bij scrollen of hoveren. Nu drijft de hele oversteek
+      op je scrollpositie, licht de grens op waar een naam hem raakt, en kun
+      je met je muis over een naam gaan om vooruit te zien wat ermee gebeurt.
 
-   De uitzondering is de hoek waar privacy hét product is: browser-gebaseerde
-   anonimiseerders. Die zetten allemaal een LIVE DEMO op de pagina, en daar zit
-   de vondst — het uitblijven van een serverrondje is zélf het bewijs. Je hoeft
-   niet te zeggen dat het op het apparaat gebeurt, je laat het zien doordat er
-   niets laadt.
+   De tweede helft van de belofte staat eronder: de gegevens die de grens niet
+   eens halen. Die duwen ertegenaan en blijven liggen.
 
-   Dat patroon lenen we, met één ding erbij dat die tools niet hebben: het gaat
-   over een échte klas. Typ de namen van je eigen leerlingen en zie ze
-   verdwijnen. Niemand gelooft een belofte zo goed als eentje die hij zelf net
-   heeft getest.
-
-   Eronder, heel rustig, de drie stappen voor wie het precies wil weten (dat is
-   het Apple-patroon, en het kost bijna niets), en als afsluiter de lege plek —
-   de enige grap op deze pagina die ook werkt als iemand alleen maar scant.
-
-   ⚠️ Het maskeren hieronder is ECHT en gebeurt in de browser: hele woorden,
-   hoofdletter-ongevoelig, precies zoals de platformlaag in
-   public/avinka-masking.js het doet. Er gaat hier niets de deur uit. Dat moet
-   ook zo blijven — de hele sectie staat of valt ermee dat de claim klopt. ── */
-
-/* De voorbeeldzin waarin de namen landen. Bewust een echte rapportzin: zo zie
-   je meteen dat het verhaal overeind blijft en alleen de naam verandert. Dat
-   neemt de angst weg dat maskeren de tekst kapot maakt. */
-function maakZin(namen: string[]) {
-  const [a, b, c] = namen;
-  const delen = [
-    `${a} liet dit halfjaar een mooie groei zien bij spelling.`,
-    b ? ` ${b} werkt geconcentreerder dan eerst.` : "",
-    c ? ` En ${c} durft steeds vaker iets te vragen.` : "",
-  ];
-  return delen.join("");
-}
+   ⚠️ Het maskeren is ECHT en gebeurt in de browser: hele woorden,
+   hoofdletter-ongevoelig, dezelfde regel als public/avinka-masking.js. Er
+   gaat hier niets de deur uit — gemeten: nul netwerkverzoeken. Die nul is de
+   sectie. Komt er ooit iets bij dat wél verstuurt, dan klopt het niet meer. */
 
 const STANDAARD = "Sofie, Daan, Iris";
 const SCHUILNAAM = (i: number) => `leerling ${String.fromCharCode(65 + i)}`;
 
-/* Hele-woord-regex, hoofdletter-ongevoelig — dezelfde regel als de echte
-   maskeerlaag. Door de woordgrenzen wordt "Sam" nooit uit "samen" geknipt. */
-function woordRe(naam: string) {
-  const veilig = naam.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const start = /^[A-Za-zÀ-ÿ0-9]/.test(naam) ? "\\b" : "";
-  const eind = /[A-Za-zÀ-ÿ0-9]$/.test(naam) ? "\\b" : "";
-  return new RegExp(start + veilig + eind, "gi");
+/* Wat de grens niet haalt. Dit is de andere helft van de belofte: namen gaan
+   gemaskeerd mee, maar dít gaat helemaal niet mee. */
+const BLIJFT = ["toetsresultaten", "gespreksverslagen", "rapportcijfers"];
+
+/* De zin waarin de namen staan. Bewust een echte rapportzin: zo zie je dat
+   het verhaal heel blijft en alleen de naam verandert. */
+function maakDelen(namen: string[]) {
+  const staarten = [
+    " liet dit halfjaar een mooie groei zien bij spelling. ",
+    " werkt geconcentreerder dan eerst. En ",
+    " durft steeds vaker iets te vragen.",
+  ];
+  return namen.map((naam, i) => ({ naam, staart: staarten[i] ?? " " }));
 }
 
-const STAPPEN = [
-  { nr: "01", tekst: "Je typt de naam van een leerling." },
-  { nr: "02", tekst: "Nog op je eigen apparaat wordt die vervangen door een schuilnaam." },
-  { nr: "03", tekst: "De AI ziet alleen die schuilnaam. Wij bewaren niets van de leerling." },
-];
+function soepel(t: number) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+const klem = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 
 export function WereldPrivacy() {
   const [invoer, setInvoer] = useState(STANDAARD);
+  const [zweef, setZweef] = useState(-1);
 
-  const { namen, zin, gemaskeerd } = useMemo(() => {
-    /* splitsen op komma's en spaties, dubbele eruit, en een bovengrens zodat
-       iemand die de hele klassenlijst plakt de zin niet opblaast */
+  const sectie = useRef<HTMLElement>(null);
+  const vanRefs = useRef<Array<HTMLSpanElement | null>>([]);
+  const naarRefs = useRef<Array<HTMLSpanElement | null>>([]);
+  const vliegRefs = useRef<Array<HTMLSpanElement | null>>([]);
+  const gloedRef = useRef<HTMLDivElement>(null);
+  const blijftRefs = useRef<Array<HTMLSpanElement | null>>([]);
+  const lijnRef = useRef<HTMLDivElement>(null);
+  /* De laag waarin de namen vliegen. ALLE posities worden hiertegen gemeten:
+     de vliegende kopieën staan hierin, dus meten tegen de sectie leverde een
+     verschuiving op ter grootte van de afstand tussen sectie en raster — de
+     namen landden dan netjes een paar honderd pixels naast hun doel. */
+  const beeldRef = useRef<HTMLDivElement>(null);
+
+  const namen = useMemo(() => {
     const gevonden = Array.from(
       new Map(
         invoer
-          .split(/[,;\n]+|\s{2,}/)
+          .split(/[,;\n]+/)
           .flatMap((d) => d.trim().split(/\s+/))
           .map((d) => d.trim())
           .filter((d) => d.length > 1)
           .map((d) => [d.toLowerCase(), d]),
       ).values(),
     ).slice(0, 3);
-
-    const lijst = gevonden.length ? gevonden : ["Sofie", "Daan", "Iris"];
-    const tekst = maakZin(lijst);
-    let uit = tekst;
-    lijst.forEach((n, i) => {
-      uit = uit.replace(woordRe(n), SCHUILNAAM(i));
-    });
-    return { namen: lijst, zin: tekst, gemaskeerd: uit };
+    return gevonden.length ? gevonden : ["Sofie", "Daan", "Iris"];
   }, [invoer]);
 
-  /* de tekst in stukjes hakken zodat we de namen kunnen markeren */
-  const markeer = (tekst: string, merken: string[], klasse: string) => {
-    if (!merken.length) return tekst;
-    const re = new RegExp(
-      `(${merken.map((m) => m.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`,
-      "gi",
-    );
-    return tekst.split(re).map((deel, i) =>
-      merken.some((m) => m.toLowerCase() === deel.toLowerCase()) ? (
-        <mark key={i} className={klasse}>
-          {deel}
-        </mark>
-      ) : (
-        <span key={i}>{deel}</span>
-      ),
-    );
-  };
+  const delen = useMemo(() => maakDelen(namen), [namen]);
+
+  /* ── de oversteek ──
+     De posities worden gemeten (niet geraden): waar staat de naam links, waar
+     is zijn plek rechts. Daartussen vliegt een kopie. Meten gebeurt bij
+     layout en bij resize, nooit per frame — dat zou elke frame een layout
+     forceren en precies het gehaper opleveren dat we eerder hadden. */
+  const posities = useRef<Array<{ x1: number; y1: number; x2: number; y2: number }>>([]);
+  const meet = useCallback(() => {
+    const el = beeldRef.current;
+    if (!el) return;
+    const basis = el.getBoundingClientRect();
+    posities.current = namen.map((_, i) => {
+      const a = vanRefs.current[i]?.getBoundingClientRect();
+      const b = naarRefs.current[i]?.getBoundingClientRect();
+      if (!a || !b) return { x1: 0, y1: 0, x2: 0, y2: 0 };
+      return {
+        x1: a.left - basis.left + a.width / 2,
+        y1: a.top - basis.top + a.height / 2,
+        x2: b.left - basis.left + b.width / 2,
+        y2: b.top - basis.top + b.height / 2,
+      };
+    });
+  }, [namen]);
+
+  useLayoutEffect(() => {
+    meet();
+  }, [meet]);
+
+  useEffect(() => {
+    const el = sectie.current;
+    if (!el) return;
+
+    /* Geen state maar een gewone variabele: dit wordt alleen in de teken-lus
+       gelezen en hoeft nooit een render te veroorzaken. */
+    const rustig = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    /* Pas meten als de layout écht klaar is. Meten in een layout-effect gaat
+       mis: de webfonts zijn dan nog niet geladen, de regels breken daarna
+       anders, en de landingsplekken verschuiven — waardoor de namen naast hun
+       doel terechtkwamen. Daarom meten we lui, bij het eerste tekenmoment,
+       en opnieuw zodra de fonts binnen zijn of de maat verandert. */
+    let gemeten = false;
+    const ro = new ResizeObserver(() => {
+      gemeten = false;
+      wek();
+    });
+    ro.observe(el);
+    document.fonts?.ready.then(() => {
+      gemeten = false;
+      wek();
+    });
+
+    let raf = 0;
+    const teken = () => {
+      raf = 0;
+      if (!gemeten) {
+        meet();
+        gemeten = true;
+      }
+      const r = el.getBoundingClientRect();
+      /* De oversteek loopt terwijl de sectie door beeld komt. Geen sticky en
+         geen extra schermlengte: die maakten de pagina eerder alleen maar
+         langer zonder dat er iets bij kwam. */
+      const p = klem((window.innerHeight * 0.78 - r.top) / (r.height * 0.62));
+
+      const beeld = beeldRef.current?.getBoundingClientRect();
+      const lijnX =
+        lijnRef.current && beeld
+          ? lijnRef.current.getBoundingClientRect().left - beeld.left
+          : 0;
+
+      let gloedSterkte = 0;
+      let gloedY = 0;
+
+      namen.forEach((naam, i) => {
+        const vlieg = vliegRefs.current[i];
+        const van = vanRefs.current[i];
+        const pos = posities.current[i];
+        if (!vlieg || !pos) return;
+
+        /* elke naam vertrekt iets later, zodat het een reeks wordt en geen
+           groepssprong */
+        const start = 0.1 + i * 0.15;
+        const t = rustig ? 1 : klem((p - start) / 0.34);
+        const e = soepel(t);
+
+        const x = pos.x1 + (pos.x2 - pos.x1) * e;
+        const y = pos.y1 + (pos.y2 - pos.y1) * e;
+        /* een lichte boog: hij wordt opgetild en weer neergezet */
+        const boog = Math.sin(e * Math.PI) * -26;
+
+        vlieg.style.transform = `translate3d(${x.toFixed(1)}px, ${(y + boog).toFixed(1)}px, 0) translate(-50%, -50%)`;
+        vlieg.style.opacity = t > 0.02 ? "1" : "0";
+
+        /* de omslag gebeurt precies op de grens */
+        const overGrens = x >= lijnX;
+        vlieg.dataset.gemaskeerd = overGrens ? "ja" : "nee";
+        const wil = overGrens ? SCHUILNAAM(i) : naam;
+        if (vlieg.textContent !== wil) vlieg.textContent = wil;
+
+        /* De naam links BLIJFT staan. Hij verdween eerst helemaal, en dan las
+           het als "je tekst is gewist" — terwijl er in werkelijkheid alleen
+           een kopie vertrekt; jouw eigen tekst houdt de naam gewoon. Hij dipt
+           dus even weg terwijl de kopie onderweg is en komt daarna terug. */
+        if (van) van.style.opacity = (1 - 0.62 * Math.sin(klem(t) * Math.PI)).toFixed(2);
+
+        /* de grens licht op waar hij geraakt wordt */
+        const raakt = 1 - Math.min(1, Math.abs(x - lijnX) / 90);
+        if (raakt > gloedSterkte && t > 0 && t < 1) {
+          gloedSterkte = raakt;
+          gloedY = y;
+        }
+      });
+
+      if (gloedRef.current) {
+        gloedRef.current.style.opacity = (gloedSterkte * 0.9).toFixed(2);
+        gloedRef.current.style.transform = `translate3d(-50%, ${gloedY.toFixed(0)}px, 0) translateY(-50%) scaleY(${(0.6 + gloedSterkte * 0.9).toFixed(2)})`;
+      }
+
+      /* de gegevens die de grens niet halen: ze duwen ertegenaan en blijven */
+      blijftRefs.current.forEach((el2, i) => {
+        if (!el2) return;
+        const start = 0.22 + i * 0.1;
+        const t = rustig ? 1 : klem((p - start) / 0.3);
+        const duw = Math.sin(soepel(t) * Math.PI) * 22;
+        el2.style.transform = `translate3d(${duw.toFixed(1)}px, 0, 0)`;
+        el2.style.setProperty("--gestopt", t > 0.55 ? "1" : "0");
+      });
+    };
+
+    const wek = () => {
+      if (!raf) raf = requestAnimationFrame(teken);
+    };
+    window.addEventListener("scroll", wek, { passive: true });
+    window.addEventListener("resize", wek);
+    teken();
+
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      ro.disconnect();
+      window.removeEventListener("scroll", wek);
+      window.removeEventListener("resize", wek);
+    };
+  }, [namen, meet]);
 
   return (
-    <section className="relative overflow-hidden" style={{ background: MINT_LICHT }}>
+    <section
+      ref={sectie}
+      className="relative overflow-hidden"
+      style={{ background: MINT_LICHT }}
+      aria-label="Privacy"
+    >
       <Golf kleur="#fcfbf7" flip vorm="oploopRechts" hoogte="h-[70px] sm:h-[118px]" />
       <KaartVlak
         kleur={VLAK_MINT}
         vorm="koepel"
-        breedte={780}
-        hoogte={380}
-        style={{ right: "-14%", top: 120, transform: "rotate(-5deg)" }}
+        breedte={760}
+        hoogte={360}
+        style={{ right: "-15%", top: 90, transform: "rotate(-5deg)" }}
         className="hidden lg:block"
         tel={3}
       />
 
-      <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pb-28 pt-28 lg:pb-36 lg:pt-32">
-        <div className="max-w-2xl">
-          <p data-reveal className="text-2xl" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
-            privacy voorop
-          </p>
-          <h2
-            data-reveal
-            className="mt-2 font-display text-[clamp(2.1rem,4.4vw,3.4rem)] font-black leading-[1.03] tracking-tight [text-wrap:balance]"
-            style={{ color: DONKER }}
-          >
-            Er is één ding dat we bewust niet doen.
-          </h2>
-          <p data-reveal style={{ transitionDelay: "80ms" }} className="mt-6 text-xl leading-9 text-ink/75">
-            Gegevens van leerlingen bewaren we niet. En hun namen gaan nooit
-            naar de AI: die worden op jouw eigen apparaat vervangen door een
-            schuilnaam, nog vóór er iets wordt verstuurd.
-          </p>
-        </div>
-
-        {/* ── De proef ── */}
-        <div
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-28 pt-28 lg:pb-32 lg:pt-32">
+        <h2
           data-reveal
-          style={{
-            transitionDelay: "140ms",
-            background: "#fffdf9",
-            borderRadius: "3rem 2.2rem 3.2rem 2.4rem / 2.4rem 3.2rem 2.2rem 3rem",
-            borderColor: "#d4e5dc",
-            boxShadow: "-14px 34px 66px -34px rgba(23,80,58,0.6)",
-          }}
-          className="relative mt-14 border-[2.5px] px-7 py-9 sm:px-11 sm:py-11"
+          className="max-w-2xl font-display text-[clamp(2.1rem,4.4vw,3.4rem)] font-black leading-[1.03] tracking-tight [text-wrap:balance]"
+          style={{ color: DONKER }}
         >
-          <span
-            className="absolute left-[58%] top-[-18px] flex h-10 w-10 items-center justify-center rounded-2xl bg-brand shadow-md"
-            style={{ translate: "-50% 0", rotate: "8deg" }}
+          Namen komen hier niet voorbij.
+        </h2>
+
+        {/* ── het beeld ── */}
+        <div ref={beeldRef} className="relative mt-14 grid gap-10 md:grid-cols-2 md:gap-0">
+          {/* de grens zelf */}
+          <div
+            ref={lijnRef}
+            className="pointer-events-none absolute left-1/2 top-0 hidden h-full w-px md:block"
+            style={{ background: "linear-gradient(to bottom, transparent, rgba(30,107,77,0.45) 12%, rgba(30,107,77,0.45) 88%, transparent)" }}
             aria-hidden
           >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="#fff" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 13l4 4L19 7" />
-            </svg>
-          </span>
-
-          <p className="text-2xl" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
-            probeer het maar
-          </p>
-
-          <label htmlFor="avinka-namen" className="mt-3 block font-display text-2xl font-black tracking-tight" style={{ color: DONKER }}>
-            Typ de namen van een paar leerlingen uit je eigen klas.
-          </label>
-
-          <input
-            id="avinka-namen"
-            value={invoer}
-            onChange={(e) => setInvoer(e.target.value)}
-            spellCheck={false}
-            autoComplete="off"
-            placeholder={STANDAARD}
-            className="mt-5 w-full rounded-2xl border-[2.5px] border-[#d4e5dc] bg-white px-5 py-4 text-lg text-ink outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/15"
-          />
-
-          <div className="mt-7 grid gap-5 sm:grid-cols-2">
-            {/* wat jij schrijft */}
-            <div className="rounded-2xl bg-[#f6f4ec] p-6">
-              <p className="text-[0.68rem] font-bold uppercase tracking-[0.16em] text-ink/45">
-                Wat jij schrijft
-              </p>
-              <p className="mt-3 text-lg leading-8 text-ink/85">
-                {markeer(zin, namen, "bg-transparent font-bold text-ink underline decoration-2 underline-offset-4 decoration-[#f59e0b]")}
-              </p>
-            </div>
-
-            {/* wat de AI ontvangt */}
-            <div className="rounded-2xl p-6" style={{ background: MINT }}>
-              <p className="text-[0.68rem] font-bold uppercase tracking-[0.16em]" style={{ color: KOP }}>
-                Wat de AI ontvangt
-              </p>
-              <p className="mt-3 text-lg leading-8 text-ink/85" aria-live="polite">
-                {markeer(
-                  gemaskeerd,
-                  namen.map((_, i) => SCHUILNAAM(i)),
-                  "rounded-md bg-white/80 px-1.5 font-bold text-[#1e6b4d]",
-                )}
-              </p>
-            </div>
+            {/* de plek waar een naam de grens raakt, licht op */}
+            <div
+              ref={gloedRef}
+              className="absolute left-1/2 top-0 h-24 w-24 rounded-full opacity-0"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(47,158,110,0.55) 0%, rgba(47,158,110,0.18) 45%, rgba(47,158,110,0) 72%)",
+              }}
+            />
           </div>
 
-          {/* Dit zinnetje is de kern van het bewijs: er laadt niets, want er
-             gaat niets weg. Dat is precies waarom een live demo hier sterker
-             is dan welke uitleg ook. */}
-          <p className="mt-6 text-base leading-7 text-ink/60">
-            Dit gebeurt volledig op jouw apparaat, hier in je browser. Er wordt
-            niets verstuurd — je mag je internet er zelfs bij uitzetten.
-          </p>
+          {/* links: wat jij schrijft */}
+          <div className="md:pr-12">
+            <p className="text-[0.68rem] font-bold uppercase tracking-[0.16em] text-ink/45">
+              Op jouw apparaat
+            </p>
+            <p className="mt-4 text-xl leading-9 text-ink/85 sm:text-2xl sm:leading-10">
+              {delen.map((d, i) => (
+                <span key={i}>
+                  <span
+                    ref={(r) => {
+                      vanRefs.current[i] = r;
+                    }}
+                    onMouseEnter={() => setZweef(i)}
+                    onMouseLeave={() => setZweef(-1)}
+                    className="cursor-default font-bold underline decoration-2 underline-offset-4"
+                    style={{ textDecorationColor: "#f59e0b" }}
+                  >
+                    {zweef === i ? SCHUILNAAM(i) : d.naam}
+                  </span>
+                  {d.staart}
+                </span>
+              ))}
+            </p>
+
+            <label className="mt-8 flex flex-wrap items-center gap-3 text-base text-ink/55">
+              <span>Typ je eigen klas:</span>
+              <input
+                value={invoer}
+                onChange={(e) => setInvoer(e.target.value)}
+                spellCheck={false}
+                autoComplete="off"
+                placeholder={STANDAARD}
+                aria-label="Namen van leerlingen uit je klas"
+                className="min-w-[12rem] flex-1 rounded-xl border-[2px] border-[#cfe0d6] bg-white/70 px-4 py-2 text-base text-ink outline-none transition focus:border-brand focus:bg-white focus:ring-4 focus:ring-brand/15"
+              />
+            </label>
+          </div>
+
+          {/* rechts: wat er weggaat */}
+          <div className="md:pl-12">
+            <p className="text-[0.68rem] font-bold uppercase tracking-[0.16em]" style={{ color: KOP }}>
+              Wat de AI ontvangt
+            </p>
+            <p className="mt-4 text-xl leading-9 text-ink/85 sm:text-2xl sm:leading-10">
+              {delen.map((d, i) => (
+                <span key={i}>
+                  {/* de lege plek waar de schuilnaam neerkomt */}
+                  <span
+                    ref={(r) => {
+                      naarRefs.current[i] = r;
+                    }}
+                    className="inline-block rounded-md align-baseline"
+                    style={{
+                      minWidth: `${SCHUILNAAM(i).length * 0.56}em`,
+                      background: "rgba(47,158,110,0.10)",
+                    }}
+                  >
+                    {/* Op een smal scherm vliegt er niets (de laag hieronder
+                       staat op md:block), dus daar hoort de schuilnaam er
+                       gewoon te staan — anders blijft het vakje eeuwig leeg. */}
+                    <span className="px-1.5 font-bold text-[#1e6b4d] md:hidden">
+                      {SCHUILNAAM(i)}
+                    </span>
+                    <span className="hidden md:inline" style={{ height: "1.1em" }} />
+                  </span>
+                  {d.staart}
+                </span>
+              ))}
+            </p>
+          </div>
+
+          {/* de vliegende namen */}
+          <div className="pointer-events-none absolute inset-0 hidden md:block" aria-hidden>
+            {namen.map((naam, i) => (
+              <span
+                key={i}
+                ref={(r) => {
+                  vliegRefs.current[i] = r;
+                }}
+                data-gemaskeerd="nee"
+                className="absolute left-0 top-0 whitespace-nowrap rounded-md px-1.5 text-xl font-bold opacity-0 will-change-transform sm:text-2xl [&[data-gemaskeerd='ja']]:bg-brand/12 [&[data-gemaskeerd='ja']]:text-[#1e6b4d] [&[data-gemaskeerd='nee']]:text-ink"
+              >
+                {naam}
+              </span>
+            ))}
+          </div>
         </div>
 
-        {/* ── De drie stappen, rustig ── */}
-        <ol data-reveal className="mt-14 grid gap-8 sm:grid-cols-3">
-          {STAPPEN.map((s) => (
-            <li key={s.nr}>
-              <p className="font-display text-sm font-black tracking-[0.3em]" style={{ color: KOP }}>
-                {s.nr}
-              </p>
-              <p className="mt-2 text-lg leading-8 text-ink/75">{s.tekst}</p>
-            </li>
+        {/* ── wat de grens niet eens haalt ── */}
+        <div className="mt-16 flex flex-wrap items-center gap-x-3 gap-y-4">
+          <span className="text-base text-ink/55">En dit gaat helemaal niet mee:</span>
+          {BLIJFT.map((b, i) => (
+            <span
+              key={b}
+              ref={(r) => {
+                blijftRefs.current[i] = r;
+              }}
+              className="grens-chip relative rounded-full border-[2px] px-4 py-1.5 text-base font-semibold will-change-transform"
+              style={{ borderColor: "#cfe0d6", color: "#1e6b4d", background: "rgba(255,255,255,0.6)" }}
+            >
+              {b}
+            </span>
           ))}
-        </ol>
-
-        {/* ── De lege plek ── */}
-        <div
-          data-reveal
-          className="mt-14 rounded-[2rem] border-[2.5px] border-dashed px-8 py-10 text-center sm:px-12"
-          style={{ borderColor: "#c6dcd0" }}
-        >
-          <p className="mx-auto max-w-xl text-lg leading-8 text-ink/70">
-            Hier hadden we graag een voorbeeld laten zien van hoe wij met de
-            gegevens van jouw leerlingen omgaan.
-          </p>
-          <p className="mx-auto mt-3 max-w-xl font-display text-xl font-black leading-8" style={{ color: DONKER }}>
-            Daar hadden we gegevens van jouw leerlingen voor nodig gehad.
-          </p>
         </div>
+
+        <p data-reveal className="mt-10 max-w-xl text-lg leading-8 text-ink/70">
+          Dit gebeurt in je eigen browser, nog voor er iets verstuurd wordt.
+          Gegevens van leerlingen bewaren we niet.
+        </p>
       </div>
+
+      <style>{`
+        /* het streepje dat door een chip valt zodra hij is tegengehouden */
+        .grens-chip::after {
+          content: "";
+          position: absolute;
+          left: 12%;
+          right: 12%;
+          top: 50%;
+          height: 2px;
+          background: #1e6b4d;
+          border-radius: 2px;
+          transform: scaleX(var(--gestopt, 0));
+          transform-origin: left center;
+          transition: transform .45s cubic-bezier(.2,.7,.2,1);
+          opacity: .55;
+        }
+      `}</style>
     </section>
   );
 }
