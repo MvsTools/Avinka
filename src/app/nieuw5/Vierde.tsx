@@ -25,12 +25,12 @@ import {
   WereldFx,
   WereldIntro,
   WereldHerken,
-  WereldPrivacy,
   WereldRegie,
   WereldMaker,
   WereldSlot,
 } from "./Wereld";
 import { WereldPolaroids } from "./Polaroids";
+import { WereldWater } from "./Water";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -1076,9 +1076,12 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           <ToolRail />
         </section>
 
-        {/* ── 4. Privacy: mint-veld met vliegtuig-silhouet en één sterke
-           bewijs-compositie (klassenlijst + bewaar-kaartje, overlappend). ── */}
-        <WereldPrivacy />
+        {/* ── 4. Privacy: het donkere midden van de pagina. Geen uitlegblok
+           met kaartjes meer, maar één filmisch moment onder water waarin de
+           belofte wordt voorgedaan in plaats van verteld. Dit is meteen het
+           enige donkere veld tussen de film en het slot, en daarmee de derde
+           akte die de pagina miste. ── */}
+        <WereldWater />
 
         {/* ── 5. De regie blijft bij jou. Drie witte kaartjes naast elkaar,
            zonder kop en zonder iconen: op deze plek in de pagina hoort rust,
