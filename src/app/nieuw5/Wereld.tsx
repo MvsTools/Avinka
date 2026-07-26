@@ -340,25 +340,14 @@ function SilhouetSplat({
   drops.forEach(([x, y, r]) => { if (x - r < minX) minX = x - r; if (x + r > maxX) maxX = x + r; if (y - r < minY) minY = y - r; if (y + r > maxY) maxY = y + r; });
   const m = 12;
   const vb = `${(minX - m).toFixed(1)} ${(minY - m).toFixed(1)} ${(maxX - minX + 2 * m).toFixed(1)} ${(maxY - minY + 2 * m).toFixed(1)}`;
-  /* de vorm zelf, zodat de twee drukgangen gegarandeerd identiek zijn */
-  const vlek = (vulling: string) => (
-    <>
-      <path d={d} fill={vulling} />
-      {drops.map((dp, i) => (
-        <circle key={i} cx={dp[0].toFixed(1)} cy={dp[1].toFixed(1)} r={dp[2].toFixed(1)} fill={vulling} />
-      ))}
-    </>
-  );
   return (
     <SilhouetWrap par={0.03} style={style} tel={tel} className={className}>
-      {/* Twee losse svg's in plaats van één svg met een interne transform: de
-         schuif hoort een vaste afstand in PIXELS te zijn (een pers is altijd
-         even ver scheef), en een transform binnen de viewBox zou per vorm
-         meeschalen — en bovendien tegen de viewBox-rand aan geknipt worden. */}
-      <span className="relative block" style={{ isolation: "isolate" }}>
-        <svg viewBox={vb} className="block w-full">{vlek(kleur)}</svg>
-        <svg viewBox={vb} className="absolute inset-0 block w-full" style={RISO_LAAG}>{vlek(RISO_INKT)}</svg>
-      </span>
+      <svg viewBox={vb} className="block w-full">
+        <path d={d} fill={kleur} />
+        {drops.map((dp, i) => (
+          <circle key={i} cx={dp[0].toFixed(1)} cy={dp[1].toFixed(1)} r={dp[2].toFixed(1)} fill={kleur} />
+        ))}
+      </svg>
     </SilhouetWrap>
   );
 }
@@ -384,46 +373,6 @@ export function SplatVeld({
   );
 }
 
-/* ── Risografie: de misdruk ────────────────────────────────────────────────
-   Elke achtergrondvorm wordt twee keer "gedrukt": eerst de gewone inkt, dan
-   dezelfde vorm een paar pixels verschoven in een warme tweede inkt. Waar de
-   twee over elkaar liggen ontstaat een derde tint die in geen van beide inkten
-   bestaat. Dat is precies wat een risograaf doet als het papier niet perfect
-   uitgelijnd door de pers gaat — geen fout om weg te poetsen maar het
-   handschrift van de techniek. Het geeft de vlakken diepte zonder dat er ook
-   maar één nieuwe vorm op de pagina komt.
-
-   De schuif is ÉÉN vaste richting voor de hele pagina. Een echte pers voert
-   het papier elke keer dezelfde kant op scheef; per vorm een andere richting
-   zou juist verraden dat het nep is.
-
-   De schuif moet GROOT genoeg zijn om als misdruk te lezen. Bij een kleine
-   schuif ligt de tweede laag over vrijwel de hele vorm en krijg je geen
-   verschoven rand maar één compleet hergekleurde vorm — dat werd meteen een
-   vieze olijftint. Nu zie je drie zones: pure eerste inkt linksboven, de
-   overlap in het midden, pure tweede inkt rechtsonder. */
-const RISO_SCHUIF = { x: 42, y: 46 };
-/* De tweede inkt: amber, maar zó verdund dat het als WARMTE leest en niet als
-   een tweede kleur die met het groen om aandacht vecht (die fout is op deze
-   pagina al eens gemaakt met de zandkleurige klodder). De overlap beslaat het
-   grootste deel van de vorm, dus alles boven een paar procent kleurt de hele
-   vorm om in plaats van hem warmte te geven. Halfdoorzichtig, zoals echte
-   riso-inkt: daardoor past de uitstekende rand zich aan wat eronder ligt in
-   plaats van er een dekkend randje op te leggen. */
-const RISO_INKT = "rgba(47, 158, 110, 0.13)";
-
-/* De tweede drukgang. `isolation: isolate` op de wrapper is essentieel: dan
-   blendt de multiply gegarandeerd tegen de eerste inktlaag en hangt hij niet
-   af van wat er verder onder de vorm ligt — of van een transform van een
-   voorouder, die een blend anders stilletjes uitschakelt (de parallax-wrapper
-   hierboven zet er één). Bewust de losse `translate`-eigenschap en niet
-   `transform`: in Tailwind v4 zitten die op verschillende properties en dan
-   telt een eigen transform bovenop de hunne op. */
-const RISO_LAAG: CSSProperties = {
-  translate: `${RISO_SCHUIF.x}px ${RISO_SCHUIF.y}px`,
-  mixBlendMode: "multiply",
-};
-
 /* ── De uitvergrote kaartvorm ──────────────────────────────────────────────
    Het achtergrondmotief dat wél van deze site is. Een verf-klodder komt uit
    een schildersatelier en heeft met een werkplek voor leerkrachten niets te
@@ -443,10 +392,7 @@ export function KaartVlak({
 }) {
   return (
     <SilhouetWrap par={0.022} style={style} tel={tel} className={className}>
-      <span className="relative block" style={{ width: breedte, height: hoogte, isolation: "isolate" }}>
-        <span className="absolute inset-0" style={{ background: kleur, borderRadius: VLAKVORMEN[vorm] }} />
-        <span className="absolute inset-0" style={{ background: RISO_INKT, borderRadius: VLAKVORMEN[vorm], ...RISO_LAAG }} />
-      </span>
+      <span className="block" style={{ width: breedte, height: hoogte, background: kleur, borderRadius: VLAKVORMEN[vorm] }} />
     </SilhouetWrap>
   );
 }
