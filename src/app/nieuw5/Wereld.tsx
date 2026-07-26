@@ -18,22 +18,26 @@ import type { CSSProperties, ReactNode } from "react";
    en de toolkaarten blijven ongemoeid: dat is al ons "filmisch realisme".
    Reveals liften mee op het data-reveal/is-in-systeem van Vierde.tsx. ───── */
 
-/* MINT was de eigenaar op alle vier de mintvelden te donker; MINT_LICHT is
-   nu de echte veldkleur van de pagina (Herken, Privacy, Regie, Maker,
-   Ervaringen). MINT zelf blijft in gebruik als DIEPERE tint-op-tint-accent
-   bovenop dat lichte veld (het mintblok/quote-blokje in de makerskaart). */
+/* MINT was de eigenaar op alle mintvelden te donker; MINT_LICHT is nu de
+   echte veldkleur van de pagina (Herken, Privacy, Regie, Maker, Ervaringen).
+   MINT zelf blijft in gebruik als DIEPERE tint-op-tint-accent bovenop dat
+   lichte veld (het mintblok/quote-blokje in de makerskaart + de linker
+   bubbel in de ervaringen-sectie, die moest juist donkerder blijven). */
 export const MINT = "#cfe6d8";
 export const MINT_LICHT = "#ecf6f0";
-export const MINT_DIEP = "#b5d8c4"; // silhouetten op mint
+/* Alle tint-op-tint-accenten die BOVENOP het mintveld liggen (silhouetten,
+   de zachte klodders/vlakken) zijn met dezelfde stap meegelicht als MINT →
+   MINT_LICHT, anders staan ze nu te hard tegen het nieuwe lichte veld af. */
+export const MINT_DIEP = "#d2e8dc"; // silhouetten op mint
 /* Achtergrondvlakken: bewust maar een paar procent van de ondergrond af.
    De rustigste sectie van de pagina (privacy) heeft óók een achtergrond-
    motief — de vliegtuigjes — en die werkt juist omdat je hem nauwelijks
    ziet. Dat is de maat voor alle vlakken hieronder. */
 export const VLAK_PAPIER = "#f2f4ed"; // op het gespikkelde papier
-export const VLAK_MINT = "#c6dfcf"; // op een mintveld
+export const VLAK_MINT = "#e3efe7"; // op een mintveld
 /* Nog een stap zachter, voor plekken waar meerdere vlakken bij elkaar staan:
    twee vormen naast elkaar tellen op en worden samen al snel te aanwezig. */
-const VLAK_MINT_ZACHT = "#cae2d3";
+const VLAK_MINT_ZACHT = "#e7f2eb";
 export const DONKER = "#17503a"; // slotveld + sticker
 export const KOP = "#1e6b4d"; // koppen op licht veld (het "getinte" groen)
 
