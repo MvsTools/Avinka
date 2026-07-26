@@ -215,6 +215,16 @@ function PolaroidKaart({
 
 /* ── Desktop: de levende draad ── */
 
+/* Hoeveel de kaart meegeeft aan de beweging van je muis. `DUW_KRACHT` zet
+   opgespaarde muisafstand om in graden, `DUW_MAX` is hoeveel duw er hoogstens
+   in kan zitten en `DUW_MAXHOEK` begrenst de uitslag: ver genoeg om te voelen
+   dat hij jou volgt, niet zo ver dat het een pretpark wordt.
+   `DUW_DEMPING` bepaalt hoe snel de duw uitdooft als je stil blijft staan. */
+const DUW_KRACHT = 0.15;
+const DUW_MAX = 90;
+const DUW_MAXHOEK = 9;
+const DUW_DEMPING = 9;
+
 /* veer-integratie: één stap van een gedempte veer richting `doel` */
 function veer(huidig: number, snelheid: number, doel: number, k: number, d: number, dt: number): [number, number] {
   const v = snelheid + (k * (doel - huidig) - d * snelheid) * dt;
@@ -244,6 +254,10 @@ function DraadScene() {
      deze vlag onthoudt één tik lang dat de laatste beweging een sleep was */
   const netGesleept = useRef(false);
   const hoverI = useRef(-1);
+  /* de opgespaarde duw van je muis over de kaart waar je nu op staat, plus
+     waar je cursor de vorige keer was om de richting uit af te leiden */
+  const duw = useRef(0);
+  const vorigeHoverX = useRef<number | null>(null);
   const inBeeld = useRef(false);
   const rustig = useRef(false); // prefers-reduced-motion
 
@@ -269,6 +283,10 @@ function DraadScene() {
 
       const breed = el.clientWidth;
 
+      /* de duw van je muis dooft uit zodra je stil blijft staan: dan veert de
+         kaart vanzelf terug en tikt hij onderweg zijn buurman aan */
+      duw.current *= Math.max(0, 1 - dt * DUW_DEMPING);
+
       /* ── 1. veren integreren ── */
       for (let i = 0; i < KAARTEN.length; i++) {
         const f = fys.current[i];
@@ -288,8 +306,17 @@ function DraadScene() {
         /* het ophangpunt zakt door onder beweging (gewicht aan de draad) */
         [f.dip, f.vdip] = veer(f.dip, f.vdip, 0, 130, 9.5, dt);
 
-        /* slingerhoek: veert naar de rusthoek; hover trekt hem recht */
-        const doelHoek = hoverI.current === i ? 0 : k.rot;
+        /* slingerhoek. Teken-afspraak: een POSITIEVE hoek draait met de klok
+           mee om het punt op de draad, en dus gaat de onderkant van de kaart
+           naar LINKS. Een duw naar rechts is daarom een negatieve hoek.
+           Onder de muis volgt de kaart jouw beweging; sleep je hem, dan hangt
+           hij recht aan je cursor; verder veert hij naar zijn rusthoek. */
+        const onderMuis = hoverI.current === i && !isSleep;
+        const doelHoek = onderMuis
+          ? Math.max(-DUW_MAXHOEK, Math.min(DUW_MAXHOEK, -duw.current * DUW_KRACHT))
+          : isSleep
+            ? 0
+            : k.rot;
         [f.hoek, f.vhoek] = veer(f.hoek, f.vhoek, doelHoek, 60, 4.6, dt);
 
         /* hover-lift */
@@ -344,8 +371,11 @@ function DraadScene() {
         const k = KAARTEN[i];
         const isSleep = sleep.current?.i === i;
 
-        /* ambient: heel trage wieg, elk kaartje zijn eigen ritme */
-        const wieg = rustig.current ? 0 : Math.sin(t / (2600 + i * 340) + i * 1.7) * 0.7;
+        /* ambient: heel trage wieg, elk kaartje zijn eigen ritme. Zodra jij
+           een kaart aanraakt dooft die eigen drift uit (hij hangt aan `til`,
+           dezelfde 0..1 als de hover-lift): wat je vasthebt luistert naar
+           jou, niet naar zijn eigen klokje. */
+        const wieg = rustig.current ? 0 : Math.sin(t / (2600 + i * 340) + i * 1.7) * 0.7 * (1 - f.til);
         const totHoek = f.hoek + wieg;
 
         const rustX = (k.x / 100) * breed;
@@ -372,9 +402,12 @@ function DraadScene() {
         const lente = k.draad + f.til * -7;
         const lijn = draadjes.current[i];
         if (lijn) {
+          /* MIN, niet plus: de kaart draait met de klok mee om dit punt, dus
+             bij een positieve hoek zakt zijn top naar links weg. Met een plus
+             wees het draadje precies de andere kant op dan de kaart hing. */
           lijn.setAttribute("x1", String(hangX));
           lijn.setAttribute("y1", String(hangY));
-          lijn.setAttribute("x2", (hangX + Math.sin(rad) * lente).toFixed(1));
+          lijn.setAttribute("x2", (hangX - Math.sin(rad) * lente).toFixed(1));
           lijn.setAttribute("y2", (hangY + Math.cos(rad) * lente).toFixed(1));
         }
         const knoop = knoopjes.current[i];
@@ -410,7 +443,16 @@ function DraadScene() {
   };
   const opPointerMove = (i: number) => (e: ReactPointerEvent) => {
     const s = sleep.current;
-    if (!s || s.i !== i) return;
+    if (!s || s.i !== i) {
+      /* je sleept niet, je strijkt er alleen langs: de kaart gaat mee met de
+         kant waarop jij beweegt en zwaait terug zodra je stilhoudt */
+      if (rustig.current || hoverI.current !== i) return;
+      const vorig = vorigeHoverX.current;
+      vorigeHoverX.current = e.clientX;
+      if (vorig === null) return;
+      duw.current = Math.max(-DUW_MAX, Math.min(DUW_MAX, duw.current + (e.clientX - vorig)));
+      return;
+    }
     const afstand = Math.abs(e.clientX - s.startPointerX);
     if (!s.bewogen && afstand > 6) {
       s.bewogen = true;
@@ -471,8 +513,8 @@ function DraadScene() {
           /* het draaipunt ligt óp de draad (draadlengte boven de kaart), dus
              kaart én draadje slingeren samen om het ophangpunt */
           style={{ height: 212 * KAART_RATIO, transformOrigin: `50% ${-k.draad}px`, left: 0 }}
-          onPointerEnter={() => { hoverI.current = i; }}
-          onPointerLeave={() => { hoverI.current = -1; }}
+          onPointerEnter={() => { hoverI.current = i; vorigeHoverX.current = null; duw.current = 0; }}
+          onPointerLeave={() => { hoverI.current = -1; vorigeHoverX.current = null; }}
           onPointerDown={opPointerDown(i)}
           onPointerMove={opPointerMove(i)}
           onPointerUp={opPointerUp(i)}
