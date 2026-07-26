@@ -21,6 +21,7 @@ import {
   SPECKLE_STIJL,
   KaartVlak,
   Lichtbron,
+  MINT_LICHT,
   VLAK_PAPIER,
   WereldFx,
   WereldIntro,
@@ -1082,6 +1083,11 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
            enige donkere veld tussen de film en het slot, en daarmee de derde
            akte die de pagina miste. ── */}
         <WereldWater />
+
+        {/* Ademruimte na het water. De slotzin moet kunnen landen voordat het
+           volgende blok begint; zonder dit plakte de regie-sectie er direct
+           tegenaan en liep de boodschap meteen de volgende kop in. */}
+        <div aria-hidden className="h-[16vh] sm:h-[20vh]" style={{ background: MINT_LICHT }} />
 
         {/* ── 5. De regie blijft bij jou. Drie witte kaartjes naast elkaar,
            zonder kop en zonder iconen: op deze plek in de pagina hoort rust,
