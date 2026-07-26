@@ -21,7 +21,6 @@ import {
   SPECKLE_STIJL,
   KaartVlak,
   Lichtbron,
-  MINT_LICHT,
   VLAK_PAPIER,
   WereldFx,
   WereldIntro,
@@ -31,7 +30,7 @@ import {
   WereldSlot,
 } from "./Wereld";
 import { WereldPolaroids } from "./Polaroids";
-import { WereldWater } from "./Water";
+import { WereldPrivacy } from "./Privacy";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -1077,17 +1076,11 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           <ToolRail />
         </section>
 
-        {/* ── 4. Privacy: het donkere midden van de pagina. Geen uitlegblok
-           met kaartjes meer, maar één filmisch moment onder water waarin de
-           belofte wordt voorgedaan in plaats van verteld. Dit is meteen het
-           enige donkere veld tussen de film en het slot, en daarmee de derde
-           akte die de pagina miste. ── */}
-        <WereldWater />
-
-        {/* Ademruimte na het water. De slotzin moet kunnen landen voordat het
-           volgende blok begint; zonder dit plakte de regie-sectie er direct
-           tegenaan en liep de boodschap meteen de volgende kop in. */}
-        <div aria-hidden className="h-[16vh] sm:h-[20vh]" style={{ background: MINT_LICHT }} />
+        {/* ── 4. Privacy: de belofte wordt hier niet verteld maar bewezen.
+           Een live maskeer-proef waarin de bezoeker de namen van zijn eigen
+           klas typt en ze ziet verdwijnen — het uitblijven van een laadmoment
+           is zelf het bewijs dat het op zijn apparaat gebeurt. ── */}
+        <WereldPrivacy />
 
         {/* ── 5. De regie blijft bij jou. Drie witte kaartjes naast elkaar,
            zonder kop en zonder iconen: op deze plek in de pagina hoort rust,
