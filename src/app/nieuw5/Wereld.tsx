@@ -98,6 +98,28 @@ function maakGolf({
   return `${d} L1440 111 L0 111 Z`;
 }
 
+/* Speelse zigzag-overgang: zelfde gedachte als de golf hierboven (BEREKEND,
+   geen losse punten), maar met rechte segmenten in plaats van een curve —
+   de schets van de eigenaar was een getekende zaagtand, geen vloeiende
+   deining. De tandhoogte varieert bewust (geen twee tanden precies gelijk),
+   dat houdt het speels in plaats van metronomisch. */
+function maakZigzag({
+  start, eind, amp = 30, tanden = 8, fase = 0,
+}: { start: number; eind: number; amp?: number; tanden?: number; fase?: number }) {
+  const N = tanden * 2;
+  const p: Array<[number, number]> = [];
+  for (let i = 0; i <= N; i++) {
+    const t = i / N;
+    const basis = start + (eind - start) * t;
+    const kant = i % 2 === 0 ? -1 : 1;
+    const variatie = 0.66 + 0.34 * Math.sin(i * 2.3 + fase);
+    p.push([t * 1440, basis + kant * amp * variatie]);
+  }
+  let d = `M ${p[0][0].toFixed(1)} ${p[0][1].toFixed(1)}`;
+  for (let i = 1; i < p.length; i++) d += ` L ${p[i][0].toFixed(1)} ${p[i][1].toFixed(1)}`;
+  return `${d} L1440 111 L0 111 Z`;
+}
+
 const GOLVEN = {
   /* de oorspronkelijke: rustige dubbele deining, vlak */
   zacht: maakGolf({ start: 62, eind: 56, amp: 26, golven: 1.15, fase: 0.4 }),
@@ -111,9 +133,11 @@ const GOLVEN = {
   rust: maakGolf({ start: 76, eind: 72, amp: 11, golven: 1.45, fase: 0.9 }),
   /* één hoge kam op het linkerderde, daarna lang uitlopend */
   kam: maakGolf({ start: 72, eind: 64, amp: 32, golven: 0.7, fase: -2.67 }),
+  /* de speelse zaagtand-overgang naar de ervaringen-sectie */
+  speels: maakZigzag({ start: 58, eind: 44, amp: 30, tanden: 7, fase: 0.8 }),
 } as const;
 
-function Golf({
+export function Golf({
   kleur, flip = false, vorm = "zacht", hoogte = "h-[60px] sm:h-[96px]",
 }: { kleur: string; flip?: boolean; vorm?: keyof typeof GOLVEN; hoogte?: string }) {
   /* Zonder flip: onderin de sectie, gevuld met de kleur van het vólgende veld.
@@ -1031,9 +1055,10 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           </div>
         </div>
       </div>
-      {/* Het mintveld eindigt hier: de polaroid-sectie eronder staat op het
-         gespikkelde papier, zoals in de referentie. */}
-      <Golf kleur="#fcfbf7" vorm="rust" />
+      {/* Het mintveld loopt hier NIET meer dood: het gaat gewoon door tot de
+         onderrand van de sectie en zet zich in de ervaringen-sectie eronder
+         voort (zelfde MINT-tint, dus geen naad op de overgang). Daar krijgt
+         het pas zijn eigen speelse zaagtand-overgang terug naar papier. */}
     </section>
   );
 }

@@ -6,7 +6,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { DONKER, KOP, MINT, MINT_DIEP, KaartVlak, VLAK_PAPIER } from "./Wereld";
+import { DONKER, Golf, KOP, MINT, MINT_DIEP, KaartVlak, VLAK_PAPIER } from "./Wereld";
 
 /* ── De polaroids: wat leerkrachten zeggen ─────────────────────────────────
    Ervaringen als instax-kaartjes aan één levende draad. Geen prikbord, geen
@@ -685,6 +685,20 @@ function StapelScene() {
 export function WereldPolaroids() {
   return (
     <section className="relative overflow-x-clip">
+      {/* Het mintveld van de makers-sectie hierboven (WereldMaker) loopt hier
+         gewoon door — zelfde MINT-tint, dus geen naad op de sectiegrens —
+         en krijgt nu pas zijn eigen speelse zaagtand-overgang terug naar het
+         gespikkelde papier. Was voorheen een dun lijntje vlak achter de
+         makerskaart; ligt nu veel groter en reikt tot in het intro-tekstblok
+         van deze sectie. */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[300px] overflow-hidden sm:h-[380px] lg:h-[480px]"
+        aria-hidden
+      >
+        <div className="absolute inset-0" style={{ background: MINT }} />
+        <Golf kleur="#fcfbf7" vorm="speels" hoogte="h-[90px] sm:h-[130px] lg:h-[170px]" />
+      </div>
+
       {/* de achtergrond uit de referentie is óns bestaande wereldje: het
          gespikkelde papier met zachte vlakken in de hoeken en losse stipjes */}
       <KaartVlak
