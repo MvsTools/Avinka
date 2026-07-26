@@ -13,14 +13,19 @@ import { DONKER, KOP, MINT, MINT_DIEP, KaartVlak, VLAK_PAPIER } from "./Wereld";
    houten knijpers: een dunne, licht doorhangende lijn (familie van de golf-
    overgangen) waar de kaartjes met een kort draadje aan hangen.
 
-   De fysica (desktop):
-   - elk kaartje hangt aan zijn eigen punt op de draad en wiegt daar heel
-     traag omheen, elk in zijn eigen ritme;
-   - hover: het kaartje komt naar voren en draait rustig recht;
-   - slepen: het kaartje schuift horizontaal langs de draad mee met je muis,
-     de draad buigt door onder het gewicht, en de buren wiegen na; loslaten
-     laat het terugveren naar zijn eigen plek met een nazwaai;
+   De fysica (desktop). Kernregel: ALLEEN de kaart onder je muis beweegt.
+   Kaartjes weten niets van elkaar, botsen niet, en er is geen ambient wieg
+   — laat je de rij met rust, dan hangt hij volledig stil.
+   - hover: het kaartje komt naar voren en volgt de kant waarop jij beweegt;
+     stop je, dan zwaait het terug naar zijn eigen scheve hoek. Elk kaartje
+     doet dat in zijn eigen tempo, uit zijn eigen draadlengte (zie `VEER`);
+   - slepen: het kaartje schuift langs de draad mee met je muis en de draad
+     zakt eronder door; loslaten laat het terugveren met een nazwaai;
    - klikken (zonder slepen): de kaart draait om en je leest de ervaring.
+
+   De rAF-lus stopt zichzelf zodra alles is uitgezwaaid en wordt pas weer
+   gewekt als je een kaart aanraakt (of bij een resize). Zolang je er niet
+   bent kost deze sectie dus niets.
 
    Mobiel is bewust géén verkleinde desktop maar een stapel foto's in je
    hand: één grote polaroid tegelijk, omhoog vegen schuift de bovenste van
@@ -225,8 +230,16 @@ const DUW_MAX = 90;
 const DUW_MAXHOEK = 9;
 const DUW_DEMPING = 9;
 
-/* en hoe hard de kaarten ernaast meewiegen van die duw */
-const RIMPEL_HOEK = 0.35;
+/* Elk kaartje zwaait in zijn eigen tempo, en dat tempo komt uit zijn eigen
+   draadlengte. Een echte slinger gaat sneller naarmate hij korter is
+   (ω² = g/L), dus Marieke aan 66px tikt vlot heen en weer waar Kim aan 148px
+   er duidelijk langer over doet. De demping schaalt mee zodat ze allemaal
+   even soepel uitzwaaien, alleen niet even snel. */
+const GEM_DRAAD = KAARTEN.reduce((s, k) => s + k.draad, 0) / KAARTEN.length;
+const VEER = KAARTEN.map((k) => {
+  const stijf = 60 * (GEM_DRAAD / k.draad);
+  return { k: stijf, d: 0.594 * Math.sqrt(stijf) };
+});
 
 /* veer-integratie: één stap van een gedempte veer richting `doel` */
 function veer(huidig: number, snelheid: number, doel: number, k: number, d: number, dt: number): [number, number] {
@@ -261,7 +274,8 @@ function DraadScene() {
      waar je cursor de vorige keer was om de richting uit af te leiden */
   const duw = useRef(0);
   const vorigeHoverX = useRef<number | null>(null);
-  const inBeeld = useRef(false);
+  /* zet de rAF-lus weer aan; hij stopt zichzelf als alles is uitgezwaaid */
+  const wek = useRef<(() => void) | null>(null);
   const rustig = useRef(false); // prefers-reduced-motion
 
   /* rust-y van de draad op positie x (fractie 0..1): lichte doorhang */
@@ -272,22 +286,35 @@ function DraadScene() {
     if (!el) return;
     rustig.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    const io = new IntersectionObserver(([e]) => { inBeeld.current = e.isIntersecting; }, { rootMargin: "120px" });
-    io.observe(el);
-
     let vorige = performance.now();
     let raf = 0;
 
+    /* Is alles uitgezwaaid? Dan zetten we de lus helemaal stil in plaats van
+       60x per seconde dezelfde waarden te blijven schrijven. Dat scheelt echt
+       wat: één frame is ~40 DOM-attributen plus een herberekend SVG-pad, en
+       dat gebeurde eerder ook als er niemand keek. Nu kost de sectie niets
+       zolang je er niet bent. */
+    const inRust = () => {
+      if (hoverI.current !== -1 || sleep.current) return false;
+      if (Math.abs(duw.current) > 0.01) return false;
+      for (let i = 0; i < KAARTEN.length; i++) {
+        const f = fys.current[i];
+        if (Math.abs(f.x) > 0.05 || Math.abs(f.vx) > 0.05) return false;
+        if (Math.abs(f.dip) > 0.05 || Math.abs(f.vdip) > 0.05) return false;
+        if (Math.abs(f.hoek - KAARTEN[i].rot) > 0.02 || Math.abs(f.vhoek) > 0.05) return false;
+        if (f.til > 0.004 || Math.abs(f.vtil) > 0.01) return false;
+      }
+      return true;
+    };
+
     const stap = (t: number) => {
-      raf = requestAnimationFrame(stap);
       const dt = Math.min(0.032, (t - vorige) / 1000);
       vorige = t;
-      if (!inBeeld.current) return;
 
       const breed = el.clientWidth;
 
-      /* de duw van je muis dooft uit zodra je stil blijft staan: dan veert de
-         kaart vanzelf terug en tikt hij onderweg zijn buurman aan */
+      /* de duw van je muis dooft uit zodra je stil blijft staan, en dan veert
+         de kaart vanzelf terug naar zijn eigen scheve hoek */
       duw.current *= Math.max(0, 1 - dt * DUW_DEMPING);
 
       /* ── 1. veren integreren ── */
@@ -297,9 +324,7 @@ function DraadScene() {
         const isSleep = sleep.current?.i === i;
 
         /* horizontaal: tijdens slepen strak achter de muis aan, daarna
-           terugveren naar de eigen plek. De terugveer is bewust wat lichter
-           gedempt: het kaartje mag doorschieten voorbij zijn rustplek, en
-           precies dán tikt het zijn buurman aan — de waslijn-botsing. */
+           terugveren naar de eigen plek met een nazwaai */
         const rustX = (k.x / 100) * breed;
         let doelX = isSleep ? sleep.current!.laatstePointerX - sleep.current!.startPointerX + sleep.current!.startX : 0;
         /* niet voorbij de randen van de scène te slepen */
@@ -320,75 +345,33 @@ function DraadScene() {
           : isSleep
             ? 0
             : k.rot;
-        [f.hoek, f.vhoek] = veer(f.hoek, f.vhoek, doelHoek, 60, 4.6, dt);
+        [f.hoek, f.vhoek] = veer(f.hoek, f.vhoek, doelHoek, VEER[i].k, VEER[i].d, dt);
 
         /* hover-lift */
         [f.til, f.vtil] = veer(f.til, f.vtil, hoverI.current === i ? 1 : 0, 170, 22, dt);
       }
 
-      /* ── 2. botsingen: één tik die doortikt, als dominostenen ────────────
-         De aangetikte kaart moet WEGSCHIETEN, niet meegeduwd worden. Twee
-         dingen maken dat verschil:
-         - `RAAK` staat ruim onder de onderlinge afstand (226px), zodat er
-           eerst een stuk vrije baan is. Stond die vlak eronder, dan zat je
-           al na 11px tegen je buurman aan en schoof je de hele rij als één
-           blok voor je uit.
-         - de tik is ELASTISCH (`WEGTIK` > 1): de geraakte kaart krijgt méér
-           vaart mee dan de duwende kaart heeft, dus hij laat los, vliegt
-           vooruit en tikt op zijn beurt de volgende aan. Op 0,85 bleef hij
-           per definitie tegen je aan plakken en kwam er nooit een tweede tik.
-         Twee passes (heen en terug) zodat een tik in hetzelfde frame de hele
-         rij door kan lopen. */
-      const RAAK = 188;
-      const WEGTIK = 1.45;
-      const losOp = (a: number, b: number) => {
-        const fa = fys.current[a], fb = fys.current[b];
-        const posA = (KAARTEN[a].x / 100) * breed + fa.x;
-        const posB = (KAARTEN[b].x / 100) * breed + fb.x;
-        const afstand = posB - posA;
-        if (afstand >= RAAK) return;
-        const overlap = RAAK - afstand;
-        const aVast = sleep.current?.i === a;
-        const bVast = sleep.current?.i === b;
-        /* uit elkaar duwen: een vastgehouden kaart wijkt niet */
-        if (aVast && !bVast) fb.x += overlap;
-        else if (bVast && !aVast) fa.x -= overlap;
-        else { fa.x -= overlap / 2; fb.x += overlap / 2; }
-        /* de klap: vaart die de een op de ander overdraagt */
-        const vRel = fa.vx - fb.vx;
-        if (vRel > 0) {
-          const stoot = Math.min(1000, vRel);
-          if (!bVast) {
-            fb.vx += stoot * WEGTIK;
-            /* b wordt naar RECHTS getikt, dus zijn onderkant moet ook naar
-               rechts: dat is een negatieve hoek (zie de afspraak bij
-               `doelHoek`). Stond hier op plus, waardoor een aangetikt kaartje
-               de kant op zwaaide waar de klap NIET vandaan kwam. */
-            fb.vhoek -= Math.min(130, stoot * 0.1);
-          }
-          if (!aVast) {
-            fa.vx -= stoot * 0.55;
-            /* a stuitert terug naar links, dus positief */
-            fa.vhoek += Math.min(90, stoot * 0.06);
-          }
+      /* Als alles is uitgezwaaid: exact op de rustwaarden zetten, nog één keer
+         tekenen en dan de lus stoppen. Zonder dit snappen blijven er staartjes
+         van duizendsten hangen en komt hij nooit tot rust. */
+      const klaar = inRust();
+      if (klaar) {
+        duw.current = 0;
+        for (let i = 0; i < KAARTEN.length; i++) {
+          fys.current[i] = { x: 0, vx: 0, dip: 0, vdip: 0, hoek: KAARTEN[i].rot, vhoek: 0, til: 0, vtil: 0 };
         }
-      };
-      for (let i = 0; i < KAARTEN.length - 1; i++) losOp(i, i + 1);
-      for (let i = KAARTEN.length - 2; i >= 0; i--) losOp(i, i + 1);
+      }
 
-      /* ── 3. tekenen ── */
+      /* ── 2. tekenen ──
+         Geen onderlinge botsingen (meer): kaartjes tikken elkaar niet aan en
+         weten niet van elkaars bestaan. Ook geen ambient wieg. Wat je niet
+         aanraakt, hangt stil. */
       const punten: Array<[number, number]> = [];
       for (let i = 0; i < KAARTEN.length; i++) {
         const f = fys.current[i];
         const k = KAARTEN[i];
         const isSleep = sleep.current?.i === i;
-
-        /* ambient: heel trage wieg, elk kaartje zijn eigen ritme. Zodra jij
-           een kaart aanraakt dooft die eigen drift uit (hij hangt aan `til`,
-           dezelfde 0..1 als de hover-lift): wat je vasthebt luistert naar
-           jou, niet naar zijn eigen klokje. */
-        const wieg = rustig.current ? 0 : Math.sin(t / (2600 + i * 340) + i * 1.7) * 0.7 * (1 - f.til);
-        const totHoek = f.hoek + wieg;
+        const totHoek = f.hoek;
 
         const rustX = (k.x / 100) * breed;
         const hangX = rustX + f.x;
@@ -441,10 +424,25 @@ function DraadScene() {
         }
         draadPad.current.setAttribute("d", d);
       }
+
+      if (klaar) { raf = 0; return; } // uitgezwaaid: lus stopt hier
+      raf = requestAnimationFrame(stap);
     };
 
-    raf = requestAnimationFrame(stap);
-    return () => { cancelAnimationFrame(raf); io.disconnect(); };
+    /* De lus draait alleen als er iets te bewegen valt. `wek` wordt geroepen
+       zodra je een kaart aanraakt, en bij een resize omdat de rustplekken dan
+       opnieuw uitgerekend moeten worden. Er wordt altijd minstens één frame
+       getekend, dus na een resize staat alles meteen weer goed. */
+    wek.current = () => {
+      if (raf) return;
+      vorige = performance.now();
+      raf = requestAnimationFrame(stap);
+    };
+    wek.current();
+
+    const ro = new ResizeObserver(() => wek.current?.());
+    ro.observe(el);
+    return () => { if (raf) cancelAnimationFrame(raf); ro.disconnect(); };
   }, []);
 
   /* pointer-gedrag: pas ná 6px beweging wordt het een sleep (anders kaapt
@@ -452,6 +450,7 @@ function DraadScene() {
   const opPointerDown = (i: number) => (e: ReactPointerEvent) => {
     if (rustig.current) return;
     sleep.current = { i, startX: fys.current[i].x, startPointerX: e.clientX, laatstePointerX: e.clientX, bewogen: false };
+    wek.current?.();
   };
   const opPointerMove = (i: number) => (e: ReactPointerEvent) => {
     const s = sleep.current;
@@ -462,18 +461,7 @@ function DraadScene() {
       const vorig = vorigeHoverX.current;
       vorigeHoverX.current = e.clientX;
       if (vorig === null) return;
-      const dx = e.clientX - vorig;
-      duw.current = Math.max(-DUW_MAX, Math.min(DUW_MAX, duw.current + dx));
-      /* de duw loopt over de draad door naar de buren. De DRAAD zelf blijft
-         hierbij bewust stil: die zag er te onrustig uit als hij ook al ging
-         golven zodra je er alleen maar met je muis overheen ging. Alleen de
-         kaarten reageren, met een strakkere afval dan bij slepen (0,45 per
-         kaart i.p.v. 1/afstand): een streek langs een kaart is lichter dan
-         hem echt beetpakken, dus de rimpel sterft na twee kaarten uit. */
-      for (let j = 0; j < KAARTEN.length; j++) {
-        if (j === i) continue;
-        fys.current[j].vhoek -= dx * RIMPEL_HOEK * Math.pow(0.45, Math.abs(j - i));
-      }
+      duw.current = Math.max(-DUW_MAX, Math.min(DUW_MAX, duw.current + (e.clientX - vorig)));
       return;
     }
     const afstand = Math.abs(e.clientX - s.startPointerX);
@@ -485,19 +473,9 @@ function DraadScene() {
       const vorig = s.laatstePointerX;
       s.laatstePointerX = e.clientX;
       const dx = e.clientX - vorig;
-      /* Het gewicht trekt de draad omlaag — maar ALLEEN onder de kaart die
-         je vasthebt. De buren dipten eerst ook mee, en dan golfde de hele
-         lijn bij elke sleep; dat werd te onrustig voor iets wat verder een
-         rustige, stille lijn hoort te zijn. De buren wiegen nu wel, ze
-         hangen alleen aan een draad die stil blijft liggen. */
-      const f = fys.current[i];
-      f.vdip += Math.min(60, Math.abs(dx) * 14);
-      for (let j = 0; j < KAARTEN.length; j++) {
-        if (j === i) continue;
-        /* MIN, niet plus: met een plus wiegden de buren juist wég van de
-           kant waarop je sleepte (zie de teken-afspraak bij `doelHoek`) */
-        fys.current[j].vhoek -= dx * 0.9 * (1 / (1 + Math.abs(j - i)));
-      }
+      /* het gewicht trekt de draad omlaag onder de kaart die je vasthebt —
+         en verder gebeurt er niets: de buren blijven hangen waar ze hangen */
+      fys.current[i].vdip += Math.min(60, Math.abs(dx) * 14);
     }
   };
   const opPointerUp = (i: number) => () => {
@@ -540,7 +518,7 @@ function DraadScene() {
           /* het draaipunt ligt óp de draad (draadlengte boven de kaart), dus
              kaart én draadje slingeren samen om het ophangpunt */
           style={{ height: 212 * KAART_RATIO, transformOrigin: `50% ${-k.draad}px`, left: 0 }}
-          onPointerEnter={() => { hoverI.current = i; vorigeHoverX.current = null; duw.current = 0; }}
+          onPointerEnter={() => { hoverI.current = i; vorigeHoverX.current = null; duw.current = 0; wek.current?.(); }}
           onPointerLeave={() => { hoverI.current = -1; vorigeHoverX.current = null; }}
           onPointerDown={opPointerDown(i)}
           onPointerMove={opPointerMove(i)}
