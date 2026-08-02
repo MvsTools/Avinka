@@ -128,21 +128,22 @@ const AI: Array<{
   },
   {
     titel: "Je ziet vooraf wat wel en niet mag",
-    /* Geen gezochte foto maar het échte venster uit public/avinka-privacy.js,
-       dat elke tool over kinderen opent met een wel/niet-lijst. Ingekort tot
-       drie regels van één regel elk: op ~80px moeten het vinkje en de kruisjes
-       het werk doen, en vijf wikkelende regels worden daar een grijze massa.
-       Achtergrond mint en niet wit, anders zie je niet dát er een beeld staat
-       in een blokje dat zelf wit is. */
-    foto: "/nieuw5/foto/ai-2-vooraf.png",
-    alt: "Het adviesvenster van Avinka: wel de voornaam, geen achternaam, geen medische gegevens",
+    /* Een geel briefje met alléén een groen vinkje en een rood kruisje, geen
+       letters. Een leeg briefje zei niets; die twee tekens zijn wat de
+       boodschap op ~80px draagt (dat werkte ook in de gerenderde versie van
+       het echte adviesvenster, die hier eerst stond). */
+    foto: "/nieuw5/foto/ai-2-vooraf.jpg",
+    alt: "Een geel briefje naast een laptop met een groen vinkje en een rood kruisje erop",
     inspring: "lg:self-end",
     rot: "1.3deg",
   },
   {
     titel: "Een laatste controle voor je verstuurt",
-    foto: "/nieuw5/foto/p5905445.jpg",
-    alt: "Tijdelijke foto",
+    /* Eén vinger boven de Enter-toets, met zichtbare tussenruimte. Een hele
+       hand boven een toetsenbord leest als typen; één vinger die nét niet
+       indrukt leest als aarzelen, en dat is het moment dat de zin beschrijft. */
+    foto: "/nieuw5/foto/ai-3-controle.jpg",
+    alt: "Een vinger die stilhangt vlak boven de Enter-toets van een laptop",
     inspring: "lg:ml-8 lg:self-start",
     rot: "-0.9deg",
   },
