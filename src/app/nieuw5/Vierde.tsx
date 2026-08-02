@@ -15,7 +15,6 @@ import {
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
-import Prijzen from "@/components/Prijzen";
 import { PROEF_DAGEN } from "@/lib/abonnement";
 import {
   SPECKLE_STIJL,
@@ -31,6 +30,7 @@ import {
 } from "./Wereld";
 import { WereldPolaroids } from "./Polaroids";
 import { WereldPrivacy } from "./Privacy";
+import { WereldPrijzen, WereldVragen } from "./PrijzenVragen";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -1109,55 +1109,14 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
            met live tellers, zodra er echte data is. ── */}
         <WereldPolaroids />
 
-        {/* ── 8. Prijzen ── */}
-        <Prijzen />
+        {/* ── 8. Prijzen: het eigen mintveld. Vóór deze verbouwing lagen
+           maker, ervaringen, prijzen én vragen allemaal op hetzelfde papier;
+           dit veld brengt de afwisseling terug in de staart van de pagina. ── */}
+        <WereldPrijzen />
 
-        {/* ── 9. Veelgestelde vragen ── */}
-        <section id="vragen" className="scroll-mt-16">
-          <div className="mx-auto w-full max-w-3xl px-6 py-24">
-            <h2 className="text-center font-display text-4xl font-black tracking-tight [text-wrap:balance]">
-              Veelgestelde vragen
-            </h2>
-            <div className="mt-12 space-y-4">
-              {FAQ.slice(0, 4).map((item) => (
-                <details
-                  key={item.vraag}
-                  className="group/faq rounded-2xl border border-black/5 bg-white p-6 shadow-[-7px_18px_40px_-34px_rgba(23,80,58,0.5)]"
-                >
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-lg text-lg font-bold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
-                    {item.vraag}
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-white transition-transform group-open/faq:rotate-45">
-                      +
-                    </span>
-                  </summary>
-                  <p className="mt-4 leading-8 text-ink/70">{item.antwoord}</p>
-                </details>
-              ))}
-              <details className="group/more">
-                <summary className="flex cursor-pointer list-none items-center justify-center gap-2 rounded-lg py-2 text-center text-base font-bold text-brand hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
-                  Nog meer veelgestelde vragen
-                  <span className="text-lg transition-transform group-open/more:rotate-180">⌄</span>
-                </summary>
-                <div className="mt-4 space-y-4">
-                  {FAQ.slice(4).map((item) => (
-                    <details
-                      key={item.vraag}
-                      className="group/faq rounded-2xl border border-black/5 bg-white p-6 shadow-[-7px_18px_40px_-34px_rgba(23,80,58,0.5)]"
-                    >
-                      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-lg text-lg font-bold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
-                        {item.vraag}
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-white transition-transform group-open/faq:rotate-45">
-                          +
-                        </span>
-                      </summary>
-                      <p className="mt-4 leading-8 text-ink/70">{item.antwoord}</p>
-                    </details>
-                  ))}
-                </div>
-              </details>
-            </div>
-          </div>
-        </section>
+        {/* ── 9. Veelgestelde vragen: het lichtste blok van de pagina, geen
+           kaders maar haarlijnen. ── */}
+        <WereldVragen items={FAQ} />
 
         {/* ── 10. Slot: het donkergroene veld, één keer op de pagina. ── */}
         <WereldSlot />

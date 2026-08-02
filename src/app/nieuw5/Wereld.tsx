@@ -86,7 +86,7 @@ const KAART_RAND = "#d4e5dc";
 const KAART_SCHADUW = schaduw(34, 66, -34, 0.6);
 
 /* Witte kaart met grote ronding: dé kaartvorm van deze wereld. */
-const KAART =
+export const KAART =
   "rounded-[2.5rem] bg-white shadow-[-14px_36px_80px_-48px_rgba(23,80,58,0.55)] ring-1 ring-ink/[0.04]";
 
 /* ── Golf-overgang tussen twee kleurvelden ──
@@ -145,6 +145,10 @@ const GOLVEN = {
      nadrukkelijk weg naar rechts, zodat het mintveld daar veel dieper
      doorloopt dan aan de linkerkant. */
   speels: maakGolf({ start: 22, eind: 92, amp: 17, golven: 1.3, fase: 0.5 }),
+  /* twee volle, ondiepe deiningen — de enige golf op de pagina die meer dan
+     anderhalve slag maakt. Sluit het prijzenveld af zonder een kant te
+     kiezen: hij begint en eindigt op bijna dezelfde hoogte. */
+  ribbel: maakGolf({ start: 58, eind: 52, amp: 15, golven: 2.05, fase: 0.8 }),
 } as const;
 
 export function Golf({
@@ -422,7 +426,7 @@ export function KaartVlak({
 }
 
 /* ── Confetti: een paar losse stipjes rond een blok ── */
-function Confetti({ punten }: { punten: Array<{ x: string; y: string; r?: number; amber?: boolean }> }) {
+export function Confetti({ punten }: { punten: Array<{ x: string; y: string; r?: number; amber?: boolean }> }) {
   return (
     <>
       {punten.map((p, i) => (
