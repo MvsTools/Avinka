@@ -9,8 +9,8 @@ import { DONKER, Golf, KOP, MINT_LICHT, KaartVlak, VLAK_MINT, schaduw } from "./
    vond, en wat hier dus terug moet komen:
 
    1. TWEE LOSSE KAARTEN die elk ÉÉN ding uitleggen. Dat past precies op de
-      twee beloftes: namen gaan nooit mee, en wij bewaren niets over
-      leerlingen. Niet één sectie die alles tegelijk probeert te zeggen.
+      twee beloftes: namen gaan nooit naar de AI, en over een kind bewaren we
+      geen oordeel. Niet één sectie die alles tegelijk probeert te zeggen.
    2. HET PLAATJE ZEGT WAT HET DOET. Ente tekent vierkantjes om de gezichten
       met een naamchip eraan; je snapt gezichtsherkenning zonder één woord.
    3. ECHTE FOTO'S, want dat maakt het warm.
@@ -40,7 +40,18 @@ import { DONKER, Golf, KOP, MINT_LICHT, KaartVlak, VLAK_MINT, schaduw } from "./
      échte naam valt. Kaart 2: een archiefdoos met tabbladen, waarvan de
      kleuren toevallig bijna ons eigen palet zijn.
    - De naam op het bovenste werkblad (Sophie) is dezelfde die in kaart 2
-     wordt gezocht en niet gevonden. Zo haken de twee kaarten aan elkaar.
+     wordt opgezocht. Zo haken de twee kaarten aan elkaar.
+
+   ── Ronde 3 (2-8): kaart 2 klopte feitelijk niet ──
+   Die kaart beloofde "wij bewaren niets over je klas" en liet een zoekactie
+   met 0 resultaten zien. Allebei onwaar: voornamen van je klas bewaren we
+   wél (anders kan geen enkele tool je werk voorvullen), net als
+   klasplattegronden en rapportconcepten — die laatste 90 dagen, zie
+   database/retention.sql en /privacy. De kaart gaat nu over de échte grens:
+   we bewaren een voornaam, maar nooit een oordeel (cijfers, toetsresultaten,
+   dossiers — die blijven op je eigen apparaat). De zoekactie laat dat nu
+   precies zo zien. Een belofte die een controle overleeft is sterker dan een
+   absolute die dat niet doet.
 
    Zie [[referentie-eerst-regel]]: eerst het beeld, dan pas bouwen. ────── */
 
@@ -188,17 +199,17 @@ export function WereldPrivacy() {
             className="relative border-[2.5px] bg-white p-5 sm:p-6 lg:mt-10"
           >
             <p className="text-xl leading-none" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
-              blijft leeg
+              en verder niets
             </p>
             <h3
               className="mt-1 font-display text-[clamp(1.4rem,2.2vw,1.75rem)] font-black leading-tight tracking-tight"
               style={{ color: DONKER }}
             >
-              Wij bewaren niets over je klas
+              Alleen een voornaam, nooit een oordeel
             </h3>
             <p className="mt-1.5 max-w-sm leading-6 text-ink/60">
-              Je lesontwerpen, werkbladen en draaiboeken bewaren we wel. Alles
-              over je leerlingen niet.
+              Je klaslijst bewaren we, zodat de tools je werk kunnen voorvullen.
+              Wat een kind kan of scoort, bewaren we niet.
             </p>
 
             <div className="relative mt-4 overflow-hidden" style={{ borderRadius: FOTO_RECHTS }}>
@@ -209,24 +220,57 @@ export function WereldPrivacy() {
                 className="block aspect-[5/4] w-full object-cover"
               />
 
-              {/* het zoekbalkje: zoek de leerling van het bovenste werkblad
-                 hiernaast in ons archief, en vind niets. */}
+              {/* Het zoekbriefje: zoek de leerling van het bovenste werkblad
+                 hiernaast op in ons archief. Hier stond eerst "0 resultaten",
+                 maar dat was niet waar: voornamen van je klas bewaren we wél
+                 (anders kunnen de tools je werk niet voorvullen), net als
+                 plattegronden en rapportconcepten (die laatste 90 dagen).
+                 Wat we bewust NIET bewaren is het oordeel over een kind:
+                 cijfers, toetsresultaten, dossiers. Een belofte die een
+                 controle overleeft is sterker dan een absolute die dat niet
+                 doet, dus laat de zoekactie precies dat zien. Zie
+                 database/retention.sql en /privacy voor de bron. */}
               <div
                 data-reveal
                 style={{ transitionDelay: "260ms" }}
                 className="absolute inset-x-4 bottom-4 sm:inset-x-5 sm:bottom-5"
               >
-                <div className="flex items-center gap-2.5 rounded-full bg-white px-4 py-2.5 shadow-[0_10px_30px_-8px_rgba(0,0,0,0.4)]">
-                  <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-ink/40" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
-                    <circle cx="11" cy="11" r="7" />
-                    <path d="m20 20-3.5-3.5" />
-                  </svg>
-                  <span className="text-base text-ink/80" style={{ fontFamily: "var(--font-hand)" }}>
-                    Sophie
-                  </span>
-                  <span className="ml-auto whitespace-nowrap rounded-full bg-brand/10 px-2.5 py-1 text-[0.72rem] font-bold" style={{ color: KOP }}>
-                    0 resultaten
-                  </span>
+                <div className="overflow-hidden rounded-[1.4rem] bg-white shadow-[0_10px_30px_-8px_rgba(0,0,0,0.4)]">
+                  {/* Op 390px is de foto maar ~250px hoog, dus alles wat hier
+                     staat telt dubbel: zonder de kleinere maten hieronder nam
+                     dit briefje de halve foto in beslag. */}
+                  <div className="flex items-center gap-2 px-3 py-1 sm:gap-2.5 sm:px-4 sm:py-1.5">
+                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0 text-ink/40 sm:h-4 sm:w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
+                      <circle cx="11" cy="11" r="7" />
+                      <path d="m20 20-3.5-3.5" />
+                    </svg>
+                    <span className="text-sm text-ink/80 sm:text-base" style={{ fontFamily: "var(--font-hand)" }}>
+                      Sophie
+                    </span>
+                  </div>
+
+                  <div className="border-t border-ink/[0.07] px-3 py-1.5 sm:px-4 sm:py-2">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-md bg-brand" aria-hidden>
+                        <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
+                      </span>
+                      <span className="text-[0.72rem] sm:text-[0.78rem] font-bold text-ink/80">haar voornaam</span>
+                      <span className="ml-auto whitespace-nowrap rounded-full bg-brand/10 px-1.5 py-0.5 text-[0.62rem] font-bold sm:px-2 sm:text-[0.68rem]" style={{ color: KOP }}>
+                        bewaard
+                      </span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="flex h-4 w-4 shrink-0 items-center justify-center" aria-hidden>
+                        <span className="block h-[2.5px] w-2.5 rounded-full bg-ink/25" />
+                      </span>
+                      {/* "cijfers, toetsen, dossier" wikkelde op 390px naar
+                         twee regels en dan at het paneel de halve foto op */}
+                      <span className="text-[0.72rem] sm:text-[0.78rem] text-ink/45">cijfers en toetsen</span>
+                      <span className="ml-auto whitespace-nowrap rounded-full bg-ink/[0.06] px-1.5 py-0.5 text-[0.62rem] font-bold sm:px-2 sm:text-[0.68rem] text-ink/45">
+                        niet bewaard
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
