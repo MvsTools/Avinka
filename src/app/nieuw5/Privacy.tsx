@@ -98,9 +98,9 @@ const CHIP: CSSProperties = { background: "#2f9e6e", color: "#ffffff" };
    het kader niet meer. Nu is het net als in de referentie: een kader om wat er
    staat, met het label los eronder. */
 const NAMEN = [
-  { left: "51.8%", top: "7.4%", w: "26.3%", h: "5.4%", chip: "leerling A", vert: 0 },
-  { left: "53.0%", top: "34.3%", w: "25.1%", h: "5.4%", chip: "leerling B", vert: 90 },
-  { left: "60.1%", top: "58.7%", w: "29.1%", h: "5.7%", chip: "leerling C", vert: 180 },
+  { left: "51.8%", top: "7.4%", w: "26.3%", h: "5.4%", chip: "leerling A" },
+  { left: "53.0%", top: "34.3%", w: "25.1%", h: "5.4%", chip: "leerling B" },
+  { left: "60.1%", top: "58.7%", w: "29.1%", h: "5.7%", chip: "leerling C" },
 ];
 
 /* ── De rechterkolom: hoe wij AI veilig maken ──────────────────────────────
@@ -197,16 +197,25 @@ export function WereldPrivacy() {
                 className="block aspect-[5/4] w-full object-cover"
               />
 
-              {/* de kadertjes, zoals de vierkantjes om de gezichten in de
-                 referentie — maar wat er uitkomt is juist géén naam */}
+              {/* De kadertjes, zoals de vierkantjes om de gezichten in de
+                 referentie, maar wat er uitkomt is juist géén naam.
+
+                 Ze zitten in ÉÉN omhulsel met één data-reveal, niet elk apart.
+                 Eerst kwamen leerling A, B en C een voor een binnen, en dat las
+                 als drie losse gebeurtenissen terwijl het één handeling is: de
+                 hele klassenlijst wordt in één keer vervangen. */}
+              <div
+                data-reveal
+                /* data-stil: alleen faden, niet meeschuiven. Een kadertje dat
+                   omhoog komt terwijl de foto stilstaat, laat los van het
+                   papier waar het op geplakt hoort te zitten. */
+                data-stil=""
+                className="absolute inset-0"
+                style={{ transitionDelay: "140ms" }}
+              >
               {NAMEN.map((n) => (
                 <span
                   key={n.chip}
-                  data-reveal
-                  /* data-stil: alleen faden, niet meeschuiven. Een kadertje dat
-                     omhoog komt terwijl de foto stilstaat, laat los van het
-                     papier waar het op geplakt hoort te zitten. */
-                  data-stil=""
                   style={{
                     left: n.left,
                     top: n.top,
@@ -215,7 +224,6 @@ export function WereldPrivacy() {
                     /* de bladen liggen licht gedraaid; een kaarsrecht kader
                        ligt er dan los overheen in plaats van erop */
                     rotate: "-3.5deg",
-                    transitionDelay: `${n.vert + 120}ms`,
                   }}
                   className="absolute rounded-[12px] border-[3px] border-white/95 shadow-[0_2px_14px_rgba(0,0,0,0.25)]"
                   aria-hidden
@@ -228,6 +236,7 @@ export function WereldPrivacy() {
                   </span>
                 </span>
               ))}
+              </div>
 
               {/* het bijschrift ín de foto, zoals de referentie doet */}
               <span
@@ -249,17 +258,23 @@ export function WereldPrivacy() {
              geen tussenzin, geen uitleg-alinea's. Dit blok moet je in één blik
              kunnen lezen, dus alles wat de kop al zegt is weg. */}
           <div className="lg:pt-10">
-            <div className="flex flex-col gap-4">
+            {/* Eén data-reveal op de rij, niet op elk blokje.
+
+               Elk blokje had er eerst zijn eigen, en dat pakte slecht uit: de
+               waarnemer kijkt per element, dus de vertraging telt vanaf het
+               moment dat dát blokje zelf de drempel passeert. Blokje 2 en 3
+               deden dat in dezelfde scrollstap en kwamen dus samen binnen,
+               terwijl blokje 1 er los voor zat. De stagger deed dus niet wat
+               hij beloofde. Nu komt de rij als één geheel op. */}
+            <div data-reveal style={{ transitionDelay: "120ms" }} className="flex flex-col gap-4">
               {AI.map((a, i) => (
                 <div
                   key={a.titel}
-                  data-reveal
                   style={{
                     borderRadius: BLOK_VORM[i],
                     borderColor: KAART_RAND,
                     boxShadow: schaduw(18, 40, -22, 0.5),
                     rotate: a.rot,
-                    transitionDelay: `${100 + i * 90}ms`,
                   }}
                   /* w-fit: laat elk blokje om zijn eigen regel heen krimpen.
                      Vol-breed eindigden ze alle drie op dezelfde rechterlijn
