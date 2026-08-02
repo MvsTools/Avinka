@@ -549,21 +549,27 @@ export function WereldIntro() {
         kleur={VLAK_PAPIER}
         breedte={620}
         hoogte={430}
-        /* Stond op top:-60 en stak dan 108px boven de sectie uit. Dat werkte
-           toen deze sectie bovenaan de body stond: erboven lag alleen papier,
-           dus je zag de naad niet. Sinds "Herken je dit?" ervóór is gezet
-           steekt hij het MINTVELD in, en de lagen daarvan (golf, vlakken,
-           inhoud) hebben een eigen z-index en schilderen er dus overheen —
-           je zag de bovenkant kaarsrecht afgesneden.
-           Waarom 80 en niet 55: de draaiing van 11° maakt het omhullende vak
-           al 55px hoger dan de vorm zelf, en daar komt de scroll-parallax
-           (data-wpar) nog bovenop — die tilt hem juist bij het IN BEELD KOMEN
-           nog eens ~25px omhoog. Doorgemeten over zes scrollposities; op 80
-           blijft hij overal binnen de sectie. Naar beneden mag hij wél
-           uitsteken: daar ligt hetzelfde papier. */
-        style={{ right: "-6%", top: 80, transform: "rotate(-11deg)" }}
+        /* Hij LOOPT DOOR over de sectiegrens, tot op het mintveld erboven.
+           Twee dingen waren daarvoor nodig:
+
+           1. z-[11]. De lagen van "Herken je dit?" (golf z-5, vlakken z-6,
+              inhoud z-10) zitten in dezelfde stapelcontext als deze sectie en
+              schilderden er dus overheen — dát was de kaarsrechte afsnijding.
+              Elf ligt daar net boven.
+           2. multiply. Zonder mengen zou dit papiergekleurde vlak als lichte
+              vlek op de mint liggen. Vermenigvuldigen verdonkert juist wat
+              eronder ligt met een paar procent, dus hij pakt op het papier de
+              papiertoon en op de mint de minttoon. Dezelfde truc als de
+              korrellaag elders op de pagina: één vorm, twee ondergronden, geen
+              zichtbare naad. */
+        style={{
+          right: "-6%",
+          top: -60,
+          transform: "rotate(-11deg)",
+          mixBlendMode: "multiply",
+        }}
         vorm="ei"
-        className="hidden lg:block"
+        className="z-[11] hidden lg:block"
         tel={1}
       />
 
