@@ -26,6 +26,7 @@ export type Voorkeuren = {
   taalniveau: string; // standaard | a2 | b1
   lengte: string; // kort | gemiddeld | uitgebreid
   aanspreekvorm: string; // je | u  (alleen Oudercontact)
+  communicatie_app: string; // '' | parro | social_schools — voor de "open in ..."-knop
 };
 export type Leerling = { naam: string; geslacht: "" | "j" | "m" };
 export type Klas = {
@@ -43,7 +44,7 @@ export async function getVoorkeuren(): Promise<Voorkeuren | null> {
   const sb = createClient();
   const { data, error } = await sb
     .from("instellingen")
-    .select("schoolnaam, standaardgroep, toon, taalniveau, lengte, aanspreekvorm")
+    .select("schoolnaam, standaardgroep, toon, taalniveau, lengte, aanspreekvorm, communicatie_app")
     .maybeSingle();
   if (error || !data) return null;
   const v: Voorkeuren = {
@@ -55,6 +56,7 @@ export async function getVoorkeuren(): Promise<Voorkeuren | null> {
     taalniveau: data.taalniveau ?? "standaard",
     lengte: data.lengte ?? "gemiddeld",
     aanspreekvorm: data.aanspreekvorm ?? "je",
+    communicatie_app: (data as { communicatie_app?: string }).communicatie_app ?? "",
   };
   // Best-effort: de BRIN-kolommen bestaan mogelijk nog niet (migratie niet
   // gedraaid). Een aparte select faalt dan stilletjes en we houden gewoon "".
@@ -716,6 +718,25 @@ export async function setFeedbackStatus(
   const { data, error } = await sb.rpc("wijs_admin_feedback_status", {
     fid: id,
     nieuwe_status: status,
+  });
+  return !error && data === true;
+}
+
+// ── BÈTA "EIGEN SCHOOLSJABLOON" (Toetsanalyse, IEP en Cito) ────────────────
+// Werkt alleen betrouwbaar bij sjablonen die van tevoren zijn getest, dus
+// standaard uit; de eigenaar zet het per account handmatig aan op e-mailadres.
+export async function getBetaEigenFormatLijst(): Promise<string[] | null> {
+  const sb = createClient();
+  const { data, error } = await sb.rpc("wijs_admin_beta_eigen_format_lijst");
+  if (error || !data) return null;
+  return (data as { email: string }[]).map((r) => r.email);
+}
+
+export async function zetBetaEigenFormat(email: string, aan: boolean): Promise<boolean> {
+  const sb = createClient();
+  const { data, error } = await sb.rpc("wijs_admin_zet_beta_eigen_format", {
+    doel_email: email,
+    aan,
   });
   return !error && data === true;
 }

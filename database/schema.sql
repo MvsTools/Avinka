@@ -47,6 +47,11 @@ create table if not exists public.instellingen (
   start_tool_sinds date,                       -- wanneer voor het laatst gewisseld (max 1×/maand)
   mollie_customer_id text,                     -- Mollie-klant (voor terugkerende incasso)
   mollie_payment_id  text,                     -- lopende betaling (om terugkomst te verifiëren)
+  -- Bèta die de eigenaar per account handmatig aanzet (zie wijs_admin_zet_beta_eigen_format).
+  beta_eigen_format boolean not null default false,
+  -- Welke ouder-app de leerkracht gebruikt: '' | 'parro' | 'social_schools'.
+  -- Bepaalt of en welke "open in ..."-knop de tools tonen bij een bericht.
+  communicatie_app text not null default '',
   created_at     timestamptz default now(),
   updated_at     timestamptz default now()
 );
@@ -65,6 +70,8 @@ create table if not exists public.instellingen (
 --   alter table public.instellingen add column if not exists start_tool_sinds date;
 --   alter table public.instellingen add column if not exists mollie_customer_id text;
 --   alter table public.instellingen add column if not exists mollie_payment_id text;
+--   alter table public.instellingen add column if not exists beta_eigen_format boolean not null default false;
+--   alter table public.instellingen add column if not exists communicatie_app text not null default '';
 create index if not exists idx_instellingen_verwezen on public.instellingen(verwezen_door);
 
 -- ── 2) KLASSEN — je klassenlijst (meerdere klassen per leerkracht mogelijk) ───
@@ -732,6 +739,40 @@ begin
   return true;
 end; $$;
 grant execute on function public.wijs_admin_feedback_status(uuid, text) to authenticated;
+
+-- Bèta "eigen schoolsjabloon" (Toetsanalyse) per account aan/uit, op e-mailadres.
+-- Admin-gated; instellingen staat alleen "auth.uid() = user_id" toe, dus dit
+-- moet via een security-definer functie lopen om een ANDER account te raken.
+create or replace function public.wijs_admin_zet_beta_eigen_format(doel_email text, aan boolean)
+returns boolean language plpgsql security definer set search_path = public as $$
+declare doel_id uuid;
+begin
+  if not public.wijs_is_admin() then return false; end if;
+  select id into doel_id from auth.users where lower(email) = lower(doel_email) limit 1;
+  if doel_id is null then return false; end if;
+  insert into public.instellingen (user_id, beta_eigen_format)
+  values (doel_id, aan)
+  on conflict (user_id) do update set beta_eigen_format = excluded.beta_eigen_format;
+  return true;
+end; $$;
+grant execute on function public.wijs_admin_zet_beta_eigen_format(text, boolean) to authenticated;
+
+-- Welke accounts de bèta nu aan hebben staan (voor het admin-scherm).
+create or replace function public.wijs_admin_beta_eigen_format_lijst()
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare r jsonb;
+begin
+  if not public.wijs_is_admin() then return null; end if;
+  select coalesce(jsonb_agg(to_jsonb(x) order by x.email), '[]'::jsonb) into r
+  from (
+    select u.email
+    from public.instellingen i
+    join auth.users u on u.id = i.user_id
+    where i.beta_eigen_format = true
+  ) x;
+  return r;
+end; $$;
+grant execute on function public.wijs_admin_beta_eigen_format_lijst() to authenticated;
 
 -- ── 13) TAKEN — persoonlijke takenlijst (van to-do naar gedaan) ───────────
 -- Eigen takenlijst van de leerkracht. Privé in het account (RLS), gaat nooit

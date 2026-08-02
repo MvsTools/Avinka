@@ -27,6 +27,11 @@ const aanspreekvormen = [
   { waarde: "je", label: "Je / jullie" },
   { waarde: "u", label: "U" },
 ];
+const communicatieApps = [
+  { waarde: "", label: "Geen" },
+  { waarde: "parro", label: "Parro" },
+  { waarde: "social_schools", label: "Social Schools" },
+];
 
 // Eén keuzerij met knoppen, zoals de toon-knoppen. waarde/zet werken op het
 // veld in de Voorkeuren-state.
@@ -180,6 +185,7 @@ export default function VoorkeurenForm() {
     taalniveau: "standaard",
     lengte: "gemiddeld",
     aanspreekvorm: "je",
+    communicatie_app: "",
   });
   const [geladen, setGeladen] = useState(false);
   const [status, setStatus] = useState<"" | "bezig" | "klaar" | "fout">("");
@@ -349,6 +355,17 @@ export default function VoorkeurenForm() {
           raak("aanspreekvorm");
         }}
         extra={badge("aanspreekvorm")}
+      />
+      <KeuzeRij
+        titel="Communicatie-app"
+        hint="(voor de “open in ...”-knop bij berichten)"
+        opties={communicatieApps}
+        waarde={v.communicatie_app}
+        zet={(w) => {
+          setV({ ...v, communicatie_app: w });
+          raak("communicatie_app");
+        }}
+        extra={badge("communicatie_app")}
       />
     </div>
 

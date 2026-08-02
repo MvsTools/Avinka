@@ -7,10 +7,11 @@ import { createClient } from "@/utils/supabase/server";
 // nog aanpassen — dit is alleen de slimme standaard.
 //
 // Waarden sluiten exact aan op de bestaande tool-velden:
-//   toon          : warm | neutraal | zakelijk
-//   taalniveau    : standaard | a2 | b1
-//   lengte        : kort | gemiddeld | uitgebreid
-//   aanspreekvorm : je | u   (alleen Oudercontact gebruikt dit)
+//   toon             : warm | neutraal | zakelijk
+//   taalniveau       : standaard | a2 | b1
+//   lengte           : kort | gemiddeld | uitgebreid
+//   aanspreekvorm    : je | u   (alleen Oudercontact gebruikt dit)
+//   communicatie_app : '' | parro | social_schools (voor de "open in ..."-knop)
 //
 // RLS zorgt dat je alleen je eigen instellingen krijgt. Geen sessie/fout → de
 // standaarden, zodat de tool altijd gewoon doorwerkt.
@@ -20,6 +21,7 @@ const STANDAARD = {
   lengte: "gemiddeld",
   aanspreekvorm: "je",
   standaardgroep: "",
+  communicatie_app: "",
 };
 
 export async function GET() {
@@ -33,7 +35,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("instellingen")
-    .select("toon, taalniveau, lengte, aanspreekvorm, standaardgroep")
+    .select("toon, taalniveau, lengte, aanspreekvorm, standaardgroep, communicatie_app")
     .maybeSingle();
   if (error || !data) {
     return NextResponse.json(STANDAARD);
@@ -45,5 +47,6 @@ export async function GET() {
     lengte: data.lengte ?? STANDAARD.lengte,
     aanspreekvorm: data.aanspreekvorm ?? STANDAARD.aanspreekvorm,
     standaardgroep: data.standaardgroep ?? STANDAARD.standaardgroep,
+    communicatie_app: data.communicatie_app ?? STANDAARD.communicatie_app,
   });
 }
