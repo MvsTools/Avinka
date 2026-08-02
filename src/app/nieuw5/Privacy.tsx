@@ -39,19 +39,26 @@ import { DONKER, Golf, KOP, MINT_LICHT, KaartVlak, VLAK_MINT, schaduw } from "./
      rechtsboven (Sophie, Daan, Emma), zodat ons kadertje precies over een
      échte naam valt. Kaart 2: een archiefdoos met tabbladen, waarvan de
      kleuren toevallig bijna ons eigen palet zijn.
-   - De naam op het bovenste werkblad (Sophie) is dezelfde die in kaart 2
-     wordt opgezocht. Zo haken de twee kaarten aan elkaar.
-
-   ── Ronde 3 (2-8): kaart 2 klopte feitelijk niet ──
-   Die kaart beloofde "wij bewaren niets over je klas" en liet een zoekactie
-   met 0 resultaten zien. Allebei onwaar: voornamen van je klas bewaren we
-   wél (anders kan geen enkele tool je werk voorvullen), net als
+   ── Ronde 3 en 4 (2-8): kaart 2 twee keer omgegooid ──
+   Die kaart beloofde eerst "wij bewaren niets over je klas" en liet een
+   zoekactie met 0 resultaten zien. Allebei onwaar: voornamen van je klas
+   bewaren we wél (anders kan geen enkele tool je werk voorvullen), net als
    klasplattegronden en rapportconcepten — die laatste 90 dagen, zie
-   database/retention.sql en /privacy. De kaart gaat nu over de échte grens:
-   we bewaren een voornaam, maar nooit een oordeel (cijfers, toetsresultaten,
-   dossiers — die blijven op je eigen apparaat). De zoekactie laat dat nu
-   precies zo zien. Een belofte die een controle overleeft is sterker dan een
-   absolute die dat niet doet.
+   database/retention.sql en /privacy.
+
+   De reparatie (een lijstje van wat we wél en niet bewaren) was ook niet
+   goed: het dwong de lezer tot uitzoekwerk, en zo'n belofte veroudert zodra
+   er verwerkersovereenkomsten met scholen komen — dan mag er meer bewaard
+   worden en moeten we een privacybelofte intrekken.
+
+   DE REGEL DIE HIERUIT VOLGT: een schoolovereenkomst verandert de
+   BEWAARTERMIJN, niet het DOEL. Beloof dus het doel, niet de inventaris. De
+   kaart noemt daarom alleen nog wat er nooit met je gegevens gebeurt; dat
+   blijft waar, met of zonder overeenkomst. Zie ook [[schoolroute-org-laag]].
+
+   ⚠️ "AI ermee trainen" leunt op de DPA + zero-data-retention-afspraak bij
+   Anthropic ([[ai-aanbieder-keuze]]). Die moet getekend zijn voordat dit
+   publiek gaat.
 
    Zie [[referentie-eerst-regel]]: eerst het beeld, dan pas bouwen. ────── */
 
@@ -199,17 +206,17 @@ export function WereldPrivacy() {
             className="relative border-[2.5px] bg-white p-5 sm:p-6 lg:mt-10"
           >
             <p className="text-xl leading-none" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
-              en verder niets
+              geen uitzonderingen
             </p>
             <h3
               className="mt-1 font-display text-[clamp(1.4rem,2.2vw,1.75rem)] font-black leading-tight tracking-tight"
               style={{ color: DONKER }}
             >
-              Alleen een voornaam, nooit een oordeel
+              We gebruiken het nergens anders voor
             </h3>
             <p className="mt-1.5 max-w-sm leading-6 text-ink/60">
-              Je klaslijst bewaren we, zodat de tools je werk kunnen voorvullen.
-              Wat een kind kan of scoort, bewaren we niet.
+              Wat je invult is er om jouw werk te doen. Verder gebeurt er niets
+              mee.
             </p>
 
             <div className="relative mt-4 overflow-hidden" style={{ borderRadius: FOTO_RECHTS }}>
@@ -220,57 +227,53 @@ export function WereldPrivacy() {
                 className="block aspect-[5/4] w-full object-cover"
               />
 
-              {/* Het zoekbriefje: zoek de leerling van het bovenste werkblad
-                 hiernaast op in ons archief. Hier stond eerst "0 resultaten",
-                 maar dat was niet waar: voornamen van je klas bewaren we wél
-                 (anders kunnen de tools je werk niet voorvullen), net als
-                 plattegronden en rapportconcepten (die laatste 90 dagen).
-                 Wat we bewust NIET bewaren is het oordeel over een kind:
-                 cijfers, toetsresultaten, dossiers. Een belofte die een
-                 controle overleeft is sterker dan een absolute die dat niet
-                 doet, dus laat de zoekactie precies dat zien. Zie
-                 database/retention.sql en /privacy voor de bron. */}
+              {/* Het briefje op de doos: alleen wat er NOOIT gebeurt.
+
+                 Hier stond eerst een inventaris van wat we wel en niet
+                 bewaren. Twee bezwaren van de eigenaar, allebei terecht. Het
+                 dwong de lezer tot uitzoekwerk, en — zwaarder — zo'n belofte
+                 veroudert: zodra er verwerkersovereenkomsten met scholen
+                 komen mag er meer bewaard worden, en dan moeten we een
+                 privacybelofte intrekken. Dat is erger dan hem nooit gedaan
+                 hebben.
+
+                 Wat een schoolovereenkomst verandert is de BEWAARTERMIJN. Wat
+                 niet verandert is het DOEL. Deze kaart gaat daarom over het
+                 doel, en noemt alleen de ontkenningen: die blijven waar, met
+                 of zonder overeenkomst. Doorgestreepte tekst zonder verdere
+                 iconen — het kopje draagt de betekenis al. */}
               <div
                 data-reveal
                 style={{ transitionDelay: "260ms" }}
-                className="absolute inset-x-4 bottom-4 sm:inset-x-5 sm:bottom-5"
+                /* Op desktop niet vol-breed: de regels zijn kort, dus een
+                   vol-breed vlak werd een lege slab. Smaller leest het als een
+                   label óp de doos. Op mobiel wél vol-breed, daar is geen
+                   ruimte te verspillen. */
+                className="absolute inset-x-4 bottom-4 sm:bottom-5 sm:left-5 sm:right-auto sm:max-w-[68%]"
               >
                 <div className="overflow-hidden rounded-[1.4rem] bg-white shadow-[0_10px_30px_-8px_rgba(0,0,0,0.4)]">
                   {/* Op 390px is de foto maar ~250px hoog, dus alles wat hier
                      staat telt dubbel: zonder de kleinere maten hieronder nam
                      dit briefje de halve foto in beslag. */}
-                  <div className="flex items-center gap-2 px-3 py-1 sm:gap-2.5 sm:px-4 sm:py-1.5">
-                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0 text-ink/40 sm:h-4 sm:w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
-                      <circle cx="11" cy="11" r="7" />
-                      <path d="m20 20-3.5-3.5" />
-                    </svg>
-                    <span className="text-sm text-ink/80 sm:text-base" style={{ fontFamily: "var(--font-hand)" }}>
-                      Sophie
-                    </span>
-                  </div>
-
-                  <div className="border-t border-ink/[0.07] px-3 py-1.5 sm:px-4 sm:py-2">
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-md bg-brand" aria-hidden>
-                        <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
-                      </span>
-                      <span className="text-[0.72rem] sm:text-[0.78rem] font-bold text-ink/80">haar voornaam</span>
-                      <span className="ml-auto whitespace-nowrap rounded-full bg-brand/10 px-1.5 py-0.5 text-[0.62rem] font-bold sm:px-2 sm:text-[0.68rem]" style={{ color: KOP }}>
-                        bewaard
-                      </span>
-                    </div>
-                    <div className="mt-1 flex items-center gap-2">
-                      <span className="flex h-4 w-4 shrink-0 items-center justify-center" aria-hidden>
-                        <span className="block h-[2.5px] w-2.5 rounded-full bg-ink/25" />
-                      </span>
-                      {/* "cijfers, toetsen, dossier" wikkelde op 390px naar
-                         twee regels en dan at het paneel de halve foto op */}
-                      <span className="text-[0.72rem] sm:text-[0.78rem] text-ink/45">cijfers en toetsen</span>
-                      <span className="ml-auto whitespace-nowrap rounded-full bg-ink/[0.06] px-1.5 py-0.5 text-[0.62rem] font-bold sm:px-2 sm:text-[0.68rem] text-ink/45">
-                        niet bewaard
-                      </span>
-                    </div>
-                  </div>
+                  {/* Het kopje draagt de merkkleur: met alléén doorgestreept
+                     grijs verloor deze kaart zijn anker naast de groene chips
+                     van kaart 1 en werd het een bleke slab. */}
+                  <p
+                    className="px-3 py-1 text-[0.62rem] font-bold uppercase tracking-[0.08em] sm:px-4 sm:py-1.5 sm:text-[0.66rem]"
+                    style={{ color: KOP }}
+                  >
+                    wat er nooit mee gebeurt
+                  </p>
+                  <ul className="border-t border-ink/[0.07] px-3 py-1.5 sm:px-4 sm:py-2">
+                    {["AI ermee trainen", "verkopen of delen", "gebruiken voor reclame"].map((wat) => (
+                      <li
+                        key={wat}
+                        className="text-[0.74rem] leading-5 text-ink/65 line-through decoration-ink/40 sm:text-[0.8rem] sm:leading-6"
+                      >
+                        {wat}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
 
@@ -278,7 +281,7 @@ export function WereldPrivacy() {
                 className="absolute left-3 top-3 hidden rounded-full bg-black/45 px-3 py-1.5 text-[0.7rem] font-bold text-white backdrop-blur-sm sm:block"
                 aria-hidden
               >
-                ons archief van jouw klas
+                wat je bij ons opslaat
               </span>
             </div>
           </article>
