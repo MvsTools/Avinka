@@ -2384,14 +2384,26 @@ function StijlBlok() {
     <style>{`
       .font-hand { font-family: var(--font-hand), "Segoe Print", cursive; }
 
-      /* Reveals: inhoud is standaard zichtbaar; .anim voegt de beweging toe. */
+      /* Reveals: inhoud is standaard zichtbaar; .anim voegt de beweging toe.
+
+         Was 18px in 0,7s. Bij normaal scrolltempo betekende dat: je kijkt al
+         naar een blok terwijl het nog aan het aankomen is, en met de
+         vertragingen erbovenop deed één sectie er ruim een seconde over.
+         Korter en kleiner leest als "het stond er al", wat het doel is; de
+         beweging hoort de blik te begeleiden, niet te vertragen. */
       .anim [data-reveal] {
         opacity: 0;
-        transform: translateY(18px);
-        transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-          transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+        transform: translateY(12px);
+        transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+          transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
       }
       .anim [data-reveal].is-in { opacity: 1; transform: none; }
+
+      /* Overlays die op een foto vastgeplakt zitten (de naamkadertjes in de
+         privacysectie) mogen NIET meeschuiven: als zo'n kadertje omhoog komt
+         terwijl de foto stilstaat, laat het los van het papier waar het op
+         hoort te liggen. Die faden alleen. */
+      .anim [data-reveal][data-stil] { transform: none; }
 
       /* ── De tool-galerij ── */
       /* Slepen: de rail pakt de muis vast; tijdens het slepen geen snap.

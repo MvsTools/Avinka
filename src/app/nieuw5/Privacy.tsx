@@ -99,8 +99,8 @@ const CHIP: CSSProperties = { background: "#2f9e6e", color: "#ffffff" };
    staat, met het label los eronder. */
 const NAMEN = [
   { left: "51.8%", top: "7.4%", w: "26.3%", h: "5.4%", chip: "leerling A", vert: 0 },
-  { left: "53.0%", top: "34.3%", w: "25.1%", h: "5.4%", chip: "leerling B", vert: 130 },
-  { left: "60.1%", top: "58.7%", w: "29.1%", h: "5.7%", chip: "leerling C", vert: 260 },
+  { left: "53.0%", top: "34.3%", w: "25.1%", h: "5.4%", chip: "leerling B", vert: 90 },
+  { left: "60.1%", top: "58.7%", w: "29.1%", h: "5.7%", chip: "leerling C", vert: 180 },
 ];
 
 /* ── De rechterkolom: hoe wij AI veilig maken ──────────────────────────────
@@ -153,16 +153,16 @@ export function WereldPrivacy() {
 
       <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pb-24 pt-28 lg:pb-28 lg:pt-32">
         <div className="max-w-2xl">
-          <p data-reveal className="text-2xl" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
-            privacy voorop
-          </p>
           <h2
             data-reveal
-            className="mt-2 font-display text-[clamp(2.1rem,4.4vw,3.4rem)] font-black leading-[1.03] tracking-tight [text-wrap:balance]"
+            className="font-display text-[clamp(2.1rem,4.4vw,3.4rem)] font-black leading-[1.03] tracking-tight [text-wrap:balance]"
             style={{ color: DONKER }}
           >
             Veilig omgaan met AI
           </h2>
+          <p data-reveal className="mt-2 text-2xl" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
+            privacy voorop
+          </p>
         </div>
 
         {/* ── de twee kaarten ── */}
@@ -178,11 +178,8 @@ export function WereldPrivacy() {
               rotate: "-1.8deg",
             }}
           >
-            <p className="text-xl leading-none" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
-              blijft thuis
-            </p>
             <h3
-              className="mt-1 font-display text-[clamp(1.4rem,2.2vw,1.75rem)] font-black leading-tight tracking-tight"
+              className="font-display text-[clamp(1.4rem,2.2vw,1.75rem)] font-black leading-tight tracking-tight"
               style={{ color: DONKER }}
             >
               Namen gaan nooit mee
@@ -206,6 +203,10 @@ export function WereldPrivacy() {
                 <span
                   key={n.chip}
                   data-reveal
+                  /* data-stil: alleen faden, niet meeschuiven. Een kadertje dat
+                     omhoog komt terwijl de foto stilstaat, laat los van het
+                     papier waar het op geplakt hoort te zitten. */
+                  data-stil=""
                   style={{
                     left: n.left,
                     top: n.top,
@@ -214,7 +215,7 @@ export function WereldPrivacy() {
                     /* de bladen liggen licht gedraaid; een kaarsrecht kader
                        ligt er dan los overheen in plaats van erop */
                     rotate: "-3.5deg",
-                    transitionDelay: `${n.vert + 200}ms`,
+                    transitionDelay: `${n.vert + 120}ms`,
                   }}
                   className="absolute rounded-[12px] border-[3px] border-white/95 shadow-[0_2px_14px_rgba(0,0,0,0.25)]"
                   aria-hidden
@@ -258,7 +259,7 @@ export function WereldPrivacy() {
                     borderColor: KAART_RAND,
                     boxShadow: schaduw(18, 40, -22, 0.5),
                     rotate: a.rot,
-                    transitionDelay: `${180 + i * 130}ms`,
+                    transitionDelay: `${100 + i * 90}ms`,
                   }}
                   /* w-fit: laat elk blokje om zijn eigen regel heen krimpen.
                      Vol-breed eindigden ze alle drie op dezelfde rechterlijn
