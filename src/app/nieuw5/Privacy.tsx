@@ -123,8 +123,14 @@ const AI: Array<{
   },
   {
     titel: "Je ziet vooraf wat wel en niet mag",
-    foto: "/nieuw5/foto/p5905441.jpg",
-    alt: "Tijdelijke foto",
+    /* Geen gezochte foto maar het échte venster uit public/avinka-privacy.js,
+       dat elke tool over kinderen opent met een wel/niet-lijst. Ingekort tot
+       drie regels van één regel elk: op ~80px moeten het vinkje en de kruisjes
+       het werk doen, en vijf wikkelende regels worden daar een grijze massa.
+       Achtergrond mint en niet wit, anders zie je niet dát er een beeld staat
+       in een blokje dat zelf wit is. */
+    foto: "/nieuw5/foto/ai-2-vooraf.png",
+    alt: "Het adviesvenster van Avinka: wel de voornaam, geen achternaam, geen medische gegevens",
     inspring: "lg:self-end",
     rot: "1.3deg",
   },
