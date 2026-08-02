@@ -534,9 +534,9 @@ export function WereldFx() {
    fragmenten (die zitten al in de film en bij de tools). */
 export function WereldIntro() {
   return (
-    // overflow-x-clip (i.p.v. -hidden): horizontaal netjes geclipt, maar de
-    // verf-klodder mag verticaal naar boven uitsteken in de papieren
-    // ademruimte erboven (naadloos, zelfde papier) zodat hij groter kan.
+    // overflow-x-clip (i.p.v. -hidden): horizontaal netjes geclipt, verticaal
+    // niet. Dat mocht, want tóén stond deze sectie bovenaan de body met alleen
+    // papieren ademruimte erboven.
     <section className="relative overflow-x-clip">
       {/* Hier stond een verf-klodder onder de rechter alinea, maar die las als
          een cartoon-explosie. Nu draagt de golf naar de sectie hieronder die
@@ -549,10 +549,19 @@ export function WereldIntro() {
         kleur={VLAK_PAPIER}
         breedte={620}
         hoogte={430}
-        /* bewust hoger en schuiner dan de golf eronder: anders lopen de
-           onderrand van dit vlak en de golfrand bijna evenwijdig en wordt
-           het één brede band in plaats van twee losse lagen */
-        style={{ right: "-6%", top: -60, transform: "rotate(-11deg)" }}
+        /* Stond op top:-60 en stak dan 108px boven de sectie uit. Dat werkte
+           toen deze sectie bovenaan de body stond: erboven lag alleen papier,
+           dus je zag de naad niet. Sinds "Herken je dit?" ervóór is gezet
+           steekt hij het MINTVELD in, en de lagen daarvan (golf, vlakken,
+           inhoud) hebben een eigen z-index en schilderen er dus overheen —
+           je zag de bovenkant kaarsrecht afgesneden.
+           Waarom 80 en niet 55: de draaiing van 11° maakt het omhullende vak
+           al 55px hoger dan de vorm zelf, en daar komt de scroll-parallax
+           (data-wpar) nog bovenop — die tilt hem juist bij het IN BEELD KOMEN
+           nog eens ~25px omhoog. Doorgemeten over zes scrollposities; op 80
+           blijft hij overal binnen de sectie. Naar beneden mag hij wél
+           uitsteken: daar ligt hetzelfde papier. */
+        style={{ right: "-6%", top: 80, transform: "rotate(-11deg)" }}
         vorm="ei"
         className="hidden lg:block"
         tel={1}
