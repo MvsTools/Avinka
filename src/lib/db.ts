@@ -720,6 +720,25 @@ export async function setFeedbackStatus(
   return !error && data === true;
 }
 
+// ── BÈTA "EIGEN SCHOOLSJABLOON" (Toetsanalyse, IEP en Cito) ────────────────
+// Werkt alleen betrouwbaar bij sjablonen die van tevoren zijn getest, dus
+// standaard uit; de eigenaar zet het per account handmatig aan op e-mailadres.
+export async function getBetaEigenFormatLijst(): Promise<string[] | null> {
+  const sb = createClient();
+  const { data, error } = await sb.rpc("wijs_admin_beta_eigen_format_lijst");
+  if (error || !data) return null;
+  return (data as { email: string }[]).map((r) => r.email);
+}
+
+export async function zetBetaEigenFormat(email: string, aan: boolean): Promise<boolean> {
+  const sb = createClient();
+  const { data, error } = await sb.rpc("wijs_admin_zet_beta_eigen_format", {
+    doel_email: email,
+    aan,
+  });
+  return !error && data === true;
+}
+
 // ── REVIEWS (beloning: een review achterlaten) ────────────────────────────
 // Eén review per gebruiker. mag_tonen = toestemming om 'm (met voornaam) op de
 // website te laten zien — zo verzamel je echte testimonials van leerkrachten.

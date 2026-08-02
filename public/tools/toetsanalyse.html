@@ -166,6 +166,40 @@
   .result-subtitle { font-size: 13px; color: #6b6880; }
   .result-warnings { font-size: 12.5px; color: #221c3a; background: #fff7ed; border: 1px solid #fbe0bf; border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; line-height: 1.5; display: none; }
   .result-warnings.visible { display: block; }
+
+  /* Controle-paneel: mens-in-de-loop vóór het downloaden. Standaard dicht (zie
+     renderReviewPaneel/toggleReviewPaneel) — je klapt hem zelf open om de
+     AI-tekst te lezen en zo nodig aan te passen. */
+  .review-paneel { border: 1px solid var(--warm); border-radius: 16px; margin-bottom: 16px; overflow: hidden; }
+  .review-kop { display: flex; align-items: center; gap: 11px; padding: 14px 16px; cursor: pointer; user-select: none; background: var(--cream); }
+  .review-kop-ic { font-size: 17px; flex-shrink: 0; }
+  .review-kop-tekst { flex: 1; min-width: 0; }
+  .review-kop-titel { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .review-kop-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .review-chev { width: 9px; height: 9px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .2s; opacity: .6; flex-shrink: 0; }
+  .review-paneel.open .review-chev { transform: rotate(-135deg); }
+  .review-body { display: none; padding: 16px; border-top: 1px solid var(--warm); }
+  .review-paneel.open .review-body { display: block; animation: reviewFade .25s ease both; }
+  @keyframes reviewFade { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  .review-item { margin-bottom: 14px; }
+  .review-item:last-child { margin-bottom: 0; }
+  .review-item-label { display: block; font-size: 12.5px; font-weight: 700; color: var(--ink); margin-bottom: 5px; }
+  .review-item textarea { width: 100%; min-height: 64px; padding: 10px 12px; border: 1.5px solid var(--warm); border-radius: 10px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; color: var(--ink); line-height: 1.5; resize: vertical; outline: none; transition: border-color .18s; box-sizing: border-box; }
+  .review-item textarea:focus { border-color: var(--accent2); }
+
+  /* Bij meer dan één onderwerp (bijvoorbeeld per vak) groeperen we de
+     tekstvakken in een eigen, kleiner uitklapblokje per onderwerp — zo zie je
+     in één oogopslag wat er is zonder alles tegelijk open te hoeven zetten. */
+  .review-groep { border: 1px solid var(--warm); border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
+  .review-groep:last-child { margin-bottom: 0; }
+  .review-groep-kop { display: flex; align-items: center; gap: 9px; padding: 10px 12px; cursor: pointer; user-select: none; background: #fff; }
+  .review-groep-naam { flex: 1; min-width: 0; font-size: 13px; font-weight: 700; color: var(--ink); }
+  .review-groep-aantal { font-size: 11.5px; color: var(--muted); }
+  .review-groep-chev { width: 7px; height: 7px; border-right: 1.6px solid var(--muted); border-bottom: 1.6px solid var(--muted); transform: rotate(45deg); transition: transform .2s; opacity: .55; flex-shrink: 0; }
+  .review-groep.open .review-groep-chev { transform: rotate(-135deg); }
+  .review-groep-inhoud { display: none; padding: 12px 12px 2px; border-top: 1px solid var(--warm); }
+  .review-groep.open .review-groep-inhoud { display: block; }
+
   .btn-download { width: 100%; padding: 16px; background: #2f9e6e; color: white; border: none; border-radius: 14px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 9px; transition: all 0.2s ease; box-shadow: 0 10px 24px rgba(47,158,110,0.28); }
   .btn-download:hover { background: #25855a; transform: translateY(-1px); }
   .btn-download:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
@@ -577,7 +611,7 @@
     </div>
 
     <div class="tpl-row">
-      <button type="button" class="tpl-toggle" id="tplToggle" onclick="iepToonTemplate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Eigen schoolformat gebruiken <span class="tag-beta">Bèta</span></button>
+      <button type="button" class="tpl-toggle" id="tplToggle" style="display:none;" onclick="iepToonTemplate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Eigen schoolformat gebruiken <span class="tag-beta">Bèta</span></button>
       <button type="button" class="uitleg-link" onclick="openUitleg('iep')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 9.2a2.8 2.8 0 0 1 5.2 1c0 1.8-2.7 2.3-2.7 2.3"/><path d="M12 17h.01"/></svg>Hoe haal ik mijn gegevens uit IEP? <span class="uitleg-link-arrow">→</span></button>
     </div>
 
@@ -751,6 +785,19 @@
       </div>
     </div>
     <div class="result-warnings" id="result-warnings"></div>
+
+    <div class="review-paneel" id="review-paneel">
+      <div class="review-kop" onclick="toggleReviewPaneel()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleReviewPaneel();}">
+        <span class="review-kop-ic">👁️</span>
+        <div class="review-kop-tekst">
+          <div class="review-kop-titel">Controleer de tekst</div>
+          <div class="review-kop-sub" id="review-kop-sub">Klik om de AI-tekst te lezen en zo nodig aan te passen</div>
+        </div>
+        <span class="review-chev"></span>
+      </div>
+      <div class="review-body" id="review-body"></div>
+    </div>
+
     <button class="btn-download" id="btn-download" onclick="downloadWord()">
       📥 Download Word-document
     </button>
@@ -844,7 +891,7 @@
     </div>
 
     <div class="tpl-row">
-      <button type="button" class="tpl-toggle" id="cito-tplToggle" onclick="citoToonTemplate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Eigen groepsplan gebruiken <span class="tag-beta">Bèta</span></button>
+      <button type="button" class="tpl-toggle" id="cito-tplToggle" style="display:none;" onclick="citoToonTemplate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Eigen groepsplan gebruiken <span class="tag-beta">Bèta</span></button>
       <button type="button" class="uitleg-link" onclick="openUitleg('cito')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 9.2a2.8 2.8 0 0 1 5.2 1c0 1.8-2.7 2.3-2.7 2.3"/><path d="M12 17h.01"/></svg>Hoe haal ik mijn gegevens uit Cito? <span class="uitleg-link-arrow">→</span></button>
     </div>
 
@@ -1006,6 +1053,18 @@
     </div>
   </div>
 
+  <div class="review-paneel" id="cito-review-paneel" style="display:none;">
+    <div class="review-kop" onclick="toggleReviewPaneel('cito-')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleReviewPaneel('cito-');}">
+      <span class="review-kop-ic">👁️</span>
+      <div class="review-kop-tekst">
+        <div class="review-kop-titel">Controleer de tekst</div>
+        <div class="review-kop-sub" id="cito-review-kop-sub">Klik om de AI-tekst te lezen en zo nodig aan te passen</div>
+      </div>
+      <span class="review-chev"></span>
+    </div>
+    <div class="review-body" id="cito-review-body"></div>
+  </div>
+
   <div id="cito-eigen-result"></div>
 
   <div class="loading-box" id="cito-form-loading">
@@ -1013,6 +1072,18 @@
     <div class="loading-text">Bezig met invullen…</div>
     <div class="loading-sub" id="cito-form-loading-sub"></div>
   </div>
+  <div class="review-paneel" id="cito-form-review-paneel" style="display:none; margin-top:20px;">
+    <div class="review-kop" onclick="toggleReviewPaneel('cito-form-')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleReviewPaneel('cito-form-');}">
+      <span class="review-kop-ic">👁️</span>
+      <div class="review-kop-tekst">
+        <div class="review-kop-titel">Controleer de tekst</div>
+        <div class="review-kop-sub" id="cito-form-review-kop-sub">Klik om de AI-tekst te lezen en zo nodig aan te passen</div>
+      </div>
+      <span class="review-chev"></span>
+    </div>
+    <div class="review-body" id="cito-form-review-body"></div>
+  </div>
+
   <div id="cito-form-result" style="margin-top:20px;"></div>
 
   <footer class="iep-foot">
@@ -4473,10 +4544,10 @@ async function genereerIndividueleAnalyse() {
     return;
   }
 
-  setupProgress(['Toetsgegevens inlezen', 'Leerlingprofielen samenstellen', 'AI schrijft de rapporten', 'Leerlingrapport opmaken']);
+  setupProgress(['Toetsgegevens inlezen', 'Leerlingprofielen samenstellen', 'AI schrijft de rapporten']);
   setProg(0, 'active'); setSub('Scores en niveaus per leerling verzamelen…'); await wacht(300); setProg(0, 'done');
 
-  let leerlingen, teksten = {}, blob;
+  let leerlingen, teksten = {};
   try {
     setProg(1, 'active'); setSub('Per kind de positie t.o.v. de groep bepalen…');
     if (window.avinkaMask) { try { await window.avinkaMask.ready; } catch (e) {} } // klasnamen voor nette koppen
@@ -4491,36 +4562,56 @@ async function genereerIndividueleAnalyse() {
       if (budgetOp()) { kostenCapBereikt = true; teksten[ld.naam] = null; continue; }
       teksten[ld.naam] = await iepSchrijfLeerlingTekst(ld);
     }
-    setProg(2, 'done');
-
-    setProg(3, 'active'); setSub('Leerlingrapport opmaken…');
-    blob = await iepBouwLeerlingDocxBlob(leerlingen, teksten); setProg(3, 'done'); setSub('');
+    setProg(2, 'done'); setSub('');
   } catch (e) {
     document.getElementById('loading-box').classList.remove('visible');
     document.getElementById('btn-analyse').disabled = false;
-    showError('Het opbouwen van de leerlingrapporten gaf een fout: ' + e.message);
+    showError('Het schrijven van de rapporten gaf een fout: ' + e.message);
     return;
   }
 
   document.getElementById('loading-box').classList.remove('visible');
-  // De schooltemplate-knoppen horen bij deze weg niet; verberg ze.
+  // De schooltemplate-downloadknop hoort bij deze weg niet; verberg 'm.
   document.getElementById('btn-download').style.display = 'none';
   const diagBtn = document.querySelector('#result-box button[onclick="downloadDiagnose()"]');
   if (diagBtn) diagBtn.style.display = 'none';
 
   document.getElementById('result-subtitle').textContent = `Leerlingrapport — ${leerlingen.length} leerling${leerlingen.length === 1 ? '' : 'en'}`;
+  renderReviewPaneelVanLeerlingTeksten(leerlingen, teksten);
+
+  // De downloadknop bouwt het leerlingrapport pas op het moment van klikken,
+  // zodat een aanpassing in het controle-paneel hierboven altijd meegaat.
   const w = document.getElementById('result-warnings');
-  const extra = kostenCapBereikt
-    ? '<div style="font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:6px;">Bij een deel van de leerlingen is de AI-tekst overgeslagen om de kosten te beperken; daar staan de feiten uit de data. Je kunt die stukjes zelf aanvullen.</div>' : '';
-  try {
-    const url = URL.createObjectURL(blob);
-    const bestand = `Leerlingrapport_${(ctxGroep || '').replace(/\s/g, '')}_${ctxMeetmoment || ''}_${new Date().toISOString().slice(0, 10)}.docx`;
-    const dl = `<a class="btn-analyse" style="text-decoration:none;margin-bottom:12px;" href="${url}" download="${escapeHtml(bestand)}"><span>⬇</span><span>Download leerlingrapport</span></a>`;
-    w.innerHTML = dl + extra;
-  } catch (e) {
-    w.innerHTML = '<strong>De rapporten zijn gebouwd, maar de downloadlink gaf een fout.</strong><br>' + escapeHtml(e.message);
+  w.innerHTML = '';
+  const dlBtn = document.createElement('button');
+  dlBtn.type = 'button';
+  dlBtn.className = 'btn-analyse';
+  dlBtn.style.marginBottom = '12px';
+  dlBtn.innerHTML = '<span>⬇</span><span>Download leerlingrapport</span>';
+  dlBtn.onclick = async () => {
+    dlBtn.disabled = true;
+    const orig = dlBtn.innerHTML;
+    dlBtn.innerHTML = '<span>⏳</span><span>Document aanmaken…</span>';
+    try {
+      const blob = await iepBouwLeerlingDocxBlob(leerlingen, teksten);
+      const url = URL.createObjectURL(blob);
+      const bestand = `Leerlingrapport_${(ctxGroep || '').replace(/\s/g, '')}_${ctxMeetmoment || ''}_${new Date().toISOString().slice(0, 10)}.docx`;
+      const a = document.createElement('a');
+      a.href = url; a.download = bestand; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    } catch (e) {
+      showError('Het opbouwen van het leerlingrapport gaf een fout: ' + e.message);
+    }
+    dlBtn.disabled = false;
+    dlBtn.innerHTML = orig;
+  };
+  w.appendChild(dlBtn);
+  if (kostenCapBereikt) {
+    w.insertAdjacentHTML('beforeend',
+      '<div style="font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:6px;">Bij een deel van de leerlingen is de AI-tekst overgeslagen om de kosten te beperken; daar staan de feiten uit de data. Je kunt die stukjes zelf aanvullen.</div>');
   }
   w.classList.add('visible');
+
   document.getElementById('result-box').classList.add('visible');
   markStepDone('step2', 'step3');
   meldAnalyseGedaan();
@@ -4546,41 +4637,61 @@ async function genereerEigenTemplate() {
   }
   etplPasNamenToe(); // ook de automatisch (uit de klas) opgeloste namen toepassen
 
-  setupProgress(['Toetsgegevens inlezen', 'Analyse samenstellen', 'AI schrijft de teksten', 'Toetsanalyse-document opmaken']);
+  setupProgress(['Toetsgegevens inlezen', 'Analyse samenstellen', 'AI schrijft de teksten']);
   setProg(0, 'active'); setSub('Scores en niveaus berekenen…'); await wacht(400); setProg(0, 'done');
 
-  let cats, teksten, blob;
+  let cats, teksten;
   try {
     setProg(1, 'active'); setSub('Verdeling, domeinen en leerlingbeeld samenstellen…');
     cats = etplCategoriseer(); window.__etplCats = cats; await wacht(300); setProg(1, 'done');
     setProg(2, 'active'); setSub('De AI schrijft de duiding en tips…');
-    teksten = await etplSchrijfTeksten(cats); setProg(2, 'done');
-    setProg(3, 'active'); setSub('Toetsanalyse-document opmaken…');
-    blob = await etplBouwDocxBlob(cats, teksten); setProg(3, 'done'); setSub('');
+    teksten = await etplSchrijfTeksten(cats); setProg(2, 'done'); setSub('');
   } catch (e) {
     document.getElementById('loading-box').classList.remove('visible');
-    showError('Het opbouwen van het document gaf een fout: ' + e.message);
+    showError('Het schrijven van de teksten gaf een fout: ' + e.message);
     return;
   }
 
   document.getElementById('loading-box').classList.remove('visible');
 
-  // Download-/diagnoseknoppen van de schooltemplate-weg horen hier niet; verberg ze beide.
+  // De downloadknop van de schooltemplate-weg hoort hier niet; verberg 'm.
   document.getElementById('btn-download').style.display = 'none';
   const diagBtn = document.querySelector('#result-box button[onclick="downloadDiagnose()"]');
   if (diagBtn) diagBtn.style.display = 'none';
 
   document.getElementById('result-subtitle').textContent = 'Eigen Toetsanalyse-template';
+  renderReviewPaneelVanTeksten(teksten);
+
+  // De downloadknop bouwt het document pas op het moment van klikken — niet
+  // eerder — zodat een aanpassing in het controle-paneel hierboven altijd in
+  // het gedownloade document terechtkomt.
   const w = document.getElementById('result-warnings');
-  try {
-    const url = URL.createObjectURL(blob);
-    const bestand = `Toetsanalyse_${(ctxGroep || '').replace(/\s/g, '')}_${ctxMeetmoment || ''}_${new Date().toISOString().slice(0, 10)}.docx`;
-    const dl = `<a class="btn-analyse" style="text-decoration:none;margin-bottom:12px;" href="${url}" download="${escapeHtml(bestand)}"><span>⬇</span><span>Download Toetsanalyse-document</span></a>`;
-    w.innerHTML = dl;
-  } catch (e) {
-    w.innerHTML = '<strong>Het document is gebouwd, maar de downloadlink gaf een fout.</strong><br>' + escapeHtml(e.message);
-  }
+  w.innerHTML = '';
+  const dlBtn = document.createElement('button');
+  dlBtn.type = 'button';
+  dlBtn.className = 'btn-analyse';
+  dlBtn.style.marginBottom = '12px';
+  dlBtn.innerHTML = '<span>⬇</span><span>Download Toetsanalyse-document</span>';
+  dlBtn.onclick = async () => {
+    dlBtn.disabled = true;
+    const orig = dlBtn.innerHTML;
+    dlBtn.innerHTML = '<span>⏳</span><span>Document aanmaken…</span>';
+    try {
+      const blob = await etplBouwDocxBlob(cats, teksten);
+      const url = URL.createObjectURL(blob);
+      const bestand = `Toetsanalyse_${(ctxGroep || '').replace(/\s/g, '')}_${ctxMeetmoment || ''}_${new Date().toISOString().slice(0, 10)}.docx`;
+      const a = document.createElement('a');
+      a.href = url; a.download = bestand; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    } catch (e) {
+      showError('Het opbouwen van het document gaf een fout: ' + e.message);
+    }
+    dlBtn.disabled = false;
+    dlBtn.innerHTML = orig;
+  };
+  w.appendChild(dlBtn);
   w.classList.add('visible');
+
   document.getElementById('result-box').classList.add('visible');
   markStepDone('step2', 'step3');
   meldAnalyseGedaan();
@@ -4628,9 +4739,11 @@ async function startAnalyse() {
   document.getElementById('naam-modal').classList.remove('visible');
   ambitieData = null;
   ambitieTableIdx = null;
-  // Defensief: zorg dat de schooltemplate-knoppen weer zichtbaar zijn (de eigen-template-weg
-  // verbergt ze; zonder reset zouden ze na het wisselen van weg verborgen kunnen blijven).
+  // Defensief: zorg dat de schooltemplate-knoppen en het controle-paneel weer zichtbaar zijn
+  // (de eigen-template-weg verbergt ze; zonder reset zouden ze na het wisselen van weg
+  // verborgen kunnen blijven).
   document.getElementById('btn-download').style.display = '';
+  document.getElementById('review-paneel').style.display = '';
   const _diagBtn = document.querySelector('#result-box button[onclick="downloadDiagnose()"]');
   if (_diagBtn) _diagBtn.style.display = '';
   markStepDone('step1', 'step2');
@@ -4736,6 +4849,7 @@ async function startAnalyse() {
       w.innerHTML = '<strong>Let op:</strong><br>' + [...new Set(runWarnings)].map(x=>'• '+x).join('<br>');
       w.classList.add('visible');
     }
+    renderReviewPaneel();
     markStepDone('step2', 'step3');
     meldAnalyseGedaan();
     if (naamCorrecties.some(c => !c.auto)) toonNaamModal();
@@ -5751,6 +5865,170 @@ function downloadDiagnose() {
     a.href = url; a.download = 'toetsanalyse_diagnose.txt'; a.click();
     URL.revokeObjectURL(url);
   } catch(e) {}
+}
+
+// `prefix` kiest welk paneel: '' voor de IEP-kant (review-paneel), 'cito-'
+// voor de Cito-kant (cito-review-paneel) — allebei dezelfde opbouw/stijl,
+// gewoon twee losse plekken in de pagina (IEP en Cito zijn eigen schermen).
+function toggleReviewPaneel(prefix) {
+  document.getElementById((prefix || '') + 'review-paneel').classList.toggle('open');
+}
+
+// Eén tekstvak in het controle-paneel: label erboven, de tekst zelf bewerkbaar.
+// `zet` schrijft een wijziging terug naar de plek waar die vandaan kwam
+// (analysisResult of het teksten-object van de eigen-template-weg), zodat het
+// downloaden altijd de aangepaste tekst gebruikt, niet de originele.
+function voegReviewVeldToe(body, label, tekst, zet) {
+  const item = document.createElement('div');
+  item.className = 'review-item';
+  const lab = document.createElement('span');
+  lab.className = 'review-item-label';
+  lab.textContent = label;
+  const ta = document.createElement('textarea');
+  ta.value = tekst;
+  ta.oninput = () => zet(ta.value);
+  item.appendChild(lab);
+  item.appendChild(ta);
+  body.appendChild(item);
+}
+
+// Eén klein uitklapblokje binnen het paneel, voor de teksten van één
+// onderwerp (meestal een vak). Zelfde chevron-mechaniek als het paneel zelf,
+// alleen kleiner — zo blijft het overzichtelijk als er veel tekst is.
+function voegReviewGroepToe(body, naam, items) {
+  const wrap = document.createElement('div');
+  wrap.className = 'review-groep';
+  const kop = document.createElement('div');
+  kop.className = 'review-groep-kop';
+  kop.setAttribute('role', 'button');
+  kop.setAttribute('tabindex', '0');
+  const zetOpen = () => wrap.classList.toggle('open');
+  kop.onclick = zetOpen;
+  kop.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); zetOpen(); } };
+  const naamEl = document.createElement('span');
+  naamEl.className = 'review-groep-naam';
+  naamEl.textContent = naam;
+  const aantalEl = document.createElement('span');
+  aantalEl.className = 'review-groep-aantal';
+  aantalEl.textContent = `${items.length} stuk${items.length === 1 ? '' : 'ken'}`;
+  const chev = document.createElement('span');
+  chev.className = 'review-groep-chev';
+  kop.appendChild(naamEl); kop.appendChild(aantalEl); kop.appendChild(chev);
+  const inhoud = document.createElement('div');
+  inhoud.className = 'review-groep-inhoud';
+  items.forEach(it => voegReviewVeldToe(inhoud, it.label, it.tekst, it.zet));
+  wrap.appendChild(kop);
+  wrap.appendChild(inhoud);
+  body.appendChild(wrap);
+}
+
+// De motor achter het controle-paneel: een platte lijst velden ({ groep,
+// label, tekst, zet }) wordt gegroepeerd per onderwerp. Bij precies één
+// onderwerp (de schooltemplate-weg kent geen vak per cel) slaan we het
+// tussenniveau over en tonen we gewoon de losse tekstvakken — een uitklapje
+// om één ding open te klappen heeft geen zin.
+function renderReviewGroepen(velden, prefix) {
+  prefix = prefix || '';
+  const body = document.getElementById(prefix + 'review-body');
+  body.innerHTML = '';
+
+  const groepen = [];
+  const bijNaam = new Map();
+  let teller = 0;
+  velden.forEach(v => {
+    const tekst = (v.tekst || '').trim();
+    if (!tekst) return;
+    teller++;
+    let g = bijNaam.get(v.groep);
+    if (!g) { g = { naam: v.groep, items: [] }; bijNaam.set(v.groep, g); groepen.push(g); }
+    g.items.push({ label: v.label, tekst, zet: v.zet });
+  });
+
+  if (groepen.length <= 1) {
+    (groepen[0]?.items || []).forEach(it => voegReviewVeldToe(body, it.label, it.tekst, it.zet));
+  } else {
+    groepen.forEach(g => voegReviewGroepToe(body, g.naam, g.items));
+  }
+
+  const paneel = document.getElementById(prefix + 'review-paneel');
+  const sub = document.getElementById(prefix + 'review-kop-sub');
+  paneel.classList.remove('open'); // elke nieuwe analyse begint weer dicht
+  paneel.style.display = teller ? '' : 'none';
+  sub.textContent = teller
+    ? `${teller} stuk${teller === 1 ? '' : 'ken'} tekst — klap open om te lezen en zo nodig aan te passen`
+    : '';
+}
+
+// Mens-in-de-loop vóór het downloaden, voor de schooltemplate-weg: elk stukje
+// tekst dat de AI heeft geschreven krijgt een eigen tekstvak. Cellen die de AI
+// niet heeft ingevuld ("[ In te vullen door leerkracht ]", een kale streep, of
+// een score die de tool zelf berekende) slaan we over — daar is niets van de
+// AI te controleren. De cellen kennen geen vak, dus dit wordt altijd de platte
+// lijst (zie renderReviewGroepen).
+function renderReviewPaneel() {
+  const velden = [];
+  Object.keys(analysisResult).forEach(cellId => {
+    let pairs;
+    try { pairs = JSON.parse(analysisResult[cellId]); } catch (e) { return; }
+    pairs.forEach((pair, idx) => {
+      const tekst = (pair.answer || '').trim();
+      if (!tekst || tekst === '—' || pair.leerkracht || tekst.startsWith('[ In te vullen')) return;
+      velden.push({
+        groep: 'algemeen',
+        label: pair.question || `Tekst ${velden.length + 1}`,
+        tekst,
+        zet: (v) => { pairs[idx].answer = v; analysisResult[cellId] = JSON.stringify(pairs); },
+      });
+    });
+  });
+  renderReviewGroepen(velden);
+}
+
+// Zelfde controle-paneel, maar dan voor de eigen-template-weg: die bouwt geen
+// analysisResult, maar een `teksten`-object met een eigen vorm (duiding en
+// "wat valt op" per vak, een eigen leerroute per vak, en tips per item). Een
+// wijziging hier schrijft terug in `teksten`, en dat object is precies wat
+// etplBouwDocxBlob() gebruikt om het document te bouwen — dus de downloadknop
+// moet het document pas ná deze stap bouwen, niet ervoor. Hier groeperen we
+// wél per vak (plus een verzamelgroep voor de tips), want dat maakt precies
+// het verschil bij een analyse met veel vakken.
+function renderReviewPaneelVanTeksten(teksten, prefix) {
+  const velden = [];
+
+  Object.keys(teksten.duiding || {}).forEach(vak => {
+    velden.push({ groep: VAK_LABELS[vak] || vak, label: 'Duiding', tekst: teksten.duiding[vak], zet: (v) => { teksten.duiding[vak] = v; } });
+  });
+  Object.keys(teksten.domein || {}).forEach(vak => {
+    velden.push({ groep: VAK_LABELS[vak] || vak, label: 'Wat valt op', tekst: teksten.domein[vak], zet: (v) => { teksten.domein[vak] = v; } });
+  });
+  Object.keys(teksten.eigenLeerlijn || {}).forEach(vak => {
+    (teksten.eigenLeerlijn[vak] || []).forEach((tekst, i) => {
+      velden.push({ groep: VAK_LABELS[vak] || vak, label: `Eigen leerroute #${i + 1}`, tekst, zet: (v) => { teksten.eigenLeerlijn[vak][i] = v; } });
+    });
+  });
+  (teksten.klassikaal || []).forEach((it, i) => {
+    velden.push({ groep: 'Tips voor de groep', label: [it.label, it.domein].filter(Boolean).join(': ') || `Tip ${i + 1}`, tekst: it.tip, zet: (v) => { teksten.klassikaal[i].tip = v; } });
+  });
+  (teksten.groepjes || []).forEach((g, i) => {
+    velden.push({ groep: 'Tips voor de groep', label: g.focus || `Tip ${i + 1}`, tekst: g.tip, zet: (v) => { teksten.groepjes[i].tip = v; } });
+  });
+
+  renderReviewGroepen(velden, prefix);
+}
+
+// Zelfde controle-paneel, maar dan voor "Analyse per leerling": per kind een
+// eigen AI-tekst ({ duiding, aandacht } of null als de kostencap is geraakt).
+// Hier is de leerling zelf de groep — dat is precies de indeling die je hier
+// wilt: één rapport per kind, apart te bekijken.
+function renderReviewPaneelVanLeerlingTeksten(leerlingen, teksten, prefix) {
+  const velden = [];
+  leerlingen.forEach(ld => {
+    const t = teksten[ld.naam];
+    if (!t) return; // budgetcap geraakt of nog geen tekst: niets te controleren voor dit kind
+    velden.push({ groep: ld.naam, label: 'Duiding', tekst: t.duiding, zet: (v) => { t.duiding = v; } });
+    velden.push({ groep: ld.naam, label: 'Aandachtspunten', tekst: t.aandacht, zet: (v) => { t.aandacht = v; } });
+  });
+  renderReviewGroepen(velden, prefix);
 }
 
 async function downloadWord() {
@@ -7560,11 +7838,12 @@ async function citoGenereerUitGroep() {
 async function citoGenereerLeerlingrapporten(leerlingen, extraNamen) {
   const btn = document.getElementById('cito-btn-go'); if (btn) btn.disabled = true;
   const res = document.getElementById('cito-eigen-result'); if (res) res.innerHTML = '';
+  document.getElementById('cito-review-paneel').style.display = 'none';
   const loading = document.getElementById('cito-eigen-loading');
   const groepData = citoData; // rijkste bron indien aanwezig
   const groepsModus = leerlingen.length > CITO_PROFIEL_DREMPEL;
   // Voortgang met nette fase-beschrijvingen (zoals de groepsanalyse); geen leerlingnamen.
-  citoSetupProgress(groepsModus ? ['Gegevens inlezen', 'Groepsprofiel opmaken'] : ['Gegevens inlezen', 'AI schrijft de rapporten', 'Rapport opmaken']);
+  citoSetupProgress(groepsModus ? ['Gegevens inlezen', 'Groepsprofiel opmaken'] : ['Gegevens inlezen', 'AI schrijft de rapporten']);
   if (loading) loading.classList.add('visible');
   const ctx = { groep: (leerlingen[0] && leerlingen[0].groep) || '', meetmoment: (leerlingen[0] && leerlingen[0].meetmoment) || '' };
   try {
@@ -7580,22 +7859,43 @@ async function citoGenereerLeerlingrapporten(leerlingen, extraNamen) {
         buildNameMap([...namen]);
         for (const ld of leerlingen) teksten[ld.naam] = await citoSchrijfLeerlingTekst(ld);
       }
-      citoSetProg(1, 'done');
-      citoSetProg(2, 'active'); citoSetSub('Rapport opmaken…');
+      citoSetProg(1, 'done'); citoSetSub('');
     } else {
-      citoSetProg(1, 'active'); citoSetSub('Groepsprofiel opmaken…');
+      citoSetProg(1, 'active'); citoSetSub('Groepsprofiel opmaken…'); citoSetProg(1, 'done'); citoSetSub('');
     }
-    const blob = await citoBouwLeerlingDocxBlob(leerlingen, ctx, teksten, groepsModus ? 'groep' : 'individueel');
-    citoSetProg(groepsModus ? 1 : 2, 'done'); citoSetSub('');
     if (loading) loading.classList.remove('visible');
-    const url = URL.createObjectURL(blob);
+
     const naamDeel = groepsModus ? 'groepsprofiel' : (leerlingen.length === 1 ? (leerlingen[0].voornaam || 'leerling') : leerlingen.length + 'leerlingen');
     const bestand = `Toetsanalyse_Cito_${naamDeel}_${ctx.meetmoment || ''}_${new Date().toISOString().slice(0, 10)}.docx`;
     const note = groepsModus
       ? leerlingen.length + ' leerlingen → één groepsprofiel (functioneringsniveau per vak).'
       : 'Leerlingrapport' + (leerlingen.length > 1 ? 'en (één per leerling)' : '') + '. De cijfers komen uit de Cito-export.';
-    if (res) res.innerHTML = `<a class="btn-analyse" style="text-decoration:none;margin-top:10px;" href="${url}" download="${escapeHtmlC(bestand)}"><span>⬇</span><span>Download ${groepsModus ? 'groepsprofiel' : 'leerlingrapport' + (leerlingen.length > 1 ? 'en' : '')}</span></a>` +
-      `<div style="font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.55;">${escapeHtmlC(note)}</div>`;
+
+    renderReviewPaneelVanLeerlingTeksten(leerlingen, teksten, 'cito-');
+
+    // De downloadknop bouwt het rapport pas op het moment van klikken, zodat
+    // een aanpassing in het controle-paneel hierboven altijd meegaat.
+    const dlBtn = document.createElement('a');
+    dlBtn.href = '#'; dlBtn.className = 'btn-analyse'; dlBtn.style.textDecoration = 'none'; dlBtn.style.marginTop = '10px';
+    dlBtn.innerHTML = `<span>⬇</span><span>Download ${groepsModus ? 'groepsprofiel' : 'leerlingrapport' + (leerlingen.length > 1 ? 'en' : '')}</span>`;
+    dlBtn.onclick = async (e) => {
+      e.preventDefault();
+      const orig = dlBtn.innerHTML;
+      dlBtn.innerHTML = '<span>⏳</span><span>Document aanmaken…</span>';
+      try {
+        const blob = await citoBouwLeerlingDocxBlob(leerlingen, ctx, teksten, groepsModus ? 'groep' : 'individueel');
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = bestand; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+      } catch (err) { citoShowError('Kon het rapport niet bouwen: ' + err.message); }
+      dlBtn.innerHTML = orig;
+    };
+    if (res) {
+      res.innerHTML = '';
+      res.appendChild(dlBtn);
+      res.insertAdjacentHTML('beforeend', `<div style="font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.55;">${escapeHtmlC(note)}</div>`);
+    }
     citoGegenereerd = true; // klaar: knop blijft uit tot de gebruiker iets wijzigt
     // Tijdwinst: omvang = som van kind×vak (zoals IEP), telt mee als 'leerlingrapport'.
     const items = leerlingen.reduce((n, l) => n + ((l.vakken && l.vakken.length) || 0), 0);
@@ -7935,10 +8235,11 @@ async function citoGenereerEigen() {
   const btn = document.getElementById('cito-btn-go'); if (btn) btn.disabled = true;
   const res = document.getElementById('cito-eigen-result');
   res.innerHTML = '';
+  document.getElementById('cito-review-paneel').style.display = 'none';
   const hasKey = apiKey && apiKey.startsWith('sk-ant-');
   const loading = document.getElementById('cito-eigen-loading');
   // Zelfde laadscherm als de IEP-kant: spinner + meelopende voortgangsbalkjes.
-  citoSetupProgress(['Toetsgegevens inlezen', 'Analyse samenstellen', hasKey ? 'AI schrijft de teksten' : 'Teksten samenstellen', 'Toetsanalyse-document opmaken']);
+  citoSetupProgress(['Toetsgegevens inlezen', 'Analyse samenstellen', hasKey ? 'AI schrijft de teksten' : 'Teksten samenstellen']);
   if (loading) loading.classList.add('visible');
   try {
     citoSetProg(0, 'active'); citoSetSub('Scores en niveaus berekenen…');
@@ -7963,20 +8264,36 @@ async function citoGenereerEigen() {
     let teksten = { duiding: {}, klassikaal: [], groepjes: [] };
     if (hasKey) { try { teksten = await citoSchrijfTeksten(cats, ctx); } catch (e) { /* val terug op het deterministische document */ } }
     else { await wacht(300); }
-    citoSetProg(2, 'done');
-
-    citoSetProg(3, 'active'); citoSetSub('Toetsanalyse-document opmaken…');
-    const blob = await citoBouwDocxBlob(cats, teksten, ctx);
-    citoSetProg(3, 'done'); citoSetSub('');
+    citoSetProg(2, 'done'); citoSetSub('');
 
     if (loading) loading.classList.remove('visible');
-    const url = URL.createObjectURL(blob);
+    renderReviewPaneelVanTeksten(teksten, 'cito-');
+
     const bestand = `Toetsanalyse_Cito_${String(ctx.groep || '').replace(/\s/g, '')}_${ctx.meetmoment || ''}_${new Date().toISOString().slice(0, 10)}.docx`;
     const note = hasKey
       ? 'De cijfers, niveaus en clusters komen uit je Cito-export; de duiding en tips zijn door de AI geschreven (met gemaskeerde namen).'
       : 'De cijfers, niveaus en clusters komen volledig uit je Cito-export. Wil je ook de geschreven duiding en tips? Vul dan hieronder bij "Groepsplan invullen" je API-sleutel in en genereer opnieuw.';
-    res.innerHTML = `<a class="btn-analyse" style="text-decoration:none;margin-top:10px;" href="${url}" download="${escapeHtmlC(bestand)}"><span>⬇</span><span>Download Toetsanalyse-Cito-document</span></a>` +
-      `<div style="font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.55;">${note}</div>`;
+    // De downloadknop bouwt het document pas op het moment van klikken, zodat
+    // een aanpassing in het controle-paneel hierboven altijd meegaat.
+    const dlBtn = document.createElement('a');
+    dlBtn.href = '#'; dlBtn.className = 'btn-analyse'; dlBtn.style.textDecoration = 'none'; dlBtn.style.marginTop = '10px';
+    dlBtn.innerHTML = '<span>⬇</span><span>Download Toetsanalyse-Cito-document</span>';
+    dlBtn.onclick = async (e) => {
+      e.preventDefault();
+      const orig = dlBtn.innerHTML;
+      dlBtn.innerHTML = '<span>⏳</span><span>Document aanmaken…</span>';
+      try {
+        const blob = await citoBouwDocxBlob(cats, teksten, ctx);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = bestand; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+      } catch (err) { citoShowError('Kon het document niet bouwen: ' + err.message); }
+      dlBtn.innerHTML = orig;
+    };
+    res.innerHTML = '';
+    res.appendChild(dlBtn);
+    res.insertAdjacentHTML('beforeend', `<div style="font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.55;">${note}</div>`);
     citoMarkStep('cito-step3', 'cito-step4');
     citoGegenereerd = true; // klaar: knop blijft uit tot de gebruiker iets wijzigt
     // Tijdwinst: groepsanalyse = hele groep × vakken (zoals IEP), telt mee als 'analyse'.
@@ -8625,11 +8942,11 @@ async function citoFormuleerDoelenAI(formulier) {
     for (const g of dd.groepen) {
       const item = obj[g.groep]; if (!item) continue;
       const doelTxt = (typeof item === 'string' ? item : (item.doel || '')).trim();
-      if (doelTxt.length >= 8) { const cel = formulier.cells.find(x => x.cellId === g.cellId); if (cel) cel._vul = { type:'para', regels:[doelTxt] }; }
+      if (doelTxt.length >= 8) { const cel = formulier.cells.find(x => x.cellId === g.cellId); if (cel) cel._vul = { type:'para', regels:[doelTxt], ai: true }; }
       const evalTxt = (item && item.evaluatie || '').trim();
       if (evalTxt.length >= 8 && ed) {
         const eg = ed.groepen.find(x => x.groep === g.groep);
-        if (eg) { const cel = formulier.cells.find(x => x.cellId === eg.cellId); if (cel) cel._vul = { type:'para', regels:[evalTxt] }; }
+        if (eg) { const cel = formulier.cells.find(x => x.cellId === eg.cellId); if (cel) cel._vul = { type:'para', regels:[evalTxt], ai: true }; }
       }
     }
   } catch (e) {
@@ -8927,7 +9244,7 @@ ${items.map((it,i)=>`[${i}] ${it.vraag}`).join('\n\n')}`;
     const line = /^\s*LEERKRACHT\s*$/i.test(a) ? CITO_LEERKRACHT_TEKST : a;
     (perCel[it.cellId] = perCel[it.cellId] || []).push(line);
   });
-  Object.entries(perCel).forEach(([cellId, lines]) => { citoAnalysisResult[cellId] = { mode:'para', lines }; });
+  Object.entries(perCel).forEach(([cellId, lines]) => { citoAnalysisResult[cellId] = { mode:'para', lines, ai: true }; });
 }
 
 // ── OBJECTIEF: KOERS-GROEPERING (wie ligt op koers / risico / extra), per vak ──
@@ -8992,9 +9309,13 @@ function citoVulKopAlineas(formulier) {
   formulier._kopAlineas = lijst;
 }
 
+// Vult citoAnalysisResult voor dit formulier en geeft er een momentopname van
+// terug — het document zelf wordt hier NIET meer gebouwd. Dat gebeurt pas als
+// de leerkracht op de downloadknop klikt (zie citoToonFormulierResultaat),
+// zodat een aanpassing in het controle-paneel altijd meegaat.
 async function citoVerwerkFormulier(formulier) {
   citoAnalysisResult = {};
-  if (!citoData) { citoFormWarnings.push('Geen toetsgegevens ingelezen.'); return await citoSchrijfDocx(formulier); }
+  if (!citoData) { citoFormWarnings.push('Geen toetsgegevens ingelezen.'); return {}; }
   const vak = formulier.vak;
   citoVulKopvelden(formulier.cells, vak);
   citoVulMethodeVelden(formulier);
@@ -9009,14 +9330,33 @@ async function citoVerwerkFormulier(formulier) {
     if (!c._vul) return;
     if (c._vul.type === 'kop')   citoAnalysisResult[c.cellId] = { mode:'kop',   lines:[c._vul.waarde] };
     else if (c._vul.type === 'lijst') citoAnalysisResult[c.cellId] = { mode:'lijst', lines:c._vul.regels };
-    else if (c._vul.type === 'para')  citoAnalysisResult[c.cellId] = { mode:'para',  lines:c._vul.regels };
+    else if (c._vul.type === 'para')  citoAnalysisResult[c.cellId] = { mode:'para',  lines:c._vul.regels, ai: !!c._vul.ai };
   });
   citoVulUniverseel(formulier); // universele rol-vulling (nu: huidige-meting niveaustroken)
   citoVulReferentieniveau(formulier); // objectief: "Mijn groep scoort" uit de eigen banddefinitie
   citoVulKoers(formulier);            // objectief: aantal per koers-categorie + leerkracht bij behoeften/OPP
   citoVulKopAlineas(formulier);       // objectief: Datum/Groep/Aantal in de losse kopveld-alinea's
   await citoVulOpenVelden(formulier); // AI: data-vragen beantwoorden, subjectieve → leerkracht (terugval: patronen)
-  return await citoSchrijfDocx(formulier);
+  return { ...citoAnalysisResult };
+}
+
+// Uit een citoAnalysisResult-momentopname: alleen de cellen die de AI heeft
+// geschreven (ai:true), zonder de kale "In te vullen door de leerkracht"-
+// plekken. Het label komt uit de oorspronkelijke celtekst van het formulier
+// (de vraag/het label dat er al stond), zodat je weet waar de tekst bij hoort.
+function citoReviewVeldenVoorFormulier(formulier, resultaat) {
+  const velden = [];
+  let n = 0;
+  Object.entries(resultaat).forEach(([cellId, entry]) => {
+    if (!entry.ai) return;
+    const tekst = (entry.lines || []).filter(l => l && l !== CITO_LEERKRACHT_TEKST).join('\n\n');
+    if (!tekst.trim()) return;
+    n++;
+    const cel = (formulier.cells || []).find(c => c.cellId === cellId);
+    const kort = cel && cel.text ? cel.text.split('\n')[0].trim().slice(0, 70) : '';
+    velden.push({ label: kort || `Tekst ${n}`, tekst, zet: (v) => { entry.lines = [v]; } });
+  });
+  return velden;
 }
 
 // ════════════════════════════════════════════════════════════
@@ -9311,8 +9651,8 @@ async function citoStartFormulier() {
       if (budgetOp()) { citoFormWarnings.push('De kostengrens van deze analyse is bereikt; de overige groepsplannen zijn niet automatisch ingevuld. Vul die zelf in of doe ze in een aparte ronde.'); break; }
       if (sub) sub.textContent = `Formulier ${i+1}/${citoFormulieren.length}: ${f.vak?f.vak.label:f.naam}…`;
       if (!f.vak) { citoFormWarnings.push(`${f.naam}: vak niet herkend, overgeslagen.`); continue; }
-      const blob = await citoVerwerkFormulier(f);
-      results.push({ naam: f.naam, vak: f.vak.label, blob });
+      const resultaat = await citoVerwerkFormulier(f);
+      results.push({ naam: f.naam, vak: f.vak.label, formulier: f, resultaat });
     }
   } catch(err) {
     if (loading) loading.classList.remove('visible');
@@ -9334,18 +9674,48 @@ async function citoStartFormulier() {
 function citoToonFormulierResultaat(results) {
   const box = document.getElementById('cito-form-result');
   if (!box) return;
-  let h = `<div class="cito-vakkaart" style="border-color:var(--accent2);"><h4>✓ ${results.length} formulier(en) ingevuld</h4>`+
-          `<div class="vk-sub">Ingevuld: kopvelden, groepssamenstelling, groepsdoel en (bij spelling) de zwakste categorieën, in het lettertype van het formulier. Alle andere velden (evaluatie, methode, doelen per groep) zijn bewust met rust gelaten.</div></div>`;
+  box.innerHTML = `<div class="cito-vakkaart" style="border-color:var(--accent2);"><h4>✓ ${results.length} formulier(en) ingevuld</h4>`+
+    `<div class="vk-sub">Ingevuld: kopvelden, groepssamenstelling, groepsdoel en (bij spelling) de zwakste categorieën, in het lettertype van het formulier. Alle andere velden (evaluatie, methode, doelen per groep) zijn bewust met rust gelaten.</div></div>`;
+
+  // Controle-paneel: alle AI-geschreven cellen van alle formulieren samen,
+  // gegroepeerd per formulier (vak) — precies zoals bij de andere routes.
+  const velden = [];
   results.forEach(r => {
-    const url = URL.createObjectURL(r.blob);
-    const bestand = `ingevuld_${r.vak.replace(/[^a-zA-Z]/g,'')}_${(citoData.meetmoment||'')}.docx`;
-    h += `<a class="btn-analyse" style="text-decoration:none;margin-bottom:10px;" href="${url}" download="${escapeHtmlC(bestand)}"><span>⬇</span><span>Download ${escapeHtmlC(r.vak)}</span></a>`;
+    citoReviewVeldenVoorFormulier(r.formulier, r.resultaat).forEach(v => {
+      velden.push({ groep: r.vak, label: v.label, tekst: v.tekst, zet: v.zet });
+    });
   });
+  renderReviewGroepen(velden, 'cito-form-');
+
+  // Downloadknoppen: elk bouwt zijn eigen document pas op het moment van
+  // klikken, met de (eventueel aangepaste) tekst uit het controle-paneel.
+  results.forEach(r => {
+    const bestand = `ingevuld_${r.vak.replace(/[^a-zA-Z]/g,'')}_${(citoData.meetmoment||'')}.docx`;
+    const dlBtn = document.createElement('a');
+    dlBtn.href = '#'; dlBtn.className = 'btn-analyse'; dlBtn.style.textDecoration = 'none'; dlBtn.style.marginBottom = '10px';
+    dlBtn.innerHTML = `<span>⬇</span><span>Download ${escapeHtmlC(r.vak)}</span>`;
+    dlBtn.onclick = async (e) => {
+      e.preventDefault();
+      const orig = dlBtn.innerHTML;
+      dlBtn.innerHTML = '<span>⏳</span><span>Document aanmaken…</span>';
+      try {
+        citoAnalysisResult = r.resultaat; // tijdelijk: citoSchrijfDocx leest de globale variabele
+        const blob = await citoSchrijfDocx(r.formulier);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = bestand; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+      } catch (err) { citoShowError('Kon het document niet bouwen: ' + err.message); }
+      dlBtn.innerHTML = orig;
+    };
+    box.appendChild(dlBtn);
+  });
+
   if (citoFormWarnings.length) {
-    h += `<div class="cito-opvallend" style="background:rgba(200,150,40,0.06);border-color:rgba(200,150,40,0.3);"><h4 style="color:#9a6a1a;">Let op</h4><ul>`+
-         [...new Set(citoFormWarnings)].map(w=>`<li>${escapeHtmlC(w)}</li>`).join('') + `</ul></div>`;
+    box.insertAdjacentHTML('beforeend',
+      `<div class="cito-opvallend" style="background:rgba(200,150,40,0.06);border-color:rgba(200,150,40,0.3);"><h4 style="color:#9a6a1a;">Let op</h4><ul>`+
+      [...new Set(citoFormWarnings)].map(w=>`<li>${escapeHtmlC(w)}</li>`).join('') + `</ul></div>`);
   }
-  box.innerHTML = h;
   box.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
@@ -9619,6 +9989,24 @@ document.addEventListener('keydown', function(e){ if (e.key === 'Escape') { clos
   }
   if(document.readyState!=='loading') init(); else document.addEventListener('DOMContentLoaded', init);
 })();
+</script>
+
+<script>
+// Eigen-schoolsjabloon (IEP en Cito) is bèta: die werkt alleen betrouwbaar bij
+// sjablonen die van tevoren zijn getest. Daarom standaard verborgen (zie de
+// inline style op de knoppen zelf) en alleen zichtbaar voor accounts waar dat
+// expliciet is aangezet (instellingen.beta_eigen_format, admin-scherm bij
+// Tools). Geen sessie of een fout bij het ophalen → gewoon verborgen blijven.
+fetch('/api/beta-eigen-format', { credentials: 'same-origin' })
+  .then(r => r.ok ? r.json() : { aan: false })
+  .then(d => {
+    if (!d || !d.aan) return;
+    const iep = document.getElementById('tplToggle');
+    const cito = document.getElementById('cito-tplToggle');
+    if (iep) iep.style.display = '';
+    if (cito) cito.style.display = '';
+  })
+  .catch(() => {});
 </script>
 
 </body>

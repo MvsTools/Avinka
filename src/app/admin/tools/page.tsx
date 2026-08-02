@@ -1,4 +1,5 @@
 import AdminTools from "@/components/admin/AdminTools";
+import AdminBetaToegang from "@/components/admin/AdminBetaToegang";
 
 export default function AdminToolsPage() {
   return (
@@ -8,6 +9,7 @@ export default function AdminToolsPage() {
         <p className="mt-2 text-lg text-ink/70">Welke tools worden het meest gebruikt.</p>
       </div>
       <AdminTools />
+      <AdminBetaToegang />
     </div>
   );
 }
