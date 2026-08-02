@@ -22,6 +22,7 @@ import SchooljaarWeek from "./SchooljaarWeek";
 import AgendaKoppelen from "./AgendaKoppelen";
 import { ETIKET } from "./schooljaar-stijl";
 import SchooljaarDagkaart from "./SchooljaarDagkaart";
+import FeitenRij from "./FeitenRij";
 
 // Mijn schooljaar, laag 1: je jaar op een rij. De weekplanning en je lesdag
 // komen hier straks als eigen tabbladen bij; de gegevens eronder zijn al
@@ -530,24 +531,6 @@ function Feiten({
       ];
 
   return <FeitenRij feiten={feiten} />;
-}
-
-function FeitenRij({
-  feiten,
-}: {
-  feiten: { label: string; groot: string; klein: string }[];
-}) {
-  return (
-    <div className="grid gap-px overflow-hidden rounded-3xl border border-black/5 bg-black/5 shadow-sm sm:grid-cols-3">
-      {feiten.map((f) => (
-        <div key={f.label} className="bg-white px-5 py-4">
-          <p className="text-xs font-bold uppercase tracking-wider text-ink/40">{f.label}</p>
-          <p className="mt-1.5 text-lg font-bold leading-tight text-ink">{f.groot}</p>
-          {f.klein && <p className="mt-0.5 text-sm text-ink/55">{f.klein}</p>}
-        </div>
-      ))}
-    </div>
-  );
 }
 
 /** Het jaar als lijst: blokken werk, met de vakanties ertussen. */
