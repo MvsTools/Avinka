@@ -10,18 +10,19 @@ import {
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
-  type ReactNode,
   type SVGProps,
 } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
+import { signout } from "@/app/auth/actions";
 import { PROEF_DAGEN } from "@/lib/abonnement";
 import {
   SPECKLE_STIJL,
   BlobKnop,
   Confetti,
   KaartVlak,
+  KOP,
   Lichtbron,
   VLAK_PAPIER,
   WereldFx,
@@ -438,16 +439,18 @@ function abonneerReduced(cb: () => void) {
   return () => mq.removeEventListener("change", cb);
 }
 
-/* `body` maakt het onderste deel van de pagina verwisselbaar. Zonder die prop
-   verandert er niets: dan rendert exact dezelfde body als altijd. Met een
-   eigen body houden alternatieve opzetten (zie ../opzet) wél de echte film
-   bovenaan, zonder dat die gekopieerd of aangeraakt hoeft te worden. */
-export default function Vierde({
+/* De landingspagina zelf. Het serverwerk (wie is de bezoeker, mag die de
+   prijzen zien, staat er een foto klaar) gebeurt in ../page.tsx; hier komt dat
+   binnen als drie kale props, zodat dit een client-component kan blijven — de
+   film en alle beweging hebben de browser nodig. */
+export default function Landing({
   fotoBestand,
-  body,
+  ingelogd = false,
+  toonPrijzen = true,
 }: {
   fotoBestand?: string;
-  body?: ReactNode;
+  ingelogd?: boolean;
+  toonPrijzen?: boolean;
 }) {
   const root = useRef<HTMLDivElement>(null);
   // null op de server (eerste paint), daarna de echte systeemvoorkeur.
@@ -672,13 +675,45 @@ export default function Vierde({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/Avinka_logo.png" alt="Avinka" className="h-8 w-auto" />
           </span>
+          {/* ⚠️ De balk is tijdens de film doorzichtig, en de film BEGINT op de
+             donkergroene avondlaag en eindigt op licht papier. Een gewone
+             tekstlink zou daar dus eerst onleesbaar zijn. Vandaar dat de
+             tweede-keus-actie hetzelfde crème plaatje krijgt als het logo:
+             die leest op allebei de ondergronden. */}
           <nav className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/sign-up"
-              className="rounded-xl bg-brand px-4 py-2 text-sm font-bold text-white shadow-sm shadow-brand/20 transition hover:bg-brand-dark sm:text-base"
-            >
-              Probeer gratis
-            </Link>
+            {ingelogd ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="rounded-xl bg-brand px-4 py-3 text-sm font-bold text-white shadow-sm shadow-brand/20 transition hover:bg-brand-dark sm:py-2 sm:text-base"
+                >
+                  Mijn dashboard
+                </Link>
+                <form action={signout}>
+                  <button
+                    type="submit"
+                    className="rounded-xl bg-cream/95 px-3.5 py-3 text-sm font-semibold text-ink/80 shadow-sm ring-1 ring-black/5 transition hover:text-ink sm:py-2 sm:text-base"
+                  >
+                    Uitloggen
+                  </button>
+                </form>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/sign-in"
+                  className="rounded-xl bg-cream/95 px-3.5 py-3 text-sm font-semibold text-ink/80 shadow-sm ring-1 ring-black/5 transition hover:text-ink sm:py-2 sm:text-base"
+                >
+                  Inloggen
+                </Link>
+                <Link
+                  href="/sign-up"
+                  className="rounded-xl bg-brand px-4 py-3 text-sm font-bold text-white shadow-sm shadow-brand/20 transition hover:bg-brand-dark sm:py-2 sm:text-base"
+                >
+                  Probeer gratis
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       </header>
@@ -1053,24 +1088,20 @@ export default function Vierde({
          wereld begon pas een paar honderd pixels verderop — waardoor de film
          en de body als twee losse pagina's aan elkaar geplakt leken.
 
-         Hier hoort GEEN blob-vlak zoals elders op de pagina: die strook is maar
-         een paar tientallen pixels hoog, dus elke vorm wordt door de
-         overflow met een kaarsrechte lijn doormidden gesneden — en dat viel
-         meer op dan het gat zelf. Een zacht verloop heeft geen rand die
-         afgesneden kan worden en doet hier hetzelfde werk: de wereld begint
-         al te ademen zonder dat er een object ligt. */}
-      <div
-        aria-hidden
-        style={{
-          height: film ? "14vh" : "6vh",
-          ...SPECKLE_STIJL,
-          backgroundImage: `radial-gradient(120% 150% at 88% 0%, ${VLAK_PAPIER} 0%, rgba(242,244,237,0) 62%), ${SPECKLE_STIJL.backgroundImage}`,
-        }}
-      />
+         Hier heeft een zacht verloop gestaan om die strook te vullen. Dat is er
+         weer uit, want het maakte precies het probleem dat het moest oplossen:
+         ⚠️ het verloop had zijn centrum op 88% breedte, bóvenaan de strook. Daar
+         begint het dus op volle sterkte, terwijl de film erboven gewoon papier
+         is — en dat geeft een harde horizontale rand op de sectiegrens. Links
+         was het al uitgedoofd (het centrum ligt rechts), dus daar liep de kleur
+         wél mooi door: precies het verschil links/rechts dat opviel.
+         Les: een verloop dat op een rand begint, IS een rand. Wil je hier ooit
+         weer iets, laat het dan in het midden van de strook beginnen en naar
+         beide kanten uitdoven. */}
+      <div aria-hidden style={{ height: film ? "14vh" : "6vh", ...SPECKLE_STIJL }} />
 
       {/* ════════════════════════ DE BODY ════════════════════════ */}
-      {body ?? (
-        <main id="verder" className="relative z-10 scroll-mt-16" style={SPECKLE_STIJL}>
+      <main id="verder" className="relative z-10 scroll-mt-16" style={SPECKLE_STIJL}>
         {/* De effecten-motor: wieg-animaties, scroll-parallax en muis-diepte. */}
         <WereldFx />
 
@@ -1117,16 +1148,20 @@ export default function Vierde({
             className="-z-10 hidden lg:block"
             tel={3}
           />
-          {/* Tegenover het vlak links, op de hoogte van de kop: de rechterhelft
-             van deze sectie was over de volle hoogte leeg, en dat is precies
-             waar het achtergrondweefsel van de pagina onderbrak. Ligt hoog
-             genoeg om niet met de kaartenrij te concurreren. */}
+          {/* De rechter is bewust lang en vlak. Hij was 620 breed, 330 hoog en
+             7° gedraaid, en dan daalt zijn linkerflank net zo steil als de
+             rechterflank van het vlak hiernaast — twee steile randen naar
+             elkaar toe met een strook papier ertussen, en dat leest als een
+             botsing in plaats van als één vorm.
+             Nu loopt hij ~300px verder door naar links, is hij lager en staat
+             hij bijna recht (3°). Daardoor overlapt hij het vlak links en komt
+             zijn flank er in een flauwe hoek bovenop in plaats van ertegenaan. */}
           <KaartVlak
             kleur={VLAK_PAPIER}
             vorm="wig"
-            breedte={620}
-            hoogte={330}
-            style={{ right: "-11%", top: 30, transform: "rotate(7deg)" }}
+            breedte={920}
+            hoogte={300}
+            style={{ right: "-11%", top: 60, transform: "rotate(3deg)" }}
             className="-z-10 hidden lg:block"
             tel={6}
           />
@@ -1176,16 +1211,17 @@ export default function Vierde({
         {/* ── 8. Prijzen: het eigen mintveld. Vóór deze verbouwing lagen
            maker, ervaringen, prijzen én vragen allemaal op hetzelfde papier;
            dit veld brengt de afwisseling terug in de staart van de pagina. ── */}
-        <WereldPrijzen />
+        {/* Wie al betaalt hoeft geen prijzen meer te zien; proef- en verlopen
+           accounts wél, want die kunnen nog een plan kiezen. */}
+        {toonPrijzen && <WereldPrijzen />}
 
         {/* ── 9. Veelgestelde vragen: het lichtste blok van de pagina, geen
            kaders maar haarlijnen. ── */}
         <WereldVragen items={FAQ} />
 
         {/* ── 10. Slot: het donkergroene veld, één keer op de pagina. ── */}
-          <WereldSlot />
-        </main>
-      )}
+        <WereldSlot />
+      </main>
     </div>
   );
 }
@@ -1540,17 +1576,35 @@ function KlassenlijstKaart() {
 function RailKop() {
   return (
     <div className="mx-auto w-full max-w-5xl px-6">
-      <div data-reveal className="max-w-2xl">
-        <h2 className="font-display text-4xl font-black tracking-tight [text-wrap:balance]">
+      {/* Hier stond een gewone ondertekst. Die is vervangen door hetzelfde
+         handgeschreven duwtje als bij de ervaringen-sectie, maar gespiegeld:
+         daar staat de tekst links met het pijltje rechts, hier andersom. Twee
+         keer exact dezelfde zet zou een tic worden; gespiegeld is het een
+         motief dat je herkent. */}
+      <div data-reveal className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
+        <h2 className="max-w-2xl font-display text-4xl font-black tracking-tight [text-wrap:balance]">
           Alle tools, één werkplek
         </h2>
-        {/* De belofte bovenaan de pagina ("win elke week 2 uur terug") stond
-           daar één keer en kwam daarna nergens meer terug. Hier hoort hij
-           thuis: dit is de sectie waar de tijdwinst per tool op de kaarten
-           staat, dus hier telt hij op tot iets wat je kunt narekenen. */}
-        <p className="mt-4 text-lg text-ink/70">
-          Elke tool pakt een stuk van je week terug. Samen zo&apos;n 2 uur.
-          Sleep de rij opzij om ze allemaal te zien.
+        <p
+          className="flex shrink-0 items-center gap-2 text-xl lg:pb-1"
+          style={{ fontFamily: "var(--font-hand)", color: KOP }}
+        >
+          {/* Hetzelfde pijltje als bij de polaroids, horizontaal gespiegeld
+             (x wordt 40 − x), zodat het naar de kaarten linksonder wijst in
+             plaats van naar rechts. */}
+          <svg
+            viewBox="0 0 40 28"
+            className="h-6 w-9 shrink-0"
+            fill="none"
+            stroke={KOP}
+            strokeWidth="2"
+            strokeLinecap="round"
+            aria-hidden
+          >
+            <path d="M38 4 C 26 6, 14 10, 8 22" />
+            <path d="M14 20 L 7.5 23 L 6 16" />
+          </svg>
+          sleep de rij opzij om ze allemaal te zien
         </p>
       </div>
     </div>
@@ -2092,7 +2146,12 @@ export function ToolRail() {
   const kantlijn = "max(1.5rem, calc(50% - 32rem + 1.5rem))";
 
   return (
-    <div className="pt-24">
+    /* Was pt-24. Met de ondertekst erbij hing de kop midden in zijn blok; nu
+       die weg is stond er 120px boven de kop en nog maar 40px tot de kaarten,
+       en dan zakt de titel optisch weg naar de rij toe. Dit haalt er 32px af,
+       zodat de kop weer boven zijn eigen sectie staat in plaats van vlak boven
+       de kaarten. */
+    <div className="pt-14">
       <RailKop />
       <div className="mt-3">
         <div
@@ -2229,8 +2288,12 @@ export function KaartBeeld({ soort }: { soort: string }) {
         <div className="relative flex h-full flex-col px-6 pb-16 pt-6">
           {/* Stond rechts (self-end), maar daar zit nu het tijdwinst-chipje
              dat op elke kaart in dezelfde hoek hoort. Links is hier de vrije
-             kant: de balken eronder beginnen ook links. */}
-          <p className="font-hand self-start text-xl text-white">groep 5 · middenmeting</p>
+             kant: de balken eronder beginnen ook links.
+             Op de smalle kaart schuift de regel een rij naar beneden: het
+             handschrift (Kalam) is breed genoeg om daar alsnog tot onder het
+             chipje te lopen. Vanaf sm is er ruimte zat en staat hij weer op
+             zijn oude hoogte. */}
+          <p className="font-hand mt-6 self-start text-xl text-white sm:mt-0">groep 5 · middenmeting</p>
           {/* Per vak één balk, niet per rekendomein: een toetsronde gaat net
              zo goed over spelling en begrijpend lezen. */}
           <div className="mt-4 space-y-3" aria-hidden>

@@ -313,6 +313,15 @@ function DraadScene() {
 
       const breed = el.clientWidth;
 
+      /* ⚠️ Op mobiel staat deze scène op display:none (daar is het een stapel
+         foto's in je hand), en dan is clientWidth 0. Zonder deze uitstap deelt
+         de fysica hieronder door nul — `hangX / breed` wordt NaN — en schrijft
+         ze NaN in de x/y van elk draadje, elk knoopje en het draadpad. Dat gaf
+         ruim duizend consolefouten per mobiel bezoek.
+         Stoppen mag: de ResizeObserver onderaan wekt de lus vanzelf zodra het
+         element weer breedte krijgt (bij draaien of vergroten van het venster). */
+      if (breed === 0) { raf = 0; return; }
+
       /* de duw van je muis dooft uit zodra je stil blijft staan, en dan veert
          de kaart vanzelf terug naar zijn eigen scheve hoek */
       duw.current *= Math.max(0, 1 - dt * DUW_DEMPING);
