@@ -206,7 +206,10 @@ function AiIcoon({ soort }: { soort: "training" | "vooraf" | "controle" }) {
 
 export function WereldPrivacy() {
   return (
-    <section className="relative overflow-hidden" style={{ background: MINT_LICHT }} aria-label="Privacy">
+    /* overflow-x-clip in plaats van overflow-hidden: horizontaal blijft er
+       geknipt, maar het vlak linksboven mag verticaal doorlopen tot in de
+       sectie erboven. */
+    <section className="relative overflow-x-clip" style={{ background: MINT_LICHT }} aria-label="Privacy">
       <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="oploopRechts" hoogte="h-[70px] sm:h-[118px]" />
       <KaartVlak
         kleur={VLAK_MINT}
@@ -217,19 +220,28 @@ export function WereldPrivacy() {
         className="hidden lg:block"
         tel={3}
       />
-      {/* Kwam uit de sectie hierboven ("Zo werkt het"), waar hij op de
-         sectiegrens werd afgesneden en er een papieren band onder hem overbleef.
-         Hier hoort hij: de golf bovenaan deze sectie snijdt hem precies op de
-         mintrand af, dus je ziet geen snede maar een vorm die onder het veld
-         door loopt — hetzelfde principe als het vlak hierboven rechts. Daarom
-         ook de mint-tint en een negatieve top. */}
+      {/* Deze loopt als enige vlak op de pagina dwars over een veldovergang
+         heen: hij begint op het papier van "Zo werkt het" en loopt door tot in
+         het mintveld. Drie dingen maken dat mogelijk.
+
+         1. De sectie knipt verticaal niet meer (overflow-x-clip): horizontaal
+            blijft er geknipt, anders duwt dit vlak de pagina breder.
+         2. z-[6]. De golf bovenaan deze sectie staat op z-5 en zou het vlak
+            anders precies op de mintrand afsnijden. Zes ligt daar net boven en
+            blijft onder de inhoud (z-10).
+         3. multiply met #f5f8f5. Een vaste kleur kán hier niet kloppen: boven
+            de golf ligt papier en eronder mint. Deze waarde is zo gekozen dat
+            hij vermenigvuldigd op mint exact VLAK_MINT oplevert en op papier
+            exact VLAK_PAPIER — dezelfde twee tinten die de andere vlakken op
+            die ondergronden al hebben. De vorm wisselt dus vanzelf mee van
+            toon precies waar de golf loopt. */}
       <KaartVlak
-        kleur={VLAK_MINT}
+        kleur="#f5f8f5"
         vorm="koepel"
         breedte={700}
         hoogte={330}
-        style={{ left: "-14%", top: -60, transform: "rotate(-6deg)" }}
-        className="hidden lg:block"
+        style={{ left: "-14%", top: -60, transform: "rotate(-6deg)", mixBlendMode: "multiply" }}
+        className="z-[6] hidden lg:block"
         tel={2}
       />
       {/* De onderste helft van deze sectie was leeg, en samen met de bovenkant
