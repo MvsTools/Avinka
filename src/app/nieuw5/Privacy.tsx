@@ -158,13 +158,18 @@ function AiIcoon({ soort }: { soort: "training" | "vooraf" | "controle" }) {
   if (soort === "training")
     return (
       <svg viewBox="0 0 48 48" className="h-11 w-11 sm:h-12 sm:w-12" aria-hidden>
-        {/* jouw werk */}
-        <rect x="7" y="5" width="24" height="30" rx="4.5" stroke={DONKER} strokeWidth="2.6" {...gemeen} />
-        <path d="M13 14h12M13 20h8" stroke={DONKER} strokeOpacity="0.45" strokeWidth="2.4" {...gemeen} />
-        {/* het verbodsteken: het gaat niet verder dan hier */}
-        <circle cx="34" cy="34" r="9.5" fill="#ffffff" />
-        <circle cx="34" cy="34" r="9.5" stroke="#f59e0b" strokeWidth="2.6" {...gemeen} />
-        <path d="M28.3 39.7 39.7 28.3" stroke="#f59e0b" strokeWidth="2.6" {...gemeen} />
+        {/* Het document staat linksboven en het verbodsteken rechtsonder; samen
+           lagen ze 1,25 eenheid uit het midden van het vak. De groep schuift
+           het geheel terug in plaats van elke coördinaat apart te verzetten. */}
+        <g transform="translate(-1.25 -0.25)">
+          {/* jouw werk */}
+          <rect x="7" y="5" width="24" height="30" rx="4.5" stroke={DONKER} strokeWidth="2.6" {...gemeen} />
+          <path d="M13 14h12M13 20h8" stroke={DONKER} strokeOpacity="0.45" strokeWidth="2.4" {...gemeen} />
+          {/* het verbodsteken: het gaat niet verder dan hier */}
+          <circle cx="34" cy="34" r="9.5" fill="#ffffff" />
+          <circle cx="34" cy="34" r="9.5" stroke="#f59e0b" strokeWidth="2.6" {...gemeen} />
+          <path d="M28.3 39.7 39.7 28.3" stroke="#f59e0b" strokeWidth="2.6" {...gemeen} />
+        </g>
       </svg>
     );
 
@@ -175,11 +180,15 @@ function AiIcoon({ soort }: { soort: "training" | "vooraf" | "controle" }) {
            een derde van de hoogte op, waardoor het vinkje en het kruisje
            samengeperst raakten en op ~44px tot één vlekje vervaagden. */}
         <rect x="5" y="7" width="38" height="34" rx="5" stroke={DONKER} strokeWidth="2.6" {...gemeen} />
-        {/* Wat wel mag, en wat niet. Met de lijndikte erbij liepen deze twee
-           tot op een pixel naar elkaar toe en werden ze samen één vlekje; er
-           zit nu echt lucht tussen. */}
-        <path d="M10 24l4 4 7.5-8" stroke="#2f9e6e" strokeWidth="3.2" {...gemeen} />
-        <path d="M30 19.5l9.5 9.5M39.5 19.5l-9.5 9.5" stroke={DONKER} strokeOpacity="0.4" strokeWidth="3" {...gemeen} />
+        {/* Wat wel mag, en wat niet.
+           ⚠️ Reken hier met de LIJNDIKTE mee, niet met de padcoördinaten: een
+           lijn van 3 steekt aan elke kant 1,5 buiten zijn pad. Op die manier
+           uitgelijnd liep het kruisje eerst tegen de rechterwand van het
+           venster aan terwijl er links ruimte over was, en zaten de twee
+           tekens ook te dicht op elkaar. Nu staat het páár gecentreerd: de
+           zichtbare randen houden aan beide kanten dezelfde marge. */}
+        <path d="M10.8 24.25l3.5 3.5 6.5-7.5" stroke="#2f9e6e" strokeWidth="3.2" {...gemeen} />
+        <path d="M28.8 19.75l8.5 8.5M37.3 19.75l-8.5 8.5" stroke={DONKER} strokeOpacity="0.4" strokeWidth="3" {...gemeen} />
       </svg>
     );
 
