@@ -38,36 +38,35 @@ const STAPPEN = [
 
 export function WereldHoeWerktHet() {
   return (
-    <section className="relative overflow-hidden">
-      {/* Beide vlakken stonden met een negatieve offset (bottom:-40 en
-         top:-30) en werden daardoor door de sectierand kaarsrecht afgesneden:
-         deze sectie heeft overflow-hidden, dus alles wat eruit steekt wordt
-         geknipt. Bij een organische vorm valt zo'n rechte lijn meteen op.
-         Ze staan nu allebei binnen de sectie. Let op bij het bijstellen: de
-         scroll-parallax (data-wpar) verschuift ze nog eens tot enkele tientallen
-         pixels, dus meet over meerdere scrollposities en niet op één moment. */}
-      <KaartVlak
-        kleur={VLAK_PAPIER}
-        vorm="koepel"
-        breedte={700}
-        hoogte={330}
-        style={{ left: "-14%", bottom: 55, transform: "rotate(-6deg)" }}
-        className="hidden lg:block"
-        tel={2}
-      />
-      {/* Vult het gat in het achtergrondweefsel tussen de kaartenrij hierboven
-         en het mintveld hieronder: over die ruim vierhonderd pixels lag niets. */}
+    /* overflow-x-clip in plaats van overflow-hidden: horizontaal blijft er
+       geknipt (anders duwen de vlakken de pagina breder), maar verticaal mag
+       er nu doorgelopen worden. Met overflow-hidden werden de vlakken
+       kaarsrecht afgesneden op de sectiegrens, en bij een organische vorm valt
+       zo'n rechte lijn meteen op. */
+    <section className="relative overflow-x-clip">
+      {/* ⚠️ Waar de onderrand van deze sectie ligt is NIET waar je hem ziet.
+         De privacysectie hieronder begint met een papieren golfstrook van 117px
+         voordat de mint echt start. Een vlak dat op de sectiegrens wordt
+         afgesneden houdt dus een papieren band onder zich, en dat leest als een
+         wit vlak tussen de vorm en het mintveld.
+
+         Daarom staat hier alleen nog het vlak dat naar BOVEN uitsteekt: daar
+         ligt hetzelfde papier, dus dat is naadloos. Het vlak dat naar beneden
+         liep is verhuisd naar de bovenkant van de privacysectie, waar de golf
+         hem precies op de mintrand afsnijdt — net als het vlak rechts van
+         "Veilig omgaan met AI". */}
       <KaartVlak
         kleur={VLAK_PAPIER}
         vorm="ei"
         breedte={560}
         hoogte={300}
-        style={{ right: "-12%", top: 85, transform: "rotate(9deg)" }}
+        style={{ right: "-12%", top: -30, transform: "rotate(9deg)" }}
         className="hidden lg:block"
         tel={6}
       />
 
-      <div className="relative mx-auto w-full max-w-6xl px-6 pb-24 pt-8 lg:pb-28">
+      {/* z-10: de inhoud moet boven de vlakken hierboven blijven. */}
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-24 pt-8 lg:pb-28">
         <Confetti punten={[{ x: "97%", y: "72%", r: 4, amber: true }]} />
         <h2
           data-reveal

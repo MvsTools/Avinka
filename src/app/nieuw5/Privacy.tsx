@@ -217,6 +217,21 @@ export function WereldPrivacy() {
         className="hidden lg:block"
         tel={3}
       />
+      {/* Kwam uit de sectie hierboven ("Zo werkt het"), waar hij op de
+         sectiegrens werd afgesneden en er een papieren band onder hem overbleef.
+         Hier hoort hij: de golf bovenaan deze sectie snijdt hem precies op de
+         mintrand af, dus je ziet geen snede maar een vorm die onder het veld
+         door loopt — hetzelfde principe als het vlak hierboven rechts. Daarom
+         ook de mint-tint en een negatieve top. */}
+      <KaartVlak
+        kleur={VLAK_MINT}
+        vorm="koepel"
+        breedte={700}
+        hoogte={330}
+        style={{ left: "-14%", top: -60, transform: "rotate(-6deg)" }}
+        className="hidden lg:block"
+        tel={2}
+      />
       {/* De onderste helft van deze sectie was leeg, en samen met de bovenkant
          van de makerssectie eronder was dat het grootste gat van de pagina:
          ruim duizend pixels zonder één achtergrondvorm. Links, tegenover het
