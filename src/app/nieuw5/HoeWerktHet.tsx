@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { DONKER, KOP, KaartVlak, VLAK_PAPIER } from "./Wereld";
+import { Confetti, DONKER, KOP, KaartVlak, VLAK_PAPIER } from "./Wereld";
 
 /* ── Zo werkt het ───────────────────────────────────────────────────────────
    Dit blok ontbrak. De pagina liet wél zien wát je krijgt (acht toolkaarten),
@@ -48,8 +48,20 @@ export function WereldHoeWerktHet() {
         className="hidden lg:block"
         tel={2}
       />
+      {/* Vult het gat in het achtergrondweefsel tussen de kaartenrij hierboven
+         en het mintveld hieronder: over die ruim vierhonderd pixels lag niets. */}
+      <KaartVlak
+        kleur={VLAK_PAPIER}
+        vorm="ei"
+        breedte={560}
+        hoogte={300}
+        style={{ right: "-12%", top: -30, transform: "rotate(9deg)" }}
+        className="hidden lg:block"
+        tel={6}
+      />
 
       <div className="relative mx-auto w-full max-w-6xl px-6 pb-24 pt-8 lg:pb-28">
+        <Confetti punten={[{ x: "97%", y: "72%", r: 4, amber: true }]} />
         <h2
           data-reveal
           className="font-display text-[clamp(1.875rem,3.4vw,2.75rem)] font-black tracking-tight"

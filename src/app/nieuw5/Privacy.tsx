@@ -162,6 +162,19 @@ export function WereldPrivacy() {
         className="hidden lg:block"
         tel={3}
       />
+      {/* De onderste helft van deze sectie was leeg, en samen met de bovenkant
+         van de makerssectie eronder was dat het grootste gat van de pagina:
+         ruim duizend pixels zonder één achtergrondvorm. Links, tegenover het
+         vlak hierboven, zodat het weefsel blijft zigzaggen. */}
+      <KaartVlak
+        kleur={VLAK_MINT}
+        vorm="schelp"
+        breedte={640}
+        hoogte={360}
+        style={{ left: "-13%", bottom: 90, transform: "rotate(6deg)" }}
+        className="hidden lg:block"
+        tel={7}
+      />
 
       <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pb-24 pt-28 lg:pb-28 lg:pt-32">
         <div className="max-w-2xl">

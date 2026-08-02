@@ -6,7 +6,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { DONKER, Golf, KOP, MINT, MINT_LICHT, MINT_DIEP, KaartVlak, VLAK_MINT, VLAK_PAPIER } from "./Wereld";
+import { Confetti, DONKER, Golf, KOP, MINT, MINT_LICHT, MINT_DIEP, KaartVlak, VLAK_MINT, VLAK_PAPIER } from "./Wereld";
 
 /* ── De polaroids: wat leerkrachten zeggen ─────────────────────────────────
    Ervaringen als instax-kaartjes aan één levende draad. Geen prikbord, geen
@@ -728,6 +728,9 @@ export function WereldPolaroids() {
       />
 
       <div className="relative mx-auto w-full max-w-6xl px-6 pb-24 pt-24 lg:pb-28 lg:pt-28">
+        {/* Dit was de enige sectie van de pagina zonder stipjes; over ruim
+           veertienhonderd pixels lag er geen enkele. */}
+        <Confetti punten={[{ x: "1%", y: "12%", r: 4 }, { x: "97%", y: "34%", r: 5, amber: true }]} />
         <div className="text-center">
           {/* Het handgeschreven opstapje "wat leerkrachten zeggen" is weg: het
              handschrift zit hier al ín de kop ("uit de praktijk"), dus stond

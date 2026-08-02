@@ -19,6 +19,7 @@ import { PROEF_DAGEN } from "@/lib/abonnement";
 import {
   SPECKLE_STIJL,
   BlobKnop,
+  Confetti,
   KaartVlak,
   Lichtbron,
   VLAK_PAPIER,
@@ -107,6 +108,8 @@ const REGIE = [
 const KAARTEN = [
   {
     id: "rapporten",
+    kort: "± 10 min",
+    hoek: "links" as const,
     naam: "Rapporten",
     tijd: "± 10 minuten per rapport",
     zin: "Rapportteksten die klinken alsof jij ze schreef.",
@@ -116,6 +119,8 @@ const KAARTEN = [
   },
   {
     id: "toetsanalyse",
+    kort: "± 3 uur",
+    hoek: "links" as const,
     naam: "Toetsanalyse",
     tijd: "± 3 uur per toetsronde",
     zin: "Zie in één oogopslag wie extra aandacht nodig heeft.",
@@ -125,6 +130,8 @@ const KAARTEN = [
   },
   {
     id: "oudercontact",
+    kort: "± 2–20 min",
+    hoek: "rechts" as const,
     naam: "Oudercontact",
     tijd: "± 2 tot 20 minuten per bericht",
     zin: "Kwalitatieve berichten aan ouders in jouw stijl.",
@@ -134,6 +141,8 @@ const KAARTEN = [
   },
   {
     id: "lesontwerp",
+    kort: "± 25 min",
+    hoek: "rechts" as const,
     naam: "Lesontwerp",
     tijd: "± 25 minuten per les",
     zin: "Van één leerdoel naar een compleet doordachte les.",
@@ -143,6 +152,8 @@ const KAARTEN = [
   },
   {
     id: "plattegrond",
+    kort: "± 20 min",
+    hoek: "links" as const,
     naam: "Plattegrond",
     tijd: "± 20 minuten per opstelling",
     zin: "De slimme klassenopstelling.",
@@ -152,6 +163,8 @@ const KAARTEN = [
   },
   {
     id: "werkbladen",
+    kort: "± 15 min",
+    hoek: "rechts" as const,
     naam: "Werkbladen",
     tijd: "± 15 minuten per werkblad",
     zin: "Werkbladen die precies bij je les passen.",
@@ -161,6 +174,8 @@ const KAARTEN = [
   },
   {
     id: "draaiboek",
+    kort: "± 3 uur",
+    hoek: "rechts" as const,
     naam: "Draaiboek",
     tijd: "± 3 uur per draaiboek",
     zin: "Een uitgedacht schoolevenement.",
@@ -170,6 +185,8 @@ const KAARTEN = [
   },
   {
     id: "weekplanning",
+    kort: "± 30 min",
+    hoek: "links" as const,
     naam: "Weekplanning",
     tijd: "± 30 minuten per planning",
     zin: "Je week compleet ingepland.",
@@ -1034,8 +1051,24 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
       </section>
 
       {/* Ademruimte tussen film en body: de finale mag uitademen voordat de
-         uitleg begint. */}
-      <div aria-hidden style={{ height: film ? "14vh" : "6vh", ...SPECKLE_STIJL }} />
+         uitleg begint. De strook was helemaal kaal — het eerste vormpje van de
+         wereld begon pas een paar honderd pixels verderop — waardoor de film
+         en de body als twee losse pagina's aan elkaar geplakt leken.
+
+         Hier hoort GEEN blob-vlak zoals elders op de pagina: die strook is maar
+         een paar tientallen pixels hoog, dus elke vorm wordt door de
+         overflow met een kaarsrechte lijn doormidden gesneden — en dat viel
+         meer op dan het gat zelf. Een zacht verloop heeft geen rand die
+         afgesneden kan worden en doet hier hetzelfde werk: de wereld begint
+         al te ademen zonder dat er een object ligt. */}
+      <div
+        aria-hidden
+        style={{
+          height: film ? "14vh" : "6vh",
+          ...SPECKLE_STIJL,
+          backgroundImage: `radial-gradient(120% 150% at 88% 0%, ${VLAK_PAPIER} 0%, rgba(242,244,237,0) 62%), ${SPECKLE_STIJL.backgroundImage}`,
+        }}
+      />
 
       {/* ════════════════════════ DE BODY ════════════════════════ */}
       <main id="verder" className="relative z-10 scroll-mt-16" style={SPECKLE_STIJL}>
@@ -1085,6 +1118,20 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
             className="-z-10 hidden lg:block"
             tel={3}
           />
+          {/* Tegenover het vlak links, op de hoogte van de kop: de rechterhelft
+             van deze sectie was over de volle hoogte leeg, en dat is precies
+             waar het achtergrondweefsel van de pagina onderbrak. Ligt hoog
+             genoeg om niet met de kaartenrij te concurreren. */}
+          <KaartVlak
+            kleur={VLAK_PAPIER}
+            vorm="wig"
+            breedte={620}
+            hoogte={330}
+            style={{ right: "-11%", top: 30, transform: "rotate(7deg)" }}
+            className="-z-10 hidden lg:block"
+            tel={6}
+          />
+          <Confetti punten={[{ x: "6%", y: "84%", r: 4 }, { x: "93%", y: "22%", r: 5, amber: true }]} />
           <ToolRail />
         </section>
 
@@ -1809,53 +1856,49 @@ function RailKaarten({
           >
             <KaartBeeld soort={k.id} />
             <div className="kaart-grain pointer-events-none absolute inset-0" aria-hidden />
-            {/* Naam én tijdwinst staan op de kaart zelf. De tijdwinst stond
-               eerst alléén in het paneel dat opengaat bij een klik — en dat is
-               nu juist het bewijs onder de belofte bovenaan de pagina ("win
-               elke week 2 uur terug"), dus het hoort in beeld te staan voor
-               wie alleen langs scrollt. De donkere balk eronder is er zodat
-               beide regels leesbaar blijven op elke tekening. */}
-            {!k.licht && (
-              <span
-                className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-ink/70 via-ink/22 to-transparent"
-                aria-hidden
-              />
-            )}
-            <div
-              className={`absolute bottom-4 left-4 right-4 ${
-                k.licht ? "w-fit rounded-3xl bg-ink py-2.5 pl-2 pr-4 shadow-md" : ""
+            {/* De tijdwinst als klein chipje in een bovenhoek. Stond eerst
+               alléén in het paneel dat opengaat bij een klik, en dat is juist
+               het bewijs onder de belofte bovenaan de pagina ("win elke week 2
+               uur terug") — dus het hoort in beeld voor wie langs scrollt.
+               Daarna stond het als tweede regel onder de naam, maar dat werd
+               te zwaar; klein en in een hoek is genoeg.
+               ⚠️ WELKE hoek verschilt per kaart (`hoek` in KAARTEN): elke
+               tekening heeft zelf al iets in een bovenhoek staan — een datum,
+               een tabkopje, een handgeschreven regel — dus één vaste hoek
+               botst altijd ergens. */}
+            <span
+              className={`absolute top-3.5 z-10 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6875rem] font-bold shadow-sm ${
+                k.hoek === "rechts" ? "right-3.5" : "left-3.5"
+              } ${k.licht ? "bg-ink/90 text-cream" : "bg-white/95 text-ink"}`}
+            >
+              <svg viewBox="0 0 24 24" className="h-3 w-3 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.6" aria-hidden>
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7.5V12l3 2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              bespaart {k.kort}
+            </span>
+            <p
+              className={`absolute bottom-4 left-4 flex items-center gap-2 font-display text-lg font-black tracking-tight ${
+                k.licht
+                  ? "rounded-full bg-ink py-1.5 pl-1.5 pr-4 text-cream shadow-md"
+                  : "text-white"
               }`}
             >
-              <p
-                className={`flex items-center gap-2 font-display text-lg font-black tracking-tight ${
-                  k.licht ? "text-cream" : "text-white"
+              <span
+                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-colors duration-300 ${
+                  gezien[i] ? "bg-white text-brand-dark" : "bg-white/15 ring-1 ring-white/50"
                 }`}
+                aria-hidden
               >
-                <span
-                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-colors duration-300 ${
-                    gezien[i] ? "bg-white text-brand-dark" : "bg-white/15 ring-1 ring-white/50"
-                  }`}
-                  aria-hidden
-                >
-                  {gezien[i] && <Vink className="vinkpop h-3.5 w-3.5" dik={4} />}
-                </span>
-                {k.naam}
-              </p>
-              <p
-                className={`mt-1 pl-8 text-[0.8125rem] font-bold leading-tight ${
-                  k.licht ? "text-cream/75" : "text-white/85"
-                }`}
-              >
-                Bespaart {k.tijd}
-              </p>
-            </div>
+                {gezien[i] && <Vink className="vinkpop h-3.5 w-3.5" dik={4} />}
+              </span>
+              {k.naam}
+            </p>
             {/* Verschijnt bij hover: het duwtje dat zegt dat je kunt klikken.
                Rechts, met een zachte verdonkering eronder zodat het op elke
-               tekening leesbaar blijft. Zit bewust bóven de naam- en tijdregel
-               (pb-20): op de smalste kaart liep de langste tijdregel anders
-               precies onder dit witte chipje door. */}
+               tekening leesbaar blijft. */}
             <span
-              className="kaart-hint pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-end bg-gradient-to-t from-ink/55 to-transparent p-4 pb-20 pt-14"
+              className="kaart-hint pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-end bg-gradient-to-t from-ink/55 to-transparent p-4 pt-14"
               aria-hidden
             >
               <span className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-ink shadow-md">
@@ -2230,7 +2273,11 @@ function KaartBeeld({ soort }: { soort: string }) {
         <div className="absolute bottom-[24%] left-12 right-5 rotate-1 rounded-2xl rounded-br-md bg-ink p-4 shadow-xl">
           <p className="text-sm leading-6 text-cream">Wat leuk om zo mee te kijken. Dankjewel! ❤️</p>
         </div>
-        <p className="font-hand absolute left-6 top-6 -rotate-2 text-xl text-ink/80">
+        {/* Zit iets lager dan de andere kaarten hun hoektekst: deze regel is
+           breed genoeg om tot voorbij het midden te lopen, en het tijdwinst-
+           chipje rechtsboven viel er anders overheen. Onder het chipje langs
+           houdt de regel zijn volledige tekst. */}
+        <p className="font-hand absolute left-6 top-12 -rotate-2 text-xl text-ink/80">
           vrijdag 16:02 · verstuurd
         </p>
       </div>

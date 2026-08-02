@@ -724,6 +724,19 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
       </div>
       {/* De liniaal hoort in het mintveld te liggen, dus onderin de sectie. */}
       <SilhouetLiniaal kleur={MINT_DIEP} veld={MINT_LICHT} style={{ width: 460, left: -120, bottom: 150, transform: "rotate(-14deg)" }} />
+      {/* De bovenhelft van deze sectie (nog papier) had niets. Samen met de
+         onderkant van de privacysectie was dat het grootste gat in het
+         achtergrondweefsel van de pagina. Rechts, tegenover de liniaal die
+         onderin links ligt. */}
+      <KaartVlak
+        kleur={VLAK_PAPIER}
+        vorm="wig"
+        breedte={600}
+        hoogte={320}
+        style={{ right: "-12%", top: 60, transform: "rotate(-8deg)" }}
+        className="hidden lg:block"
+        tel={6}
+      />
 
       <div className="relative z-10 mx-auto w-full max-w-4xl px-6 pb-32 pt-32 lg:pb-36 lg:pt-36">
         {/* De kaart hoort nu bij de familie: organische radii, tonale rand en

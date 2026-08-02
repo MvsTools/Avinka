@@ -93,6 +93,10 @@ export function WereldPrijzen() {
       />
 
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-28 pt-24 lg:pb-32 lg:pt-28">
+        {/* Over de hele strook van de kaartenrij tot en met de prijzen lag geen
+           enkel stipje meer, terwijl ze bovenin de pagina juist dicht bij
+           elkaar staan. Twee is hier genoeg. */}
+        <Confetti punten={[{ x: "-2%", y: "6%", r: 4, amber: true }, { x: "99%", y: "62%", r: 5 }]} />
         {/* De kop staat links op de tekstkolom en de schakelaar rechts op
            dezelfde regel: één balk in plaats van drie gecentreerde blokken
            onder elkaar. */}
