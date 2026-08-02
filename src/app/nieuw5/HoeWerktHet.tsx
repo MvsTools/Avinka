@@ -39,12 +39,19 @@ const STAPPEN = [
 export function WereldHoeWerktHet() {
   return (
     <section className="relative overflow-hidden">
+      {/* Beide vlakken stonden met een negatieve offset (bottom:-40 en
+         top:-30) en werden daardoor door de sectierand kaarsrecht afgesneden:
+         deze sectie heeft overflow-hidden, dus alles wat eruit steekt wordt
+         geknipt. Bij een organische vorm valt zo'n rechte lijn meteen op.
+         Ze staan nu allebei binnen de sectie. Let op bij het bijstellen: de
+         scroll-parallax (data-wpar) verschuift ze nog eens tot enkele tientallen
+         pixels, dus meet over meerdere scrollposities en niet op één moment. */}
       <KaartVlak
         kleur={VLAK_PAPIER}
         vorm="koepel"
         breedte={700}
         hoogte={330}
-        style={{ left: "-14%", bottom: -40, transform: "rotate(-6deg)" }}
+        style={{ left: "-14%", bottom: 55, transform: "rotate(-6deg)" }}
         className="hidden lg:block"
         tel={2}
       />
@@ -55,7 +62,7 @@ export function WereldHoeWerktHet() {
         vorm="ei"
         breedte={560}
         hoogte={300}
-        style={{ right: "-12%", top: -30, transform: "rotate(9deg)" }}
+        style={{ right: "-12%", top: 85, transform: "rotate(9deg)" }}
         className="hidden lg:block"
         tel={6}
       />

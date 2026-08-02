@@ -741,7 +741,7 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         vorm="wig"
         breedte={600}
         hoogte={320}
-        style={{ right: "-12%", top: 60, transform: "rotate(-8deg)" }}
+        style={{ right: "-12%", top: 70, transform: "rotate(-8deg)" }}
         className="hidden lg:block"
         tel={6}
       />
@@ -895,7 +895,7 @@ export function WereldSlot() {
   return (
     <section className="relative overflow-hidden" style={{ background: SLOT }}>
       <Golf kleur="var(--w-papier, #fcfbf7)" flip />
-      <SilhouetVliegtuig kleur="#ffffff" style={{ width: 300, right: -40, top: 60, transform: "rotate(14deg)", opacity: 0.05 }} tel={1} />
+      <SilhouetVliegtuig kleur="#ffffff" style={{ width: 300, right: -40, top: 125, transform: "rotate(14deg)", opacity: 0.05 }} tel={1} />
       {/* Ook hier stond een potlood-silhouet; op deze schaal en bij dit lage
          contrast was er geen potlood meer in te herkennen, alleen een wig.
          Een organisch vlak doet hetzelfde werk en hoort bij de rest. */}
@@ -904,7 +904,7 @@ export function WereldSlot() {
         vorm="schelp"
         breedte={620}
         hoogte={380}
-        style={{ left: "-8%", bottom: 40, transform: "rotate(-9deg)" }}
+        style={{ left: "-8%", bottom: 55, transform: "rotate(-9deg)" }}
         className="hidden lg:block"
         tel={2}
       />
