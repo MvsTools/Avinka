@@ -109,7 +109,6 @@ const KAARTEN = [
   {
     id: "rapporten",
     kort: "± 10 min",
-    hoek: "links" as const,
     naam: "Rapporten",
     tijd: "± 10 minuten per rapport",
     zin: "Rapportteksten die klinken alsof jij ze schreef.",
@@ -120,7 +119,6 @@ const KAARTEN = [
   {
     id: "toetsanalyse",
     kort: "± 3 uur",
-    hoek: "links" as const,
     naam: "Toetsanalyse",
     tijd: "± 3 uur per toetsronde",
     zin: "Zie in één oogopslag wie extra aandacht nodig heeft.",
@@ -131,7 +129,6 @@ const KAARTEN = [
   {
     id: "oudercontact",
     kort: "± 2–20 min",
-    hoek: "rechts" as const,
     naam: "Oudercontact",
     tijd: "± 2 tot 20 minuten per bericht",
     zin: "Kwalitatieve berichten aan ouders in jouw stijl.",
@@ -142,7 +139,6 @@ const KAARTEN = [
   {
     id: "lesontwerp",
     kort: "± 25 min",
-    hoek: "rechts" as const,
     naam: "Lesontwerp",
     tijd: "± 25 minuten per les",
     zin: "Van één leerdoel naar een compleet doordachte les.",
@@ -153,7 +149,6 @@ const KAARTEN = [
   {
     id: "plattegrond",
     kort: "± 20 min",
-    hoek: "links" as const,
     naam: "Plattegrond",
     tijd: "± 20 minuten per opstelling",
     zin: "De slimme klassenopstelling.",
@@ -164,7 +159,6 @@ const KAARTEN = [
   {
     id: "werkbladen",
     kort: "± 15 min",
-    hoek: "rechts" as const,
     naam: "Werkbladen",
     tijd: "± 15 minuten per werkblad",
     zin: "Werkbladen die precies bij je les passen.",
@@ -175,7 +169,6 @@ const KAARTEN = [
   {
     id: "draaiboek",
     kort: "± 3 uur",
-    hoek: "rechts" as const,
     naam: "Draaiboek",
     tijd: "± 3 uur per draaiboek",
     zin: "Een uitgedacht schoolevenement.",
@@ -186,7 +179,6 @@ const KAARTEN = [
   {
     id: "weekplanning",
     kort: "± 30 min",
-    hoek: "links" as const,
     naam: "Weekplanning",
     tijd: "± 30 minuten per planning",
     zin: "Je week compleet ingepland.",
@@ -1862,20 +1854,25 @@ function RailKaarten({
                uur terug") — dus het hoort in beeld voor wie langs scrollt.
                Daarna stond het als tweede regel onder de naam, maar dat werd
                te zwaar; klein en in een hoek is genoeg.
-               ⚠️ WELKE hoek verschilt per kaart (`hoek` in KAARTEN): elke
-               tekening heeft zelf al iets in een bovenhoek staan — een datum,
-               een tabkopje, een handgeschreven regel — dus één vaste hoek
-               botst altijd ergens. */}
+
+               Alle acht in DEZELFDE hoek (rechtsboven): dat was de hoek die
+               het minst bezet was. De tekeningen die er iets hadden staan zijn
+               ervoor opgeschoven — zie de opmerkingen bij toetsanalyse,
+               oudercontact en draaiboek in KaartBeeld.
+
+               Alleen de duur, zonder het woord "bespaart": het klokje zegt al
+               dat het over tijd gaat, en de volledige zin ("± 10 minuten per
+               rapport") staat in het paneel dat bij een klik opengaat. */}
             <span
-              className={`absolute top-3.5 z-10 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6875rem] font-bold shadow-sm ${
-                k.hoek === "rechts" ? "right-3.5" : "left-3.5"
-              } ${k.licht ? "bg-ink/90 text-cream" : "bg-white/95 text-ink"}`}
+              className={`absolute right-3.5 top-3.5 z-10 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6875rem] font-bold shadow-sm ${
+                k.licht ? "bg-ink/90 text-cream" : "bg-white/95 text-ink"
+              }`}
             >
               <svg viewBox="0 0 24 24" className="h-3 w-3 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.6" aria-hidden>
                 <circle cx="12" cy="12" r="9" />
                 <path d="M12 7.5V12l3 2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              bespaart {k.kort}
+              {k.kort}
             </span>
             <p
               className={`absolute bottom-4 left-4 flex items-center gap-2 font-display text-lg font-black tracking-tight ${
@@ -2222,7 +2219,10 @@ function KaartBeeld({ soort }: { soort: string }) {
         <div className="absolute -left-16 -top-20 h-64 w-64 rounded-full bg-white/15 blur-3xl" aria-hidden />
         {/* Flow-layout: nooit overlap, ook op de kortere mobiele kaart. */}
         <div className="relative flex h-full flex-col px-6 pb-16 pt-6">
-          <p className="font-hand self-end text-xl text-white">groep 5 · middenmeting</p>
+          {/* Stond rechts (self-end), maar daar zit nu het tijdwinst-chipje
+             dat op elke kaart in dezelfde hoek hoort. Links is hier de vrije
+             kant: de balken eronder beginnen ook links. */}
+          <p className="font-hand self-start text-xl text-white">groep 5 · middenmeting</p>
           {/* Per vak één balk, niet per rekendomein: een toetsronde gaat net
              zo goed over spelling en begrijpend lezen. */}
           <div className="mt-4 space-y-3" aria-hidden>
@@ -2356,8 +2356,11 @@ function KaartBeeld({ soort }: { soort: string }) {
     return (
       <div className="absolute inset-0 bg-brand">
         <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/20 blur-3xl" aria-hidden />
-        {/* het werkblad zelf */}
-        <div className="absolute left-1/2 top-[46%] w-[80%] -translate-x-1/2 -translate-y-1/2 rotate-2 rounded-xl bg-white p-5 shadow-2xl">
+        {/* Het werkblad zelf. Op de smalle kaart (mobiel) vulde het bijna het
+           hele vlak en kwam de rechterbovenhoek onder het tijdwinst-chipje
+           uit; daar staat het nu iets smaller en iets lager. Vanaf sm is er
+           ruimte zat en blijft de oude maat staan. */}
+        <div className="absolute left-1/2 top-[50%] w-[76%] -translate-x-1/2 -translate-y-1/2 rotate-2 rounded-xl bg-white p-4 shadow-2xl sm:top-[46%] sm:w-[80%] sm:p-5">
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-ink/40">
             Werkblad · spelling
           </p>
@@ -2419,7 +2422,10 @@ function KaartBeeld({ soort }: { soort: string }) {
     return (
       <div className="absolute inset-0 bg-accent-soft">
         <div className="absolute -left-14 -top-14 h-56 w-56 rounded-full bg-accent/30 blur-3xl" aria-hidden />
-        <p className="absolute left-5 top-6 -rotate-2 rounded-lg bg-ink px-3 py-1.5 font-display text-sm font-bold text-cream shadow-md">
+        {/* Iets lager dan de andere hoekteksten, net als bij oudercontact: dit
+           labeltje is breed genoeg om op de smalle kaart tot onder het
+           tijdwinst-chipje rechtsboven te lopen. */}
+        <p className="absolute left-5 top-12 -rotate-2 rounded-lg bg-ink px-3 py-1.5 font-display text-sm font-bold text-cream shadow-md">
           Kerstdiner · het draaiboek
         </p>
         {/* de tijdlijn van de avond */}
