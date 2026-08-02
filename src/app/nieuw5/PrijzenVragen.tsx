@@ -97,13 +97,14 @@ export function WereldPrijzen() {
            dezelfde regel: één balk in plaats van drie gecentreerde blokken
            onder elkaar. */}
         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between lg:gap-16">
+          {/* Hier stond "en wat kost het" in handschrift boven de kop. Weg:
+             dat opstapje stond in zes van de negen secties en werd daarmee
+             een sjabloon in plaats van een signatuur — en boven een kop die
+             letterlijk over het bedrag gaat, voegde het niets toe. */}
           <div className="max-w-2xl">
-            <p data-reveal className="text-2xl" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
-              en wat kost het
-            </p>
             <h2
               data-reveal
-              className="mt-2 font-display text-[clamp(2.25rem,4.4vw,3.5rem)] font-black leading-[1.02] tracking-tight [text-wrap:balance]"
+              className="font-display text-[clamp(2.25rem,4.4vw,3.5rem)] font-black leading-[1.02] tracking-tight [text-wrap:balance]"
               style={{ color: DONKER }}
             >
               Eén vast bedrag. Onbeperkt gebruik.
@@ -111,6 +112,13 @@ export function WereldPrijzen() {
             <p data-reveal className="mt-5 text-lg leading-8 text-ink/75">
               Je begint met {PROEF_DAGEN} dagen gratis proberen, zonder
               betaalgegevens. Daarna kies je het abonnement dat bij je past.
+            </p>
+            {/* De derde plek waar de belofte van bovenaan de pagina landt: op
+               het moment dat iemand naar het bedrag kijkt. Bewust gekoppeld
+               aan Compleet (€9,99) en niet aan Start — dat is één tool, dus
+               daar zouden die twee uur niet kloppen. */}
+            <p data-reveal className="mt-4 text-lg font-bold" style={{ color: KOP }}>
+              Elke week zo&apos;n 2 uur terug, voor minder dan een tientje per maand.
             </p>
           </div>
 
@@ -258,8 +266,11 @@ export function WereldVragen({ items }: { items: Vraag[] }) {
   const wissel = (vraag: string) =>
     setOpen((oud) => (oud.includes(vraag) ? oud.filter((v) => v !== vraag) : [...oud, vraag]));
 
-  const eerste = items.slice(0, 4);
-  const rest = items.slice(4);
+  /* Vijf staan er open in plaats van vier: de ChatGPT-vraag is erbij gekomen
+     en die hoort zichtbaar te zijn zonder eerst te moeten uitklappen — het is
+     de vraag die iedereen in de lerarenkamer stelt. */
+  const eerste = items.slice(0, 5);
+  const rest = items.slice(5);
 
   return (
     <section id="vragen" className="relative overflow-hidden scroll-mt-16">
@@ -280,12 +291,11 @@ export function WereldVragen({ items }: { items: Vraag[] }) {
       <div className="relative mx-auto w-full max-w-5xl px-6 pb-28 pt-24 lg:pb-32">
         <div className="max-w-3xl">
           <Confetti punten={[{ x: "-3%", y: "2%", r: 4, amber: true }]} />
-          <p data-reveal className="text-2xl" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
-            nog iets te vragen
-          </p>
+          {/* Ook hier het handgeschreven opstapje ("nog iets te vragen") weg:
+             het herhaalde alleen de kop eronder. */}
           <h2
             data-reveal
-            className="mt-2 font-display text-[clamp(2.25rem,4.4vw,3.5rem)] font-black leading-[1.02] tracking-tight"
+            className="font-display text-[clamp(2.25rem,4.4vw,3.5rem)] font-black leading-[1.02] tracking-tight"
             style={{ color: DONKER }}
           >
             Veelgestelde vragen

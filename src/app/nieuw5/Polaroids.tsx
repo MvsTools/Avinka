@@ -729,12 +729,13 @@ export function WereldPolaroids() {
 
       <div className="relative mx-auto w-full max-w-6xl px-6 pb-24 pt-24 lg:pb-28 lg:pt-28">
         <div className="text-center">
-          <p data-reveal className="text-2xl" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
-            wat leerkrachten zeggen
-          </p>
+          {/* Het handgeschreven opstapje "wat leerkrachten zeggen" is weg: het
+             handschrift zit hier al ín de kop ("uit de praktijk"), dus stond
+             het er twee keer, en paginabreed stond dit opstapje in zes van de
+             negen secties. */}
           <h2
             data-reveal
-            className="mt-2 font-display text-[clamp(2.25rem,4.4vw,3.5rem)] font-black leading-[1.02] tracking-tight [text-wrap:balance]"
+            className="font-display text-[clamp(2.25rem,4.4vw,3.5rem)] font-black leading-[1.02] tracking-tight [text-wrap:balance]"
             style={{ color: DONKER }}
           >
             Echte ervaringen{" "}

@@ -28,6 +28,7 @@ import {
   WereldMaker,
   WereldSlot,
 } from "./Wereld";
+import { WereldHoeWerktHet } from "./HoeWerktHet";
 import { WereldPolaroids } from "./Polaroids";
 import { WereldPrivacy } from "./Privacy";
 import { WereldPrijzen, WereldVragen } from "./PrijzenVragen";
@@ -183,6 +184,11 @@ const FAQ = [
     vraag: "Gaan de gegevens van mijn leerlingen ergens heen?",
     antwoord:
       "Nee. Namen, plaatsen en contactgegevens worden op je eigen apparaat onleesbaar gemaakt voordat er iets wordt verstuurd. Je account staat bovendien op beveiligde servers in Europa. Privacy is bij Avinka de ruggengraat, geen bijzaak.",
+  },
+  {
+    vraag: "Waarom zou ik dit gebruiken en niet gewoon ChatGPT?",
+    antwoord:
+      "Omdat je daar het werk eromheen zelf doet. Avinka weet al hoe een rapport, een toetsanalyse of een lesontwerp eruit hoort te zien: de opbouw en de didactiek zitten in de tool, niet in een prompt die je elke keer opnieuw moet bedenken. Het rekenwerk doet de tool zelf, dus daar kan niets in verzonnen worden. Namen van je leerlingen worden onleesbaar gemaakt voordat er iets wordt verstuurd. En je krijgt geen chatvenster terug maar een bestand dat je meteen kunt printen of bewaren.",
   },
   {
     vraag: "Moet ik verstand van AI of computers hebben?",
@@ -1041,12 +1047,18 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
            heeft zijn eigen avond-naar-dag-belichting. */}
         <Lichtbron />
 
-        {/* ── 1. Wat Avinka is: kalm op het gespikkelde papier. ── */}
-        <WereldIntro />
+        {/* ── 1. Herken je dit? Mint-veld met witte kaarten en het grote
+           potlood-silhouet: het eerste kleurveld van de wereld.
 
-        {/* ── 2. Herken je dit? Mint-veld met witte kaarten en het grote
-           potlood-silhouet: het eerste kleurveld van de wereld. ── */}
+           Stond eerst ná de intro, en dan ging de pagina van pijn (de film)
+           naar oplossing (de intro) en wéér terug naar pijn. Nu loopt de
+           ladder één kant op: de film laat de chaos zien, deze sectie zegt in
+           woorden wat er misgaat, en pas daarna komt het antwoord. ── */}
         <WereldHerken />
+
+        {/* ── 2. Wat Avinka is: kalm op het gespikkelde papier. Het antwoord
+           op de drie pijnpunten hierboven. ── */}
+        <WereldIntro />
 
         {/* ── 3. De tool-galerij: grote kunstkaarten, jij schuift ze zelf.
            Eigen ondergrond (zand) zodat het duidelijk een nieuw hoofdstuk is
@@ -1075,6 +1087,12 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
           />
           <ToolRail />
         </section>
+
+        {/* ── 3b. Zo werkt het: de drie stappen. Staat hier omdat je net hebt
+           gezien wát je krijgt; de vraag die dan komt is hoe dat gaat. En de
+           laatste stap ("jij leest na en past aan") loopt rechtstreeks door
+           in de privacysectie hieronder. ── */}
+        <WereldHoeWerktHet />
 
         {/* ── 4. Privacy: de belofte wordt hier niet verteld maar bewezen.
            Een live maskeer-proef waarin de bezoeker de namen van zijn eigen
@@ -1479,7 +1497,12 @@ function RailKop() {
         <h2 className="font-display text-4xl font-black tracking-tight [text-wrap:balance]">
           Alle tools, één werkplek
         </h2>
-        <p className="mt-4 text-lg text-ink/60">
+        {/* De belofte bovenaan de pagina ("win elke week 2 uur terug") stond
+           daar één keer en kwam daarna nergens meer terug. Hier hoort hij
+           thuis: dit is de sectie waar de tijdwinst per tool op de kaarten
+           staat, dus hier telt hij op tot iets wat je kunt narekenen. */}
+        <p className="mt-4 text-lg text-ink/70">
+          Elke tool pakt een stuk van je week terug. Samen zo&apos;n 2 uur.
           Sleep de rij opzij om ze allemaal te zien.
         </p>
       </div>
@@ -1786,28 +1809,53 @@ function RailKaarten({
           >
             <KaartBeeld soort={k.id} />
             <div className="kaart-grain pointer-events-none absolute inset-0" aria-hidden />
-            <p
-              className={`absolute bottom-4 left-4 flex items-center gap-2 font-display text-lg font-black tracking-tight ${
-                k.licht
-                  ? "rounded-full bg-ink py-1.5 pl-1.5 pr-4 text-cream shadow-md"
-                  : "text-white"
+            {/* Naam én tijdwinst staan op de kaart zelf. De tijdwinst stond
+               eerst alléén in het paneel dat opengaat bij een klik — en dat is
+               nu juist het bewijs onder de belofte bovenaan de pagina ("win
+               elke week 2 uur terug"), dus het hoort in beeld te staan voor
+               wie alleen langs scrollt. De donkere balk eronder is er zodat
+               beide regels leesbaar blijven op elke tekening. */}
+            {!k.licht && (
+              <span
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-ink/70 via-ink/22 to-transparent"
+                aria-hidden
+              />
+            )}
+            <div
+              className={`absolute bottom-4 left-4 right-4 ${
+                k.licht ? "w-fit rounded-3xl bg-ink py-2.5 pl-2 pr-4 shadow-md" : ""
               }`}
             >
-              <span
-                className={`flex h-6 w-6 items-center justify-center rounded-full transition-colors duration-300 ${
-                  gezien[i] ? "bg-white text-brand-dark" : "bg-white/15 ring-1 ring-white/50"
+              <p
+                className={`flex items-center gap-2 font-display text-lg font-black tracking-tight ${
+                  k.licht ? "text-cream" : "text-white"
                 }`}
-                aria-hidden
               >
-                {gezien[i] && <Vink className="vinkpop h-3.5 w-3.5" dik={4} />}
-              </span>
-              {k.naam}
-            </p>
+                <span
+                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-colors duration-300 ${
+                    gezien[i] ? "bg-white text-brand-dark" : "bg-white/15 ring-1 ring-white/50"
+                  }`}
+                  aria-hidden
+                >
+                  {gezien[i] && <Vink className="vinkpop h-3.5 w-3.5" dik={4} />}
+                </span>
+                {k.naam}
+              </p>
+              <p
+                className={`mt-1 pl-8 text-[0.8125rem] font-bold leading-tight ${
+                  k.licht ? "text-cream/75" : "text-white/85"
+                }`}
+              >
+                Bespaart {k.tijd}
+              </p>
+            </div>
             {/* Verschijnt bij hover: het duwtje dat zegt dat je kunt klikken.
-               Rechtsonder, tegenover de naam, met een zachte verdonkering
-               eronder zodat het op elke tekening leesbaar blijft. */}
+               Rechts, met een zachte verdonkering eronder zodat het op elke
+               tekening leesbaar blijft. Zit bewust bóven de naam- en tijdregel
+               (pb-20): op de smalste kaart liep de langste tijdregel anders
+               precies onder dit witte chipje door. */}
             <span
-              className="kaart-hint pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-end bg-gradient-to-t from-ink/55 to-transparent p-4 pt-14"
+              className="kaart-hint pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-end bg-gradient-to-t from-ink/55 to-transparent p-4 pb-20 pt-14"
               aria-hidden
             >
               <span className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-ink shadow-md">
