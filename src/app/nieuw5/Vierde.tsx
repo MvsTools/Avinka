@@ -19,6 +19,7 @@ import Prijzen from "@/components/Prijzen";
 import { PROEF_DAGEN } from "@/lib/abonnement";
 import {
   SPECKLE_STIJL,
+  BlobKnop,
   KaartVlak,
   Lichtbron,
   VLAK_PAPIER,
@@ -1799,10 +1800,12 @@ function ToolPaneel({
 function RailKaarten({
   gezien,
   opOpenen,
+  opKnopKlik,
   openId,
 }: {
   gezien: boolean[];
   opOpenen: (index: number, vanaf: DOMRect, e: ReactMouseEvent) => void;
+  opKnopKlik: (e: ReactMouseEvent<HTMLAnchorElement>) => void;
   openId: string | null;
 }) {
   return (
@@ -1859,7 +1862,11 @@ function RailKaarten({
         </figure>
       ))}
 
-      {/* En de rij groeit gewoon door: de haak naar meer. */}
+      {/* De rij groeit door — én eindigt met de uitnodiging. Wie tot hier
+         sleept heeft alle tools gezien; dit is het warmste punt van de
+         pagina, dus staat de knop hier en niet in een losse balk eronder.
+         De kaart houdt zijn eigen belofte ("dit is nog maar het begin") en
+         die loopt door in het aanbod: kom maar kijken. */}
       <figure
         className="rail-kaart w-[18.5rem] shrink-0 snap-start select-none sm:w-[21rem]"
         style={{ "--i": KAARTEN.length } as CSSProperties}
@@ -1867,9 +1874,9 @@ function RailKaarten({
         <div className="relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-3xl bg-ink shadow-lg ring-1 ring-black/10">
           <div className="absolute -right-16 -top-12 h-56 w-56 rounded-full bg-brand/30 blur-3xl" aria-hidden />
           <div className="absolute -left-20 top-14 h-52 w-52 rounded-full bg-accent/25 blur-3xl" aria-hidden />
-          <div className="absolute right-4 top-6 flex gap-2" aria-hidden>
-            <div className="h-24 w-16 rotate-6 rounded-xl bg-white/10 ring-1 ring-white/15" />
-            <div className="h-28 w-20 -rotate-3 rounded-xl bg-white/[0.07] ring-1 ring-white/10" />
+          <div className="absolute right-4 top-5 flex gap-2" aria-hidden>
+            <div className="h-20 w-14 rotate-6 rounded-xl bg-white/10 ring-1 ring-white/15" />
+            <div className="h-24 w-16 -rotate-3 rounded-xl bg-white/[0.07] ring-1 ring-white/10" />
           </div>
           <div className="relative p-6">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-cream/80 ring-1 ring-white/15">
@@ -1877,6 +1884,19 @@ function RailKaarten({
             </span>
             <p className="mt-3 font-display text-3xl font-black leading-[1.03] tracking-tight text-cream">
               En dit is nog maar het begin
+            </p>
+            <BlobKnop
+              href="/sign-up"
+              variant="wit"
+              maat="klein"
+              className="mt-6 w-full"
+              onClick={opKnopKlik}
+            >
+              Probeer Avinka gratis
+            </BlobKnop>
+            {/* Kort genoeg om op de smalste kaart op één regel te blijven. */}
+            <p className="mt-3 text-center text-xs leading-5 text-cream/55">
+              {PROEF_DAGEN} dagen gratis, geen betaalgegevens.
             </p>
           </div>
         </div>
@@ -1908,12 +1928,20 @@ function ToolRail() {
      klik viel met waar de muis neerkwam: meer dan een paar pixels verschil is
      slepen geweest. Een klik via het toetsenbord heeft geen positie
      (detail 0) en opent altijd. */
+  const isVersleept = (e: ReactMouseEvent) =>
+    e.detail !== 0 && Math.hypot(e.clientX - neer.current.x, e.clientY - neer.current.y) > 6;
+
   const opOpenen = (index: number, vanaf: DOMRect, e: ReactMouseEvent) => {
-    const versleept =
-      e.detail !== 0 && Math.hypot(e.clientX - neer.current.x, e.clientY - neer.current.y) > 6;
-    if (versleept) return;
+    if (isVersleept(e)) return;
     setOpen({ index, vanaf });
     setKaartVerborgen(true);
+  };
+
+  /* Dezelfde beveiliging voor de knop op de laatste kaart. Een link navigeert
+     uit zichzelf, dus die moeten we actief tegenhouden: Next slaat het
+     navigeren over zodra de klik is afgebroken. */
+  const opKnopKlik = (e: ReactMouseEvent<HTMLAnchorElement>) => {
+    if (isVersleept(e)) e.preventDefault();
   };
 
   const bijScroll = () => {
@@ -2038,6 +2066,7 @@ function ToolRail() {
           <RailKaarten
             gezien={gezien}
             opOpenen={opOpenen}
+            opKnopKlik={opKnopKlik}
             openId={open && kaartVerborgen ? KAARTEN[open.index].id : null}
           />
         </div>

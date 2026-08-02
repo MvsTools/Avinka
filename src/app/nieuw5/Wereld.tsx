@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "react";
 
 /* ── De Wereld van /nieuw5 ──────────────────────────────────────────────────
    De body-taal, geleend van de referentie (bahamabucks) maar met óns merk:
@@ -245,8 +245,21 @@ function Drijvers({ punten }: { punten: Array<{ x: string; y: string; amber?: bo
    vinkje, `licht` = wit met inkt, `wit` = wit met donkergroen (voor op het
    donkere slotveld). */
 export function BlobKnop({
-  href, variant = "vol", className = "", children,
-}: { href: string; variant?: "vol" | "licht" | "wit"; className?: string; children: ReactNode }) {
+  href, variant = "vol", maat = "normaal", className = "", onClick, children,
+}: {
+  href: string;
+  variant?: "vol" | "licht" | "wit";
+  /* `klein` is voor krappe plekken (de knop óp een toolkaart): zelfde vorm en
+     gewicht, alleen minder ruimte eromheen, zodat het label bij een smalle
+     kaart niet buiten de knop valt. */
+  maat?: "normaal" | "klein";
+  className?: string;
+  /* Next roept dit aan vóór het navigeren en slaat de navigatie over zodra de
+     klik is afgebroken (`e.preventDefault()`). Zo kan een knop in een
+     sleepbare rij een sleepbeweging tegenhouden zonder toch te navigeren. */
+  onClick?: (e: ReactMouseEvent<HTMLAnchorElement>) => void;
+  children: ReactNode;
+}) {
   const stijl =
     variant === "vol"
       ? "bg-brand text-white shadow-lg shadow-brand/25 hover:bg-brand-dark"
@@ -256,7 +269,10 @@ export function BlobKnop({
   return (
     <Link
       href={href}
-      className={`blobknop inline-flex items-center justify-center gap-2.5 whitespace-nowrap px-8 py-4 text-center text-lg font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand ${stijl} ${className}`}
+      onClick={onClick}
+      className={`blobknop inline-flex items-center justify-center gap-2.5 whitespace-nowrap text-center font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand ${
+        maat === "klein" ? "px-5 py-3.5 text-base" : "px-8 py-4 text-lg"
+      } ${stijl} ${className}`}
       style={variant === "wit" ? { color: DONKER } : undefined}
     >
       {variant === "vol" && (
