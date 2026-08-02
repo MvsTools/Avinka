@@ -833,20 +833,15 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
               </p>
               {/* De slotregel was vet gedrukte tekst op wit en verdween
                  daardoor in de rest van de kaart, terwijl het juist de zin is
-                 die je moet onthouden. Nu is het een eigen mintblok met een
-                 vinkje, in de vorm van de kaarten zelf: het geeft de kaart
-                 kleur én zet de zin apart als het punt van het verhaal. */}
+                 die je moet onthouden. Nu is het een eigen mintblok in de vorm
+                 van de kaarten zelf: het geeft de kaart kleur én zet de zin
+                 apart als het punt van het verhaal.
+                 Er hing ook een vinkje-badge over de bovenrand van dit blok;
+                 die is er samen met die van de kaart zelf uit. */}
               <div
                 className="relative mt-8 px-7 py-6"
                 style={{ background: MINT, borderRadius: "2.4rem 1.6rem 2.2rem 1.5rem" }}
               >
-                <span
-                  className="absolute -top-4 left-8 flex h-9 w-9 items-center justify-center rounded-2xl bg-brand shadow-md"
-                  style={{ rotate: "-8deg" }}
-                  aria-hidden
-                >
-                  <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" stroke="#fff" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
-                </span>
                 <p className="text-lg font-bold leading-8" style={{ color: DONKER }}>
                   Goede leerkrachten horen hun tijd te besteden aan leerlingen,
                   niet aan papierwerk.
