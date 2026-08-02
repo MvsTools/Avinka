@@ -1,10 +1,10 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { DONKER, Golf, KOP, MINT_LICHT, KaartVlak, VLAK_MINT } from "./Wereld";
+import { DONKER, Golf, KOP, MINT_LICHT, KaartVlak, VLAK_MINT, schaduw } from "./Wereld";
 
 /* ── De privacysectie ──────────────────────────────────────────────────────
-   Nagebouwd naar de referentie die de eigenaar aanwees: het middenstuk van
+   Gebouwd naar de referentie die de eigenaar aanwees: het middenstuk van
    ente.io (public/_referenties/02b-ente-mid.png). Wat hij daar sterk aan
    vond, en wat hier dus terug moet komen:
 
@@ -13,27 +13,65 @@ import { DONKER, Golf, KOP, MINT_LICHT, KaartVlak, VLAK_MINT } from "./Wereld";
       leerlingen. Niet één sectie die alles tegelijk probeert te zeggen.
    2. HET PLAATJE ZEGT WAT HET DOET. Ente tekent vierkantjes om de gezichten
       met een naamchip eraan; je snapt gezichtsherkenning zonder één woord.
-      Hier: kadertjes op de schriften met een chip die de SCHUILNAAM toont,
-      en een zoekbalkje over het lege lokaal dat nul resultaten geeft.
-   3. ECHTE FOTO'S, want dat maakt het warm. Dezelfde rechtenvrije
-      schoolfoto's die ook bij de polaroids gebruikt worden.
+   3. ECHTE FOTO'S, want dat maakt het warm.
 
    Bewust GEEN foto's van kinderen: een privacysectie die kindergezichten
-   toont om over privacy te praten, spreekt zichzelf tegen. De namen zitten
-   op het schoolwerk, en dat is ook waar ze in het echt staan.
+   toont om over privacy te praten, spreekt zichzelf tegen. De namen staan op
+   het schoolwerk, en dat is ook waar ze in het echt staan.
 
-   Na vijf verzonnen versies (bureaublad, prikbord, onderwater, de grens, de
-   sluis) is dit de eerste die naar een goedgekeurde referentie is gebouwd.
+   ── Ronde 2 (2-8), na feedback van de eigenaar ──
+   De kaarten waren te groot en te recht: twee identieke rechthoeken van
+   536×556 op een pagina vol organische vormen, met de drie regie-keien er
+   pal onder. En de foto's klopten niet met het verhaal — een stapel
+   schriften heeft niets met leerlingnamen te maken en een klaslokaal is geen
+   archief, dus de kadertjes kaderden iets willekeurigs.
+
+   Wat er is veranderd:
+   - KLEINER (max-w-5xl i.p.v. 6xl) en de foto in 5/4 i.p.v. 4/3.
+   - SPEELS, maar bewust NIET zoals de regie-keien. Die zijn bijna rond; deze
+     zijn gewone kaarten met vier ongelijke hoeken — de familie van de
+     makerskaart. Expliciete wens van de eigenaar: het mag niet te veel van
+     hetzelfde worden. Om diezelfde reden staat hier GEEN vinkje-badge: die
+     zit al op de drie regie-keien én op de makerskaart.
+   - De rechterkaart hangt lager, zodat de rij golft in plaats van in het
+     gelid te staan.
+   - NIEUWE FOTO'S. Kaart 1: drie Nederlandse werkbladen met de naamregel
+     rechtsboven (Sophie, Daan, Emma), zodat ons kadertje precies over een
+     échte naam valt. Kaart 2: een archiefdoos met tabbladen, waarvan de
+     kleuren toevallig bijna ons eigen palet zijn.
+   - De naam op het bovenste werkblad (Sophie) is dezelfde die in kaart 2
+     wordt gezocht en niet gevonden. Zo haken de twee kaarten aan elkaar.
+
    Zie [[referentie-eerst-regel]]: eerst het beeld, dan pas bouwen. ────── */
 
-const CHIP_A: CSSProperties = { background: "#2f9e6e", color: "#ffffff" };
+const KAART_RAND = "#d4e5dc";
+const KAART_SCHADUW = schaduw(34, 66, -34, 0.6);
 
-/* De kadertjes op de eerste foto. Percentages t.o.v. het fotovlak, gekozen
-   op plekken waar op een schrift ook echt een naam staat. */
-const KADERS = [
-  { left: "6%", top: "18%", w: "30%", h: "17%", chip: "leerling A", vert: 0 },
-  { left: "33%", top: "45%", w: "30%", h: "16%", chip: "leerling B", vert: 120 },
-  { left: "12%", top: "70%", w: "31%", h: "16%", chip: "leerling C", vert: 240 },
+/* Vier duidelijk ongelijke hoeken, gespiegeld tussen de twee kaarten. Subtiel
+   ongelijk werkte niet: dan lees je gewoon een afgeronde rechthoek. */
+const VORM_LINKS = "3.6rem 1.2rem 3.2rem 1.6rem / 1.6rem 3.2rem 1.2rem 3.6rem";
+const VORM_RECHTS = "1.3rem 3.5rem 1.5rem 3.1rem / 3.1rem 1.4rem 3.4rem 1.4rem";
+/* De foto krijgt dezelfde taal, een maat zachter, zodat je geen rechthoek in
+   een rechthoek ziet. */
+const FOTO_LINKS = "2.4rem 0.8rem 2.2rem 1.0rem / 1.0rem 2.2rem 0.8rem 2.4rem";
+const FOTO_RECHTS = "0.9rem 2.4rem 1.0rem 2.1rem / 2.1rem 1.0rem 2.3rem 0.9rem";
+
+const CHIP: CSSProperties = { background: "#2f9e6e", color: "#ffffff" };
+
+/* De kadertjes liggen op de drie naamregels, van "Naam:" tot het eind van de
+   stippellijn. Percentages zijn t.o.v. het ZICHTBARE fotovlak: de foto is 4/3
+   en wordt in een 5/4-vak getoond, dus object-cover snijdt links en rechts elk
+   3,125% weg. De x-waarden hieronder zijn daar al voor gecorrigeerd.
+
+   Het kader omsluit de naam en laat hem staan; de chip hangt eróndér in plaats
+   van erop. Eerste poging had een kader precies om de handgeschreven naam met
+   de chip in de hoek — die twee vielen dan samen tot één groene vlek en je zag
+   het kader niet meer. Nu is het net als in de referentie: een kader om wat er
+   staat, met het label los eronder. */
+const NAMEN = [
+  { left: "51.8%", top: "7.4%", w: "26.3%", h: "5.4%", chip: "leerling A", vert: 0 },
+  { left: "53.0%", top: "34.3%", w: "25.1%", h: "5.4%", chip: "leerling B", vert: 130 },
+  { left: "60.1%", top: "58.7%", w: "29.1%", h: "5.7%", chip: "leerling C", vert: 260 },
 ];
 
 export function WereldPrivacy() {
@@ -50,7 +88,7 @@ export function WereldPrivacy() {
         tel={3}
       />
 
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-24 pt-28 lg:pb-28 lg:pt-32">
+      <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pb-24 pt-28 lg:pb-28 lg:pt-32">
         <div className="max-w-2xl">
           <p data-reveal className="text-2xl" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
             privacy voorop
@@ -65,52 +103,64 @@ export function WereldPrivacy() {
         </div>
 
         {/* ── de twee kaarten ── */}
-        <div className="mt-12 grid gap-6 lg:mt-14 lg:grid-cols-2 lg:gap-8">
+        <div className="mt-12 grid items-start gap-8 lg:mt-14 lg:grid-cols-2 lg:gap-10">
           {/* KAART 1 — de maskering, letterlijk op het schoolwerk */}
           <article
             data-reveal
-            className="rounded-[2.5rem] bg-white p-6 shadow-[-10px_30px_70px_-42px_rgba(23,80,58,0.6)] ring-1 ring-ink/[0.04] sm:p-8"
+            className="relative border-[2.5px] bg-white p-5 sm:p-6"
+            style={{
+              borderRadius: VORM_LINKS,
+              borderColor: KAART_RAND,
+              boxShadow: KAART_SCHADUW,
+              rotate: "-1.8deg",
+            }}
           >
+            <p className="text-xl leading-none" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
+              blijft thuis
+            </p>
             <h3
-              className="text-center font-display text-[clamp(1.6rem,2.6vw,2.1rem)] font-black tracking-tight"
+              className="mt-1 font-display text-[clamp(1.4rem,2.2vw,1.75rem)] font-black leading-tight tracking-tight"
               style={{ color: DONKER }}
             >
               Namen gaan nooit mee
             </h3>
-            <p className="mx-auto mt-2 max-w-sm text-center text-base leading-7 text-ink/60">
+            <p className="mt-1.5 max-w-sm leading-6 text-ink/60">
               Op jouw eigen apparaat vervangen door een schuilnaam, nog vóór er
               iets wordt verstuurd.
             </p>
 
-            <div className="relative mt-6 overflow-hidden rounded-[1.6rem]">
+            <div className="relative mt-4 overflow-hidden" style={{ borderRadius: FOTO_LINKS }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/nieuw5/foto/p7054755.jpg"
-                alt="Een stapel schriften met een potlood erop, zoals ze op een lerarenbureau liggen"
-                className="block aspect-[4/3] w-full object-cover"
+                src="/nieuw5/foto/werkbladen-namen.jpg"
+                alt="Drie werkbladen die over elkaar heen liggen, met rechtsboven op elk blad een ingevulde naamregel"
+                className="block aspect-[5/4] w-full object-cover"
               />
 
               {/* de kadertjes, zoals de vierkantjes om de gezichten in de
                  referentie — maar wat er uitkomt is juist géén naam */}
-              {KADERS.map((k) => (
+              {NAMEN.map((n) => (
                 <span
-                  key={k.chip}
+                  key={n.chip}
                   data-reveal
                   style={{
-                    left: k.left,
-                    top: k.top,
-                    width: k.w,
-                    height: k.h,
-                    transitionDelay: `${k.vert + 200}ms`,
+                    left: n.left,
+                    top: n.top,
+                    width: n.w,
+                    height: n.h,
+                    /* de bladen liggen licht gedraaid; een kaarsrecht kader
+                       ligt er dan los overheen in plaats van erop */
+                    rotate: "-3.5deg",
+                    transitionDelay: `${n.vert + 200}ms`,
                   }}
-                  className="absolute rounded-[14px] border-[3px] border-white/95 shadow-[0_2px_14px_rgba(0,0,0,0.25)]"
+                  className="absolute rounded-[12px] border-[3px] border-white/95 shadow-[0_2px_14px_rgba(0,0,0,0.25)]"
                   aria-hidden
                 >
                   <span
-                    className="absolute -bottom-3 -right-2 whitespace-nowrap rounded-full px-2.5 py-1 text-[0.72rem] font-bold shadow-md sm:text-[0.78rem]"
-                    style={CHIP_A}
+                    className="absolute left-0 top-full mt-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[0.72rem] font-bold shadow-md"
+                    style={CHIP}
                   >
-                    {k.chip}
+                    {n.chip}
                   </span>
                 </span>
               ))}
@@ -128,43 +178,51 @@ export function WereldPrivacy() {
           {/* KAART 2 — het lege archief */}
           <article
             data-reveal
-            style={{ transitionDelay: "120ms" }}
-            className="rounded-[2.5rem] bg-white p-6 shadow-[-10px_30px_70px_-42px_rgba(23,80,58,0.6)] ring-1 ring-ink/[0.04] sm:p-8"
+            style={{
+              transitionDelay: "120ms",
+              borderRadius: VORM_RECHTS,
+              borderColor: KAART_RAND,
+              boxShadow: KAART_SCHADUW,
+              rotate: "1.4deg",
+            }}
+            className="relative border-[2.5px] bg-white p-5 sm:p-6 lg:mt-10"
           >
+            <p className="text-xl leading-none" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
+              blijft leeg
+            </p>
             <h3
-              className="text-center font-display text-[clamp(1.6rem,2.6vw,2.1rem)] font-black tracking-tight"
+              className="mt-1 font-display text-[clamp(1.4rem,2.2vw,1.75rem)] font-black leading-tight tracking-tight"
               style={{ color: DONKER }}
             >
               Wij bewaren niets over je klas
             </h3>
-            <p className="mx-auto mt-2 max-w-sm text-center text-base leading-7 text-ink/60">
+            <p className="mt-1.5 max-w-sm leading-6 text-ink/60">
               Je lesontwerpen, werkbladen en draaiboeken bewaren we wel. Alles
               over je leerlingen niet.
             </p>
 
-            <div className="relative mt-6 overflow-hidden rounded-[1.6rem]">
+            <div className="relative mt-4 overflow-hidden" style={{ borderRadius: FOTO_RECHTS }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/nieuw5/foto/p36650154.jpg"
-                alt="Een leeg klaslokaal met houten tafeltjes en een groen schoolbord"
-                className="block aspect-[4/3] w-full object-cover"
+                src="/nieuw5/foto/archiefdoos.jpg"
+                alt="Een archiefdoos met tabbladen op een houten tafel"
+                className="block aspect-[5/4] w-full object-cover"
               />
 
-              {/* het zoekbalkje: zoek een leerling in ons archief, en vind
-                 niets. Zelfde compositie als de zoekbalk over de foto's in de
-                 referentie, maar met de uitkomst als de clou. */}
+              {/* het zoekbalkje: zoek de leerling van het bovenste werkblad
+                 hiernaast in ons archief, en vind niets. */}
               <div
                 data-reveal
                 style={{ transitionDelay: "260ms" }}
-                className="absolute inset-x-4 bottom-4 sm:inset-x-6 sm:bottom-6"
+                className="absolute inset-x-4 bottom-4 sm:inset-x-5 sm:bottom-5"
               >
-                <div className="flex items-center gap-2.5 rounded-full bg-white px-4 py-3 shadow-[0_10px_30px_-8px_rgba(0,0,0,0.4)]">
+                <div className="flex items-center gap-2.5 rounded-full bg-white px-4 py-2.5 shadow-[0_10px_30px_-8px_rgba(0,0,0,0.4)]">
                   <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-ink/40" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
                     <circle cx="11" cy="11" r="7" />
                     <path d="m20 20-3.5-3.5" />
                   </svg>
                   <span className="text-base text-ink/80" style={{ fontFamily: "var(--font-hand)" }}>
-                    Sofie
+                    Sophie
                   </span>
                   <span className="ml-auto whitespace-nowrap rounded-full bg-brand/10 px-2.5 py-1 text-[0.72rem] font-bold" style={{ color: KOP }}>
                     0 resultaten
