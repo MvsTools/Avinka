@@ -164,6 +164,26 @@ function tijdTekst(m: number): string {
 }
 
 /**
+ * De aantekeningen per vak op een stapeltje, zodat ze een herverdeling overleven.
+ *
+ * Bewust een lijstje en niet één tekst per vak: staat bij al je vier rekenlessen
+ * "werkboek blz. 40", dan komt die er bij alle vier weer op; had je hem maar bij
+ * één les staan, dan ook maar bij één. Zo raak je nooit iets kwijt, maar gaat een
+ * aantekening van één les zich ook niet ineens over het hele vak verspreiden.
+ */
+function aantekeningenPerVak(blokken: Basisrooster["blokken"]): Map<string, string[]> {
+  const stapels = new Map<string, string[]>();
+  for (const b of blokken) {
+    const tekst = b.omschrijving?.trim();
+    if (!tekst) continue;
+    const stapel = stapels.get(b.vak) ?? [];
+    stapel.push(tekst);
+    stapels.set(b.vak, stapel);
+  }
+  return stapels;
+}
+
+/**
  * Het slotje: dicht = dit blok staat vast op zijn tijd, open = het mag schuiven.
  * Eén tekening voor het knopje in de balk én de slotjes in de blokken zelf, zodat
  * je ze meteen bij elkaar plaatst.
@@ -616,7 +636,20 @@ export default function RoosterBewerken({
           (staatVast(b) || (b.type === "vast" && !(gymGeregeld && b.vak === "gym"))),
       );
       const taken = c.blokken.filter((b) => b.type === "taak");
-      return { ...c, blokken: [...blijft, ...taken, ...genereerLessen(c.setup, blijft)] };
+      // Je eigen aantekeningen mogen hier niet sneuvelen. De lessen worden
+      // vervangen door verse blokken, dus we nemen de teksten van de blokken die
+      // verdwijnen mee naar de nieuwe blokken van hetzelfde vak. Alleen die
+      // blokken: wat blijft staan (pauzes, vastgezette lessen) heeft zijn eigen
+      // tekst nog, die zou anders dubbel terugkomen.
+      const blijftIds = new Set(blijft.map((b) => b.id));
+      const aantekeningen = aantekeningenPerVak(
+        c.blokken.filter((b) => b.type !== "taak" && !blijftIds.has(b.id)),
+      );
+      const verdeeld = genereerLessen(c.setup, blijft).map((b) => {
+        const tekst = aantekeningen.get(b.vak)?.shift();
+        return tekst ? { ...b, omschrijving: tekst } : b;
+      });
+      return { ...c, blokken: [...blijft, ...taken, ...verdeeld] };
     });
   }
 
