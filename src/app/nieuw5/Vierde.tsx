@@ -1118,16 +1118,20 @@ export default function Vierde({
             className="-z-10 hidden lg:block"
             tel={3}
           />
-          {/* Tegenover het vlak links, op de hoogte van de kop: de rechterhelft
-             van deze sectie was over de volle hoogte leeg, en dat is precies
-             waar het achtergrondweefsel van de pagina onderbrak. Ligt hoog
-             genoeg om niet met de kaartenrij te concurreren. */}
+          {/* De rechter is bewust lang en vlak. Hij was 620 breed, 330 hoog en
+             7° gedraaid, en dan daalt zijn linkerflank net zo steil als de
+             rechterflank van het vlak hiernaast — twee steile randen naar
+             elkaar toe met een strook papier ertussen, en dat leest als een
+             botsing in plaats van als één vorm.
+             Nu loopt hij ~300px verder door naar links, is hij lager en staat
+             hij bijna recht (3°). Daardoor overlapt hij het vlak links en komt
+             zijn flank er in een flauwe hoek bovenop in plaats van ertegenaan. */}
           <KaartVlak
             kleur={VLAK_PAPIER}
             vorm="wig"
-            breedte={620}
-            hoogte={330}
-            style={{ right: "-11%", top: 30, transform: "rotate(7deg)" }}
+            breedte={920}
+            hoogte={300}
+            style={{ right: "-11%", top: 60, transform: "rotate(3deg)" }}
             className="-z-10 hidden lg:block"
             tel={6}
           />
