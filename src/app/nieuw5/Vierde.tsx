@@ -1054,20 +1054,17 @@ export default function Vierde({
          wereld begon pas een paar honderd pixels verderop — waardoor de film
          en de body als twee losse pagina's aan elkaar geplakt leken.
 
-         Hier hoort GEEN blob-vlak zoals elders op de pagina: die strook is maar
-         een paar tientallen pixels hoog, dus elke vorm wordt door de
-         overflow met een kaarsrechte lijn doormidden gesneden — en dat viel
-         meer op dan het gat zelf. Een zacht verloop heeft geen rand die
-         afgesneden kan worden en doet hier hetzelfde werk: de wereld begint
-         al te ademen zonder dat er een object ligt. */}
-      <div
-        aria-hidden
-        style={{
-          height: film ? "14vh" : "6vh",
-          ...SPECKLE_STIJL,
-          backgroundImage: `radial-gradient(120% 150% at 88% 0%, ${VLAK_PAPIER} 0%, rgba(242,244,237,0) 62%), ${SPECKLE_STIJL.backgroundImage}`,
-        }}
-      />
+         Hier heeft een zacht verloop gestaan om die strook te vullen. Dat is er
+         weer uit, want het maakte precies het probleem dat het moest oplossen:
+         ⚠️ het verloop had zijn centrum op 88% breedte, bóvenaan de strook. Daar
+         begint het dus op volle sterkte, terwijl de film erboven gewoon papier
+         is — en dat geeft een harde horizontale rand op de sectiegrens. Links
+         was het al uitgedoofd (het centrum ligt rechts), dus daar liep de kleur
+         wél mooi door: precies het verschil links/rechts dat opviel.
+         Les: een verloop dat op een rand begint, IS een rand. Wil je hier ooit
+         weer iets, laat het dan in het midden van de strook beginnen en naar
+         beide kanten uitdoven. */}
+      <div aria-hidden style={{ height: film ? "14vh" : "6vh", ...SPECKLE_STIJL }} />
 
       {/* ════════════════════════ DE BODY ════════════════════════ */}
       {body ?? (
