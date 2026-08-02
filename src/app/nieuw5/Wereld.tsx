@@ -628,7 +628,7 @@ export function WereldIntro() {
 
 /* 2. Herken je dit? Mint-veld, drie witte kaarten die trapsgewijs hangen,
    groot potlood-silhouet als ons palmblad. */
-const PIJN = [
+export const PIJN = [
   {
     titel: "Te veel administratie",
     tekst: "Je wilt er zijn voor je klas, maar raakt steeds meer tijd kwijt aan formulieren, analyses en verslagen.",

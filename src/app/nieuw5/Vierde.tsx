@@ -10,6 +10,7 @@ import {
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
   type SVGProps,
 } from "react";
 import { gsap } from "gsap";
@@ -108,7 +109,7 @@ const REGIE = [
 /* De tool-galerij: per tool één kunstkaart (Stripe-achtig, maar in onze
    eigen beeldtaal). Nieuwe tool = kaart erbij. `licht` bepaalt of de naam
    op de kaart een donker plaatje nodig heeft. */
-const KAARTEN = [
+export const KAARTEN = [
   {
     id: "rapporten",
     kort: "± 10 min",
@@ -191,7 +192,7 @@ const KAARTEN = [
   },
 ];
 
-const FAQ = [
+export const FAQ = [
   {
     vraag: "Gaan de gegevens van mijn leerlingen ergens heen?",
     antwoord:
@@ -408,7 +409,7 @@ function NavChart() {
 
 /* ── Het getekende vinkje ──────────────────────────────────────────────── */
 
-function Vink({
+export function Vink({
   className,
   dik = 3.2,
   ...rest
@@ -437,7 +438,17 @@ function abonneerReduced(cb: () => void) {
   return () => mq.removeEventListener("change", cb);
 }
 
-export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
+/* `body` maakt het onderste deel van de pagina verwisselbaar. Zonder die prop
+   verandert er niets: dan rendert exact dezelfde body als altijd. Met een
+   eigen body houden alternatieve opzetten (zie ../opzet) wél de echte film
+   bovenaan, zonder dat die gekopieerd of aangeraakt hoeft te worden. */
+export default function Vierde({
+  fotoBestand,
+  body,
+}: {
+  fotoBestand?: string;
+  body?: ReactNode;
+}) {
   const root = useRef<HTMLDivElement>(null);
   // null op de server (eerste paint), daarna de echte systeemvoorkeur.
   const reduced = useSyncExternalStore<boolean | null>(
@@ -1058,7 +1069,8 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
       />
 
       {/* ════════════════════════ DE BODY ════════════════════════ */}
-      <main id="verder" className="relative z-10 scroll-mt-16" style={SPECKLE_STIJL}>
+      {body ?? (
+        <main id="verder" className="relative z-10 scroll-mt-16" style={SPECKLE_STIJL}>
         {/* De effecten-motor: wieg-animaties, scroll-parallax en muis-diepte. */}
         <WereldFx />
 
@@ -1171,8 +1183,9 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
         <WereldVragen items={FAQ} />
 
         {/* ── 10. Slot: het donkergroene veld, één keer op de pagina. ── */}
-        <WereldSlot />
-      </main>
+          <WereldSlot />
+        </main>
+      )}
     </div>
   );
 }
@@ -1947,7 +1960,7 @@ function RailKaarten({
   );
 }
 
-function ToolRail() {
+export function ToolRail() {
   const rail = useRef<HTMLDivElement>(null);
   const greep = useRef({ actief: false, startX: 0, startScroll: 0, vangt: 0 });
   // Waar de muis of vinger neerkwam; zo weten we bij de klik of er gesleept is.
@@ -2183,7 +2196,7 @@ function Tafelgroep({
 }
 
 /* ── De kaartbeelden: acht kleine werelden in de merktaal. ─────────────── */
-function KaartBeeld({ soort }: { soort: string }) {
+export function KaartBeeld({ soort }: { soort: string }) {
   if (soort === "rapporten")
     return (
       <div className="absolute inset-0 bg-ink">
