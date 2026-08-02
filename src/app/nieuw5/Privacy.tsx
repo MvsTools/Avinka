@@ -161,7 +161,7 @@ export function WereldPrivacy() {
             className="mt-2 font-display text-[clamp(2.1rem,4.4vw,3.4rem)] font-black leading-[1.03] tracking-tight [text-wrap:balance]"
             style={{ color: DONKER }}
           >
-            Het veiligheidswerk hebben wij al gedaan.
+            Veilig omgaan met AI
           </h2>
         </div>
 
@@ -243,20 +243,12 @@ export function WereldPrivacy() {
              losse blokjes rechts is het contrast dat deze sectie speels houdt,
              en het past bij het verhaal: links één ding dat we niet doen,
              rechts drie dingen die we juist wél voor je uitdenken. */}
-          <div className="lg:pt-4">
-            <h3
-              data-reveal
-              className="font-display text-[clamp(1.5rem,2.4vw,1.95rem)] font-black leading-tight tracking-tight"
-              style={{ color: DONKER }}
-            >
-              Veilig omgaan met AI
-            </h3>
-            {/* De losse tussenzin ("Je hoeft geen privacy-expert te zijn") is
-               weg: de sectiekop zegt dat al, en dit blok moet je in één blik
-               kunnen lezen. Om diezelfde reden is elk blokje nog maar één
-               regel; de uitleg eronder maakte er drie alinea's van naast een
-               kaart die zelf ook al tekst heeft. */}
-            <div className="mt-6 flex flex-col gap-4">
+          {/* "Veilig omgaan met AI" is de sectiekop geworden en stond hier
+             dus dubbel. Wat overblijft zijn de drie blokjes zelf: geen kop,
+             geen tussenzin, geen uitleg-alinea's. Dit blok moet je in één blik
+             kunnen lezen, dus alles wat de kop al zegt is weg. */}
+          <div className="lg:pt-10">
+            <div className="flex flex-col gap-4">
               {AI.map((a, i) => (
                 <div
                   key={a.titel}
