@@ -2386,16 +2386,18 @@ function StijlBlok() {
 
       /* Reveals: inhoud is standaard zichtbaar; .anim voegt de beweging toe.
 
-         Was 18px in 0,7s. Bij normaal scrolltempo betekende dat: je kijkt al
-         naar een blok terwijl het nog aan het aankomen is, en met de
-         vertragingen erbovenop deed één sectie er ruim een seconde over.
-         Korter en kleiner leest als "het stond er al", wat het doel is; de
-         beweging hoort de blik te begeleiden, niet te vertragen. */
+         Even op 12px/0,5s gezet omdat een sectie er ruim een seconde over
+         deed. Dat was de verkeerde knop: niet de LENGTE van de beweging zat
+         in de weg, maar het AANTAL losse bewegingen. Negen elementen die elk
+         hun eigen moment kozen leest als rommel, ook als elk afzonderlijk
+         netjes is. Met de reveals op groepen (zie Privacy.tsx) is dat weg, en
+         mocht de beweging weer voluit — korter maakte het effect namelijk zo
+         goed als onzichtbaar. */
       .anim [data-reveal] {
         opacity: 0;
-        transform: translateY(12px);
-        transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-          transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        transform: translateY(18px);
+        transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+          transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
       }
       .anim [data-reveal].is-in { opacity: 1; transform: none; }
 
