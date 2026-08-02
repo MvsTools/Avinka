@@ -2229,8 +2229,12 @@ export function KaartBeeld({ soort }: { soort: string }) {
         <div className="relative flex h-full flex-col px-6 pb-16 pt-6">
           {/* Stond rechts (self-end), maar daar zit nu het tijdwinst-chipje
              dat op elke kaart in dezelfde hoek hoort. Links is hier de vrije
-             kant: de balken eronder beginnen ook links. */}
-          <p className="font-hand self-start text-xl text-white">groep 5 · middenmeting</p>
+             kant: de balken eronder beginnen ook links.
+             Op de smalle kaart schuift de regel een rij naar beneden: het
+             handschrift (Kalam) is breed genoeg om daar alsnog tot onder het
+             chipje te lopen. Vanaf sm is er ruimte zat en staat hij weer op
+             zijn oude hoogte. */}
+          <p className="font-hand mt-6 self-start text-xl text-white sm:mt-0">groep 5 · middenmeting</p>
           {/* Per vak één balk, niet per rekendomein: een toetsronde gaat net
              zo goed over spelling en begrijpend lezen. */}
           <div className="mt-4 space-y-3" aria-hidden>

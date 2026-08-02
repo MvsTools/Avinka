@@ -692,6 +692,12 @@ export function WereldHerken() {
               <br />
               je dit?
             </h2>
+            {/* Drie regels in plaats van twee. Kalam loopt breder dan de Caveat
+               die hier eerst stond, waardoor "efficiënter" als los woord op een
+               derde regel viel — een wees. Kleiner zetten hielp wel maar kostte
+               aanwezigheid; drie korte regels lezen bij handschrift juist
+               natuurlijk, dus de maat kon terug omhoog. De tekst is
+               ongewijzigd, alleen de regelval. */}
             <p
               data-reveal
               className="mt-6 text-2xl leading-snug lg:sticky lg:top-60"
@@ -699,7 +705,9 @@ export function WereldHerken() {
             >
               Het hoort bij het werk,
               <br />
-              maar het kan slimmer, sneller en efficiënter
+              maar het kan slimmer,
+              <br />
+              sneller en efficiënter
             </p>
           </div>
 

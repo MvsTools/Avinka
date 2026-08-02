@@ -2,7 +2,7 @@ import { existsSync } from "fs";
 import path from "path";
 import type { CSSProperties } from "react";
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Instrument_Sans, Caveat } from "next/font/google";
+import { Bricolage_Grotesque, Instrument_Sans, Kalam } from "next/font/google";
 import Footer from "@/components/Footer";
 import Vierde from "./Vierde";
 
@@ -20,7 +20,12 @@ import Vierde from "./Vierde";
 
 const display = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-bricolage" });
 const sans = Instrument_Sans({ subsets: ["latin"], variable: "--font-instrument" });
-const hand = Caveat({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--font-hand" });
+/* Kalam in plaats van Caveat, overgenomen uit /nieuw6: dit is het handschrift
+   van "privacy voorop" en "maar het kan slimmer, sneller en efficiënter".
+   ⚠️ Kalam loopt duidelijk breder dan Caveat, dus na deze wissel moeten de
+   handgeschreven regels op de toolkaarten opnieuw gecontroleerd worden — die
+   liggen daar vlak naast het tijdwinst-chipje. */
+const hand = Kalam({ subsets: ["latin"], weight: ["400", "700"], variable: "--font-hand" });
 
 export const metadata: Metadata = {
   title: "Avinka · één geheel (nieuw5)",
