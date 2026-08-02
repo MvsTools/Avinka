@@ -181,7 +181,7 @@ function PolaroidKaart({
               </span>
               <span className={`mt-0.5 block leading-none text-ink/50 ${klein ? "text-[0.7rem]" : "text-xs"}`}>{kaart.rol}</span>
             </span>
-            <Doodle soort={kaart.doodle} kleur={kaart.doodle === "ster" ? "#f59e0b" : "#2f9e6e"} />
+            <Doodle soort={kaart.doodle} kleur={kaart.doodle === "ster" ? "var(--color-accent, #f59e0b)" : "var(--color-brand, #2f9e6e)"} />
           </span>
         </span>
 
@@ -198,7 +198,7 @@ function PolaroidKaart({
               <span key={i}>
                 {deel}
                 {i < delen.length - 1 && (
-                  <span className="underline decoration-2 underline-offset-4" style={{ textDecorationColor: "#2f9e6e" }}>
+                  <span className="underline decoration-2 underline-offset-4" style={{ textDecorationColor: "var(--color-brand, #2f9e6e)" }}>
                     {kaart.accent}
                   </span>
                 )}
@@ -210,7 +210,7 @@ function PolaroidKaart({
               <span className="block text-xl leading-none" style={{ fontFamily: "var(--font-hand)", color: KOP }}>{kaart.naam}</span>
               <span className="mt-0.5 block text-xs leading-none text-ink/50">{kaart.rol}</span>
             </span>
-            <Doodle soort={kaart.doodle} kleur={kaart.doodle === "ster" ? "#f59e0b" : "#2f9e6e"} />
+            <Doodle soort={kaart.doodle} kleur={kaart.doodle === "ster" ? "var(--color-accent, #f59e0b)" : "var(--color-brand, #2f9e6e)"} />
           </span>
         </span>
       </span>
@@ -673,7 +673,7 @@ function StapelScene() {
           <span
             key={k.naam}
             className="h-1.5 rounded-full transition-all duration-300"
-            style={{ width: bovenste === i ? 18 : 6, background: bovenste === i ? "#2f9e6e" : "rgba(34,28,58,0.2)" }}
+            style={{ width: bovenste === i ? 18 : 6, background: bovenste === i ? "var(--color-brand, #2f9e6e)" : "rgba(34,28,58,0.2)" }}
           />
         ))}
       </div>
@@ -697,7 +697,7 @@ export function WereldPolaroids() {
         aria-hidden
       >
         <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
-        <Golf kleur="#fcfbf7" vorm="speels" hoogte="h-[90px] sm:h-[130px] lg:h-[170px]" />
+        <Golf kleur="var(--w-papier, #fcfbf7)" vorm="speels" hoogte="h-[90px] sm:h-[130px] lg:h-[170px]" />
       </div>
 
       {/* de achtergrond uit de referentie is óns bestaande wereldje: het
@@ -742,7 +742,7 @@ export function WereldPolaroids() {
             style={{ color: DONKER }}
           >
             Echte ervaringen{" "}
-            <span className="whitespace-nowrap" style={{ fontFamily: "var(--font-hand)", fontWeight: 400, color: "#2f9e6e" }}>
+            <span className="whitespace-nowrap" style={{ fontFamily: "var(--font-hand)", fontWeight: 400, color: "var(--color-brand, #2f9e6e)" }}>
               uit de praktijk
             </span>
           </h2>

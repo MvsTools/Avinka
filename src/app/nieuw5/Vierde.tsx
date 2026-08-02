@@ -591,7 +591,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
       tl.to(q("[data-belofte]"), { color: "#221c3a", duration: 14, ease: "power1.inOut" }, 74);
       /* "2 uur" is in de avond lichter mint (leesbaar op donkergroen) en
          kleurt met de dag mee terug naar het merkgroen. */
-      tl.to(q("[data-uur]"), { color: "#2f9e6e", duration: 14, ease: "power1.inOut" }, 74);
+      tl.to(q("[data-uur]"), { color: "var(--color-brand, #2f9e6e)", duration: 14, ease: "power1.inOut" }, 74);
       tl.add(() => {
         const st = tl.scrollTrigger;
         q("[data-header]")[0]?.classList[st && st.progress > 0.86 ? "add" : "remove"]("film-klaar");
@@ -645,7 +645,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
   }, [reduced]);
 
   return (
-    <div ref={root} className="flex flex-1 flex-col bg-[#fcfbf7] text-ink">
+    <div ref={root} className="flex flex-1 flex-col bg-[var(--w-papier,#fcfbf7)] text-ink">
       <StijlBlok />
 
       {/* ── Vaste bovenbalk ── */}
@@ -653,7 +653,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
         data-header
         className={`fixed inset-x-0 top-0 z-40 transition-colors duration-500 ${
           film ? "" : "film-klaar"
-        } [&.film-klaar]:border-b [&.film-klaar]:border-black/5 [&.film-klaar]:bg-[#fcfbf7]/85 [&.film-klaar]:backdrop-blur`}
+        } [&.film-klaar]:border-b [&.film-klaar]:border-black/5 [&.film-klaar]:bg-[color-mix(in_srgb,var(--w-papier,#fcfbf7)_85%,transparent)] [&.film-klaar]:backdrop-blur`}
       >
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <span className="rounded-xl bg-cream/95 px-2.5 py-1.5 shadow-sm ring-1 ring-black/5">
@@ -692,7 +692,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
              de werkplek-sectie overloopt in plaats van met een harde lijn. */}
           <div
             data-avondlaag
-            className={`pointer-events-none absolute inset-0 bg-[#17503a] ${film ? "" : "hidden"}`}
+            className={`pointer-events-none absolute inset-0 bg-[var(--w-donker,#17503a)] ${film ? "" : "hidden"}`}
             aria-hidden
           >
             {/* warme bureaulamp rechtsboven */}
@@ -710,7 +710,7 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
               }`}
             >
               Win elke week{" "}
-              <span data-uur className={film ? "text-[#6fd7a3]" : "text-brand"}>
+              <span data-uur className={film ? "text-[var(--w-film-hoogtepunt,#6fd7a3)]" : "text-brand"}>
                 2 uur
               </span>{" "}
               terug
@@ -2296,7 +2296,7 @@ function KaartBeeld({ soort }: { soort: string }) {
         <svg viewBox="0 0 336 420" fill="none" className="absolute inset-0 h-full w-full" aria-hidden>
           <path
             d="M70 46 C 205 62, 260 76, 246 110 C 232 162, 98 138, 92 174 C 86 224, 240 200, 246 238 C 253 280, 146 268, 128 298"
-            stroke="#2f9e6e"
+            stroke="var(--color-brand, #2f9e6e)"
             strokeWidth="3"
             strokeLinecap="round"
             strokeDasharray="1 11"

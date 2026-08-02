@@ -24,28 +24,45 @@ import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "re
    lichte veld, maar alleen nog op witte kaarten (het mintblok/quote-blokje
    in de makerskaart) — niet meer op het veld zelf: dat bleek daar tóch te
    donker. */
-export const MINT = "#cfe6d8";
-export const MINT_LICHT = "#ecf6f0";
+/* ── TOKENS ────────────────────────────────────────────────────────────────
+   Elke kleur, vorm en schaduw hieronder is een CSS-variabele met de huidige
+   waarde als terugval. Zonder wrapper verandert er dus niets: /nieuw5 ziet
+   eruit zoals hij eruitzag. Zet een wrapper met andere `--w-*`-waarden om de
+   componenten heen en de hele pagina verschuift mee, zonder dat er één
+   sectie, tekst of stukje gedrag verandert. Dat is wat de vijf thema-routes
+   doen (zie themas.ts).
+
+   Waarom variabelen en niet vijf kopieën van de pagina: een kopie loopt na
+   de eerste inhoudelijke wijziging meteen uit de pas, en dan vergelijk je
+   geen skins meer maar vijf verschillende pagina's. ──────────────────────── */
+export const MINT = "var(--w-veld-diep, #cfe6d8)";
+export const MINT_LICHT = "var(--w-veld, #ecf6f0)";
 /* Alle tint-op-tint-accenten die BOVENOP het mintveld liggen (silhouetten,
    de zachte klodders/vlakken) zijn met dezelfde stap meegelicht als MINT →
    MINT_LICHT, anders staan ze nu te hard tegen het nieuwe lichte veld af. */
-export const MINT_DIEP = "#d2e8dc"; // silhouetten op mint
+export const MINT_DIEP = "var(--w-silhouet, #d2e8dc)"; // silhouetten op mint
 /* Achtergrondvlakken: bewust maar een paar procent van de ondergrond af.
    De rustigste sectie van de pagina (privacy) heeft óók een achtergrond-
    motief — de vliegtuigjes — en die werkt juist omdat je hem nauwelijks
    ziet. Dat is de maat voor alle vlakken hieronder. */
-export const VLAK_PAPIER = "#f2f4ed"; // op het gespikkelde papier
-export const VLAK_MINT = "#e3efe7"; // op een mintveld
+export const VLAK_PAPIER = "var(--w-vlak-papier, #f2f4ed)"; // op het gespikkelde papier
+export const VLAK_MINT = "var(--w-vlak-veld, #e3efe7)"; // op een mintveld
 /* Nog een stap zachter, voor plekken waar meerdere vlakken bij elkaar staan:
    twee vormen naast elkaar tellen op en worden samen al snel te aanwezig. */
-const VLAK_MINT_ZACHT = "#e7f2eb";
-export const DONKER = "#17503a"; // slotveld + sticker
-export const KOP = "#1e6b4d"; // koppen op licht veld (het "getinte" groen)
+const VLAK_MINT_ZACHT = "var(--w-vlak-veld-zacht, #e7f2eb)";
+/* Koptekst op lichte vlakken. Stond eerder ook als achtergrond van het
+   slotveld; die twee rollen zijn nu gescheiden (zie SLOT hieronder), want een
+   variant kan de ene willen verdiepen zonder de andere onleesbaar te maken. */
+export const DONKER = "var(--w-donker, #17503a)";
+/* De achtergrond van het donkergroene slotveld, de enige plek op de pagina
+   waar een veld echt donker is. */
+export const SLOT = "var(--w-slot, #17503a)";
+export const KOP = "var(--w-kop, #1e6b4d)"; // koppen op licht veld (het "getinte" groen)
 
 /* Gespikkeld papier: kleine groene + amberen spikkels op bijna-wit. */
 export const SPECKLE_STIJL: CSSProperties = {
-  backgroundColor: "#fcfbf7",
-  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='190' height='190'%3E%3Cg fill='%232f9e6e' opacity='0.11'%3E%3Ccircle cx='12' cy='20' r='1.6'/%3E%3Ccircle cx='48' cy='8' r='1.1'/%3E%3Ccircle cx='92' cy='30' r='1.7'/%3E%3Ccircle cx='142' cy='14' r='1.2'/%3E%3Ccircle cx='176' cy='44' r='1.4'/%3E%3Ccircle cx='26' cy='72' r='1.3'/%3E%3Ccircle cx='72' cy='58' r='1.6'/%3E%3Ccircle cx='120' cy='78' r='1.1'/%3E%3Ccircle cx='162' cy='94' r='1.5'/%3E%3Ccircle cx='8' cy='120' r='1.4'/%3E%3Ccircle cx='54' cy='134' r='1.7'/%3E%3Ccircle cx='98' cy='114' r='1.2'/%3E%3Ccircle cx='138' cy='146' r='1.4'/%3E%3Ccircle cx='178' cy='128' r='1.1'/%3E%3Ccircle cx='30' cy='168' r='1.5'/%3E%3Ccircle cx='86' cy='160' r='1.3'/%3E%3Ccircle cx='128' cy='176' r='1.6'/%3E%3C/g%3E%3Cg fill='%23f59e0b' opacity='0.09'%3E%3Ccircle cx='66' cy='28' r='1.3'/%3E%3Ccircle cx='152' cy='62' r='1.4'/%3E%3Ccircle cx='20' cy='98' r='1.2'/%3E%3Ccircle cx='112' cy='142' r='1.5'/%3E%3Ccircle cx='58' cy='100' r='1.1'/%3E%3C/g%3E%3C/svg%3E")`,
+  backgroundColor: "var(--w-papier, var(--w-papier, #fcfbf7))",
+  backgroundImage: `var(--w-papier-patroon, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='190' height='190'%3E%3Cg fill='%232f9e6e' opacity='0.11'%3E%3Ccircle cx='12' cy='20' r='1.6'/%3E%3Ccircle cx='48' cy='8' r='1.1'/%3E%3Ccircle cx='92' cy='30' r='1.7'/%3E%3Ccircle cx='142' cy='14' r='1.2'/%3E%3Ccircle cx='176' cy='44' r='1.4'/%3E%3Ccircle cx='26' cy='72' r='1.3'/%3E%3Ccircle cx='72' cy='58' r='1.6'/%3E%3Ccircle cx='120' cy='78' r='1.1'/%3E%3Ccircle cx='162' cy='94' r='1.5'/%3E%3Ccircle cx='8' cy='120' r='1.4'/%3E%3Ccircle cx='54' cy='134' r='1.7'/%3E%3Ccircle cx='98' cy='114' r='1.2'/%3E%3Ccircle cx='138' cy='146' r='1.4'/%3E%3Ccircle cx='178' cy='128' r='1.1'/%3E%3Ccircle cx='30' cy='168' r='1.5'/%3E%3Ccircle cx='86' cy='160' r='1.3'/%3E%3Ccircle cx='128' cy='176' r='1.6'/%3E%3C/g%3E%3Cg fill='%23f59e0b' opacity='0.09'%3E%3Ccircle cx='66' cy='28' r='1.3'/%3E%3Ccircle cx='152' cy='62' r='1.4'/%3E%3Ccircle cx='20' cy='98' r='1.2'/%3E%3Ccircle cx='112' cy='142' r='1.5'/%3E%3Ccircle cx='58' cy='100' r='1.1'/%3E%3C/g%3E%3C/svg%3E"))`,
 };
 
 /* Vijf duidelijk verschillende organische vormen voor de achtergrondvlakken.
@@ -55,11 +72,11 @@ export const SPECKLE_STIJL: CSSProperties = {
    een andere breedte/hoogte-verhouding en een andere draaiing per plek is
    geen van de vlakken hetzelfde. */
 const VLAKVORMEN = {
-  ei: "72% 28% 58% 42% / 44% 56% 42% 58%",
-  kiezel: "38% 62% 46% 54% / 63% 37% 62% 38%",
-  koepel: "52% 48% 46% 54% / 76% 74% 26% 24%",
-  wig: "24% 76% 70% 30% / 66% 34% 68% 32%",
-  schelp: "62% 38% 34% 66% / 36% 62% 40% 64%",
+  ei: "var(--w-vorm-ei, 72% 28% 58% 42% / 44% 56% 42% 58%)",
+  kiezel: "var(--w-vorm-kiezel, 38% 62% 46% 54% / 63% 37% 62% 38%)",
+  koepel: "var(--w-vorm-koepel, 52% 48% 46% 54% / 76% 74% 26% 24%)",
+  wig: "var(--w-vorm-wig, 24% 76% 70% 30% / 66% 34% 68% 32%)",
+  schelp: "var(--w-vorm-schelp, 62% 38% 34% 66% / 36% 62% 40% 64%)",
 } as const;
 
 /* ── ÉÉN LICHTBRON VOOR DE HELE PAGINA ────────────────────────────────────
@@ -76,18 +93,18 @@ const VLAKVORMEN = {
    Vuistregel: x ≈ -0,4 × y. Verder dan dat gaat het als een lage avondzon
    lezen en wordt het theater; minder is niet meer te zien. */
 const SCHADUW_HELLING = 0.4;
-export function schaduw(y: number, blur: number, spread: number, alpha: number, kleur = "23,80,58") {
+export function schaduw(y: number, blur: number, spread: number, alpha: number, kleur = "var(--w-schaduw-rgb, 23,80,58)") {
   return `${-Math.round(y * SCHADUW_HELLING)}px ${y}px ${blur}px ${spread}px rgba(${kleur},${alpha})`;
 }
 
 /* Rand en schaduw van de organische kaarten (regie-kaartjes én de makers-
    kaart), zodat die twee gegarandeerd hetzelfde aanvoelen. */
-const KAART_RAND = "#d4e5dc";
+const KAART_RAND = "var(--w-kaart-rand, #d4e5dc)";
 const KAART_SCHADUW = schaduw(34, 66, -34, 0.6);
 
 /* Witte kaart met grote ronding: dé kaartvorm van deze wereld. */
 export const KAART =
-  "rounded-[2.5rem] bg-white shadow-[-14px_36px_80px_-48px_rgba(23,80,58,0.55)] ring-1 ring-ink/[0.04]";
+  "rounded-[var(--w-kaart-radius,2.5rem)] bg-white shadow-[var(--w-kaart-schaduw,-14px_36px_80px_-48px_rgba(23,80,58,0.55))] ring-1 ring-ink/[0.04]";
 
 /* ── Golf-overgang tussen twee kleurvelden ──
    Elke overgang op de pagina heeft nu een EIGEN golf. Dat is een bewuste
@@ -235,7 +252,7 @@ function Drijvers({ punten }: { punten: Array<{ x: string; y: string; amber?: bo
           style={{
             left: p.x,
             top: p.y,
-            background: p.amber ? "#f59e0b" : "#2f9e6e",
+            background: p.amber ? "var(--color-accent, #f59e0b)" : "var(--color-brand, #2f9e6e)",
             animationDelay: `${-(p.tel ?? i) * 5.2}s`,
           }}
           aria-hidden
@@ -438,7 +455,7 @@ export function Confetti({ punten }: { punten: Array<{ x: string; y: string; r?:
             top: p.y,
             width: (p.r ?? 5) * 2,
             height: (p.r ?? 5) * 2,
-            background: p.amber ? "#f59e0b" : "#2f9e6e",
+            background: p.amber ? "var(--color-accent, #f59e0b)" : "var(--color-brand, #2f9e6e)",
             opacity: p.amber ? 0.55 : 0.4,
           }}
           aria-hidden
@@ -523,8 +540,8 @@ export function WereldFx() {
       /* De klodder-knop: organisch-ongelijke rondingen (familie van de
          blob-kaarten) die bij hover van vorm wisselen — onze eigen knopvorm,
          zoals de referentie zijn golf-knoppen heeft. */
-      .blobknop { border-radius: 2.1rem 1.3rem 2.2rem 1.4rem; transition: border-radius .45s cubic-bezier(.2,.7,.2,1), transform .2s ease, background-color .2s ease, box-shadow .2s ease; }
-      .blobknop:hover { border-radius: 1.3rem 2.2rem 1.4rem 2.1rem; transform: translateY(-2px) rotate(-0.6deg); }
+      .blobknop { border-radius: var(--w-knop-radius, 2.1rem 1.3rem 2.2rem 1.4rem); transition: border-radius .45s cubic-bezier(.2,.7,.2,1), transform .2s ease, background-color .2s ease, box-shadow .2s ease; }
+      .blobknop:hover { border-radius: var(--w-knop-radius-hover, 1.3rem 2.2rem 1.4rem 2.1rem); transform: translateY(-2px) rotate(-0.6deg); }
       .blobknop:active { transform: translateY(0) scale(.97); }
       @media (prefers-reduced-motion: reduce) {
         .wereld-wieg, .wereld-drijf, .wereld-stip, .wereld-vlucht { animation: none; }
@@ -561,8 +578,8 @@ export function WereldIntro() {
         className="hidden lg:block"
         tel={1}
       />
-      <SilhouetGum kleur="#dcebe2" style={{ width: 130, left: "4%", top: 40, transform: "rotate(14deg)" }} tel={2} />
-      <SilhouetBoek kleur="#e9e2cf" style={{ width: 170, left: "10%", bottom: 52, transform: "rotate(-8deg)", opacity: 0.8 }} />
+      <SilhouetGum kleur="var(--w-sier-a, #dcebe2)" style={{ width: 130, left: "4%", top: 40, transform: "rotate(14deg)" }} tel={2} />
+      <SilhouetBoek kleur="var(--w-sier-b, #e9e2cf)" style={{ width: 170, left: "10%", bottom: 52, transform: "rotate(-8deg)", opacity: 0.8 }} />
 
       {/* De tekstkolom kreeg iets meer breedte (0,9 / 1,1 in plaats van
          1 / 1,05): de uitleg hiernaast is de kern van de hele pagina en las
@@ -635,7 +652,7 @@ export function WereldHerken() {
          die daarboven eindigt. Dat vult die hoek met de eigen sectietaal in
          plaats van met een losse vlek. De onderrand van deze sectie loopt
          dezelfde kant op, waardoor het hele mintveld een schuine band wordt. */}
-      <Golf kleur="#fcfbf7" flip vorm="oploopLinks" hoogte="h-[80px] sm:h-[140px]" />
+      <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="oploopLinks" hoogte="h-[80px] sm:h-[140px]" />
       {/* Van drie klodders naar één. De twee die weg zijn: een zandkleurige
          rechtsonder (twee accentkleuren in één beeld vechten met elkaar) en
          een kleine linksonder. Wat overblijft is de grote, nu in dezelfde
@@ -717,7 +734,7 @@ export function WereldHerken() {
       </div>
       {/* Zelfde helling als de bovenrand: het papier komt links hoog terug en
          blijft rechts laag, zodat het mintveld als geheel schuin oploopt. */}
-      <Golf kleur="#fcfbf7" vorm="oploopLinks" />
+      <Golf kleur="var(--w-papier, #fcfbf7)" vorm="oploopLinks" />
     </section>
   );
 }
@@ -737,7 +754,7 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
          (Spiegelbeeld van de regie-sectie, waar de mint juist bovenin zit.) */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 top-1/2" aria-hidden>
         <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
-        <Golf kleur="#fcfbf7" flip vorm="kam" />
+        <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="kam" />
       </div>
       {/* De liniaal hoort in het mintveld te liggen, dus onderin de sectie. */}
       <SilhouetLiniaal kleur={MINT_DIEP} veld={MINT_LICHT} style={{ width: 460, left: -120, bottom: 150, transform: "rotate(-14deg)" }} />
@@ -766,7 +783,7 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           style={{
             /* niet puur wit: een warme papiertoon houdt de kaart in dezelfde
                wereld als het gespikkelde papier van de pagina */
-            background: "#fffdf9",
+            background: "var(--w-kaart-warm, #fffdf9)",
             borderRadius: "3.2rem 2.4rem 3.4rem 2.6rem / 2.6rem 3.4rem 2.4rem 3.2rem",
             borderColor: KAART_RAND,
             boxShadow: KAART_SCHADUW,
@@ -902,8 +919,8 @@ export function Lichtbron() {
 /* 10. Slot: het donkergroene veld, één keer op de pagina. */
 export function WereldSlot() {
   return (
-    <section className="relative overflow-hidden" style={{ background: DONKER }}>
-      <Golf kleur="#fcfbf7" flip />
+    <section className="relative overflow-hidden" style={{ background: SLOT }}>
+      <Golf kleur="var(--w-papier, #fcfbf7)" flip />
       <SilhouetVliegtuig kleur="#ffffff" style={{ width: 300, right: -40, top: 60, transform: "rotate(14deg)", opacity: 0.05 }} tel={1} />
       {/* Ook hier stond een potlood-silhouet; op deze schaal en bij dit lage
          contrast was er geen potlood meer in te herkennen, alleen een wig.

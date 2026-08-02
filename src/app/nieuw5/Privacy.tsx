@@ -62,30 +62,30 @@ import { DONKER, Golf, KOP, MINT_LICHT, KaartVlak, VLAK_MINT, schaduw } from "./
 
    Zie [[referentie-eerst-regel]]: eerst het beeld, dan pas bouwen. ────── */
 
-const KAART_RAND = "#d4e5dc";
+const KAART_RAND = "var(--w-kaart-rand, #d4e5dc)";
 const KAART_SCHADUW = schaduw(34, 66, -34, 0.6);
 
 /* Vier duidelijk ongelijke hoeken. Subtiel ongelijk werkte niet: dan lees je
    gewoon een afgeronde rechthoek. */
-const VORM_LINKS = "3.6rem 1.2rem 3.2rem 1.6rem / 1.6rem 3.2rem 1.2rem 3.6rem";
+const VORM_LINKS = "var(--w-vorm-groot, 3.6rem 1.2rem 3.2rem 1.6rem / 1.6rem 3.2rem 1.2rem 3.6rem)";
 /* De foto krijgt dezelfde taal, een maat zachter, zodat je geen rechthoek in
    een rechthoek ziet. */
-const FOTO_LINKS = "2.4rem 0.8rem 2.2rem 1.0rem / 1.0rem 2.2rem 0.8rem 2.4rem";
+const FOTO_LINKS = "var(--w-vorm-beeld, 2.4rem 0.8rem 2.2rem 1.0rem / 1.0rem 2.2rem 0.8rem 2.4rem)";
 
 /* Dezelfde ongelijke hoeken, maar op blokjes-formaat. Elk blokje een andere,
    zodat de drie niet als één gestempelde rij lezen. */
 const BLOK_VORM = [
-  "1.5rem 0.7rem 1.3rem 0.8rem / 0.8rem 1.3rem 0.7rem 1.5rem",
-  "0.7rem 1.5rem 0.8rem 1.3rem / 1.3rem 0.8rem 1.5rem 0.7rem",
-  "1.3rem 0.8rem 1.5rem 0.7rem / 0.7rem 1.5rem 0.8rem 1.3rem",
+  "var(--w-vorm-blok1, 1.5rem 0.7rem 1.3rem 0.8rem / 0.8rem 1.3rem 0.7rem 1.5rem)",
+  "var(--w-vorm-blok2, 0.7rem 1.5rem 0.8rem 1.3rem / 1.3rem 0.8rem 1.5rem 0.7rem)",
+  "var(--w-vorm-blok3, 1.3rem 0.8rem 1.5rem 0.7rem / 0.7rem 1.5rem 0.8rem 1.3rem)",
 ];
 const BLOK_FOTO = [
-  "0.9rem 0.45rem 0.85rem 0.5rem / 0.5rem 0.85rem 0.45rem 0.9rem",
-  "0.45rem 0.9rem 0.5rem 0.85rem / 0.85rem 0.5rem 0.9rem 0.45rem",
-  "0.85rem 0.5rem 0.9rem 0.45rem / 0.45rem 0.9rem 0.5rem 0.85rem",
+  "var(--w-vorm-tegel1, 0.9rem 0.45rem 0.85rem 0.5rem / 0.5rem 0.85rem 0.45rem 0.9rem)",
+  "var(--w-vorm-tegel2, 0.45rem 0.9rem 0.5rem 0.85rem / 0.85rem 0.5rem 0.9rem 0.45rem)",
+  "var(--w-vorm-tegel3, 0.85rem 0.5rem 0.9rem 0.45rem / 0.45rem 0.9rem 0.5rem 0.85rem)",
 ];
 
-const CHIP: CSSProperties = { background: "#2f9e6e", color: "#ffffff" };
+const CHIP: CSSProperties = { background: "var(--color-brand, #2f9e6e)", color: "#ffffff" };
 
 /* De kadertjes liggen op de drie naamregels, van "Naam:" tot het eind van de
    stippellijn. Percentages zijn t.o.v. het ZICHTBARE fotovlak: de foto is 4/3
@@ -167,8 +167,8 @@ function AiIcoon({ soort }: { soort: "training" | "vooraf" | "controle" }) {
           <path d="M13 14h12M13 20h8" stroke={DONKER} strokeOpacity="0.45" strokeWidth="2.4" {...gemeen} />
           {/* het verbodsteken: het gaat niet verder dan hier */}
           <circle cx="34" cy="34" r="9.5" fill="#ffffff" />
-          <circle cx="34" cy="34" r="9.5" stroke="#f59e0b" strokeWidth="2.6" {...gemeen} />
-          <path d="M28.3 39.7 39.7 28.3" stroke="#f59e0b" strokeWidth="2.6" {...gemeen} />
+          <circle cx="34" cy="34" r="9.5" stroke="var(--color-accent, #f59e0b)" strokeWidth="2.6" {...gemeen} />
+          <path d="M28.3 39.7 39.7 28.3" stroke="var(--color-accent, #f59e0b)" strokeWidth="2.6" {...gemeen} />
         </g>
       </svg>
     );
@@ -187,7 +187,7 @@ function AiIcoon({ soort }: { soort: "training" | "vooraf" | "controle" }) {
            venster aan terwijl er links ruimte over was, en zaten de twee
            tekens ook te dicht op elkaar. Nu staat het páár gecentreerd: de
            zichtbare randen houden aan beide kanten dezelfde marge. */}
-        <path d="M10.8 24.25l3.5 3.5 6.5-7.5" stroke="#2f9e6e" strokeWidth="3.2" {...gemeen} />
+        <path d="M10.8 24.25l3.5 3.5 6.5-7.5" stroke="var(--color-brand, #2f9e6e)" strokeWidth="3.2" {...gemeen} />
         <path d="M28.8 19.75l8.5 8.5M37.3 19.75l-8.5 8.5" stroke={DONKER} strokeOpacity="0.4" strokeWidth="3" {...gemeen} />
       </svg>
     );
@@ -198,7 +198,7 @@ function AiIcoon({ soort }: { soort: "training" | "vooraf" | "controle" }) {
       <path d="M5 21 38 7 27 38 20 26Z" stroke={DONKER} strokeWidth="2.6" {...gemeen} />
       <path d="M20 26 38 7" stroke={DONKER} strokeOpacity="0.45" strokeWidth="2.6" {...gemeen} />
       {/* de laatste controle, in het vinkje van het merk */}
-      <circle cx="36" cy="34" r="9" fill="#2f9e6e" />
+      <circle cx="36" cy="34" r="9" fill="var(--color-brand, #2f9e6e)" />
       <path d="M31.8 34.2l2.9 2.9 5.5-6" stroke="#ffffff" strokeWidth="2.8" {...gemeen} />
     </svg>
   );
@@ -207,7 +207,7 @@ function AiIcoon({ soort }: { soort: "training" | "vooraf" | "controle" }) {
 export function WereldPrivacy() {
   return (
     <section className="relative overflow-hidden" style={{ background: MINT_LICHT }} aria-label="Privacy">
-      <Golf kleur="#fcfbf7" flip vorm="oploopRechts" hoogte="h-[70px] sm:h-[118px]" />
+      <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="oploopRechts" hoogte="h-[70px] sm:h-[118px]" />
       <KaartVlak
         kleur={VLAK_MINT}
         vorm="koepel"
@@ -390,7 +390,7 @@ export function WereldPrivacy() {
          horizontale rand, en dat is de enige plek op de pagina waar twee
          kleurvelden elkaar recht raken. Zelfde vorm als daar: zakt in het
          midden weg en komt aan beide randen hoog terug. */}
-      <Golf kleur="#fcfbf7" vorm="hapMidden" />
+      <Golf kleur="var(--w-papier, #fcfbf7)" vorm="hapMidden" />
     </section>
   );
 }

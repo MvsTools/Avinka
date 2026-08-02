@@ -47,7 +47,7 @@ function Vinkje() {
         viewBox="0 0 24 24"
         className="h-3 w-3"
         fill="none"
-        stroke="#2f9e6e"
+        stroke="var(--color-brand, #2f9e6e)"
         strokeWidth="4"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -68,7 +68,7 @@ export function WereldPrijzen() {
     <section id="prijzen" className="relative overflow-hidden" style={{ background: MINT_LICHT }}>
       {/* Rustige entree: deze golf is bijna vlak, want de sectie hierboven
          (de polaroids) eindigt al druk. De uitgang mag wél bewegen. */}
-      <Golf kleur="#fcfbf7" flip vorm="rust" hoogte="h-[70px] sm:h-[120px]" />
+      <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="rust" hoogte="h-[70px] sm:h-[120px]" />
 
       {/* Twee zachte vlakken tint-op-tint: één links achter de kop, één rechts
          laag onder de kaarten. Bewust in de zachtste tint — hier staan al drie
@@ -220,7 +220,7 @@ export function WereldPrijzen() {
         </p>
       </div>
 
-      <Golf kleur="#fcfbf7" vorm="ribbel" />
+      <Golf kleur="var(--w-papier, #fcfbf7)" vorm="ribbel" />
     </section>
   );
 }
