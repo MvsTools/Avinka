@@ -65,14 +65,25 @@ import { DONKER, Golf, KOP, MINT_LICHT, KaartVlak, VLAK_MINT, schaduw } from "./
 const KAART_RAND = "#d4e5dc";
 const KAART_SCHADUW = schaduw(34, 66, -34, 0.6);
 
-/* Vier duidelijk ongelijke hoeken, gespiegeld tussen de twee kaarten. Subtiel
-   ongelijk werkte niet: dan lees je gewoon een afgeronde rechthoek. */
+/* Vier duidelijk ongelijke hoeken. Subtiel ongelijk werkte niet: dan lees je
+   gewoon een afgeronde rechthoek. */
 const VORM_LINKS = "3.6rem 1.2rem 3.2rem 1.6rem / 1.6rem 3.2rem 1.2rem 3.6rem";
-const VORM_RECHTS = "1.3rem 3.5rem 1.5rem 3.1rem / 3.1rem 1.4rem 3.4rem 1.4rem";
 /* De foto krijgt dezelfde taal, een maat zachter, zodat je geen rechthoek in
    een rechthoek ziet. */
 const FOTO_LINKS = "2.4rem 0.8rem 2.2rem 1.0rem / 1.0rem 2.2rem 0.8rem 2.4rem";
-const FOTO_RECHTS = "0.9rem 2.4rem 1.0rem 2.1rem / 2.1rem 1.0rem 2.3rem 0.9rem";
+
+/* Dezelfde ongelijke hoeken, maar op blokjes-formaat. Elk blokje een andere,
+   zodat de drie niet als één gestempelde rij lezen. */
+const BLOK_VORM = [
+  "1.5rem 0.7rem 1.3rem 0.8rem / 0.8rem 1.3rem 0.7rem 1.5rem",
+  "0.7rem 1.5rem 0.8rem 1.3rem / 1.3rem 0.8rem 1.5rem 0.7rem",
+  "1.3rem 0.8rem 1.5rem 0.7rem / 0.7rem 1.5rem 0.8rem 1.3rem",
+];
+const BLOK_FOTO = [
+  "0.9rem 0.45rem 0.85rem 0.5rem / 0.5rem 0.85rem 0.45rem 0.9rem",
+  "0.45rem 0.9rem 0.5rem 0.85rem / 0.85rem 0.5rem 0.9rem 0.45rem",
+  "0.85rem 0.5rem 0.9rem 0.45rem / 0.45rem 0.9rem 0.5rem 0.85rem",
+];
 
 const CHIP: CSSProperties = { background: "#2f9e6e", color: "#ffffff" };
 
@@ -90,6 +101,43 @@ const NAMEN = [
   { left: "51.8%", top: "7.4%", w: "26.3%", h: "5.4%", chip: "leerling A", vert: 0 },
   { left: "53.0%", top: "34.3%", w: "25.1%", h: "5.4%", chip: "leerling B", vert: 130 },
   { left: "60.1%", top: "58.7%", w: "29.1%", h: "5.7%", chip: "leerling C", vert: 260 },
+];
+
+/* ── De rechterkolom: hoe wij AI veilig maken ──────────────────────────────
+   Drie losse blokjes naast de grote namenkaart, om en om ingesprongen, elk
+   met een eigen foto en een eigen draaiing. Bewust géén vierde witte kaart:
+   één stevige kaart naast drie zwevende blokjes is het contrast dat deze
+   sectie speels houdt.
+
+   ⚠️ De foto's hieronder zijn TIJDELIJKE OPVULLING (bestaande schoolfoto's).
+   Er moeten drie eigen beelden komen; zie het briefje in scherm-1. */
+const AI: Array<{
+  titel: string; tekst: string; foto: string; alt: string; inspring: string; rot: string;
+}> = [
+  {
+    titel: "We trainen er geen AI mee",
+    tekst: "Wat je invult gaat nooit een model in. Het wordt gebruikt om jouw werk te doen, en verder niets.",
+    foto: "/nieuw5/foto/p30703810.jpg",
+    alt: "Tijdelijke foto",
+    inspring: "lg:ml-0",
+    rot: "-1.6deg",
+  },
+  {
+    titel: "We zeggen vooraf wat je beter niet deelt",
+    tekst: "Elke tool die over kinderen gaat, opent met concreet advies: wél de voornaam, geen achternamen, adressen of medische gegevens.",
+    foto: "/nieuw5/foto/p5905441.jpg",
+    alt: "Tijdelijke foto",
+    inspring: "lg:ml-10",
+    rot: "1.3deg",
+  },
+  {
+    titel: "We waarschuwen je op tijd",
+    tekst: "Lijkt iets wat je invult privacygevoelig, dan zeggen we het vóórdat het verstuurd wordt.",
+    foto: "/nieuw5/foto/p5905445.jpg",
+    alt: "Tijdelijke foto",
+    inspring: "lg:ml-4",
+    rot: "-0.9deg",
+  },
 ];
 
 export function WereldPrivacy() {
@@ -116,7 +164,7 @@ export function WereldPrivacy() {
             className="mt-2 font-display text-[clamp(2.1rem,4.4vw,3.4rem)] font-black leading-[1.03] tracking-tight [text-wrap:balance]"
             style={{ color: DONKER }}
           >
-            Er is één ding dat we bewust niet doen.
+            Wij denken na over veiligheid, zodat jij dat niet hoeft.
           </h2>
         </div>
 
@@ -193,98 +241,56 @@ export function WereldPrivacy() {
             </div>
           </article>
 
-          {/* KAART 2 — het lege archief */}
-          <article
-            data-reveal
-            style={{
-              transitionDelay: "120ms",
-              borderRadius: VORM_RECHTS,
-              borderColor: KAART_RAND,
-              boxShadow: KAART_SCHADUW,
-              rotate: "1.4deg",
-            }}
-            className="relative border-[2.5px] bg-white p-5 sm:p-6 lg:mt-10"
-          >
-            <p className="text-xl leading-none" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
-              geen uitzonderingen
-            </p>
+          {/* ── RECHTS: hoe wij AI veilig maken ──────────────────────────────
+             Geen tweede grote kaart meer. Eén stevige kaart links naast drie
+             losse blokjes rechts is het contrast dat deze sectie speels houdt,
+             en het past bij het verhaal: links één ding dat we niet doen,
+             rechts drie dingen die we juist wél voor je uitdenken. */}
+          <div className="lg:pt-4">
             <h3
-              className="mt-1 font-display text-[clamp(1.4rem,2.2vw,1.75rem)] font-black leading-tight tracking-tight"
+              data-reveal
+              className="font-display text-[clamp(1.5rem,2.4vw,1.95rem)] font-black leading-tight tracking-tight"
               style={{ color: DONKER }}
             >
-              We gebruiken het nergens anders voor
+              Veilig omgaan met AI
             </h3>
-            <p className="mt-1.5 max-w-sm leading-6 text-ink/60">
-              Wat je invult is er om jouw werk te doen. Verder gebeurt er niets
-              mee.
+            <p data-reveal className="mt-1.5 max-w-md leading-6 text-ink/60">
+              Je hoeft zelf geen privacy-expert te zijn. Wij denken het voor je
+              uit, en zeggen het als er iets niet in hoort.
             </p>
 
-            <div className="relative mt-4 overflow-hidden" style={{ borderRadius: FOTO_RECHTS }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/nieuw5/foto/archiefdoos.jpg"
-                alt="Een archiefdoos met tabbladen op een houten tafel"
-                className="block aspect-[5/4] w-full object-cover"
-              />
-
-              {/* Het briefje op de doos: alleen wat er NOOIT gebeurt.
-
-                 Hier stond eerst een inventaris van wat we wel en niet
-                 bewaren. Twee bezwaren van de eigenaar, allebei terecht. Het
-                 dwong de lezer tot uitzoekwerk, en — zwaarder — zo'n belofte
-                 veroudert: zodra er verwerkersovereenkomsten met scholen
-                 komen mag er meer bewaard worden, en dan moeten we een
-                 privacybelofte intrekken. Dat is erger dan hem nooit gedaan
-                 hebben.
-
-                 Wat een schoolovereenkomst verandert is de BEWAARTERMIJN. Wat
-                 niet verandert is het DOEL. Deze kaart gaat daarom over het
-                 doel, en noemt alleen de ontkenningen: die blijven waar, met
-                 of zonder overeenkomst. Doorgestreepte tekst zonder verdere
-                 iconen — het kopje draagt de betekenis al. */}
-              <div
-                data-reveal
-                style={{ transitionDelay: "260ms" }}
-                /* Op desktop niet vol-breed: de regels zijn kort, dus een
-                   vol-breed vlak werd een lege slab. Smaller leest het als een
-                   label óp de doos. Op mobiel wél vol-breed, daar is geen
-                   ruimte te verspillen. */
-                className="absolute inset-x-4 bottom-4 sm:bottom-5 sm:left-5 sm:right-auto sm:max-w-[68%]"
-              >
-                <div className="overflow-hidden rounded-[1.4rem] bg-white shadow-[0_10px_30px_-8px_rgba(0,0,0,0.4)]">
-                  {/* Op 390px is de foto maar ~250px hoog, dus alles wat hier
-                     staat telt dubbel: zonder de kleinere maten hieronder nam
-                     dit briefje de halve foto in beslag. */}
-                  {/* Het kopje draagt de merkkleur: met alléén doorgestreept
-                     grijs verloor deze kaart zijn anker naast de groene chips
-                     van kaart 1 en werd het een bleke slab. */}
-                  <p
-                    className="px-3 py-1 text-[0.62rem] font-bold uppercase tracking-[0.08em] sm:px-4 sm:py-1.5 sm:text-[0.66rem]"
-                    style={{ color: KOP }}
-                  >
-                    wat er nooit mee gebeurt
-                  </p>
-                  <ul className="border-t border-ink/[0.07] px-3 py-1.5 sm:px-4 sm:py-2">
-                    {["AI ermee trainen", "verkopen of delen", "gebruiken voor reclame"].map((wat) => (
-                      <li
-                        key={wat}
-                        className="text-[0.74rem] leading-5 text-ink/65 line-through decoration-ink/40 sm:text-[0.8rem] sm:leading-6"
-                      >
-                        {wat}
-                      </li>
-                    ))}
-                  </ul>
+            <div className="mt-6 flex flex-col gap-4">
+              {AI.map((a, i) => (
+                <div
+                  key={a.titel}
+                  data-reveal
+                  style={{
+                    borderRadius: BLOK_VORM[i],
+                    borderColor: KAART_RAND,
+                    boxShadow: schaduw(18, 40, -22, 0.5),
+                    rotate: a.rot,
+                    transitionDelay: `${180 + i * 130}ms`,
+                  }}
+                  className={`flex items-center gap-4 border-[2.5px] bg-white p-3 ${a.inspring}`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={a.foto}
+                    alt={a.alt}
+                    className="h-16 w-16 shrink-0 object-cover sm:h-[4.5rem] sm:w-[4.5rem]"
+                    style={{ borderRadius: BLOK_FOTO[i] }}
+                  />
+                  <div>
+                    <h4 className="font-display text-[1.02rem] font-black leading-tight" style={{ color: DONKER }}>
+                      {a.titel}
+                    </h4>
+                    <p className="mt-1 text-[0.85rem] leading-5 text-ink/60">{a.tekst}</p>
+                  </div>
                 </div>
-              </div>
-
-              <span
-                className="absolute left-3 top-3 hidden rounded-full bg-black/45 px-3 py-1.5 text-[0.7rem] font-bold text-white backdrop-blur-sm sm:block"
-                aria-hidden
-              >
-                wat je bij ons opslaat
-              </span>
+              ))}
             </div>
-          </article>
+          </div>
+
         </div>
       </div>
     </section>
