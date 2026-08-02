@@ -111,7 +111,13 @@ export function WereldPrijzen() {
               className="font-display text-[clamp(2.25rem,4.4vw,3.5rem)] font-black leading-[1.02] tracking-tight [text-wrap:balance]"
               style={{ color: DONKER }}
             >
-              Eén vast bedrag. Onbeperkt gebruik.
+              {/* ⚠️ Hier stond "Onbeperkt gebruik." Dat is niet waar: er zit een
+                 verbruiksplafond op een account, als slot tegen misbruik en
+                 accountdelen. De gedeelde components/Prijzen.tsx is daar op
+                 383de45 al voor gecorrigeerd; deze kopie was meegekomen met de
+                 oude tekst en is bij het overzetten naar de echte voorpagina
+                 blijven staan. Beloof geen onbeperktheid die er niet is. */}
+              Eén vast bedrag. Geen verrassingen.
             </h2>
             <p data-reveal className="mt-5 text-lg leading-8 text-ink/75">
               Je begint met {PROEF_DAGEN} dagen gratis proberen, zonder
