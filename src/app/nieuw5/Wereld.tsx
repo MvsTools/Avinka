@@ -542,44 +542,16 @@ export function WereldIntro() {
          een cartoon-explosie. Nu draagt de golf naar de sectie hieronder die
          hoek (het mintveld loopt daar rechts flink omhoog) en ligt er alleen
          nog een uitvergrote kaartvorm achter — de vorm van de site zelf. */}
-      {/* Hier stonden nog een gum- en een boek-silhouet achter de tekst.
-         Eruit op verzoek; het uitvergrote kaartvlak rechts draagt deze sectie
-         verder alleen. */}
-      <KaartVlak
-        kleur={MINT_LICHT}
-        breedte={620}
-        hoogte={430}
-        /* Hij LOOPT DOOR over de sectiegrens, tot op het mintveld erboven.
-           Twee dingen waren daarvoor nodig:
-
-           1. z-[11]. De lagen van "Herken je dit?" (golf z-5, vlakken z-6,
-              inhoud z-10) zitten in dezelfde stapelcontext als deze sectie en
-              schilderden er dus overheen — dát was de kaarsrechte afsnijding.
-              Elf ligt daar net boven.
-           2. De kleur van het mintveld zelf, en dus GEEN mengmodus. Waar hij
-              over het veld valt is hij per definitie onzichtbaar, en waar hij
-              eronder uitkomt leest hij als een uitloper van datzelfde veld.
-              De vorm en de sectie erboven zijn daarmee één ding in plaats van
-              twee die elkaar raken. */
-        style={{
-          right: "-6%",
-          top: -60,
-          transform: "rotate(-11deg)",
-        }}
-        vorm="ei"
-        className="z-[11] hidden lg:block"
-        tel={1}
-      />
-
+      {/* Deze sectie heeft geen achtergrondvorm meer. Er stonden eerst een
+         gum- en een boek-silhouet en daarna een uitvergroot kaartvlak; alle
+         drie zijn er op verzoek uit. Wat overblijft is het gespikkelde papier
+         met de losse stipjes, en het mintveld erboven dat met zijn golf de
+         bovenrand van deze sectie maakt. */}
       {/* De tekstkolom kreeg iets meer breedte (0,9 / 1,1 in plaats van
          1 / 1,05): de uitleg hiernaast is de kern van de hele pagina en las
          als een zijopmerking. Met een bredere kolom past de eerste zin op
          minder regels en kan hij groter staan zonder te versnipperen. */}
-      {/* z-20: het vlak hierboven staat op 11 om over de lagen van de sectie
-         ervóór heen te komen, en zou anders ook over deze tekst heen vallen —
-         nu het een dekkende mintkleur heeft in plaats van een doorschijnende
-         tint is dat niet meer onschuldig. */}
-      <div className="relative z-20 mx-auto grid w-full max-w-5xl gap-10 px-6 pb-24 pt-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16 lg:pb-32 lg:pt-24">
+      <div className="relative mx-auto grid w-full max-w-5xl gap-10 px-6 pb-24 pt-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16 lg:pb-32 lg:pt-24">
         <Confetti punten={[{ x: "2%", y: "18%", r: 4, amber: true }, { x: "96%", y: "70%", r: 5 }, { x: "88%", y: "8%", r: 3 }]} />
         <div>
           <h2
