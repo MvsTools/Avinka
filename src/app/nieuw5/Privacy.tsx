@@ -115,24 +115,24 @@ const AI: Array<{
   titel: string; tekst: string; foto: string; alt: string; inspring: string; rot: string;
 }> = [
   {
-    titel: "We trainen er geen AI mee",
-    tekst: "Wat je invult gaat nooit een model in. Het wordt gebruikt om jouw werk te doen, en verder niets.",
+    titel: "Jouw werk traint geen AI",
+    tekst: "Wat je invult gebruiken we om jouw tekst te maken. Daarna is het klaar. Geen enkele AI wordt er slimmer van.",
     foto: "/nieuw5/foto/p30703810.jpg",
     alt: "Tijdelijke foto",
     inspring: "lg:ml-0",
     rot: "-1.6deg",
   },
   {
-    titel: "We zeggen vooraf wat je beter niet deelt",
-    tekst: "Elke tool die over kinderen gaat, opent met concreet advies: wél de voornaam, geen achternamen, adressen of medische gegevens.",
+    titel: "Je weet vooraf wat wel en niet kan",
+    tekst: "Open je een tool die over kinderen gaat, dan zie je meteen wat verstandig is. Voornaam mag. Achternaam, adres of iets medisch niet.",
     foto: "/nieuw5/foto/p5905441.jpg",
     alt: "Tijdelijke foto",
     inspring: "lg:ml-10",
     rot: "1.3deg",
   },
   {
-    titel: "We waarschuwen je op tijd",
-    tekst: "Lijkt iets wat je invult privacygevoelig, dan zeggen we het vóórdat het verstuurd wordt.",
+    titel: "We tikken je op de schouder",
+    tekst: "Typ je toch iets dat te herleiden is, dan zeggen we het. Voordat het weggaat, niet erna.",
     foto: "/nieuw5/foto/p5905445.jpg",
     alt: "Tijdelijke foto",
     inspring: "lg:ml-4",
@@ -164,7 +164,7 @@ export function WereldPrivacy() {
             className="mt-2 font-display text-[clamp(2.1rem,4.4vw,3.4rem)] font-black leading-[1.03] tracking-tight [text-wrap:balance]"
             style={{ color: DONKER }}
           >
-            Wij denken na over veiligheid, zodat jij dat niet hoeft.
+            Het veiligheidswerk hebben wij al gedaan.
           </h2>
         </div>
 
@@ -255,8 +255,7 @@ export function WereldPrivacy() {
               Veilig omgaan met AI
             </h3>
             <p data-reveal className="mt-1.5 max-w-md leading-6 text-ink/60">
-              Je hoeft zelf geen privacy-expert te zijn. Wij denken het voor je
-              uit, en zeggen het als er iets niet in hoort.
+              Je hoeft geen privacy-expert te zijn om je werk te doen.
             </p>
 
             <div className="mt-6 flex flex-col gap-4">
