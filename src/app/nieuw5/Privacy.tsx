@@ -300,7 +300,15 @@ export function WereldPrivacy() {
           </div>
 
         </div>
+
       </div>
+
+      {/* De overgang van mint naar papier zat in de regie-sectie hieronder,
+         die nu weg is. Zonder deze golf eindigt het mintveld met een harde
+         horizontale rand, en dat is de enige plek op de pagina waar twee
+         kleurvelden elkaar recht raken. Zelfde vorm als daar: zakt in het
+         midden weg en komt aan beide randen hoog terug. */}
+      <Golf kleur="#fcfbf7" vorm="hapMidden" />
     </section>
   );
 }

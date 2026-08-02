@@ -25,7 +25,6 @@ import {
   WereldFx,
   WereldIntro,
   WereldHerken,
-  WereldRegie,
   WereldMaker,
   WereldSlot,
 } from "./Wereld";
@@ -1082,13 +1081,24 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
            is zelf het bewijs dat het op zijn apparaat gebeurt. ── */}
         <WereldPrivacy />
 
-        {/* ── 5. De regie blijft bij jou. Drie witte kaartjes naast elkaar,
-           zonder kop en zonder iconen: op deze plek in de pagina hoort rust,
-           dus de kaartjes moeten het met woorden en witruimte doen. Bewust
-           een ander ritme dan de sectie hierboven, waar de kaarten juist
-           naast de tekst staan. Op een smal scherm vallen ze onder
-           elkaar. ── */}
-        <WereldRegie />
+        {/* ── 5. HIER STOND "De regie blijft bij jou": drie ronde kaartjes met
+           "Jij beslist", "Altijd bij te sturen" en "De cijfers kloppen altijd".
+           Weggehaald, om drie redenen:
+
+           1. Ze hingen los. Elke andere sectie opent met een titel; deze drie
+              kwamen uit het niets. Dat werkte toen er iets anders boven stond,
+              maar de privacysectie eindigt nu zélf met drie blokjes. Drie
+              blokjes gevolgd door drie cirkels leest als een herhaling zonder
+              verband.
+           2. Inhoudelijke overlap. "Wij maken AI veilig" (hierboven) en "jij
+              houdt de AI in de hand" (hier) zijn dezelfde redenering, in twee
+              losse secties gezet.
+           3. Twee van de drie waren zwak: "jij beslist" en "je kunt het
+              aanpassen" zegt elke AI-tool. De derde, dat de tool zelf rekent
+              en de AI nooit getallen verzint, was juist de sterkste claim van
+              de pagina. Die is verhuisd naar het slot van de privacysectie,
+              waar hij de redenering afmaakt: je gegevens zijn veilig, én wat
+              eruit komt klopt. De FAQ verderop behandelt hem ook nog. ── */}
 
         {/* ── 6. De maker ── */}
         <WereldMaker fotoBestand={fotoBestand} />
