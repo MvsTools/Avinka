@@ -746,10 +746,6 @@ export function WereldPolaroids() {
               uit de praktijk
             </span>
           </h2>
-          <p data-reveal className="mx-auto mt-5 max-w-xl text-lg leading-8 text-ink/75">
-            Deze zomer test een groep leerkrachten Avinka in de praktijk. Hun
-            ervaringen komen hier te staan, in hun eigen woorden.
-          </p>
         </div>
 
         {/* het handgeschreven hintje met een boogpijltje naar de kaarten */}
@@ -772,11 +768,11 @@ export function WereldPolaroids() {
           </div>
         </div>
 
-        {/* eerlijk zolang de zomertest loopt: dit zijn voorbeeldkaarten */}
-        <p className="mt-10 text-center text-sm font-semibold text-ink/55">
-          Dit zijn nog voorbeeld-ervaringen. De echte komen uit de zomertest.
-          Geen verzonnen quotes, dat beloven we.
-        </p>
+        {/* ⚠️ Hier stond de disclaimer dat dit voorbeeld-ervaringen zijn en
+           dat de echte uit de zomertest komen. Die is er op verzoek uit.
+           De kaartjes zelf zijn nog steeds verzonnen voorbeelden mét
+           verzonnen namen — vervangen door echte reacties vóór de pagina
+           publiek gaat. */}
       </div>
 
       <style>{`

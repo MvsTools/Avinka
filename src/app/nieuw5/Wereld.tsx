@@ -564,7 +564,11 @@ export function WereldIntro() {
       <SilhouetGum kleur="#dcebe2" style={{ width: 130, left: "4%", top: 40, transform: "rotate(14deg)" }} tel={2} />
       <SilhouetBoek kleur="#e9e2cf" style={{ width: 170, left: "10%", bottom: 52, transform: "rotate(-8deg)", opacity: 0.8 }} />
 
-      <div className="relative mx-auto grid w-full max-w-5xl gap-10 px-6 pb-24 pt-16 lg:grid-cols-[1fr_1.05fr] lg:gap-16 lg:pb-32 lg:pt-24">
+      {/* De tekstkolom kreeg iets meer breedte (0,9 / 1,1 in plaats van
+         1 / 1,05): de uitleg hiernaast is de kern van de hele pagina en las
+         als een zijopmerking. Met een bredere kolom past de eerste zin op
+         minder regels en kan hij groter staan zonder te versnipperen. */}
+      <div className="relative mx-auto grid w-full max-w-5xl gap-10 px-6 pb-24 pt-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16 lg:pb-32 lg:pt-24">
         <Confetti punten={[{ x: "2%", y: "18%", r: 4, amber: true }, { x: "96%", y: "70%", r: 5 }, { x: "88%", y: "8%", r: 3 }]} />
         <div>
           <h2
@@ -579,11 +583,24 @@ export function WereldIntro() {
             <BlobKnop href="#tools" variant="licht" className="w-full sm:w-auto">Bekijk de tools</BlobKnop>
           </div>
         </div>
-        <div className="max-w-xl lg:pt-2">
-          <p data-reveal className="text-lg leading-8 text-ink/75">
+        {/* Dit is de uitleg van het hele product en stond er in dezelfde maat
+           en kleur bij als elke andere bijzin op de pagina. Nu in twee stukken
+           met een echte rangorde: de eerste zin zegt wát Avinka is en staat
+           groot en in de kopkleur, de rest legt uit hoe dat werkt en blijft
+           gewone lopende tekst. Zo valt de kern op zonder dat het blok gaat
+           schreeuwen. */}
+        <div className="max-w-2xl lg:pt-1">
+          <p
+            data-reveal
+            className="text-[1.375rem] font-semibold leading-9 [text-wrap:balance] sm:text-2xl sm:leading-10"
+            style={{ color: KOP }}
+          >
             Avinka brengt de hulpmiddelen voor je schoolwerk samen in één
-            omgeving. Je geeft aan wat je nodig hebt en Avinka helpt je met de
-            uitwerking, zodat terugkerende taken minder tijd kosten en je werk
+            omgeving.
+          </p>
+          <p data-reveal className="mt-4 text-lg leading-8 text-ink/75" style={{ transitionDelay: "90ms" }}>
+            Je geeft aan wat je nodig hebt en Avinka helpt je met de uitwerking,
+            zodat terugkerende taken minder tijd kosten en je werk
             overzichtelijk blijft.
           </p>
         </div>
@@ -663,9 +680,9 @@ export function WereldHerken() {
               className="mt-6 text-2xl leading-snug lg:sticky lg:top-60"
               style={{ fontFamily: "var(--font-hand)", color: KOP }}
             >
-              het hoort bij het werk.
+              Het hoort bij het werk,
               <br />
-              maar het kan met minder gedoe.
+              maar het kan slimmer, sneller en efficiënter
             </p>
           </div>
 
@@ -757,13 +774,10 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           }}
         >
           <Confetti punten={[{ x: "94%", y: "8%", r: 5, amber: true }, { x: "2%", y: "86%", r: 4 }]} />
-          <span
-            className="absolute left-[62%] top-[-18px] flex h-10 w-10 items-center justify-center rounded-2xl bg-brand shadow-md"
-            style={{ translate: "-50% 0", rotate: "8deg" }}
-            aria-hidden
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="#fff" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
-          </span>
+          {/* Hier hing een groen vinkje-badge over de bovenrand. Eruit op
+             verzoek: het vinkje van het merk zit al in het mintblok onderaan
+             deze kaart, en op een kennismaking met de maker voegt een
+             afvink-teken niets toe. */}
 
           <div className="relative flex flex-col gap-10 sm:flex-row sm:items-stretch sm:gap-12">
             {/* Portretkolom: de foto in een organische vorm in plaats van een
@@ -911,10 +925,9 @@ export function WereldSlot() {
 
       <div className="relative z-10 mx-auto w-full max-w-3xl px-6 pb-32 pt-36 text-center">
         <Confetti punten={[{ x: "16%", y: "18%", r: 4, amber: true }, { x: "82%", y: "12%", r: 5 }, { x: "90%", y: "70%", r: 4, amber: true }]} />
-        <div data-reveal className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-lg shadow-black/20">
-          <svg viewBox="0 0 24 24" className="h-9 w-9" fill="none" stroke={DONKER} strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
-        </div>
-        <h2 data-reveal className="mt-7 font-display text-[clamp(2.5rem,5.5vw,4rem)] font-black leading-[1.02] tracking-tight text-white [text-wrap:balance]">
+        {/* Hier stond een wit vierkant met het merkvinkje boven de slotkop.
+           Eruit op verzoek; de kop begint nu meteen. */}
+        <h2 data-reveal className="font-display text-[clamp(2.5rem,5.5vw,4rem)] font-black leading-[1.02] tracking-tight text-white [text-wrap:balance]">
           Kom binnen. Je werkplek staat klaar.
         </h2>
         <p data-reveal className="mx-auto mt-5 max-w-xl text-lg leading-8 text-white/75">

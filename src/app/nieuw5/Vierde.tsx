@@ -55,7 +55,10 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 /* ── Inhoud ────────────────────────────────────────────────────────────── */
 
 const STRIP = [
-  "🔒 Namen blijven thuis",
+  /* Was "Namen blijven thuis". De eigenaar wilde die term kwijt; deze zegt
+     hetzelfde in gewone woorden en sluit aan op de privacysectie verderop,
+     waar de belofte "namen gaan nooit mee" wordt uitgelegd. */
+  "🔒 Leerlingnamen gaan nooit mee",
   "🇳🇱 Volledig Nederlands",
   "💚 Door een leerkracht gemaakt",
   "✓ Maandelijks opzegbaar",
@@ -985,22 +988,14 @@ export default function Vierde({ fotoBestand }: { fotoBestand?: string }) {
                       <Tegel naam="ouder" label="Oudercontact" emoji="✉️" kleur="bg-rose-500" />
                       <Tegel naam="plattegrond" label="Plattegrond" emoji="🪑" kleur="bg-amber-500" />
                       <Tegel naam="les" label="Lesontwerp" emoji="📓" kleur="bg-teal-500" />
-                      <div
-                        data-tegel="werkbladen"
-                        className="relative flex flex-col items-center gap-1 rounded-xl border-2 border-dashed border-black/10 bg-white/60 p-2 text-center"
-                      >
-                        <span
-                          data-tegelvink="werkbladen"
-                          className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand text-[9px] font-black text-white shadow-sm"
-                          aria-hidden
-                        >
-                          ✓
-                        </span>
-                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-soft text-sm">
-                          ✨
-                        </span>
-                        <span className="w-full truncate text-[10px] font-bold text-ink/60">Werkbladen</span>
-                      </div>
+                      {/* Werkbladen stond hier nog als "binnenkort"-tegel: een
+                         gestippeld kadertje met een ✨ in plaats van een icoon,
+                         uit de tijd dat de tool nog niet bestond. Het is nu een
+                         gewone tool, dus ook een gewone tegel. Potlood, want
+                         een werkblad is het enige wat de leerling zelf invult;
+                         indigo omdat dat het verst af staat van de vijf
+                         kleuren die er al liggen. */}
+                      <Tegel naam="werkbladen" label="Werkbladen" emoji="✏️" kleur="bg-indigo-500" />
                     </div>
 
                     {/* tip-balk */}
