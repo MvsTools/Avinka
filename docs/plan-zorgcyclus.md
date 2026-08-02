@@ -5,6 +5,12 @@ aanleiding van een ingeving van de eigenaar. Dit document bewaart de redenering
 en de gevonden feiten, zodat dit later opgepakt kan worden zonder het onderzoek
 opnieuw te doen.
 
+> ⛔ **Niet nodig voor livegang.** Besluit van de eigenaar, 2 augustus 2026: dit
+> hele blok — schoollicenties, de kleine zorgcyclus, en de weekplanning mét
+> lessen, doelen en notities — is een toekomstplan. Het platform gaat live als
+> product voor de individuele leerkracht; de schoolroute komt daarna. Dit
+> document mag de go-live-lijst dus niet vertragen.
+
 ---
 
 ## 1. Het idee, in de woorden van de eigenaar
