@@ -23,6 +23,7 @@
     lengte: "gemiddeld",
     aanspreekvorm: "je",
     standaardgroep: "",
+    communicatie_app: "",
   };
   var data = Object.assign({}, STANDAARD);
 

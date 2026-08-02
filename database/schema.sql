@@ -49,6 +49,9 @@ create table if not exists public.instellingen (
   mollie_payment_id  text,                     -- lopende betaling (om terugkomst te verifiëren)
   -- Bèta die de eigenaar per account handmatig aanzet (zie wijs_admin_zet_beta_eigen_format).
   beta_eigen_format boolean not null default false,
+  -- Welke ouder-app de leerkracht gebruikt: '' | 'parro' | 'social_schools'.
+  -- Bepaalt of en welke "open in ..."-knop de tools tonen bij een bericht.
+  communicatie_app text not null default '',
   created_at     timestamptz default now(),
   updated_at     timestamptz default now()
 );
@@ -68,6 +71,7 @@ create table if not exists public.instellingen (
 --   alter table public.instellingen add column if not exists mollie_customer_id text;
 --   alter table public.instellingen add column if not exists mollie_payment_id text;
 --   alter table public.instellingen add column if not exists beta_eigen_format boolean not null default false;
+--   alter table public.instellingen add column if not exists communicatie_app text not null default '';
 create index if not exists idx_instellingen_verwezen on public.instellingen(verwezen_door);
 
 -- ── 2) KLASSEN — je klassenlijst (meerdere klassen per leerkracht mogelijk) ───

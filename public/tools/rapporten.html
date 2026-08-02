@@ -486,6 +486,7 @@
   <script src="/avinka-privacy.js"></script>
   <script src="/avinka-masking.js"></script>
   <script src="/avinka-voorkeuren.js"></script>
+  <script src="/avinka-communicatie-app.js"></script>
 </head>
 <body>
 <div class="app">
@@ -764,6 +765,7 @@
         <button class="btn-soft" style="padding:14px;font-size:14px;" onclick="toggleAanpas()">↻ Tekst aanpassen</button>
         <button class="btn-green" onclick="keurGoed()"><span>✓</span><span>Goedkeuren</span></button>
       </div>
+      <button class="btn-soft" id="verhaal-btn-open-app" style="display:none; width:100%; margin-top:10px; padding:14px; font-size:14px;"></button>
       <div class="aanpas-wrap" id="aanpas-wrap">
         <label class="field-label">Wat zou je anders willen?</label>
         <textarea class="field-input" id="aanpas-input" placeholder="bijv. korter, minder over rekenen, warmer van toon, benoem dat ze veel gegroeid is in zelfvertrouwen…"></textarea>
@@ -1743,6 +1745,9 @@ function keurGoed() {
   l.status = 'klaar';
   renderOverzicht();
   terugNaarOverzicht();
+}
+if (window.avinkaCommApp) {
+  avinkaCommApp.zetKnop(document.getElementById('verhaal-btn-open-app'), () => document.getElementById('verhaal-tekst').value);
 }
 
 // Lichte opschoning: gedachtestreepjes weg, nette witregels.

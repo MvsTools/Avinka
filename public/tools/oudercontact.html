@@ -452,6 +452,7 @@
   <script src="/avinka-datum.js"></script>
   <script src="/avinka-masking.js"></script>
   <script src="/avinka-voorkeuren.js"></script>
+  <script src="/avinka-communicatie-app.js"></script>
   <script src="/avinka-dropdown.js"></script>
   <script src="/avinka-groep.js"></script>
   <script src="/avinka-verlaten.js"></script>
@@ -648,6 +649,7 @@
         </div>
         <p class="bericht-hint">Bij <em>Kopiëren</em> komt alles samen — schoon voor Parro, en met vette kopjes voor e-mail of een nieuwsbrief.</p>
         <button class="btn-green" id="btn-kopieer" onclick="kopieerBericht()">📋 Kopieer bericht</button>
+        <button class="btn-soft" id="btn-open-app" style="display:none;"></button>
 
         <div class="bijschaaf-rij">
           <button class="btn-soft" onclick="bijschaaf('korter')">Korter</button>
@@ -771,6 +773,7 @@
         <button class="btn-green" id="nb-btn-kopieer-alles" onclick="nbKopieerAlles(this)">📋 Kopieer hele nieuwsbrief</button>
         <div id="nb-blokken"></div>
         <button class="btn-green" id="nb-btn-kopieer-alles-onder" onclick="nbKopieerAlles(this)" style="margin-top:4px;">📋 Kopieer hele nieuwsbrief</button>
+        <button class="btn-soft" id="nb-btn-open-app" style="display:none; margin-top:4px;"></button>
         <div class="bijschaaf-rij">
           <button class="btn-soft" onclick="nbGenereer()">Opnieuw schrijven</button>
         </div>
@@ -906,6 +909,7 @@
           <input type="text" class="titel-input" id="mail-afsluiting" value="Met vriendelijke groet,">
         </div>
         <button class="btn-green" id="mail-btn-kopieer" onclick="mailKopieer()">📋 Kopieer bericht</button>
+        <button class="btn-soft" id="mail-btn-open-app" style="display:none;"></button>
         <div class="bijschaaf-rij">
           <button class="btn-soft" onclick="mailBijschaaf('warmer')">Warmer</button>
           <button class="btn-soft" onclick="mailBijschaaf('milder')">Milder</button>
@@ -1090,6 +1094,7 @@
           <input type="text" class="titel-input" id="info-afsluiting" value="Met vriendelijke groet,">
         </div>
         <button class="btn-green" id="info-btn-kopieer" onclick="infoKopieer()">📋 Kopieer brief</button>
+        <button class="btn-soft" id="info-btn-open-app" style="display:none;"></button>
         <div class="bijschaaf-rij">
           <button class="btn-soft" onclick="infoBijschaaf('warmer')">Warmer</button>
           <button class="btn-soft" onclick="infoBijschaaf('zakelijker')">Zakelijker</button>
@@ -2455,6 +2460,16 @@ function setBericht(plain) {
 function getBericht() {
   return (document.getElementById('bericht-tekst').innerText || '').replace(/\n{3,}/g, '\n\n').trim();
 }
+// Zelfde samenstelling (aanhef + tekst + afsluiting) als kopieerBericht() gebruikt,
+// zodat de "open in ..."-knop precies hetzelfde bericht kopieert.
+function getVolledigBericht() {
+  const aanhef = (document.getElementById('aanhef-input').value || '').trim();
+  const afsluiting = (document.getElementById('afsluiting-input').value || '').trim();
+  return [aanhef, getBericht(), afsluiting].filter(Boolean).join('\n\n');
+}
+if (window.avinkaCommApp) {
+  avinkaCommApp.zetKnop(document.getElementById('btn-open-app'), getVolledigBericht);
+}
 
 function kopieGelukt(knop, klaarLabel, normaalLabel) {
   knop.classList.add('gekopieerd');
@@ -2929,7 +2944,9 @@ function nbKopieerBlok(i, knop) {
   kopieerNaarKlembord(tekst, knop, '✓ Gekopieerd', 'Kopieer');
 }
 
-function nbKopieerAlles(knop) {
+// Platte tekst + html van de hele nieuwsbrief, gedeeld door nbKopieerAlles en
+// de "open in ..."-knop, zodat ze altijd exact hetzelfde kopiëren.
+function nbTeksten() {
   const plainParts = [], htmlParts = [];
   brief.blokken.forEach(b => {
     if (b.soort === 'rubriek') {
@@ -2942,8 +2959,16 @@ function nbKopieerAlles(knop) {
       plainParts.push(b.body, ''); htmlParts.push('<p><em>' + escapeHtml(b.body) + '</em></p>');
     }
   });
-  const plain = plainParts.join('\n').replace(/\n{3,}/g, '\n\n').trim();
-  const html = htmlParts.join('');
+  return {
+    plain: plainParts.join('\n').replace(/\n{3,}/g, '\n\n').trim(),
+    html: htmlParts.join(''),
+  };
+}
+if (window.avinkaCommApp) {
+  avinkaCommApp.zetKnop(document.getElementById('nb-btn-open-app'), () => nbTeksten().plain);
+}
+function nbKopieerAlles(knop) {
+  const { plain, html } = nbTeksten();
   const klaar = () => kopieGelukt(knop, '✓ Gekopieerd', '📋 Kopieer hele nieuwsbrief');
   try {
     if (navigator.clipboard && window.ClipboardItem) {
@@ -3169,11 +3194,20 @@ function mailToggleAanpas() {
   w.style.display = w.style.display === 'none' ? 'block' : 'none';
 }
 
+function mailPlainTekst() {
+  const div = document.getElementById('mail-tekst');
+  const aanhef = (document.getElementById('mail-aanhef').value || '').trim();
+  const afsluiting = (document.getElementById('mail-afsluiting').value || '').trim();
+  return [aanhef, div.innerText.trim(), afsluiting].filter(Boolean).join('\n\n');
+}
+if (window.avinkaCommApp) {
+  avinkaCommApp.zetKnop(document.getElementById('mail-btn-open-app'), mailPlainTekst);
+}
 async function mailKopieer() {
   const div = document.getElementById('mail-tekst');
   const aanhef = (document.getElementById('mail-aanhef').value || '').trim();
   const afsluiting = (document.getElementById('mail-afsluiting').value || '').trim();
-  const plain = [aanhef, div.innerText.trim(), afsluiting].filter(Boolean).join('\n\n');
+  const plain = mailPlainTekst();
   const html = (aanhef ? '<p>' + escapeHtml(aanhef) + '</p>' : '') + div.innerHTML + (afsluiting ? '<p>' + escapeHtml(afsluiting) + '</p>' : '');
   const knop = document.getElementById('mail-btn-kopieer');
   const klaar = () => kopieGelukt(knop, '✓ Gekopieerd', '📋 Kopieer bericht');
@@ -4134,11 +4168,20 @@ function infoToggleAanpas() {
   w.style.display = w.style.display === 'none' ? 'block' : 'none';
 }
 
+function infoPlainTekst() {
+  const div = document.getElementById('info-tekst');
+  const aanhef = (document.getElementById('info-aanhef').value || '').trim();
+  const afsluiting = (document.getElementById('info-afsluiting').value || '').trim();
+  return [aanhef, div.innerText.trim(), afsluiting].filter(Boolean).join('\n\n');
+}
+if (window.avinkaCommApp) {
+  avinkaCommApp.zetKnop(document.getElementById('info-btn-open-app'), infoPlainTekst);
+}
 async function infoKopieer() {
   const div = document.getElementById('info-tekst');
   const aanhef = (document.getElementById('info-aanhef').value || '').trim();
   const afsluiting = (document.getElementById('info-afsluiting').value || '').trim();
-  const plain = [aanhef, div.innerText.trim(), afsluiting].filter(Boolean).join('\n\n');
+  const plain = infoPlainTekst();
   const html = (aanhef ? '<p>' + escapeHtml(aanhef) + '</p>' : '') + div.innerHTML + (afsluiting ? '<p>' + escapeHtml(afsluiting) + '</p>' : '');
   const knop = document.getElementById('info-btn-kopieer');
   const klaar = () => kopieGelukt(knop, '✓ Gekopieerd', '📋 Kopieer brief');

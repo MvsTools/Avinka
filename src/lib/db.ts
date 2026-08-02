@@ -26,6 +26,7 @@ export type Voorkeuren = {
   taalniveau: string; // standaard | a2 | b1
   lengte: string; // kort | gemiddeld | uitgebreid
   aanspreekvorm: string; // je | u  (alleen Oudercontact)
+  communicatie_app: string; // '' | parro | social_schools — voor de "open in ..."-knop
 };
 export type Leerling = { naam: string; geslacht: "" | "j" | "m" };
 export type Klas = {
@@ -43,7 +44,7 @@ export async function getVoorkeuren(): Promise<Voorkeuren | null> {
   const sb = createClient();
   const { data, error } = await sb
     .from("instellingen")
-    .select("schoolnaam, standaardgroep, toon, taalniveau, lengte, aanspreekvorm")
+    .select("schoolnaam, standaardgroep, toon, taalniveau, lengte, aanspreekvorm, communicatie_app")
     .maybeSingle();
   if (error || !data) return null;
   const v: Voorkeuren = {
@@ -55,6 +56,7 @@ export async function getVoorkeuren(): Promise<Voorkeuren | null> {
     taalniveau: data.taalniveau ?? "standaard",
     lengte: data.lengte ?? "gemiddeld",
     aanspreekvorm: data.aanspreekvorm ?? "je",
+    communicatie_app: (data as { communicatie_app?: string }).communicatie_app ?? "",
   };
   // Best-effort: de BRIN-kolommen bestaan mogelijk nog niet (migratie niet
   // gedraaid). Een aparte select faalt dan stilletjes en we houden gewoon "".
