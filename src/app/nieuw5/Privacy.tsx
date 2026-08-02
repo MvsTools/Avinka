@@ -116,8 +116,13 @@ const AI: Array<{
 }> = [
   {
     titel: "Jouw werk traint geen AI",
-    foto: "/nieuw5/foto/p30703810.jpg",
-    alt: "Tijdelijke foto",
+    /* Het scherm van de AI zelf: het antwoord staat er nog, het invoerveld is
+       alweer leeg. Eerdere pogingen zochten een voorwerp op een bureau (een
+       map, een pen, een krijtbord) en dat was steeds decoratie: die zeggen
+       niets over de AI, en een uitgeveegd schoolbord is bovendien nostalgie
+       terwijl dit product het tegenovergestelde is. */
+    foto: "/nieuw5/foto/ai-1-training.jpg",
+    alt: "Een laptopscherm met een antwoord erop en een leeg invoerveld eronder",
     inspring: "lg:self-start",
     rot: "-1.6deg",
   },
