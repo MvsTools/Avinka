@@ -306,30 +306,6 @@ export function BlobKnop({
   );
 }
 
-/* Kleine school-vormpjes voor op het papier: net als de grote silhouetten,
-   maar lichter van toon en bescheidener. */
-function SilhouetGum({ kleur, style, tel, className }: { kleur: string; style: CSSProperties; tel?: number; className?: string }) {
-  return (
-    <SilhouetWrap par={0.05} style={style} tel={tel} className={className}>
-      <svg viewBox="0 0 120 54" className="block w-full">
-        <rect x="2" y="6" width="116" height="42" rx="14" fill={kleur} />
-        <rect x="2" y="6" width="44" height="42" rx="14" fill={kleur} opacity="0.55" />
-      </svg>
-    </SilhouetWrap>
-  );
-}
-
-function SilhouetBoek({ kleur, style, tel, className }: { kleur: string; style: CSSProperties; tel?: number; className?: string }) {
-  return (
-    <SilhouetWrap par={0.04} style={style} tel={tel} className={className}>
-      <svg viewBox="0 0 140 84" className="block w-full">
-        <path d="M70 12 C 50 2, 20 2, 6 10 L6 72 C 20 64, 50 64, 70 74 C 90 64, 120 64, 134 72 L134 10 C 120 2, 90 2, 70 12 Z" fill={kleur} />
-        <path d="M70 12 L70 74" stroke="#fff" strokeWidth="3" opacity="0.5" />
-      </svg>
-    </SilhouetWrap>
-  );
-}
-
 /* Een echte gevallen verf-klodder (splat): een grillig, onregelmatig silhouet
    met uitlopers/vingers én een paar losse satelliet-druppels eromheen, alsof
    er een klodder verf op het papier is gevallen. De vorm wordt deterministisch
@@ -566,6 +542,9 @@ export function WereldIntro() {
          een cartoon-explosie. Nu draagt de golf naar de sectie hieronder die
          hoek (het mintveld loopt daar rechts flink omhoog) en ligt er alleen
          nog een uitvergrote kaartvorm achter — de vorm van de site zelf. */}
+      {/* Hier stonden nog een gum- en een boek-silhouet achter de tekst.
+         Eruit op verzoek; het uitvergrote kaartvlak rechts draagt deze sectie
+         verder alleen. */}
       <KaartVlak
         kleur={VLAK_PAPIER}
         breedte={620}
@@ -578,8 +557,6 @@ export function WereldIntro() {
         className="hidden lg:block"
         tel={1}
       />
-      <SilhouetGum kleur="var(--w-sier-a, #dcebe2)" style={{ width: 130, left: "4%", top: 40, transform: "rotate(14deg)" }} tel={2} />
-      <SilhouetBoek kleur="var(--w-sier-b, #e9e2cf)" style={{ width: 170, left: "10%", bottom: 52, transform: "rotate(-8deg)", opacity: 0.8 }} />
 
       {/* De tekstkolom kreeg iets meer breedte (0,9 / 1,1 in plaats van
          1 / 1,05): de uitleg hiernaast is de kern van de hele pagina en las
