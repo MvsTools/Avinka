@@ -112,30 +112,27 @@ const NAMEN = [
    ⚠️ De foto's hieronder zijn TIJDELIJKE OPVULLING (bestaande schoolfoto's).
    Er moeten drie eigen beelden komen; zie het briefje in scherm-1. */
 const AI: Array<{
-  titel: string; tekst: string; foto: string; alt: string; inspring: string; rot: string;
+  titel: string; foto: string; alt: string; inspring: string; rot: string;
 }> = [
   {
     titel: "Jouw werk traint geen AI",
-    tekst: "Wat je invult gebruiken we om jouw tekst te maken. Daarna is het klaar. Geen enkele AI wordt er slimmer van.",
     foto: "/nieuw5/foto/p30703810.jpg",
     alt: "Tijdelijke foto",
-    inspring: "lg:ml-0",
+    inspring: "lg:self-start",
     rot: "-1.6deg",
   },
   {
-    titel: "Je weet vooraf wat wel en niet kan",
-    tekst: "Open je een tool die over kinderen gaat, dan zie je meteen wat verstandig is. Voornaam mag. Achternaam, adres of iets medisch niet.",
+    titel: "Je ziet vooraf wat wel en niet mag",
     foto: "/nieuw5/foto/p5905441.jpg",
     alt: "Tijdelijke foto",
-    inspring: "lg:ml-10",
+    inspring: "lg:self-end",
     rot: "1.3deg",
   },
   {
     titel: "Een laatste controle voor je verstuurt",
-    tekst: "Staat er toch iets herleidbaars in je tekst, dan krijg je dat te zien.",
     foto: "/nieuw5/foto/p5905445.jpg",
     alt: "Tijdelijke foto",
-    inspring: "lg:ml-4",
+    inspring: "lg:ml-8 lg:self-start",
     rot: "-0.9deg",
   },
 ];
@@ -254,10 +251,11 @@ export function WereldPrivacy() {
             >
               Veilig omgaan met AI
             </h3>
-            <p data-reveal className="mt-1.5 max-w-md leading-6 text-ink/60">
-              Je hoeft geen privacy-expert te zijn om je werk te doen.
-            </p>
-
+            {/* De losse tussenzin ("Je hoeft geen privacy-expert te zijn") is
+               weg: de sectiekop zegt dat al, en dit blok moet je in één blik
+               kunnen lezen. Om diezelfde reden is elk blokje nog maar één
+               regel; de uitleg eronder maakte er drie alinea's van naast een
+               kaart die zelf ook al tekst heeft. */}
             <div className="mt-6 flex flex-col gap-4">
               {AI.map((a, i) => (
                 <div
@@ -270,21 +268,24 @@ export function WereldPrivacy() {
                     rotate: a.rot,
                     transitionDelay: `${180 + i * 130}ms`,
                   }}
-                  className={`flex items-center gap-4 border-[2.5px] bg-white p-3 ${a.inspring}`}
+                  /* w-fit: laat elk blokje om zijn eigen regel heen krimpen.
+                     Vol-breed eindigden ze alle drie op dezelfde rechterlijn
+                     en zag je de links-rechts-afwisseling niet. */
+                  className={`flex w-fit max-w-full items-center gap-4 border-[2.5px] bg-white p-3 ${a.inspring}`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={a.foto}
                     alt={a.alt}
-                    className="h-16 w-16 shrink-0 object-cover sm:h-[4.5rem] sm:w-[4.5rem]"
+                    className="h-[4.5rem] w-[4.5rem] shrink-0 object-cover sm:h-20 sm:w-20"
                     style={{ borderRadius: BLOK_FOTO[i] }}
                   />
-                  <div>
-                    <h4 className="font-display text-[1.02rem] font-black leading-tight" style={{ color: DONKER }}>
-                      {a.titel}
-                    </h4>
-                    <p className="mt-1 text-[0.85rem] leading-5 text-ink/60">{a.tekst}</p>
-                  </div>
+                  <h4
+                    className="font-display text-[1.08rem] font-black leading-snug [text-wrap:balance] sm:text-[1.15rem]"
+                    style={{ color: DONKER }}
+                  >
+                    {a.titel}
+                  </h4>
                 </div>
               ))}
             </div>
