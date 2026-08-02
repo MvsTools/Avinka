@@ -112,42 +112,88 @@ const NAMEN = [
    ⚠️ De foto's hieronder zijn TIJDELIJKE OPVULLING (bestaande schoolfoto's).
    Er moeten drie eigen beelden komen; zie het briefje in scherm-1. */
 const AI: Array<{
-  titel: string; foto: string; alt: string; inspring: string; rot: string;
+  titel: string; icoon: "training" | "vooraf" | "controle"; inspring: string; rot: string;
 }> = [
   {
     titel: "Jouw werk traint geen AI",
-    /* Het scherm van de AI zelf: het antwoord staat er nog, het invoerveld is
-       alweer leeg. Eerdere pogingen zochten een voorwerp op een bureau (een
-       map, een pen, een krijtbord) en dat was steeds decoratie: die zeggen
-       niets over de AI, en een uitgeveegd schoolbord is bovendien nostalgie
-       terwijl dit product het tegenovergestelde is. */
-    foto: "/nieuw5/foto/ai-1-training.jpg",
-    alt: "Een laptopscherm met een antwoord erop en een leeg invoerveld eronder",
+    icoon: "training",
     inspring: "lg:self-start",
     rot: "-1.6deg",
   },
   {
     titel: "Je ziet vooraf wat wel en niet mag",
-    /* Een geel briefje met alléén een groen vinkje en een rood kruisje, geen
-       letters. Een leeg briefje zei niets; die twee tekens zijn wat de
-       boodschap op ~80px draagt (dat werkte ook in de gerenderde versie van
-       het echte adviesvenster, die hier eerst stond). */
-    foto: "/nieuw5/foto/ai-2-vooraf.jpg",
-    alt: "Een geel briefje naast een laptop met een groen vinkje en een rood kruisje erop",
+    icoon: "vooraf",
     inspring: "lg:self-end",
     rot: "1.3deg",
   },
   {
     titel: "Een laatste controle voor je verstuurt",
-    /* Eén vinger boven de Enter-toets, met zichtbare tussenruimte. Een hele
-       hand boven een toetsenbord leest als typen; één vinger die nét niet
-       indrukt leest als aarzelen, en dat is het moment dat de zin beschrijft. */
-    foto: "/nieuw5/foto/ai-3-controle.jpg",
-    alt: "Een vinger die stilhangt vlak boven de Enter-toets van een laptop",
+    icoon: "controle",
     inspring: "lg:ml-8 lg:self-start",
     rot: "-0.9deg",
   },
 ];
+
+/* ── De drie iconen ────────────────────────────────────────────────────────
+   Hier stonden foto's: een bijna leeg laptopscherm, een geel briefje en een
+   vinger boven een Enter-toets. Ze lazen als willekeurige stockbeelden — en
+   de eerste was zo bleek dat er nauwelijks iets te zien viel.
+
+   De regel die hier eerder is opgeschreven blijft staan: als de zin over de AI
+   gaat, moet het beeld over de AI gaan. Deze drie volgen daarom de weg van
+   jouw document: het wordt niet hergebruikt, je weet vooraf wat er wel en niet
+   in mag, en er zit een laatste controle vóór het weggaat.
+
+   Op ~72px zijn er maar een paar vormen leesbaar, dus elk icoon houdt het bij
+   één hoofdvorm plus één merkteken. Lijnwerk in plaats van gevulde vlakken:
+   dat past bij de tekeningen op de toolkaarten en blijft licht naast de grote
+   foto van de werkbladen ernaast. ─────────────────────────────────────────── */
+function AiIcoon({ soort }: { soort: "training" | "vooraf" | "controle" }) {
+  const gemeen = {
+    fill: "none" as const,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+
+  if (soort === "training")
+    return (
+      <svg viewBox="0 0 48 48" className="h-11 w-11 sm:h-12 sm:w-12" aria-hidden>
+        {/* jouw werk */}
+        <rect x="7" y="5" width="24" height="30" rx="4.5" stroke={DONKER} strokeWidth="2.6" {...gemeen} />
+        <path d="M13 14h12M13 20h8" stroke={DONKER} strokeOpacity="0.45" strokeWidth="2.4" {...gemeen} />
+        {/* het verbodsteken: het gaat niet verder dan hier */}
+        <circle cx="34" cy="34" r="9.5" fill="#ffffff" />
+        <circle cx="34" cy="34" r="9.5" stroke="#f59e0b" strokeWidth="2.6" {...gemeen} />
+        <path d="M28.3 39.7 39.7 28.3" stroke="#f59e0b" strokeWidth="2.6" {...gemeen} />
+      </svg>
+    );
+
+  if (soort === "vooraf")
+    return (
+      <svg viewBox="0 0 48 48" className="h-11 w-11 sm:h-12 sm:w-12" aria-hidden>
+        {/* Het venster dat je vooraf te zien krijgt. Zonder titelbalk: die at
+           een derde van de hoogte op, waardoor het vinkje en het kruisje
+           samengeperst raakten en op ~44px tot één vlekje vervaagden. */}
+        <rect x="5" y="7" width="38" height="34" rx="5" stroke={DONKER} strokeWidth="2.6" {...gemeen} />
+        {/* Wat wel mag, en wat niet. Met de lijndikte erbij liepen deze twee
+           tot op een pixel naar elkaar toe en werden ze samen één vlekje; er
+           zit nu echt lucht tussen. */}
+        <path d="M10 24l4 4 7.5-8" stroke="#2f9e6e" strokeWidth="3.2" {...gemeen} />
+        <path d="M30 19.5l9.5 9.5M39.5 19.5l-9.5 9.5" stroke={DONKER} strokeOpacity="0.4" strokeWidth="3" {...gemeen} />
+      </svg>
+    );
+
+  return (
+    <svg viewBox="0 0 48 48" className="h-11 w-11 sm:h-12 sm:w-12" aria-hidden>
+      {/* versturen */}
+      <path d="M5 21 38 7 27 38 20 26Z" stroke={DONKER} strokeWidth="2.6" {...gemeen} />
+      <path d="M20 26 38 7" stroke={DONKER} strokeOpacity="0.45" strokeWidth="2.6" {...gemeen} />
+      {/* de laatste controle, in het vinkje van het merk */}
+      <circle cx="36" cy="34" r="9" fill="#2f9e6e" />
+      <path d="M31.8 34.2l2.9 2.9 5.5-6" stroke="#ffffff" strokeWidth="2.8" {...gemeen} />
+    </svg>
+  );
+}
 
 export function WereldPrivacy() {
   return (
@@ -306,13 +352,15 @@ export function WereldPrivacy() {
                      en zag je de links-rechts-afwisseling niet. */
                   className={`flex w-fit max-w-full items-center gap-4 border-[2.5px] bg-white p-3 ${a.inspring}`}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={a.foto}
-                    alt={a.alt}
-                    className="h-[4.5rem] w-[4.5rem] shrink-0 object-cover sm:h-20 sm:w-20"
-                    style={{ borderRadius: BLOK_FOTO[i] }}
-                  />
+                  {/* Het tegeltje houdt exact de maat en de scheve hoeken van
+                     de foto die hier stond, zodat de compositie van de drie
+                     blokjes niet verschuift. */}
+                  <span
+                    className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center sm:h-20 sm:w-20"
+                    style={{ borderRadius: BLOK_FOTO[i], background: MINT_LICHT }}
+                  >
+                    <AiIcoon soort={a.icoon} />
+                  </span>
                   <h4
                     className="font-display text-[1.08rem] font-black leading-snug [text-wrap:balance] sm:text-[1.15rem]"
                     style={{ color: DONKER }}
