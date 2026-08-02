@@ -132,7 +132,7 @@ const AI: Array<{
   },
   {
     titel: "Een laatste controle voor je verstuurt",
-    tekst: "Staat er toch iets herleidbaars in je tekst, dan krijg je dat te zien. Niet achteraf, als het al weg is.",
+    tekst: "Staat er toch iets herleidbaars in je tekst, dan krijg je dat te zien.",
     foto: "/nieuw5/foto/p5905445.jpg",
     alt: "Tijdelijke foto",
     inspring: "lg:ml-4",
