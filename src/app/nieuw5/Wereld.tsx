@@ -546,7 +546,7 @@ export function WereldIntro() {
          Eruit op verzoek; het uitvergrote kaartvlak rechts draagt deze sectie
          verder alleen. */}
       <KaartVlak
-        kleur={VLAK_PAPIER}
+        kleur={MINT_LICHT}
         breedte={620}
         hoogte={430}
         /* Hij LOOPT DOOR over de sectiegrens, tot op het mintveld erboven.
@@ -556,17 +556,15 @@ export function WereldIntro() {
               inhoud z-10) zitten in dezelfde stapelcontext als deze sectie en
               schilderden er dus overheen — dát was de kaarsrechte afsnijding.
               Elf ligt daar net boven.
-           2. multiply. Zonder mengen zou dit papiergekleurde vlak als lichte
-              vlek op de mint liggen. Vermenigvuldigen verdonkert juist wat
-              eronder ligt met een paar procent, dus hij pakt op het papier de
-              papiertoon en op de mint de minttoon. Dezelfde truc als de
-              korrellaag elders op de pagina: één vorm, twee ondergronden, geen
-              zichtbare naad. */
+           2. De kleur van het mintveld zelf, en dus GEEN mengmodus. Waar hij
+              over het veld valt is hij per definitie onzichtbaar, en waar hij
+              eronder uitkomt leest hij als een uitloper van datzelfde veld.
+              De vorm en de sectie erboven zijn daarmee één ding in plaats van
+              twee die elkaar raken. */
         style={{
           right: "-6%",
           top: -60,
           transform: "rotate(-11deg)",
-          mixBlendMode: "multiply",
         }}
         vorm="ei"
         className="z-[11] hidden lg:block"
@@ -577,7 +575,11 @@ export function WereldIntro() {
          1 / 1,05): de uitleg hiernaast is de kern van de hele pagina en las
          als een zijopmerking. Met een bredere kolom past de eerste zin op
          minder regels en kan hij groter staan zonder te versnipperen. */}
-      <div className="relative mx-auto grid w-full max-w-5xl gap-10 px-6 pb-24 pt-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16 lg:pb-32 lg:pt-24">
+      {/* z-20: het vlak hierboven staat op 11 om over de lagen van de sectie
+         ervóór heen te komen, en zou anders ook over deze tekst heen vallen —
+         nu het een dekkende mintkleur heeft in plaats van een doorschijnende
+         tint is dat niet meer onschuldig. */}
+      <div className="relative z-20 mx-auto grid w-full max-w-5xl gap-10 px-6 pb-24 pt-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16 lg:pb-32 lg:pt-24">
         <Confetti punten={[{ x: "2%", y: "18%", r: 4, amber: true }, { x: "96%", y: "70%", r: 5 }, { x: "88%", y: "8%", r: 3 }]} />
         <div>
           <h2
