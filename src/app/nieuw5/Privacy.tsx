@@ -131,8 +131,8 @@ const AI: Array<{
     rot: "1.3deg",
   },
   {
-    titel: "We tikken je op de schouder",
-    tekst: "Typ je toch iets dat te herleiden is, dan zeggen we het. Voordat het weggaat, niet erna.",
+    titel: "Een laatste controle voor je verstuurt",
+    tekst: "Staat er toch iets herleidbaars in je tekst, dan krijg je dat te zien. Niet achteraf, als het al weg is.",
     foto: "/nieuw5/foto/p5905445.jpg",
     alt: "Tijdelijke foto",
     inspring: "lg:ml-4",
