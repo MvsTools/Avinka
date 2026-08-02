@@ -802,9 +802,8 @@ export default function RoosterBewerken({
               <SlotIcoon dicht grootte={15} />
             </span>
             <span>
-              Klik een blok aan om het vast te zetten of weer los te maken. Een vastgezet blok
-              schuift niet, ruilt niet en blijft staan als je opnieuw verdeelt. Klaar? Klik nog
-              eens op het slotje.
+              Klik een blok aan om het vast te zetten. Een vastgezet blok blijft staan terwijl je
+              met de rest van het rooster bezig bent.
             </span>
           </p>
         ) : slotHint ? (
@@ -2254,9 +2253,12 @@ function Bewerkraster({
                   // vervagen, want het is onderweg naar de andere plek.
                   const gaatRuilen = sleep?.ruil?.id === b.id;
                   if (gaatRuilen) stijl.opacity = 0.3;
-                  // Het slotje: in de slotstand op elk blok (open of dicht, want
-                  // dan ben je ze aan het zetten), daarbuiten alleen op de blokken
-                  // die echt vaststaan.
+                  // Het slotje: je ziet het alleen op blokken die écht vaststaan.
+                  // Wél of géén slotje is in één oogopslag duidelijk; twee tinten
+                  // van hetzelfde plaatje naast elkaar was dat niet. In de slotstand
+                  // houden we bij een los blok de ruimte vrij en laten we het open
+                  // slotje alleen zien onder de muis (een voorproefje van je klik),
+                  // zodat de naam niet verspringt en het raster rustig blijft.
                   const slotTonen = slotstand || b.opSlot;
                   return (
                     <button
@@ -2295,7 +2297,10 @@ function Bewerkraster({
                       >
                         {slotTonen && (
                           <span
-                            className={"shrink-0 " + (b.opSlot ? "opacity-75" : "opacity-30")}
+                            className={
+                              "shrink-0 transition-opacity " +
+                              (b.opSlot ? "opacity-70" : "opacity-0 group-hover:opacity-40")
+                            }
                             style={{ color: b.kleur?.tekst }}
                           >
                             <SlotIcoon dicht={Boolean(b.opSlot)} grootte={12} />
