@@ -7,7 +7,9 @@ import OnboardingCard from "@/components/dashboard/OnboardingCard";
 import WelkomModal from "@/components/dashboard/WelkomModal";
 import StreakBadge from "@/components/dashboard/StreakBadge";
 import TakenOverzicht from "@/components/dashboard/TakenOverzicht";
+import VandaagRij from "@/components/dashboard/VandaagRij";
 import { amsterdamDatum } from "@/lib/streak";
+import { haalMijnGroepen, haalPlanning } from "@/lib/planning";
 
 export default async function DashboardStart() {
   const supabase = await createClient();
@@ -25,7 +27,11 @@ export default async function DashboardStart() {
 
   // Welke tools zitten in het pakket van deze leerkracht? Zolang betalingen
   // niet live zijn, is alles open (de vlag regelt dat in magToolGebruiken).
-  const ab = BETALINGEN_LIVE ? await getAbonnementServer() : null;
+  const [ab, planning, groepen] = await Promise.all([
+    BETALINGEN_LIVE ? getAbonnementServer() : Promise.resolve(null),
+    haalPlanning(supabase, { nu: vandaag }),
+    haalMijnGroepen(supabase),
+  ]);
   const vergrendeld = (slug: string) => (ab ? !magToolGebruiken(ab, slug) : false);
 
   return (
@@ -37,17 +43,19 @@ export default async function DashboardStart() {
           <h1 className="text-3xl font-black tracking-tight text-ink sm:text-4xl">
             {eersteKeer ? `Welkom bij Avinka, ${naam}!` : `Welkom terug, ${naam}!`} 👋
           </h1>
-          <p className="mt-2 text-lg text-ink/70">
-            {eersteKeer
-              ? "Fijn dat je er bent. Hieronder zet je in een paar stappen alles klaar."
-              : "Kies een tool om mee te beginnen. Je tijd na schooltijd is van jou."}
-          </p>
+          {eersteKeer && (
+            <p className="mt-2 text-lg text-ink/70">
+              Fijn dat je er bent. Hieronder zet je in een paar stappen alles klaar.
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <TakenOverzicht />
           <StreakBadge />
         </div>
       </div>
+
+      <VandaagRij bron={planning} vandaag={vandaag} groepen={groepen} />
 
       <OnboardingCard />
 

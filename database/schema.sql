@@ -843,3 +843,114 @@ create trigger on_auth_user_created_toestemming
   for each row execute function public.registreer_toestemming();
 
 -- Klaar. Je tabellen staan klaar en zijn per gebruiker afgeschermd.
+
+-- ── 16) SCHOOLAGENDA — gekoppelde agenda's en de afspraken eruit ──────────
+-- Een leerkracht plakt de agendalink van school (Parro, Social Schools,
+-- Outlook of Teams, Google) en Avinka leest daar de afspraken uit. Zo'n link
+-- is een sleutel tot die agenda, dus hij staat VERSLEUTELD opgeslagen: de code
+-- versleutelt hem met AVINKA_GEHEIM_SLEUTEL, de database ziet alleen ruis.
+--
+-- AVG: namen van kinderen worden uit de titel gehaald vóór het opslaan
+-- (maskeerNamen in src/lib/agenda-ophalen.ts). Wat overblijft is het soort
+-- afspraak en het tijdstip, en dat mag gewoon.
+
+create table if not exists public.agenda_bronnen (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  naam          text not null,
+  systeem       text not null default 'ics',
+  link_geheim   text not null,
+  modus         text not null default 'alles',
+  kleur         text not null default 'groen',
+  actief        boolean not null default true,
+  laatst_gelukt timestamptz,
+  laatste_fout  text,
+  aantal_items  integer not null default 0,
+  created_at    timestamptz not null default now()
+);
+-- Toegestane waarden voor 'modus' en 'systeem' bewaakt de code
+-- (src/app/api/agenda/bronnen/route.ts). Bewust geen check-constraints hier:
+-- die sneuvelden bij het plakken in de SQL-editor en leveren weinig op.
+alter table public.agenda_bronnen enable row level security;
+drop policy if exists "eigen agendabronnen" on public.agenda_bronnen;
+create policy "eigen agendabronnen" on public.agenda_bronnen
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.agenda_bronnen to authenticated;
+create index if not exists idx_agenda_bronnen_user on public.agenda_bronnen(user_id);
+
+create table if not exists public.agenda_items (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  bron_id    uuid not null references public.agenda_bronnen(id) on delete cascade,
+  uid        text not null,
+  datum      date not null,
+  tot_datum  date not null,
+  hele_dag   boolean not null default false,
+  begintijd  time,
+  eindtijd   time,
+  titel      text not null,
+  soort      text not null default 'overig',
+  tijdvakken smallint not null default 1,
+  locatie    text,
+  bijgewerkt timestamptz not null default now()
+);
+alter table public.agenda_items enable row level security;
+drop policy if exists "eigen agenda-items" on public.agenda_items;
+create policy "eigen agenda-items" on public.agenda_items
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.agenda_items to authenticated;
+create unique index if not exists idx_agenda_items_uniek
+  on public.agenda_items(bron_id, uid, datum);
+create index if not exists idx_agenda_items_user_datum
+  on public.agenda_items(user_id, datum);
+
+-- De vakantieregio is alleen het vangnet: als jouw schoolagenda de vakanties
+-- zelf bevat, zijn die leidend. Scholen wijken af (een tweede week mei, een
+-- eigen pinkstervakantie), dus de landelijke lijst is nooit de waarheid.
+alter table public.instellingen add column if not exists vakantieregio text;
+
+-- ── 17) BASISROOSTER — je vaste lesweek ───────────────────────────────────
+-- Het rooster wordt gemaakt in de weekplanning en stond eerst alleen in de
+-- browser (localStorage). Daardoor was je rooster op school een ander dan thuis.
+-- Nu hangt het aan je account, per schooljaar.
+--
+-- We bewaren de vorm van de weekplanning ongewijzigd in `data` (setup + blokken,
+-- tijden in minuten). Dat houdt de tool werkend en we vertalen één keer in
+-- src/lib/planning/rooster.ts. Er staan GEEN leerlingnamen in: alleen vakken,
+-- dagen en tijden.
+
+create table if not exists public.basisrooster (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  schooljaar text not null,                       -- "2026-2027"
+  data       jsonb not null default '{}'::jsonb,  -- { setup, blokken, duurVoorkeur }
+  bijgewerkt timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+alter table public.basisrooster enable row level security;
+drop policy if exists "eigen basisrooster" on public.basisrooster;
+create policy "eigen basisrooster" on public.basisrooster
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.basisrooster to authenticated;
+-- Eén rooster per schooljaar. (Later mogelijk meer, bijvoorbeeld bij een
+-- duobaan; dan vervalt deze unieke index.)
+create unique index if not exists idx_basisrooster_uniek
+  on public.basisrooster(user_id, schooljaar);
+
+-- Een week die afwijkt van je basisrooster: uitstapje, toetsweek, geruilde dag.
+-- Je basisrooster blijft ongemoeid; hier staat alleen wat er die ene week anders
+-- is. Leeg record of geen record = die week volgt gewoon je basisrooster.
+create table if not exists public.rooster_week (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  maandag    date not null,                       -- de maandag van die week
+  data       jsonb not null default '{}'::jsonb,  -- { blokken }
+  bijgewerkt timestamptz not null default now()
+);
+alter table public.rooster_week enable row level security;
+drop policy if exists "eigen roosterweek" on public.rooster_week;
+create policy "eigen roosterweek" on public.rooster_week
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.rooster_week to authenticated;
+create unique index if not exists idx_rooster_week_uniek
+  on public.rooster_week(user_id, maandag);

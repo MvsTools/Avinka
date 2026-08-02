@@ -1,0 +1,161 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import { kort, volledig, zijkantLabel } from "@/lib/planning";
+import type { Dagbeeld, PlanItem } from "@/lib/planning";
+import { ETIKET } from "./schooljaar-stijl";
+
+// Het kaartje van één dag. Klik een dag aan (in de kalender of in de lijst) en
+// je ziet precies wat er staat en hoe laat. Straks komt hier je lesrooster van
+// die dag bij; de dagweergave rekent al met dezelfde gegevens.
+//
+// De vensterschil en de afspraakregel staan hier ook, want het weekkaartje
+// gebruikt precies dezelfde.
+
+/** Het venster zelf: verduisterde achtergrond, sluiten met Escape of ernaast. */
+export function Kaartvenster({
+  titel,
+  sluit,
+  children,
+}: {
+  titel: string;
+  sluit: () => void;
+  children: React.ReactNode;
+}) {
+  const kaart = useRef<HTMLDivElement>(null);
+
+  // Escape sluit, en het venster krijgt de aandacht zodat je met het toetsenbord
+  // niet achter het kaartje verdwaalt.
+  useEffect(() => {
+    const toets = (e: KeyboardEvent) => {
+      if (e.key === "Escape") sluit();
+    };
+    document.addEventListener("keydown", toets);
+    kaart.current?.focus();
+    return () => document.removeEventListener("keydown", toets);
+  }, [sluit]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/25 p-0 backdrop-blur-[2px] sm:items-center sm:p-6"
+      onClick={sluit}
+    >
+      <div
+        ref={kaart}
+        role="dialog"
+        aria-modal="true"
+        aria-label={titel}
+        tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white p-6 shadow-xl outline-none sm:rounded-3xl"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <p className="font-serif text-2xl font-semibold text-ink">{titel}</p>
+          <button
+            onClick={sluit}
+            aria-label="Sluiten"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-black/10 text-ink/50 transition-transform duration-150 hover:text-ink active:scale-[0.96]"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/** Eén afspraak met zijn tijd. Zelfde vorm in het dag- en het weekkaartje. */
+export function Afspraakregel({ item, groepen }: { item: PlanItem; groepen: number[] }) {
+  const et = ETIKET[item.soort];
+  const meerdaags = item.totDatum > item.datum;
+  const zijkant = zijkantLabel(item, groepen);
+  return (
+    <li
+      className={
+        "rounded-2xl border border-black/5 bg-cream/40 px-4 py-3 " + (zijkant ? "opacity-70" : "")
+      }
+    >
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <span className="font-semibold text-ink">{item.titel}</span>
+        <span className={"rounded-lg px-2 py-0.5 text-xs font-bold " + et.stijl}>{et.woord}</span>
+        {zijkant && (
+          <span className="rounded-lg border border-black/10 px-2 py-0.5 text-xs font-semibold text-ink/45">
+            {zijkant}
+          </span>
+        )}
+      </div>
+      <p className="mt-1 text-sm text-ink/60">
+        {item.heleDag
+          ? meerdaags
+            ? `Hele dag, ${kort(item.datum)} tot en met ${kort(item.totDatum)}`
+            : "Hele dag"
+          : `${item.begin}${item.eind ? ` tot ${item.eind}` : ""}`}
+        {item.tijdvakken > 1 ? `, ${item.tijdvakken} tijdvakken achter elkaar` : ""}
+      </p>
+    </li>
+  );
+}
+
+/** Wat voor dag het is, in één regel: startweek, vakantie, vrije dag, weekend. */
+export function Dagstatus({ beeld }: { beeld: Dagbeeld }) {
+  if (beeld.startweek) {
+    return (
+      <p className="mt-4 rounded-2xl bg-accent-soft px-4 py-3 font-semibold text-amber-800">
+        Startweek
+      </p>
+    );
+  }
+  if (beeld.vakantie) {
+    return (
+      <p className="mt-4 rounded-2xl bg-brand-soft px-4 py-3 font-semibold text-brand-dark">
+        {beeld.vakantie.naam}, tot en met {kort(beeld.vakantie.tot)}
+      </p>
+    );
+  }
+  if (beeld.vrijReden === "vrije dag") {
+    return (
+      <p className="mt-4 rounded-2xl bg-brand-soft px-4 py-3 font-semibold text-brand-dark">
+        Geen les vandaag. Voor jou is het meestal wel een werkdag.
+      </p>
+    );
+  }
+  if (beeld.weekend) {
+    return <p className="mt-4 rounded-2xl bg-cream px-4 py-3 font-semibold text-ink/60">Weekend</p>;
+  }
+  return null;
+}
+
+export default function SchooljaarDagkaart({
+  beeld,
+  sluit,
+  groepen = [],
+}: {
+  beeld: Dagbeeld;
+  sluit: () => void;
+  groepen?: number[];
+}) {
+  const afspraken = beeld.items.filter((i) => i.soort !== "vakantie");
+
+  return (
+    <Kaartvenster titel={volledig(beeld.datum)} sluit={sluit}>
+      <Dagstatus beeld={beeld} />
+
+      {afspraken.length > 0 && (
+        <ul className="mt-4 flex flex-col gap-2">
+          {afspraken.map((item) => (
+            <Afspraakregel key={item.id} item={item} groepen={groepen} />
+          ))}
+        </ul>
+      )}
+
+      {!afspraken.length && !beeld.vakantie && !beeld.startweek && (
+        <p className="mt-4 text-ink/60">
+          {beeld.weekend ? "Niets gepland." : "Niets bijzonders deze dag."}
+        </p>
+      )}
+    </Kaartvenster>
+  );
+}

@@ -1,0 +1,127 @@
+METHODES-AFVINKLIJST - Mijn schooljaar
+=======================================
+Laatst bijgewerkt: 2 augustus 2026
+
+*** GEPAUZEERD (besluit 2-8-2026, na Pluspunt) ***
+Dit werk ligt bewust stil. Eerst moet de ZORGCYCLUS er zijn: een weekplanning
+die lesnummers doorplant maar waarin je niet kunt noteren wie waar uitvalt,
+levert een leerkracht weinig op. Pluspunt is af en blijft staan als bewijs dat
+de aanpak werkt; de rest ligt klaar voor wanneer het nodig is.
+Zie docs\plan-zorgcyclus.md
+
+
+Wat is dit?
+-----------
+Lijst van lesmethodes per vakgebied. Per methode houden we twee dingen bij:
+  [Str.]  = structuur (aantal blokken/weken/lessen, waar de toetsen zitten)
+  [Doel]  = leerdoelen per les gekoppeld (komt later)
+
+[x] = klaar    [ ] = nog niet gedaan
+
+LET OP (2-8-2026): ThiemeMeulenhoff heeft haar basisonderwijs-methodes per
+1 juli 2024 overgedragen aan Zwijsen. Wizwijs (rekenen) wordt uitgefaseerd,
+niet als eerste bouwen.
+
+
+REKENEN
+-------
+[x] Str  [ ] Doel  Pluspunt 4 (Malmberg)
+        --> Structuur helemaal uitgezocht! Zie hieronder voor het detail.
+
+[ ] Str  [ ] Doel  De Wereld in Getallen (Malmberg)
+[ ] Str  [ ] Doel  Getal & Ruimte Junior (Noordhoff)
+[ ] Str  [ ] Doel  Rekenrijk (Noordhoff)
+[ ] Str  [ ] Doel  Semsom (Zwijsen)
+[ ] Str  [ ] Doel  Alles telt Q (Zwijsen)
+[ ] Str  [ ] Doel  Wizwijs (Zwijsen/was ThiemeMeulenhoff) - WORDT UITGEFASEERD
+
+    >>> DETAIL PLUSPUNT 4 (bron: openbare brochure van Malmberg zelf) <<<
+
+    Jaarprogramma (groep 3 t/m 8):
+      - 10 blokken van elk 3 weken (30 weken)
+      - + 2 optionele instapweken + 7 keuzeweken (vrij in te vullen)
+      - Na elk blok een bloktoets; 2x per jaar een grote "supertoets"
+
+    Een blok = 3 weken = 15 lessen:
+      Week 1: les 1-2 = doel 1, les 3-4 = doel 2, les 5 = peilingsles
+      Week 2: les 6-7 = doel 3, les 8-9 = doel 4, les 10 = peilingsles
+      Week 3: les 11 = meten/meetkunde, les 12 = bloktoets (vorig blok),
+              les 13-14 = remedieren/herhalen, les 15 = blokevaluatie
+
+    Een les: instructie op 1 doel + zelfstandig oefenen. Peilingsles = 55 min.
+
+    Per groep: groep 3-5 gelijke start; vanaf groep 6 geintegreerder;
+    vanaf groep 7 toetsen op twee niveaus.
+
+
+TAAL & SPELLING
+---------------
+[ ] Str  [ ] Doel  Staal - taal + spelling (Malmberg)
+[ ] Str  [ ] Doel  Taal Actief 5 (Malmberg)
+[ ] Str  [ ] Doel  Taalverhaal.nu (ThiemeMeulenhoff/Zwijsen)
+[ ] Str  [ ] Doel  Pit (ThiemeMeulenhoff/Zwijsen)
+[ ] Str  [ ] Doel  Nieuw Nederlands Junior (Noordhoff)
+[ ] Str  [ ] Doel  Taaljacht (Zwijsen)
+
+
+LEZEN
+-----
+[ ] Str  [ ] Doel  Veilig leren lezen (Zwijsen)
+[ ] Str  [ ] Doel  Lijn 3 (Malmberg)
+[ ] Str  [ ] Doel  Estafette (ThiemeMeulenhoff/Zwijsen)
+[ ] Str  [ ] Doel  Blink Lezen (Blink)
+[ ] Str  [ ] Doel  Nieuwsbegrip (CED-groep)
+
+
+SCHRIJVEN
+---------
+[ ] Str  [ ] Doel  Pennenstreken (Zwijsen)
+[ ] Str  [ ] Doel  Klinkers (Malmberg)
+[ ] Str  [ ] Doel  Handschrift (uitgever nog checken)
+
+
+WERELDORIENTATIE / ZAAKVAKKEN
+------------------------------
+[ ] Str  [ ] Doel  Naut / Meander / Brandaan (Malmberg)
+[ ] Str  [ ] Doel  Argus Clou (Malmberg)
+[ ] Str  [ ] Doel  Blink Wereld (Blink)
+[ ] Str  [ ] Doel  Wijzer! (Noordhoff)
+[ ] Str  [ ] Doel  Faqta (Faqta)
+[ ] Str  [ ] Doel  De Zaken / Code D (Zwijsen)
+
+
+ENGELS
+------
+[ ] Str  [ ] Doel  Take it Easy (Zwijsen)
+[ ] Str  [ ] Doel  Blink Engels - was Groove.me (Blink)
+[ ] Str  [ ] Doel  Join in (Malmberg)
+
+
+VERKEER
+-------
+[ ] Str  [ ] Doel  VVN Verkeersmethode (Veilig Verkeer Nederland)
+[ ] Str  [ ] Doel  Wijzer! Verkeer (Noordhoff)
+[ ] Str  [ ] Doel  Let's Go (Malmberg/ANWB)
+
+
+SOCIAAL-EMOTIONEEL
+------------------
+[ ] Str  [ ] Doel  Kwink (Kwink)
+[ ] Str  [ ] Doel  De Vreedzame School (CED-groep)
+[ ] Str  [ ] Doel  Leefstijl (nog te onderzoeken)
+
+
+JONGE KIND (groep 1-2)
+-----------------------
+[ ] Str  [ ] Doel  Schatkist (Zwijsen)
+[ ] Str  [ ] Doel  Kleuterplein (ThiemeMeulenhoff/Zwijsen)
+[ ] Str  [ ] Doel  Onderbouwd (nog te checken)
+
+
+OPENSTAAND
+----------
+- Volgorde nog niet gekozen. Logisch vertrekpunt: grootste methode per
+  hoofdvak eerst (rekenen/taal/spelling/lezen), jonge kind en vakoverstijgende
+  methodes (Blink, Schatkist, Onderbouwd) later.
+- Sommige methodes hebben geen vast blok/les-format (Blink Lezen/Wereld,
+  Nieuwsbegrip, jonge kind) - daar eerst over nadenken hoe dat moet.

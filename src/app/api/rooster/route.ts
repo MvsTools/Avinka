@@ -1,0 +1,75 @@
+import { NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
+import { isBasisrooster, schooljaarVoor, vandaag } from "@/lib/planning";
+import { haalRegio } from "@/lib/planning";
+
+// Je basisrooster bewaren bij je account, per schooljaar. Tot nu toe stond het
+// alleen in de browser waarin je het maakte; hiermee is het overal hetzelfde.
+//
+// Er staan geen leerlingnamen in een rooster: alleen vakken, dagen en tijden.
+
+// Het rooster van je account ophalen, zodat de weekplanning-editor het kan laden
+// in plaats van uit de browser. Zonder ?schooljaar= pakken we het huidige jaar.
+export async function GET(verzoek: Request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ fout: "Log eerst in." }, { status: 401 });
+
+  const gevraagd = new URL(verzoek.url).searchParams.get("schooljaar");
+  const schooljaar =
+    gevraagd && /^\d{4}-\d{4}$/.test(gevraagd)
+      ? gevraagd
+      : schooljaarVoor(vandaag(), await haalRegio(supabase));
+
+  const { data } = await supabase
+    .from("basisrooster")
+    .select("data")
+    .eq("user_id", user.id)
+    .eq("schooljaar", schooljaar)
+    .maybeSingle();
+
+  const ruw = (data as { data?: unknown } | null)?.data ?? null;
+  return NextResponse.json({ rooster: isBasisrooster(ruw) ? ruw : null, schooljaar });
+}
+
+export async function POST(verzoek: Request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ fout: "Log eerst in." }, { status: 401 });
+
+  let body: { rooster?: unknown; schooljaar?: unknown };
+  try {
+    body = await verzoek.json();
+  } catch {
+    return NextResponse.json({ fout: "Onleesbaar verzoek." }, { status: 400 });
+  }
+
+  if (!isBasisrooster(body.rooster)) {
+    return NextResponse.json({ fout: "Dit is geen bruikbaar rooster." }, { status: 400 });
+  }
+
+  // Zonder opgegeven schooljaar: het jaar waar we nu in zitten.
+  const schooljaar =
+    typeof body.schooljaar === "string" && /^\d{4}-\d{4}$/.test(body.schooljaar)
+      ? body.schooljaar
+      : schooljaarVoor(vandaag(), await haalRegio(supabase));
+
+  const { error } = await supabase.from("basisrooster").upsert(
+    {
+      user_id: user.id,
+      schooljaar,
+      data: body.rooster,
+      bijgewerkt: new Date().toISOString(),
+    },
+    { onConflict: "user_id,schooljaar" },
+  );
+
+  if (error) {
+    return NextResponse.json({ fout: "Het rooster kon niet worden bewaard." }, { status: 500 });
+  }
+  return NextResponse.json({ schooljaar });
+}

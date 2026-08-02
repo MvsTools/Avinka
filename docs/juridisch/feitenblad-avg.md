@@ -2,7 +2,13 @@
 
 Voor de privacyjurist. Dit blad beschrijft feitelijk wat het platform doet met gegevens, zodat de beoordeling en de verwerkersovereenkomst niet met uitvraagwerk hoeven te beginnen. Alles hieronder is nagelopen in de broncode; onderaan staat een eerlijke lijst met punten waar de praktijk en de bestaande teksten nog niet kloppen.
 
-Versie: 20 juli 2026. Status: nog niet live, geen echte gebruikers.
+Versie: 24 juli 2026. Status: nog niet live, geen echte gebruikers.
+
+Bijgewerkt op 24 juli 2026: paragraaf 4 over het koppelen van de schoolagenda is
+nieuw, met bijbehorende vragen en openstaande punten. Dat onderdeel is na de
+eerste versie van dit blad gebouwd en is bewust apart beschreven, omdat het het
+enige onderdeel is waarbij gegevens de applicatie binnenkomen zonder dat de
+leerkracht ze zelf intypt.
 
 ---
 
@@ -25,6 +31,7 @@ e-mailadres, versleuteld wachtwoord en voornaam (Supabase-auth); schoolnaam plus
 | Concept-rapportteksten per kind (naam + verhaal) | tabel `rapporten` | wordt na 90 dagen automatisch gewist |
 | Plattegronden met voornamen, opgeslagen lesmateriaal | tabel `bestanden` | door de gebruiker zelf bewaard |
 | Vrije teksten van de leerkracht | tabel `teksten` | kan namen bevatten |
+| Afspraken uit de gekoppelde schoolagenda | tabel `agenda_items` | titel gemaskeerd vóór opslaan; zie paragraaf 4 |
 
 **Uitdrukkelijk niet opgeslagen:** toetsanalyses. De uitvoer van de toetsanalyse-tool (cijfers en niveaus per kind) wordt nergens naar de server geschreven; die ontstaat in de browser van de leerkracht en gaat als download naar het eigen apparaat. Verder geen BSN, geen diagnoses, geen medische of gedragsgegevens; de tools sturen daar actief van weg.
 
@@ -40,34 +47,94 @@ Gevolg: de AI-leverancier ontvangt gepseudonimiseerde tekst en kan het kind of d
 
 Aandachtspunt voor de beoordeling: de maskering gebeurt volledig in de browser. De server-route naar de AI is een doorgeefluik dat de inhoud niet inspecteert en niet nogmaals maskeert. Er is dus geen tweede net als een tool zou vergeten te maskeren.
 
-## 4. Externe partijen
+## 4. De schoolagenda koppelen
+
+Dit onderdeel wijkt af van de rest van het platform en verdient daarom aparte
+aandacht: het is het enige punt waar gegevens **binnenkomen** in plaats van dat
+de leerkracht ze zelf invoert.
+
+**Wat de leerkracht doet.** Hij haalt in zijn schoolapp (Parro, Social Schools,
+Outlook of Teams, Google Agenda) de abonneerlink van de agenda op en plakt die
+bij ons. Zo'n ICS-link is bedoeld om door agenda-programma's te worden
+uitgelezen; dat is de functie ervan. Hij mag meerdere agenda's koppelen.
+
+**Wat er technisch gebeurt.** Onze server haalt de link op (niet de browser van
+de leerkracht, dus de aanbieder ziet ons serveradres). Voor het ophalen wordt het
+adres gecontroleerd: alleen https, geen inloggegevens in de URL, en interne of
+lokale adressen worden geweigerd. De opgehaalde agenda wordt gelezen, per
+afspraak wordt het soort herkend (vakantie, vrije dag, rapport, gesprek,
+vergadering, toets, activiteit, overig), en losse tijdvakken op dezelfde dag
+worden samengevouwen tot één blok.
+
+**Wat wij bewaren, en wat niet.**
+
+| Wat | Bewaard? |
+|---|---|
+| Datum, einddatum, begintijd, eindtijd, hele dag ja/nee | ja |
+| Titel van de afspraak, gemaskeerd, maximaal 300 tekens | ja |
+| Herkend soort en het aantal samengevouwen tijdvakken | ja |
+| **Omschrijving of notitieveld van de afspraak** | **nee, wordt niet eens uitgelezen** |
+| **Locatie** | **nee, wordt wel gelezen maar niet opgeslagen** |
+| **Genodigden, organisator, e-mailadressen** | **nee** |
+
+De abonneerlink zelf is een sleutel tot de hele agenda. Hij staat daarom
+versleuteld in de database (`agenda_bronnen.link_geheim`, versleuteld door de
+applicatie met een sleutel die niet in de database staat). De leerkracht kan een
+agenda met één actie loskoppelen; de bijbehorende afspraken verdwijnen dan mee.
+Beide tabellen staan onder Row Level Security.
+
+**Maskering.** Vóór het opslaan worden de voornamen uit de eigen klassenlijsten
+van deze leerkracht in de titel vervangen door `[leerling]`. "Gesprek ouders
+Sanne" wordt dus "Gesprek ouders [leerling]". Namen korter dan drie letters
+worden overgeslagen, om te voorkomen dat gewone woorden sneuvelen.
+
+Belangrijke beperking, eerlijk gezegd: die maskering kent alleen de kinderen uit
+de klassen die deze leerkracht zelf in het platform heeft gezet. Staat er in de
+schoolagenda een naam van een kind uit een andere groep, dan blijft die staan.
+In de praktijk zijn schoolagenda's meestal op groepsniveau geschreven ("Groep 7 -
+Oudergesprekken"), maar wij kunnen niet garanderen dat er nooit een naam in
+staat. Zie ook de openstaande punten.
+
+**Merknamen.** Wij noemen Parro, Social Schools, Outlook, Teams en Google Agenda
+bij naam om aan te geven waar de koppeling mee werkt, zonder logo's en zonder
+enige suggestie van samenwerking of goedkeuring. Wij gaan ervan uit dat dit
+toegestaan refererend merkgebruik is, maar horen graag of dat klopt en of de
+gebruiksvoorwaarden van die aanbieders geautomatiseerd uitlezen door een derde
+partij toestaan. Dat laatste hebben wij niet geverifieerd.
+
+## 5. Externe partijen
 
 | Partij | Rol | Wat gaat erheen | Waar |
 |---|---|---|---|
-| Supabase | inlog, database, auth-mails | alles uit paragraaf 2 | hosted; volgens onze eigen tekst Frankfurt (zie punt 8 hieronder) |
+| Supabase | inlog, database, auth-mails | alles uit paragraaf 2 | hosted; volgens onze eigen tekst Frankfurt (zie punt 9 hieronder) |
 | Anthropic (Claude) | AI-verwerking | de gemaskeerde prompt | Verenigde Staten |
 | Mollie | betalingen | voornaam en e-mail van de leerkracht, bedrag, plan | Nederland |
 | Google Fonts | lettertypes | IP-adres en browsergegevens van de bezoeker | Verenigde Staten |
 | Cloudflare cdnjs en jsDelivr | scriptbestanden voor de tools | IP-adres en browsergegevens van de bezoeker | Verenigde Staten |
+| Parro, Social Schools, Outlook of Teams, Google Agenda | leveren de agenda die de leerkracht koppelt | wij halen op, wij sturen niets; zij zien het adres van onze server en de door de leerkracht verstrekte abonneerlink | per aanbieder verschillend |
+
+De agenda-aanbieders in de laatste rij zijn geen verwerkers van ons: wij sturen er
+geen gegevens heen. Het verkeer gaat één kant op, van hen naar ons, en alleen
+omdat de leerkracht daar zelf een link voor aanlevert. Zie paragraaf 4.
 
 Er is geen analytics, geen error-tracking, geen advertentiepixel, geen eigen e-maildienst, en er zijn alleen functionele cookies.
 
 Voornemen richting Anthropic: hun DPA tekenen en Zero Data Retention aanvragen (dan bewaart Anthropic de aangeleverde tekst niet). Er bestaat ook een route om Claude in Frankfurt te draaien via AWS Bedrock of Google Vertex; dat is technisch voorbereid maar nog niet aangezet.
 
-## 5. Rechten van betrokkenen, nu al gebouwd
+## 6. Rechten van betrokkenen, nu al gebouwd
 
 - Data-export van het eigen account, als leesbare pagina of als JSON.
 - Account verwijderen met één actie; alle gekoppelde gegevens gaan mee via cascade.
 - Per item wissen (klas, rapport, tekst, bestand, taak).
 - Automatische opschoning van concept-rapportteksten na 90 dagen (nachtelijke databasetaak).
 
-## 6. Wat er al aan juridische teksten ligt
+## 7. Wat er al aan juridische teksten ligt
 
 Een privacyverklaring en algemene voorwaarden, beide met versienummer en met een registratie van wie welke versie heeft geaccepteerd. In beide staan nog placeholders voor bedrijfsnaam, adres, KvK-nummer en contactadres. Deze teksten zijn opgesteld zonder juridische toetsing en zijn precies wat wij graag nagekeken zien.
 
 Een verwerkersovereenkomst bestaat nog niet. De voorwaarden beloven er wel al een op verzoek.
 
-## 7. De vragen waar wij op vastlopen
+## 8. De vragen waar wij op vastlopen
 
 1. **Wie is verwerkingsverantwoordelijke: de leerkracht of de school?** Wij verkopen nu aan individuele leerkrachten, die bij aanmelden akkoord klikken. Bij de geplande schooltools (analyse over meerdere klassen heen) kruist data meerdere leerkrachten. Mag het leerkracht-model, of moet het bij ons altijd op schoolniveau?
 2. **Doorgifte naar de Verenigde Staten.** Is de DPA van Anthropic plus Zero Data Retention voldoende, of hebben wij standaardcontractbepalingen en een transfer impact assessment nodig? Zou u ons adviseren de EU-route (Frankfurt) verplicht te maken voor schoolklanten?
@@ -77,8 +144,11 @@ Een verwerkersovereenkomst bestaat nog niet. De voorwaarden beloven er wel al ee
 6. Zijn onze bewaartermijnen verdedigbaar, met name de 90 dagen voor concept-rapportteksten?
 7. Is een digitaal klik-akkoord rechtsgeldig, en hoe borgen wij proportioneel dat de ondertekenaar bevoegd is namens de school?
 8. Hebben wij een functionaris gegevensbescherming nodig, en moeten wij een DPIA uitvoeren?
+9. **De schoolagenda (paragraaf 4).** De leerkracht koppelt een agenda die van de school is en die hij zelf niet heeft opgesteld. Mag hij die link op eigen houtje aan een externe dienst geven, of is daar toestemming van de school voor nodig? En wie is voor die binnengehaalde afspraken verwerkingsverantwoordelijke: de school, de leerkracht, of wij?
+10. **Mogen wij de namen Parro, Social Schools, Outlook, Teams en Google Agenda tonen** zoals beschreven in paragraaf 4, dus als aanduiding waar de koppeling mee werkt, zonder logo's en zonder claim van samenwerking?
+11. **Is onze maskering van de agendatitels voldoende**, gezien de beperking dat wij alleen de kinderen uit de eigen klassen van deze leerkracht kennen (paragraaf 4)? Zo niet, is het dan verdedigbaar om helemaal geen titels op te slaan en alleen datum, tijd en soort te bewaren?
 
-## 8. Eerlijke lijst met openstaande gaten
+## 9. Eerlijke lijst met openstaande gaten
 
 Deze punten zijn ons bekend en nog niet opgelost. Wij noemen ze liever zelf dan dat ze uit de beoordeling rollen.
 
@@ -88,6 +158,10 @@ Deze punten zijn ons bekend en nog niet opgelost. Wij noemen ze liever zelf dan 
 4. Ingestuurde feedback en de AI-verbruikslogs zitten niet in de data-export.
 5. De opslagregio van Supabase staat als bewering in onze privacyverklaring maar is niet uit de configuratie te controleren; wij verifiëren dat in het Supabase-dashboard vóór het gesprek.
 6. De maskering is client-side, zonder controle aan de serverkant (zie paragraaf 3).
+7. De maskering van agendatitels dekt alleen de kinderen uit de eigen klassen van de leerkracht. Een naam van een kind uit een andere groep blijft staan (paragraaf 4).
+8. De gekoppelde agenda's en de opgehaalde afspraken zitten nog niet in de data-export van het account.
+9. Voor de agenda-afspraken geldt nog geen automatische bewaartermijn. Ze blijven staan tot de leerkracht de agenda loskoppelt of zijn account verwijdert. Voornemen is om afspraken van afgesloten schooljaren op te ruimen, in lijn met het uitgangspunt dat wij alleen het huidige en het vorige schooljaar tonen.
+10. Wij hebben niet gecontroleerd of de gebruiksvoorwaarden van Parro, Social Schools, Outlook of Google het uitlezen van hun agendalink door een derde partij toestaan.
 
 ---
 

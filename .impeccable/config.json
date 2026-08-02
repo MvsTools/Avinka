@@ -1,0 +1,53 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font-size",
+        "value": "*",
+        "files": [
+          "src/app/nieuw3/Werkplek.tsx"
+        ],
+        "createdAt": "2026-07-21T10:32:47.677Z",
+        "reason": "Miniatuur-productmockups in de film (vensters, dashboard-tegels, takenlijstje); zelfde gedocumenteerde uitzondering als de film-landing in DESIGN.md typografie"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "*",
+        "files": [
+          "public/tools/weekplanning.html"
+        ],
+        "createdAt": "2026-07-21T17:04:24.569Z",
+        "reason": "Tools in public/tools/ volgen het eigen canonieke tool-veld-knop-systeem (projectgeheugen), niet de DESIGN.md-ramp van de landing"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "*",
+        "files": [
+          "public/tools/weekplanning.html"
+        ],
+        "createdAt": "2026-07-21T17:04:24.569Z",
+        "reason": "Tools in public/tools/ volgen het eigen canonieke tool-veld-knop-systeem (projectgeheugen), niet de DESIGN.md-ramp van de landing"
+      },
+      {
+        "rule": "design-system-radius",
+        "value": "*",
+        "files": [
+          "public/tools/weekplanning.html"
+        ],
+        "createdAt": "2026-07-21T17:04:24.569Z",
+        "reason": "Tools in public/tools/ volgen het eigen canonieke tool-veld-knop-systeem (projectgeheugen), niet de DESIGN.md-ramp van de landing"
+      },
+      {
+        "rule": "overused-font",
+        "value": "*",
+        "files": [
+          "public/tools/weekplanning.html"
+        ],
+        "createdAt": "2026-07-21T17:04:24.569Z",
+        "reason": "Fraunces + Plus Jakarta Sans zijn de vastgelegde merkfonts (DESIGN.md typografie); identity-preservation"
+      }
+    ]
+  }
+}
