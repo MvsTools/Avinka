@@ -2111,7 +2111,12 @@ export function ToolRail() {
   const kantlijn = "max(1.5rem, calc(50% - 32rem + 1.5rem))";
 
   return (
-    <div className="pt-24">
+    /* Was pt-24. Met de ondertekst erbij hing de kop midden in zijn blok; nu
+       die weg is stond er 120px boven de kop en nog maar 40px tot de kaarten,
+       en dan zakt de titel optisch weg naar de rij toe. Dit haalt er 32px af,
+       zodat de kop weer boven zijn eigen sectie staat in plaats van vlak boven
+       de kaarten. */
+    <div className="pt-14">
       <RailKop />
       <div className="mt-3">
         <div
