@@ -22,6 +22,7 @@ import {
   BlobKnop,
   Confetti,
   KaartVlak,
+  KOP,
   Lichtbron,
   VLAK_PAPIER,
   WereldFx,
@@ -1540,17 +1541,35 @@ function KlassenlijstKaart() {
 function RailKop() {
   return (
     <div className="mx-auto w-full max-w-5xl px-6">
-      <div data-reveal className="max-w-2xl">
-        <h2 className="font-display text-4xl font-black tracking-tight [text-wrap:balance]">
+      {/* Hier stond een gewone ondertekst. Die is vervangen door hetzelfde
+         handgeschreven duwtje als bij de ervaringen-sectie, maar gespiegeld:
+         daar staat de tekst links met het pijltje rechts, hier andersom. Twee
+         keer exact dezelfde zet zou een tic worden; gespiegeld is het een
+         motief dat je herkent. */}
+      <div data-reveal className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
+        <h2 className="max-w-2xl font-display text-4xl font-black tracking-tight [text-wrap:balance]">
           Alle tools, één werkplek
         </h2>
-        {/* De belofte bovenaan de pagina ("win elke week 2 uur terug") stond
-           daar één keer en kwam daarna nergens meer terug. Hier hoort hij
-           thuis: dit is de sectie waar de tijdwinst per tool op de kaarten
-           staat, dus hier telt hij op tot iets wat je kunt narekenen. */}
-        <p className="mt-4 text-lg text-ink/70">
-          Elke tool pakt een stuk van je week terug. Samen zo&apos;n 2 uur.
-          Sleep de rij opzij om ze allemaal te zien.
+        <p
+          className="flex shrink-0 items-center gap-2 text-xl lg:pb-1"
+          style={{ fontFamily: "var(--font-hand)", color: KOP }}
+        >
+          {/* Hetzelfde pijltje als bij de polaroids, horizontaal gespiegeld
+             (x wordt 40 − x), zodat het naar de kaarten linksonder wijst in
+             plaats van naar rechts. */}
+          <svg
+            viewBox="0 0 40 28"
+            className="h-6 w-9 shrink-0"
+            fill="none"
+            stroke={KOP}
+            strokeWidth="2"
+            strokeLinecap="round"
+            aria-hidden
+          >
+            <path d="M38 4 C 26 6, 14 10, 8 22" />
+            <path d="M14 20 L 7.5 23 L 6 16" />
+          </svg>
+          sleep de rij opzij om ze allemaal te zien
         </p>
       </div>
     </div>
