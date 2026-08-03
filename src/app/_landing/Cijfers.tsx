@@ -228,84 +228,59 @@ function Rapport({ begin, bijhouden }: { begin: Cijfers; bijhouden: boolean }) {
   const uren = urenUit(cijfers.minuten);
   if (uren < DREMPELS.uren) return null;
 
-  /* De "vakken" van het rapport. Alleen wat de drempel haalt komt op het vel;
-     een rapport met één regel is beter dan een regel met een mager getal. */
-  const regels: Array<{ vak: string; getal: number; eenheid?: string; groot?: boolean }> = [
-    { vak: "Tijd teruggegeven", getal: uren, eenheid: "uur", groot: true },
-  ];
-  if (cijfers.leerkrachten >= DREMPELS.leerkrachten)
-    regels.push({ vak: "Leerkrachten geholpen", getal: cijfers.leerkrachten });
-  if (cijfers.uitwerkingen >= DREMPELS.uitwerkingen)
-    regels.push({ vak: "Uitwerkingen gemaakt", getal: cijfers.uitwerkingen });
+  const toonLeerkrachten = cijfers.leerkrachten >= DREMPELS.leerkrachten;
 
   return (
     <section ref={anker} className="relative overflow-x-clip">
-      {/* 🔑 Dit vlak is GROTER dan het rapport en ligt eronder. Een eerdere
-         versie had een vorm waarvan de rand precies door de inhoud sneed; een
-         vorm die de inhoud volledig omvat geeft het vel juist iets om op te
-         liggen en heeft nergens een rand die iets doorknipt. */}
+      {/* Eén zacht vlak, groter dan het kaartje en eronder, zodat zijn rand
+         nergens door de inhoud snijdt. */}
       <KaartVlak
         kleur={VLAK_PAPIER}
         vorm="kiezel"
-        breedte={1180}
-        hoogte={560}
-        style={{ right: "-16%", top: -50, transform: "rotate(-3deg)" }}
+        breedte={880}
+        hoogte={420}
+        style={{ left: "-10%", top: -30, transform: "rotate(4deg)" }}
         className="-z-10 hidden lg:block"
-        tel={5}
+        tel={4}
       />
 
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-20 pt-6 lg:pb-24">
-        <Confetti punten={[{ x: "3%", y: "18%", r: 4, amber: true }, { x: "97%", y: "84%", r: 5 }]} />
+        <Confetti punten={[{ x: "92%", y: "22%", r: 4, amber: true }]} />
 
-        {/* Het mapje. Het vel schuift er met een transform net uit, zodat het
-           mint langs de onderkant en de rechterkant zichtbaar blijft: één
-           element dat diepte én kleur geeft, zonder er een rekwisiet bij te
-           halen. */}
-        <div data-reveal className="rp-map">
-          <article className="rp-vel">
-            <header className="rp-kop">
-              <h2 className="rp-titel">Het rapport van Avinka</h2>
-              {/* Bewust GEEN schooljaar: de cijfers tellen alles bij elkaar,
-                 dus een periode op het vel zou een claim zijn die niet klopt. */}
-              <p className="rp-periode">opgemaakt door alle leerkrachten samen</p>
-            </header>
+        {/* Kaartje links, de herkomst als kanttekening rechts. Twee kleine
+           dingen die samen de breedte pakken, in plaats van één groot vlak. */}
+        <div className="flex flex-col gap-8 md:flex-row md:items-center md:gap-14">
+          <div data-reveal className="rp-map shrink-0">
+            <article className="rp-kaart">
+              <h2 className="rp-titel">Rapport van Avinka</h2>
+              <div aria-hidden className="rp-lijn" />
 
-            <div className="rp-body">
-              <dl className="rp-regels">
-                {regels.map((r) => (
-                  <div key={r.vak} className={`rp-regel ${r.groot ? "is-groot" : ""}`}>
-                    <dt className="rp-vak">{r.vak}</dt>
-                    {/* De stippellijn van een voorgedrukt formulier. Puur
-                       decoratief, dus buiten de voorleesvolgorde. */}
-                    <span aria-hidden className="rp-leider" />
-                    <dd className="rp-cijfer">
-                      <Waarde getal={r.getal} eenheid={r.eenheid} groot={r.groot} />
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+              <p className="rp-hoofd">
+                <Waarde getal={uren} eenheid="uur" groot />
+              </p>
+              <p className="rp-onder">
+                teruggegeven
+                {toonLeerkrachten && (
+                  <>
+                    {" "}
+                    aan <Waarde getal={cijfers.leerkrachten} /> leerkrachten
+                  </>
+                )}
+              </p>
 
-              <aside className="rp-opmerking">
-                <p className="rp-oplabel">opmerking van de leerkracht</p>
-                {/* Geen grapje om het grapje: dit is een claim die elders op de
-                   pagina ook staat en die klopt (de tool rekent, de AI schrijft
-                   alleen de taal eromheen). */}
-                <p className="rp-hand">Rekent zelf. Verzint nooit een getal.</p>
-                <div className="rp-stempelvak">
-                  <Stempel />
-                </div>
-              </aside>
-            </div>
-          </article>
+              {/* De stempel valt over de rand van het kaartje heen. Dat is wat
+                 hem gedrukt laat lijken in plaats van geplaatst: niemand
+                 stempelt netjes binnen de lijntjes. */}
+              <Stempel />
+            </article>
+          </div>
+
+          <p data-reveal className="max-w-sm text-base leading-7 text-ink/65">
+            Opgeteld uit het werk dat de tools overnemen: rapporten, oudercontact,
+            toetsanalyse, lesvoorbereiding. Werk van na schooltijd. Het loopt bij
+            zolang je hier bent.
+          </p>
         </div>
-
-        {/* Bronvermelding. Elke geloofwaardige teller die we bekeken hebben
-           heeft er een: een getal zonder herkomst is een claim. */}
-        <p data-reveal className="mt-7 max-w-2xl text-base leading-7 text-ink/65">
-          Opgeteld uit het werk dat de tools overnemen: rapporten, oudercontact,
-          toetsanalyse, lesvoorbereiding. Werk van na schooltijd. Het rapport
-          loopt bij zolang je hier bent.
-        </p>
       </div>
 
       <RapportStijl />
@@ -316,226 +291,139 @@ function Rapport({ begin, bijhouden }: { begin: Cijfers; bijhouden: boolean }) {
 function RapportStijl() {
   return (
     <style>{`
-      /* ── het mapje en het vel ── */
+      /* ── het mapje en het kaartje ──
+         ⚠️ Dit was een vel over de volle breedte met drie regels, een
+         handgeschreven opmerking en een label erboven. Te groots en te veel
+         informatie: een kaartje met één zin doet hetzelfde werk. Wat eruit
+         ging: de regel "uitwerkingen gemaakt" (het minst zeggende getal) en de
+         opmerking van de leerkracht. Die laatste om een tweede reden: hij
+         suggereerde dat een echte leerkracht dat gezegd had, en op deze pagina
+         staan al verzonnen quotes die vóór livegang weg moeten. */
       .rp-map {
         background: ${MINT};
-        border-radius: 14px;
-        transform: rotate(-0.9deg);
-        box-shadow: ${schaduw(26, 52, -26, 0.42)};
+        border-radius: 13px;
+        transform: rotate(-1deg);
+        box-shadow: ${schaduw(20, 44, -22, 0.4)};
       }
-      .rp-vel {
+      .rp-kaart {
+        position: relative;
+        width: clamp(272px, 31vw, 368px);
         background: #fffefb;
-        /* Een document heeft scherpere hoeken dan een UI-kaart. Op 12px las
-           dit vel als een card; op 5px als papier. */
+        /* Een document heeft scherpere hoeken dan een UI-kaart. */
         border-radius: 5px;
-        /* ⚠️ Stond op -11/-13 en dan was de mint een groene schaduw in plaats
-           van een mapje. Verder eruit geschoven, en het vel staat schever dan
-           de map zodat je twee losse voorwerpen ziet en geen dubbele rand. */
-        transform: translate(-22px, -26px) rotate(1.15deg);
-        padding: clamp(22px, 3vw, 40px) clamp(22px, 3.4vw, 46px);
-        box-shadow: ${schaduw(20, 44, -22, 0.34)};
+        /* net uit de map geschoven, zodat er mint langs de onderkant en de
+           rechterkant zichtbaar blijft: kleur en diepte uit één element */
+        transform: translate(-9px, -11px) rotate(1.4deg);
+        padding: clamp(20px, 2.2vw, 28px) clamp(20px, 2.4vw, 30px)
+                 clamp(24px, 2.6vw, 32px);
+        box-shadow: ${schaduw(14, 32, -16, 0.3)};
       }
 
-      /* ── de kop van het formulier ── */
-      .rp-kop {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: 6px 20px;
-        border-bottom: 2px solid rgba(var(--w-schaduw-rgb, 23,80,58), 0.13);
-        padding-bottom: clamp(14px, 1.8vw, 22px);
-      }
+      /* ⚠️ Hier hebben twee perforatiegaatjes gestaan, om het kaartje als
+         blad uit een map te laten lezen. Weggehaald na bekijken: op de rand
+         van een klein kaartje, mét de mint van de map er direct achter, lees
+         je geen gaten maar bobbels. Niet opnieuw proberen zonder de map te
+         verplaatsen. */
+
       .rp-titel {
         font-family: var(--font-display), Georgia, serif;
         font-weight: 900;
-        letter-spacing: -0.03em;
-        line-height: 1.05;
-        font-size: clamp(1.7rem, 3.1vw, 2.6rem);
+        letter-spacing: -0.025em;
+        line-height: 1.15;
+        font-size: clamp(1.15rem, 1.7vw, 1.35rem);
         color: ${DONKER};
       }
-      /* ⚠️ Deze twee kleine labels stonden op 0,55 en 0,5 dekking. Op wit is
-         dat ongeveer 3,2:1 bij een letter van 15 pixels, en daar geldt de eis
-         van 4,5:1. Op 0,62 halen ze 4,7:1. Nagemeten in de browser. */
-      .rp-periode {
-        font-size: clamp(0.95rem, 1.3vw, 1.05rem);
-        color: rgba(34, 28, 58, 0.62);
+      /* De streep onder de kop: de enige formulierlijn die overblijft. */
+      .rp-lijn {
+        height: 2px;
+        margin: clamp(12px, 1.4vw, 16px) 0 clamp(16px, 1.8vw, 22px);
+        background: rgba(var(--w-schaduw-rgb, 23,80,58), 0.14);
       }
 
-      /* ── de body: regels links, opmerking rechts ── */
-      .rp-body {
-        display: grid;
-        gap: clamp(24px, 3vw, 44px);
-        padding-top: clamp(18px, 2.2vw, 28px);
-      }
-      @media (min-width: 900px) {
-        /* Zo blijft het vel breed en laag in plaats van langwerpig: de
-           opmerking staat naast de regels, niet eronder. */
-        .rp-body { grid-template-columns: minmax(0, 1fr) minmax(230px, 20rem); }
-      }
-
-      /* ⚠️ De rechterkolom (handschrift + stempel) is hoger dan de regels, en
-         met een vaste tussenruimte bleef er linksonder een gat van tachtig
-         pixels staan. De regels verdelen zich nu over de volle hoogte. */
-      .rp-regels {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        gap: clamp(10px, 1.4vw, 18px);
-        min-height: 100%;
-      }
-      .rp-regel { display: flex; align-items: baseline; gap: 10px; }
-      .rp-vak {
-        font-size: clamp(1rem, 1.45vw, 1.15rem);
-        font-weight: 600;
-        color: rgba(34, 28, 58, 0.78);
-        white-space: nowrap;
-      }
-      /* De stippellijn van een voorgedrukt formulier. Hij hangt aan de
-         basislijn van de tekst, niet aan het midden van de regel; anders
-         zweeft hij los tussen label en cijfer. */
-      .rp-leider {
-        flex: 1 1 auto;
-        min-width: 18px;
-        border-bottom: 2px dotted rgba(34, 28, 58, 0.22);
-        transform: translateY(-0.32em);
-      }
-      .rp-cijfer {
+      .rp-hoofd {
         font-family: var(--font-display), Georgia, serif;
         font-weight: 900;
-        letter-spacing: -0.035em;
-        line-height: 0.95;
+        letter-spacing: -0.04em;
+        line-height: 0.9;
         color: ${DONKER};
-        white-space: nowrap;
       }
-      .rp-groot { font-size: clamp(2.5rem, 5.4vw, 4.1rem); }
-      .rp-klein { font-size: clamp(1.5rem, 2.7vw, 2.15rem); color: ${KOP}; }
-      /* De eenheid hoort BIJ het getal en is geen los label in een eigen
-         kolom. Als los woord viel "uur" na drie letters stil en bleef er een
-         gat rechts naast de hoofdregel staan. */
+      .rp-groot { font-size: clamp(2.7rem, 5vw, 3.6rem); }
+      /* De eenheid hangt AAN het getal en is geen los label: als los woord
+         viel "uur" na drie letters stil en bleef er een gat naast staan. */
       .rp-eenheid {
-        font-size: 0.4em;
+        font-size: 0.36em;
         font-weight: 800;
         letter-spacing: 0;
         margin-left: 0.1em;
         color: ${KOP};
       }
-
-      /* ── de opmerking ── */
-      .rp-opmerking { position: relative; }
-      @media (min-width: 900px) {
-        /* 🔑 Geen streepje maar een VOUW. Een rechte lijn tussen twee kolommen
-           is een tabelrand; een haarlijn met een zachte schaduw aan de ene
-           kant en een lichtrand aan de andere leest als papier dat een keer
-           dubbelgevouwen is geweest. Dat verkoopt het vel als vel, en het
-           kost één regel meer dan een border. */
-        .rp-opmerking {
-          padding-left: clamp(24px, 2.8vw, 38px);
-          border-left: 1px solid rgba(var(--w-schaduw-rgb, 23,80,58), 0.16);
-        }
-        /* ⚠️ De schaduw van de vouw MOET een los laagje zijn. Met een
-           box-shadow op de kolom zelf legt de browser hem om het hele blok
-           heen, en dan leest de rechterkolom als een tweede kaart bovenop het
-           vel: precies de kaart-in-kaart die DESIGN.md verbiedt. Dit laagje
-           ligt alleen links van de vouwlijn en dooft naar buiten uit. */
-        .rp-opmerking::before {
-          content: "";
-          position: absolute;
-          left: -15px;
-          top: -14px;
-          bottom: -14px;
-          width: 15px;
-          pointer-events: none;
-          background: linear-gradient(
-            to right,
-            rgba(var(--w-schaduw-rgb, 23,80,58), 0) 0%,
-            rgba(var(--w-schaduw-rgb, 23,80,58), 0.075) 100%
-          );
-        }
+      .rp-onder {
+        margin-top: clamp(8px, 1vw, 12px);
+        font-size: clamp(1rem, 1.35vw, 1.1rem);
+        line-height: 1.5;
+        color: rgba(34, 28, 58, 0.72);
+        /* Evenwichtig afbreken: zonder dit viel "leerkrachten" als los woord
+           op een tweede regel. */
+        text-wrap: balance;
+        /* ruimte vrijhouden voor de stempel rechtsonder */
+        padding-right: clamp(52px, 5.4vw, 68px);
       }
-      .rp-oplabel {
-        font-size: 0.95rem;
-        color: rgba(34, 28, 58, 0.62);
-        margin-bottom: 0.5rem;
-      }
-      .rp-hand {
-        font-family: var(--font-hand), cursive;
-        font-size: clamp(1.35rem, 2.1vw, 1.7rem);
-        line-height: 1.35;
+      /* Het tweede getal staat IN de zin, niet op een eigen regel. Zo blijft
+         het één mededeling in plaats van een lijstje. */
+      .rp-klein {
+        font-weight: 800;
         color: ${KOP};
-        /* het schrijven: van links naar rechts vrijkomen */
-        clip-path: inset(0 0 0 0);
       }
-      /* Een stempel wordt ergens neergedrukt, hij staat niet netjes in een
-         vakje. Deze zakt onder de tekst door en steekt links buiten de
-         kolomlijn, alsof iemand hem schuin heeft aangedrukt. */
-      .rp-stempelvak { margin-top: clamp(14px, 1.8vw, 22px); }
-      @media (min-width: 900px) {
-        .rp-stempelvak { margin-left: clamp(-46px, -3.4vw, -26px); }
-      }
+
+      /* ── de stempel ── */
       .rp-stempel {
-        width: clamp(58px, 6vw, 74px);
+        position: absolute;
+        right: clamp(-18px, -1.4vw, -12px);
+        bottom: clamp(-16px, -1.2vw, -11px);
+        width: clamp(52px, 5.2vw, 62px);
         height: auto;
         color: var(--color-brand, #2f9e6e);
         /* doorschijnende inkt: een stempel drukt nooit helemaal vol af */
-        opacity: 0.7;
+        opacity: 0.72;
         transform: rotate(-13deg);
       }
 
-      /* ── de beweging: het formulier wordt ingevuld ──
-         Alles hangt aan .is-in van de GROEP (het mapje), niet aan een reveal
-         per element. 🔑 De waarnemer kijkt per element en de vertraging telt
-         vanaf het moment dat dát element de drempel passeert; met losse
-         reveals starten elementen die in dezelfde scrollstap binnenkomen dus
-         tegelijk, en dan is de volgorde weg. */
-      /* ⚠️ Hier stond opacity:0 op de cijfers, het handschrift en de
-         stempel zolang de reveal nog niet gestart was. Dat is precies de val
-         waar de ontwerpregel voor waarschuwt: inhoud onzichtbaar maken in
-         afwachting van een klasse. Start de waarnemer om wat voor reden dan
-         ook niet, dan staat het vel er mét regels maar ZONDER cijfers.
-         Nu staat alles standaard gewoon zichtbaar en begint de animatie pas
-         op het moment dat .is-in erbij komt (het eerste keyframe zet de
-         doorzichtigheid dan zelf op nul). Het vel zit op dat moment nog in
-         zijn eigen reveal, dus je ziet er niets van knipperen. */
+      /* ── de beweging: het kaartje wordt ingevuld ──
+         Alles hangt aan .is-in van de GROEP, niet aan een reveal per element.
+         🔑 De waarnemer kijkt per element en de vertraging telt vanaf het
+         moment dat dát element de drempel passeert; met losse reveals starten
+         elementen die in dezelfde scrollstap binnenkomen tegelijk en is de
+         volgorde weg.
+
+         ⚠️ De inhoud staat standaard gewoon zichtbaar. Eerder stond hier
+         opacity nul tot de reveal-klasse kwam, en dan staat het kaartje er bij
+         een haperende waarnemer mét kop maar ZONDER cijfer. Het eerste
+         keyframe doet het verbergen; het kaartje zit op dat moment nog in zijn
+         eigen reveal, dus je ziet er niets van knipperen. */
       .anim .rp-map.is-in .rp-inkt {
         animation: rpInkt 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
       }
-      .anim .rp-map.is-in .rp-regel:nth-child(1) .rp-inkt { animation-delay: 0.18s; }
-      .anim .rp-map.is-in .rp-regel:nth-child(2) .rp-inkt { animation-delay: 0.30s; }
-      .anim .rp-map.is-in .rp-regel:nth-child(3) .rp-inkt { animation-delay: 0.42s; }
+      .anim .rp-map.is-in .rp-hoofd .rp-inkt { animation-delay: 0.16s; }
+      .anim .rp-map.is-in .rp-onder .rp-inkt { animation-delay: 0.32s; }
       @keyframes rpInkt {
         from { opacity: 0; transform: translateY(7px); }
         to   { opacity: 1; transform: none; }
       }
 
-      /* Het handschrift komt van links vrij, alsof het geschreven wordt. */
-      .anim .rp-map.is-in .rp-hand {
-        animation: rpSchrijf 0.8s cubic-bezier(0.35, 0.6, 0.25, 1) 0.54s both;
-      }
-      @keyframes rpSchrijf {
-        from { opacity: 1; clip-path: inset(0 100% 0 0); }
-        to   { opacity: 1; clip-path: inset(0 0 0 0); }
-      }
-
       /* De stempel valt als laatste, met de korte pop die DESIGN.md voor het
-         vinkje voorschrijft: onder 300ms, vanaf ongeveer 1.2, nooit vanaf 0. */
+         vinkje voorschrijft: onder 300ms, vanaf ongeveer 1.2, nooit vanaf 0.
+         ⚠️ Niet later zetten: wie doorscrolt mist anders het slotakkoord. */
       .anim .rp-map.is-in .rp-stempel {
-        animation: rpStempel 0.26s cubic-bezier(0.3, 1.5, 0.5, 1) 1.12s both;
+        animation: rpStempel 0.26s cubic-bezier(0.3, 1.5, 0.5, 1) 0.62s both;
       }
       @keyframes rpStempel {
         from { opacity: 0; transform: rotate(-21deg) scale(1.3); }
-        to   { opacity: 0.7; transform: rotate(-13deg) scale(1); }
+        to   { opacity: 0.72; transform: rotate(-13deg) scale(1); }
       }
 
-      /* Een verse waarde die later binnenkomt gebruikt dezelfde inkt. Dit
-         geldt ook als de reveal al geweest is, want de sleutel van het element
-         verandert en de animatie start opnieuw. */
-      .anim .rp-map.is-in .rp-inkt { will-change: opacity, transform; }
-
       @media (prefers-reduced-motion: reduce) {
-        .rp-inkt, .rp-hand, .rp-stempel { animation: none !important; opacity: 1 !important; }
-        .rp-stempel { opacity: 0.7 !important; }
-        .rp-hand { clip-path: none !important; }
+        .rp-inkt, .rp-stempel { animation: none !important; opacity: 1 !important; }
+        .rp-stempel { opacity: 0.72 !important; }
       }
     `}</style>
   );
