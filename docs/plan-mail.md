@@ -19,6 +19,7 @@ nieuw account is ruis; bevestigen en welkom heten mogen best één mail zijn.
 | 1 | Bevestig je aanmelding (met welkom erin) | direct bij aanmelden | `no-reply@avinka.nl` | – |
 | 2 | Je proefperiode loopt af | 2 dagen vóór het einde van de 7 proefdagen | `no-reply@avinka.nl` | – |
 | 3 | Bevestiging van je abonnement | direct na een geslaagde betaling | `no-reply@avinka.nl` | **`support@avinka.nl`** |
+| 4 | Uitnodiging duo-collega | als een gebruiker het adres van zijn duo invult | `no-reply@avinka.nl` | – |
 
 Daarnaast blijft de bestaande **wachtwoord-vergeten-mail** lopen. Die telt
 technisch mee, maar is geen nieuwe bouwstap: die verstuurt Supabase al.
@@ -37,10 +38,64 @@ taak in de database voor het opruimen van oude rapporten
 (`database/retention.sql`, cron `wis-oude-rapporten`) — dat is het patroon om te
 volgen. Bouw dit pas ná mail 1 en 3.
 
-**Bewust NIET nu:** nieuwsbrieven, tips-mails, "je collega heeft een taak
-afgevinkt", en de duo-uitnodiging per mail. De duo-uitnodiging werkt prima als
-deelbare link (zie `DuoCollega.tsx`); een mail eromheen is later een kwartiertje
-werk zodra de verzendstraat staat.
+**Mail 4 is de enige die een gebruiker zélf verstuurt.** Daarom telt hij niet
+als ruis: de andere drie gaan vanzelf, deze vraagt iemand bewust aan. Besloten
+3-8-2026, zie de aparte paragraaf hieronder.
+
+**Bewust NIET nu:** nieuwsbrieven, tips-mails en "je collega heeft een taak
+afgevinkt".
+
+---
+
+## 1b. De duo-uitnodiging per mail (besloten 3-8-2026)
+
+Vandaag maakt de tool een deelbare link die je zelf doorstuurt (WhatsApp, mail,
+wat dan ook). Vóór live wordt dit de hoofdroute: **je typt het mailadres van je
+duo-collega in en het bericht gaat automatisch de deur uit.**
+
+**De link blijft bestaan als vangnet, niet als tweede gelijkwaardige route.**
+Mail hapert vaker dan je denkt: een streng spamfilter op schoolmail, een
+typefout in het adres, of je collega zit naast je en je wilt het in tien
+seconden regelen. Een uitnodigingssysteem dat alleen via mail kan, staat stil
+zodra de mail stilstaat.
+
+### ⚠️ De uitnodiging moet vastzitten aan het ingetypte adres
+
+Nu geldt: wie de code heeft, kan accepteren. Bij een link die je zelf doorstuurt
+is dat prima — jij bepaalt wie hem krijgt. Zodra je een adres intypt, bepaalt de
+**typefout** wie hem krijgt, en achter zo'n uitnodiging zitten de voornamen van
+je leerlingen.
+
+Dus: een uitnodiging die per mail is verstuurd, is alleen te accepteren door wie
+inlogt met precies dát mailadres. Belandt hij bij de verkeerde persoon, dan kan
+die er niets mee. Het patroon staat al in de codebase bij het delen van
+draaiboeken (`bestand_deling.gedeeld_email`, vergeleken met
+`auth.jwt() ->> 'email'`).
+
+Een handmatig doorgestuurde link houdt zijn huidige gedrag: wie hem heeft, kan
+hem gebruiken. Dat verschil is bewust.
+
+### Wat er dan gebouwd moet worden
+
+- **Database:** kolom `uitgenodigd_email` op `duo_koppels` (leeg = de oude
+  link-uitnodiging, dus bestaande koppels blijven werken), plus de controle in
+  `duo_koppel_accepteren`: is het veld gevuld, dan moet het overeenkomen met het
+  mailadres van wie accepteert. SQL door de eigenaar.
+- **Server:** een route die de mail verstuurt. Moet server-side, want de
+  verzendsleutel mag nooit in de browser komen.
+- **Scherm:** invulveld voor het adres in `DuoCollega.tsx`, met de link eronder
+  als "of stuur zelf een link".
+- **Tekst:** wie nodigt uit, welke klas, en wat er gebeurt als je nog geen
+  account hebt (aanmaken met dít adres, anders past de uitnodiging niet).
+
+Schatting: een halve dag, ná de verzendstraat.
+
+### AVG-kanttekening
+
+Je vult hier het mailadres van iemand anders in. Dat adres wordt alleen gebruikt
+om die ene uitnodiging te versturen en om te controleren wie mag accepteren —
+nooit voor iets anders, en het levert geen account op. Meenemen in de
+privacyverklaring bij de jurist-check.
 
 ---
 
