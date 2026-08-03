@@ -245,10 +245,11 @@ export default function DuoOverdracht() {
                       rows={3}
                       className="mt-1 w-full resize-y rounded-xl border border-black/10 bg-cream px-4 py-3 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
                     />
+                    {/* Kort houden: drie feiten, geen alinea. De volledige uitleg
+                        over bewaren staat in /privacy. */}
                     <p className="mt-1.5 text-xs text-ink/45">
-                      Dit vervangt jouw vorige briefje en verdwijnt vanzelf na 30 dagen. Er
-                      blijft geen geschiedenis staan. Geen bijzondere persoonsgegevens
-                      (medisch, gezinssituatie, diagnoses).
+                      Vervangt je vorige briefje · weg na 30 dagen · geen medische of
+                      gezinsgegevens
                     </p>
                   </div>
                 </div>
