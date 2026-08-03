@@ -372,8 +372,7 @@ function Rapport({
            elk onder een eigen hoek. Dat is wat deze hoek een statistiekenhoekje
            maakt in plaats van één kaart met een lap tekst ernaast. */}
         <div data-reveal className="rp-cluster">
-          <div className="rp-map">
-            <article className="rp-kaart">
+          <article className="rp-kaart">
               {/* Geen h2: de sectie heeft nu zijn eigen kop, en twee koppen
                  vlak boven elkaar is er een te veel. Dit is de titel van het
                  document, niet van de sectie. */}
@@ -401,9 +400,8 @@ function Rapport({
               {/* De stempel valt over de rand van het kaartje heen. Dat is wat
                  hem gedrukt laat lijken in plaats van geplaatst: niemand
                  stempelt netjes binnen de lijntjes. */}
-              <Stempel />
-            </article>
-          </div>
+            <Stempel />
+          </article>
 
           {(toonLeerkrachten || toonUitwerkingen) && (
             <div className="rp-briefjes">
@@ -485,28 +483,50 @@ function RapportStijl() {
         gap: clamp(14px, 1.8vw, 24px);
       }
 
-      /* ── het mapje en het rapport ── */
-      .rp-map {
-        background: ${MINT};
-        border-radius: 13px;
-        transform: rotate(-1deg);
-        box-shadow: ${schaduw(20, 44, -22, 0.4)};
-      }
-      .rp-kaart {
+      /* ── DE KAARTJES ─────────────────────────────────────────────────────
+         ⚠️ Het waren rechthoekige documenten met scherpe hoeken en een harde
+         schaduw, en dat is precies waarom ze niet bij de site pasten. De
+         kaartvorm van deze wereld is groot en rond (KAART in Wereld.tsx:
+         2,5rem radius met een grote zachte groengetinte schaduw) en de
+         achtergrondvormen zijn blobs met ONGELIJKE radii. Vier keer dezelfde
+         witte rechthoek is dus geen verzameling maar een tabel.
+
+         Wat er nu gebeurt:
+         - elk kaartje heeft zijn EIGEN ongelijke radius, dus geen twee
+           dezelfde vorm. Dat is het blob-idioom van de pagina.
+         - elk kaartje heeft zijn EIGEN kleur uit het palet: wit voor het
+           hoofddocument, mint, donkergroen en crème. Samen een verzameling in
+           plaats van vier kopieën. Donkere kaarten zijn al onderdeel van deze
+           pagina (de toolkaarten in de galerij).
+         - de schaduw is die van de wereld: groot, zacht en groengetint, in
+           plaats van de strakke UI-schaduw die er stond.
+         ─────────────────────────────────────────────────────────────────── */
+      .rp-kaart, .rp-briefje, .rp-bron {
         position: relative;
-        width: clamp(272px, 31vw, 368px);
-        background: #fffefb;
-        /* Een document heeft scherpere hoeken dan een UI-kaart. */
-        border-radius: 5px;
-        /* net uit de map geschoven, zodat er mint langs de onderkant en de
-           rechterkant zichtbaar blijft: kleur en diepte uit één element */
-        transform: translate(-9px, -11px) rotate(1.4deg);
-        padding: clamp(20px, 2.2vw, 28px) clamp(20px, 2.4vw, 30px)
-                 clamp(24px, 2.6vw, 32px);
-        box-shadow: ${schaduw(14, 32, -16, 0.3)};
+        box-shadow: ${schaduw(34, 74, -44, 0.5)};
+        transform: rotate(var(--hoek, 0deg)) translateY(var(--lift, 0px));
+        transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+          box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      /* 🔑 Ga je er met de muis over, dan gaat het kaartje rechter liggen en
+         komt het omhoog: je pakt het op. Hoek en hoogte staan in variabelen
+         zodat de hover ze kan bijstellen zonder ze te overschrijven. Dezelfde
+         beweging als de toolkaarten in de galerij, dus geen nieuw idioom. */
+      .rp-kaart:hover, .rp-briefje:hover, .rp-bron:hover {
+        transform: rotate(calc(var(--hoek, 0deg) * 0.3))
+          translateY(calc(var(--lift, 0px) - 6px));
+        box-shadow: ${schaduw(44, 92, -44, 0.55)};
       }
 
-      /* Titel links, live-teken rechts, allebei op de basislijn. */
+      /* het hoofddocument */
+      .rp-kaart {
+        --hoek: -1.2deg;
+        width: clamp(272px, 31vw, 368px);
+        background: #ffffff;
+        border-radius: 2.6rem 1.5rem 2.4rem 1.7rem;
+        padding: clamp(24px, 2.6vw, 34px) clamp(24px, 2.8vw, 36px)
+                 clamp(28px, 3vw, 38px);
+      }
       .rp-kop {
         display: flex;
         align-items: baseline;
@@ -526,7 +546,6 @@ function RapportStijl() {
         letter-spacing: 0.02em;
         color: ${KOP};
       }
-
       .rp-titel {
         font-family: var(--font-display), Georgia, serif;
         font-weight: 900;
@@ -535,13 +554,11 @@ function RapportStijl() {
         font-size: clamp(1.15rem, 1.7vw, 1.35rem);
         color: ${DONKER};
       }
-      /* De streep onder de kop: de enige formulierlijn die overblijft. */
       .rp-lijn {
         height: 2px;
-        margin: clamp(12px, 1.4vw, 16px) 0 clamp(16px, 1.8vw, 22px);
+        margin: clamp(14px, 1.6vw, 18px) 0 clamp(16px, 1.8vw, 22px);
         background: rgba(var(--w-schaduw-rgb, 23,80,58), 0.14);
       }
-
       .rp-hoofd {
         font-family: var(--font-display), Georgia, serif;
         font-weight: 900;
@@ -569,39 +586,22 @@ function RapportStijl() {
         padding-right: clamp(52px, 5.4vw, 68px);
       }
 
-      /* ── de losse briefjes ──
-         Geen map eronder en geen kop: het rapport blijft het hoofddocument.
-         Elk briefje heeft een eigen hoek, anders liggen ze als een tabel op
-         elkaar gestapeld en is het weer een lijstje. */
-      /* ⚠️ Hier heeft een ruitjespatroon gezeten om de briefjes op
-         rekenpapier te laten lijken. Afgekeurd: op zo'n klein vlak wordt het
-         een patroon in plaats van papier, en het vecht met de cijfers die er
-         juist uit moeten springen. Het karakter komt nu uit de TYPOGRAFIE en
-         uit hoe het papier reageert als je erover gaat. */
+      /* ── de twee losse cijfers, elk een eigen kleur en vorm ── */
       .rp-briefje {
         width: clamp(158px, 17vw, 205px);
-        background: #fffefb;
-        border-radius: 5px;
-        padding: clamp(13px, 1.5vw, 18px) clamp(15px, 1.7vw, 20px);
-        box-shadow: ${schaduw(12, 28, -14, 0.28)};
+        padding: clamp(16px, 1.9vw, 22px) clamp(18px, 2vw, 24px);
       }
-      /* 🔑 De hoek en de hoogte staan in variabelen, zodat de hover ze kan
-         bijstellen zonder ze te overschrijven. Ga je er met de muis over, dan
-         gaat het papiertje iets rechter liggen en komt het omhoog: je pakt het
-         op. Dat is het enige speelse dat de kaartjes hebben, en het is
-         onzichtbaar tot je het zoekt. Dezelfde beweging als de toolkaarten in
-         de galerij, dus geen nieuw idioom. */
-      .rp-briefje:nth-child(1) { --hoek: -2.3deg; --lift: clamp(-26px, -2vw, -14px); }
-      .rp-briefje:nth-child(2) { --hoek: 1.8deg; --lift: clamp(14px, 2vw, 26px); }
-      .rp-briefje, .rp-bron, .rp-map {
-        transform: rotate(var(--hoek, 0deg)) translateY(var(--lift, 0px));
-        transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-          box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+      .rp-briefje:nth-child(1) {
+        --hoek: -2.6deg;
+        --lift: clamp(-30px, -2.4vw, -16px);
+        background: ${MINT};
+        border-radius: 1.5rem 2.3rem 1.4rem 2.1rem;
       }
-      .rp-briefje:hover, .rp-bron:hover, .rp-map:hover {
-        transform: rotate(calc(var(--hoek, 0deg) * 0.35))
-          translateY(calc(var(--lift, 0px) - 5px));
-        box-shadow: ${schaduw(26, 52, -22, 0.36)};
+      .rp-briefje:nth-child(2) {
+        --hoek: 2.1deg;
+        --lift: clamp(16px, 2.2vw, 28px);
+        background: ${DONKER};
+        border-radius: 2.2rem 1.4rem 2.2rem 1.5rem;
       }
       .rp-briefgetal {
         display: block;
@@ -611,12 +611,6 @@ function RapportStijl() {
         line-height: 0.95;
         color: ${DONKER};
       }
-      /* ⚠️ De briefjes waren typografisch te dun: een middelgroot cijfer met
-         een lichtgrijs woordje eronder leest als een bijschrift, niet als een
-         mededeling. Het cijfer is nu fors groter (het is het onderwerp van het
-         papiertje) en het woord staat in merkgroen op gewicht 700 strak tegen
-         de onderkant van het cijfer aan. Dat maakt van elk briefje één blok in
-         plaats van twee losse regels. */
       .rp-klein { font-size: clamp(2.05rem, 3.1vw, 2.8rem); }
       .rp-brieflabel {
         display: block;
@@ -626,7 +620,9 @@ function RapportStijl() {
         letter-spacing: -0.005em;
         color: ${KOP};
       }
-
+      /* Op het donkere kaartje draait de inkt om. */
+      .rp-briefje:nth-child(2) .rp-briefgetal { color: #fdf9f0; }
+      .rp-briefje:nth-child(2) .rp-brieflabel { color: rgba(255, 255, 255, 0.72); }
       /* ── de stempel ── */
       .rp-stempel {
         position: absolute;
@@ -651,13 +647,14 @@ function RapportStijl() {
          is daarom iets breder en de tussenruimte iets kleiner:
          368 + 34 + 434 + 34 + 222 = 1092, past nog steeds. */
       .rp-bron {
-        position: relative;
+        --hoek: -1.8deg;
         width: clamp(178px, 17.5vw, 222px);
-        background: #fffefb;
-        border-radius: 5px;
+        /* crème: de vierde kleur van de verzameling */
+        background: var(--color-cream, #fbf6ee);
+        border-radius: 2rem 1.4rem 2.2rem 1.3rem;
         /* extra ruimte links voor de kantlijn */
-        padding: clamp(13px, 1.5vw, 17px) clamp(14px, 1.6vw, 18px) clamp(13px, 1.5vw, 17px)
-                 clamp(22px, 2.2vw, 28px);
+        padding: clamp(17px, 1.9vw, 22px) clamp(18px, 2vw, 24px) clamp(17px, 1.9vw, 22px)
+                 clamp(28px, 2.8vw, 34px);
         box-shadow: ${schaduw(12, 28, -14, 0.24)};
         /* een derde hoek, anders liggen twee papieren precies parallel */
         --hoek: -1.5deg;
@@ -676,11 +673,12 @@ function RapportStijl() {
       .rp-bron::before {
         content: "";
         position: absolute;
-        top: 0;
-        bottom: 0;
-        left: clamp(13px, 1.3vw, 17px);
+        top: clamp(14px, 1.6vw, 18px);
+        bottom: clamp(14px, 1.6vw, 18px);
+        left: clamp(17px, 1.7vw, 21px);
         width: 2px;
-        background: rgba(245, 158, 11, 0.42);
+        border-radius: 9999px;
+        background: rgba(245, 158, 11, 0.5);
       }
 
       .rp-bronlabel {
@@ -688,7 +686,10 @@ function RapportStijl() {
         font-weight: 800;
         letter-spacing: -0.01em;
         font-size: clamp(0.95rem, 1.15vw, 1.05rem);
-        color: rgba(34, 28, 58, 0.62);
+        /* 0,62 gaf op wit 4,63:1, maar dit kaartje is crème en dat is net
+           donkerder: daar zakte hetzelfde label naar 4,52 en dat is te dicht
+           op de grens van 4,5. Op 0,66 zit er weer marge in. */
+        color: rgba(34, 28, 58, 0.66);
       }
       .rp-brontekst {
         margin-top: 0.5rem;
@@ -764,8 +765,8 @@ function RapportStijl() {
       @media (prefers-reduced-motion: reduce) {
         /* Het oppakken vervalt; de schaduw mag wel meebewegen, dat is geen
            verplaatsing. */
-        .rp-briefje, .rp-bron, .rp-map { transition: box-shadow 0.4s ease; }
-        .rp-briefje:hover, .rp-bron:hover, .rp-map:hover {
+        .rp-kaart, .rp-briefje, .rp-bron { transition: box-shadow 0.4s ease; }
+        .rp-kaart:hover, .rp-briefje:hover, .rp-bron:hover {
           transform: rotate(var(--hoek, 0deg)) translateY(var(--lift, 0px));
         }
         .rp-inkt, .rp-stempel, .rp-puls { animation: none !important; }
