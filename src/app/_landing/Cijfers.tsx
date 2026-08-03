@@ -325,9 +325,11 @@ function Rapport({
          het mintveld van de prijzen. De papieren liggen dus met hun bovenkant
          op papier en met hun onderkant op mint, precies zoals de makerskaart
          dat al doet. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 top-[54%]" aria-hidden>
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 top-[48%]" aria-hidden>
         <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
-        <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="speels" />
+        {/* Fors hoger dan de standaard (60/96px): op die maat was het een
+           streepje in plaats van een golf, en dan doet de overgang geen werk. */}
+        <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="speels" hoogte="h-[130px] sm:h-[210px]" />
         {/* Alleen afsluiten als er gewoon papier volgt. Volgen de prijzen (ook
            mint), dan loopt het veld door en zou een golf hier een naad maken. */}
         {!prijzenVolgt && <Golf kleur="var(--w-papier, #fcfbf7)" vorm="rust" hoogte="h-[70px] sm:h-[110px]" />}
@@ -342,7 +344,14 @@ function Rapport({
           ]}
         />
 
-        <h2 data-reveal className="rp-sectiekop">Avinka in cijfers</h2>
+        {/* Kop links, de stand van het bijwerken rechts: de plek waar je op
+           een dashboard kijkt of iets nog actueel is. */}
+        <div data-reveal className="rp-kopregel">
+          <h2 className="rp-sectiekop">Avinka in cijfers</h2>
+          <p className="rp-bijgewerkt">
+            bijgewerkt <span className="rp-tel">{seconden < 3 ? "zojuist" : `${seconden} s geleden`}</span>
+          </p>
+        </div>
 
         {/* De papieren op het bureau: het rapport en de losse briefjes ernaast,
            elk onder een eigen hoek. Dat is wat deze hoek een statistiekenhoekje
@@ -353,7 +362,20 @@ function Rapport({
               {/* Geen h2: de sectie heeft nu zijn eigen kop, en twee koppen
                  vlak boven elkaar is er een te veel. Dit is de titel van het
                  document, niet van de sectie. */}
-              <p className="rp-titel">Rapport van Avinka</p>
+              <div className="rp-kop">
+                <p className="rp-titel">Rapport van Avinka</p>
+                {/* Het live-teken hoort op het hoofddocument, want daar kijk
+                   je. Het stipje licht één keer op bij elke controle; de
+                   sleutel zorgt dat die animatie opnieuw start. */}
+                <span className="rp-live">
+                  <span
+                    aria-hidden
+                    key={seconden === 0 ? "puls" : "stil"}
+                    className={`rp-stip ${seconden === 0 ? "rp-puls" : ""}`}
+                  />
+                  live
+                </span>
+              </div>
               <div aria-hidden className="rp-lijn" />
 
               <p className="rp-hoofd">
@@ -387,13 +409,6 @@ function Rapport({
               Gemeten bij elk stuk werk dat de tools afronden, opgeteld over alle
               gebruikers.
             </p>
-            {/* De sleutel op het aantal seconden zorgt dat het stipje bij elke
-               terugsprong opnieuw één keer oplicht. Bewust géén eeuwig
-               kloppend bolletje: het licht alleen op als er echt gekeken is. */}
-            <p className="rp-bronlive">
-              <span aria-hidden key={seconden === 0 ? "puls" : "stil"} className={`rp-stip ${seconden === 0 ? "rp-puls" : ""}`} />
-              bijgewerkt <span className="rp-tel">{seconden < 3 ? "zojuist" : `${seconden} s geleden`}</span>
-            </p>
           </div>
         </div>
       </div>
@@ -416,8 +431,21 @@ function RapportStijl() {
          van 1104, en dan wipte de herkomst naar een tweede regel onder de
          kaart terwijl rechts alles leeg bleef. Nu: 368 + 38 + 434 + 38 + 192
          = 1070 en het past. */
-      .rp-sectiekop {
+      .rp-kopregel {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px 24px;
         margin-bottom: clamp(22px, 2.8vw, 36px);
+      }
+      .rp-bijgewerkt {
+        font-size: clamp(0.9rem, 1.15vw, 1rem);
+        font-weight: 600;
+        color: rgba(34, 28, 58, 0.62);
+      }
+
+      .rp-sectiekop {
         font-family: var(--font-display), Georgia, serif;
         font-weight: 900;
         letter-spacing: -0.03em;
@@ -461,6 +489,27 @@ function RapportStijl() {
         padding: clamp(20px, 2.2vw, 28px) clamp(20px, 2.4vw, 30px)
                  clamp(24px, 2.6vw, 32px);
         box-shadow: ${schaduw(14, 32, -16, 0.3)};
+      }
+
+      /* Titel links, live-teken rechts, allebei op de basislijn. */
+      .rp-kop {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .rp-live {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex: none;
+        padding: 0.2rem 0.55rem 0.24rem;
+        border-radius: 9999px;
+        background: rgba(47, 158, 110, 0.12);
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        color: ${KOP};
       }
 
       .rp-titel {
@@ -508,9 +557,18 @@ function RapportStijl() {
          Geen map eronder en geen kop: het rapport blijft het hoofddocument.
          Elk briefje heeft een eigen hoek, anders liggen ze als een tabel op
          elkaar gestapeld en is het weer een lijstje. */
+      /* ⚠️ "Gewoon saai wit vierkant" was de klacht, en terecht. Elk papiertje
+         heeft nu de soort die bij zijn inhoud hoort, zoals in een schoolschrift:
+         cijfers op RUITJES, tekst met een KANTLIJN. Heel licht gehouden — het
+         moet als papier lezen, niet als patroon. Het ruitjesmotief komt uit de
+         themavariant "Diep bos", die de eigenaar destijds als enige onderdeel
+         daarvan wilde bewaren. */
       .rp-briefje {
         width: clamp(158px, 17vw, 205px);
-        background: #fffefb;
+        background-color: #fffefb;
+        background-image:
+          repeating-linear-gradient(to right, rgba(34,28,58,0.05) 0 1px, transparent 1px 16px),
+          repeating-linear-gradient(to bottom, rgba(34,28,58,0.05) 0 1px, transparent 1px 16px);
         border-radius: 5px;
         padding: clamp(13px, 1.5vw, 18px) clamp(15px, 1.7vw, 20px);
         box-shadow: ${schaduw(12, 28, -14, 0.28)};
@@ -557,10 +615,13 @@ function RapportStijl() {
          is daarom iets breder en de tussenruimte iets kleiner:
          368 + 34 + 434 + 34 + 222 = 1092, past nog steeds. */
       .rp-bron {
+        position: relative;
         width: clamp(178px, 17.5vw, 222px);
         background: #fffefb;
         border-radius: 5px;
-        padding: clamp(13px, 1.5vw, 17px) clamp(14px, 1.6vw, 18px);
+        /* extra ruimte links voor de kantlijn */
+        padding: clamp(13px, 1.5vw, 17px) clamp(14px, 1.6vw, 18px) clamp(13px, 1.5vw, 17px)
+                 clamp(22px, 2.2vw, 28px);
         box-shadow: ${schaduw(12, 28, -14, 0.24)};
         /* een derde hoek, anders liggen twee papieren precies parallel */
         transform: rotate(-1.5deg);
@@ -573,6 +634,19 @@ function RapportStijl() {
          ⚠️ De kleuren zijn NIET meegegaan in het verzwaren: 0,62 en 0,80 halen
          4,6:1 en 8,3:1. Zwaarder mág lichter, maar hieronder wordt het weer
          krap bij deze lettergroottes. */
+      /* De kantlijn van schoolpapier. In het echt is die rood; hier amber,
+         want rood is op deze site expliciet afgewezen als merkkleur. Meteen
+         de enige plek waar het amber-accent in dit hoekje terugkomt. */
+      .rp-bron::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: clamp(13px, 1.3vw, 17px);
+        width: 2px;
+        background: rgba(245, 158, 11, 0.42);
+      }
+
       .rp-bronlabel {
         font-family: var(--font-display), Georgia, serif;
         font-weight: 800;
