@@ -310,14 +310,23 @@ function Rapport({ begin, bijhouden }: { begin: Cijfers; bijhouden: boolean }) {
             </div>
           )}
 
-          {/* De herkomst, kort, als derde groep. Dit was een alinea van drie
-             regels die niets toevoegde. Hij staat rechts omdat het rapport en
-             de briefjes samen maar tweederde van de breedte pakten en de rest
-             leeg bleef. */}
-          <p className="rp-bron">
-            <span aria-hidden className="rp-stip" />
-            <span>Opgebouwd uit al het toolgebruik, en het loopt bij zolang je hier bent.</span>
-          </p>
+          {/* De verantwoording, óók op papier. Als losse regel tekst naast
+             drie kaartjes hoorde hij er niet bij; nu is het het vierde stuk
+             papier op het bureau, met een eigen hoek. De toon is zakelijker
+             dan de vorige versie ("opgebouwd uit al het toolgebruik, en het
+             loopt bij zolang je hier bent") omdat dit het stuk is dat vertrouwen
+             moet wekken, en daar past spreektaal slecht bij. */}
+          <div className="rp-bron">
+            <p className="rp-bronlabel">verantwoording</p>
+            <p className="rp-brontekst">
+              Gemeten bij elk stuk werk dat de tools afronden, opgeteld over alle
+              gebruikers.
+            </p>
+            <p className="rp-bronlive">
+              <span aria-hidden className="rp-stip" />
+              doorlopend bijgewerkt
+            </p>
+          </div>
         </div>
       </div>
 
@@ -463,23 +472,49 @@ function RapportStijl() {
          Eén regel met een groen stipje ervoor, dat het meelopen aanduidt.
          Bewust géén kloppend of pulserend bolletje: beweging die eeuwig
          doorgaat is op deze pagina expliciet ongewenst. */
+      /* ⚠️ Breedte nagerekend: 368 (rapport) + 38 + 434 (briefjes) + 38 + 208
+         = 1086 in een kolom van 1104. Wordt dit kaartje breder, dan wipt het
+         naar een tweede rij en blijft rechts alles leeg. */
       .rp-bron {
+        width: clamp(178px, 17vw, 208px);
+        background: #fffefb;
+        border-radius: 5px;
+        padding: clamp(13px, 1.5vw, 17px) clamp(14px, 1.6vw, 18px);
+        box-shadow: ${schaduw(12, 28, -14, 0.24)};
+        /* een derde hoek, anders liggen twee papieren precies parallel */
+        transform: rotate(-1.5deg);
+      }
+      /* ⚠️ 0,55 dekking geeft op wit ongeveer 3,2:1 bij een letter van 14px,
+         en daar geldt de eis van 4,5:1. Dezelfde fout stond eerder al in de
+         kleine labels van het rapport; op 0,62 haalt hij 4,7:1. */
+      .rp-bronlabel {
+        font-size: 0.85rem;
+        color: rgba(34, 28, 58, 0.62);
+      }
+      .rp-brontekst {
+        margin-top: 0.45rem;
+        font-size: clamp(0.9rem, 1.1vw, 0.98rem);
+        line-height: 1.55;
+        color: rgba(34, 28, 58, 0.78);
+        text-wrap: pretty;
+      }
+      .rp-bronlive {
         display: flex;
-        align-items: flex-start;
-        gap: 0.6rem;
-        flex: 0 1 12rem;
-        line-height: 1.6;
-        font-size: clamp(0.95rem, 1.2vw, 1.05rem);
-        color: rgba(34, 28, 58, 0.66);
+        align-items: center;
+        gap: 0.45rem;
+        margin-top: 0.7rem;
+        padding-top: 0.6rem;
+        border-top: 1px solid rgba(var(--w-schaduw-rgb, 23,80,58), 0.12);
+        font-size: 0.85rem;
+        color: ${KOP};
       }
       .rp-stip {
-        margin-top: 0.5em;
-        width: 8px;
-        height: 8px;
+        width: 7px;
+        height: 7px;
         flex: none;
         border-radius: 9999px;
         background: var(--color-brand, #2f9e6e);
-        box-shadow: 0 0 0 4px rgba(47, 158, 110, 0.16);
+        box-shadow: 0 0 0 3px rgba(47, 158, 110, 0.16);
       }
 
       /* ── de beweging: de papieren worden ingevuld ──
