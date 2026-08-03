@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Confetti, DONKER, KOP, MINT, VLAK_PAPIER, KaartVlak, schaduw } from "./Wereld";
+import { Confetti, DONKER, Golf, KOP, MINT, MINT_LICHT, VLAK_PAPIER, KaartVlak, schaduw } from "./Wereld";
 import type { Cijfers } from "@/lib/cijfers";
 
 export type { Cijfers };
@@ -90,6 +90,14 @@ export function urenUit(minuten: number) {
    2. alleen als het tabblad zichtbaar is.
    ─────────────────────────────────────────────────────────────────────────── */
 function useBijgehoudenCijfers(begin: Cijfers, bijhouden: boolean) {
+  /* 🔑 WAAROM ER EEN SECONDETELLER BIJ ZIT
+     Het bijhouden wérkte al, maar je zag het nooit: bij weinig gebruikers
+     verandert een optelsom van alles dagenlang niet, dus stond het beeld stil
+     en zei "doorlopend bijgewerkt" niets. De oplossing is NIET de getallen
+     laten oplopen tussen twee metingen door (dat zijn verzonnen tussenstanden
+     en die horen hier niet), maar het CONTROLEREN zichtbaar maken: hoe lang
+     geleden is er gekeken. Dat loopt elke seconde op en springt bij elke
+     controle terug naar nul, dus er beweegt altijd iets en het is waar. */
   /* ⚠️ `bron` houdt bij welke prop-waarde we hebben overgenomen. Zonder dat
      kopieert de hook de begincijfers één keer bij het aankoppelen en kijkt hij
      daarna nooit meer naar de prop. Op de echte pagina valt dat niet op (daar
@@ -103,16 +111,13 @@ function useBijgehoudenCijfers(begin: Cijfers, bijhouden: boolean) {
   if (staat.bron !== sleutelVan(begin)) setStaat({ cijfers: begin, bron: sleutelVan(begin) });
   const cijfers = staat.cijfers;
 
+  const [seconden, setSeconden] = useState(0);
   const anker = useRef<HTMLElement>(null);
   const inBeeld = useRef(false);
 
   useEffect(() => {
     const el = anker.current;
-    /* Niet bijhouden bij een voorbeeldrapport (?cijfers=demo en de proefpagina).
-       Zonder deze uitzondering haalt het na een halve minuut de échte cijfers
-       op, die onder de drempel liggen, en verdwijnt het voorbeeld waar je juist
-       naar aan het kijken bent. */
-    if (!el || !bijhouden) return;
+    if (!el) return;
 
     const kijker = new IntersectionObserver(
       ([ingang]) => {
@@ -124,7 +129,7 @@ function useBijgehoudenCijfers(begin: Cijfers, bijhouden: boolean) {
 
     let gestopt = false;
     const haal = async () => {
-      if (gestopt || document.hidden || !inBeeld.current) return;
+      if (gestopt) return;
       try {
         const antwoord = await fetch("/api/cijfers");
         if (!antwoord.ok || antwoord.status === 204) return;
@@ -139,15 +144,34 @@ function useBijgehoudenCijfers(begin: Cijfers, bijhouden: boolean) {
       }
     };
 
-    const tik = setInterval(haal, KIJK_INTERVAL_MS);
+    /* De secondeteller loopt alleen als het kaartje in beeld is en het
+       tabblad zichtbaar; anders zou hij doortikken terwijl er niemand kijkt
+       en niets gecontroleerd wordt. */
+    const seconde = setInterval(() => {
+      if (document.hidden || !inBeeld.current) return;
+      setSeconden((n) => (n + 1) % Math.round(KIJK_INTERVAL_MS / 1000));
+    }, 1000);
+
+    const tik = setInterval(() => {
+      if (document.hidden || !inBeeld.current) return;
+      setSeconden(0);
+      /* ⚠️ De KLOK loopt altijd, het OPHALEN alleen als bijhouden aanstaat.
+         Bij een voorbeeldrapport (?cijfers=demo en de proefpagina) zou een
+         echte controle de werkelijke cijfers ophalen, die onder de drempel
+         liggen, en dan verdwijnt het voorbeeld waar je juist naar kijkt. De
+         teller loopt daar dus wél door, zodat je ziet hoe het straks werkt. */
+      if (bijhouden) haal();
+    }, KIJK_INTERVAL_MS);
+
     return () => {
       gestopt = true;
+      clearInterval(seconde);
       clearInterval(tik);
       kijker.disconnect();
     };
   }, [bijhouden]);
 
-  return { cijfers, anker };
+  return { cijfers, anker, seconden };
 }
 
 /* ── Eén ingevulde waarde ───────────────────────────────────────────────────
@@ -205,13 +229,27 @@ function Stempel() {
 
 /* ── De sectie ───────────────────────────────────────────────────────────── */
 
+/* Of deze sectie iets te vertellen heeft. Landing.tsx gebruikt dit om te
+   bepalen of de prijzensectie zijn eigen golf nog nodig heeft: als het
+   mintveld hier al begint, zou die golf een tweede rand vlak op de eerste
+   leggen. */
+export function toontCijfers(cijfers: Cijfers | null) {
+  return Boolean(cijfers) && urenUit(cijfers!.minuten) >= DREMPELS.uren;
+}
+
 export function WereldCijfers({
   cijfers,
   bijhouden = true,
+  prijzenVolgt = true,
 }: {
   cijfers: Cijfers | null;
   /* false voor een voorbeeldrapport: dan blijven de meegegeven cijfers staan. */
   bijhouden?: boolean;
+  /* Komt de prijzensectie hierna? Die is óók mint, dus dan loopt het veld
+     gewoon door en hoeft er onderaan niets afgesloten te worden. Staat hij uit
+     (een betalende bezoeker ziet geen prijzen), dan volgt er papier en moet het
+     mintveld hier zelf netjes eindigen. */
+  prijzenVolgt?: boolean;
 }) {
   /* De beslissing of er iets te tonen valt staat bewust BUITEN het rapport, en
      het bijhouden zit erin. Zolang er te weinig data is bestaat het rapport dus
@@ -219,7 +257,7 @@ export function WereldCijfers({
      die toch verborgen is. */
   if (!cijfers) return null;
   if (urenUit(cijfers.minuten) < DREMPELS.uren) return null;
-  return <Rapport begin={cijfers} bijhouden={bijhouden} />;
+  return <Rapport begin={cijfers} bijhouden={bijhouden} prijzenVolgt={prijzenVolgt} />;
 }
 
 /* Eén los briefje met één cijfer. Dezelfde papiersoort als het rapport, maar
@@ -239,8 +277,16 @@ function Briefje({ getal, label }: { getal: number; label: string }) {
   );
 }
 
-function Rapport({ begin, bijhouden }: { begin: Cijfers; bijhouden: boolean }) {
-  const { cijfers, anker } = useBijgehoudenCijfers(begin, bijhouden);
+function Rapport({
+  begin,
+  bijhouden,
+  prijzenVolgt,
+}: {
+  begin: Cijfers;
+  bijhouden: boolean;
+  prijzenVolgt: boolean;
+}) {
+  const { cijfers, anker, seconden } = useBijgehoudenCijfers(begin, bijhouden);
 
   const uren = urenUit(cijfers.minuten);
   if (uren < DREMPELS.uren) return null;
@@ -273,6 +319,20 @@ function Rapport({ begin, bijhouden }: { begin: Cijfers; bijhouden: boolean }) {
         tel={7}
       />
 
+      {/* De golf. Deze sectie lag als enige van de staart vlak op het papier,
+         zonder enige overgang, en dat is wat hem saai maakte. De mint begint
+         halverwege en loopt door tot onder aan de sectie, waar hij overgaat in
+         het mintveld van de prijzen. De papieren liggen dus met hun bovenkant
+         op papier en met hun onderkant op mint, precies zoals de makerskaart
+         dat al doet. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 top-[54%]" aria-hidden>
+        <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
+        <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="speels" />
+        {/* Alleen afsluiten als er gewoon papier volgt. Volgen de prijzen (ook
+           mint), dan loopt het veld door en zou een golf hier een naad maken. */}
+        {!prijzenVolgt && <Golf kleur="var(--w-papier, #fcfbf7)" vorm="rust" hoogte="h-[70px] sm:h-[110px]" />}
+      </div>
+
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-20 pt-6 lg:pb-24">
         <Confetti
           punten={[
@@ -282,13 +342,18 @@ function Rapport({ begin, bijhouden }: { begin: Cijfers; bijhouden: boolean }) {
           ]}
         />
 
+        <h2 data-reveal className="rp-sectiekop">Avinka in cijfers</h2>
+
         {/* De papieren op het bureau: het rapport en de losse briefjes ernaast,
            elk onder een eigen hoek. Dat is wat deze hoek een statistiekenhoekje
            maakt in plaats van één kaart met een lap tekst ernaast. */}
         <div data-reveal className="rp-cluster">
           <div className="rp-map">
             <article className="rp-kaart">
-              <h2 className="rp-titel">Rapport van Avinka</h2>
+              {/* Geen h2: de sectie heeft nu zijn eigen kop, en twee koppen
+                 vlak boven elkaar is er een te veel. Dit is de titel van het
+                 document, niet van de sectie. */}
+              <p className="rp-titel">Rapport van Avinka</p>
               <div aria-hidden className="rp-lijn" />
 
               <p className="rp-hoofd">
@@ -322,9 +387,12 @@ function Rapport({ begin, bijhouden }: { begin: Cijfers; bijhouden: boolean }) {
               Gemeten bij elk stuk werk dat de tools afronden, opgeteld over alle
               gebruikers.
             </p>
+            {/* De sleutel op het aantal seconden zorgt dat het stipje bij elke
+               terugsprong opnieuw één keer oplicht. Bewust géén eeuwig
+               kloppend bolletje: het licht alleen op als er echt gekeken is. */}
             <p className="rp-bronlive">
-              <span aria-hidden className="rp-stip" />
-              doorlopend bijgewerkt
+              <span aria-hidden key={seconden === 0 ? "puls" : "stil"} className={`rp-stip ${seconden === 0 ? "rp-puls" : ""}`} />
+              bijgewerkt <span className="rp-tel">{seconden < 3 ? "zojuist" : `${seconden} s geleden`}</span>
             </p>
           </div>
         </div>
@@ -348,6 +416,16 @@ function RapportStijl() {
          van 1104, en dan wipte de herkomst naar een tweede regel onder de
          kaart terwijl rechts alles leeg bleef. Nu: 368 + 38 + 434 + 38 + 192
          = 1070 en het past. */
+      .rp-sectiekop {
+        margin-bottom: clamp(22px, 2.8vw, 36px);
+        font-family: var(--font-display), Georgia, serif;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        line-height: 1.05;
+        font-size: clamp(1.875rem, 3.4vw, 2.75rem);
+        color: ${DONKER};
+      }
+
       .rp-cluster {
         display: flex;
         flex-wrap: wrap;
@@ -529,6 +607,15 @@ function RapportStijl() {
         background: var(--color-brand, #2f9e6e);
         box-shadow: 0 0 0 3px rgba(47, 158, 110, 0.16);
       }
+      /* Eén keer oplichten op het moment van controleren, niet eeuwig kloppen. */
+      .rp-puls { animation: rpPuls 0.75s cubic-bezier(0.22, 1, 0.36, 1); }
+      @keyframes rpPuls {
+        0%   { box-shadow: 0 0 0 0 rgba(47, 158, 110, 0.55); }
+        100% { box-shadow: 0 0 0 9px rgba(47, 158, 110, 0); }
+      }
+      /* De seconden staan op tabulaire cijfers: anders springt de tekst
+         ernaast heen en weer bij elke tik. */
+      .rp-tel { font-variant-numeric: tabular-nums; }
 
       /* ── de beweging: de papieren worden ingevuld ──
          Alles hangt aan .is-in van de GROEP, niet aan een reveal per element.
@@ -565,7 +652,8 @@ function RapportStijl() {
       }
 
       @media (prefers-reduced-motion: reduce) {
-        .rp-inkt, .rp-stempel { animation: none !important; opacity: 1 !important; }
+        .rp-inkt, .rp-stempel, .rp-puls { animation: none !important; }
+        .rp-inkt, .rp-stempel { opacity: 1 !important; }
         .rp-stempel { opacity: 0.72 !important; }
       }
     `}</style>

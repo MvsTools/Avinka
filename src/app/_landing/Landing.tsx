@@ -17,7 +17,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { signout } from "@/app/auth/actions";
 import { PROEF_DAGEN } from "@/lib/abonnement";
-import { WereldCijfers, type Cijfers } from "./Cijfers";
+import { WereldCijfers, toontCijfers, type Cijfers } from "./Cijfers";
 import {
   SPECKLE_STIJL,
   BlobKnop,
@@ -1224,14 +1224,14 @@ export default function Landing({
            Zolang er nog te weinig data is laat de sectie zichzelf helemaal
            weg, inclusief de kop. Er staat dus nooit een nul of een pijnlijk
            laag getal op de voorpagina. ── */}
-        <WereldCijfers cijfers={cijfers} bijhouden={bijhouden} />
+        <WereldCijfers cijfers={cijfers} bijhouden={bijhouden} prijzenVolgt={toonPrijzen} />
 
         {/* ── 8. Prijzen: het eigen mintveld. Vóór deze verbouwing lagen
            maker, ervaringen, prijzen én vragen allemaal op hetzelfde papier;
            dit veld brengt de afwisseling terug in de staart van de pagina. ── */}
         {/* Wie al betaalt hoeft geen prijzen meer te zien; proef- en verlopen
            accounts wél, want die kunnen nog een plan kiezen. */}
-        {toonPrijzen && <WereldPrijzen />}
+        {toonPrijzen && <WereldPrijzen zonderTopgolf={toontCijfers(cijfers)} />}
 
         {/* ── 9. Veelgestelde vragen: het lichtste blok van de pagina, geen
            kaders maar haarlijnen. ── */}

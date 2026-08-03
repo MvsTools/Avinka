@@ -60,15 +60,20 @@ function Vinkje() {
 
 /* ── 1. Prijzen ──────────────────────────────────────────────────────────── */
 
-export function WereldPrijzen() {
+export function WereldPrijzen({ zonderTopgolf = false }: { zonderTopgolf?: boolean }) {
   // false = maandelijks, true = per schooljaar (juli en augustus gratis)
   const [jaar, setJaar] = useState(false);
 
   return (
     <section id="prijzen" className="relative overflow-hidden" style={{ background: MINT_LICHT }}>
       {/* Rustige entree: deze golf is bijna vlak, want de sectie hierboven
-         (de polaroids) eindigt al druk. De uitgang mag wél bewegen. */}
-      <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="rust" hoogte="h-[70px] sm:h-[120px]" />
+         eindigt al druk. De uitgang mag wél bewegen.
+         ⚠️ Hij vervalt als de cijfersectie hierboven al in mint eindigt: dan
+         zou hij een papieren strook tussen twee mintvelden tekenen, en dat
+         leest als een naad. Landing.tsx bepaalt dat. */}
+      {!zonderTopgolf && (
+        <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="rust" hoogte="h-[70px] sm:h-[120px]" />
+      )}
 
       {/* Twee zachte vlakken tint-op-tint: één links achter de kop, één rechts
          laag onder de kaarten. Bewust in de zachtste tint — hier staan al drie
