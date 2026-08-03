@@ -11,7 +11,6 @@ import {
   KAART,
   KaartVlak,
   KOP,
-  MINT,
   MINT_LICHT,
   RUIS_OP_PAPIER,
   VLAK_MINT,
@@ -315,24 +314,9 @@ export function WereldPrijzen({
               style={{ transitionDelay: `${i * 90}ms` } as CSSProperties}
               className={`relative ${plan.held ? "sm:-my-5" : ""}`}
             >
-              {/* De held wordt niet met een randje aangewezen maar met de
-                 vorm van de site zelf: een uitvergrote kaartvorm die er
-                 onderuit steekt, zoals de vlakken elders op de pagina. In de
-                 zachte tint (VLAK_MINT) scheelde die nog geen 4% met het veld
-                 en zag je hem simpelweg niet; MINT is de tint die hiervoor
-                 bedoeld is — diep genoeg om als spot te lezen, en hij ligt
-                 achter een witte kaart en niet onder tekst. */}
-              {uitgelicht && (
-                <span
-                  className="pointer-events-none absolute -inset-x-7 -inset-y-6 -z-10 hidden sm:block"
-                  style={{
-                    background: MINT,
-                    borderRadius: "38% 62% 46% 54% / 63% 37% 62% 38%",
-                    transform: "rotate(-3deg)",
-                  }}
-                  aria-hidden
-                />
-              )}
+              {/* Hier stond een uitvergrote kaartvorm achter de held (MINT,
+                 -inset-x-7/-inset-y-6). Die moest weg: de held wordt nu alleen
+                 nog aangewezen door de chip en zijn iets grotere kaart. */}
 
               {/* ⚠️ De kaart zelf blijft ALTIJD hetzelfde — wit, dezelfde
                  tekstkleuren, geen "grijs geworden"-behandeling. Dat is
