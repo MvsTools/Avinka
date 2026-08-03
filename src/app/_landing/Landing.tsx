@@ -1271,7 +1271,11 @@ export default function Landing({
            Zolang er nog te weinig data is laat de sectie zichzelf helemaal
            weg, inclusief de kop. Er staat dus nooit een nul of een pijnlijk
            laag getal op de voorpagina. ── */}
-        <WereldCijfers cijfers={cijfers} bijhouden={bijhouden} prijzenVolgt={toonPrijzen} />
+        {/* Het mintveld van de staart loopt door tot in de vragensectie, ook
+           als de prijzen wegvallen: dan pakt de vragensectie het veld op waar
+           de cijfers ophouden. Deze sectie hoeft dus nooit zelf af te sluiten
+           zolang er iets mint onder haar staat. */}
+        <WereldCijfers cijfers={cijfers} bijhouden={bijhouden} veldLooptDoor />
 
         {/* ── 8. Prijzen: het eigen mintveld. Vóór deze verbouwing lagen
            maker, ervaringen, prijzen én vragen allemaal op hetzelfde papier;
@@ -1282,11 +1286,13 @@ export default function Landing({
 
         {/* ── 9. Veelgestelde vragen: het lichtste blok van de pagina, geen
            kaders maar haarlijnen.
-           Het mintveld van de prijzen loopt hier nog even door — tot voorbij
-           de eerste vraag — en pas dáár golft het terug naar papier. Staan de
-           prijzen er niet, dan is dat veld er ook niet en eindigt het al
-           hierboven, dus dan begint deze sectie gewoon op papier. ── */}
-        <WereldVragen items={FAQ} mintBoven={toonPrijzen} />
+           Het mintveld hierboven loopt hier nog even door — tot voorbij de
+           eerste vraag — en pas dáár golft het terug naar papier.
+           ⚠️ Dit hing eerst aan `toonPrijzen` alleen, en daardoor zag een
+           betalende bezoeker (geen prijzenblok) de hele baan niet. Het veld
+           komt van de prijzen ÓF van de cijfers; alleen als geen van beide er
+           staat begint deze sectie gewoon op papier. ── */}
+        <WereldVragen items={FAQ} mintBoven={toonPrijzen || toontCijfers(cijfers)} />
 
         {/* ── 10. Slot: het donkergroene veld, één keer op de pagina. ── */}
         <WereldSlot />

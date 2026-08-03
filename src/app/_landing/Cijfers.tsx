@@ -304,16 +304,17 @@ export function toontCijfers(cijfers: Cijfers | null) {
 export function WereldCijfers({
   cijfers,
   bijhouden = true,
-  prijzenVolgt = true,
+  veldLooptDoor = true,
 }: {
   cijfers: Cijfers | null;
   /* false voor een voorbeeldrapport: dan blijven de meegegeven cijfers staan. */
   bijhouden?: boolean;
-  /* Komt de prijzensectie hierna? Die is óók mint, dus dan loopt het veld
-     gewoon door en hoeft er onderaan niets afgesloten te worden. Staat hij uit
-     (een betalende bezoeker ziet geen prijzen), dan volgt er papier en moet het
-     mintveld hier zelf netjes eindigen. */
-  prijzenVolgt?: boolean;
+  /* Loopt het mintveld hieronder door? Dan hoeft deze sectie onderaan niets af
+     te sluiten. Deze stond eerder op "komt de prijzensectie hierna", en dat was
+     te smal: het veld gaat ook door als de prijzen wegvallen, want dan neemt de
+     vragensectie het over. Op die aanname ging het één keer mis — een betalende
+     bezoeker zag hier een golf terwijl de mint gewoon doorliep. */
+  veldLooptDoor?: boolean;
 }) {
   /* De beslissing of er iets te tonen valt staat bewust BUITEN het rapport, en
      het bijhouden zit erin. Zolang er te weinig data is bestaat het rapport dus
@@ -321,7 +322,7 @@ export function WereldCijfers({
      die toch verborgen is. */
   if (!cijfers) return null;
   if (urenUit(cijfers.minuten) < DREMPELS.uren) return null;
-  return <Rapport begin={cijfers} bijhouden={bijhouden} prijzenVolgt={prijzenVolgt} />;
+  return <Rapport begin={cijfers} bijhouden={bijhouden} veldLooptDoor={veldLooptDoor} />;
 }
 
 /* Eén los briefje met één cijfer. Dezelfde papiersoort als het rapport, maar
@@ -344,11 +345,11 @@ function Briefje({ getal, label }: { getal: number; label: string }) {
 function Rapport({
   begin,
   bijhouden,
-  prijzenVolgt,
+  veldLooptDoor,
 }: {
   begin: Cijfers;
   bijhouden: boolean;
-  prijzenVolgt: boolean;
+  veldLooptDoor: boolean;
 }) {
   const { cijfers, anker, seconden } = useBijgehoudenCijfers(begin, bijhouden);
 
@@ -442,7 +443,7 @@ function Rapport({
         <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="zacht" hoogte="h-[145px] sm:h-[230px]" />
         {/* Alleen afsluiten als er gewoon papier volgt. Volgen de prijzen (ook
            mint), dan loopt het veld door en zou een golf hier een naad maken. */}
-        {!prijzenVolgt && <Golf kleur="var(--w-papier, #fcfbf7)" vorm="rust" hoogte="h-[70px] sm:h-[110px]" />}
+        {!veldLooptDoor && <Golf kleur="var(--w-papier, #fcfbf7)" vorm="rust" hoogte="h-[70px] sm:h-[110px]" />}
       </div>
 
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-28 pt-10 lg:pb-32 lg:pt-12">
