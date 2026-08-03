@@ -18,6 +18,8 @@ type Groep = { klasId: string; klasNaam: string };
 // ⚠️ Bewust géén gesprek: schrijf je opnieuw, dan vervangt dat je eigen vorige
 // briefje. Zo ontstaat er nooit een archief van kind-specifieke opmerkingen —
 // dat is hier de belangrijkste privacymaatregel (zie schema.sql sectie 19).
+// Een briefje dat blijft staan omdat iemand stopt met schrijven, wordt na 30
+// dagen alsnog opgeruimd (cron `wis-oude-overdracht` in database/retention.sql).
 // Het briefje van een collega kun je lezen maar niet aanpassen; bij een naam
 // eronder moet je erop kunnen vertrouwen dat die klopt.
 //
@@ -171,8 +173,9 @@ export default function DuoOverdracht() {
                     className="mt-1 w-full resize-y rounded-xl border border-black/10 bg-cream px-4 py-3 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
                   />
                   <p className="mt-1.5 text-xs text-ink/45">
-                    Dit vervangt jouw vorige briefje, er blijft geen geschiedenis staan. Geen
-                    bijzondere persoonsgegevens (medisch, gezinssituatie, diagnoses).
+                    Dit vervangt jouw vorige briefje en verdwijnt vanzelf na 30 dagen. Er
+                    blijft geen geschiedenis staan. Geen bijzondere persoonsgegevens
+                    (medisch, gezinssituatie, diagnoses).
                   </p>
                 </div>
               </div>
