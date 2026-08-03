@@ -174,28 +174,79 @@ function useBijgehoudenCijfers(begin: Cijfers, bijhouden: boolean) {
   return { cijfers, anker, seconden };
 }
 
-/* ── Eén ingevulde waarde ───────────────────────────────────────────────────
-   Bij binnenkomst verschijnt hij als verse inkt. Verandert het getal later
-   echt, dan doet hij precies hetzelfde: één bewegingstaal voor het object. */
-function Waarde({ getal, eenheid, groot }: { getal: number; eenheid?: string; groot?: boolean }) {
-  const [staat, setStaat] = useState({ toont: getal, vers: 0 });
+/* ── Eén cijfer dat kan doorrollen ──────────────────────────────────────────
+   Verandert dit cijfer, dan schuift het oude eruit en het nieuwe erin. Alleen
+   het cijfer dat écht verandert beweegt; bij 1.284 → 1.285 rolt dus alleen de
+   laatste. Dat is wat een scorebord doet en het is de enige eerlijke manier om
+   beweging te tonen: we verzinnen geen tussenstanden, we laten zien dat er iets
+   verspringt op het moment dat het verspringt. */
+const ROL_MS = 460;
+
+function Rol({ teken }: { teken: string }) {
+  const [staat, setStaat] = useState({ toont: teken, vorig: teken, rolt: false, beurt: 0 });
 
   /* Tijdens het renderen bijstellen in plaats van in een effect: React
-     ondersteunt dat voor "state aanpassen als een prop verandert", en het
-     scheelt een renderronde per wijziging (react-hooks/set-state-in-effect). */
-  if (staat.toont !== getal) setStaat({ toont: getal, vers: staat.vers + 1 });
+     ondersteunt dat voor "state aanpassen als een prop verandert" en het
+     scheelt een renderronde (react-hooks/set-state-in-effect). */
+  if (staat.toont !== teken) {
+    const stil =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setStaat({ toont: teken, vorig: staat.toont, rolt: !stil, beurt: staat.beurt + 1 });
+  }
+
+  const { toont, vorig, rolt, beurt } = staat;
+  useEffect(() => {
+    if (!rolt) return;
+    const t = setTimeout(() => setStaat((s) => ({ ...s, rolt: false })), ROL_MS);
+    return () => clearTimeout(t);
+  }, [rolt, beurt]);
 
   return (
-    <span
-      /* De sleutel verandert bij elke nieuwe waarde, zodat de inkt-animatie
-         opnieuw start in plaats van alleen de tekst te verwisselen. */
-      key={staat.vers}
-      className={`rp-inkt tabular-nums ${groot ? "rp-groot" : "rp-klein"}`}
-    >
-      {staat.toont.toLocaleString("nl-NL")}
-      {/* De spatie staat er echt en niet alleen als marge: zonder tekstspatie
-         plakt een schermlezer het aan elkaar tot "1.284uur". */}
-      {eenheid && <span className="rp-eenheid"> {eenheid}</span>}
+    <span className="rp-rol">
+      {rolt && <span className="rp-rol-uit">{vorig}</span>}
+      <span className={rolt ? "rp-rol-in" : undefined}>{toont}</span>
+    </span>
+  );
+}
+
+/* ── Eén waarde op het bord ─────────────────────────────────────────────────
+   Bij binnenkomst verschijnt hij als verse inkt; daarna rolt hij per cijfer.
+   Het grote getal krijgt VAKJES om elk cijfer, zoals een scorebord: dat laat
+   zien dat het een aflezing is en geen stuk tekst. De kleine getallen op de
+   briefjes rollen wel mee maar krijgen geen vakjes — anders wordt het druk en
+   verdwijnt de rangorde tussen hoofdgetal en bijvangst. */
+function Waarde({ getal, eenheid, groot }: { getal: number; eenheid?: string; groot?: boolean }) {
+  const geschreven = getal.toLocaleString("nl-NL");
+  const tekens = geschreven.split("");
+  /* De sleutel is de POSITIE VAN RECHTS. Op de positie van links zou bij
+     999 → 1.000 elke kaart een plek verspringen en rolt het hele getal om in
+     plaats van alleen de cijfers die echt veranderen. */
+  const sleutelVoor = (i: number) => tekens.slice(i + 1).filter((t) => t !== ".").length + 1;
+
+  return (
+    <span className={`rp-inkt ${groot ? "rp-groot" : "rp-klein"}`}>
+      {/* Het getal één keer, leesbaar, voor de schermlezer. De losse cijfers
+         hieronder staan op aria-hidden: die zouden anders als "1 punt 2 8 4"
+         worden voorgelezen. */}
+      <span className="sr-only">
+        {geschreven}
+        {eenheid ? ` ${eenheid}` : ""}
+      </span>
+      <span aria-hidden className="rp-rij">
+        {tekens.map((teken, i) =>
+          teken === "." ? (
+            /* De duizendtalpunt is geen vakje: een punt in een cijfervakje kan
+               net zo goed een cijfer zijn dat toevallig omrolt. */
+            <span key={`p${i}`} className="rp-punt" />
+          ) : (
+            <span key={sleutelVoor(i)} className={groot ? "rp-cel" : "rp-cel-los"}>
+              <Rol teken={teken} />
+            </span>
+          ),
+        )}
+        {eenheid && <span className="rp-eenheid">{eenheid}</span>}
+      </span>
     </span>
   );
 }
@@ -602,7 +653,67 @@ function RapportStijl() {
         line-height: 0.9;
         color: ${DONKER};
       }
-      .rp-groot { font-size: clamp(2.7rem, 5vw, 3.6rem); }
+      .rp-groot { font-size: clamp(2.5rem, 4.6vw, 3.3rem); }
+
+      /* ── het scorebord ───────────────────────────────────────────────────
+         Elk cijfer in een eigen vakje. Dat is wat een aflezing onderscheidt
+         van een stuk tekst: je ziet dat er posities zijn die kunnen
+         verspringen, ook als ze op dit moment stilstaan. Alleen het GROTE
+         getal krijgt vakjes; de briefjes rollen wel mee maar blijven kaal,
+         anders wordt het druk en verdwijnt de rangorde. */
+      .rp-rij { display: inline-flex; align-items: baseline; gap: 0.06em; }
+      .rp-cel {
+        display: inline-flex;
+        justify-content: center;
+        padding: 0.1em 0.14em 0.12em;
+        border-radius: 0.28em;
+        background: rgba(47, 158, 110, 0.09);
+      }
+      .rp-cel-los { display: inline-flex; justify-content: center; }
+      /* De duizendtalpunt krijgt bewust geen vakje: een punt in een
+         cijfervakje kan net zo goed een cijfer zijn dat toevallig omrolt. */
+      .rp-punt {
+        position: relative;
+        width: 0.26em;
+        align-self: stretch;
+      }
+      .rp-punt::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: 0.18em;
+        width: 0.11em;
+        height: 0.11em;
+        margin-left: -0.055em;
+        border-radius: 9999px;
+        background: currentColor;
+      }
+
+      /* ── het doorrollen ──
+         Alleen het cijfer dat écht verandert beweegt: bij 1.284 → 1.285 rolt
+         de laatste en staan de andere stil. Dat is het verschil tussen een
+         aflezing en een animatie: er beweegt precies zoveel als er gebeurt. */
+      .rp-rol {
+        position: relative;
+        display: inline-block;
+        overflow: hidden;
+        font-variant-numeric: tabular-nums;
+      }
+      .rp-rol > span { display: block; }
+      .rp-rol-uit {
+        position: absolute;
+        inset: 0;
+        animation: rpRolUit ${ROL_MS}ms cubic-bezier(0.4, 0, 0.2, 1) both;
+      }
+      .rp-rol-in { animation: rpRolIn ${ROL_MS}ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+      @keyframes rpRolUit {
+        from { transform: translateY(0); opacity: 1; }
+        to   { transform: translateY(-108%); opacity: 0; }
+      }
+      @keyframes rpRolIn {
+        from { transform: translateY(108%); opacity: 0; }
+        to   { transform: translateY(0); opacity: 1; }
+      }
       /* De eenheid hangt AAN het getal en is geen los label: als los woord
          viel "uur" na drie letters stil en bleef er een gat naast staan. */
       .rp-eenheid {
@@ -810,7 +921,10 @@ function RapportStijl() {
         .rp-kaart:hover, .rp-briefje:hover, .rp-bron:hover {
           transform: rotate(var(--hoek, 0deg)) translateY(var(--lift, 0px));
         }
-        .rp-inkt, .rp-stempel, .rp-puls, .rp-klopt { animation: none !important; }
+        .rp-inkt, .rp-stempel, .rp-puls, .rp-klopt,
+        .rp-rol-uit, .rp-rol-in { animation: none !important; }
+        /* zonder animatie mag het oude cijfer niet blijven hangen */
+        .rp-rol-uit { display: none !important; }
         .rp-inkt, .rp-stempel { opacity: 1 !important; }
         .rp-stempel { opacity: 0.72 !important; }
       }
