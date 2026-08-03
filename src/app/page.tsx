@@ -53,10 +53,22 @@ function zoekAfbeelding(basis: string) {
   return varianten.find((f) => existsSync(path.join(process.cwd(), "public", f)));
 }
 
+/* De cijfers voor het klapbord ("Samen teruggewonnen").
+   ⚠️ NOG NIET AANGESLOTEN OP DE DATABASE. wijs_community_stats() mag alleen
+   door ingelogde gebruikers worden opgevraagd (grant execute ... to
+   authenticated in database/schema.sql), en de bezoeker van deze pagina is
+   dat per definitie niet. Er is dus nog een stukje SQL nodig voordat hier
+   echte getallen kunnen staan.
+
+   Tot die tijd geeft dit null terug en laat de sectie zichzelf helemaal weg,
+   precies zoals bedoeld. Met ?cijfers=demo zie je hem met testgetallen: dat
+   is om het ontwerp te kunnen beoordelen, niet iets wat een bezoeker treft. */
+const DEMO_CIJFERS = { minuten: 77_040, leerkrachten: 37, uitwerkingen: 9_412 };
+
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ startpagina?: string }>;
+  searchParams: Promise<{ startpagina?: string; cijfers?: string }>;
 }) {
   const supabase = await createClient();
   const {
@@ -86,6 +98,7 @@ export default async function Home({
         fotoBestand={zoekAfbeelding("michael")}
         ingelogd={Boolean(user)}
         toonPrijzen={toonPrijzen}
+        cijfers={params.cijfers === "demo" ? DEMO_CIJFERS : null}
       />
       <Footer maxWidth="max-w-5xl" />
     </div>

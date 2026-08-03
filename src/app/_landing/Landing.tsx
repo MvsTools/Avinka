@@ -17,6 +17,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { signout } from "@/app/auth/actions";
 import { PROEF_DAGEN } from "@/lib/abonnement";
+import { WereldCijfers, type Cijfers } from "./Cijfers";
 import {
   SPECKLE_STIJL,
   BlobKnop,
@@ -447,10 +448,14 @@ export default function Landing({
   fotoBestand,
   ingelogd = false,
   toonPrijzen = true,
+  cijfers = null,
 }: {
   fotoBestand?: string;
   ingelogd?: boolean;
   toonPrijzen?: boolean;
+  /* De gemeenschapscijfers voor het klapbord. null = nog geen data, en dan
+     laat WereldCijfers zichzelf helemaal weg. Zie Cijfers.tsx. */
+  cijfers?: Cijfers | null;
 }) {
   const root = useRef<HTMLDivElement>(null);
   // null op de server (eerste paint), daarna de echte systeemvoorkeur.
@@ -1203,10 +1208,19 @@ export default function Landing({
         {/* ── 6. De maker ── */}
         <WereldMaker fotoBestand={fotoBestand} />
 
-        {/* ── 7. Ervaringen: polaroids aan de levende draad. Onder deze
-           sectie is de plek gereserveerd voor de "Avinka in cijfers"-band
-           met live tellers, zodra er echte data is. ── */}
+        {/* ── 7. Ervaringen: polaroids aan de levende draad. ── */}
         <WereldPolaroids />
+
+        {/* ── 7b. Samen teruggewonnen: het klapbord met de echte cijfers.
+           Staat hier omdat de polaroids het zachte bewijs zijn (wat mensen
+           zéggen) en dit het harde (wat er gemeten is). Samen vormen ze het
+           bewijsblok, en dat hoort vlak vóór de prijzen te staan: dat is het
+           moment waarop iemand beslist.
+
+           Zolang er nog te weinig data is laat de sectie zichzelf helemaal
+           weg, inclusief de kop. Er staat dus nooit een nul of een pijnlijk
+           laag getal op de voorpagina. ── */}
+        <WereldCijfers cijfers={cijfers} />
 
         {/* ── 8. Prijzen: het eigen mintveld. Vóór deze verbouwing lagen
            maker, ervaringen, prijzen én vragen allemaal op hetzelfde papier;
