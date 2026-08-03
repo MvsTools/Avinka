@@ -8,7 +8,6 @@ import {
   Confetti,
   DONKER,
   Golf,
-  KAART,
   KaartVlak,
   KOP,
   MINT_LICHT,
@@ -325,7 +324,17 @@ export function WereldPrijzen({
                  andere ondergrond krijgen lezen sneller als drie verschillende
                  dingen dan als dezelfde tabel in een andere stand. Alleen de
                  knop onderin verandert; zie daar. */}
-              <div className={`relative flex h-full flex-col p-8 ${plan.held ? "sm:py-11" : ""} ${KAART}`}>
+              {/* ⚠️ Niet de gedeelde KAART-stijl hier: die schaduw (blur 80,
+                 rgba(23,80,58,0.55) — een verzadigd donkergroen) klopt op een
+                 brede kolom, maar deze kaarten staan op mobiel maar 15-24px
+                 van de schermrand. Dan wordt de schaduw zélf het randje dat
+                 nooit naar het bijna-witte papier terugkeert: de achtergrond
+                 eronder is allang cream, maar de vage groene gloed eromheen
+                 overtuigt je van het tegendeel. Dezelfde kleur, wel de kleinere
+                 schaduw die ook de Schakelaar hier verderop gebruikt. */}
+              <div
+                className={`relative flex h-full flex-col p-8 ${plan.held ? "sm:py-11" : ""} rounded-[var(--w-kaart-radius,2.5rem)] bg-white shadow-[-8px_20px_44px_-30px_rgba(23,80,58,0.55)] ring-1 ring-ink/[0.04]`}
+              >
                 {/* De chip staat naast de naam en niet als sticker over de
                    bovenrand: zo blijft de namenrij van de drie kaarten op
                    dezelfde lijn en leest het als deel van de kaart. */}
