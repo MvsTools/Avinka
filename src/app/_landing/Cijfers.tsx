@@ -429,7 +429,11 @@ function Rapport({
               <p className="rp-hoofd">
                 <Waarde getal={uren} eenheid="uur" groot />
               </p>
-              <p className="rp-onder">teruggegeven na schooltijd</p>
+              {/* ⚠️ Stond eerst "teruggegeven na schooltijd". Dat las stroef en zei
+                 niets over wat het oplevert. Deze zegt wél waar het over gaat
+                 (bespaarde tijd) en houdt vast dat het werk van ná schooltijd
+                 is, want dat was het inzicht waar de hele eenheid op berust. */}
+              <p className="rp-onder">bespaard op werk na schooltijd</p>
 
               {/* De stempel valt over de rand van het kaartje heen. Dat is wat
                  hem gedrukt laat lijken in plaats van geplaatst: niemand
@@ -440,7 +444,7 @@ function Rapport({
           {(toonLeerkrachten || toonUitwerkingen) && (
             <div className="rp-briefjes">
               {toonLeerkrachten && <Briefje getal={cijfers.leerkrachten} label="leerkrachten" />}
-              {toonUitwerkingen && <Briefje getal={cijfers.uitwerkingen} label="uitwerkingen" />}
+              {toonUitwerkingen && <Briefje getal={cijfers.uitwerkingen} label="taken afgevinkt" />}
             </div>
           )}
 
@@ -451,7 +455,9 @@ function Rapport({
              loopt bij zolang je hier bent") omdat dit het stuk is dat vertrouwen
              moet wekken, en daar past spreektaal slecht bij. */}
           <div className="rp-bron">
-            <p className="rp-bronlabel">verantwoording</p>
+            {/* ⚠️ Hier stond het kopje "verantwoording". Eruit: het woord is
+               ambtelijk en het kaartje heeft geen titel nodig, want de zin
+               zelf vertelt al wat het is. */}
             <p className="rp-brontekst">
               Gemeten bij elk stuk werk dat de tools afronden, opgeteld over alle
               gebruikers.
@@ -610,6 +616,9 @@ function RapportStijl() {
         font-weight: 600;
         line-height: 1.45;
         color: rgba(34, 28, 58, 0.8);
+        /* Evenwichtig afbreken: zonder dit viel "schooltijd" als los woord op
+           een tweede regel. */
+        text-wrap: balance;
         /* ruimte vrijhouden voor de stempel rechtsonder */
         padding-right: clamp(52px, 5.4vw, 68px);
       }
