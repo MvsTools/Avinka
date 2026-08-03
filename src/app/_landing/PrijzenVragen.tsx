@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { PLANNEN, PROEF_DAGEN, planById, prijsTekst, type PlanId } from "@/lib/abonnement";
 import {
@@ -102,52 +102,128 @@ function standVoor(plan: PlanId, huidigPlan: PlanId | null): KaartStand {
   return RANG[plan] < RANG[huidigPlan] ? { soort: "inbegrepen" } : { soort: "upgrade" };
 }
 
+/* ── Waar het mintveld ophoudt ─────────────────────────────────────────────
+   De golf moet vlak onder de €5,99 landen. Dat punt is in CSS niet uit te
+   drukken: hoe ver het boven de onderkant van de sectie ligt verschilt per
+   breedte (de kaarten wikkelen anders en stapelen onder 640px) en per bezoeker
+   (de introzin erboven is korter of langer). Vaste pixelwaarden per breekpunt
+   heb ik geprobeerd — die klopten op 1440 en zaten er op 390 ruim duizend
+   pixels naast, en ze verlopen stilletjes zodra er één zin bij komt.
+   Daarom wordt het één keer gemeten en opnieuw bij elke maatverandering.
+
+   ⚠️ De ResizeObserver vuurt zelf al af direct na observe(), dus de eerste
+   meting komt daar ook vandaan. Geen setState synchroon in het effect. */
+/* Hoever de onderkant van de laag bóven het bedrag moet liggen, zodat de golf
+   zelf er nét ONDER valt. De golf is 92px hoog (op élke breedte gelijk, anders
+   verschuift dit punt mee); zijn rand ligt gemiddeld 30px boven de onderkant
+   van de laag en deint ±9. Met 45 komt de rand dus 6 tot 24 pixels onder het
+   bedrag uit — ruim vóór de eerste opsommingsregel, die nog eens zo'n 30px
+   lager begint. Verander je de golfhoogte, herbereken dan dit getal. */
+const GOLF_MARGE = 45;
+
+function useVeldTotHetBedrag() {
+  const sectie = useRef<HTMLElement>(null);
+  const bedrag = useRef<HTMLSpanElement>(null);
+  const [veldBodem, setVeldBodem] = useState<number | null>(null);
+
+  useEffect(() => {
+    const s = sectie.current;
+    const b = bedrag.current;
+    if (!s || !b) return;
+    const kijker = new ResizeObserver(() => {
+      /* ⚠️ Met getBoundingClientRect() ging dit mis: de kaarten komen binnen
+         met een scroll-reveal, en zolang die transform loopt zit het bedrag
+         tientallen pixels van zijn eigen plek. offsetTop/offsetHeight kijken
+         naar de layout en trekken zich van transforms niets aan, dus die
+         geven het rustpunt — ook als er op dat moment nog iets beweegt. */
+      let y = 0;
+      for (let n: HTMLElement | null = b; n && n !== s; n = n.offsetParent as HTMLElement | null) {
+        y += n.offsetTop;
+      }
+      setVeldBodem(s.offsetHeight - (y + b.offsetHeight) - GOLF_MARGE);
+    });
+    kijker.observe(s);
+    return () => kijker.disconnect();
+  }, []);
+
+  return { sectie, bedrag, veldBodem };
+}
+
 export function WereldPrijzen({
   zonderTopgolf = false,
-  zonderOndergolf = false,
   huidigPlan = null,
 }: {
   zonderTopgolf?: boolean;
-  zonderOndergolf?: boolean;
   /* Het betaalde pakket dat deze bezoeker nú heeft, of null: uitgelogd, in de
      proef, of verlopen. Alleen dit bepaalt welke kaarten dichtgaan. */
   huidigPlan?: PlanId | null;
 }) {
   // false = maandelijks, true = per schooljaar (juli en augustus gratis)
   const [jaar, setJaar] = useState(false);
+  const { sectie, bedrag, veldBodem } = useVeldTotHetBedrag();
 
   return (
-    <section id="prijzen" className="relative overflow-hidden" style={{ background: MINT_LICHT }}>
-      {/* Rustige entree: deze golf is bijna vlak, want de sectie hierboven
-         eindigt al druk. De uitgang mag wél bewegen.
+    <section ref={sectie} id="prijzen" className="relative overflow-hidden">
+      {/* ── Het mintveld loopt tot halverwege de kaarten ─────────────────────
+         Het veld vulde eerst de hele sectie én liep door tot in de vragen, en
+         dat werd één lange baan van ruim tweeduizend pixels. Nu stopt hij vlak
+         onder de €5,99: de kaarten komen met hun bovenkant uit het veld en
+         staan met hun onderkant op papier, net als de makerskaart hogerop.
+
+         🔑 Waar hij precies stopt wordt gemeten, niet vastgezet — zie
+         useVeldTotHetBedrag hierboven. De waarden in de klasse zijn alleen de
+         schatting voor het allereerste beeld, vóór die meting binnen is; ze
+         mogen er dus best een stukje naast zitten. */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 z-0 bottom-[1619px] overflow-hidden sm:bottom-[607px] lg:bottom-[541px]"
+        style={veldBodem == null ? undefined : { bottom: veldBodem }}
+        aria-hidden
+      >
+        <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
+
+        {/* Twee zachte vlakken tint-op-tint: één links achter de kop, één
+           rechts op de rand. Bewust in de zachtste tint — hier staan al drie
+           kaarten, dus de achtergrond hoeft alleen de hoeken te dragen.
+           Ze staan binnen deze laag en vóór de golf, zodat de golf ze op de
+           kleurrand afsnijdt in plaats van dat ze het papier in steken. */}
+        <KaartVlak
+          kleur={VLAK_MINT}
+          vorm="wig"
+          breedte={780}
+          hoogte={340}
+          style={{ left: "-14%", top: 150, transform: "rotate(-5deg)" }}
+          className="hidden lg:block"
+          tel={2}
+        />
+        <KaartVlak
+          kleur={VLAK_MINT}
+          vorm="ei"
+          breedte={620}
+          hoogte={360}
+          style={{ right: "-10%", bottom: -120, transform: "rotate(7deg)" }}
+          className="hidden lg:block"
+          tel={5}
+        />
+
+        {/* ⚠️ Deze golf MOET vlak zijn. Hij moet landen in het gat tussen de
+           prijs en de eerste opsommingsregel, en dat is maar zo'n 32px hoog;
+           `ribbel` deint 36px en sneed dus dwars door het bedrag. `rust` deint
+           26px en past precies. */}
+        {/* De 92 staat er voluit en niet als variabele: Tailwind leest de
+           klassennamen uit de broncode, dus een samengestelde naam levert geen
+           CSS op en de golf zou onzichtbaar zijn. Zie GOLF_MARGE hierboven —
+           die twee getallen horen bij elkaar. */}
+        <Golf kleur="var(--w-papier, #fcfbf7)" vorm="rust" hoogte="h-[92px]" />
+      </div>
+
+      {/* Rustige entree van bovenaf. Andere vorm dan de golf hieronder: twee
+         keer dezelfde maakt van het veld een gestempelde band.
          ⚠️ Hij vervalt als de cijfersectie hierboven al in mint eindigt: dan
          zou hij een papieren strook tussen twee mintvelden tekenen, en dat
          leest als een naad. Landing.tsx bepaalt dat. */}
       {!zonderTopgolf && (
-        <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="rust" hoogte="h-[70px] sm:h-[120px]" />
+        <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="hapMidden" hoogte="h-[70px] sm:h-[120px]" />
       )}
-
-      {/* Twee zachte vlakken tint-op-tint: één links achter de kop, één rechts
-         laag onder de kaarten. Bewust in de zachtste tint — hier staan al drie
-         witte kaarten, dus de achtergrond hoeft alleen de hoeken te dragen. */}
-      <KaartVlak
-        kleur={VLAK_MINT}
-        vorm="wig"
-        breedte={780}
-        hoogte={340}
-        style={{ left: "-14%", top: 150, transform: "rotate(-5deg)" }}
-        className="z-[6] hidden lg:block"
-        tel={2}
-      />
-      <KaartVlak
-        kleur={VLAK_MINT}
-        vorm="ei"
-        breedte={620}
-        hoogte={360}
-        style={{ right: "-10%", bottom: 60, transform: "rotate(7deg)" }}
-        className="z-[6] hidden lg:block"
-        tel={5}
-      />
 
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-28 pt-24 lg:pb-32 lg:pt-28">
         {/* Over de hele strook van de kaartenrij tot en met de prijzen lag geen
@@ -221,7 +297,14 @@ export function WereldPrijzen({
             const dicht = stand.soort === "huidig" || stand.soort === "inbegrepen";
             /* De held mag alleen uitgelicht blijven zolang hij ook echt te
                kiezen is; een dichte kaart met "Meest gekozen" erop nodigt uit
-               tot iets wat niet kan. */
+               tot iets wat niet kan.
+               ⚠️ Dit gaat alleen over het SIERAAD: de chip en de vorm
+               erachter. De MAAT van de heldkaart hangt aan `plan.held` en
+               blijft dus altijd hetzelfde, ook als hij dicht is. Anders is de
+               kaartenrij in de ene stand 34px hoger dan in de andere, en dan
+               landt de golf van het mintveld per bezoeker op een andere plek
+               in de kaart. En een prijstabel hoort niet te verspringen zodra
+               je van abonnement wisselt. */
             const uitgelicht = Boolean(plan.held) && !dicht;
             /* Blijft er nog maar één stap over (Compleet-klant die alleen naar
                Pro kan), dan is dat de enige actie op de pagina en verdient hij
@@ -235,7 +318,7 @@ export function WereldPrijzen({
               key={plan.id}
               data-reveal
               style={{ transitionDelay: `${i * 90}ms` } as CSSProperties}
-              className={`relative ${uitgelicht ? "sm:-my-5" : ""}`}
+              className={`relative ${plan.held ? "sm:-my-5" : ""}`}
             >
               {/* De held wordt niet met een randje aangewezen maar met de
                  vorm van de site zelf: een uitvergrote kaartvorm die er
@@ -258,18 +341,21 @@ export function WereldPrijzen({
 
               {/* ⚠️ "Grijs" is hier NIET opacity op de hele kaart. Dat haalt de
                  tekst onder de AA-contrastgrens, en de inhoud moet leesbaar
-                 blijven: het is nog steeds wat je hebt. De kaart zakt daarom
-                 wég in plaats van te vervagen — geen wit, geen schaduw, geen
-                 uitlichting, alleen een vlak in de tint van het veld. Hij
-                 leest als achtergrond in plaats van als aanbod, terwijl elke
-                 letter even scherp blijft. */}
+                 blijven: het is nog steeds wat je hebt. De kaart gaat daarom
+                 omláág in plaats van te vervagen — geen wit, geen schaduw,
+                 geen uitlichting, maar een diepere tint dan het veld, alsof
+                 hij erin is gedrukt. Elke letter blijft even scherp.
+                 ⚠️ Dit stond op VLAK_MINT (#e3efe7) en dat scheelt nog geen
+                 4% met het mintveld eronder: dan zie je geen kaart meer maar
+                 een vlek. MINT is de tint die voor dit verschil bedoeld is —
+                 dezelfde die de heldvorm achter Compleet draagt. */}
               <div
-                className={`relative flex h-full flex-col p-8 ${uitgelicht ? "sm:py-11" : ""} ${
+                className={`relative flex h-full flex-col p-8 ${plan.held ? "sm:py-11" : ""} ${
                   dicht
-                    ? "rounded-[var(--w-kaart-radius,2.5rem)] ring-1 ring-ink/[0.07]"
+                    ? "rounded-[var(--w-kaart-radius,2.5rem)] ring-1 ring-[color:var(--w-veld-rand,#bcd8c8)]"
                     : KAART
                 }`}
-                style={dicht ? { background: VLAK_MINT } : undefined}
+                style={dicht ? { background: MINT } : undefined}
               >
                 {/* De chip staat naast de naam en niet als sticker over de
                    bovenrand: zo blijft de namenrij van de drie kaarten op
@@ -287,13 +373,24 @@ export function WereldPrijzen({
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-sm text-ink/55">{plan.tagline}</p>
+                {/* ⚠️ Op wit haalt ink/55 net 5,4:1, maar op de diepere tint
+                   van een dichte kaart zakt hij naar 4,43 — onder de AA-grens
+                   van 4,5 voor tekst van 14px. Zelfde verhaal voor "p/m"
+                   (3,75). Op die kaarten dus een stap donkerder; gemeten, niet
+                   op gevoel. */}
+                <p className={`mt-1 text-sm ${dicht ? "text-ink/70" : "text-ink/55"}`}>{plan.tagline}</p>
 
                 <p className="mt-6 flex items-baseline gap-1.5">
-                  <span className="font-display text-[3.25rem] font-black leading-none tracking-tight text-ink">
+                  <span
+                    /* Het eerste bedrag (€5,99) is het ankerpunt waar de golf
+                       van het mintveld op wordt afgeregeld. Zie
+                       useVeldTotHetBedrag bovenaan dit bestand. */
+                    ref={i === 0 ? bedrag : undefined}
+                    className="font-display text-[3.25rem] font-black leading-none tracking-tight text-ink"
+                  >
                     {prijsTekst(plan.prijsMaand)}
                   </span>
-                  <span className="text-ink/50">p/m</span>
+                  <span className={dicht ? "text-ink/65" : "text-ink/50"}>p/m</span>
                 </p>
                 {/* Vaste hoogte, ook als de regel er niet staat: anders
                    springen de drie kaarten los van elkaar zodra je schakelt. */}
@@ -318,8 +415,10 @@ export function WereldPrijzen({
                      dan geen knop. Zelfde hoogte als een kleine BlobKnop, dus
                      de drie kaarten blijven op één lijn eindigen. */
                   <p
-                    className="blobknop mt-8 flex w-full items-center justify-center gap-2.5 px-5 py-3.5 text-center text-base font-bold"
-                    style={{ background: MINT, color: DONKER }}
+                    /* Wit op de verzonken kaart: op mint-in-mint verdween deze
+                       strook in de kaart en las je 'm niet meer als label. */
+                    className="blobknop mt-8 flex w-full items-center justify-center gap-2.5 bg-white px-5 py-3.5 text-center text-base font-bold"
+                    style={{ color: DONKER }}
                   >
                     <Vinkje />
                     {stand.soort === "huidig" ? "Je huidige abonnement" : "Zit hier al in"}
@@ -362,11 +461,9 @@ export function WereldPrijzen({
         </p>
       </div>
 
-      {/* ⚠️ Vervalt als de vragensectie hieronder het mintveld overneemt: dan
-         loopt het veld door tot voorbij de eerste vraag en ligt de golf dáár.
-         Twee golven vlak na elkaar zou een papieren band tussen twee
-         mintvelden tekenen. Landing.tsx bepaalt dat. */}
-      {!zonderOndergolf && <Golf kleur="var(--w-papier, #fcfbf7)" vorm="ribbel" />}
+      {/* Hier stond de afsluitende golf van deze sectie. Die is niet meer
+         nodig: het mintveld eindigt nu al halverwege de kaarten, met zijn
+         eigen golf, en alles daaronder is gewoon papier. */}
     </section>
   );
 }
@@ -408,7 +505,7 @@ function Schakelaar({ jaar, setJaar }: { jaar: boolean; setJaar: (v: boolean) =>
 
 type Vraag = { vraag: string; antwoord: string };
 
-export function WereldVragen({ items, mintBoven = false }: { items: Vraag[]; mintBoven?: boolean }) {
+export function WereldVragen({ items }: { items: Vraag[] }) {
   // Meerdere tegelijk open mag: dit is een naslaglijst, geen quiz.
   const [open, setOpen] = useState<string[]>([]);
   const [meer, setMeer] = useState(false);
@@ -424,43 +521,11 @@ export function WereldVragen({ items, mintBoven = false }: { items: Vraag[]; min
 
   return (
     <section id="vragen" className="relative overflow-hidden scroll-mt-16">
-      {/* ── Het mintveld van de prijzen loopt hier doorheen ──────────────────
-         Het veld eindigde precies op de sectiegrens, en dan valt de kop
-         "Veelgestelde vragen" meteen op kaal papier: de golf zat zó ver van
-         de eerste vraag dat de staart van de pagina in tweeën brak. Nu loopt
-         de mint door tot voorbij de eerste vraag en pas dáár komt de golf.
-         De hoogte is met opzet in pixels en niet in procenten: de sectie
-         wordt hoger zodra iemand een vraag openklapt of "Bekijk de andere 5
-         vragen" gebruikt, en met een percentage zou de golf dan mee naar
-         beneden zakken. */}
-      {mintBoven && (
-        <div
-          /* De hoogte is op de PIXEL afgeregeld: de golf moet in het gat vallen
-             tussen de haarlijn onder vraag 1 en de tekst van vraag 2. Op 370px
-             sneed hij precies door het plusje van vraag 2. */
-          className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[355px] overflow-hidden sm:h-[310px] lg:h-[355px]"
-          aria-hidden
-        >
-          <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
-
-          {/* Linksonder op de rand, tegenover het vlak dat in de cijfersectie
-             rechtsboven hangt: samen omlijsten ze de staart van het veld.
-             Hij duikt de golf in, dus het papier van de golf snijdt hem op de
-             kleurrand af — zelfde ingreep als overal elders. */}
-          <KaartVlak
-            kleur={VLAK_MINT}
-            vorm="koepel"
-            breedte={700}
-            hoogte={330}
-            style={{ left: "-15%", bottom: -90, transform: "rotate(-6deg)" }}
-            className="hidden lg:block"
-            tel={5}
-          />
-
-          <Golf kleur="var(--w-papier, #fcfbf7)" vorm="ribbel" hoogte="h-[70px] sm:h-[110px]" />
-        </div>
-      )}
-
+      {/* Hier lag een mintbaan die doorliep tot voorbij de eerste vraag. Die
+         is eruit: samen met het veld bij de prijzen en de cijfers werd het één
+         baan van ruim tweeduizend pixels, en dat was te veel van hetzelfde.
+         Het veld stopt nu halverwege de prijskaarten; deze sectie is weer
+         helemaal papier. */}
       {/* De rechterhelft blijft leeg omdat de lijst links staat; daar ligt het
          vlak dat die hoek draagt. Het stond eerst breder en hoger, waardoor
          de rand er precies door de open/dicht-knopjes heen liep; nu blijft

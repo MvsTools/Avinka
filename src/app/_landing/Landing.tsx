@@ -1289,18 +1289,13 @@ export default function Landing({
         {/* Voor iedereen zichtbaar; de sectie past zich aan de bezoeker aan
            in plaats van te verdwijnen. Zie PrijzenVragen.tsx voor de vijf
            standen. */}
-        <WereldPrijzen
-          zonderTopgolf={toontCijfers(cijfers)}
-          zonderOndergolf
-          huidigPlan={huidigPlan}
-        />
+        <WereldPrijzen zonderTopgolf={toontCijfers(cijfers)} huidigPlan={huidigPlan} />
 
         {/* ── 9. Veelgestelde vragen: het lichtste blok van de pagina, geen
            kaders maar haarlijnen.
-           Het mintveld van de prijzen loopt hier nog even door — tot voorbij
-           de eerste vraag — en pas dáár golft het terug naar papier. De
-           prijzensectie staat er altijd, dus dat veld is er ook altijd. ── */}
-        <WereldVragen items={FAQ} mintBoven />
+           Weer helemaal op papier: het mintveld eindigt nu al halverwege de
+           prijskaarten. ── */}
+        <WereldVragen items={FAQ} />
 
         {/* ── 10. Slot: het donkergroene veld, één keer op de pagina. ── */}
         <WereldSlot />
