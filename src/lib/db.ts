@@ -889,6 +889,34 @@ export async function getDuoOverdrachten(klasId: string): Promise<DuoOverdracht[
   return data as DuoOverdracht[];
 }
 
+// Wanneer heb jij de overdracht van deze groep voor het laatst gelezen? Leeg =
+// nog nooit, dan is alles van je collega's nieuw.
+export async function getOverdrachtGelezen(klasId: string): Promise<string | null> {
+  const sb = createClient();
+  const { data, error } = await sb
+    .from("duo_overdracht_gelezen")
+    .select("gelezen_op")
+    .eq("klas_id", klasId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data.gelezen_op as string;
+}
+
+export async function markeerOverdrachtGelezen(klasId: string): Promise<boolean> {
+  const sb = createClient();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return false;
+  const { error } = await sb
+    .from("duo_overdracht_gelezen")
+    .upsert(
+      { klas_id: klasId, user_id: user.id, gelezen_op: new Date().toISOString() },
+      { onConflict: "klas_id,user_id" },
+    );
+  return !error;
+}
+
 export async function zetDuoOverdracht(klasId: string, tekst: string): Promise<boolean> {
   const sb = createClient();
   const {

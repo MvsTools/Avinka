@@ -57,9 +57,14 @@ export default async function DashboardStart() {
         </div>
       </div>
 
-      <VandaagRij bron={planning} vandaag={vandaag} groepen={groepen} />
-
-      <DuoOverdracht />
+      {/* De overdracht is de vierde tegel in dezelfde rij: hij hoort bij het
+          "hoe staat het er vandaag voor"-blok, niet bij de tools eronder. */}
+      <VandaagRij
+        bron={planning}
+        vandaag={vandaag}
+        groepen={groepen}
+        extraTegel={<DuoOverdracht />}
+      />
 
       <OnboardingCard />
 

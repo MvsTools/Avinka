@@ -1424,4 +1424,23 @@ drop policy if exists "eigen overdracht schrijven" on public.duo_overdracht;
 create policy "eigen overdracht schrijven" on public.duo_overdracht
   for all using (auteur = auth.uid() and public.klas_toegang(duo_overdracht.klas_id))
   with check (auteur = auth.uid() and public.klas_toegang(duo_overdracht.klas_id));
+
+-- Wanneer heb JIJ de overdracht van deze groep voor het laatst gelezen? Nodig
+-- voor de teller op Start ("2 nieuwe berichten"). Eén regel per persoon per
+-- groep; alleen je eigen regel is van jou.
+--
+-- Bewust in de database en niet in de browser: lees je het op je telefoon, dan
+-- hoort het op je laptop ook gelezen te zijn. localStorage hoort bij een
+-- apparaat, niet bij een mens.
+create table if not exists public.duo_overdracht_gelezen (
+  klas_id   uuid not null references public.klassen(id) on delete cascade,
+  user_id   uuid not null references auth.users(id) on delete cascade,
+  gelezen_op timestamptz not null default now(),
+  primary key (klas_id, user_id)
+);
+alter table public.duo_overdracht_gelezen enable row level security;
+drop policy if exists "eigen leesstand" on public.duo_overdracht_gelezen;
+create policy "eigen leesstand" on public.duo_overdracht_gelezen
+  for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+grant select, insert, update, delete on public.duo_overdracht_gelezen to authenticated;
 grant select, insert, update, delete on public.duo_overdracht to authenticated;

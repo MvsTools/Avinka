@@ -171,6 +171,21 @@ create policy "eigen overdracht schrijven" on public.duo_overdracht
   for all using (auteur = auth.uid() and public.klas_toegang(duo_overdracht.klas_id))
   with check (auteur = auth.uid() and public.klas_toegang(duo_overdracht.klas_id));
 
+-- Leesstand van de overdracht (voor de teller op Start). In de database en niet
+-- in de browser: lees je het op je telefoon, dan hoort het op je laptop ook
+-- gelezen te zijn.
+create table if not exists public.duo_overdracht_gelezen (
+  klas_id    uuid not null references public.klassen(id) on delete cascade,
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  gelezen_op timestamptz not null default now(),
+  primary key (klas_id, user_id)
+);
+alter table public.duo_overdracht_gelezen enable row level security;
+drop policy if exists "eigen leesstand" on public.duo_overdracht_gelezen;
+create policy "eigen leesstand" on public.duo_overdracht_gelezen
+  for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+grant select, insert, update, delete on public.duo_overdracht_gelezen to authenticated;
+
 -- ⚠️ Bijwerken van een koppeling mag alleen de eigenaar van de klas. Anders
 -- kan een meekijkende collega zijn eigen rol op 'volledig' zetten en zo alsnog
 -- bij de rapporten. Loskoppelen (delete) mogen ze allebei.

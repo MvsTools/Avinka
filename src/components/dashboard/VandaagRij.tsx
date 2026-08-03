@@ -117,14 +117,19 @@ function Tegel({
   );
 }
 
+// `extraTegel` schuift een vierde tegel in dezelfde rij (de overdracht van je
+// collega's). Zit er geen in, dan blijven het gewoon drie kolommen — een lege
+// vierde plek zou de rij scheef trekken.
 export default function VandaagRij({
   bron,
   vandaag,
   groepen = [],
+  extraTegel,
 }: {
   bron: PlanningBron;
   vandaag: string;
   groepen?: number[];
+  extraTegel?: React.ReactNode;
 }) {
   const { schooljaar } = bron;
   const beeld = dagbeeld(bron, vandaag);
@@ -170,7 +175,11 @@ export default function VandaagRij({
 
   return (
     <>
-      <div className="grid gap-3 sm:grid-cols-3">
+      {/* auto-fit in plaats van een vast aantal kolommen: de overdracht-tegel
+          verschijnt alleen als je een groep deelt, en een vaste vierde kolom
+          zou anders leeg blijven staan. Lege sporen vallen bij auto-fit
+          vanzelf weg, dus drie tegels verdelen de rij netjes met z'n drieën. */}
+      <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(220px,1fr))]">
         <Tegel
           icon={<CalendarIcon className="h-5 w-5" />}
           badge="bg-ink/[0.06] text-ink/70"
@@ -243,6 +252,11 @@ export default function VandaagRij({
             <p className="text-lg font-bold leading-tight text-ink">Niets gepland</p>
           )}
         </Tegel>
+
+        {/* De overdracht-tegel levert zelf ook zijn opengeklapte paneel, en dat
+            gaat als `col-span-full` over de hele rij — vandaar dat hij ín het
+            raster staat en niet ernaast. */}
+        {extraTegel}
       </div>
 
       {open === "dag" && (
