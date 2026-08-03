@@ -9,8 +9,10 @@
 // weet, kan je collega zelf opzoeken. Een overdracht gaat juist over wat er
 // níét in staat — wat er anders liep, wie aandacht nodig had, wat een ouder
 // zei. Een concept uit systeemgegevens leest daardoor altijd als vulling.
-// Wat wél hielp is de kapstok naast dit veld: niet vertellen wat er gebeurd
-// is, maar vragen wat er te vertellen valt.
+//
+// Daarna is nog een tussenvorm geprobeerd (aantikbare kopjes onder het veld)
+// en ook die is eruit: die typ je zelf net zo snel. Wat overblijft is het
+// enige stuk werk dat een model hier echt uit handen neemt.
 //
 // Alles gaat eerst door de gedeelde maskeerlaag (zie ai-maskering.ts), dus
 // voornamen van kinderen en de schoolnaam verlaten het apparaat niet.
@@ -32,9 +34,10 @@ Regels:
 - Gebruik alleen wat de leerkracht heeft opgeschreven. Verzin er niets bij: geen namen,
   geen tijden, geen gebeurtenissen, geen afloop.
 - Snap je een steekwoord niet, neem het dan over zoals het er staat in plaats van te gokken.
-- Staan er kopjes in (bijvoorbeeld "Anders gelopen:" of "Voor jou:"), houd die dan aan.
-  Staan ze er niet, maak er dan geen opsomming met streepjes van.
-- Schrijf in het Nederlands, in hele zinnen, hooguit vier zinnen per kopje.
+- Heeft de leerkracht zelf een indeling gebruikt (kopjes, streepjes, regels onder
+  elkaar), houd die dan aan. Zo niet, schrijf dan lopende tekst en verzin er geen
+  opsomming bij.
+- Schrijf in het Nederlands, in hele zinnen, hooguit vier zinnen per onderdeel.
 - Geen aanhef en geen afsluiting: het staat al in een berichtenscherm met een naam erboven.
 - Zakelijk vriendelijk, zoals collega's onder elkaar. Geen uitroeptekens, geen emoji.
 - Neem geen medische gegevens, diagnoses of gezinssituaties op. Staat zoiets in de

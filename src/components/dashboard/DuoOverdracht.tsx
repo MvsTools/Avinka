@@ -17,18 +17,6 @@ import DagTegel from "./DagTegel";
 
 type Groep = { klasId: string; klasNaam: string };
 
-// De kapstok naast het invoerveld. Deze drie komen uit wat leerkrachten in de
-// praktijk in een overdracht zetten: wat er anders liep, wat de ander moet
-// oppakken, en de losse bijzonderheden.
-//
-// ⚠️ Hier heeft een AI-knop "Begin voor mij" gezeten die een concept schreef
-// uit het rooster en de agenda. Eruit gehaald omdat álles wat het platform
-// weet, je collega zelf kan opzoeken; zo'n concept leest dan als vulling. Een
-// overdracht gaat juist over wat er níét in het systeem staat. Deze drie
-// woorden kosten geen AI en geen credits, en beantwoorden de echte vraag:
-// wat schrijf ik hier eigenlijk op?
-const KOPJES = ["Anders gelopen", "Voor jou", "Even weten"];
-
 // De overdracht voor je collega's bij een groep. Leest als een gespreksscherm:
 // berichten bovenin, typen onderin.
 //
@@ -151,8 +139,17 @@ export default function DuoOverdracht() {
     setAiFout(null);
   }
 
-  // De AI werkt alleen uit wat jij hebt getypt. Hij weet verder niets van je
-  // dag, en dat hoort ook niet: zie de uitleg bij KOPJES hierboven.
+  // De AI werkt alleen uit wat jij hebt getypt: van steekwoorden naar lopende
+  // zinnen. Hij weet verder niets van je dag, en dat hoort ook niet.
+  //
+  // ⚠️ Hier hebben twee dingen gezeten die er bewust weer uit zijn: een knop
+  // "Begin voor mij" die een concept schreef uit het rooster en de agenda, en
+  // daarna een kapstok van aantikbare kopjes. Het concept viel af omdat álles
+  // wat het platform weet door je collega zelf op te zoeken is, en zo'n
+  // concept dus als vulling leest; een overdracht gaat juist over wat er níét
+  // in het systeem staat. De kopjes vielen af omdat je die zelf ook kunt
+  // typen. Wat overblijft is het enige stuk werk dat de AI echt uit handen
+  // neemt: het netjes formuleren.
   async function vraagAi() {
     const getypt = (invoer[actieveGroep] ?? "").trim();
     if (!getypt || aiBezig) return;
@@ -166,22 +163,6 @@ export default function DuoOverdracht() {
     setAiBezig(false);
     if (antwoord.ok) setVoorstel(antwoord.tekst);
     else setAiFout(antwoord.melding);
-  }
-
-  // Een kopje aantikken zet het in je veld en laat je cursor er direct achter
-  // staan. Op een nieuwe regel als je al aan het typen was.
-  function zetKopje(kopje: string) {
-    const huidig = invoer[actieveGroep] ?? "";
-    const scheiding = huidig.trim() ? (huidig.endsWith("\n") ? "" : "\n") : "";
-    setInvoer((v) => ({ ...v, [actieveGroep]: huidig + scheiding + kopje + ": " }));
-    // Wachten tot React het veld heeft bijgewerkt, anders zet de cursor zich
-    // op de oude tekstlengte.
-    requestAnimationFrame(() => {
-      const el = veld.current;
-      if (!el) return;
-      el.focus();
-      el.selectionStart = el.selectionEnd = el.value.length;
-    });
   }
 
   function neemVoorstelOver() {
@@ -384,32 +365,6 @@ export default function DuoOverdracht() {
               rows={2}
               className="mt-1.5 w-full resize-y rounded-xl border border-black/10 bg-cream px-4 py-2.5 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
             />
-
-            {/* De kapstok: geen doosjes, gewoon drie woorden die je aantikt.
-                Ze staan direct onder het veld waar ze in schrijven. */}
-            <div
-              role="group"
-              aria-label="Zet een kopje in je bericht"
-              className="mt-2 flex flex-wrap items-center gap-x-1 gap-y-1 text-xs"
-            >
-              <span className="text-ink/40">Kopje:</span>
-              {KOPJES.map((kopje, i) => (
-                <span key={kopje} className="flex items-center gap-x-1">
-                  {i > 0 && (
-                    <span aria-hidden className="text-ink/25">
-                      ·
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => zetKopje(kopje)}
-                    className="rounded font-semibold text-ink/55 underline decoration-dotted underline-offset-2 transition hover:text-brand-dark"
-                  >
-                    {kopje}
-                  </button>
-                </span>
-              ))}
-            </div>
 
             {/* Hulp links, wegsturen rechts, allebei aan hun eigen kant vast. */}
             <div className="mt-2 flex items-center justify-between gap-2">
