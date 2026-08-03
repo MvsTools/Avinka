@@ -18,16 +18,35 @@
    geaggregeerde functie-antwoord mag naar buiten.
    ────────────────────────────────────────────────────────────────────────── */
 
+/* ⚠️ WAT DEZE DRIE GETALLEN PRECIES BETEKENEN — niet raden, dit is besloten.
+   Ze komen uit avinka_landing_cijfers() en tellen ALLE accounts die ooit iets
+   in een tool hebben afgerond, ongeacht hun abonnement: proef, actief,
+   opgezegd en verlopen tellen allemaal mee. Er bestaat namelijk pas een rij in
+   `statistiek` zodra iemand echt iets gedáán heeft, dus het is "leerkrachten
+   die Avinka gebruikt hebben", niet "aanmeldingen" en niet "abonnees".
+
+   Die keuze past bij elkaar: de uren zijn óók van alle tijd, dus "37
+   leerkrachten hebben samen 1.284 uur bespaard" is een ware zin.
+
+   ADMIN-ACCOUNTS TELLEN NIET MEE, in alle drie de getallen. Anders staat de
+   eigenaar zelf als leerkracht op zijn eigen voorpagina, en zouden er uren in
+   het totaal zitten van iemand die niet bij het aantal leerkrachten is
+   meegeteld. Overwogen en niet gekozen: alleen betalende abonnementen (dan
+   staat het tijdens de proefgroep op nul) en alleen recent actieven (dan slaan
+   de uren en de leerkrachten op verschillende periodes). */
 export type Cijfers = {
-  /* werkelijk bespaarde minuten over alle gebruikers heen */
+  /* werkelijk bespaarde minuten over alle meetellende gebruikers heen */
   minuten: number;
+  /* accounts die ooit een actie afrondden, zonder admins */
   leerkrachten: number;
+  /* afgeronde acties over alle tools heen ("keer afgevinkt" op de landing) */
   uitwerkingen: number;
 };
 
-/* Hoe lang het antwoord centraal bewaard blijft. Het bord verspringt pas als
-   er een hele schooldag (7,5 uur) bij komt, dus vaker dan dit ophalen levert
-   nooit een ander getal op. */
+/* Hoe lang het antwoord centraal bewaard blijft. Het rapport verspringt pas
+   als er een heel uur bij komt, dus vaker ophalen levert nooit een ander getal
+   op. (Hier stond nog "een hele schooldag van 7,5 uur"; die eenheid is
+   vervangen door het uur.) */
 export const CIJFERS_CACHE_SECONDEN = 30;
 
 export async function haalCijfers(): Promise<Cijfers | null> {
