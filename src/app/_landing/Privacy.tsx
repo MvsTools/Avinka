@@ -235,13 +235,18 @@ export function WereldPrivacy() {
       {/* De onderste helft van deze sectie was leeg, en samen met de bovenkant
          van de makerssectie eronder was dat het grootste gat van de pagina:
          ruim duizend pixels zonder één achtergrondvorm. Links, tegenover het
-         vlak hierboven, zodat het weefsel blijft zigzaggen. */}
+         vlak hierboven, zodat het weefsel blijft zigzaggen.
+         Hij zweefde eerst vrij in het veld (bottom 90) en dat is de enige vorm
+         op de pagina die dat deed: overal elders komt een vlak onder een
+         kleurrand vandaan. Nu duikt hij met zijn onderkant de golf in, dus de
+         golf onderaan deze sectie snijdt hem af — zelfde principe als de twee
+         vlakken hierboven, alleen aan de andere rand. */}
       <KaartVlak
         kleur={VLAK_MINT}
         vorm="schelp"
         breedte={640}
         hoogte={360}
-        style={{ left: "-13%", bottom: 90, transform: "rotate(6deg)" }}
+        style={{ left: "-13%", bottom: -105, transform: "rotate(6deg)" }}
         className="hidden lg:block"
         tel={7}
       />

@@ -744,6 +744,28 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
          (Spiegelbeeld van de regie-sectie, waar de mint juist bovenin zit.) */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 top-1/2" aria-hidden>
         <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
+
+        {/* Rechts van de makerskaart begint het mintveld dat doorloopt tot in
+           de ervaringen-sectie, en die hele rechterbovenhoek was leeg: de
+           liniaal ligt linksonder en verder lag hier niets tot ver in de
+           polaroids. Dit vlak vult hem en hangt met zijn bovenkant boven de
+           golf uit, zodat de kam-golf hem op de mintrand afsnijdt.
+           🔑 Het eigen overflow-vakje is nodig: deze laag zelf mag NIET
+           clippen (dan knipt hij een pixel van de golf) en zonder vakje zou
+           het vlak boven de golf uit het papier in steken — precies de fout
+           die eerder bij het polaroid-vlak is hersteld. */}
+        <div className="absolute inset-0 overflow-hidden">
+          <KaartVlak
+            kleur={VLAK_MINT}
+            vorm="ei"
+            breedte={660}
+            hoogte={400}
+            style={{ right: "-8%", top: -80, transform: "rotate(7deg)" }}
+            className="hidden lg:block"
+            tel={5}
+          />
+        </div>
+
         <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="kam" />
       </div>
       {/* De liniaal hoort in het mintveld te liggen, dus onderin de sectie. */}

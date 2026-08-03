@@ -61,7 +61,10 @@ function Vinkje() {
 
 /* ── 1. Prijzen ──────────────────────────────────────────────────────────── */
 
-export function WereldPrijzen({ zonderTopgolf = false }: { zonderTopgolf?: boolean }) {
+export function WereldPrijzen({
+  zonderTopgolf = false,
+  zonderOndergolf = false,
+}: { zonderTopgolf?: boolean; zonderOndergolf?: boolean }) {
   // false = maandelijks, true = per schooljaar (juli en augustus gratis)
   const [jaar, setJaar] = useState(false);
 
@@ -232,7 +235,11 @@ export function WereldPrijzen({ zonderTopgolf = false }: { zonderTopgolf?: boole
         </p>
       </div>
 
-      <Golf kleur="var(--w-papier, #fcfbf7)" vorm="ribbel" />
+      {/* ⚠️ Vervalt als de vragensectie hieronder het mintveld overneemt: dan
+         loopt het veld door tot voorbij de eerste vraag en ligt de golf dáár.
+         Twee golven vlak na elkaar zou een papieren band tussen twee
+         mintvelden tekenen. Landing.tsx bepaalt dat. */}
+      {!zonderOndergolf && <Golf kleur="var(--w-papier, #fcfbf7)" vorm="ribbel" />}
     </section>
   );
 }
@@ -274,7 +281,7 @@ function Schakelaar({ jaar, setJaar }: { jaar: boolean; setJaar: (v: boolean) =>
 
 type Vraag = { vraag: string; antwoord: string };
 
-export function WereldVragen({ items }: { items: Vraag[] }) {
+export function WereldVragen({ items, mintBoven = false }: { items: Vraag[]; mintBoven?: boolean }) {
   // Meerdere tegelijk open mag: dit is een naslaglijst, geen quiz.
   const [open, setOpen] = useState<string[]>([]);
   const [meer, setMeer] = useState(false);
@@ -290,6 +297,43 @@ export function WereldVragen({ items }: { items: Vraag[] }) {
 
   return (
     <section id="vragen" className="relative overflow-hidden scroll-mt-16">
+      {/* ── Het mintveld van de prijzen loopt hier doorheen ──────────────────
+         Het veld eindigde precies op de sectiegrens, en dan valt de kop
+         "Veelgestelde vragen" meteen op kaal papier: de golf zat zó ver van
+         de eerste vraag dat de staart van de pagina in tweeën brak. Nu loopt
+         de mint door tot voorbij de eerste vraag en pas dáár komt de golf.
+         De hoogte is met opzet in pixels en niet in procenten: de sectie
+         wordt hoger zodra iemand een vraag openklapt of "Bekijk de andere 5
+         vragen" gebruikt, en met een percentage zou de golf dan mee naar
+         beneden zakken. */}
+      {mintBoven && (
+        <div
+          /* De hoogte is op de PIXEL afgeregeld: de golf moet in het gat vallen
+             tussen de haarlijn onder vraag 1 en de tekst van vraag 2. Op 370px
+             sneed hij precies door het plusje van vraag 2. */
+          className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[355px] overflow-hidden sm:h-[310px] lg:h-[355px]"
+          aria-hidden
+        >
+          <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
+
+          {/* Linksonder op de rand, tegenover het vlak dat in de cijfersectie
+             rechtsboven hangt: samen omlijsten ze de staart van het veld.
+             Hij duikt de golf in, dus het papier van de golf snijdt hem op de
+             kleurrand af — zelfde ingreep als overal elders. */}
+          <KaartVlak
+            kleur={VLAK_MINT}
+            vorm="koepel"
+            breedte={700}
+            hoogte={330}
+            style={{ left: "-15%", bottom: -90, transform: "rotate(-6deg)" }}
+            className="hidden lg:block"
+            tel={5}
+          />
+
+          <Golf kleur="var(--w-papier, #fcfbf7)" vorm="ribbel" hoogte="h-[70px] sm:h-[110px]" />
+        </div>
+      )}
+
       {/* De rechterhelft blijft leeg omdat de lijst links staat; daar ligt het
          vlak dat die hoek draagt. Het stond eerst breder en hoger, waardoor
          de rand er precies door de open/dicht-knopjes heen liep; nu blijft
@@ -307,7 +351,7 @@ export function WereldVragen({ items }: { items: Vraag[] }) {
         />
       )}
 
-      <div className="relative mx-auto w-full max-w-5xl px-6 pb-28 pt-24 lg:pb-32">
+      <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pb-28 pt-24 lg:pb-32">
         <div className="max-w-3xl">
           {/* Papier: uit sinds de opruiming. */}
           {RUIS_OP_PAPIER && (

@@ -22,10 +22,13 @@ import {
   SPECKLE_STIJL,
   BlobKnop,
   Confetti,
+  Golf,
   KaartVlak,
+  MINT_LICHT,
   RUIS_OP_PAPIER,
   KOP,
   Lichtbron,
+  VLAK_MINT,
   VLAK_PAPIER,
   WereldFx,
   WereldIntro,
@@ -1139,10 +1142,40 @@ export default function Landing({
            is en niet een tas losse tools, heeft de film bovenaan al laten
            zien; hier hoeft dat niet nog eens in tekst. Na de kaarten gaat de
            pagina direct door naar de privacybelofte. ── */}
+        {/* ⚠️ Dit was een papieren sectie, en daarmee liep het papier drie
+           secties lang door: intro → tools → zo werkt het. De pagina wisselt
+           overal af tussen papier en een golvend mintveld, en precies op de
+           plek waar de tools staan viel dat ritme stil. Nu is dit een eigen
+           veld met een golf aan beide kanten, en gaat de pagina weer netjes
+           om en om: mint (herken) → papier (intro) → MINT (tools) → papier
+           (zo werkt het) → mint (privacy).
+           De verticale ruimte moest daarvoor omhoog (pt-6 → pt-28): een golf
+           is ~120px hoog en liep anders dwars door de kop. */}
         <section
           id="tools"
-          className="relative isolate overflow-hidden pb-24 pt-6 scroll-mt-20"
+          className="relative isolate overflow-hidden pb-28 pt-28 scroll-mt-20 lg:pb-32 lg:pt-32"
+          style={{ background: MINT_LICHT }}
         >
+          <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="hapMidden" hoogte="h-[70px] sm:h-[118px]" />
+
+          {/* De grote vorm van deze sectie. Hij hangt met zijn bovenkant boven
+             de golf uit; de golf ligt op z-[5] en dit vlak op -z-10, dus het
+             papier van de golf snijdt hem precies op de kleurrand af. Je ziet
+             daardoor geen vorm die tegen een rand aan botst maar een vorm die
+             onder het veld vandaan komt — dezelfde ingreep als bij "Veilig
+             omgaan met AI", de polaroids en de cijfers.
+             Rechts, want de kop staat links: zo draagt hij de lege hoek naast
+             het handgeschreven duwtje in plaats van achter tekst te liggen. */}
+          <KaartVlak
+            kleur={VLAK_MINT}
+            vorm="kiezel"
+            breedte={900}
+            hoogte={520}
+            style={{ right: "-12%", top: -120, transform: "rotate(4deg)" }}
+            className="-z-10 hidden lg:block"
+            tel={4}
+          />
+
           {/* Hier stonden drie verf-klodders achter de kaarten. Die kaarten
              zijn zelf al het kleurrijkste van de hele pagina (donker, groen,
              amber), dus een drukke achtergrond ging ermee concurreren in
@@ -1186,6 +1219,10 @@ export default function Landing({
             <Confetti punten={[{ x: "6%", y: "84%", r: 4 }, { x: "93%", y: "22%", r: 5, amber: true }]} />
           )}
           <ToolRail />
+          {/* Terug naar papier voor "Zo werkt het". Een andere golfvorm dan
+             bovenaan: dezelfde vorm boven en onder maakt van een veld een
+             gestempelde band. */}
+          <Golf kleur="var(--w-papier, #fcfbf7)" vorm="kam" hoogte="h-[70px] sm:h-[110px]" />
         </section>
 
         {/* ── 3b. Zo werkt het: de drie stappen. Staat hier omdat je net hebt
@@ -1241,11 +1278,15 @@ export default function Landing({
            dit veld brengt de afwisseling terug in de staart van de pagina. ── */}
         {/* Wie al betaalt hoeft geen prijzen meer te zien; proef- en verlopen
            accounts wél, want die kunnen nog een plan kiezen. */}
-        {toonPrijzen && <WereldPrijzen zonderTopgolf={toontCijfers(cijfers)} />}
+        {toonPrijzen && <WereldPrijzen zonderTopgolf={toontCijfers(cijfers)} zonderOndergolf />}
 
         {/* ── 9. Veelgestelde vragen: het lichtste blok van de pagina, geen
-           kaders maar haarlijnen. ── */}
-        <WereldVragen items={FAQ} />
+           kaders maar haarlijnen.
+           Het mintveld van de prijzen loopt hier nog even door — tot voorbij
+           de eerste vraag — en pas dáár golft het terug naar papier. Staan de
+           prijzen er niet, dan is dat veld er ook niet en eindigt het al
+           hierboven, dus dan begint deze sectie gewoon op papier. ── */}
+        <WereldVragen items={FAQ} mintBoven={toonPrijzen} />
 
         {/* ── 10. Slot: het donkergroene veld, één keer op de pagina. ── */}
         <WereldSlot />
