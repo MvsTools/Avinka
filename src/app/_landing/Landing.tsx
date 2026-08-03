@@ -23,6 +23,7 @@ import {
   BlobKnop,
   Confetti,
   KaartVlak,
+  RUIS_OP_PAPIER,
   KOP,
   Lichtbron,
   VLAK_PAPIER,
@@ -1148,15 +1149,18 @@ export default function Landing({
              plaats van hem te dragen. Er ligt nu één uitvergrote kaartvorm
              links — dezelfde blob-vorm als de kaarten zelf, alleen enorm en
              tint-op-tint — en verder niets. */}
-          <KaartVlak
-            kleur={VLAK_PAPIER}
-            vorm="kiezel"
-            breedte={940}
-            hoogte={430}
-            style={{ left: "-8%", top: 90, transform: "rotate(-4deg)" }}
-            className="-z-10 hidden lg:block"
-            tel={3}
-          />
+          {/* Papier: uit sinds de opruiming, zie RUIS_OP_PAPIER in Wereld.tsx. */}
+          {RUIS_OP_PAPIER && (
+            <KaartVlak
+              kleur={VLAK_PAPIER}
+              vorm="kiezel"
+              breedte={940}
+              hoogte={430}
+              style={{ left: "-8%", top: 90, transform: "rotate(-4deg)" }}
+              className="-z-10 hidden lg:block"
+              tel={3}
+            />
+          )}
           {/* De rechter is bewust lang en vlak. Hij was 620 breed, 330 hoog en
              7° gedraaid, en dan daalt zijn linkerflank net zo steil als de
              rechterflank van het vlak hiernaast — twee steile randen naar
@@ -1165,16 +1169,22 @@ export default function Landing({
              Nu loopt hij ~300px verder door naar links, is hij lager en staat
              hij bijna recht (3°). Daardoor overlapt hij het vlak links en komt
              zijn flank er in een flauwe hoek bovenop in plaats van ertegenaan. */}
-          <KaartVlak
-            kleur={VLAK_PAPIER}
-            vorm="wig"
-            breedte={920}
-            hoogte={300}
-            style={{ right: "-11%", top: 60, transform: "rotate(3deg)" }}
-            className="-z-10 hidden lg:block"
-            tel={6}
-          />
-          <Confetti punten={[{ x: "6%", y: "84%", r: 4 }, { x: "93%", y: "22%", r: 5, amber: true }]} />
+          {/* Papier: uit sinds de opruiming. */}
+          {RUIS_OP_PAPIER && (
+            <KaartVlak
+              kleur={VLAK_PAPIER}
+              vorm="wig"
+              breedte={920}
+              hoogte={300}
+              style={{ right: "-11%", top: 60, transform: "rotate(3deg)" }}
+              className="-z-10 hidden lg:block"
+              tel={6}
+            />
+          )}
+          {/* Papier: uit sinds de opruiming. */}
+          {RUIS_OP_PAPIER && (
+            <Confetti punten={[{ x: "6%", y: "84%", r: 4 }, { x: "93%", y: "22%", r: 5, amber: true }]} />
+          )}
           <ToolRail />
         </section>
 

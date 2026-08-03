@@ -35,6 +35,19 @@ import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "re
    Waarom variabelen en niet vijf kopieën van de pagina: een kopie loopt na
    de eerste inhoudelijke wijziging meteen uit de pas, en dan vergelijk je
    geen skins meer maar vijf verschillende pagina's. ──────────────────────── */
+/* ── DE SCHAKELAAR VOOR ACHTERGRONDRUIS OP PAPIER ──────────────────────────
+   De pagina wisselt lege papiervelden af met mintvelden die door golven
+   worden begrensd. Achtergrondvormen (blobs, silhouetten, confettistipjes)
+   stonden in ALLEBEI, en op het kale papier werden ze ruis: er is daar geen
+   veld dat ze draagt, dus ze zweven.
+
+   Afspraak sinds 3-8: die vormen horen ALLEEN in de golvende mintvelden.
+   Zet deze schakelaar op `true` en alles wat op papier stond komt precies
+   terug zoals het was — de code is niet weggegooid, alleen uitgeschakeld.
+   ⚠️ De vormen IN de mintvelden hangen hier niet aan; die blijven altijd staan.
+   ────────────────────────────────────────────────────────────────────────── */
+export const RUIS_OP_PAPIER = false;
+
 export const MINT = "var(--w-veld-diep, #cfe6d8)";
 export const MINT_LICHT = "var(--w-veld, #ecf6f0)";
 /* Alle tint-op-tint-accenten die BOVENOP het mintveld liggen (silhouetten,
@@ -552,7 +565,10 @@ export function WereldIntro() {
          als een zijopmerking. Met een bredere kolom past de eerste zin op
          minder regels en kan hij groter staan zonder te versnipperen. */}
       <div className="relative mx-auto grid w-full max-w-5xl gap-10 px-6 pb-24 pt-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16 lg:pb-32 lg:pt-24">
-        <Confetti punten={[{ x: "2%", y: "18%", r: 4, amber: true }, { x: "96%", y: "70%", r: 5 }, { x: "88%", y: "8%", r: 3 }]} />
+        {/* Papier: alleen zichtbaar met de schakelaar aan (zie RUIS_OP_PAPIER). */}
+        {RUIS_OP_PAPIER && (
+          <Confetti punten={[{ x: "2%", y: "18%", r: 4, amber: true }, { x: "96%", y: "70%", r: 5 }, { x: "88%", y: "8%", r: 3 }]} />
+        )}
         <div>
           <h2
             data-reveal
@@ -736,15 +752,19 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
          onderkant van de privacysectie was dat het grootste gat in het
          achtergrondweefsel van de pagina. Rechts, tegenover de liniaal die
          onderin links ligt. */}
-      <KaartVlak
-        kleur={VLAK_PAPIER}
-        vorm="wig"
-        breedte={600}
-        hoogte={320}
-        style={{ right: "-12%", top: 70, transform: "rotate(-8deg)" }}
-        className="hidden lg:block"
-        tel={6}
-      />
+      {/* Dit vlak ligt in de PAPIEREN bovenhelft van deze sectie (de mint
+         begint pas halverwege), dus het valt onder de opruiming. */}
+      {RUIS_OP_PAPIER && (
+        <KaartVlak
+          kleur={VLAK_PAPIER}
+          vorm="wig"
+          breedte={600}
+          hoogte={320}
+          style={{ right: "-12%", top: 70, transform: "rotate(-8deg)" }}
+          className="hidden lg:block"
+          tel={6}
+        />
+      )}
 
       <div className="relative z-10 mx-auto w-full max-w-4xl px-6 pb-32 pt-32 lg:pb-36 lg:pt-36">
         {/* De kaart hoort nu bij de familie: organische radii, tonale rand en
@@ -764,7 +784,14 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
             rotate: "-0.6deg",
           }}
         >
-          <Confetti punten={[{ x: "94%", y: "8%", r: 5, amber: true }, { x: "2%", y: "86%", r: 4 }]} />
+          {/* Het stipje op 8% ligt in de papieren bovenhelft en gaat mee in de
+             opruiming; dat op 86% ligt in het mintveld en blijft dus staan. */}
+          <Confetti
+            punten={[
+              ...(RUIS_OP_PAPIER ? [{ x: "94%", y: "8%", r: 5, amber: true }] : []),
+              { x: "2%", y: "86%", r: 4 },
+            ]}
+          />
           {/* Hier hing een groen vinkje-badge over de bovenrand. Eruit op
              verzoek: het vinkje van het merk zit al in het mintblok onderaan
              deze kaart, en op een kennismaking met de maker voegt een

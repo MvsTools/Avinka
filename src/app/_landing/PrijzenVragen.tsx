@@ -13,6 +13,7 @@ import {
   KOP,
   MINT,
   MINT_LICHT,
+  RUIS_OP_PAPIER,
   VLAK_MINT,
   VLAK_PAPIER,
 } from "./Wereld";
@@ -293,19 +294,25 @@ export function WereldVragen({ items }: { items: Vraag[] }) {
          vlak dat die hoek draagt. Het stond eerst breder en hoger, waardoor
          de rand er precies door de open/dicht-knopjes heen liep; nu blijft
          hij rechts van de lijst. */}
-      <KaartVlak
-        kleur={VLAK_PAPIER}
-        vorm="schelp"
-        breedte={620}
-        hoogte={420}
-        style={{ right: "-16%", top: 260, transform: "rotate(6deg)" }}
-        className="hidden lg:block"
-        tel={3}
-      />
+      {/* Papier (vragensectie): uit sinds de opruiming, zie RUIS_OP_PAPIER. */}
+      {RUIS_OP_PAPIER && (
+        <KaartVlak
+          kleur={VLAK_PAPIER}
+          vorm="schelp"
+          breedte={620}
+          hoogte={420}
+          style={{ right: "-16%", top: 260, transform: "rotate(6deg)" }}
+          className="hidden lg:block"
+          tel={3}
+        />
+      )}
 
       <div className="relative mx-auto w-full max-w-5xl px-6 pb-28 pt-24 lg:pb-32">
         <div className="max-w-3xl">
-          <Confetti punten={[{ x: "-3%", y: "2%", r: 4, amber: true }]} />
+          {/* Papier: uit sinds de opruiming. */}
+          {RUIS_OP_PAPIER && (
+            <Confetti punten={[{ x: "-3%", y: "2%", r: 4, amber: true }]} />
+          )}
           {/* Ook hier het handgeschreven opstapje ("nog iets te vragen") weg:
              het herhaalde alleen de kop eronder. */}
           <h2

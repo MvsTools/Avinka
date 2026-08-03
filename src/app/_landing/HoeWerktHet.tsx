@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { Confetti, DONKER, KOP, KaartVlak, VLAK_PAPIER } from "./Wereld";
+import { Confetti, DONKER, KOP, KaartVlak, RUIS_OP_PAPIER, VLAK_PAPIER } from "./Wereld";
 
 /* ── Zo werkt het ───────────────────────────────────────────────────────────
    Dit blok ontbrak. De pagina liet wél zien wát je krijgt (acht toolkaarten),
@@ -55,19 +55,25 @@ export function WereldHoeWerktHet() {
          liep is verhuisd naar de bovenkant van de privacysectie, waar de golf
          hem precies op de mintrand afsnijdt — net als het vlak rechts van
          "Veilig omgaan met AI". */}
-      <KaartVlak
-        kleur={VLAK_PAPIER}
-        vorm="ei"
-        breedte={560}
-        hoogte={300}
-        style={{ right: "-12%", top: -30, transform: "rotate(9deg)" }}
-        className="hidden lg:block"
-        tel={6}
-      />
+      {/* Papier: uit sinds de opruiming, zie RUIS_OP_PAPIER in Wereld.tsx. */}
+      {RUIS_OP_PAPIER && (
+        <KaartVlak
+          kleur={VLAK_PAPIER}
+          vorm="ei"
+          breedte={560}
+          hoogte={300}
+          style={{ right: "-12%", top: -30, transform: "rotate(9deg)" }}
+          className="hidden lg:block"
+          tel={6}
+        />
+      )}
 
       {/* z-10: de inhoud moet boven de vlakken hierboven blijven. */}
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-24 pt-8 lg:pb-28">
-        <Confetti punten={[{ x: "97%", y: "72%", r: 4, amber: true }]} />
+        {/* Papier: uit sinds de opruiming. */}
+        {RUIS_OP_PAPIER && (
+          <Confetti punten={[{ x: "97%", y: "72%", r: 4, amber: true }]} />
+        )}
         <h2
           data-reveal
           className="font-display text-[clamp(1.875rem,3.4vw,2.75rem)] font-black tracking-tight"
