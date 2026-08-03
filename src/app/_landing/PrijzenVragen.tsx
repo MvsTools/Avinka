@@ -374,18 +374,16 @@ export function WereldPrijzen({
                 {/* Alleen dít verandert er als je al betaalt: de rest van de
                    kaart blijft precies zoals hij is. */}
                 {dicht ? (
-                  /* Geen knop maar een strook: er valt niets te klikken, en
-                     iets wat eruitziet als een knop maar niets doet is erger
-                     dan geen knop. Zelfde hoogte als een kleine BlobKnop, dus
-                     de drie kaarten blijven op één lijn eindigen. Zachte tint
-                     in plaats van wit, zodat hij zich van een echte knop
-                     onderscheidt zonder dat de rest van de kaart meeverandert. */
+                  /* ⚠️ Geen "Je huidige abonnement" / "Zit hier al in" meer:
+                     de TEKST moet exact hetzelfde blijven, ingelogd of
+                     uitgelogd, gekozen of niet. Het enige verschil is dat hij
+                     hier niet klikbaar is (vandaar een <p>, geen knop) en op
+                     een zachte tint staat in plaats van wit/groen. */
                   <p
                     className="blobknop mt-8 flex w-full items-center justify-center gap-2.5 px-5 py-3.5 text-center text-base font-bold"
                     style={{ background: "var(--w-vlak-veld, #e3efe7)", color: DONKER }}
                   >
-                    <Vinkje />
-                    {stand.soort === "huidig" ? "Je huidige abonnement" : "Zit hier al in"}
+                    Probeer gratis
                   </p>
                 ) : (
                   <BlobKnop
