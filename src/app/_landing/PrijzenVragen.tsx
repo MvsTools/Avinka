@@ -148,10 +148,8 @@ function useVeldTotHetBedrag() {
 }
 
 export function WereldPrijzen({
-  zonderTopgolf = false,
   huidigPlan = null,
 }: {
-  zonderTopgolf?: boolean;
   /* Het betaalde pakket dat deze bezoeker nú heeft, of null: uitgelogd, in de
      proef, of verlopen. Alleen dit bepaalt welke kaarten dichtgaan. */
   huidigPlan?: PlanId | null;
@@ -216,12 +214,14 @@ export function WereldPrijzen({
 
       {/* Rustige entree van bovenaf. Andere vorm dan de golf hieronder: twee
          keer dezelfde maakt van het veld een gestempelde band.
-         ⚠️ Hij vervalt als de cijfersectie hierboven al in mint eindigt: dan
-         zou hij een papieren strook tussen twee mintvelden tekenen, en dat
-         leest als een naad. Landing.tsx bepaalt dat. */}
-      {!zonderTopgolf && (
-        <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="hapMidden" hoogte="h-[70px] sm:h-[120px]" />
-      )}
+         ⚠️ Deze sectie opent ALTIJD met haar eigen entree, ook als de cijfers
+         hierboven al in mint eindigen. Eerder viel deze golf dan weg, en dan
+         liep het mintveld van de cijfers ongemerkt door tot in de prijzen —
+         "Avinka in cijfers" en "Eén vast bedrag" versmolten zo tot één vlek.
+         Nu sluit de cijfersectie zichzelf af (zie haar eigen golf in
+         Cijfers.tsx) en begint deze sectie weer met een schone lei: een
+         korte, duidelijke papieren strook tussen de twee secties. */}
+      <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="hapMidden" hoogte="h-[70px] sm:h-[120px]" />
 
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-28 pt-24 lg:pb-32 lg:pt-28">
         {/* Over de hele strook van de kaartenrij tot en met de prijzen lag geen

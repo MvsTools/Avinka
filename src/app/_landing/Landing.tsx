@@ -17,7 +17,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { signout } from "@/app/auth/actions";
 import { PROEF_DAGEN, type PlanId } from "@/lib/abonnement";
-import { WereldCijfers, toontCijfers, type Cijfers } from "./Cijfers";
+import { WereldCijfers, type Cijfers } from "./Cijfers";
 import {
   SPECKLE_STIJL,
   BlobKnop,
@@ -1277,19 +1277,21 @@ export default function Landing({
            Zolang er nog te weinig data is laat de sectie zichzelf helemaal
            weg, inclusief de kop. Er staat dus nooit een nul of een pijnlijk
            laag getal op de voorpagina. ── */}
-        {/* Het mintveld van de staart loopt door tot in de vragensectie, ook
-           als de prijzen wegvallen: dan pakt de vragensectie het veld op waar
-           de cijfers ophouden. Deze sectie hoeft dus nooit zelf af te sluiten
-           zolang er iets mint onder haar staat. */}
-        <WereldCijfers cijfers={cijfers} bijhouden={bijhouden} veldLooptDoor />
+        {/* Sluit sinds kort ALTIJD zelf af (eigen golf terug naar papier),
+           ook al is de sectie hierna (prijzen) ook mint. Anders versmolten
+           "Avinka in cijfers" en "Eén vast bedrag" tot één ononderbroken
+           mintvlek — inhoudelijk twee aparte secties, visueel niet meer te
+           onderscheiden. Zie de golf onderin Cijfers.tsx. */}
+        <WereldCijfers cijfers={cijfers} bijhouden={bijhouden} />
 
         {/* ── 8. Prijzen: het eigen mintveld. Vóór deze verbouwing lagen
            maker, ervaringen, prijzen én vragen allemaal op hetzelfde papier;
-           dit veld brengt de afwisseling terug in de staart van de pagina. ── */}
+           dit veld brengt de afwisseling terug in de staart van de pagina.
+           Opent nu ook altijd met haar eigen entreegolf, om dezelfde reden. ── */}
         {/* Voor iedereen zichtbaar; de sectie past zich aan de bezoeker aan
            in plaats van te verdwijnen. Zie PrijzenVragen.tsx voor de vijf
            standen. */}
-        <WereldPrijzen zonderTopgolf={toontCijfers(cijfers)} huidigPlan={huidigPlan} />
+        <WereldPrijzen huidigPlan={huidigPlan} />
 
         {/* ── 9. Veelgestelde vragen: het lichtste blok van de pagina, geen
            kaders maar haarlijnen.

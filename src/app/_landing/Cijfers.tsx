@@ -305,10 +305,7 @@ function Stempel() {
 
 /* ── De sectie ───────────────────────────────────────────────────────────── */
 
-/* Of deze sectie iets te vertellen heeft. Landing.tsx gebruikt dit om te
-   bepalen of de prijzensectie zijn eigen golf nog nodig heeft: als het
-   mintveld hier al begint, zou die golf een tweede rand vlak op de eerste
-   leggen. */
+/* Of deze sectie iets te vertellen heeft. */
 export function toontCijfers(cijfers: Cijfers | null) {
   return Boolean(cijfers) && (!DREMPELS_AAN || urenUit(cijfers!.minuten) >= DREMPELS.uren);
 }
@@ -316,17 +313,10 @@ export function toontCijfers(cijfers: Cijfers | null) {
 export function WereldCijfers({
   cijfers,
   bijhouden = true,
-  veldLooptDoor = true,
 }: {
   cijfers: Cijfers | null;
   /* false voor een voorbeeldrapport: dan blijven de meegegeven cijfers staan. */
   bijhouden?: boolean;
-  /* Loopt het mintveld hieronder door? Dan hoeft deze sectie onderaan niets af
-     te sluiten. Deze stond eerder op "komt de prijzensectie hierna", en dat was
-     te smal: het veld gaat ook door als de prijzen wegvallen, want dan neemt de
-     vragensectie het over. Op die aanname ging het één keer mis — een betalende
-     bezoeker zag hier een golf terwijl de mint gewoon doorliep. */
-  veldLooptDoor?: boolean;
 }) {
   /* De beslissing of er iets te tonen valt staat bewust BUITEN het rapport, en
      het bijhouden zit erin. Zolang er te weinig data is bestaat het rapport dus
@@ -334,7 +324,7 @@ export function WereldCijfers({
      die toch verborgen is. */
   if (!cijfers) return null;
   if (DREMPELS_AAN && urenUit(cijfers.minuten) < DREMPELS.uren) return null;
-  return <Rapport begin={cijfers} bijhouden={bijhouden} veldLooptDoor={veldLooptDoor} />;
+  return <Rapport begin={cijfers} bijhouden={bijhouden} />;
 }
 
 /* Eén los briefje met één cijfer. Dezelfde papiersoort als het rapport, maar
@@ -357,11 +347,9 @@ function Briefje({ getal, label }: { getal: number; label: string }) {
 function Rapport({
   begin,
   bijhouden,
-  veldLooptDoor,
 }: {
   begin: Cijfers;
   bijhouden: boolean;
-  veldLooptDoor: boolean;
 }) {
   const { cijfers, anker, seconden } = useBijgehoudenCijfers(begin, bijhouden);
 
@@ -453,9 +441,15 @@ function Rapport({
            polaroids een sectie hoger, én hij loopt zo schuin weg dat hij bij
            deze hoogte als een schuine streep las in plaats van als een golf. */}
         <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="zacht" hoogte="h-[145px] sm:h-[230px]" />
-        {/* Alleen afsluiten als er gewoon papier volgt. Volgen de prijzen (ook
-           mint), dan loopt het veld door en zou een golf hier een naad maken. */}
-        {!veldLooptDoor && <Golf kleur="var(--w-papier, #fcfbf7)" vorm="rust" hoogte="h-[70px] sm:h-[110px]" />}
+        {/* ⚠️ Deze sectie sluit ALTIJD zelf af, ook als de prijzen (ook mint)
+           hierna komen. Eerder liep het mintveld dan gewoon door tot in de
+           prijzensectie — één ononderbroken band die "Avinka in cijfers" en
+           "Eén vast bedrag" tot één grote vlek samensmolt, terwijl het
+           inhoudelijk twee aparte secties zijn. De twee mintvelden krijgen nu
+           allebei hun eigen golf: dicht hier, en de prijzen openen zelf weer
+           met hun eigen entree (zie zonderTopgolf in PrijzenVragen.tsx, dat
+           om dezelfde reden is teruggedraaid). */}
+        <Golf kleur="var(--w-papier, #fcfbf7)" vorm="rust" hoogte="h-[70px] sm:h-[110px]" />
       </div>
 
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-28 pt-10 lg:pb-32 lg:pt-12">
