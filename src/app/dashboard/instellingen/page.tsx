@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { createClient } from "@/utils/supabase/server";
 import VoorkeurenForm from "@/components/dashboard/VoorkeurenForm";
 import AccountBeheer from "@/components/dashboard/AccountBeheer";
 import AiCredits from "@/components/dashboard/AiCredits";
+import DuoCollega from "@/components/dashboard/DuoCollega";
 
 export default async function InstellingenPage() {
   const supabase = await createClient();
@@ -21,6 +23,10 @@ export default async function InstellingenPage() {
       </div>
 
       <VoorkeurenForm />
+
+      <Suspense fallback={null}>
+        <DuoCollega />
+      </Suspense>
 
       <AiCredits />
 

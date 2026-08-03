@@ -1,4 +1,5 @@
 import TakenView from "@/components/dashboard/TakenView";
+import DuoTaken from "@/components/dashboard/DuoTaken";
 
 export default function TakenPage() {
   return (
@@ -8,6 +9,9 @@ export default function TakenPage() {
         <p className="mt-2 text-lg text-ink/70">
           Van to-do naar gedaan. Zet je taken hier neer en vink af wat klaar is.
         </p>
+      </div>
+      <div className="mb-6">
+        <DuoTaken />
       </div>
       <TakenView />
     </div>

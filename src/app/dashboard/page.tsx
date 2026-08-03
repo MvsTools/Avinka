@@ -8,6 +8,7 @@ import WelkomModal from "@/components/dashboard/WelkomModal";
 import StreakBadge from "@/components/dashboard/StreakBadge";
 import TakenOverzicht from "@/components/dashboard/TakenOverzicht";
 import VandaagRij from "@/components/dashboard/VandaagRij";
+import DuoOverdracht from "@/components/dashboard/DuoOverdracht";
 import { amsterdamDatum } from "@/lib/streak";
 import { haalMijnGroepen, haalPlanning } from "@/lib/planning";
 
@@ -56,6 +57,8 @@ export default async function DashboardStart() {
       </div>
 
       <VandaagRij bron={planning} vandaag={vandaag} groepen={groepen} />
+
+      <DuoOverdracht />
 
       <OnboardingCard />
 

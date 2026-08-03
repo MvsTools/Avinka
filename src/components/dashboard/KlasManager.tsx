@@ -8,6 +8,7 @@ import {
   saveKlas,
   deleteKlas,
   setActieveKlas,
+  getActieveKlasId,
   getAbonnement,
   type Klas,
   type Leerling,
@@ -37,6 +38,7 @@ function netjes(s: string): string {
 
 export default function KlasManager() {
   const [klassen, setKlassen] = useState<Klas[]>([]);
+  const [mijnActieveId, setMijnActieveId] = useState<string | null>(null);
   const [selId, setSelId] = useState<string>("");
   const [invoer, setInvoer] = useState("");
   const [nieuwGeslacht, setNieuwGeslacht] = useState<Leerling["geslacht"]>("");
@@ -50,8 +52,9 @@ export default function KlasManager() {
   const sel = klassen.find((k) => k.id === selId) ?? null;
 
   // Hoeveel groepen mag deze leerkracht beheren? (Start = 1, Compleet/Pro = meer)
+  // Een gedeelde duo-klas van je partner telt niet mee voor jouw eigen limiet.
   const limiet = ab ? klasLimiet(ab) : Infinity;
-  const magNogKlas = klassen.length < limiet;
+  const magNogKlas = klassen.filter((k) => k.eigenKlas).length < limiet;
 
   // ── Laden ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -76,8 +79,10 @@ export default function KlasManager() {
         /* geen opslag */
       }
 
+      const actieveId = await getActieveKlasId(lijst);
       setKlassen(lijst);
-      setSelId((lijst.find((k) => k.actief) ?? lijst[0])?.id ?? "");
+      setMijnActieveId(actieveId);
+      setSelId(actieveId ?? lijst[0]?.id ?? "");
       setGeladen(true);
     })();
   }, []);
@@ -133,9 +138,13 @@ export default function KlasManager() {
     setSelId(k.id);
   }
 
-  async function maakActief(id: string) {
-    const ok = await setActieveKlas(id);
-    if (ok) setKlassen((ks) => ks.map((k) => ({ ...k, actief: k.id === id })));
+  async function maakActief(k: Klas) {
+    const ok = await setActieveKlas(k);
+    if (!ok) return;
+    setMijnActieveId(k.id);
+    if (k.eigenKlas) {
+      setKlassen((ks) => ks.map((x) => (x.eigenKlas ? { ...x, actief: x.id === k.id } : x)));
+    }
   }
 
   function verwijderKlas(id: string) {
@@ -150,10 +159,11 @@ export default function KlasManager() {
     const ok = await deleteKlas(k.id);
     if (!ok) return;
     const rest = klassen.filter((x) => x.id !== k.id);
-    // Was dit de actieve klas? Maak dan een andere actief.
-    if (k.actief && rest.length) {
-      await setActieveKlas(rest[0].id);
-      rest[0] = { ...rest[0], actief: true };
+    // Was dit de klas die voor MIJ actief stond? Maak dan een andere actief.
+    if (mijnActieveId === k.id && rest.length) {
+      await setActieveKlas(rest[0]);
+      setMijnActieveId(rest[0].id);
+      if (rest[0].eigenKlas) rest[0] = { ...rest[0], actief: true };
     }
     setKlassen(rest);
     if (selId === k.id) setSelId(rest[0]?.id ?? "");
@@ -202,19 +212,25 @@ export default function KlasManager() {
           >
             <button
               type="button"
-              onClick={() => maakActief(k.id)}
-              title={k.actief ? "De tools vullen deze klas in" : "Deze klas door de tools laten gebruiken"}
+              onClick={() => maakActief(k)}
+              title={
+                k.id === mijnActieveId
+                  ? "De tools vullen deze klas in"
+                  : "Deze klas door de tools laten gebruiken"
+              }
               className={`text-base leading-none transition ${
-                k.actief ? "text-amber-500" : "text-ink/25 hover:text-amber-500"
+                k.id === mijnActieveId ? "text-amber-500" : "text-ink/25 hover:text-amber-500"
               }`}
             >
-              {k.actief ? "★" : "☆"}
+              {k.id === mijnActieveId ? "★" : "☆"}
             </button>
             <button
               type="button"
               onClick={() => setSelId(k.id)}
               className="max-w-[40vw] truncate"
+              title={k.eigenKlas ? undefined : "Gedeeld door je duo-partner"}
             >
+              {!k.eigenKlas && "👥 "}
               {k.naam || "Naamloze klas"}
             </button>
             {klassen.length > 1 && (

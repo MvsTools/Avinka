@@ -38,7 +38,8 @@ export type Klas = {
   naam: string;
   leerlingen: string[]; // platte namenlijst (afgeleid; voor de tools)
   leerlingenData: Leerling[]; // rijk: naam + geslacht per leerling
-  actief: boolean; // de klas die de tools invullen
+  actief: boolean; // eigenaar-eigen "actief"-vlag (alleen betekenisvol als eigenKlas)
+  eigenKlas: boolean; // van jou, of een gedeelde klas van je duo-partner?
 };
 export type Tekst = { id: string; titel: string; inhoud: string; created_at: string };
 export type Rapport = { naam: string; verhaal: string; updated_at: string };
@@ -191,7 +192,7 @@ export async function getAbonnement(): Promise<Abonnement> {
 }
 
 // ── KLASSEN (meerdere per leerkracht) ─────────────────────────────────────
-const KLAS_COLS = "id, naam, leerlingen, leerlingen_data, actief, created_at";
+const KLAS_COLS = "id, naam, leerlingen, leerlingen_data, actief, created_at, user_id";
 
 type KlasRow = {
   id: string;
@@ -199,9 +200,10 @@ type KlasRow = {
   leerlingen: string[] | null;
   leerlingen_data: Leerling[] | null;
   actief: boolean | null;
+  user_id: string;
 };
 
-function mapKlas(r: KlasRow): Klas {
+function mapKlas(r: KlasRow, mijnId: string): Klas {
   const namen = r.leerlingen ?? [];
   const data: Leerling[] =
     Array.isArray(r.leerlingen_data) && r.leerlingen_data.length
@@ -213,17 +215,24 @@ function mapKlas(r: KlasRow): Klas {
     leerlingen: data.map((l) => l.naam),
     leerlingenData: data,
     actief: !!r.actief,
+    eigenKlas: r.user_id === mijnId,
   };
 }
 
+// Geeft ook de klas(sen) van een actieve duo-partner terug (RLS staat dat
+// toe, zie "duo-partner klas" in schema.sql) — eigenKlas onderscheidt ze.
 export async function getKlassen(): Promise<Klas[]> {
   const sb = createClient();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return [];
   const { data, error } = await sb
     .from("klassen")
     .select(KLAS_COLS)
     .order("created_at", { ascending: true });
   if (error || !data) return [];
-  return (data as KlasRow[]).map(mapKlas);
+  return (data as KlasRow[]).map((r) => mapKlas(r, user.id));
 }
 
 export async function addKlas(naam: string): Promise<Klas | null> {
@@ -232,17 +241,20 @@ export async function addKlas(naam: string): Promise<Klas | null> {
     data: { user },
   } = await sb.auth.getUser();
   if (!user) return null;
+  // Alleen je EIGEN klassen tellen mee voor "is dit de eerste" en het
+  // pakketlimiet — een gedeelde duo-klas van je partner hoort daar niet bij.
   const { count } = await sb
     .from("klassen")
-    .select("id", { count: "exact", head: true });
-  const actief = !count; // de eerste klas wordt meteen de actieve
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id);
+  const actief = !count; // de eerste eigen klas wordt meteen de actieve
   const { data, error } = await sb
     .from("klassen")
     .insert({ user_id: user.id, naam, leerlingen: [], leerlingen_data: [], actief })
     .select(KLAS_COLS)
     .single();
   if (error || !data) return null;
-  return mapKlas(data as KlasRow);
+  return mapKlas(data as KlasRow, user.id);
 }
 
 export async function saveKlas(
@@ -264,15 +276,41 @@ export async function deleteKlas(id: string): Promise<boolean> {
   return !error;
 }
 
-export async function setActieveKlas(id: string): Promise<boolean> {
+// Een EIGEN klas activeren blijft de oude klassen.actief-vlag gebruiken.
+// Een GEDEELDE (duo-partner) klas activeren raakt die rij bewust niet aan —
+// die vlag hoort bij de eigenaar en zou anders bij hén ongemerkt omklappen.
+// In plaats daarvan onthoudt je eigen instellingen-rij welke gedeelde klas
+// voor JOU actief is (actieve_duo_klas_id, zie schema.sql sectie 19).
+export async function setActieveKlas(klas: Klas): Promise<boolean> {
   const sb = createClient();
   const {
     data: { user },
   } = await sb.auth.getUser();
   if (!user) return false;
-  await sb.from("klassen").update({ actief: false }).eq("user_id", user.id);
-  const { error } = await sb.from("klassen").update({ actief: true }).eq("id", id);
+  if (klas.eigenKlas) {
+    await sb.from("klassen").update({ actief: false }).eq("user_id", user.id);
+    const { error } = await sb.from("klassen").update({ actief: true }).eq("id", klas.id);
+    if (error) return false;
+    // Eigen klas gekozen: een eerder ingestelde gedeelde-klas-voorkeur vervalt.
+    await sb
+      .from("instellingen")
+      .upsert({ user_id: user.id, actieve_duo_klas_id: null }, { onConflict: "user_id" });
+    return true;
+  }
+  const { error } = await sb
+    .from("instellingen")
+    .upsert({ user_id: user.id, actieve_duo_klas_id: klas.id }, { onConflict: "user_id" });
   return !error;
+}
+
+// Welke klas is voor MIJ actief? Voorkeur voor een gekozen gedeelde
+// duo-klas; anders de gewone eigen-klas-volgorde (klassen.actief).
+export async function getActieveKlasId(klassen: Klas[]): Promise<string | null> {
+  const sb = createClient();
+  const { data } = await sb.from("instellingen").select("actieve_duo_klas_id").maybeSingle();
+  const duoId = data?.actieve_duo_klas_id as string | null | undefined;
+  if (duoId && klassen.some((k) => k.id === duoId)) return duoId;
+  return (klassen.find((k) => k.eigenKlas && k.actief) ?? klassen[0])?.id ?? null;
 }
 
 // ── RAPPORTEN (voor de koppeling met leerling-profielen) ──────────────────
@@ -537,6 +575,263 @@ export async function getAantalVerwijzingenProef(code: string): Promise<number> 
   const { data, error } = await sb.rpc("wijs_aantal_verwijzingen_proef", { code });
   if (error || typeof data !== "number") return 0;
   return data;
+}
+
+// ── DUO-COLLEGA'S (samen één klas draaien) ────────────────────────────────
+// Zelfde uitnodig-via-code-principe als hierboven (referral), maar
+// tweezijdig: pas na expliciete acceptatie door de uitgenodigde krijgt die
+// toegang (RLS ziet de rij pas als hij status='actief' heeft, zie
+// database/schema.sql sectie 19). Geen automatische koppeling.
+export type DuoKoppel = {
+  id: string;
+  klasId: string;
+  klasNaam: string;
+  status: "uitgenodigd" | "actief";
+  code: string | null;
+  benIkUitnodiger: boolean; // ben ik gebruiker_a (heb ik 'm aangemaakt)?
+  partnerId: string | null; // de ANDERE van de twee (null zolang nog uitgenodigd)
+  gedeeldeMapId: string | null;
+  gedeeldeMapNaam: string | null;
+};
+
+const DUO_KOPPEL_COLS =
+  "id, gebruiker_a, gebruiker_b, klas_id, status, code, gedeelde_map_id, klassen(naam), bestanden(naam)";
+
+type DuoKoppelRow = {
+  id: string;
+  gebruiker_a: string;
+  gebruiker_b: string | null;
+  klas_id: string;
+  status: "uitgenodigd" | "actief";
+  code: string | null;
+  gedeelde_map_id: string | null;
+  klassen: { naam: string } | { naam: string }[] | null;
+  bestanden: { naam: string } | { naam: string }[] | null;
+};
+
+function mapDuoKoppel(r: DuoKoppelRow, mijnId: string): DuoKoppel {
+  const klas = Array.isArray(r.klassen) ? r.klassen[0] : r.klassen;
+  const map = Array.isArray(r.bestanden) ? r.bestanden[0] : r.bestanden;
+  return {
+    id: r.id,
+    klasId: r.klas_id,
+    klasNaam: klas?.naam ?? "",
+    status: r.status,
+    code: r.code,
+    benIkUitnodiger: r.gebruiker_a === mijnId,
+    partnerId: r.gebruiker_a === mijnId ? r.gebruiker_b : r.gebruiker_a,
+    gedeeldeMapId: r.gedeelde_map_id,
+    gedeeldeMapNaam: map?.naam ?? null,
+  };
+}
+
+// Al je duo-koppels (verzonden én ontvangen, uitgenodigd én actief) — RLS
+// laat alleen zien waar jij zelf gebruiker_a of gebruiker_b van bent.
+export async function getDuoKoppels(): Promise<DuoKoppel[]> {
+  const sb = createClient();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await sb
+    .from("duo_koppels")
+    .select(DUO_KOPPEL_COLS)
+    .order("created_at", { ascending: false });
+  if (error || !data) return [];
+  return (data as unknown as DuoKoppelRow[]).map((r) => mapDuoKoppel(r, user.id));
+}
+
+// Maakt een nieuwe uitnodiging voor de gekozen klas en geeft de deelbare
+// code terug. De uitgenodigde vult die zelf in (of via een link).
+//
+// Er kan er maar ÉÉN openstaan per klas: de unieke index in schema.sql draait
+// op least/greatest van de twee gebruikers, en Postgres negeert NULL daarin —
+// zolang de uitnodiging niet is geaccepteerd is de partner leeg, dus de rij
+// telt als (jij, jij, klas). Een tweede poging botst dus op die index. Klik je
+// nog eens op uitnodigen, dan hoor je gewoon dezelfde link terug te krijgen.
+export async function maakDuoUitnodiging(klasId: string): Promise<string | null> {
+  const sb = createClient();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user || !klasId) return null;
+  const { data: openstaand } = await sb
+    .from("duo_koppels")
+    .select("code")
+    .eq("klas_id", klasId)
+    .eq("gebruiker_a", user.id)
+    .eq("status", "uitgenodigd")
+    .is("gebruiker_b", null)
+    .maybeSingle();
+  if (openstaand?.code) return openstaand.code as string;
+  const code = maakRefCode();
+  const { error } = await sb
+    .from("duo_koppels")
+    .insert({ gebruiker_a: user.id, klas_id: klasId, code, status: "uitgenodigd" });
+  return error ? null : code;
+}
+
+// Voorbeeld van een uitnodiging op basis van de code, vóór acceptatie —
+// via security-definer RPC (RLS laat de rij zelf nog niet zien, zie schema.sql).
+export async function bekijkDuoUitnodiging(
+  code: string,
+): Promise<{ klasNaam: string; status: string } | null> {
+  const sb = createClient();
+  const c = code.trim().toUpperCase();
+  if (!c) return null;
+  const { data, error } = await sb.rpc("duo_koppel_voorbeeld", { p_code: c });
+  const rij = Array.isArray(data) ? data[0] : data;
+  if (error || !rij) return null;
+  return { klasNaam: rij.klas_naam as string, status: rij.status as string };
+}
+
+// Accepteert de uitnodiging — pas hierna krijg je (en de uitnodiger, over en
+// weer) toegang tot de gedeelde klas/rapporten/bestanden/taken/overdracht.
+export async function accepteerDuoUitnodiging(code: string): Promise<boolean> {
+  const sb = createClient();
+  const c = code.trim().toUpperCase();
+  if (!c) return false;
+  const { data, error } = await sb.rpc("duo_koppel_accepteren", { p_code: c });
+  return !error && !!data;
+}
+
+// Loskoppelen (door wie dan ook van de twee) — sluit alle gedeelde toegang
+// meteen af, RLS is live.
+export async function verbreekDuo(id: string): Promise<boolean> {
+  const sb = createClient();
+  const { error } = await sb.from("duo_koppels").delete().eq("id", id);
+  return !error;
+}
+
+// Welke map is de gedeelde "Groep .."-map voor dit koppel? Beide partners
+// mogen 'm instellen/wijzigen (RLS: "eigen duo koppel bijwerken").
+export async function zetGedeeldeMap(koppelId: string, mapId: string | null): Promise<boolean> {
+  const sb = createClient();
+  const { error } = await sb
+    .from("duo_koppels")
+    .update({ gedeelde_map_id: mapId })
+    .eq("id", koppelId);
+  return !error;
+}
+
+// Je eigen user-id — handig in duo-UI om "is dit van mij of mijn partner"
+// te bepalen zonder overal opnieuw sb.auth.getUser() te doen.
+export async function getMijnGebruikerId(): Promise<string | null> {
+  const sb = createClient();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  return user?.id ?? null;
+}
+
+// ── DUO-TAKEN (gedeelde takenlijst per koppel) ────────────────────────────
+// Losse tabel, naast je eigen persoonlijke takenlijst (taken) — raakt die
+// niet aan. Simpel gehouden: geen deadline/herhaal-systeem, alleen tekst +
+// afvinken + wie het doet.
+export type DuoTaak = {
+  id: string;
+  duoKoppelId: string;
+  tekst: string;
+  gedaan: boolean;
+  toegewezenAan: string | null;
+  createdAt: string;
+};
+
+const DUO_TAAK_COLS = "id, duo_koppel_id, tekst, gedaan, toegewezen_aan, created_at";
+
+type DuoTaakRow = {
+  id: string;
+  duo_koppel_id: string;
+  tekst: string;
+  gedaan: boolean;
+  toegewezen_aan: string | null;
+  created_at: string;
+};
+
+function mapDuoTaak(r: DuoTaakRow): DuoTaak {
+  return {
+    id: r.id,
+    duoKoppelId: r.duo_koppel_id,
+    tekst: r.tekst,
+    gedaan: r.gedaan,
+    toegewezenAan: r.toegewezen_aan,
+    createdAt: r.created_at,
+  };
+}
+
+export async function getDuoTaken(koppelId: string): Promise<DuoTaak[]> {
+  const sb = createClient();
+  const { data, error } = await sb
+    .from("duo_taken")
+    .select(DUO_TAAK_COLS)
+    .eq("duo_koppel_id", koppelId)
+    .order("created_at", { ascending: false });
+  if (error || !data) return [];
+  return (data as DuoTaakRow[]).map(mapDuoTaak);
+}
+
+export async function addDuoTaak(koppelId: string, tekst: string): Promise<DuoTaak | null> {
+  const sb = createClient();
+  const t = tekst.trim();
+  if (!t) return null;
+  const { data, error } = await sb
+    .from("duo_taken")
+    .insert({ duo_koppel_id: koppelId, tekst: t.slice(0, 500) })
+    .select(DUO_TAAK_COLS)
+    .single();
+  if (error || !data) return null;
+  return mapDuoTaak(data as DuoTaakRow);
+}
+
+export async function setDuoTaakGedaan(id: string, gedaan: boolean): Promise<boolean> {
+  const sb = createClient();
+  const { error } = await sb.from("duo_taken").update({ gedaan }).eq("id", id);
+  return !error;
+}
+
+// wie: jouw of je partners user-id, of null om de toewijzing weer leeg te maken.
+export async function setDuoTaakToegewezen(id: string, wie: string | null): Promise<boolean> {
+  const sb = createClient();
+  const { error } = await sb.from("duo_taken").update({ toegewezen_aan: wie }).eq("id", id);
+  return !error;
+}
+
+export async function deleteDuoTaak(id: string): Promise<boolean> {
+  const sb = createClient();
+  const { error } = await sb.from("duo_taken").delete().eq("id", id);
+  return !error;
+}
+
+// ── DUO-OVERDRACHT (op Start, voor de volgende leerkracht) ────────────────
+// Bewust ÉÉN rij per koppel (zie schema.sql) — elke nieuwe overdracht
+// overschrijft de vorige, er ontstaat geen archief van kind-specifieke
+// opmerkingen. Nooit bijzondere persoonsgegevens (medisch, gezinssituatie).
+export type DuoOverdracht = { tekst: string; auteur: string | null; bijgewerkt: string };
+
+export async function getDuoOverdracht(koppelId: string): Promise<DuoOverdracht | null> {
+  const sb = createClient();
+  const { data, error } = await sb
+    .from("duo_overdracht")
+    .select("tekst, auteur, bijgewerkt")
+    .eq("duo_koppel_id", koppelId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as DuoOverdracht;
+}
+
+export async function zetDuoOverdracht(koppelId: string, tekst: string): Promise<boolean> {
+  const sb = createClient();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return false;
+  const { error } = await sb
+    .from("duo_overdracht")
+    .upsert(
+      { duo_koppel_id: koppelId, tekst, auteur: user.id, bijgewerkt: new Date().toISOString() },
+      { onConflict: "duo_koppel_id" },
+    );
+  return !error;
 }
 
 // ── ADMIN (aggregaat-statistieken, alleen voor admins) ────────────────────
