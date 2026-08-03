@@ -1166,6 +1166,32 @@ end;
 $$;
 grant execute on function public.duo_koppel_accepteren(text) to authenticated;
 
+-- Wie is mijn duo-partner? Naam + mailadres van de ánder in het koppel.
+-- Moet via security definer: `auth.users` is voor gewone gebruikers niet
+-- leesbaar, en dat hoort ook zo te blijven. Deze functie geeft daarom alleen
+-- de tegenpartij van een koppel waar je zélf in zit, en alleen als het koppel
+-- actief is. Zo blijft het onmogelijk om met een willekeurig koppel-id
+-- mailadressen van anderen op te vragen.
+create or replace function public.duo_partner(p_koppel_id uuid)
+returns table (voornaam text, email text)
+language sql stable security definer set search_path = public as $$
+  select coalesce(u.raw_user_meta_data ->> 'first_name', ''), u.email::text
+  from public.duo_koppels dk
+  join auth.users u
+    on u.id = case when dk.gebruiker_a = auth.uid() then dk.gebruiker_b else dk.gebruiker_a end
+  where dk.id = p_koppel_id
+    and dk.status = 'actief'
+    and auth.uid() in (dk.gebruiker_a, dk.gebruiker_b)
+  limit 1;
+$$;
+grant execute on function public.duo_partner(uuid) to authenticated;
+-- ⚠️ De grant hierboven sluit `anon` NIET buiten: Postgres/Supabase geven
+-- standaard uitvoerrecht aan PUBLIC. Zonder deze revoke is de functie dus ook
+-- zonder inlog aan te roepen. (Zonder sessie is auth.uid() leeg en komt er
+-- niets terug, maar daar wil je niet van afhankelijk zijn bij een functie die
+-- mailadressen teruggeeft.)
+revoke execute on function public.duo_partner(uuid) from public, anon;
+
 -- Algemene helper: ben ik een actieve duo-partner van deze eigenaar (voor
 -- IETS, ongeacht welke klas)? De policies hieronder checken zelf preciezer
 -- (gekoppeld aan de juiste klas_id/gedeelde_map_id), dus die roepen dit niet

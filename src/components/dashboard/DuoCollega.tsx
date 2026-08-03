@@ -11,6 +11,7 @@ import {
   verbreekDuo,
   zetGedeeldeMap,
   getBestanden,
+  getDuoPartner,
   addMap,
   type Klas,
   type DuoKoppel,
@@ -21,6 +22,16 @@ import {
 // deelbare code/link (zelfde principe als de "nodig collega's uit"-link),
 // maar hier pas actief ná expliciete acceptatie door de ander — dat opent
 // namelijk toegang tot gedeelde rapporten/bestanden/taken, dus nooit stilzwijgend.
+// Naam voor de gedeelde map. Klassen heten bij de een "7" en bij de ander
+// "groep 7"; blind "Groep " ervoor plakken gaf dan "Groep groep 7". Staat het
+// woord er al, dan gebruiken we de klasnaam zoals hij is (met een hoofdletter).
+function gedeeldeMapNaam(klasNaam: string): string {
+  const naam = klasNaam.trim();
+  if (!naam) return "Gedeelde map";
+  if (/^groep\b/i.test(naam)) return naam.charAt(0).toUpperCase() + naam.slice(1);
+  return `Groep ${naam}`;
+}
+
 export default function DuoCollega() {
   const router = useRouter();
   const pathname = usePathname();
@@ -30,6 +41,7 @@ export default function DuoCollega() {
   const [koppels, setKoppels] = useState<DuoKoppel[]>([]);
   const [bestanden, setBestanden] = useState<Bestand[]>([]);
   const [laden, setLaden] = useState(true);
+  const [partners, setPartners] = useState<Record<string, { voornaam: string; email: string }>>({});
   const [mapKiezerVoor, setMapKiezerVoor] = useState<string | null>(null);
   const [mapBezig, setMapBezig] = useState(false);
 
@@ -62,6 +74,17 @@ export default function DuoCollega() {
     setKoppels(d);
     setBestanden(b);
     setLaden(false);
+
+    // Wie is je duo? Naam en mailadres komen per actief koppel apart op, want
+    // ze zitten niet in de koppel-rij zelf maar in auth.users (zie schema.sql).
+    const actief = d.filter((x) => x.status === "actief");
+    const gevonden = await Promise.all(actief.map((x) => getDuoPartner(x.id)));
+    const p: Record<string, { voornaam: string; email: string }> = {};
+    actief.forEach((x, i) => {
+      const g = gevonden[i];
+      if (g) p[x.id] = g;
+    });
+    setPartners(p);
   }
 
   useEffect(() => {
@@ -141,7 +164,7 @@ export default function DuoCollega() {
 
   async function nieuweGedeeldeMap(koppel: DuoKoppel) {
     setMapBezig(true);
-    const map = await addMap(`Groep ${koppel.klasNaam}`.trim(), null);
+    const map = await addMap(gedeeldeMapNaam(koppel.klasNaam), null);
     if (map) await zetGedeeldeMap(koppel.id, map.id);
     setMapBezig(false);
     setMapKiezerVoor(null);
@@ -249,15 +272,35 @@ export default function DuoCollega() {
           {koppels.map((k) => (
             <div key={k.id} className="py-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-semibold text-ink">{k.klasNaam}</p>
-                  <p className="text-xs text-ink/55">
-                    {k.status === "actief"
-                      ? "Actief gekoppeld"
-                      : k.benIkUitnodiger
+                  {k.status === "actief" ? (
+                    // Wie je duo is, mét mailadres: handig om te controleren of je
+                    // de juiste collega hebt gekoppeld, en om even contact te zoeken.
+                    <p className="text-xs text-ink/55">
+                      Samen met{" "}
+                      <strong className="font-semibold text-ink/75">
+                        {partners[k.id]?.voornaam || "je duo-collega"}
+                      </strong>
+                      {partners[k.id]?.email && (
+                        <>
+                          {" · "}
+                          <a
+                            href={`mailto:${partners[k.id].email}`}
+                            className="break-all text-brand hover:underline"
+                          >
+                            {partners[k.id].email}
+                          </a>
+                        </>
+                      )}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-ink/55">
+                      {k.benIkUitnodiger
                         ? "Wacht op acceptatie door je collega"
                         : "Uitnodiging ontvangen"}
-                  </p>
+                    </p>
+                  )}
                 </div>
                 <button
                   onClick={() => loskoppelen(k.id)}
@@ -301,7 +344,7 @@ export default function DuoCollega() {
                     onClick={() => nieuweGedeeldeMap(k)}
                     className="rounded-lg border border-dashed border-black/20 px-3 py-1.5 text-xs font-semibold text-ink/60 transition hover:border-brand hover:text-brand disabled:opacity-50"
                   >
-                    + Nieuwe map &quot;Groep {k.klasNaam}&quot;
+                    + Nieuwe map &quot;{gedeeldeMapNaam(k.klasNaam)}&quot;
                   </button>
                 </div>
               )}

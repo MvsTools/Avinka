@@ -714,6 +714,19 @@ export async function zetGedeeldeMap(koppelId: string, mapId: string | null): Pr
   return !error;
 }
 
+// Naam + mailadres van je duo-partner. Komt uit een security-definer functie,
+// want `auth.users` is voor gewone gebruikers niet leesbaar (zie schema.sql).
+// Alleen bij een actief koppel waar je zelf in zit.
+export async function getDuoPartner(
+  koppelId: string,
+): Promise<{ voornaam: string; email: string } | null> {
+  const sb = createClient();
+  const { data, error } = await sb.rpc("duo_partner", { p_koppel_id: koppelId });
+  const rij = Array.isArray(data) ? data[0] : data;
+  if (error || !rij) return null;
+  return { voornaam: (rij.voornaam as string) || "", email: (rij.email as string) || "" };
+}
+
 // Je eigen user-id — handig in duo-UI om "is dit van mij of mijn partner"
 // te bepalen zonder overal opnieuw sb.auth.getUser() te doen.
 export async function getMijnGebruikerId(): Promise<string | null> {
