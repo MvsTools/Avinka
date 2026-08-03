@@ -63,7 +63,7 @@ export default async function DashboardStart() {
         bron={planning}
         vandaag={vandaag}
         groepen={groepen}
-        extraTegel={<DuoOverdracht bron={planning} vandaag={vandaag} />}
+        extraTegel={<DuoOverdracht />}
       />
 
       <OnboardingCard />

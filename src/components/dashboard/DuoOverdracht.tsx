@@ -11,12 +11,23 @@ import {
   getMijnGebruikerId,
   type DuoOverdracht as Bericht,
 } from "@/lib/db";
-import type { PlanningBron } from "@/lib/planning";
-import { feitenVanVandaag, maakConcept, maakNetter } from "@/lib/overdracht-ai";
+import { maakNetter } from "@/lib/overdracht-ai";
 import { Kaartvenster } from "./SchooljaarDagkaart";
 import DagTegel from "./DagTegel";
 
 type Groep = { klasId: string; klasNaam: string };
+
+// De kapstok naast het invoerveld. Deze drie komen uit wat leerkrachten in de
+// praktijk in een overdracht zetten: wat er anders liep, wat de ander moet
+// oppakken, en de losse bijzonderheden.
+//
+// ⚠️ Hier heeft een AI-knop "Begin voor mij" gezeten die een concept schreef
+// uit het rooster en de agenda. Eruit gehaald omdat álles wat het platform
+// weet, je collega zelf kan opzoeken; zo'n concept leest dan als vulling. Een
+// overdracht gaat juist over wat er níét in het systeem staat. Deze drie
+// woorden kosten geen AI en geen credits, en beantwoorden de echte vraag:
+// wat schrijf ik hier eigenlijk op?
+const KOPJES = ["Anders gelopen", "Voor jou", "Even weten"];
 
 // De overdracht voor je collega's bij een groep. Leest als een gespreksscherm:
 // berichten bovenin, typen onderin.
@@ -31,16 +42,7 @@ type Groep = { klasId: string; klasNaam: string };
 // Op Start is dit een TEGEL naast Vandaag/Vakantie/Deze dag, met het aantal
 // nieuwe berichten erop. Klikken opent hetzelfde soort venster als die tegels
 // (Kaartvenster): één soort tegel, één soort venster.
-//
-// `bron` en `vandaag` komen van Start mee: die heeft de planning toch al
-// opgehaald, en het AI-knopje hieronder maakt er zijn concept uit.
-export default function DuoOverdracht({
-  bron,
-  vandaag,
-}: {
-  bron: PlanningBron;
-  vandaag: string;
-}) {
+export default function DuoOverdracht() {
   const [groepen, setGroepen] = useState<Groep[]>([]);
   const [berichten, setBerichten] = useState<Record<string, Bericht[]>>({});
   const [gelezenOp, setGelezenOp] = useState<Record<string, string | null>>({});
@@ -149,38 +151,37 @@ export default function DuoOverdracht({
     setAiFout(null);
   }
 
-  // Eén knop, twee situaties. Staat er tekst, dan werkt de AI die tekst uit.
-  // Is het veld leeg, dan bouwt de code eerst de feiten van vandaag op en
-  // schrijft de AI daar een concept van.
+  // De AI werkt alleen uit wat jij hebt getypt. Hij weet verder niets van je
+  // dag, en dat hoort ook niet: zie de uitleg bij KOPJES hierboven.
   async function vraagAi() {
-    const groep = groepen.find((g) => g.klasId === actieveGroep);
-    if (!groep || aiBezig) return;
     const getypt = (invoer[actieveGroep] ?? "").trim();
+    if (!getypt || aiBezig) return;
 
     setAiBezig(true);
     setAiFout(null);
     setVoorstel(null);
 
-    let antwoord;
-    if (getypt) {
-      antwoord = await maakNetter(getypt);
-    } else {
-      const feiten = feitenVanVandaag(bron, vandaag);
-      if (feiten.leeg) {
-        // Zonder feiten valt er niets te schrijven, en dan gaat de AI het gat
-        // vullen met iets dat niet gebeurd is. Dus vragen we het niet eens.
-        setAiBezig(false);
-        setAiFout(
-          "Van vandaag is er nog niets bekend om mee te beginnen. Typ zelf een paar steekwoorden, dan maak ik er een bericht van.",
-        );
-        return;
-      }
-      antwoord = await maakConcept(feiten);
-    }
+    const antwoord = await maakNetter(getypt);
 
     setAiBezig(false);
     if (antwoord.ok) setVoorstel(antwoord.tekst);
     else setAiFout(antwoord.melding);
+  }
+
+  // Een kopje aantikken zet het in je veld en laat je cursor er direct achter
+  // staan. Op een nieuwe regel als je al aan het typen was.
+  function zetKopje(kopje: string) {
+    const huidig = invoer[actieveGroep] ?? "";
+    const scheiding = huidig.trim() ? (huidig.endsWith("\n") ? "" : "\n") : "";
+    setInvoer((v) => ({ ...v, [actieveGroep]: huidig + scheiding + kopje + ": " }));
+    // Wachten tot React het veld heeft bijgewerkt, anders zet de cursor zich
+    // op de oude tekstlengte.
+    requestAnimationFrame(() => {
+      const el = veld.current;
+      if (!el) return;
+      el.focus();
+      el.selectionStart = el.selectionEnd = el.value.length;
+    });
   }
 
   function neemVoorstelOver() {
@@ -197,7 +198,6 @@ export default function DuoOverdracht({
     .filter((b) => b.tekst.trim())
     .sort((a, b) => b.bijgewerkt.localeCompare(a.bijgewerkt))[0];
 
-  // Bepaalt wat het AI-knopje doet: uitwerken wat je al typte, of beginnen.
   const heeftTekst = Boolean((invoer[actieveGroep] ?? "").trim());
 
   // Oudste bovenaan, nieuwste onderaan — de leesrichting van een berichtenapp.
@@ -385,26 +385,48 @@ export default function DuoOverdracht({
               className="mt-1.5 w-full resize-y rounded-xl border border-black/10 bg-cream px-4 py-2.5 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
             />
 
-            {/* Hulp links, wegsturen rechts, allebei aan hun eigen kant vast.
-                Ze hangen niet meer aan elkaar, dus als het opschrift van de
-                hulpknop wisselt (leeg veld → "Begin voor mij", getypt →
-                "Netter maken") schuift er verder niets mee. */}
+            {/* De kapstok: geen doosjes, gewoon drie woorden die je aantikt.
+                Ze staan direct onder het veld waar ze in schrijven. */}
+            <div
+              role="group"
+              aria-label="Zet een kopje in je bericht"
+              className="mt-2 flex flex-wrap items-center gap-x-1 gap-y-1 text-xs"
+            >
+              <span className="text-ink/40">Kopje:</span>
+              {KOPJES.map((kopje, i) => (
+                <span key={kopje} className="flex items-center gap-x-1">
+                  {i > 0 && (
+                    <span aria-hidden className="text-ink/25">
+                      ·
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => zetKopje(kopje)}
+                    className="rounded font-semibold text-ink/55 underline decoration-dotted underline-offset-2 transition hover:text-brand-dark"
+                  >
+                    {kopje}
+                  </button>
+                </span>
+              ))}
+            </div>
+
+            {/* Hulp links, wegsturen rechts, allebei aan hun eigen kant vast. */}
             <div className="mt-2 flex items-center justify-between gap-2">
               {/* Bewust neutraal van vorm: alleen het sterretje is groen. Zo
                   staat er één groene knop in beeld en zie je meteen welke het
-                  bericht wegstuurt. De vaste minimumbreedte houdt ook de knop
-                  zelf stil bij dat wisselende opschrift. */}
+                  bericht wegstuurt. */}
               <button
                 type="button"
                 onClick={vraagAi}
-                disabled={aiBezig || versturen}
-                className="inline-flex min-w-[9.5rem] items-center justify-center gap-1.5 rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-ink/70 transition hover:border-black/20 disabled:opacity-50"
+                disabled={!heeftTekst || aiBezig || versturen}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-ink/70 transition hover:border-black/20 disabled:opacity-50"
               >
                 <svg viewBox="0 0 24 24" className="h-4 w-4 text-brand" fill="currentColor" aria-hidden>
                   <path d="M13 2.5l1.9 5.6 5.6 1.9-5.6 1.9L13 17.5l-1.9-5.6L5.5 10l5.6-1.9L13 2.5z" />
                   <path d="M5.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z" />
                 </svg>
-                {heeftTekst ? "Netter maken" : "Begin voor mij"}
+                Netter maken
               </button>
               <button
                 type="button"
