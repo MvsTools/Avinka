@@ -58,26 +58,29 @@ function isoDatum(d: Date): string {
   return `${d.getFullYear()}-${m}-${day}`;
 }
 
+// Eerste dag (1 augustus) van het schooljaar waar deze datum in valt.
+function schooljaarStart(vandaag: string): string {
+  const d = new Date(vandaag + "T00:00:00");
+  const jaar = d.getMonth() + 1 >= 8 ? d.getFullYear() : d.getFullYear() - 1;
+  return `${jaar}-08-01`;
+}
+
 // Eerste dag (YYYY-MM-DD) van de gekozen periode, t.o.v. vandaag. Week en maand
 // zijn voortschrijdende vensters (laatste 7 resp. 30 dagen, incl. vandaag) zodat
 // week altijd binnen maand valt — een kalenderweek kan namelijk vóór de 1e van de
-// maand beginnen, waardoor "week" groter kon lijken dan "maand". Het schooljaar
-// loopt van 1 augustus tot en met 31 juli.
+// maand beginnen, waardoor "week" groter kon lijken dan "maand". Geen van beide
+// gaat ooit vóór het begin van het lopende schooljaar terug (1 augustus): anders
+// zou "afgelopen 30 dagen" vlak na de zomer nog gebruik uit het vórige schooljaar
+// meetellen, terwijl "dit schooljaar" dat terecht niet doet.
 function periodeStart(periode: Periode, vandaag: string): string {
   if (periode === "vandaag") return vandaag;
+  const jaarStart = schooljaarStart(vandaag);
+  if (periode === "schooljaar") return jaarStart;
   const d = new Date(vandaag + "T00:00:00");
-  if (periode === "week") {
-    const van = new Date(d);
-    van.setDate(d.getDate() - 6); // afgelopen 7 dagen, incl. vandaag
-    return isoDatum(van);
-  }
-  if (periode === "maand") {
-    const van = new Date(d);
-    van.setDate(d.getDate() - 29); // afgelopen 30 dagen, incl. vandaag
-    return isoDatum(van);
-  }
-  const jaar = d.getMonth() + 1 >= 8 ? d.getFullYear() : d.getFullYear() - 1;
-  return `${jaar}-08-01`;
+  const van = new Date(d);
+  van.setDate(d.getDate() - (periode === "week" ? 6 : 29)); // incl. vandaag
+  const iso = isoDatum(van);
+  return iso > jaarStart ? iso : jaarStart; // niet vóór schooljaarstart
 }
 
 // Tel minuten + acties uit per_dag binnen de periode (t/m vandaag).
@@ -94,20 +97,14 @@ function periodeSom(perDag: PerDag, periode: Periode, vandaag: string): { m: num
   return { m, n };
 }
 
-// Leesbare tijd. Onder een dag: "X uur Y min". Vanaf een dag schakelt 'ie over op
-// dagen ("X d Y u Z min") zodat een groot community-totaal niet "872 uur" wordt.
+// Leesbare tijd, altijd in uren (nooit dagen) — ook een groot community-totaal
+// wordt dus gewoon "872 uur" in plaats van om te schakelen naar dagen.
 function tijdTekst(min: number): string {
   const totaal = Math.max(0, Math.round(min));
   if (totaal < 60) return `${totaal} min`;
-  const totU = Math.floor(totaal / 60);
+  const uur = Math.floor(totaal / 60);
   const m = totaal % 60;
-  if (totU < 24) return m > 0 ? `${totU} uur ${m} min` : `${totU} uur`;
-  const d = Math.floor(totU / 24);
-  const u = totU % 24;
-  let s = `${d} d`;
-  if (u > 0) s += ` ${u} u`;
-  if (m > 0) s += ` ${m} min`;
-  return s;
+  return m > 0 ? `${uur} uur ${m} min` : `${uur} uur`;
 }
 
 export default function StatistiekenView() {
@@ -517,26 +514,13 @@ function TijdTeller({ minuten }: { minuten: number }) {
     return () => cancelAnimationFrame(raf);
   }, [minuten]);
 
-  const dagen = Math.floor(n / 1440);
-  const uren = Math.floor((n % 1440) / 60);
+  // Altijd in uren (nooit dagen), ook bij een groot getal.
+  const uren = Math.floor(n / 60);
   const restMin = n % 60;
   const klein = "text-2xl font-normal sm:text-3xl";
   return (
     <div className="mt-2 font-serif text-5xl font-semibold leading-none sm:text-6xl">
-      {dagen > 0 ? (
-        // Vanaf een dag: dagen + uren (minuten weglaten, blijft kort en leesbaar).
-        <>
-          {dagen}
-          <span className={klein}> d</span>
-          {uren > 0 && (
-            <>
-              {" "}
-              {uren}
-              <span className={klein}> u</span>
-            </>
-          )}
-        </>
-      ) : uren > 0 ? (
+      {uren > 0 ? (
         <>
           {uren}
           <span className={klein}> uur</span>
