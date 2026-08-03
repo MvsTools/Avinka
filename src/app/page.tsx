@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import { heeftBetaaldAbonnement } from "@/lib/abonnement";
 import { getAbonnementServer } from "@/lib/abonnement-server";
 import Landing from "./_landing/Landing";
+import type { Cijfers } from "./_landing/Cijfers";
 
 /* ──────────────────────────────────────────────────────────────────────────
    DE LANDINGSPAGINA.
@@ -54,16 +55,36 @@ function zoekAfbeelding(basis: string) {
 }
 
 /* De cijfers voor het klapbord ("Samen teruggewonnen").
-   ⚠️ NOG NIET AANGESLOTEN OP DE DATABASE. wijs_community_stats() mag alleen
-   door ingelogde gebruikers worden opgevraagd (grant execute ... to
-   authenticated in database/schema.sql), en de bezoeker van deze pagina is
-   dat per definitie niet. Er is dus nog een stukje SQL nodig voordat hier
-   echte getallen kunnen staan.
 
-   Tot die tijd geeft dit null terug en laat de sectie zichzelf helemaal weg,
-   precies zoals bedoeld. Met ?cijfers=demo zie je hem met testgetallen: dat
-   is om het ontwerp te kunnen beoordelen, niet iets wat een bezoeker treft. */
+   Komt uit avinka_landing_cijfers(): een SECURITY DEFINER-functie die alleen
+   drie totalen teruggeeft en die anon mag aanroepen. Bewust een eigen, kleine
+   functie en niet wijs_community_stats(): die geeft ook de uitsplitsing per
+   tool en de streaks terug, en dat hoeft een bezoeker niet te kunnen opvragen.
+
+   Gaat er iets mis, dan geeft dit null terug en laat de sectie zichzelf
+   helemaal weg. Een landingspagina die stukloopt op een teller is erger dan
+   een landingspagina zonder teller.
+
+   Met ?cijfers=demo zie je het bord met testgetallen: dat is om het ontwerp te
+   kunnen beoordelen, niet iets wat een bezoeker tegenkomt. */
 const DEMO_CIJFERS = { minuten: 77_040, leerkrachten: 37, uitwerkingen: 9_412 };
+
+async function haalCijfers(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<Cijfers | null> {
+  try {
+    const { data, error } = await supabase.rpc("avinka_landing_cijfers");
+    if (error || !data) return null;
+    const d = data as { minuten?: number; leerkrachten?: number; uitwerkingen?: number };
+    return {
+      minuten: Number(d.minuten ?? 0),
+      leerkrachten: Number(d.leerkrachten ?? 0),
+      uitwerkingen: Number(d.uitwerkingen ?? 0),
+    };
+  } catch {
+    return null;
+  }
+}
 
 export default async function Home({
   searchParams,
@@ -98,7 +119,7 @@ export default async function Home({
         fotoBestand={zoekAfbeelding("michael")}
         ingelogd={Boolean(user)}
         toonPrijzen={toonPrijzen}
-        cijfers={params.cijfers === "demo" ? DEMO_CIJFERS : null}
+        cijfers={params.cijfers === "demo" ? DEMO_CIJFERS : await haalCijfers(supabase)}
       />
       <Footer maxWidth="max-w-5xl" />
     </div>
