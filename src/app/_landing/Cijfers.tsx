@@ -352,7 +352,7 @@ function RapportStijl() {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: clamp(20px, 2.6vw, 38px);
+        gap: clamp(18px, 2.4vw, 34px);
       }
       /* Naast elkaar in plaats van onder elkaar, elk op een eigen hoogte.
          Onder elkaar was het een kolom naast een kaart, en dan blijft de
@@ -474,9 +474,12 @@ function RapportStijl() {
          doorgaat is op deze pagina expliciet ongewenst. */
       /* ⚠️ Breedte nagerekend: 368 (rapport) + 38 + 434 (briefjes) + 38 + 208
          = 1086 in een kolom van 1104. Wordt dit kaartje breder, dan wipt het
-         naar een tweede rij en blijft rechts alles leeg. */
+         naar een tweede rij en blijft rechts alles leeg. Na het verzwaren van
+         de letters brak "doorlopend bijgewerkt" over twee regels; het kaartje
+         is daarom iets breder en de tussenruimte iets kleiner:
+         368 + 34 + 434 + 34 + 222 = 1092, past nog steeds. */
       .rp-bron {
-        width: clamp(178px, 17vw, 208px);
+        width: clamp(178px, 17.5vw, 222px);
         background: #fffefb;
         border-radius: 5px;
         padding: clamp(13px, 1.5vw, 17px) clamp(14px, 1.6vw, 18px);
@@ -484,28 +487,38 @@ function RapportStijl() {
         /* een derde hoek, anders liggen twee papieren precies parallel */
         transform: rotate(-1.5deg);
       }
-      /* ⚠️ 0,55 dekking geeft op wit ongeveer 3,2:1 bij een letter van 14px,
-         en daar geldt de eis van 4,5:1. Dezelfde fout stond eerder al in de
-         kleine labels van het rapport; op 0,62 haalt hij 4,7:1. */
+      /* De letters op dit kaartje zijn voller dan op de rest. Als lichte
+         kleine tekst las het als de kleine lettertjes onderaan een formulier,
+         terwijl het juist het stuk is dat vertrouwen moet wekken. Het label
+         staat in de koplettertype van de pagina, net als de titel van het
+         rapport, zodat het als kop van een document leest en niet als bijschrift.
+         ⚠️ De kleuren zijn NIET meegegaan in het verzwaren: 0,62 en 0,80 halen
+         4,6:1 en 8,3:1. Zwaarder mág lichter, maar hieronder wordt het weer
+         krap bij deze lettergroottes. */
       .rp-bronlabel {
-        font-size: 0.85rem;
+        font-family: var(--font-display), Georgia, serif;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        font-size: clamp(0.95rem, 1.15vw, 1.05rem);
         color: rgba(34, 28, 58, 0.62);
       }
       .rp-brontekst {
-        margin-top: 0.45rem;
-        font-size: clamp(0.9rem, 1.1vw, 0.98rem);
-        line-height: 1.55;
-        color: rgba(34, 28, 58, 0.78);
+        margin-top: 0.5rem;
+        font-weight: 600;
+        font-size: clamp(0.95rem, 1.15vw, 1.02rem);
+        line-height: 1.5;
+        color: rgba(34, 28, 58, 0.8);
         text-wrap: pretty;
       }
       .rp-bronlive {
         display: flex;
         align-items: center;
         gap: 0.45rem;
-        margin-top: 0.7rem;
-        padding-top: 0.6rem;
+        margin-top: 0.75rem;
+        padding-top: 0.65rem;
         border-top: 1px solid rgba(var(--w-schaduw-rgb, 23,80,58), 0.12);
-        font-size: 0.85rem;
+        font-weight: 700;
+        font-size: 0.9rem;
         color: ${KOP};
       }
       .rp-stip {
