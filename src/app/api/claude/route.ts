@@ -30,6 +30,18 @@ function toolUitReferer(referer: string | null): string | null {
   const m = referer.match(/\/tools\/([a-z0-9-]+)\.html/i);
   return m ? m[1].toLowerCase() : null;
 }
+
+// Waar komt deze aanvraag vandaan? De losse tools verraden zichzelf via de
+// Referer, maar AI-knoppen in het dashboard zelf (zoals bij de overdracht)
+// staan allemaal op /dashboard. Die noemen hun naam daarom expliciet, anders
+// belanden ze als "onbekend" in het kostenoverzicht. Alleen als naam
+// bruikbaar: kleine letters, cijfers en streepjes, kort — het is gebruikers-
+// invoer en het gaat rechtstreeks de database in.
+function toolVan(request: NextRequest): string | null {
+  const eigen = request.headers.get("x-avinka-tool");
+  if (eigen && /^[a-z0-9-]{1,40}$/.test(eigen)) return eigen;
+  return toolUitReferer(request.headers.get("referer"));
+}
 export async function POST(request: NextRequest) {
   // 1) Alleen ingelogde leerkrachten mogen de AI gebruiken.
   const supabase = await createClient();
@@ -159,7 +171,7 @@ export async function POST(request: NextRequest) {
       if (v) {
         await supabase.from("ai_verbruik").insert({
           user_id: user.id,
-          tool: toolUitReferer(request.headers.get("referer")),
+          tool: toolVan(request),
           model: v.model,
           input_tokens: v.input_tokens,
           output_tokens: v.output_tokens,

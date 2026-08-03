@@ -5,12 +5,15 @@ import {
   getGedeeldeKlassen,
   getKlasCollegas,
   getDuoOverdrachten,
+  getDuoTaken,
   getOverdrachtGelezen,
   markeerOverdrachtGelezen,
   zetDuoOverdracht,
   getMijnGebruikerId,
   type DuoOverdracht as Bericht,
 } from "@/lib/db";
+import type { PlanningBron } from "@/lib/planning";
+import { feitenVanVandaag, maakConcept, maakNetter } from "@/lib/overdracht-ai";
 import { Kaartvenster } from "./SchooljaarDagkaart";
 import DagTegel from "./DagTegel";
 
@@ -29,7 +32,16 @@ type Groep = { klasId: string; klasNaam: string };
 // Op Start is dit een TEGEL naast Vandaag/Vakantie/Deze dag, met het aantal
 // nieuwe berichten erop. Klikken opent hetzelfde soort venster als die tegels
 // (Kaartvenster): één soort tegel, één soort venster.
-export default function DuoOverdracht() {
+//
+// `bron` en `vandaag` komen van Start mee: die heeft de planning toch al
+// opgehaald, en het AI-knopje hieronder maakt er zijn concept uit.
+export default function DuoOverdracht({
+  bron,
+  vandaag,
+}: {
+  bron: PlanningBron;
+  vandaag: string;
+}) {
   const [groepen, setGroepen] = useState<Groep[]>([]);
   const [berichten, setBerichten] = useState<Record<string, Bericht[]>>({});
   const [gelezenOp, setGelezenOp] = useState<Record<string, string | null>>({});
@@ -40,7 +52,13 @@ export default function DuoOverdracht() {
   const [fout, setFout] = useState(false);
   const [open, setOpen] = useState(false);
   const [actieveGroep, setActieveGroep] = useState<string>("");
+  // Het AI-knopje: het voorstel staat apart tot je het overneemt, zodat je
+  // eigen tekst nooit onder je handen vandaan wordt geschreven.
+  const [aiBezig, setAiBezig] = useState(false);
+  const [voorstel, setVoorstel] = useState<string | null>(null);
+  const [aiFout, setAiFout] = useState<string | null>(null);
   const onderaan = useRef<HTMLDivElement>(null);
+  const veld = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     (async () => {
@@ -120,6 +138,58 @@ export default function DuoOverdracht() {
       return { ...v, [klasId]: [...anderen, { tekst, auteur: mijnId ?? "", bijgewerkt: nu }] };
     });
     setInvoer((v) => ({ ...v, [klasId]: "" }));
+    setVoorstel(null);
+    setAiFout(null);
+  }
+
+  // Van groep wisselen betekent een ander gesprek; een voorstel dat bij de
+  // vorige groep hoorde mag daar niet blijven hangen.
+  function kiesGroep(klasId: string) {
+    setActieveGroep(klasId);
+    setVoorstel(null);
+    setAiFout(null);
+  }
+
+  // Eén knop, twee situaties. Staat er tekst, dan werkt de AI die tekst uit.
+  // Is het veld leeg, dan bouwt de code eerst de feiten van vandaag op en
+  // schrijft de AI daar een concept van.
+  async function vraagAi() {
+    const groep = groepen.find((g) => g.klasId === actieveGroep);
+    if (!groep || aiBezig) return;
+    const getypt = (invoer[actieveGroep] ?? "").trim();
+
+    setAiBezig(true);
+    setAiFout(null);
+    setVoorstel(null);
+
+    let antwoord;
+    if (getypt) {
+      antwoord = await maakNetter(getypt);
+    } else {
+      const taken = await getDuoTaken(groep.klasId);
+      const feiten = feitenVanVandaag(bron, vandaag, groep.klasNaam, taken);
+      if (feiten.leeg) {
+        // Zonder feiten valt er niets te schrijven, en dan gaat de AI het gat
+        // vullen met iets dat niet gebeurd is. Dus vragen we het niet eens.
+        setAiBezig(false);
+        setAiFout(
+          "Van vandaag is er nog niets bekend om mee te beginnen. Typ zelf een paar steekwoorden, dan maak ik er een bericht van.",
+        );
+        return;
+      }
+      antwoord = await maakConcept(feiten);
+    }
+
+    setAiBezig(false);
+    if (antwoord.ok) setVoorstel(antwoord.tekst);
+    else setAiFout(antwoord.melding);
+  }
+
+  function neemVoorstelOver() {
+    if (!voorstel) return;
+    setInvoer((v) => ({ ...v, [actieveGroep]: voorstel }));
+    setVoorstel(null);
+    veld.current?.focus();
   }
 
   if (groepen.length === 0) return null;
@@ -128,6 +198,9 @@ export default function DuoOverdracht() {
     .flatMap((g) => berichten[g.klasId] ?? [])
     .filter((b) => b.tekst.trim())
     .sort((a, b) => b.bijgewerkt.localeCompare(a.bijgewerkt))[0];
+
+  // Bepaalt wat het AI-knopje doet: uitwerken wat je al typte, of beginnen.
+  const heeftTekst = Boolean((invoer[actieveGroep] ?? "").trim());
 
   // Oudste bovenaan, nieuwste onderaan — de leesrichting van een berichtenapp.
   const gesprek = (berichten[actieveGroep] ?? [])
@@ -188,7 +261,7 @@ export default function DuoOverdracht() {
                 <button
                   key={g.klasId}
                   type="button"
-                  onClick={() => setActieveGroep(g.klasId)}
+                  onClick={() => kiesGroep(g.klasId)}
                   className={
                     "rounded-xl border px-3 py-1.5 text-sm font-semibold transition " +
                     (actieveGroep === g.klasId
@@ -242,11 +315,78 @@ export default function DuoOverdracht() {
 
           {/* ── Onderin: typen ── */}
           <div className="mt-3 border-t border-black/5 pt-3">
-            <label htmlFor="overdracht-invoer" className="text-sm font-semibold text-ink">
-              Wat wil je delen met je collega&apos;s?
-            </label>
+            {/* De hulpknop hoort bij de vraag, niet bij het versturen: hij helpt
+                je zeggen wat je wilt zeggen. Vandaar op de regel van het label
+                en niet naast Versturen, waar hij met die knop zou concurreren. */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label htmlFor="overdracht-invoer" className="text-sm font-semibold text-ink">
+                Wat wil je delen met je collega&apos;s?
+              </label>
+              <button
+                type="button"
+                onClick={vraagAi}
+                disabled={aiBezig || versturen}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-brand/30 bg-brand-soft px-3 py-1.5 text-sm font-semibold text-brand-dark transition hover:border-brand disabled:opacity-50"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden>
+                  <path d="M13 2.5l1.9 5.6 5.6 1.9-5.6 1.9L13 17.5l-1.9-5.6L5.5 10l5.6-1.9L13 2.5z" />
+                  <path d="M5.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z" />
+                </svg>
+                {heeftTekst ? "Netter maken" : "Begin voor mij"}
+              </button>
+            </div>
+
+            {/* Het voorstel staat náást je eigen tekst, niet eroverheen: je
+                vergelijkt en kiest zelf. */}
+            {(aiBezig || voorstel) && (
+              <div
+                aria-live="polite"
+                className="mt-2 rounded-2xl border border-brand/25 bg-brand-soft/60 px-4 py-3"
+              >
+                <p className="text-xs font-bold uppercase tracking-wider text-brand-dark">
+                  Voorstel
+                </p>
+                {aiBezig ? (
+                  <p className="mt-1 text-sm text-ink/60">Even schrijven…</p>
+                ) : (
+                  <>
+                    <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-ink/80">
+                      {voorstel}
+                    </p>
+                    <div className="mt-2.5 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={neemVoorstelOver}
+                        // Bewust niet gevuld groen: Versturen staat er vlak
+                        // onder en dat is de knop die het bericht wegstuurt.
+                        // Twee volle groene knoppen boven elkaar leest als twee
+                        // keer dezelfde eindstap.
+                        className="rounded-xl border border-brand bg-white px-4 py-1.5 text-sm font-bold text-brand-dark transition hover:bg-brand-soft"
+                      >
+                        Gebruiken
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setVoorstel(null)}
+                        className="rounded-xl border border-black/10 px-4 py-1.5 text-sm font-semibold text-ink/60 transition hover:border-black/20"
+                      >
+                        Toch niet
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {aiFout && (
+              <p aria-live="polite" className="mt-2 text-sm text-red-600">
+                {aiFout}
+              </p>
+            )}
+
             <div className="mt-1.5 flex items-end gap-2">
               <textarea
+                ref={veld}
                 id="overdracht-invoer"
                 value={invoer[actieveGroep] ?? ""}
                 onChange={(e) => setInvoer((v) => ({ ...v, [actieveGroep]: e.target.value }))}
