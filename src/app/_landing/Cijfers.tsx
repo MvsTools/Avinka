@@ -59,6 +59,25 @@ export type { Cijfers };
    Er staat hier nooit een verzonnen of pijnlijk laag cijfer. Elke regel heeft
    zijn eigen drempel (DREMPELS hieronder) en verschijnt pas als hij gehaald
    is; is de bovenste regel niet gehaald, dan blijft de hele sectie weg.
+
+   ⏳ BEKEND PLAFOND, BEWUST NIET NU OPGELOST
+   Dit bord telt ALLES bij elkaar en stopt nooit. Met de belofte van 2 uur per
+   week per leerkracht loopt dat zo:
+       30 leerkrachten:   260 uur per maand,   3.100 per jaar
+     1000 leerkrachten: 8.700 uur per maand, 104.000 per jaar
+   Na een paar jaar op schaal staat er dus een getal van zes of zeven cijfers,
+   en dan is het geen bord meer maar een kilometerstand: niemand voelt het
+   verschil tussen 312.000 en 340.000 uur. Hetzelfde geldt voor de
+   uitwerkingen. LAYOUT is niet het probleem (de kaarten krimpen mee met de
+   lengte van het getal, nagemeten tot zeven cijfers), BETEKENIS wel.
+
+   De oplossing als het zover is: tel een PERIODE in plaats van alles, het
+   liefst de afgelopen 30 dagen. Dat houdt het getal bij elke schaal in drie à
+   vier cijfers én het is sterker bewijs, want het laat zien dat het nú leeft
+   in plaats van dat er ooit veel gebeurd is. De dag-voor-dag-gegevens staan al
+   in de database (kolom `per_dag` op `statistiek`), dus er is alleen een
+   nieuwe SQL-functie nodig. Eigenaar heeft 3-8 bewust gekozen dit later te
+   doen: het speelt pas over jaren.
    ────────────────────────────────────────────────────────────────────────── */
 
 /* Per regel de ondergrens waaronder we hem niet tonen. Bewust voorzichtig:
