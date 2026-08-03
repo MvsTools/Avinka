@@ -125,10 +125,10 @@ export default function PrivacyPage() {
             hebt gezet.
           </li>
           <li>
-            <strong>Overdracht-briefjes</strong> voor collega&apos;s met wie je een groep
-            deelt: één kort briefje per persoon, dat wordt vervangen zodra diegene een nieuw
-            briefje schrijft. Er blijft dus geen geschiedenis staan, en na 30 dagen zonder
-            wijziging verdwijnt het briefje vanzelf.
+            <strong>De overdracht</strong> voor collega&apos;s met wie je een groep deelt:
+            één kort bericht per persoon, dat wordt vervangen zodra diegene een nieuw bericht
+            stuurt. Er blijft dus geen geschiedenis staan, en na 30 dagen zonder wijziging
+            verdwijnt het bericht vanzelf.
           </li>
         </ul>
         <p>
@@ -272,8 +272,8 @@ export default function PrivacyPage() {
             leerlinggegevens.
           </li>
           <li>
-            <strong>Overdracht-briefjes:</strong> maximaal 30 dagen na de laatste wijziging,
-            en eerder als de schrijver een nieuw briefje maakt (dat vervangt het oude).
+            <strong>De overdracht:</strong> maximaal 30 dagen na het laatste bericht, en
+            eerder als diezelfde persoon een nieuw bericht stuurt (dat vervangt het oude).
           </li>
           <li>
             <strong>Account-, klas- en eigen gegevens:</strong> zolang je een account hebt.

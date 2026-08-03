@@ -875,9 +875,9 @@ export async function deleteDuoTaak(id: string): Promise<boolean> {
 // opmerkingen. Nooit bijzondere persoonsgegevens (medisch, gezinssituatie).
 export type DuoOverdracht = { tekst: string; auteur: string; bijgewerkt: string };
 
-// Alle briefjes van deze groep: één per persoon, nieuwste bovenaan. Je ziet dus
-// wie wat schreef, maar er groeit geen gesprek — ieders nieuwe briefje vervangt
-// zijn eigen vorige.
+// Alle overdracht-berichten van deze groep: één per persoon, nieuwste eerst. Je
+// ziet dus wie wat schreef, maar er groeit geen gesprek — ieders nieuwe bericht
+// vervangt zijn eigen vorige.
 export async function getDuoOverdrachten(klasId: string): Promise<DuoOverdracht[]> {
   const sb = createClient();
   const { data, error } = await sb

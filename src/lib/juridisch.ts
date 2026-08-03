@@ -20,7 +20,7 @@ export const PRIVACY = {
 // leerkracht in de her-akkoord-pop-up. Laat leeg als er (nog) niets inhoudelijks
 // is veranderd; de pop-up toont dan alleen de nette vraag om opnieuw akkoord te gaan.
 export const WIJZIGING_SAMENVATTING: string[] = [
-  "Je kunt een groep voortaan samen draaien met collega's. Deel je een groep, dan kun je elkaar een kort overdracht-briefje schrijven.",
-  "Zo'n briefje wordt vervangen zodra diezelfde persoon een nieuw briefje schrijft, en verdwijnt vanzelf na 30 dagen zonder wijziging. Er blijft dus geen geschiedenis staan.",
+  "Je kunt een groep voortaan samen draaien met collega's. Deel je een groep, dan kun je elkaar een korte overdracht sturen.",
+  "Zo'n bericht wordt vervangen zodra diezelfde persoon een nieuw bericht stuurt, en verdwijnt vanzelf na 30 dagen zonder wijziging. Er blijft dus geen geschiedenis staan.",
   "Wat je met een collega deelt hangt af van de rol die je hem geeft: alles, of alles behalve de rapportteksten.",
 ];
