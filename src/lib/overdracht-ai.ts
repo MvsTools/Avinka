@@ -3,7 +3,7 @@
 // Twee situaties, één knop:
 //   • je hebt iets getypt  → "Netter maken": van steekwoorden naar een bericht.
 //   • het veld is leeg     → "Begin voor mij": een concept uit wat het platform
-//                             van vandaag al weet (rooster, agenda, gedeelde taken).
+//                             van vandaag al weet (rooster en agenda).
 //
 // De verdeling is dezelfde als in de tools: de CODE verzamelt de feiten en
 // bewaakt wat er wel en niet in mag, de AI levert alleen de taal. Daarom staat
@@ -14,7 +14,16 @@
 // Alles gaat eerst door de gedeelde maskeerlaag (zie ai-maskering.ts), dus
 // voornamen van kinderen en de schoolnaam verlaten het apparaat niet.
 
-import { dagbeeld, dagnaam, kort, plus, type PlanningBron } from "@/lib/planning";
+import {
+  dagbeeld,
+  dagnaam,
+  kort,
+  plus,
+  type PlanItem,
+  type PlanningBron,
+  type Soort,
+} from "@/lib/planning";
+import { SOORT_INFO } from "@/lib/agenda-herken";
 import { haalMaskering } from "@/lib/ai-maskering";
 
 // Een korte, taalkundige klus. Zelfde keuze als bij Oudercontact: hier hoeft
@@ -51,7 +60,11 @@ van, dat de leerkracht daarna zelf aanvult.
   oordelen, geen namen van kinderen, geen bijzonderheden die er niet staan.
 - Schrijf nooit alsof je weet hoe de dag is verlopen. Je weet wat er gepland stond,
   meer niet.
-- Laat weg wat een collega toch al weet of niet hoeft te horen.`;
+- Laat weg wat een collega toch al weet of niet hoeft te horen.
+- Staat er een toets, een oudergesprek of een rapportmoment tussen, begin daarmee.
+  Dat is voor een collega het belangrijkste nieuws van de dag; het gewone rooster
+  komt daarna en mag kort.
+- Wat morgen komt zet je aan het eind.`;
 
 // ── De feiten van vandaag (gewone code, geen AI) ──────────────────────────
 
@@ -62,39 +75,85 @@ export type Dagfeiten = {
   leeg: boolean;
 };
 
+// De agenda weet al wat vóór soort afspraak iets is (zie agenda-herken.ts:
+// "cito", "dictee" en "eindtoets" worden een toets, "spreekavond" en "10
+// minuten" een gesprek, enzovoort). Dat is precies de indeling die een
+// overdracht in de praktijk ook gebruikt: een toets, een oudergesprek en een
+// rapportmoment zijn ander nieuws dan zomaar een afspraak, en een collega wil
+// die als eerste horen. Eén platte lijst met titels gooide dat verschil weg.
+//
+// De volgorde hieronder is de volgorde waarin de regels de prompt in gaan, dus
+// belangrijkste eerst.
+const AGENDA_VOLGORDE: Soort[] = [
+  "toets",
+  "gesprek",
+  "rapport",
+  "vrij",
+  "vergadering",
+  "activiteit",
+  "overig",
+];
+
+const AGENDA_LABEL: Record<Soort, string> = {
+  toets: "Toets",
+  gesprek: "Gesprekken met ouders",
+  rapport: "Rapporten",
+  vrij: "Geen les",
+  vergadering: "Vergadering",
+  activiteit: "Activiteit",
+  overig: "Verder in de agenda",
+  // Vakanties zeggen we zelf, in de zin over of er les is.
+  vakantie: "Vakantie",
+};
+
+/** Eén afspraak als tekst. De tijd alleen waar hij iets toevoegt. */
+function noem(item: PlanItem, metTijd: boolean): string {
+  return metTijd && !item.heleDag && item.begin ? `${item.begin} ${item.titel}` : item.titel;
+}
+
+/** Per soort één regel, op volgorde van belang. Hooguit vijf per soort. */
+function agendaRegels(
+  items: PlanItem[],
+  wanneer: string,
+  metTijd: boolean,
+  overslaan: Soort[] = [],
+): string[] {
+  return AGENDA_VOLGORDE.filter((soort) => !overslaan.includes(soort)).flatMap((soort) => {
+    const groep = items.filter((i) => i.soort === soort).slice(0, 5);
+    if (!groep.length) return [];
+    return [
+      `${AGENDA_LABEL[soort]} ${wanneer}: ${groep.map((i) => noem(i, metTijd)).join(", ")}.`,
+    ];
+  });
+}
+
 // ⚠️ De gedeelde takenlijst zit hier BEWUST niet in. Die staat al op Start, met
 // afvinken en een naam erbij, dus je collega ziet hem gewoon. En een bericht is
 // een momentopname die 30 dagen blijft staan terwijl die lijst leeft: vink je
 // een taak vanavond af, dan zegt de overdracht morgen nog dat hij openstaat.
-export function feitenVanVandaag(
-  bron: PlanningBron,
-  vandaag: string,
-  groepNaam: string,
-): Dagfeiten {
+// De naam van de groep staat hier bewust niet bij: het bericht komt in het
+// gesprek van díé groep terecht, dus je collega weet dat al. Bovendien leverde
+// het "groep Groep 6A" op zodra iemand zijn klas zelf "Groep 6" noemt.
+export function feitenVanVandaag(bron: PlanningBron, vandaag: string): Dagfeiten {
   const beeld = dagbeeld(bron, vandaag);
-  const regels: string[] = [
-    `Groep: ${groepNaam}.`,
-    `Vandaag is het ${dagnaam(vandaag)} ${kort(vandaag)}.`,
-  ];
+  const regels: string[] = [`Vandaag is het ${dagnaam(vandaag)} ${kort(vandaag)}.`];
 
   // Pauzes en de eigen tijd ná schooltijd laten we weg: dat is geen nieuws voor
   // een collega, en het maakt het bericht alleen langer.
   const lessen = beeld.vrij
     ? []
     : beeld.blokken.filter((b) => b.soort === "les" && b.vak !== "pauze").slice(0, 12);
-  const afspraken = beeld.items.filter((i) => i.soort !== "vakantie").slice(0, 5);
+  const afspraken = beeld.items.filter((i) => i.soort !== "vakantie");
 
   const morgen = plus(vandaag, 1);
-  const morgenItems = dagbeeld(bron, morgen)
-    .items.filter((i) => i.soort !== "vakantie")
-    .slice(0, 3);
+  const morgenItems = dagbeeld(bron, morgen).items.filter((i) => i.soort !== "vakantie");
 
   if (beeld.vrij) {
-    regels.push(
-      beeld.vakantie
-        ? `Vandaag is er geen les: ${beeld.vakantie.naam}.`
-        : "Vandaag is er geen les.",
-    );
+    // Is de dag vrij door een studiedag of margedag, dan staat de reden in die
+    // afspraak zelf. Anders komt hij uit de vakantieregeling.
+    const reden =
+      beeld.vakantie?.naam ?? afspraken.find((i) => SOORT_INFO[i.soort]?.vrij)?.titel;
+    regels.push(reden ? `Vandaag is er geen les: ${reden}.` : "Vandaag is er geen les.");
   } else if (lessen.length) {
     regels.push(
       "Op het rooster stond vandaag: " +
@@ -108,27 +167,15 @@ export function feitenVanVandaag(
     );
   }
 
-  if (afspraken.length) {
-    regels.push(
-      "In de agenda van vandaag: " +
-        afspraken
-          .map((i) => (i.heleDag || !i.begin ? i.titel : `${i.begin} ${i.titel}`))
-          .join(", ") +
-        ".",
-    );
-  }
+  // Is de dag al vrij verklaard, dan zou de "vrij"-afspraak dat een tweede keer
+  // zeggen. Morgen mag hij juist wél apart genoemd worden: dat is nieuws.
+  const vandaagRegels = agendaRegels(afspraken, "vandaag", true, beeld.vrij ? ["vrij"] : []);
+  const morgenRegels = agendaRegels(morgenItems, `morgen (${dagnaam(morgen)})`, false);
+  regels.push(...vandaagRegels, ...morgenRegels);
 
-  if (morgenItems.length) {
-    regels.push(
-      `Morgen (${dagnaam(morgen)}) staat in de agenda: ` +
-        morgenItems.map((i) => i.titel).join(", ") +
-        ".",
-    );
-  }
-
-  // De eerste twee regels zijn alleen context. Staat er verder niets, dan valt
-  // er niets te schrijven en zou de AI het gat gaan vullen.
-  const leeg = !lessen.length && !afspraken.length && !morgenItems.length;
+  // De eerste regel is alleen context. Staat er verder niets, dan valt er niets
+  // te schrijven en zou de AI het gat gaan vullen.
+  const leeg = !lessen.length && !vandaagRegels.length && !morgenRegels.length;
   return { regels, leeg };
 }
 
