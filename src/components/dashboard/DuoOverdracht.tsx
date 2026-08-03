@@ -11,6 +11,7 @@ import {
   getMijnGebruikerId,
   type DuoOverdracht as Briefje,
 } from "@/lib/db";
+import { Kaartvenster } from "./SchooljaarDagkaart";
 
 type Groep = { klasId: string; klasNaam: string };
 
@@ -24,9 +25,9 @@ type Groep = { klasId: string; klasNaam: string };
 // dagen alsnog opgeruimd (cron `wis-oude-overdracht` in database/retention.sql).
 //
 // Op Start is dit een TEGEL naast Vandaag/Vakantie/Deze dag, met het aantal
-// nieuwe briefjes erop. Klik = het gesprek opent onder de rij. Dat is dezelfde
-// beweging als de andere tegels maken, en het houdt Start rustig: de tools
-// blijven de held.
+// nieuwe briefjes erop. Klikken opent hetzelfde soort venster als die tegels
+// (Kaartvenster): één soort tegel, één soort venster. Dat houdt Start rustig —
+// de tools blijven de held.
 export default function DuoOverdracht() {
   const [groepen, setGroepen] = useState<Groep[]>([]);
   const [briefjes, setBriefjes] = useState<Record<string, Briefje[]>>({});
@@ -184,21 +185,11 @@ export default function DuoOverdracht() {
         </div>
       </button>
 
-      {/* Het gesprek zelf: over de volle breedte onder de tegelrij, zodat het
-          leest als een pagina en niet als een propvol tegeltje. */}
+      {/* Zelfde venster als de tegels ernaast (Kaartvenster uit de dagkaart):
+          verduisterde achtergrond, sluiten met Escape of door ernaast te
+          klikken. Eén soort tegel hoort één soort venster te openen. */}
       {open && (
-        <div className="col-span-full rounded-3xl border border-black/5 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="font-bold text-ink">Overdracht</h2>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="rounded-lg px-2 py-1 text-sm font-semibold text-brand transition hover:bg-brand-soft"
-            >
-              Sluiten
-            </button>
-          </div>
-
+        <Kaartvenster titel="Overdracht" sluit={() => setOpen(false)}>
           <div className="mt-3 flex flex-col gap-5">
             {groepen.map((g) => {
               const lijst = (briefjes[g.klasId] ?? []).filter((b) => b.tekst.trim());
@@ -264,7 +255,7 @@ export default function DuoOverdracht() {
               );
             })}
           </div>
-        </div>
+        </Kaartvenster>
       )}
     </>
   );
