@@ -222,6 +222,23 @@ export function WereldCijfers({
   return <Rapport begin={cijfers} bijhouden={bijhouden} />;
 }
 
+/* Eén los briefje met één cijfer. Dezelfde papiersoort als het rapport, maar
+   zonder kop en zonder map: het rapport is het hoofddocument, dit zijn de
+   blaadjes die ernaast liggen. */
+function Briefje({ getal, label }: { getal: number; label: string }) {
+  /* Getal en woord in ÉÉN alinea. Als twee losse alinea's las een schermlezer
+     "37" en daarna "leerkrachten" als twee losse mededelingen; de spatie
+     ertussen staat er echt, anders plakken ze aan elkaar. */
+  return (
+    <p className="rp-briefje">
+      <span className="rp-briefgetal">
+        <Waarde getal={getal} />
+      </span>{" "}
+      <span className="rp-brieflabel">{label}</span>
+    </p>
+  );
+}
+
 function Rapport({ begin, bijhouden }: { begin: Cijfers; bijhouden: boolean }) {
   const { cijfers, anker } = useBijgehoudenCijfers(begin, bijhouden);
 
@@ -229,28 +246,47 @@ function Rapport({ begin, bijhouden }: { begin: Cijfers; bijhouden: boolean }) {
   if (uren < DREMPELS.uren) return null;
 
   const toonLeerkrachten = cijfers.leerkrachten >= DREMPELS.leerkrachten;
+  const toonUitwerkingen = cijfers.uitwerkingen >= DREMPELS.uitwerkingen;
 
   return (
     <section ref={anker} className="relative overflow-x-clip">
-      {/* Eén zacht vlak, groter dan het kaartje en eronder, zodat zijn rand
-         nergens door de inhoud snijdt. */}
+      {/* Twee zachte vlakken, allebei groter dan wat erop ligt en eronder,
+         zodat hun rand nergens door de inhoud snijdt. Eén onder het rapport
+         links en één onder de briefjes rechts: zo heeft de hele strook een
+         ondergrond in plaats van alleen de linkerhelft. */}
       <KaartVlak
         kleur={VLAK_PAPIER}
         vorm="kiezel"
-        breedte={880}
-        hoogte={420}
-        style={{ left: "-10%", top: -30, transform: "rotate(4deg)" }}
+        breedte={820}
+        hoogte={400}
+        style={{ left: "-12%", top: -20, transform: "rotate(4deg)" }}
         className="-z-10 hidden lg:block"
         tel={4}
       />
+      <KaartVlak
+        kleur={VLAK_PAPIER}
+        vorm="ei"
+        breedte={620}
+        hoogte={330}
+        style={{ right: "-8%", top: 40, transform: "rotate(-6deg)" }}
+        className="-z-10 hidden lg:block"
+        tel={7}
+      />
 
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-20 pt-6 lg:pb-24">
-        <Confetti punten={[{ x: "92%", y: "22%", r: 4, amber: true }]} />
+        <Confetti
+          punten={[
+            { x: "2%", y: "22%", r: 4, amber: true },
+            { x: "63%", y: "8%", r: 4 },
+            { x: "95%", y: "72%", r: 5, amber: true },
+          ]}
+        />
 
-        {/* Kaartje links, de herkomst als kanttekening rechts. Twee kleine
-           dingen die samen de breedte pakken, in plaats van één groot vlak. */}
-        <div className="flex flex-col gap-8 md:flex-row md:items-center md:gap-14">
-          <div data-reveal className="rp-map shrink-0">
+        {/* De papieren op het bureau: het rapport en de losse briefjes ernaast,
+           elk onder een eigen hoek. Dat is wat deze hoek een statistiekenhoekje
+           maakt in plaats van één kaart met een lap tekst ernaast. */}
+        <div data-reveal className="rp-cluster">
+          <div className="rp-map">
             <article className="rp-kaart">
               <h2 className="rp-titel">Rapport van Avinka</h2>
               <div aria-hidden className="rp-lijn" />
@@ -258,15 +294,7 @@ function Rapport({ begin, bijhouden }: { begin: Cijfers; bijhouden: boolean }) {
               <p className="rp-hoofd">
                 <Waarde getal={uren} eenheid="uur" groot />
               </p>
-              <p className="rp-onder">
-                teruggegeven
-                {toonLeerkrachten && (
-                  <>
-                    {" "}
-                    aan <Waarde getal={cijfers.leerkrachten} /> leerkrachten
-                  </>
-                )}
-              </p>
+              <p className="rp-onder">teruggegeven na schooltijd</p>
 
               {/* De stempel valt over de rand van het kaartje heen. Dat is wat
                  hem gedrukt laat lijken in plaats van geplaatst: niemand
@@ -275,10 +303,20 @@ function Rapport({ begin, bijhouden }: { begin: Cijfers; bijhouden: boolean }) {
             </article>
           </div>
 
-          <p data-reveal className="max-w-sm text-base leading-7 text-ink/65">
-            Opgeteld uit het werk dat de tools overnemen: rapporten, oudercontact,
-            toetsanalyse, lesvoorbereiding. Werk van na schooltijd. Het loopt bij
-            zolang je hier bent.
+          {(toonLeerkrachten || toonUitwerkingen) && (
+            <div className="rp-briefjes">
+              {toonLeerkrachten && <Briefje getal={cijfers.leerkrachten} label="leerkrachten" />}
+              {toonUitwerkingen && <Briefje getal={cijfers.uitwerkingen} label="uitwerkingen" />}
+            </div>
+          )}
+
+          {/* De herkomst, kort, als derde groep. Dit was een alinea van drie
+             regels die niets toevoegde. Hij staat rechts omdat het rapport en
+             de briefjes samen maar tweederde van de breedte pakten en de rest
+             leeg bleef. */}
+          <p className="rp-bron">
+            <span aria-hidden className="rp-stip" />
+            <span>Opgebouwd uit al het toolgebruik, en het loopt bij zolang je hier bent.</span>
           </p>
         </div>
       </div>
@@ -291,14 +329,33 @@ function Rapport({ begin, bijhouden }: { begin: Cijfers; bijhouden: boolean }) {
 function RapportStijl() {
   return (
     <style>{`
-      /* ── het mapje en het kaartje ──
-         ⚠️ Dit was een vel over de volle breedte met drie regels, een
-         handgeschreven opmerking en een label erboven. Te groots en te veel
-         informatie: een kaartje met één zin doet hetzelfde werk. Wat eruit
-         ging: de regel "uitwerkingen gemaakt" (het minst zeggende getal) en de
-         opmerking van de leerkracht. Die laatste om een tweede reden: hij
-         suggereerde dat een echte leerkracht dat gezegd had, en op deze pagina
-         staan al verzonnen quotes die vóór livegang weg moeten. */
+      /* ── de compositie ──
+         ⚠️ Dit was één kaartje met een alinea ernaast, en dat was te kaal.
+         Nu liggen er drie papieren naast elkaar, elk met één cijfer. Dezelfde
+         drie getallen als in de vorige versie, maar als compositie in plaats
+         van als lijstje in één kaart. */
+      /* ⚠️ De maten zijn nagerekend, niet gegokt. Bij een tussenruimte van
+         52px was rapport + briefjes + herkomst samen 1142 breed in een kolom
+         van 1104, en dan wipte de herkomst naar een tweede regel onder de
+         kaart terwijl rechts alles leeg bleef. Nu: 368 + 38 + 434 + 38 + 192
+         = 1070 en het past. */
+      .rp-cluster {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: clamp(20px, 2.6vw, 38px);
+      }
+      /* Naast elkaar in plaats van onder elkaar, elk op een eigen hoogte.
+         Onder elkaar was het een kolom naast een kaart, en dan blijft de
+         rechterhelft van de sectie leeg. */
+      .rp-briefjes {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: clamp(14px, 1.8vw, 24px);
+      }
+
+      /* ── het mapje en het rapport ── */
       .rp-map {
         background: ${MINT};
         border-radius: 13px;
@@ -318,12 +375,6 @@ function RapportStijl() {
                  clamp(24px, 2.6vw, 32px);
         box-shadow: ${schaduw(14, 32, -16, 0.3)};
       }
-
-      /* ⚠️ Hier hebben twee perforatiegaatjes gestaan, om het kaartje als
-         blad uit een map te laten lezen. Weggehaald na bekijken: op de rand
-         van een klein kaartje, mét de mint van de map er direct achter, lees
-         je geen gaten maar bobbels. Niet opnieuw proberen zonder de map te
-         verplaatsen. */
 
       .rp-titel {
         font-family: var(--font-display), Georgia, serif;
@@ -362,17 +413,37 @@ function RapportStijl() {
         font-size: clamp(1rem, 1.35vw, 1.1rem);
         line-height: 1.5;
         color: rgba(34, 28, 58, 0.72);
-        /* Evenwichtig afbreken: zonder dit viel "leerkrachten" als los woord
-           op een tweede regel. */
-        text-wrap: balance;
         /* ruimte vrijhouden voor de stempel rechtsonder */
         padding-right: clamp(52px, 5.4vw, 68px);
       }
-      /* Het tweede getal staat IN de zin, niet op een eigen regel. Zo blijft
-         het één mededeling in plaats van een lijstje. */
-      .rp-klein {
-        font-weight: 800;
-        color: ${KOP};
+
+      /* ── de losse briefjes ──
+         Geen map eronder en geen kop: het rapport blijft het hoofddocument.
+         Elk briefje heeft een eigen hoek, anders liggen ze als een tabel op
+         elkaar gestapeld en is het weer een lijstje. */
+      .rp-briefje {
+        width: clamp(158px, 17vw, 205px);
+        background: #fffefb;
+        border-radius: 5px;
+        padding: clamp(13px, 1.5vw, 18px) clamp(15px, 1.7vw, 20px);
+        box-shadow: ${schaduw(12, 28, -14, 0.28)};
+      }
+      .rp-briefje:nth-child(1) { transform: rotate(-2.3deg) translateY(clamp(-26px, -2vw, -14px)); }
+      .rp-briefje:nth-child(2) { transform: rotate(1.8deg) translateY(clamp(14px, 2vw, 26px)); }
+      .rp-briefgetal {
+        display: block;
+        font-family: var(--font-display), Georgia, serif;
+        font-weight: 900;
+        letter-spacing: -0.035em;
+        line-height: 0.95;
+        color: ${DONKER};
+      }
+      .rp-klein { font-size: clamp(1.55rem, 2.4vw, 2rem); }
+      .rp-brieflabel {
+        display: block;
+        margin-top: 0.3rem;
+        font-size: clamp(0.9rem, 1.15vw, 1rem);
+        color: rgba(34, 28, 58, 0.66);
       }
 
       /* ── de stempel ── */
@@ -388,7 +459,30 @@ function RapportStijl() {
         transform: rotate(-13deg);
       }
 
-      /* ── de beweging: het kaartje wordt ingevuld ──
+      /* ── de herkomst ──
+         Eén regel met een groen stipje ervoor, dat het meelopen aanduidt.
+         Bewust géén kloppend of pulserend bolletje: beweging die eeuwig
+         doorgaat is op deze pagina expliciet ongewenst. */
+      .rp-bron {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.6rem;
+        flex: 0 1 12rem;
+        line-height: 1.6;
+        font-size: clamp(0.95rem, 1.2vw, 1.05rem);
+        color: rgba(34, 28, 58, 0.66);
+      }
+      .rp-stip {
+        margin-top: 0.5em;
+        width: 8px;
+        height: 8px;
+        flex: none;
+        border-radius: 9999px;
+        background: var(--color-brand, #2f9e6e);
+        box-shadow: 0 0 0 4px rgba(47, 158, 110, 0.16);
+      }
+
+      /* ── de beweging: de papieren worden ingevuld ──
          Alles hangt aan .is-in van de GROEP, niet aan een reveal per element.
          🔑 De waarnemer kijkt per element en de vertraging telt vanaf het
          moment dat dát element de drempel passeert; met losse reveals starten
@@ -398,13 +492,14 @@ function RapportStijl() {
          ⚠️ De inhoud staat standaard gewoon zichtbaar. Eerder stond hier
          opacity nul tot de reveal-klasse kwam, en dan staat het kaartje er bij
          een haperende waarnemer mét kop maar ZONDER cijfer. Het eerste
-         keyframe doet het verbergen; het kaartje zit op dat moment nog in zijn
-         eigen reveal, dus je ziet er niets van knipperen. */
-      .anim .rp-map.is-in .rp-inkt {
+         keyframe doet het verbergen; de papieren zitten op dat moment nog in
+         hun eigen reveal, dus je ziet er niets van knipperen. */
+      .anim .rp-cluster.is-in .rp-inkt {
         animation: rpInkt 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
       }
-      .anim .rp-map.is-in .rp-hoofd .rp-inkt { animation-delay: 0.16s; }
-      .anim .rp-map.is-in .rp-onder .rp-inkt { animation-delay: 0.32s; }
+      .anim .rp-cluster.is-in .rp-hoofd .rp-inkt { animation-delay: 0.16s; }
+      .anim .rp-cluster.is-in .rp-briefje:nth-child(1) .rp-inkt { animation-delay: 0.34s; }
+      .anim .rp-cluster.is-in .rp-briefje:nth-child(2) .rp-inkt { animation-delay: 0.46s; }
       @keyframes rpInkt {
         from { opacity: 0; transform: translateY(7px); }
         to   { opacity: 1; transform: none; }
@@ -413,8 +508,8 @@ function RapportStijl() {
       /* De stempel valt als laatste, met de korte pop die DESIGN.md voor het
          vinkje voorschrijft: onder 300ms, vanaf ongeveer 1.2, nooit vanaf 0.
          ⚠️ Niet later zetten: wie doorscrolt mist anders het slotakkoord. */
-      .anim .rp-map.is-in .rp-stempel {
-        animation: rpStempel 0.26s cubic-bezier(0.3, 1.5, 0.5, 1) 0.62s both;
+      .anim .rp-cluster.is-in .rp-stempel {
+        animation: rpStempel 0.26s cubic-bezier(0.3, 1.5, 0.5, 1) 0.66s both;
       }
       @keyframes rpStempel {
         from { opacity: 0; transform: rotate(-21deg) scale(1.3); }
