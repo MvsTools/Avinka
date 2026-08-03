@@ -130,5 +130,7 @@ export type PlanningBron = {
   periodes: Periode[];
   items: PlanItem[];
   blokken: Roosterblok[];
+  /** Weken die van het basisrooster afwijken, per maandag (ISO). Leeg = geen afwijkingen. */
+  weekOverrides: Record<string, Roosterblok[]>;
   taken: Taak[];
 };

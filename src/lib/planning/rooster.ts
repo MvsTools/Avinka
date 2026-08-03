@@ -224,6 +224,16 @@ export function isBasisrooster(waarde: unknown): waarde is Basisrooster {
 }
 
 /**
+ * Is dit een geldige rooster_week.data? Zelfde strengheid als isBasisrooster,
+ * maar dan zonder setup — een weekafwijking bevat alleen blokken, nooit een
+ * eigen vakkenlijst (die blijft van het basisrooster).
+ */
+export function isRoosterWeekData(waarde: unknown): waarde is { blokken: RoosterBlokRuw[] } {
+  if (!waarde || typeof waarde !== "object") return false;
+  return Array.isArray((waarde as { blokken?: unknown }).blokken);
+}
+
+/**
  * Van de vorm van de tool naar de blokken waar Mijn schooljaar mee rekent.
  * Pauzes en gym ("vast") tellen als les: ze horen bij je schooldag.
  */

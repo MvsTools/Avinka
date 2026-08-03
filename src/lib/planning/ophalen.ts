@@ -9,10 +9,16 @@ import type { Soort } from "../agenda-herken";
 import { plus, vandaag } from "./datum";
 import { markeerDubbelingen } from "./dubbelingen";
 import { mijnGroepen } from "./relevantie";
-import { isBasisrooster, naarBlokken, type Basisrooster } from "./rooster";
+import {
+  isBasisrooster,
+  isRoosterWeekData,
+  naarBlokken,
+  type Basisrooster,
+  type RoosterSetup,
+} from "./rooster";
 import { metEigenVakanties } from "./eigen-vakanties";
 import { beschikbareSchooljaren, maakSchooljaar, periodesVan, schooljaarVoor } from "./schooljaar";
-import type { PlanItem, PlanningBron, Taak } from "./types";
+import type { PlanItem, PlanningBron, Roosterblok, Taak } from "./types";
 import { isRegio, STANDAARD_REGIO, type Regio } from "./vakanties";
 
 /** De vakantieregio van deze leerkracht. Niet ingevuld? Dan het landelijke midden. */
@@ -98,6 +104,34 @@ export async function haalBasisrooster(
   return isBasisrooster(ruw) ? ruw : null;
 }
 
+type RoosterWeekRij = { maandag: string; data: unknown };
+
+/**
+ * De weken die van het basisrooster afwijken, in een bereik. De kleuren komen
+ * altijd uit het HUIDIGE basisrooster (rooster_week bewaart alleen blokken,
+ * nooit een eigen vakkenlijst) — wijzig je later een vakkleur, dan zie je die
+ * ook meteen terug in een al bestaande weekafwijking.
+ */
+export async function haalRoosterWeken(
+  supabase: SupabaseClient,
+  van: string,
+  tot: string,
+  setup: RoosterSetup,
+): Promise<Record<string, Roosterblok[]>> {
+  const { data } = await supabase
+    .from("rooster_week")
+    .select("maandag, data")
+    .gte("maandag", van)
+    .lte("maandag", tot);
+  const rijen = (data as RoosterWeekRij[] | null) ?? [];
+  const uit: Record<string, Roosterblok[]> = {};
+  for (const rij of rijen) {
+    if (!isRoosterWeekData(rij.data)) continue;
+    uit[rij.maandag] = naarBlokken({ setup, blokken: rij.data.blokken });
+  }
+  return uit;
+}
+
 export type AgendaBron = {
   id: string;
   naam: string;
@@ -166,6 +200,10 @@ export async function haalPlanning(
     haalBasisrooster(supabase, schooljaar.id),
   ]);
 
+  // De weekafwijkingen hebben het basisrooster (voor zijn vakkleuren) al
+  // nodig, dus die vraag doen we pas hierna.
+  const weekOverrides = await haalRoosterWeken(supabase, van, tot, rooster?.setup ?? {});
+
   // Staat dezelfde afspraak in twee agenda's, dan tonen we hem één keer.
   const items = markeerDubbelingen(ruwe, volgorde);
 
@@ -178,6 +216,7 @@ export async function haalPlanning(
     items,
     taken,
     blokken: naarBlokken(rooster),
+    weekOverrides,
   };
 }
 

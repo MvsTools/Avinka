@@ -148,12 +148,7 @@ export default function SchooljaarView({
       {tab === "agendas" ? (
         <AgendaKoppelen agendas={agendas} />
       ) : tab === "week" ? (
-        <SchooljaarWeek
-          bron={bron}
-          vandaag={vandaag}
-          groepen={mijnGroepen}
-          verlaatGuard={verlaatGuard}
-        />
+        <SchooljaarWeek bron={bron} vandaag={vandaag} verlaatGuard={verlaatGuard} />
       ) : (
         <>
           {agendas.length === 0 && (
