@@ -278,6 +278,15 @@ export function WereldPrijzen({
                 Elke week zo&apos;n 2 uur terug, voor minder dan een tientje per maand.
               </p>
             )}
+            {/* Dezelfde geruststelling als onderaan deze sectie, maar dan
+               vóórdat iemand door de drie kaarten hoeft te lezen om 'm te
+               vinden. Altijd dezelfde zin, ongeacht maand/schooljaar of
+               huidigPlan — de nuance per schooljaar staat al onderin.
+               ⚠️ ink/60 haalde hier maar 4,23:1 op het mintveld, net onder de
+               AA-grens van 4,5 voor 14px-tekst. Zelfde ink/70 als onderin. */}
+            <p data-reveal className="mt-4 text-sm text-ink/70">
+              Alle abonnementen zijn maandelijks opzegbaar.
+            </p>
           </div>
 
           {/* Bij Pro valt er niets meer te kiezen — geen enkele kaart is nog
