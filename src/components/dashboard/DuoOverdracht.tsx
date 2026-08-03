@@ -367,61 +367,55 @@ export default function DuoOverdracht({
               </p>
             )}
 
-            {/* Onder het veld staat één rij bediening: typen, hulp, wegsturen.
-                De twee knoppen zitten in een eigen groepje, zodat ze op een
-                smal scherm samen onder het veld springen in plaats van dat er
-                eentje alleen achterblijft. */}
-            <div className="mt-1.5 flex flex-wrap items-end gap-2">
-              <textarea
-                ref={veld}
-                id="overdracht-invoer"
-                value={invoer[actieveGroep] ?? ""}
-                onChange={(e) => setInvoer((v) => ({ ...v, [actieveGroep]: e.target.value }))}
-                onKeyDown={(e) => {
-                  // Enter verstuurt, shift+Enter maakt een nieuwe regel — zoals
-                  // je van een berichtenveld verwacht.
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    verstuur(actieveGroep);
-                  }
-                }}
-                rows={2}
-                className="min-w-[12rem] flex-1 resize-y rounded-xl border border-black/10 bg-cream px-4 py-2.5 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
-              />
-              {/* ml-auto doet niets zolang alles op één regel past (het veld
-                  eet de ruimte al op), maar zodra de knoppen onder het veld
-                  springen duwt het ze naar de rechterrand. Zonder dit plakken
-                  ze daar links en staat Versturen ineens niet meer rechts. */}
-              <div className="ml-auto flex shrink-0 items-end gap-2">
-                {/* Bewust neutraal van vorm: alleen het sterretje is groen.
-                    Zo staat er één groene knop in beeld en zie je meteen welke
-                    het bericht wegstuurt. */}
-                <button
-                  type="button"
-                  onClick={vraagAi}
-                  disabled={aiBezig || versturen}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-ink/70 transition hover:border-black/20 disabled:opacity-50"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="h-4 w-4 text-brand"
-                    fill="currentColor"
-                    aria-hidden
-                  >
-                    <path d="M13 2.5l1.9 5.6 5.6 1.9-5.6 1.9L13 17.5l-1.9-5.6L5.5 10l5.6-1.9L13 2.5z" />
-                    <path d="M5.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z" />
-                  </svg>
-                  {heeftTekst ? "Netter maken" : "Begin voor mij"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => verstuur(actieveGroep)}
-                  disabled={!(invoer[actieveGroep] ?? "").trim() || versturen}
-                  className="rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-dark disabled:opacity-50"
-                >
-                  {versturen ? "Bezig…" : "Versturen"}
-                </button>
-              </div>
+            {/* Het veld staat op zijn eigen regel over de volle breedte, met de
+                knoppen eronder. Zo raakt het veld niets kwijt aan de knoppen en
+                blijven de knoppen op hun eigen plek staan. */}
+            <textarea
+              ref={veld}
+              id="overdracht-invoer"
+              value={invoer[actieveGroep] ?? ""}
+              onChange={(e) => setInvoer((v) => ({ ...v, [actieveGroep]: e.target.value }))}
+              onKeyDown={(e) => {
+                // Enter verstuurt, shift+Enter maakt een nieuwe regel — zoals
+                // je van een berichtenveld verwacht.
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  verstuur(actieveGroep);
+                }
+              }}
+              rows={2}
+              className="mt-1.5 w-full resize-y rounded-xl border border-black/10 bg-cream px-4 py-2.5 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+            />
+
+            {/* Hulp links, wegsturen rechts, allebei aan hun eigen kant vast.
+                Ze hangen niet meer aan elkaar, dus als het opschrift van de
+                hulpknop wisselt (leeg veld → "Begin voor mij", getypt →
+                "Netter maken") schuift er verder niets mee. */}
+            <div className="mt-2 flex items-center justify-between gap-2">
+              {/* Bewust neutraal van vorm: alleen het sterretje is groen. Zo
+                  staat er één groene knop in beeld en zie je meteen welke het
+                  bericht wegstuurt. De vaste minimumbreedte houdt ook de knop
+                  zelf stil bij dat wisselende opschrift. */}
+              <button
+                type="button"
+                onClick={vraagAi}
+                disabled={aiBezig || versturen}
+                className="inline-flex min-w-[9.5rem] items-center justify-center gap-1.5 rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-ink/70 transition hover:border-black/20 disabled:opacity-50"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4 text-brand" fill="currentColor" aria-hidden>
+                  <path d="M13 2.5l1.9 5.6 5.6 1.9-5.6 1.9L13 17.5l-1.9-5.6L5.5 10l5.6-1.9L13 2.5z" />
+                  <path d="M5.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z" />
+                </svg>
+                {heeftTekst ? "Netter maken" : "Begin voor mij"}
+              </button>
+              <button
+                type="button"
+                onClick={() => verstuur(actieveGroep)}
+                disabled={!(invoer[actieveGroep] ?? "").trim() || versturen}
+                className="rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-dark disabled:opacity-50"
+              >
+                {versturen ? "Bezig…" : "Versturen"}
+              </button>
             </div>
             {fout && (
               <p className="mt-2 text-sm text-red-600">
