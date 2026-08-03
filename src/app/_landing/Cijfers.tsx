@@ -73,6 +73,18 @@ export type { Cijfers };
    staat. Honderd uur is een eerste mijlpaal die het vertellen waard is. */
 const DREMPELS = { uren: 100, leerkrachten: 15, uitwerkingen: 250 };
 
+/* ── DE SCHAKELAAR VOOR DE DREMPELS ────────────────────────────────────────
+   Tijdelijk uit (7-8) zodat de eigenaar de hele landingspagina met de ECHTE
+   cijfers kan bekijken en verder kan afwerken, ook al zijn die cijfers nu nog
+   klein (op dit moment 2 leerkrachten, 90 uur, 225 keer afgevinkt — geen van
+   drie haalt zijn drempel). De drempels zelf zijn niet weggehaald, alleen
+   overgeslagen: op `true` gelden ze weer precies zoals hierboven beschreven.
+   ⚠️ ZET DIT TERUG OP `true` VÓÓR ER ECHT BEZOEKERS KOMEN. Zo niet, dan is dit
+   precies het "3 leerkrachten"-scenario dat de eerlijkheidsregel hierboven
+   juist moest voorkomen. Zie ook RUIS_OP_PAPIER in Wereld.tsx voor hetzelfde
+   soort schakelaar. */
+const DREMPELS_AAN = false;
+
 /* Hoe vaak de browser kijkt of er iets veranderd is. Het rapport verspringt
    pas als er een heel uur bij komt, dus vaker heeft geen zin. De databasekant
    wordt er niet zwaarder van: het antwoord komt uit een gedeelde cache van
@@ -298,7 +310,7 @@ function Stempel() {
    mintveld hier al begint, zou die golf een tweede rand vlak op de eerste
    leggen. */
 export function toontCijfers(cijfers: Cijfers | null) {
-  return Boolean(cijfers) && urenUit(cijfers!.minuten) >= DREMPELS.uren;
+  return Boolean(cijfers) && (!DREMPELS_AAN || urenUit(cijfers!.minuten) >= DREMPELS.uren);
 }
 
 export function WereldCijfers({
@@ -321,7 +333,7 @@ export function WereldCijfers({
      niet, en wordt er ook niets opgehaald: geen enkel verzoek voor een sectie
      die toch verborgen is. */
   if (!cijfers) return null;
-  if (urenUit(cijfers.minuten) < DREMPELS.uren) return null;
+  if (DREMPELS_AAN && urenUit(cijfers.minuten) < DREMPELS.uren) return null;
   return <Rapport begin={cijfers} bijhouden={bijhouden} veldLooptDoor={veldLooptDoor} />;
 }
 
@@ -354,10 +366,10 @@ function Rapport({
   const { cijfers, anker, seconden } = useBijgehoudenCijfers(begin, bijhouden);
 
   const uren = urenUit(cijfers.minuten);
-  if (uren < DREMPELS.uren) return null;
+  if (DREMPELS_AAN && uren < DREMPELS.uren) return null;
 
-  const toonLeerkrachten = cijfers.leerkrachten >= DREMPELS.leerkrachten;
-  const toonUitwerkingen = cijfers.uitwerkingen >= DREMPELS.uitwerkingen;
+  const toonLeerkrachten = !DREMPELS_AAN || cijfers.leerkrachten >= DREMPELS.leerkrachten;
+  const toonUitwerkingen = !DREMPELS_AAN || cijfers.uitwerkingen >= DREMPELS.uitwerkingen;
 
   return (
     <section ref={anker} className="relative overflow-x-clip">
