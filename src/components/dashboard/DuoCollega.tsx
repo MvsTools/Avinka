@@ -44,6 +44,17 @@ export default function DuoCollega() {
     { klasNaam: string; status: string } | null | "laden" | "fout"
   >(uitnodigingsCode ? "laden" : null);
   const [accepterenBezig, setAccepterenBezig] = useState(false);
+  const [handmatigeCode, setHandmatigeCode] = useState("");
+
+  // Een met de hand ingevulde code zetten we in de link, zodat hij daarna
+  // exact dezelfde weg aflegt als een code uit een uitnodigingslink.
+  function bekijkCode(code: string) {
+    const c = code.trim().toUpperCase();
+    if (!c) return;
+    const params = new URLSearchParams(zoekParams.toString());
+    params.set("duo", c);
+    router.replace(`${pathname}?${params.toString()}`);
+  }
 
   async function laadAlles() {
     const [k, d, b] = await Promise.all([getKlassen(), getDuoKoppels(), getBestanden()]);
@@ -150,6 +161,34 @@ export default function DuoCollega() {
         Bijzondere persoonsgegevens (medisch, gezinssituatie, diagnoses) horen hier
         nooit in.
       </p>
+
+      {/* ── Code met de hand invullen ── */}
+      {/* Vangnet: de link kan onderweg sneuvelen (doorgestuurd, afgekapt in een
+          bericht, of geopend in een andere browser dan waarin je bent ingelogd).
+          Met de code alleen kom je er ook. */}
+      {!uitnodigingsCode && (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <label htmlFor="duo-code" className="text-sm text-ink/65">
+            Code gekregen?
+          </label>
+          <input
+            id="duo-code"
+            value={handmatigeCode}
+            onChange={(e) => setHandmatigeCode(e.target.value.toUpperCase())}
+            placeholder="ABC23XY"
+            maxLength={7}
+            className="w-32 rounded-xl border border-black/10 bg-cream px-3 py-2 text-sm font-semibold tracking-widest text-ink outline-none focus:border-brand"
+          />
+          <button
+            type="button"
+            disabled={handmatigeCode.trim().length < 7}
+            onClick={() => bekijkCode(handmatigeCode)}
+            className="rounded-xl border border-black/10 px-4 py-2 text-sm font-semibold text-ink/70 transition hover:border-black/20 disabled:opacity-40"
+          >
+            Bekijken
+          </button>
+        </div>
+      )}
 
       {/* ── Uitnodiging accepteren (via ?duo=code) ── */}
       {uitnodigingsCode && voorbeeld && (

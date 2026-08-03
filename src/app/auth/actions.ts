@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { VOORWAARDEN, PRIVACY } from "@/lib/juridisch";
+import { veiligIntern } from "@/lib/paden";
 
 // Het resultaat dat de formulieren tonen (foutmelding of bevestiging).
 export type AuthState = { error?: string; message?: string };
@@ -29,13 +30,21 @@ function nlFout(bericht: string): string {
   return "Er ging iets mis. Probeer het zo nog eens.";
 }
 
-// INLOGGEN — bij succes door naar het dashboard.
+// Waar gaan we heen ná het inloggen? Standaard het dashboard, maar een
+// uitnodigingslink wil je vasthouden (zie AuthCard). `veiligIntern` houdt
+// tegen dat dit veld naar een vreemde site kan wijzen.
+function veiligeVolgende(waarde: FormDataEntryValue | null): string {
+  return veiligIntern(waarde == null ? null : String(waarde));
+}
+
+// INLOGGEN — bij succes door naar het dashboard (of naar `volgende`).
 export async function login(
   _prev: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const volgende = veiligeVolgende(formData.get("volgende"));
 
   if (!email || !password) {
     return { error: "Vul je e-mailadres en wachtwoord in." };
@@ -49,7 +58,7 @@ export async function login(
   }
 
   revalidatePath("/", "layout");
-  redirect("/dashboard");
+  redirect(volgende);
 }
 
 // REGISTREREN — stuurt een bevestigingsmail; account is pas actief na bevestiging.
@@ -61,6 +70,7 @@ export async function signup(
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const akkoord = formData.get("akkoord");
+  const volgende = veiligeVolgende(formData.get("volgende"));
 
   if (!voornaam || !email || !password) {
     return { error: "Vul je naam, e-mailadres en wachtwoord in." };
@@ -95,7 +105,12 @@ export async function signup(
         akkoord_op: new Date().toISOString(),
         akkoord_bron: "registratie",
       },
-      emailRedirectTo: `${origin}/auth/confirm`,
+      // De bevestigingslink houdt de bestemming vast, zodat een uitnodiging
+      // een mailbevestiging kan overleven.
+      emailRedirectTo:
+        volgende === "/dashboard"
+          ? `${origin}/auth/confirm`
+          : `${origin}/auth/confirm?next=${encodeURIComponent(volgende)}`,
     },
   });
 
@@ -106,7 +121,7 @@ export async function signup(
   // Staat e-mailbevestiging UIT, dan is de gebruiker meteen ingelogd → dashboard.
   if (data.session) {
     revalidatePath("/", "layout");
-    redirect("/dashboard");
+    redirect(volgende);
   }
 
   // Staat bevestiging AAN, dan moet de gebruiker eerst de mail bevestigen.
