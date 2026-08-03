@@ -307,6 +307,9 @@
   .btn-green { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 14px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s ease; box-shadow: 0 10px 24px rgba(47,158,110,0.24); }
   .btn-green:hover:not(:disabled) { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 14px 30px rgba(47,158,110,0.3); }
   .btn-green.gekopieerd { background: var(--emerald); box-shadow: none; }
+  .btn-pair { display: flex; gap: 10px; margin-top: 16px; }
+  .btn-pair .btn-green { width: auto; flex: 1; }
+  @media (max-width: 480px) { .btn-pair { flex-direction: column; } }
   .bijschaaf-rij { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
   .aanpas-wrap { margin-top: 14px; }
   .aanpas-wrap .field-input { margin-bottom: 8px; }
@@ -453,6 +456,7 @@
   <script src="/avinka-masking.js"></script>
   <script src="/avinka-voorkeuren.js"></script>
   <script src="/avinka-communicatie-app.js"></script>
+  <script src="/avinka-lvs-app.js"></script>
   <script src="/avinka-dropdown.js"></script>
   <script src="/avinka-groep.js"></script>
   <script src="/avinka-verlaten.js"></script>
@@ -648,8 +652,10 @@
           <input type="text" class="titel-input" id="afsluiting-input" value="Hartelijke groet,">
         </div>
         <p class="bericht-hint">Bij <em>Kopiëren</em> komt alles samen — schoon voor Parro, en met vette kopjes voor e-mail of een nieuwsbrief.</p>
-        <button class="btn-green" id="btn-kopieer" onclick="kopieerBericht()">📋 Kopieer bericht</button>
-        <button class="btn-soft" id="btn-open-app" style="display:none;"></button>
+        <div class="btn-pair">
+          <button class="btn-green" id="btn-kopieer" onclick="kopieerBericht()">📋 Kopieer bericht</button>
+          <button class="btn-green" id="btn-open-app" style="display:none;"></button>
+        </div>
 
         <div class="bijschaaf-rij">
           <button class="btn-soft" onclick="bijschaaf('korter')">Korter</button>
@@ -772,8 +778,10 @@
         </div>
         <button class="btn-green" id="nb-btn-kopieer-alles" onclick="nbKopieerAlles(this)">📋 Kopieer hele nieuwsbrief</button>
         <div id="nb-blokken"></div>
-        <button class="btn-green" id="nb-btn-kopieer-alles-onder" onclick="nbKopieerAlles(this)" style="margin-top:4px;">📋 Kopieer hele nieuwsbrief</button>
-        <button class="btn-soft" id="nb-btn-open-app" style="display:none; margin-top:4px;"></button>
+        <div class="btn-pair" style="margin-top:4px;">
+          <button class="btn-green" id="nb-btn-kopieer-alles-onder" onclick="nbKopieerAlles(this)">📋 Kopieer hele nieuwsbrief</button>
+          <button class="btn-green" id="nb-btn-open-app" style="display:none;"></button>
+        </div>
         <div class="bijschaaf-rij">
           <button class="btn-soft" onclick="nbGenereer()">Opnieuw schrijven</button>
         </div>
@@ -908,8 +916,10 @@
           <label class="field-label">Afsluiting <span style="text-transform:none; letter-spacing:0; font-weight:400;">— je eigen naam zet je er zelf onder</span></label>
           <input type="text" class="titel-input" id="mail-afsluiting" value="Met vriendelijke groet,">
         </div>
-        <button class="btn-green" id="mail-btn-kopieer" onclick="mailKopieer()">📋 Kopieer bericht</button>
-        <button class="btn-soft" id="mail-btn-open-app" style="display:none;"></button>
+        <div class="btn-pair">
+          <button class="btn-green" id="mail-btn-kopieer" onclick="mailKopieer()">📋 Kopieer bericht</button>
+          <button class="btn-green" id="mail-btn-open-app" style="display:none;"></button>
+        </div>
         <div class="bijschaaf-rij">
           <button class="btn-soft" onclick="mailBijschaaf('warmer')">Warmer</button>
           <button class="btn-soft" onclick="mailBijschaaf('milder')">Milder</button>
@@ -1093,8 +1103,10 @@
           <label class="field-label">Afsluiting <span style="text-transform:none; letter-spacing:0; font-weight:400;">— je eigen naam zet je er zelf onder</span></label>
           <input type="text" class="titel-input" id="info-afsluiting" value="Met vriendelijke groet,">
         </div>
-        <button class="btn-green" id="info-btn-kopieer" onclick="infoKopieer()">📋 Kopieer brief</button>
-        <button class="btn-soft" id="info-btn-open-app" style="display:none;"></button>
+        <div class="btn-pair">
+          <button class="btn-green" id="info-btn-kopieer" onclick="infoKopieer()">📋 Kopieer brief</button>
+          <button class="btn-green" id="info-btn-open-app" style="display:none;"></button>
+        </div>
         <div class="bijschaaf-rij">
           <button class="btn-soft" onclick="infoBijschaaf('warmer')">Warmer</button>
           <button class="btn-soft" onclick="infoBijschaaf('zakelijker')">Zakelijker</button>
@@ -1524,8 +1536,11 @@
           <div id="gesp-afspraken-lijst"></div>
           <button class="gesp-afspr-add" onclick="gespAfspraakToevoegen()">+ Afspraak toevoegen</button>
         </div>
-        <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:14px;">
-          <button class="btn-soft" id="gesp-btn-kopieer" onclick="gespKopieer()">📋 Kopieer</button>
+        <div class="btn-pair" style="margin-top:14px;">
+          <button class="btn-green" id="gesp-btn-kopieer" onclick="gespKopieer()">📋 Kopieer</button>
+          <button class="btn-green" id="gesp-btn-open-lvs" style="display:none;"></button>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;">
           <button class="btn-green" id="gesp-kind-klaar" onclick="gespKeurGoed()">✓ Klaar</button>
         </div>
         <div class="bijschaaf-rij">
@@ -3702,22 +3717,66 @@ function gespAssembleer(k) {
   if (afs.length) out += '\n\nAfspraken:\n' + afs.map(a => '• ' + a).join('\n');
   return out.trim();
 }
+// Zelfde opbouw als gespAssembleer, maar dan als opgemaakte HTML: labels vóór
+// een dubbele punt (Datum/Aanwezig/Aanleiding) en de kopjes Inhoud/Afspraken
+// dikgedrukt, witregels tussen de onderdelen — voor plakken in e-mail/Word/LVS.
+function gespAssembleerHtml(k) {
+  const metaRegels = [];
+  if (gesp.datum) metaRegels.push('<strong>Datum</strong>: ' + escapeHtml(gespFormatDatum(gesp.datum)));
+  const aanw = gespAanwezigTekst(k);
+  if (aanw) metaRegels.push('<strong>Aanwezig</strong>: ' + escapeHtml(aanw));
+  if (gesp.aanleiding && gesp.aanleiding.trim()) metaRegels.push('<strong>Aanleiding</strong>: ' + escapeHtml(gesp.aanleiding.trim()));
+
+  // Elk onderdeel (meta / inhoud / afspraken) is één <p>: regels erbinnen met
+  // <br> (geen witregel), tussen de <p>'s zit de witregel die e-mail/Word er
+  // vanzelf tussen zet.
+  let html = '';
+  if (metaRegels.length) html += '<p>' + metaRegels.join('<br>') + '</p>';
+
+  const verslagRegels = (k.verslag || '').trim().split(/\n/).map(r => escapeHtml(r.trim())).filter(Boolean);
+  html += '<p><strong>Inhoud:</strong>' + verslagRegels.map(r => '<br>' + r).join('') + '</p>';
+
+  const afs = (Array.isArray(k.afspraken) ? k.afspraken : []).map(s => String(s).trim()).filter(Boolean);
+  if (afs.length) {
+    html += '<p><strong>Afspraken:</strong>' + afs.map(a => '<br>• ' + escapeHtml(a)).join('') + '</p>';
+  }
+  return html;
+}
 async function gespKopieer(knop) {
   const k = gespHuidige();
   if (k) { k.naam = document.getElementById('gesp-naam').value; k.verslag = gespGetResultaat(); }
-  const plain = gespAssembleer(k || {});
+  const kk = k || {};
+  const plain = gespAssembleer(kk);
+  const html = gespAssembleerHtml(kk);
   knop = knop || document.getElementById('gesp-btn-kopieer');
   const orig = knop ? knop.textContent : '📋 Kopieer';
   const klaar = () => kopieGelukt(knop, '✓ Gekopieerd', orig);
   try {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(plain).then(klaar).catch(() => fallbackKopie(plain, klaar));
+    if (navigator.clipboard && window.ClipboardItem) {
+      await navigator.clipboard.write([new ClipboardItem({
+        'text/plain': new Blob([plain], { type: 'text/plain' }),
+        'text/html': new Blob([html], { type: 'text/html' })
+      })]);
+      klaar();
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(plain);
+      klaar();
     } else {
       fallbackKopie(plain, klaar);
     }
   } catch (e) {
     fallbackKopie(plain, klaar);
   }
+}
+// Zelfde tekst als gespKopieer, maar dan als functie die avinkaLvsApp pas op
+// het moment van klikken aanroept (zie avinka-lvs-app.js).
+function gespVerslagTekst() {
+  const k = gespHuidige();
+  if (k) { k.naam = document.getElementById('gesp-naam').value; k.verslag = gespGetResultaat(); }
+  return gespAssembleer(k || {});
+}
+if (window.avinkaLvsApp) {
+  avinkaLvsApp.zetKnop(document.getElementById('gesp-btn-open-lvs'), gespVerslagTekst);
 }
 function gespDownloadWord() {
   const k = gespHuidige();

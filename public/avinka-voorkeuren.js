@@ -2,8 +2,9 @@
 
    Haalt één keer bij het laden de voorkeuren van de leerkracht op
    (/api/voorkeuren) zodat de tools hun velden automatisch kunnen voorvullen:
-   toon, taalniveau, lengte en aanspreekvorm. De leerkracht kan het daarna in de
-   tool zelf nog aanpassen — dit is alleen de slimme standaard.
+   toon, taalniveau, lengte, aanspreekvorm, communicatie-app en LVS. De
+   leerkracht kan het daarna in de tool zelf nog aanpassen — dit is alleen de
+   slimme standaard.
 
    Gebruik in een tool:
      <script src="/avinka-voorkeuren.js"></script>
@@ -24,6 +25,9 @@
     aanspreekvorm: "je",
     standaardgroep: "",
     communicatie_app: "",
+    communicatie_url: "",
+    lvs_systeem: "",
+    lvs_url: "",
   };
   var data = Object.assign({}, STANDAARD);
 

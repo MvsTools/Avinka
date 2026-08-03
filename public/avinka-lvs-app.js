@@ -1,44 +1,36 @@
-/* Avinka — "open in Parro/Social Schools/Isy/Konnect"-knop.
+/* Avinka — "open in je LVS"-knop (ParnasSys / Esis).
 
-   Kopieert een bericht naar het klembord en opent daarna de webversie van de
-   ouder-app die de leerkracht in zijn instellingen heeft gekozen. Er gaat
-   verder niets naar die app toe — geen koppeling, geen API, alleen het
-   klembord van de leerkracht zelf en een nieuw tabblad. Staat er in de
-   instellingen niets (bruikbaars) gekozen, dan blijft de knop verborgen.
+   Kopieert een tekst naar het klembord en opent daarna de webversie van het
+   leerlingvolgsysteem dat de leerkracht in zijn instellingen heeft gekozen,
+   zodat hij 'm daar met Ctrl+V kan plakken. Er gaat verder niets automatisch
+   naar het LVS toe — geen koppeling, geen API, alleen het klembord van de
+   leerkracht zelf en een nieuw tabblad. Staat er in de instellingen niets
+   gekozen (of bij Esis geen eigen webadres), dan blijft de knop verborgen.
 
-   Parro en Social Schools hebben één gedeeld inlogadres. Isy en Konnect
-   werken per school/organisatie met een eigen instantie, maar altijd op
-   hetzelfde vaste domein-staartje (".isy-school.nl" resp. ".ouderportaal.nl")
-   — de leerkracht vult dus alleen het voorste stukje in (communicatie_url,
-   bijv. "bottel").
+   ParnasSys heeft één gedeeld inlogadres voor alle scholen. Esis werkt per
+   school met een eigen instantie, maar altijd op hetzelfde vaste stuk
+   ".rovictonline.nl" (bijv. esis97.rovictonline.nl) — de leerkracht hoeft dus
+   alleen het voorste stukje in te vullen (lvs_url, bijv. "esis97").
 
    Gebruik in een tool (na avinka-voorkeuren.js):
      <script src="/avinka-voorkeuren.js"></script>
-     <script src="/avinka-communicatie-app.js"></script>
-     avinkaCommApp.zetKnop(document.getElementById('btn-open-app'), function () {
+     <script src="/avinka-lvs-app.js"></script>
+     avinkaLvsApp.zetKnop(document.getElementById('btn-open-lvs'), function () {
        return mijnDefinitieveTekst();
      });
 */
 (function () {
   "use strict";
-  if (window.avinkaCommApp) return;
+  if (window.avinkaLvsApp) return;
 
-  var NAMEN = {
-    parro: "Parro",
-    social_schools: "Social Schools",
-    isy: "Isy",
-    konnect: "Konnect",
-  };
   var VASTE_URL = {
-    parro: "https://talk.parro.com",
-    social_schools: "https://app.socialschools.eu",
+    parnassys: "https://start.parnassys.net",
   };
   // Systemen met een eigen instantie per school delen wel altijd hetzelfde
   // vaste domein-staartje. De leerkracht vult dus alleen het voorste stukje
-  // in (bijv. "bottel"); wij plakken het vaste deel erachter.
+  // in (bijv. "esis97"); wij plakken het vaste deel erachter.
   var STAARTJE = {
-    isy: ".isy-school.nl",
-    konnect: ".ouderportaal.nl",
+    esis: ".rovictonline.nl",
   };
 
   // Bouwt de volledige URL uit het voorste stukje dat de leerkracht invulde.
@@ -70,14 +62,13 @@
   }
 
   // `haalTekst` wordt pas op het moment van klikken aangeroepen (niet vooraf),
-  // zodat altijd de actuele/definitieve tekst wordt gekopieerd, ook als de
-  // leerkracht na het laden nog iets heeft aangepast.
+  // zodat altijd de actuele/definitieve tekst wordt gekopieerd.
   function zetKnop(knop, haalTekst) {
     if (!knop || !window.avinkaVoorkeuren) return;
     window.avinkaVoorkeuren.ready.then(function (v) {
-      var app = v.communicatie_app;
-      var naam = NAMEN[app];
-      var url = VASTE_URL[app] || (STAARTJE[app] && bouwUrl(v.communicatie_url, STAARTJE[app]));
+      var systeem = v.lvs_systeem;
+      var naam = systeem === "parnassys" ? "ParnasSys" : systeem === "esis" ? "Esis" : "";
+      var url = VASTE_URL[systeem] || (STAARTJE[systeem] && bouwUrl(v.lvs_url, STAARTJE[systeem]));
       if (!naam || !url) return; // niets (bruikbaars) ingesteld: knop blijft verborgen
 
       var normaalLabel = "↗ Open in " + naam;
@@ -95,5 +86,5 @@
     });
   }
 
-  window.avinkaCommApp = { zetKnop: zetKnop };
+  window.avinkaLvsApp = { zetKnop: zetKnop };
 })();

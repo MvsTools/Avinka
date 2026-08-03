@@ -26,7 +26,10 @@ export type Voorkeuren = {
   taalniveau: string; // standaard | a2 | b1
   lengte: string; // kort | gemiddeld | uitgebreid
   aanspreekvorm: string; // je | u  (alleen Oudercontact)
-  communicatie_app: string; // '' | parro | social_schools — voor de "open in ..."-knop
+  communicatie_app: string; // '' | parro | social_schools | isy | konnect — voor de "open in ..."-knop
+  communicatie_url: string; // eigen Isy/Konnect-webadres (Parro/Social Schools hebben een vast adres)
+  lvs_systeem: string; // '' | parnassys | esis — voor de "open in je LVS"-knop
+  lvs_url: string; // eigen Esis-webadres (ParnasSys heeft één vast adres)
 };
 export type Leerling = { naam: string; geslacht: "" | "j" | "m" };
 export type Klas = {
@@ -57,8 +60,11 @@ export async function getVoorkeuren(): Promise<Voorkeuren | null> {
     lengte: data.lengte ?? "gemiddeld",
     aanspreekvorm: data.aanspreekvorm ?? "je",
     communicatie_app: (data as { communicatie_app?: string }).communicatie_app ?? "",
+    communicatie_url: "",
+    lvs_systeem: "",
+    lvs_url: "",
   };
-  // Best-effort: de BRIN-kolommen bestaan mogelijk nog niet (migratie niet
+  // Best-effort: deze kolommen bestaan mogelijk nog niet (migratie niet
   // gedraaid). Een aparte select faalt dan stilletjes en we houden gewoon "".
   const { data: bd } = await sb
     .from("instellingen")
@@ -67,6 +73,15 @@ export async function getVoorkeuren(): Promise<Voorkeuren | null> {
   if (bd) {
     v.school_brin = (bd as { school_brin?: string }).school_brin ?? "";
     v.school_vestiging = (bd as { school_vestiging?: string }).school_vestiging ?? "";
+  }
+  const { data: ld } = await sb
+    .from("instellingen")
+    .select("lvs_systeem, lvs_url, communicatie_url")
+    .maybeSingle();
+  if (ld) {
+    v.lvs_systeem = (ld as { lvs_systeem?: string }).lvs_systeem ?? "";
+    v.lvs_url = (ld as { lvs_url?: string }).lvs_url ?? "";
+    v.communicatie_url = (ld as { communicatie_url?: string }).communicatie_url ?? "";
   }
   return v;
 }
@@ -81,11 +96,15 @@ export async function saveVoorkeuren(v: Voorkeuren): Promise<boolean> {
     .from("instellingen")
     .upsert({ user_id: user.id, ...v }, { onConflict: "user_id" });
   if (!error) return true;
-  // Mogelijk bestaan de BRIN-kolommen nog niet → opnieuw zonder die velden,
-  // zodat het opslaan van de overige voorkeuren nooit stilletjes mislukt.
-  const { school_brin, school_vestiging, ...kern } = v;
+  // Mogelijk bestaan de BRIN- of LVS-kolommen nog niet (migratie niet
+  // gedraaid) → opnieuw zonder die velden, zodat het opslaan van de overige
+  // voorkeuren nooit stilletjes mislukt.
+  const { school_brin, school_vestiging, lvs_systeem, lvs_url, communicatie_url, ...kern } = v;
   void school_brin;
   void school_vestiging;
+  void lvs_systeem;
+  void lvs_url;
+  void communicatie_url;
   const { error: e2 } = await sb
     .from("instellingen")
     .upsert({ user_id: user.id, ...kern }, { onConflict: "user_id" });

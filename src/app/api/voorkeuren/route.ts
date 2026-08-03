@@ -11,7 +11,10 @@ import { createClient } from "@/utils/supabase/server";
 //   taalniveau       : standaard | a2 | b1
 //   lengte           : kort | gemiddeld | uitgebreid
 //   aanspreekvorm    : je | u   (alleen Oudercontact gebruikt dit)
-//   communicatie_app : '' | parro | social_schools (voor de "open in ..."-knop)
+//   communicatie_app : '' | parro | social_schools | isy | konnect (voor de "open in ..."-knop)
+//   communicatie_url : eigen Isy/Konnect-webadres (Parro/Social Schools hebben een vast adres)
+//   lvs_systeem      : '' | parnassys | esis (voor de "open in je LVS"-knop)
+//   lvs_url          : eigen Esis-webadres (ParnasSys heeft één vast adres)
 //
 // RLS zorgt dat je alleen je eigen instellingen krijgt. Geen sessie/fout → de
 // standaarden, zodat de tool altijd gewoon doorwerkt.
@@ -22,6 +25,9 @@ const STANDAARD = {
   aanspreekvorm: "je",
   standaardgroep: "",
   communicatie_app: "",
+  communicatie_url: "",
+  lvs_systeem: "",
+  lvs_url: "",
 };
 
 export async function GET() {
@@ -35,7 +41,9 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("instellingen")
-    .select("toon, taalniveau, lengte, aanspreekvorm, standaardgroep, communicatie_app")
+    .select(
+      "toon, taalniveau, lengte, aanspreekvorm, standaardgroep, communicatie_app, communicatie_url, lvs_systeem, lvs_url"
+    )
     .maybeSingle();
   if (error || !data) {
     return NextResponse.json(STANDAARD);
@@ -48,5 +56,8 @@ export async function GET() {
     aanspreekvorm: data.aanspreekvorm ?? STANDAARD.aanspreekvorm,
     standaardgroep: data.standaardgroep ?? STANDAARD.standaardgroep,
     communicatie_app: data.communicatie_app ?? STANDAARD.communicatie_app,
+    communicatie_url: data.communicatie_url ?? STANDAARD.communicatie_url,
+    lvs_systeem: data.lvs_systeem ?? STANDAARD.lvs_systeem,
+    lvs_url: data.lvs_url ?? STANDAARD.lvs_url,
   });
 }
