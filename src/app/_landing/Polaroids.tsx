@@ -6,7 +6,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { Confetti, DONKER, Golf, KOP, MINT, MINT_LICHT, MINT_DIEP, KaartVlak, VLAK_MINT, VLAK_PAPIER } from "./Wereld";
+import { Confetti, DONKER, Golf, KOP, MINT, MINT_LICHT, MINT_DIEP, KaartVlak, VLAK_MINT } from "./Wereld";
 
 /* ── De polaroids: wat leerkrachten zeggen ─────────────────────────────────
    Ervaringen als instax-kaartjes aan één levende draad. Geen prikbord, geen
@@ -726,15 +726,12 @@ export function WereldPolaroids() {
         className="hidden lg:block"
         tel={1}
       />
-      <KaartVlak
-        kleur={VLAK_PAPIER}
-        vorm="koepel"
-        breedte={640}
-        hoogte={360}
-        style={{ right: "-11%", bottom: 20, transform: "rotate(5deg)" }}
-        className="hidden lg:block"
-        tel={4}
-      />
+      {/* ⚠️ Hier lag een vlak rechtsonder (koepel, 640x360). Het liep dwars
+         door de polaroids van Kim en Eva heen en is verhuisd naar de
+         cijfersectie hieronder, waar de golf hem netjes op de mintrand
+         afsnijdt. Zelfde ingreep als bij "Veilig omgaan met AI": een vorm
+         hoort onder een kleurveld vandaan te komen, niet over inhoud heen te
+         liggen. */}
 
       <div className="relative mx-auto w-full max-w-6xl px-6 pb-24 pt-24 lg:pb-28 lg:pt-28">
         {/* Dit was de enige sectie van de pagina zonder stipjes; over ruim

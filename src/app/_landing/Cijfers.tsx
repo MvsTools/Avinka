@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Confetti, DONKER, Golf, KOP, MINT, MINT_LICHT, schaduw } from "./Wereld";
+import { Confetti, DONKER, Golf, KOP, MINT, MINT_LICHT, VLAK_MINT, KaartVlak, schaduw } from "./Wereld";
 import type { Cijfers } from "@/lib/cijfers";
 
 export type { Cijfers };
@@ -349,6 +349,25 @@ function Rapport({
         aria-hidden
       >
         <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
+
+        {/* Dit vlak kwam uit de ervaringen-sectie, waar het dwars door de
+           polaroids van Kim en Eva heen liep. Hier hoort het: het staat
+           BOVEN de mint maar ONDER de golf, dus de golf snijdt het precies op
+           de mintrand af en je ziet een vorm die onder het veld vandaan komt
+           in plaats van een snede. Exact dezelfde ingreep als het vlak
+           linksboven bij "Veilig omgaan met AI".
+           🔑 De volgorde in deze laag is dus de hele truc: mint, dan het vlak,
+           dan de golf. Staat het vlak ná de golf, dan ligt het eroverheen. */}
+        <KaartVlak
+          kleur={VLAK_MINT}
+          vorm="koepel"
+          breedte={660}
+          hoogte={370}
+          style={{ right: "-13%", top: 55, transform: "rotate(5deg)" }}
+          className="hidden lg:block"
+          tel={4}
+        />
+
         {/* Vorm "zacht": een rustige dubbele deining die links en rechts op
            dezelfde hoogte begint en eindigt. Hij was als enige nog ongebruikt,
            en dat is geen toeval maar beleid: elke overgang op deze pagina
@@ -373,12 +392,13 @@ function Rapport({
 
         {/* Kop links, de stand van het bijwerken rechts: de plek waar je op
            een dashboard kijkt of iets nog actueel is. */}
-        <div data-reveal className="rp-kopregel">
-          <h2 className="rp-sectiekop">Avinka in cijfers</h2>
-          <p className="rp-bijgewerkt">
-            bijgewerkt <span className="rp-tel">{seconden < 3 ? "zojuist" : `${seconden} s geleden`}</span>
-          </p>
-        </div>
+        {/* ⚠️ "bijgewerkt" stond helemaal rechts naast de kop, ver van het
+           enige dat bijgewerkt wordt. Het hoort bij het rapport, dus staat het
+           nu er vlak boven: kop, dan de stand, dan de papieren. */}
+        <h2 data-reveal className="rp-sectiekop">Avinka in cijfers</h2>
+        <p data-reveal className="rp-bijgewerkt">
+          bijgewerkt <span className="rp-tel">{seconden < 3 ? "zojuist" : `${seconden} s geleden`}</span>
+        </p>
 
         {/* De papieren op het bureau: het rapport en de losse briefjes ernaast,
            elk onder een eigen hoek. Dat is wat deze hoek een statistiekenhoekje
@@ -391,13 +411,15 @@ function Rapport({
               <div className="rp-kop">
                 <p className="rp-titel">Rapport van Avinka</p>
                 {/* Het live-teken hoort op het hoofddocument, want daar kijk
-                   je. Het stipje licht één keer op bij elke controle; de
-                   sleutel zorgt dat die animatie opnieuw start. */}
+                   je. Het stipje klopt doorlopend; op het moment van een
+                   controle springt het even hard aan (de sleutel herstart die
+                   animatie). Twee lagen dus: een rustige hartslag die zegt
+                   "dit staat aan", en een tik die zegt "net gekeken". */}
                 <span className="rp-live">
                   <span
                     aria-hidden
                     key={seconden === 0 ? "puls" : "stil"}
-                    className={`rp-stip ${seconden === 0 ? "rp-puls" : ""}`}
+                    className={`rp-stip rp-klopt ${seconden === 0 ? "rp-puls" : ""}`}
                   />
                   live
                 </span>
@@ -456,15 +478,9 @@ function RapportStijl() {
          van 1104, en dan wipte de herkomst naar een tweede regel onder de
          kaart terwijl rechts alles leeg bleef. Nu: 368 + 38 + 434 + 38 + 192
          = 1070 en het past. */
-      .rp-kopregel {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: 8px 24px;
-        margin-bottom: clamp(22px, 2.8vw, 36px);
-      }
       .rp-bijgewerkt {
+        margin-top: 0.45rem;
+        margin-bottom: clamp(18px, 2.2vw, 28px);
         font-size: clamp(0.9rem, 1.15vw, 1rem);
         font-weight: 600;
         color: rgba(34, 28, 58, 0.62);
@@ -664,9 +680,7 @@ function RapportStijl() {
         /* crème: de vierde kleur van de verzameling */
         background: var(--color-cream, #fbf6ee);
         border-radius: 2rem 1.4rem 2.2rem 1.3rem;
-        /* extra ruimte links voor de kantlijn */
-        padding: clamp(17px, 1.9vw, 22px) clamp(18px, 2vw, 24px) clamp(17px, 1.9vw, 22px)
-                 clamp(28px, 2.8vw, 34px);
+        padding: clamp(17px, 1.9vw, 22px) clamp(18px, 2vw, 24px);
         box-shadow: ${schaduw(12, 28, -14, 0.24)};
         /* een derde hoek, anders liggen twee papieren precies parallel */
         --hoek: -1.5deg;
@@ -679,19 +693,9 @@ function RapportStijl() {
          ⚠️ De kleuren zijn NIET meegegaan in het verzwaren: 0,62 en 0,80 halen
          4,6:1 en 8,3:1. Zwaarder mág lichter, maar hieronder wordt het weer
          krap bij deze lettergroottes. */
-      /* De kantlijn van schoolpapier. In het echt is die rood; hier amber,
-         want rood is op deze site expliciet afgewezen als merkkleur. Meteen
-         de enige plek waar het amber-accent in dit hoekje terugkomt. */
-      .rp-bron::before {
-        content: "";
-        position: absolute;
-        top: clamp(14px, 1.6vw, 18px);
-        bottom: clamp(14px, 1.6vw, 18px);
-        left: clamp(17px, 1.7vw, 21px);
-        width: 2px;
-        border-radius: 9999px;
-        background: rgba(245, 158, 11, 0.5);
-      }
+      /* ⚠️ Hier stond een amberkleurige kantlijn, als de rode marge van
+         schoolpapier. Eruit op verzoek: op een crème kaartje met blobvorm las
+         hij als een losse streep in plaats van als papierdetail. */
 
       .rp-bronlabel {
         font-family: var(--font-display), Georgia, serif;
@@ -730,11 +734,25 @@ function RapportStijl() {
         background: var(--color-brand, #2f9e6e);
         box-shadow: 0 0 0 3px rgba(47, 158, 110, 0.16);
       }
-      /* Eén keer oplichten op het moment van controleren, niet eeuwig kloppen. */
-      .rp-puls { animation: rpPuls 0.75s cubic-bezier(0.22, 1, 0.36, 1); }
+      /* ⚠️ Eerder klopte dit stipje alleen op het moment van een controle, en
+         dat is precies één keer per halve minuut: je ziet het nooit en dan
+         zegt "live" niets. Nu twee lagen. De HARTSLAG loopt door zolang het
+         kaartje in beeld is en zegt "dit staat aan"; de TIK springt er
+         bovenop op het moment dat er echt gekeken is.
+         Dit is de enige doorlopende beweging op de pagina, en hij verdient
+         het: een live-teken dat stilstaat is een leugen. Bij
+         prefers-reduced-motion valt hij weg en blijft het stipje gewoon staan. */
+      .rp-klopt { animation: rpKlop 2.2s cubic-bezier(0.4, 0, 0.3, 1) infinite; }
+      @keyframes rpKlop {
+        0%        { box-shadow: 0 0 0 0 rgba(47, 158, 110, 0.45); }
+        55%, 100% { box-shadow: 0 0 0 8px rgba(47, 158, 110, 0); }
+      }
+      /* De tik bij een controle: korter en feller, en hij wint van de
+         hartslag omdat hij later in het stijlblad staat. */
+      .rp-puls { animation: rpPuls 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
       @keyframes rpPuls {
-        0%   { box-shadow: 0 0 0 0 rgba(47, 158, 110, 0.55); }
-        100% { box-shadow: 0 0 0 9px rgba(47, 158, 110, 0); }
+        0%   { box-shadow: 0 0 0 0 rgba(47, 158, 110, 0.7); transform: scale(1.5); }
+        100% { box-shadow: 0 0 0 12px rgba(47, 158, 110, 0); transform: scale(1); }
       }
       /* De seconden staan op tabulaire cijfers: anders springt de tekst
          ernaast heen en weer bij elke tik. */
@@ -781,7 +799,7 @@ function RapportStijl() {
         .rp-kaart:hover, .rp-briefje:hover, .rp-bron:hover {
           transform: rotate(var(--hoek, 0deg)) translateY(var(--lift, 0px));
         }
-        .rp-inkt, .rp-stempel, .rp-puls { animation: none !important; }
+        .rp-inkt, .rp-stempel, .rp-puls, .rp-klopt { animation: none !important; }
         .rp-inkt, .rp-stempel { opacity: 1 !important; }
         .rp-stempel { opacity: 0.72 !important; }
       }
