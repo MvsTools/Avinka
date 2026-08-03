@@ -339,24 +339,14 @@ export function WereldPrijzen({
                 />
               )}
 
-              {/* ⚠️ "Grijs" is hier NIET opacity op de hele kaart. Dat haalt de
-                 tekst onder de AA-contrastgrens, en de inhoud moet leesbaar
-                 blijven: het is nog steeds wat je hebt. De kaart gaat daarom
-                 omláág in plaats van te vervagen — geen wit, geen schaduw,
-                 geen uitlichting, maar een diepere tint dan het veld, alsof
-                 hij erin is gedrukt. Elke letter blijft even scherp.
-                 ⚠️ Dit stond op VLAK_MINT (#e3efe7) en dat scheelt nog geen
-                 4% met het mintveld eronder: dan zie je geen kaart meer maar
-                 een vlek. MINT is de tint die voor dit verschil bedoeld is —
-                 dezelfde die de heldvorm achter Compleet draagt. */}
-              <div
-                className={`relative flex h-full flex-col p-8 ${plan.held ? "sm:py-11" : ""} ${
-                  dicht
-                    ? "rounded-[var(--w-kaart-radius,2.5rem)] ring-1 ring-[color:var(--w-veld-rand,#bcd8c8)]"
-                    : KAART
-                }`}
-                style={dicht ? { background: MINT } : undefined}
-              >
+              {/* ⚠️ De kaart zelf blijft ALTIJD hetzelfde — wit, dezelfde
+                 tekstkleuren, geen "grijs geworden"-behandeling. Dat is
+                 bewust: het pakket dat je al hebt verandert niet van kleur
+                 omdat je het al hebt, en drie kaarten die per bezoeker een
+                 andere ondergrond krijgen lezen sneller als drie verschillende
+                 dingen dan als dezelfde tabel in een andere stand. Alleen de
+                 knop onderin verandert; zie daar. */}
+              <div className={`relative flex h-full flex-col p-8 ${plan.held ? "sm:py-11" : ""} ${KAART}`}>
                 {/* De chip staat naast de naam en niet als sticker over de
                    bovenrand: zo blijft de namenrij van de drie kaarten op
                    dezelfde lijn en leest het als deel van de kaart. */}
@@ -373,12 +363,7 @@ export function WereldPrijzen({
                     </span>
                   )}
                 </div>
-                {/* ⚠️ Op wit haalt ink/55 net 5,4:1, maar op de diepere tint
-                   van een dichte kaart zakt hij naar 4,43 — onder de AA-grens
-                   van 4,5 voor tekst van 14px. Zelfde verhaal voor "p/m"
-                   (3,75). Op die kaarten dus een stap donkerder; gemeten, niet
-                   op gevoel. */}
-                <p className={`mt-1 text-sm ${dicht ? "text-ink/70" : "text-ink/55"}`}>{plan.tagline}</p>
+                <p className="mt-1 text-sm text-ink/55">{plan.tagline}</p>
 
                 <p className="mt-6 flex items-baseline gap-1.5">
                   <span
@@ -390,7 +375,7 @@ export function WereldPrijzen({
                   >
                     {prijsTekst(plan.prijsMaand)}
                   </span>
-                  <span className={dicht ? "text-ink/65" : "text-ink/50"}>p/m</span>
+                  <span className="text-ink/50">p/m</span>
                 </p>
                 {/* Vaste hoogte, ook als de regel er niet staat: anders
                    springen de drie kaarten los van elkaar zodra je schakelt. */}
@@ -407,18 +392,18 @@ export function WereldPrijzen({
                   ))}
                 </ul>
 
-                {/* De onderrand van de kaart vertelt wat je hier kúnt: kiezen,
-                   overstappen, of niets omdat je het al hebt. */}
+                {/* Alleen dít verandert er als je al betaalt: de rest van de
+                   kaart blijft precies zoals hij is. */}
                 {dicht ? (
                   /* Geen knop maar een strook: er valt niets te klikken, en
                      iets wat eruitziet als een knop maar niets doet is erger
                      dan geen knop. Zelfde hoogte als een kleine BlobKnop, dus
-                     de drie kaarten blijven op één lijn eindigen. */
+                     de drie kaarten blijven op één lijn eindigen. Zachte tint
+                     in plaats van wit, zodat hij zich van een echte knop
+                     onderscheidt zonder dat de rest van de kaart meeverandert. */
                   <p
-                    /* Wit op de verzonken kaart: op mint-in-mint verdween deze
-                       strook in de kaart en las je 'm niet meer als label. */
-                    className="blobknop mt-8 flex w-full items-center justify-center gap-2.5 bg-white px-5 py-3.5 text-center text-base font-bold"
-                    style={{ color: DONKER }}
+                    className="blobknop mt-8 flex w-full items-center justify-center gap-2.5 px-5 py-3.5 text-center text-base font-bold"
+                    style={{ background: "var(--w-vlak-veld, #e3efe7)", color: DONKER }}
                   >
                     <Vinkje />
                     {stand.soort === "huidig" ? "Je huidige abonnement" : "Zit hier al in"}
