@@ -374,27 +374,24 @@ export function WereldPrijzen({
                 {/* Alleen dít verandert er als je al betaalt: de rest van de
                    kaart blijft precies zoals hij is. */}
                 {dicht ? (
-                  /* ⚠️ Geen "Je huidige abonnement" / "Zit hier al in" meer:
-                     de TEKST moet exact hetzelfde blijven, ingelogd of
-                     uitgelogd, gekozen of niet. Het enige verschil is dat hij
-                     hier niet klikbaar is (vandaar een <p>, geen knop) en op
-                     een zachte tint staat in plaats van wit/groen. */
+                  /* Geen knop maar een strook: er valt niets te klikken, en
+                     iets wat eruitziet als een knop maar niets doet is erger
+                     dan geen knop. Twee teksten, met opzet niet dezelfde:
+                     - "huidig" is DIT pakket — dat is niet hetzelfde bericht
+                       als "inbegrepen" (een lager pakket dat toevallig al in
+                       je hogere pakket zit), en allebei "zit hier al in"
+                       noemen wist dat verschil weg. */
                   <p
                     className="blobknop mt-8 flex w-full items-center justify-center gap-2.5 px-5 py-3.5 text-center text-base font-bold"
                     style={{ background: "var(--w-vlak-veld, #e3efe7)", color: DONKER }}
                   >
-                    Probeer gratis
+                    {stand.soort === "huidig" ? "Actief" : "Inbegrepen"}
                   </p>
                 ) : (
                   <BlobKnop
-                    /* ⚠️ De TEKST op deze knop is altijd "Probeer gratis",
-                       ingelogd of uitgelogd, kiesbaar of upgrade — hier stond
-                       "Upgrade naar {naam}" voor wie moet overstappen, en dat
-                       maakte de kaart weer iets dat per bezoeker verschilt.
-                       Alleen de bestemming verschilt: overstappen gebeurt in
-                       het dashboard, waar de betaling en de opzegtermijn
-                       staan; de voorpagina stuurt er alleen naartoe. Nieuwe
-                       bezoekers gaan naar het aanmelden. */
+                    /* Overstappen gebeurt in het dashboard, waar de betaling
+                       en de opzegtermijn staan; de voorpagina stuurt er alleen
+                       naartoe. Nieuwe bezoekers gaan naar het aanmelden. */
                     href={
                       stand.soort === "upgrade"
                         ? /* wijzig=1 klapt de pakketten daar meteen open (anders
@@ -410,7 +407,7 @@ export function WereldPrijzen({
                     maat="klein"
                     className="mt-8 w-full"
                   >
-                    Probeer gratis
+                    {stand.soort === "upgrade" ? `Upgrade naar ${plan.naam}` : "Probeer gratis"}
                   </BlobKnop>
                 )}
               </div>
