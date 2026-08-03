@@ -91,6 +91,17 @@ export default function ProefScherm() {
           >
             bijna geen data (sectie hoort te verdwijnen)
           </button>
+          {/* Wat gebeurt er als het echt gaat lopen? 1000 leerkrachten die elk
+             ~2 uur per week terugwinnen is ruim 12.000 schooldagen per jaar. */}
+          <button
+            type="button"
+            onClick={() =>
+              setCijfers({ minuten: 5_580_000, leerkrachten: 1_000, uitwerkingen: 100_000 })
+            }
+            className="underline underline-offset-4 hover:text-brand-dark"
+          >
+            over een jaar bij 1000 leerkrachten
+          </button>
         </div>
       </div>
 

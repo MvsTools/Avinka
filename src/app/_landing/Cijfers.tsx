@@ -170,15 +170,48 @@ function KlapKaart({ cijfer }: { cijfer: string }) {
 
 /* ── Eén aflezing: de kaarten plus hun woord ─────────────────────────────── */
 
+/* Hoeveel de kaarten krimpen naarmate het getal langer wordt. Zonder dit liep
+   het bord bij 1000 leerkrachten en 100.000 uitwerkingen buiten beeld op
+   mobiel (418px in een venster van 390) en groeide de kast van 230 naar 347
+   pixels hoog omdat de detailregel ging wrappen.
+
+   De wortel zorgt dat het meeschaalt zonder onleesbaar te worden: bij vijf
+   cijfers staat de kaart op 78% en bij zeven op 65%. Het bord wordt dus wél
+   breder bij een langer getal, alleen niet evenredig. */
+function kaartSchaal(aantalCijfers: number) {
+  return Math.min(1, Math.sqrt(3 / Math.max(3, aantalCijfers)));
+}
+
 function Aflezing({ waarde, label, klein }: { waarde: number; label: string; klein?: boolean }) {
-  /* De cijfers krijgen een sleutel op hun POSITIE VAN RECHTS. Doe je dat op de
-     positie van links, dan verspringt bij 99 → 100 elke kaart een plek en
-     klapt het hele bord om in plaats van alleen het laatste cijfer. */
-  const cijfers = String(waarde).split("");
-  const n = cijfers.length;
+  /* Het getal wordt Nederlands geschreven, mét puntjes. ⚠️ Dat ontbrak: het
+     bord toonde "9412" terwijl de schermlezer "9.412" voorlas, en bij grote
+     getallen werd "100000" helemaal onleesbaar. De punt is geen kaart maar
+     een smal tussenstuk, want een punt op een klapkaart zou net zo goed een
+     cijfer kunnen zijn dat toevallig omslaat. */
+  const tekens = waarde.toLocaleString("nl-NL").split("");
+  const aantalCijfers = tekens.filter((t) => t !== ".").length;
+  /* De sleutel van een kaart is zijn POSITIE VAN RECHTS, hier zonder meeteller
+     berekend. Met een teller die in de map werd opgehoogd klaagde de
+     React-compiler terecht over een variabele die na het renderen nog
+     verandert; dit is dezelfde uitkomst, maar zonder muteren. */
+  const sleutelVoor = (i: number) => tekens.slice(i + 1).filter((t) => t !== ".").length + 1;
 
   return (
-    <div className={`flex items-center gap-3 ${klein ? "cb-klein" : ""}`}>
+    <div
+      /* flex-wrap laat het bijschrift ONDER de cijfers vallen zodra ze samen
+         niet meer passen. Bij drie cijfers blijft het dus gewoon naast elkaar
+         staan, en pas bij een lang getal op een smal scherm zakt het woord een
+         regel. Dat werkt alleen doordat de kast een breedtegrens heeft
+         (max-width hieronder); zonder die grens groeit de kast eindeloos mee
+         en wrapt er nooit iets. */
+      className={`flex flex-wrap items-center gap-x-3 gap-y-1 ${klein ? "cb-klein" : ""}`}
+      /* --kh is de kaart (krimpt met de lengte van het getal), --kb blijft de
+         maat van de REGEL. Het woord hangt aan --kb, anders zou "uitwerkingen"
+         bij een getal van zes cijfers mee omlaag schalen naar 8 pixels. */
+      style={
+        { "--kh": `calc(var(--kb) * ${kaartSchaal(aantalCijfers).toFixed(3)})` } as CSSProperties
+      }
+    >
       {/* ⚠️ aria-hidden op de kaarten, en dat is een reparatie geen luiheid.
          Elke kaart bevat het cijfer TWEE keer (boven- en onderhelft, plus
          tijdens het klappen nog twee kleppen), dus een schermlezer las
@@ -186,13 +219,17 @@ function Aflezing({ waarde, label, klein }: { waarde: number; label: string; kle
          boven water bij het uitlezen van de toegankelijkheidsboom. Het echte
          getal staat nu één keer, onzichtbaar, vóór het woord. */}
       <div aria-hidden className="flex items-stretch gap-[4px]">
-        {cijfers.map((c, i) => (
-          <KlapKaart key={n - i} cijfer={c} />
-        ))}
+        {tekens.map((teken, i) => {
+          if (teken === ".") return <span key={`p${i}`} className="cb-punt" />;
+          /* Op de positie van LINKS sleutelen zou bij 999 → 1.000 elke kaart
+             een plek laten verspringen, waardoor het hele bord omklapt in
+             plaats van alleen de cijfers die echt veranderen. */
+          return <KlapKaart key={sleutelVoor(i)} cijfer={teken} />;
+        })}
       </div>
       <span
         className="cb-woord font-display font-black leading-tight tracking-tight"
-        style={{ fontSize: "calc(var(--kh) * 0.3)" }}
+        style={{ fontSize: "calc(var(--kb) * 0.3)" }}
       >
         <span className="sr-only">{waarde.toLocaleString("nl-NL")} </span>
         {label}
@@ -249,15 +286,25 @@ export function WereldCijfers({ cijfers }: { cijfers: Cijfers | null }) {
             </h2>
             {/* Bronvermelding. Elke geloofwaardige teller die we bekeken hebben
                heeft er een: een getal zonder herkomst is een claim. */}
+            {/* ⚠️ Hier stond "Het bord loopt bij terwijl je kijkt." Dat was
+               NIET WAAR. De cijfers komen uit de serverrendering en veranderen
+               daarna niet meer; het bord staat stil zolang je op de pagina
+               bent. Dezelfde soort fout als "Onbeperkt gebruik" op de
+               prijzenkop: een zin die klopte in het ontwerp maar niet in de
+               code. Wil je het wél laten bijlopen, dan moet de teller elke
+               zoveel seconden opnieuw opgehaald worden. */}
             <p data-reveal className="mt-4 text-base leading-7 text-ink/65">
               Opgeteld uit de tijd die de tools echt bespaarden, met een schooldag
-              van {String(UUR_PER_SCHOOLDAG).replace(".", ",")} uur. Het bord loopt
-              bij terwijl je kijkt.
+              van {String(UUR_PER_SCHOOLDAG).replace(".", ",")} uur. Bijgewerkt bij
+              elk bezoek.
             </p>
           </div>
 
           {/* De kast. Een klapbord zonder behuizing is een stel losse kaartjes. */}
-          <div data-reveal className="cb-kast justify-self-start lg:justify-self-end">
+          {/* min-w-0 op de rasterkolom: zonder dat mag een grid-cel niet
+             krimpen onder de breedte van zijn inhoud, en dan heeft de
+             max-width op de kast geen effect. */}
+          <div data-reveal className="cb-kast min-w-0 justify-self-start lg:justify-self-end">
             <Aflezing waarde={dagen} label="schooldagen" />
             {detailregel && (
               <>
@@ -290,9 +337,20 @@ function BordStijl() {
          De lichte binnenrand bovenaan en de donkere onderin laten de kleppen
          ín de kast liggen in plaats van erop. */
       .cb-kast {
-        --kh: clamp(66px, 8vw, 104px);
+        /* --kb is de maat van de regel, --kh die van de kaart. Ze zijn
+           gescheiden omdat de kaart krimpt bij een langer getal en het
+           bijschrift niet mee mag krimpen. */
+        --kb: clamp(66px, 8vw, 104px);
+        --kh: var(--kb);
+        /* De kartonkleur staat op de kast en niet op de kaart, zodat ook het
+           puntje tussen de duizendtallen hem kan erven. */
+        --kaart: var(--w-klapkaart, #fdfaf1);
         background: ${DONKER};
         border-radius: 20px;
+        /* Zonder deze grens groeit de kast met het getal mee tot buiten het
+           scherm: bij 100.000 uitwerkingen was hij 418px breed in een venster
+           van 390 en werd hij afgesneden. Met de grens wrapt de inhoud. */
+        max-width: 100%;
         padding: clamp(18px, 2.4vw, 30px);
         transform: rotate(-0.8deg);
         box-shadow:
@@ -301,13 +359,31 @@ function BordStijl() {
           inset 0 -22px 34px -26px rgba(0,0,0,0.75);
       }
       /* De detailregel is kleiner, maar het is hetzelfde apparaat. */
-      .cb-klein { --kh: clamp(40px, 4.6vw, 58px); }
+      .cb-klein { --kb: clamp(40px, 4.6vw, 58px); }
+
+      /* De duizendtalpunt: een smal tussenstuk, geen kaart. Hij zit op de
+         hoogte van de kaartvoet, zoals een punt op de schrijfregel staat. */
+      .cb-punt {
+        position: relative;
+        width: calc(var(--kh) * 0.24);
+        align-self: stretch;
+      }
+      .cb-punt::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: calc(var(--kh) * 0.17);
+        width: calc(var(--kh) * 0.1);
+        height: calc(var(--kh) * 0.1);
+        margin-left: calc(var(--kh) * -0.05);
+        border-radius: 9999px;
+        background: var(--kaart, #fdfaf1);
+      }
 
       .cb-woord { color: rgba(255,255,255,0.92); }
       .cb-klein .cb-woord { color: rgba(255,255,255,0.72); }
 
       .cb-kaart {
-        --kaart: var(--w-klapkaart, #fdfaf1);
         height: var(--kh);
         width: calc(var(--kh) * 0.7);
         border-radius: 11px;
