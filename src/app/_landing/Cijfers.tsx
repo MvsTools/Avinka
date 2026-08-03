@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Confetti, DONKER, Golf, KOP, MINT, MINT_LICHT, VLAK_PAPIER, KaartVlak, schaduw } from "./Wereld";
+import { Confetti, DONKER, Golf, KOP, MINT, MINT_LICHT, schaduw } from "./Wereld";
 import type { Cijfers } from "@/lib/cijfers";
 
 export type { Cijfers };
@@ -296,35 +296,24 @@ function Rapport({
 
   return (
     <section ref={anker} className="relative overflow-x-clip">
-      {/* Twee zachte vlakken, allebei groter dan wat erop ligt en eronder,
-         zodat hun rand nergens door de inhoud snijdt. Eén onder het rapport
-         links en één onder de briefjes rechts: zo heeft de hele strook een
-         ondergrond in plaats van alleen de linkerhelft. */}
-      <KaartVlak
-        kleur={VLAK_PAPIER}
-        vorm="kiezel"
-        breedte={820}
-        hoogte={400}
-        style={{ left: "-12%", top: -20, transform: "rotate(4deg)" }}
-        className="-z-10 hidden lg:block"
-        tel={4}
-      />
-      <KaartVlak
-        kleur={VLAK_PAPIER}
-        vorm="ei"
-        breedte={620}
-        hoogte={330}
-        style={{ right: "-8%", top: 40, transform: "rotate(-6deg)" }}
-        className="-z-10 hidden lg:block"
-        tel={7}
-      />
+      {/* ⚠️ HIER STONDEN TWEE ACHTERGRONDVLAKKEN, EN DIE MOESTEN WEG.
+         De mintlaag hieronder is ONDOORZICHTIG vanaf 40% van de sectie: hij
+         vult zijn hele vak met mint en legt daar een papieren golf overheen.
+         Alles wat erachter ligt wordt daardoor op die grens kaarsrecht
+         afgesneden, en dat is precies wat er met het vlak rechtsboven
+         gebeurde: het liep van 40 tot 370 pixel en werd op 197 pixel
+         doormidden geknipt.
 
-      {/* De golf. Deze sectie lag als enige van de staart vlak op het papier,
-         zonder enige overgang, en dat is wat hem saai maakte. De mint begint
-         halverwege en loopt door tot onder aan de sectie, waar hij overgaat in
-         het mintveld van de prijzen. De papieren liggen dus met hun bovenkant
-         op papier en met hun onderkant op mint, precies zoals de makerskaart
-         dat al doet. */}
+         🔑 REGEL: een achtergrondvorm en een gekleurd veld in dezelfde sectie
+         gaan niet samen, tenzij de vorm BOVEN het veld ligt in de tint van dat
+         veld. Alternatief uit de aantekeningen is multiply met #f5f8f5, maar
+         dat is eerder afgekeurd als te aanwezig.
+
+         Ze zijn hier gewoon weg. De sectie heeft ze niet nodig: er liggen vier
+         gekleurde kaartjes en een golf, en die pale vlakken maakten de golf
+         juist slechter leesbaar omdat mint en papier maar een paar procent
+         schelen. */}
+
       {/* ⚠️ DE GOLF VIEL WEG, EN DIT IS WAAROM.
          Het mintvlak liep van 48% tot de sectiegrens: 219 pixels. De golf zelf
          is 210 pixels hoog, dus er bleef 9 pixel mint over. De dalen van de
