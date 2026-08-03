@@ -9,6 +9,7 @@ import StreakBadge from "@/components/dashboard/StreakBadge";
 import TakenOverzicht from "@/components/dashboard/TakenOverzicht";
 import VandaagRij from "@/components/dashboard/VandaagRij";
 import DuoOverdracht from "@/components/dashboard/DuoOverdracht";
+import CollegaUitnodigen from "@/components/dashboard/CollegaUitnodigen";
 import { amsterdamDatum } from "@/lib/streak";
 import { haalMijnGroepen, haalPlanning } from "@/lib/planning";
 
@@ -61,6 +62,8 @@ export default async function DashboardStart() {
       <DuoOverdracht />
 
       <OnboardingCard />
+
+      <CollegaUitnodigen />
 
       {/* De tools als grote tegels — dit is het hart van het dashboard. */}
       <section id="tools" className="scroll-mt-24">

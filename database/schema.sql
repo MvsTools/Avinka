@@ -1398,17 +1398,30 @@ grant select, insert, update, delete on public.duo_taken to authenticated;
 -- Bewust geen groeiend logboek — dat is de belangrijkste privacy-maatregel
 -- hier. Elke nieuwe overdracht vervangt de vorige; er ontstaat geen archief
 -- van eerdere, mogelijk kind-specifieke opmerkingen.
+-- ÉÉN briefje PER PERSOON per groep. Zo zie je wie wat schreef (het leest als
+-- een berichtje met een naam erboven) zonder dat er een gesprek ontstaat:
+-- schrijf je opnieuw, dan vervangt dat je eigen vorige briefje. Er groeit dus
+-- nooit een archief van kind-specifieke opmerkingen — dat blijft hier de
+-- belangrijkste privacymaatregel.
 create table if not exists public.duo_overdracht (
-  klas_id       uuid primary key references public.klassen(id) on delete cascade,
+  klas_id       uuid not null references public.klassen(id) on delete cascade,
+  auteur        uuid not null references auth.users(id) on delete cascade,
   tekst         text not null default '',
-  auteur        uuid references auth.users(id) on delete set null,
-  bijgewerkt    timestamptz default now()
+  bijgewerkt    timestamptz default now(),
+  primary key (klas_id, auteur)
 );
 
 alter table public.duo_overdracht enable row level security;
 drop policy if exists "duo overdracht voor het koppel" on public.duo_overdracht;
 drop policy if exists "duo overdracht voor de groep" on public.duo_overdracht;
-create policy "duo overdracht voor de groep" on public.duo_overdracht
-  for all using (public.klas_toegang(duo_overdracht.klas_id))
-  with check (public.klas_toegang(duo_overdracht.klas_id));
+-- Lezen doet iedereen bij de groep; schrijven alleen in je eigen briefje. Je
+-- kunt de woorden van een collega dus niet aanpassen — bij een naam eronder
+-- moet je erop kunnen vertrouwen dat die klopt.
+drop policy if exists "overdracht van de groep lezen" on public.duo_overdracht;
+create policy "overdracht van de groep lezen" on public.duo_overdracht
+  for select using (public.klas_toegang(duo_overdracht.klas_id));
+drop policy if exists "eigen overdracht schrijven" on public.duo_overdracht;
+create policy "eigen overdracht schrijven" on public.duo_overdracht
+  for all using (auteur = auth.uid() and public.klas_toegang(duo_overdracht.klas_id))
+  with check (auteur = auth.uid() and public.klas_toegang(duo_overdracht.klas_id));
 grant select, insert, update, delete on public.duo_overdracht to authenticated;

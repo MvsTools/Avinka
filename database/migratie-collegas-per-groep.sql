@@ -67,7 +67,15 @@ delete from public.duo_overdracht a
 alter table public.duo_overdracht drop constraint if exists duo_overdracht_pkey;
 alter table public.duo_overdracht drop column if exists duo_koppel_id;
 alter table public.duo_overdracht alter column klas_id set not null;
-alter table public.duo_overdracht add primary key (klas_id);
+
+-- Eén briefje PER PERSOON per groep, zodat je ziet wie wat schreef. Geen
+-- gesprek: schrijf je opnieuw, dan vervangt dat je eigen vorige briefje.
+delete from public.duo_overdracht where auteur is null; -- kan niet meer bij een naam horen
+alter table public.duo_overdracht drop constraint if exists duo_overdracht_auteur_fkey;
+alter table public.duo_overdracht alter column auteur set not null;
+alter table public.duo_overdracht add constraint duo_overdracht_auteur_fkey
+  foreign key (auteur) references auth.users(id) on delete cascade;
+alter table public.duo_overdracht add primary key (klas_id, auteur);
 
 -- ── C) Functies ─────────────────────────────────────────────────────────
 -- Hoor ik bij deze groep? (eigenaar of gekoppelde collega, welke rol dan ook)
@@ -152,10 +160,16 @@ create policy "duo taken voor de groep" on public.duo_taken
   for all using (public.klas_toegang(duo_taken.klas_id))
   with check (public.klas_toegang(duo_taken.klas_id));
 
+-- Lezen doet iedereen bij de groep; schrijven alleen in je eigen briefje —
+-- bij een naam eronder moet je erop kunnen vertrouwen dat die klopt.
 drop policy if exists "duo overdracht voor de groep" on public.duo_overdracht;
-create policy "duo overdracht voor de groep" on public.duo_overdracht
-  for all using (public.klas_toegang(duo_overdracht.klas_id))
-  with check (public.klas_toegang(duo_overdracht.klas_id));
+drop policy if exists "overdracht van de groep lezen" on public.duo_overdracht;
+create policy "overdracht van de groep lezen" on public.duo_overdracht
+  for select using (public.klas_toegang(duo_overdracht.klas_id));
+drop policy if exists "eigen overdracht schrijven" on public.duo_overdracht;
+create policy "eigen overdracht schrijven" on public.duo_overdracht
+  for all using (auteur = auth.uid() and public.klas_toegang(duo_overdracht.klas_id))
+  with check (auteur = auth.uid() and public.klas_toegang(duo_overdracht.klas_id));
 
 -- ⚠️ Bijwerken van een koppeling mag alleen de eigenaar van de klas. Anders
 -- kan een meekijkende collega zijn eigen rol op 'volledig' zetten en zo alsnog

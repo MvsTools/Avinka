@@ -873,17 +873,20 @@ export async function deleteDuoTaak(id: string): Promise<boolean> {
 // Bewust ÉÉN rij per groep (zie schema.sql) — elke nieuwe overdracht
 // overschrijft de vorige, er ontstaat geen archief van kind-specifieke
 // opmerkingen. Nooit bijzondere persoonsgegevens (medisch, gezinssituatie).
-export type DuoOverdracht = { tekst: string; auteur: string | null; bijgewerkt: string };
+export type DuoOverdracht = { tekst: string; auteur: string; bijgewerkt: string };
 
-export async function getDuoOverdracht(klasId: string): Promise<DuoOverdracht | null> {
+// Alle briefjes van deze groep: één per persoon, nieuwste bovenaan. Je ziet dus
+// wie wat schreef, maar er groeit geen gesprek — ieders nieuwe briefje vervangt
+// zijn eigen vorige.
+export async function getDuoOverdrachten(klasId: string): Promise<DuoOverdracht[]> {
   const sb = createClient();
   const { data, error } = await sb
     .from("duo_overdracht")
     .select("tekst, auteur, bijgewerkt")
     .eq("klas_id", klasId)
-    .maybeSingle();
-  if (error || !data) return null;
-  return data as DuoOverdracht;
+    .order("bijgewerkt", { ascending: false });
+  if (error || !data) return [];
+  return data as DuoOverdracht[];
 }
 
 export async function zetDuoOverdracht(klasId: string, tekst: string): Promise<boolean> {
@@ -896,7 +899,7 @@ export async function zetDuoOverdracht(klasId: string, tekst: string): Promise<b
     .from("duo_overdracht")
     .upsert(
       { klas_id: klasId, tekst, auteur: user.id, bijgewerkt: new Date().toISOString() },
-      { onConflict: "klas_id" },
+      { onConflict: "klas_id,auteur" },
     );
   return !error;
 }
