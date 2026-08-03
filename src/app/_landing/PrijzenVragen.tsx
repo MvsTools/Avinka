@@ -434,13 +434,15 @@ export function WereldPrijzen({
           })}
         </div>
 
-        {/* ink/55 haalde 3,63:1 op het mintveld en dat is onder de AA-grens
-           van 4,5 voor tekst van deze grootte. */}
-        <p className="mt-12 text-sm text-ink/70">
-          {jaar
-            ? "Per schooljaar: je betaalt gewoon maandelijks, maar juli en augustus zijn gratis."
-            : "Alle abonnementen zijn maandelijks opzegbaar."}
-        </p>
+        {/* "Alle abonnementen zijn maandelijks opzegbaar" staat nu al bovenin
+           (vóór de kaarten); die hoeft hier niet nogmaals. De schooljaar-
+           uitleg is wél nieuwe informatie en blijft dus staan, alleen als de
+           schakelaar op "Per schooljaar" staat. */}
+        {jaar && (
+          <p className="mt-12 text-sm text-ink/70">
+            Per schooljaar: je betaalt gewoon maandelijks, maar juli en augustus zijn gratis.
+          </p>
+        )}
       </div>
 
       {/* Hier stond de afsluitende golf van deze sectie. Die is niet meer
