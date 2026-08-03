@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { CSSProperties } from "react";
-import { PLANNEN, PROEF_DAGEN, prijsTekst } from "@/lib/abonnement";
+import { PLANNEN, PROEF_DAGEN, planById, prijsTekst, type PlanId } from "@/lib/abonnement";
 import {
   BlobKnop,
   Confetti,
@@ -59,12 +59,60 @@ function Vinkje() {
   );
 }
 
-/* ── 1. Prijzen ──────────────────────────────────────────────────────────── */
+/* ── 1. Prijzen ────────────────────────────────────────────────────────────
+   ⚠️ DE PRIJZEN STAAN ER ALTIJD, VOOR IEDEREEN.
+   Hier stond eerst: wie al betaalt hoeft geen prijzen te zien, dus dan valt de
+   hele sectie weg. Dat was rommelig — de pagina veranderde van vorm zonder dat
+   je begreep waarom, en wie wilde overstappen kon dat vanaf de voorpagina
+   nergens meer zien. De sectie past zich nu aan in plaats van te verdwijnen.
+
+   Vijf standen, allemaal met dezelfde drie kaarten:
+     niet ingelogd        → alles kiesbaar ("Probeer gratis")
+     proef (of verlopen)  → idem; je moet nog kiezen
+     Start               → Start grijs, "Upgrade naar Compleet" / "naar Pro"
+     Compleet            → Start + Compleet grijs, "Upgrade naar Pro"
+     Pro                 → alle drie grijs; je bent er al
+
+   De rangorde start → compleet → pro is de enige aanname hier: een pakket
+   lager dan het jouwe zit al ín het jouwe ("Alles van Start", "Alles van
+   Compleet"), dus dat is geen keuze meer maar iets wat je al hebt. Verandert
+   die volgorde ooit, dan verandert RANG mee. ────────────────────────────── */
+
+/* De volgorde waarin de pakketten op elkaar stapelen. Bewust niet de index in
+   PLANNEN: die staat toevallig in dezelfde volgorde, maar dat is een
+   presentatiekeuze en geen afspraak. */
+const RANG: Record<PlanId, number> = { start: 0, compleet: 1, pro: 2 };
+
+/* De naam zoals hij op de kaart staat, uit dezelfde ene bron. Niet zelf
+   "Start"/"Compleet"/"Pro" intikken: dan lopen de kaart en de zin uit elkaar
+   zodra een pakket ooit anders gaat heten. */
+function naamVan(plan: PlanId) {
+  return planById(plan)?.naam ?? plan;
+}
+
+type KaartStand =
+  | { soort: "kiesbaar" }
+  | { soort: "huidig" }
+  | { soort: "inbegrepen" }
+  | { soort: "upgrade" };
+
+function standVoor(plan: PlanId, huidigPlan: PlanId | null): KaartStand {
+  if (!huidigPlan) return { soort: "kiesbaar" };
+  if (plan === huidigPlan) return { soort: "huidig" };
+  return RANG[plan] < RANG[huidigPlan] ? { soort: "inbegrepen" } : { soort: "upgrade" };
+}
 
 export function WereldPrijzen({
   zonderTopgolf = false,
   zonderOndergolf = false,
-}: { zonderTopgolf?: boolean; zonderOndergolf?: boolean }) {
+  huidigPlan = null,
+}: {
+  zonderTopgolf?: boolean;
+  zonderOndergolf?: boolean;
+  /* Het betaalde pakket dat deze bezoeker nú heeft, of null: uitgelogd, in de
+     proef, of verlopen. Alleen dit bepaalt welke kaarten dichtgaan. */
+  huidigPlan?: PlanId | null;
+}) {
   // false = maandelijks, true = per schooljaar (juli en augustus gratis)
   const [jaar, setJaar] = useState(false);
 
@@ -128,29 +176,66 @@ export function WereldPrijzen({
                  blijven staan. Beloof geen onbeperktheid die er niet is. */}
               Eén vast bedrag. Geen verrassingen.
             </h2>
-            <p data-reveal className="mt-5 text-lg leading-8 text-ink/75">
-              Je begint met {PROEF_DAGEN} dagen gratis proberen, zonder
-              betaalgegevens. Daarna kies je het abonnement dat bij je past.
-            </p>
+            {/* Wie al betaalt heeft niets aan een uitnodiging om te beginnen;
+               die wil weten waar hij staat en wat de stap omhoog is. Alleen
+               deze twee regels verschillen per stand — de kop, de kaarten en
+               de schakelaar blijven voor iedereen hetzelfde. */}
+            {huidigPlan ? (
+              <p data-reveal className="mt-5 text-lg leading-8 text-ink/75">
+                Je hebt {naamVan(huidigPlan)}.{" "}
+                {huidigPlan === "pro"
+                  ? "Dat is het volledige pakket; hieronder zie je wat erin zit."
+                  : "Wil je meer, dan stap je hieronder over. Je betaalt dan het verschil vanaf de volgende maand."}
+              </p>
+            ) : (
+              <p data-reveal className="mt-5 text-lg leading-8 text-ink/75">
+                Je begint met {PROEF_DAGEN} dagen gratis proberen, zonder
+                betaalgegevens. Daarna kies je het abonnement dat bij je past.
+              </p>
+            )}
             {/* De derde plek waar de belofte van bovenaan de pagina landt: op
                het moment dat iemand naar het bedrag kijkt. Bewust gekoppeld
                aan Compleet (€9,99) en niet aan Start — dat is één tool, dus
-               daar zouden die twee uur niet kloppen. */}
-            <p data-reveal className="mt-4 text-lg font-bold" style={{ color: KOP }}>
-              Elke week zo&apos;n 2 uur terug, voor minder dan een tientje per maand.
-            </p>
+               daar zouden die twee uur niet kloppen.
+               Vervalt zodra iemand al betaalt: dan is het geen belofte meer
+               maar een verkoopregel aan een bestaande klant. */}
+            {!huidigPlan && (
+              <p data-reveal className="mt-4 text-lg font-bold" style={{ color: KOP }}>
+                Elke week zo&apos;n 2 uur terug, voor minder dan een tientje per maand.
+              </p>
+            )}
           </div>
 
-          <Schakelaar jaar={jaar} setJaar={setJaar} />
+          {/* Bij Pro valt er niets meer te kiezen — geen enkele kaart is nog
+             een aanbod — en dan is een maand/schooljaar-schakelaar een knop
+             die niets doet. Weg ermee; bij Start en Compleet bepaalt hij wél
+             hoe je de upgrade afrekent en blijft hij staan. */}
+          {huidigPlan !== "pro" && <Schakelaar jaar={jaar} setJaar={setJaar} />}
         </div>
 
         <div className="mt-14 grid items-stretch gap-6 sm:grid-cols-3 lg:gap-7">
-          {PLANNEN.map((plan, i) => (
+          {PLANNEN.map((plan, i) => {
+            const stand = standVoor(plan.id, huidigPlan);
+            /* Dicht = je hebt dit al, of het zit al in wat je hebt. Dan is de
+               kaart geen aanbod meer maar informatie. */
+            const dicht = stand.soort === "huidig" || stand.soort === "inbegrepen";
+            /* De held mag alleen uitgelicht blijven zolang hij ook echt te
+               kiezen is; een dichte kaart met "Meest gekozen" erop nodigt uit
+               tot iets wat niet kan. */
+            const uitgelicht = Boolean(plan.held) && !dicht;
+            /* Blijft er nog maar één stap over (Compleet-klant die alleen naar
+               Pro kan), dan is dat de enige actie op de pagina en verdient hij
+               het volle gewicht, ook al is Pro niet de held. */
+            const enigeUpgrade =
+              stand.soort === "upgrade" &&
+              PLANNEN.filter((p) => standVoor(p.id, huidigPlan).soort === "upgrade").length === 1;
+
+            return (
             <div
               key={plan.id}
               data-reveal
               style={{ transitionDelay: `${i * 90}ms` } as CSSProperties}
-              className={`relative ${plan.held ? "sm:-my-5" : ""}`}
+              className={`relative ${uitgelicht ? "sm:-my-5" : ""}`}
             >
               {/* De held wordt niet met een randje aangewezen maar met de
                  vorm van de site zelf: een uitvergrote kaartvorm die er
@@ -159,7 +244,7 @@ export function WereldPrijzen({
                  en zag je hem simpelweg niet; MINT is de tint die hiervoor
                  bedoeld is — diep genoeg om als spot te lezen, en hij ligt
                  achter een witte kaart en niet onder tekst. */}
-              {plan.held && (
+              {uitgelicht && (
                 <span
                   className="pointer-events-none absolute -inset-x-7 -inset-y-6 -z-10 hidden sm:block"
                   style={{
@@ -171,8 +256,20 @@ export function WereldPrijzen({
                 />
               )}
 
+              {/* ⚠️ "Grijs" is hier NIET opacity op de hele kaart. Dat haalt de
+                 tekst onder de AA-contrastgrens, en de inhoud moet leesbaar
+                 blijven: het is nog steeds wat je hebt. De kaart zakt daarom
+                 wég in plaats van te vervagen — geen wit, geen schaduw, geen
+                 uitlichting, alleen een vlak in de tint van het veld. Hij
+                 leest als achtergrond in plaats van als aanbod, terwijl elke
+                 letter even scherp blijft. */}
               <div
-                className={`${KAART} relative flex h-full flex-col p-8 ${plan.held ? "sm:py-11" : ""}`}
+                className={`relative flex h-full flex-col p-8 ${uitgelicht ? "sm:py-11" : ""} ${
+                  dicht
+                    ? "rounded-[var(--w-kaart-radius,2.5rem)] ring-1 ring-ink/[0.07]"
+                    : KAART
+                }`}
+                style={dicht ? { background: VLAK_MINT } : undefined}
               >
                 {/* De chip staat naast de naam en niet als sticker over de
                    bovenrand: zo blijft de namenrij van de drie kaarten op
@@ -181,7 +278,7 @@ export function WereldPrijzen({
                   <h3 className="font-display text-2xl font-black tracking-tight" style={{ color: DONKER }}>
                     {plan.naam}
                   </h3>
-                  {plan.held && (
+                  {uitgelicht && (
                     <span
                       className="shrink-0 bg-accent px-3 py-1 text-[0.6875rem] font-black uppercase tracking-wide text-ink"
                       style={{ borderRadius: "0.9rem 0.6rem 1rem 0.7rem" }}
@@ -213,17 +310,47 @@ export function WereldPrijzen({
                   ))}
                 </ul>
 
-                <BlobKnop
-                  href={jaar ? "/sign-up?plan=jaar" : "/sign-up?plan=maand"}
-                  variant={plan.held ? "vol" : "licht"}
-                  maat="klein"
-                  className="mt-8 w-full"
-                >
-                  Probeer gratis
-                </BlobKnop>
+                {/* De onderrand van de kaart vertelt wat je hier kúnt: kiezen,
+                   overstappen, of niets omdat je het al hebt. */}
+                {dicht ? (
+                  /* Geen knop maar een strook: er valt niets te klikken, en
+                     iets wat eruitziet als een knop maar niets doet is erger
+                     dan geen knop. Zelfde hoogte als een kleine BlobKnop, dus
+                     de drie kaarten blijven op één lijn eindigen. */
+                  <p
+                    className="blobknop mt-8 flex w-full items-center justify-center gap-2.5 px-5 py-3.5 text-center text-base font-bold"
+                    style={{ background: MINT, color: DONKER }}
+                  >
+                    <Vinkje />
+                    {stand.soort === "huidig" ? "Je huidige abonnement" : "Zit hier al in"}
+                  </p>
+                ) : (
+                  <BlobKnop
+                    /* Overstappen gebeurt in het dashboard, waar de betaling
+                       en de opzegtermijn staan; de voorpagina stuurt er alleen
+                       naartoe. Nieuwe bezoekers gaan naar het aanmelden. */
+                    href={
+                      stand.soort === "upgrade"
+                        ? /* wijzig=1 klapt de pakketten daar meteen open (anders
+                             sta je op een scherm waar je eerst "Wijzig" moet
+                             zoeken) en vorm= neemt de maand/schooljaar-keuze
+                             van hierboven mee, zodat je 'm niet twee keer maakt. */
+                          `/dashboard/abonnement?wijzig=1&vorm=${jaar ? "jaar" : "maand"}`
+                        : jaar
+                          ? "/sign-up?plan=jaar"
+                          : "/sign-up?plan=maand"
+                    }
+                    variant={uitgelicht || enigeUpgrade ? "vol" : "licht"}
+                    maat="klein"
+                    className="mt-8 w-full"
+                  >
+                    {stand.soort === "upgrade" ? `Upgrade naar ${plan.naam}` : "Probeer gratis"}
+                  </BlobKnop>
+                )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* ink/55 haalde 3,63:1 op het mintveld en dat is onder de AA-grens

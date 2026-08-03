@@ -16,7 +16,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { signout } from "@/app/auth/actions";
-import { PROEF_DAGEN } from "@/lib/abonnement";
+import { PROEF_DAGEN, type PlanId } from "@/lib/abonnement";
 import { WereldCijfers, toontCijfers, type Cijfers } from "./Cijfers";
 import {
   SPECKLE_STIJL,
@@ -451,13 +451,19 @@ function abonneerReduced(cb: () => void) {
 export default function Landing({
   fotoBestand,
   ingelogd = false,
-  toonPrijzen = true,
+  huidigPlan = null,
   cijfers = null,
   bijhouden = true,
 }: {
   fotoBestand?: string;
   ingelogd?: boolean;
-  toonPrijzen?: boolean;
+  /* Het betaalde pakket dat deze bezoeker heeft, of null (uitgelogd, proef of
+     verlopen). De prijzensectie staat er altijd; dit bepaalt alleen welke
+     kaarten dichtgaan en waar de knoppen heen wijzen.
+     ⚠️ Hier stond `toonPrijzen`: wie betaalde zag de hele sectie niet. Dat gaf
+     een pagina die zonder uitleg van vorm veranderde, én er was vanaf de
+     voorpagina geen weg meer om over te stappen. */
+  huidigPlan?: PlanId | null;
   /* De gemeenschapscijfers voor het klapbord. null = nog geen data, en dan
      laat WereldCijfers zichzelf helemaal weg. Zie Cijfers.tsx. */
   cijfers?: Cijfers | null;
@@ -1280,19 +1286,21 @@ export default function Landing({
         {/* ── 8. Prijzen: het eigen mintveld. Vóór deze verbouwing lagen
            maker, ervaringen, prijzen én vragen allemaal op hetzelfde papier;
            dit veld brengt de afwisseling terug in de staart van de pagina. ── */}
-        {/* Wie al betaalt hoeft geen prijzen meer te zien; proef- en verlopen
-           accounts wél, want die kunnen nog een plan kiezen. */}
-        {toonPrijzen && <WereldPrijzen zonderTopgolf={toontCijfers(cijfers)} zonderOndergolf />}
+        {/* Voor iedereen zichtbaar; de sectie past zich aan de bezoeker aan
+           in plaats van te verdwijnen. Zie PrijzenVragen.tsx voor de vijf
+           standen. */}
+        <WereldPrijzen
+          zonderTopgolf={toontCijfers(cijfers)}
+          zonderOndergolf
+          huidigPlan={huidigPlan}
+        />
 
         {/* ── 9. Veelgestelde vragen: het lichtste blok van de pagina, geen
            kaders maar haarlijnen.
-           Het mintveld hierboven loopt hier nog even door — tot voorbij de
-           eerste vraag — en pas dáár golft het terug naar papier.
-           ⚠️ Dit hing eerst aan `toonPrijzen` alleen, en daardoor zag een
-           betalende bezoeker (geen prijzenblok) de hele baan niet. Het veld
-           komt van de prijzen ÓF van de cijfers; alleen als geen van beide er
-           staat begint deze sectie gewoon op papier. ── */}
-        <WereldVragen items={FAQ} mintBoven={toonPrijzen || toontCijfers(cijfers)} />
+           Het mintveld van de prijzen loopt hier nog even door — tot voorbij
+           de eerste vraag — en pas dáár golft het terug naar papier. De
+           prijzensectie staat er altijd, dus dat veld is er ook altijd. ── */}
+        <WereldVragen items={FAQ} mintBoven />
 
         {/* ── 10. Slot: het donkergroene veld, één keer op de pagina. ── */}
         <WereldSlot />
