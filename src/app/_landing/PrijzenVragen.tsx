@@ -160,18 +160,9 @@ export function WereldPrijzen({
       >
         <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
 
-        {/* Twee zachte vlakken tint-op-tint: één links achter de kop, één
-           rechts op de rand. Bewust in de zachtste tint — hier staan al drie
-           kaarten, dus de achtergrond hoeft alleen de hoeken te dragen. */}
-        <KaartVlak
-          kleur={VLAK_MINT}
-          vorm="wig"
-          breedte={780}
-          hoogte={340}
-          style={{ left: "-14%", top: 40, transform: "rotate(-5deg)" }}
-          className="hidden lg:block"
-          tel={2}
-        />
+        {/* Hier stond een vlak links achter de Start-kaart (wig, -14% links).
+           Dat moest weg. Het rechtervlak blijft: zachte tint-op-tint, draagt
+           de hoek onder Pro. */}
         <KaartVlak
           kleur={VLAK_MINT}
           vorm="ei"
