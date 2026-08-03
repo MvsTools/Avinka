@@ -492,7 +492,11 @@ export function WereldVragen({ items, mintBoven = false }: { items: Vraag[]; min
             tel={5}
           />
 
-          <Golf kleur="var(--w-papier, #fcfbf7)" vorm="ribbel" hoogte="h-[70px] sm:h-[110px]" />
+          {/* "zwaai" i.p.v. "ribbel": rechts blijft op dezelfde hoogte staan
+             (waar hij al precies tussen vraag 1 en 2 viel), maar links vloeit
+             hij nu in één brede, zachte slag over de eerste vraag heen in
+             plaats van er met twee ondiepe deiningen overheen te hakkelen. */}
+          <Golf kleur="var(--w-papier, #fcfbf7)" vorm="zwaai" hoogte="h-[70px] sm:h-[110px]" />
         </div>
       )}
 

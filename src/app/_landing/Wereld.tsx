@@ -175,10 +175,13 @@ const GOLVEN = {
      nadrukkelijk weg naar rechts, zodat het mintveld daar veel dieper
      doorloopt dan aan de linkerkant. */
   speels: maakGolf({ start: 22, eind: 92, amp: 17, golven: 1.3, fase: 0.5 }),
-  /* twee volle, ondiepe deiningen — de enige golf op de pagina die meer dan
-     anderhalve slag maakt. Sluit het prijzenveld af zonder een kant te
-     kiezen: hij begint en eindigt op bijna dezelfde hoogte. */
-  ribbel: maakGolf({ start: 58, eind: 52, amp: 15, golven: 2.05, fase: 0.8 }),
+  /* zakt links flink dieper weg dan rechts, in precies één zachte slag —
+     golven:1 met fase 0 raakt zijn start- en eindhoogte exact, dus rechts
+     blijft op dezelfde hoogte staan terwijl hij links breed en smooth over
+     de eerste vraag heen vloeit. Sluit het mintveld bij de prijzen/vragen
+     af: was eerst "ribbel" (twee ondiepe deiningen, bijna symmetrisch), dat
+     oogde te gehakt voor een vloeiende overgang over lopende tekst heen. */
+  zwaai: maakGolf({ start: 85, eind: 52, amp: 9, golven: 1, fase: 0 }),
 } as const;
 
 export function Golf({
