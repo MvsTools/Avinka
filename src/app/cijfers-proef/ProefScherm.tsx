@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { WereldCijfers, urenUit } from "../_landing/Cijfers";
 import { DONKER, SPECKLE_STIJL } from "../_landing/Wereld";
 
@@ -20,6 +20,34 @@ const MINUTEN_PER_UUR = 60;
 export default function ProefScherm() {
   const [cijfers, setCijfers] = useState(START);
   const [loopt, setLoopt] = useState(true);
+  const wortel = useRef<HTMLDivElement>(null);
+
+  /* ⚠️ Zonder dit is deze pagina een ONBETROUWBARE testbank. De beweging op de
+     landing hangt aan de klasse `anim` op de wrapper en aan `is-in` die de
+     reveal-waarnemer erop zet; allebei komen ze uit Landing.tsx. Deze pagina
+     rendert het rapport los, dus daar gebeurde niets en leek de animatie stuk
+     terwijl hij op de echte pagina prima liep. Hier hetzelfde mechaniek, met
+     dezelfde drempel als in Landing.tsx. */
+  useEffect(() => {
+    const el = wortel.current;
+    if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    el.classList.add("anim");
+    const io = new IntersectionObserver(
+      (ingangen) =>
+        ingangen.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add("is-in");
+            io.unobserve(e.target);
+          }
+        }),
+      { rootMargin: "0px 0px -12% 0px" },
+    );
+    el.querySelectorAll("[data-reveal]").forEach((r) => io.observe(r));
+    return () => io.disconnect();
+    /* Eén keer opzetten is genoeg: het vel blijft staan, alleen de
+       cijfers erin veranderen. */
+  }, []);
 
   const uurErbij = () =>
     setCijfers((c) => ({
@@ -35,7 +63,7 @@ export default function ProefScherm() {
   }, [loopt]);
 
   return (
-    <div className="relative min-h-screen" style={SPECKLE_STIJL}>
+    <div ref={wortel} className="relative min-h-screen" style={SPECKLE_STIJL}>
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pt-14">
         <h1
           className="font-display text-[clamp(2rem,4vw,3rem)] font-black tracking-tight"
@@ -108,6 +136,18 @@ export default function ProefScherm() {
       <div className="relative z-10 mt-10">
         <WereldCijfers cijfers={cijfers} bijhouden={false} />
       </div>
+
+      {/* Dezelfde reveal-regels als in Landing.tsx, anders staat het vel hier
+         meteen zichtbaar en zie je de invul-animatie nooit. */}
+      <style>{`
+        .anim [data-reveal] {
+          opacity: 0;
+          transform: translateY(18px);
+          transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+            transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .anim [data-reveal].is-in { opacity: 1; transform: none; }
+      `}</style>
     </div>
   );
 }

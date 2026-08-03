@@ -1,317 +1,117 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { CSSProperties } from "react";
-import { Confetti, DONKER, VLAK_PAPIER, KaartVlak, schaduw } from "./Wereld";
+import { Confetti, DONKER, KOP, MINT, VLAK_PAPIER, KaartVlak, schaduw } from "./Wereld";
 import type { Cijfers } from "@/lib/cijfers";
 
 export type { Cijfers };
 
-/* ── "Samen teruggewonnen": het klapbord ────────────────────────────────────
-   De cijfers van de hele gemeenschap, als één apparaat op het papier tussen
-   de ervaringen en de prijzen. Daar staat het omdat de polaroids het zachte
-   bewijs zijn (wat mensen zéggen) en dit het harde (wat er gemeten is); samen
-   vormen ze het bewijsblok vlak voor het moment dat iemand naar de prijs kijkt.
+/* ── "Het rapport van Avinka" ───────────────────────────────────────────────
+   De gemeenschapscijfers op de voorpagina, tussen de ervaringen en de prijzen.
+   Daar staan ze omdat de polaroids het zachte bewijs zijn (wat mensen zéggen)
+   en dit het harde (wat er gemeten is); samen vormen ze het bewijsblok vlak
+   vóór het moment dat iemand naar de prijs kijkt.
 
-   WAAROM EEN KLAPBORD EN GEEN CIJFERBLOKJES
-   Een rij "groot getal, klein label" is het meest versleten patroon van het
-   web en staat niet voor niets op de verboden lijst in DESIGN.md. Het probleem
-   is niet alleen dat het saai is: een getal dat bij het inscrollen van 0 naar
-   1.284 telt leest als marketing. Bij een klapbord is de beweging zélf het
-   bewijs dat er iets veranderd is, want een klep valt alleen als er echt een
-   uur bij komt.
+   HET CONCEPT
+   Avinka's vlaggenschip schrijft rapporten. Hier krijgt Avinka er zelf een.
+   Dat is niet alleen een grap: een rapport is een van de weinige objecten die
+   van nature een rij labels met waarden vasthoudt, plus een opmerking van de
+   leerkracht onderaan. De inhoud past dus in het object in plaats van ernaast
+   te staan, en dat was de eis waar alle eerdere pogingen op sneuvelden
+   (decoratie naast een cijfer wordt hier consequent afgekeurd).
+
+   ⚠️ WAAROM HET GEEN KLAPBORD MEER IS
+   Er heeft hier een split-flap-bord gestaan, mechanisch en netjes gebouwd. De
+   eigenaar twijfelde terecht: het was een GADGET. De charme kwam uit het
+   mechaniek, niet uit Avinka, en elk merk kan een klapbord neerzetten. Een
+   rapport kan alleen een onderwijsproduct maken. Het klapbord staat nog in de
+   geschiedenis (commit ba8fa65) mocht het ooit terug moeten.
+
+   DE VORM: BREED EN LAAG
+   Een rapport is staand papier, en dat werd te langwerpig. Dit is daarom een
+   liggend vel dat de volle kolombreedte gebruikt, met de regels links en de
+   opmerking rechts. Het steekt uit een mintgroen mapje, want rapporten zitten
+   in een map; dat geeft in één element diepte én kleur, zonder rekwisieten.
+
+   DE BEWEGING: HET WORDT INGEVULD
+   De regels zijn voorgedrukt en meteen zichtbaar; de WAARDEN verschijnen als
+   verse inkt, één voor één, daarna schrijft de opmerking zichzelf en valt de
+   stempel. Dat is het enige nieuwe bewegingsnummer op deze pagina en het is
+   binnen 1,4 seconde klaar. ⚠️ Niet langer maken: de stempel viel eerst pas na
+   1,6 seconde en dan mist iedereen die doorscrolt het slotakkoord. Verandert er later echt een cijfer, dan gebruikt
+   dat dezelfde inkt-beweging: één bewegingstaal voor het hele object.
+   Het lift mee op het bestaande data-reveal-systeem, dus zonder JS of bij
+   prefers-reduced-motion staat alles er gewoon.
 
    DE EENHEID IS HET UUR, EN DAT IS EEN CORRECTIE
-   Hier stond eerst de SCHOOLDAG (bespaarde minuten gedeeld door 7,5 uur),
-   omdat een dag tastbaarder is dan een uur. Dat was fout, en de eigenaar ving
+   Hier stond eerst de SCHOOLDAG (minuten / 7,5 uur). Fout, en de eigenaar ving
    het: een schooldag is precies het deel van de dag waarin dit werk niet kán,
-   want dan staan de kinderen voor je. Avinka neemt werk van NA schooltijd over
-   (rapporten, oudercontact, toetsanalyse, lesvoorbereiding), dus bespaarde
-   vrije tijd omrekenen naar een eenheid werktijd klopt niet.
-
-   Overwogen als tastbaar alternatief: de avond van twee uur, gelijk aan de
-   belofte "win elke week 2 uur terug". Bewust niet gedaan. Een kleinere
-   eenheid maakt hetzelfde getal groter (90 uur is 12 schooldagen of 45
-   avonden) en dat is precies het soort oppoetsen dat deze pagina vermijdt.
-   Bovendien is "avond" een aanname over wanneer iemand dat werk doet. Het uur
-   heeft geen omrekening en dus niets om over te struikelen, en het is de
-   eenheid waarin de belofte op deze pagina al staat.
-
-   ⚠️ DE COMPOSITIE IS HERBOUWD (tweede ronde)
-   De eerste versie was drie regels onder elkaar, los op het papier. Dat was
-   geen ontwerp maar een lijstje: onnodig hoog, de rechterhelft van de sectie
-   bleef leeg, en de kaartjes zweefden zonder dat er een bord omheen zat. Wat
-   er nu anders is en waarom:
-   - er zit een KAST om de kaarten. Zonder behuizing zijn het losse kaartjes;
-     mét behuizing is het een apparaat. Donkergroen, want dan springen de
-     crème kleppen eruit, en dat is precies hoe een echt klapbord werkt.
-     Donkere objecten zijn al onderdeel van deze pagina: de toolkaarten in de
-     galerij zijn ook donker/groen/amber op papier.
-   - twee regels in plaats van drie. De twee kleine getallen staan náást
-     elkaar op de detailregel, zoals een vertrekbord één hoofdregel heeft en
-     daaronder de details. Dat scheelt een derde van de hoogte.
-   - de kop staat links, het bord rechts. De sectie gebruikt nu de volle
-     breedte in plaats van een halve kolom met leegte ernaast.
-   - het label bij het hoofdgetal is kaal ("uur"), niet "uur teruggewonnen":
-     dat woord staat al in de kop tien centimeter hoger.
+   want dan staan de kinderen voor je. Avinka neemt werk van ná schooltijd over.
+   Ook overwogen en afgewezen: de avond van twee uur. Een kleinere eenheid maakt
+   hetzelfde getal groter (90 uur = 12 schooldagen = 45 avonden) en dat is
+   oppoetsen. Het uur heeft geen omrekening en is de eenheid waarin de belofte
+   op deze pagina al staat.
 
    EERLIJKHEID
-   Er staat hier nooit een verzonnen of pijnlijk laag cijfer. Elke regel heeft
-   zijn eigen drempel (DREMPELS hieronder) en verschijnt pas als hij gehaald
-   is; is de bovenste regel niet gehaald, dan blijft de hele sectie weg.
+   Elke regel heeft een eigen drempel (DREMPELS) en verschijnt pas als die
+   gehaald is; haalt de bovenste het niet, dan blijft de hele sectie weg. Er
+   staat dus nooit een nul of een pijnlijk laag getal op de voorpagina.
 
    ⏳ BEKEND PLAFOND, BEWUST NIET NU OPGELOST
-   Dit bord telt ALLES bij elkaar en stopt nooit. Met de belofte van 2 uur per
-   week per leerkracht loopt dat zo:
-       30 leerkrachten:   260 uur per maand,   3.100 per jaar
-     1000 leerkrachten: 8.700 uur per maand, 104.000 per jaar
-   Na een paar jaar op schaal staat er dus een getal van zes of zeven cijfers,
-   en dan is het geen bord meer maar een kilometerstand: niemand voelt het
-   verschil tussen 312.000 en 340.000 uur. Hetzelfde geldt voor de
-   uitwerkingen. LAYOUT is niet het probleem (de kaarten krimpen mee met de
-   lengte van het getal, nagemeten tot zeven cijfers), BETEKENIS wel.
-
-   De oplossing als het zover is: tel een PERIODE in plaats van alles, het
-   liefst de afgelopen 30 dagen. Dat houdt het getal bij elke schaal in drie à
-   vier cijfers én het is sterker bewijs, want het laat zien dat het nú leeft
-   in plaats van dat er ooit veel gebeurd is. De dag-voor-dag-gegevens staan al
-   in de database (kolom `per_dag` op `statistiek`), dus er is alleen een
-   nieuwe SQL-functie nodig. Eigenaar heeft 3-8 bewust gekozen dit later te
-   doen: het speelt pas over jaren.
+   Dit telt ALLES bij elkaar en stopt nooit. Met 2 uur per week per leerkracht:
+   30 leerkrachten = 3.100 uur per jaar, 1000 leerkrachten = 104.000 per jaar.
+   Na een paar jaar op schaal is het een kilometerstand en voelt niemand het
+   verschil tussen 312.000 en 340.000. De oplossing als het zover is: tel de
+   afgelopen 30 dagen in plaats van alles (kolom `per_dag` op `statistiek`
+   heeft de data al, alleen een nieuwe SQL-functie nodig). Eigenaar heeft 3-8
+   bewust gekozen dit later te doen.
    ────────────────────────────────────────────────────────────────────────── */
 
 /* Per regel de ondergrens waaronder we hem niet tonen. Bewust voorzichtig:
-   liever een bord met één regel dan een regel waar "3 leerkrachten" op staat.
-   Honderd uur is een eerste mijlpaal die de moeite van het vertellen waard is.
-   Mag omhoog zodra de proefgroep groter is. */
+   liever een rapport met één regel dan een regel waar "3 leerkrachten" op
+   staat. Honderd uur is een eerste mijlpaal die het vertellen waard is. */
 const DREMPELS = { uren: 100, leerkrachten: 15, uitwerkingen: 250 };
 
-/* Hoe vaak de browser opnieuw kijkt of er iets veranderd is. Het bord
-   verspringt pas als er een heel uur bij komt, dus vaker heeft geen zin.
-   De databasekant wordt hier niet zwaarder van: het antwoord komt uit een
-   centrale cache van dezelfde duur (zie lib/cijfers.ts). */
+/* Hoe vaak de browser kijkt of er iets veranderd is. Het rapport verspringt
+   pas als er een heel uur bij komt, dus vaker heeft geen zin. De databasekant
+   wordt er niet zwaarder van: het antwoord komt uit een gedeelde cache van
+   dezelfde duur (zie lib/cijfers.ts). */
 const KIJK_INTERVAL_MS = 30_000;
 
 export function urenUit(minuten: number) {
   return Math.floor(minuten / 60);
 }
 
-/* ── Eén kaartje van het bord ────────────────────────────────────────────── */
-
-const KLEP_MS = 540;
-
-function halfCijfer(onder: boolean): CSSProperties {
-  /* Het cijfer staat op regelhoogte van de héle kaart; het onderste vlak
-     schuift de tekst een halve kaart omhoog. Zo valt de knip precies op de
-     naad, ook als de kaart meeschaalt met het scherm. */
-  return { lineHeight: "var(--kh)", marginTop: onder ? "calc(var(--kh) / -2)" : 0 };
-}
-
-/* De naad met zijn scharnier. 🔑 De pennetjes links en rechts zijn wat het
-   verschil maakt tussen "twee kaartjes" en "een mechaniek": zonder die pennen
-   ziet een klapbord eruit als een kaart met een streep erdoor. */
-function Naad() {
-  return (
-    <>
-      <div className="cb-naad pointer-events-none absolute inset-x-0 top-1/2 z-20 h-px" />
-      <div className="cb-naad-licht pointer-events-none absolute inset-x-0 top-1/2 z-20 mt-px h-px" />
-      <span className="cb-pen pointer-events-none absolute -left-[3px] top-1/2 z-30" />
-      <span className="cb-pen pointer-events-none absolute -right-[3px] top-1/2 z-30" />
-    </>
-  );
-}
-
-function KlapKaart({ cijfer }: { cijfer: string }) {
-  const [staat, setStaat] = useState({ toont: cijfer, vorig: cijfer, klapt: false, beurt: 0 });
-
-  /* 🔑 De omslag wordt hier tijdens het RENDEREN bijgesteld, niet in een
-     effect. React ondersteunt dat expliciet voor "state aanpassen als een prop
-     verandert": het rendert direct opnieuw zonder de tussenstand vast te
-     leggen. In een effect kreeg elke omslag een extra renderronde bovenop, en
-     dat is precies wat react-hooks/set-state-in-effect afvangt. */
-  if (staat.toont !== cijfer) {
-    /* Bij prefers-reduced-motion wisselt het cijfer gewoon, zonder klep. De
-       inhoud blijft volledig; alleen het mechaniek valt weg. */
-    const stil =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    setStaat({ toont: cijfer, vorig: staat.toont, klapt: !stil, beurt: staat.beurt + 1 });
-  }
-
-  /* `beurt` staat in de afhankelijkheden zodat een tweede omslag die binnenkomt
-     terwijl de eerste nog valt zijn eigen volle tijd krijgt, in plaats van te
-     worden afgekapt door de timer van de vorige. */
-  const { toont: getoond, vorig, klapt, beurt } = staat;
-  useEffect(() => {
-    if (!klapt) return;
-    const t = setTimeout(() => setStaat((s) => ({ ...s, klapt: false })), KLEP_MS);
-    return () => clearTimeout(t);
-  }, [klapt, beurt]);
-
-  const vlak =
-    "cb-vlak absolute inset-x-0 overflow-hidden text-center font-display font-black tabular-nums";
-
-  return (
-    <div className="cb-kaart relative select-none" style={{ perspective: "700px" }}>
-      {/* Onderhelft. ⚠️ Tijdens het klappen staat hier nog het OUDE cijfer: op
-         een echt klapbord komt de nieuwe onderhelft pas tevoorschijn als de
-         klep is neergevallen. Zet je hier meteen de nieuwe waarde, dan lees je
-         het complete nieuwe getal al terwijl het oude nog valt. */}
-      <div className={`${vlak} bottom-0 top-1/2 rounded-b-[9px]`}>
-        <span style={halfCijfer(true)} className="block">
-          {klapt ? vorig : getoond}
-        </span>
-      </div>
-      {/* Bovenhelft: de nieuwe waarde staat hier al klaar, afgedekt door de
-         vallende klep, zodat hij eronder vandaan komt in plaats van te
-         wisselen. */}
-      <div className={`${vlak} bottom-1/2 top-0 rounded-t-[9px]`}>
-        <span style={halfCijfer(false)} className="block">
-          {getoond}
-        </span>
-      </div>
-
-      {klapt && (
-        <>
-          <div
-            className={`${vlak} cb-val bottom-1/2 top-0 rounded-t-[9px]`}
-            style={{ transformOrigin: "bottom center" }}
-          >
-            <span style={halfCijfer(false)} className="block">
-              {vorig}
-            </span>
-          </div>
-          <div
-            className={`${vlak} cb-vang bottom-0 top-1/2 rounded-b-[9px]`}
-            style={{ transformOrigin: "top center" }}
-          >
-            <span style={halfCijfer(true)} className="block">
-              {getoond}
-            </span>
-          </div>
-        </>
-      )}
-
-      <Naad />
-    </div>
-  );
-}
-
-/* ── Eén aflezing: de kaarten plus hun woord ─────────────────────────────── */
-
-/* Hoeveel de kaarten krimpen naarmate het getal langer wordt. Zonder dit liep
-   het bord bij 1000 leerkrachten en 100.000 uitwerkingen buiten beeld op
-   mobiel (418px in een venster van 390) en groeide de kast van 230 naar 347
-   pixels hoog omdat de detailregel ging wrappen.
-
-   De wortel zorgt dat het meeschaalt zonder onleesbaar te worden: bij vijf
-   cijfers staat de kaart op 78% en bij zeven op 65%. Het bord wordt dus wél
-   breder bij een langer getal, alleen niet evenredig. */
-function kaartSchaal(aantalCijfers: number) {
-  return Math.min(1, Math.sqrt(3 / Math.max(3, aantalCijfers)));
-}
-
-function Aflezing({ waarde, label, klein }: { waarde: number; label: string; klein?: boolean }) {
-  /* Het getal wordt Nederlands geschreven, mét puntjes. ⚠️ Dat ontbrak: het
-     bord toonde "9412" terwijl de schermlezer "9.412" voorlas, en bij grote
-     getallen werd "100000" helemaal onleesbaar. De punt is geen kaart maar
-     een smal tussenstuk, want een punt op een klapkaart zou net zo goed een
-     cijfer kunnen zijn dat toevallig omslaat. */
-  const tekens = waarde.toLocaleString("nl-NL").split("");
-  const aantalCijfers = tekens.filter((t) => t !== ".").length;
-  /* De sleutel van een kaart is zijn POSITIE VAN RECHTS, hier zonder meeteller
-     berekend. Met een teller die in de map werd opgehoogd klaagde de
-     React-compiler terecht over een variabele die na het renderen nog
-     verandert; dit is dezelfde uitkomst, maar zonder muteren. */
-  const sleutelVoor = (i: number) => tekens.slice(i + 1).filter((t) => t !== ".").length + 1;
-
-  return (
-    <div
-      /* flex-wrap laat het bijschrift ONDER de cijfers vallen zodra ze samen
-         niet meer passen. Bij drie cijfers blijft het dus gewoon naast elkaar
-         staan, en pas bij een lang getal op een smal scherm zakt het woord een
-         regel. Dat werkt alleen doordat de kast een breedtegrens heeft
-         (max-width hieronder); zonder die grens groeit de kast eindeloos mee
-         en wrapt er nooit iets. */
-      className={`flex flex-wrap items-center gap-x-3 gap-y-1 ${klein ? "cb-klein" : ""}`}
-      /* --kh is de kaart (krimpt met de lengte van het getal), --kb blijft de
-         maat van de REGEL. Het woord hangt aan --kb, anders zou "uitwerkingen"
-         bij een getal van zes cijfers mee omlaag schalen naar 8 pixels. */
-      style={
-        { "--kh": `calc(var(--kb) * ${kaartSchaal(aantalCijfers).toFixed(3)})` } as CSSProperties
-      }
-    >
-      {/* ⚠️ aria-hidden op de kaarten, en dat is een reparatie geen luiheid.
-         Elke kaart bevat het cijfer TWEE keer (boven- en onderhelft, plus
-         tijdens het klappen nog twee kleppen), dus een schermlezer las
-         "1 1 7 7 1 1 uur". Dat is met kijken niet te zien; het kwam
-         boven water bij het uitlezen van de toegankelijkheidsboom. Het echte
-         getal staat nu één keer, onzichtbaar, vóór het woord. */}
-      <div aria-hidden className="flex items-stretch gap-[4px]">
-        {tekens.map((teken, i) => {
-          if (teken === ".") return <span key={`p${i}`} className="cb-punt" />;
-          /* Op de positie van LINKS sleutelen zou bij 999 → 1.000 elke kaart
-             een plek laten verspringen, waardoor het hele bord omklapt in
-             plaats van alleen de cijfers die echt veranderen. */
-          return <KlapKaart key={sleutelVoor(i)} cijfer={teken} />;
-        })}
-      </div>
-      <span
-        className="cb-woord font-display font-black leading-tight tracking-tight"
-        style={{ fontSize: "calc(var(--kb) * 0.3)" }}
-      >
-        <span className="sr-only">{waarde.toLocaleString("nl-NL")} </span>
-        {label}
-      </span>
-    </div>
-  );
-}
-
-/* ── De sectie ───────────────────────────────────────────────────────────── */
-
-export function WereldCijfers({
-  cijfers,
-  bijhouden = true,
-}: {
-  cijfers: Cijfers | null;
-  /* false voor een voorbeeldbord: dan blijven de meegegeven cijfers staan. */
-  bijhouden?: boolean;
-}) {
-  /* De beslissing of er iets te tonen valt staat bewust BUITEN het bord, en
-     het bijhouden zit erin. Zolang er te weinig data is bestaat het bord dus
-     niet, en wordt er ook niets opgehaald: geen enkel verzoek voor een sectie
-     die toch verborgen is. Zodra hij er staat gaat het bijhouden vanzelf mee. */
-  if (!cijfers) return null;
-  if (urenUit(cijfers.minuten) < DREMPELS.uren) return null;
-  return <Bord begin={cijfers} bijhouden={bijhouden} />;
-}
-
-/* ── Het bord bijhouden ──────────────────────────────────────────────────────
-   Elke halve minuut opnieuw kijken of er iets veranderd is, zodat het bord
-   echt meeloopt in plaats van stil te staan tot je de pagina herlaadt.
-
+/* ── Het rapport bijhouden ──────────────────────────────────────────────────
    🔑 TWEE SPAARZAAMHEDEN, want een teller die altijd doorvraagt is precies het
    soort verspilling dat dit product zegt te bestrijden:
-   1. alleen als de bezoeker het bord daadwerkelijk in beeld heeft. Het staat
-      onderaan een lange pagina, dus de meeste bezoekers komen er nooit; die
-      veroorzaken zo geen enkel verzoek.
-   2. alleen als het tabblad zichtbaar is. Een pagina die op de achtergrond
-      staat te pollen kost accuduur en levert niemand iets op.
-   De databasekant wordt er sowieso niet zwaarder van: het antwoord komt uit
-   een gedeelde cache van 30 seconden (lib/cijfers.ts), dus of er nu één
-   bezoeker kijkt of duizend, de database wordt even vaak bevraagd.
-   ──────────────────────────────────────────────────────────────────────────── */
+   1. alleen als het rapport in beeld is. Het staat onderaan een lange pagina,
+      dus de meeste bezoekers komen er nooit en veroorzaken geen verzoek.
+   2. alleen als het tabblad zichtbaar is.
+   ─────────────────────────────────────────────────────────────────────────── */
 function useBijgehoudenCijfers(begin: Cijfers, bijhouden: boolean) {
-  const [cijfers, setCijfers] = useState(begin);
+  /* ⚠️ `bron` houdt bij welke prop-waarde we hebben overgenomen. Zonder dat
+     kopieert de hook de begincijfers één keer bij het aankoppelen en kijkt hij
+     daarna nooit meer naar de prop. Op de echte pagina valt dat niet op (daar
+     komen de updates van binnenuit), maar op de proefpagina bleef het rapport
+     doodstil staan bij elke klik. Vergelijken op WAARDE en niet op object-
+     identiteit: de ouder maakt bij elke render een nieuw object, en op
+     identiteit zou een onschuldige hertekening een net opgehaald cijfer
+     terugzetten naar de serverwaarde. */
+  const sleutelVan = (c: Cijfers) => `${c.minuten}|${c.leerkrachten}|${c.uitwerkingen}`;
+  const [staat, setStaat] = useState({ cijfers: begin, bron: sleutelVan(begin) });
+  if (staat.bron !== sleutelVan(begin)) setStaat({ cijfers: begin, bron: sleutelVan(begin) });
+  const cijfers = staat.cijfers;
+
   const anker = useRef<HTMLElement>(null);
   const inBeeld = useRef(false);
 
   useEffect(() => {
     const el = anker.current;
-    /* Niet bijhouden bij een voorbeeldbord (?cijfers=demo en de proefpagina).
-       Zonder deze uitzondering haalt het bord na een halve minuut de échte
-       cijfers op, die onder de drempel liggen, en verdwijnt het voorbeeld
-       waar je juist naar aan het kijken bent. */
+    /* Niet bijhouden bij een voorbeeldrapport (?cijfers=demo en de proefpagina).
+       Zonder deze uitzondering haalt het na een halve minuut de échte cijfers
+       op, die onder de drempel liggen, en verdwijnt het voorbeeld waar je juist
+       naar aan het kijken bent. */
     if (!el || !bijhouden) return;
 
     const kijker = new IntersectionObserver(
@@ -329,10 +129,13 @@ function useBijgehoudenCijfers(begin: Cijfers, bijhouden: boolean) {
         const antwoord = await fetch("/api/cijfers");
         if (!antwoord.ok || antwoord.status === 204) return;
         const nieuw = (await antwoord.json()) as Cijfers;
-        if (!gestopt) setCijfers(nieuw);
+        /* De bron laten staan: dit komt van de server, niet van de prop. Zou
+           hij meeveranderen, dan denkt de vergelijking hierboven bij de
+           volgende render dat de prop is gewijzigd en springt het rapport
+           terug naar de serverwaarde. */
+        if (!gestopt) setStaat((s) => ({ ...s, cijfers: nieuw }));
       } catch {
-        /* Netwerk weg of server even niet bereikbaar: het bord blijft gewoon
-           op zijn laatste stand staan. Dat is een prima uitkomst. */
+        /* Netwerk weg: het rapport blijft op zijn laatste stand staan. */
       }
     };
 
@@ -347,219 +150,392 @@ function useBijgehoudenCijfers(begin: Cijfers, bijhouden: boolean) {
   return { cijfers, anker };
 }
 
-function Bord({ begin, bijhouden }: { begin: Cijfers; bijhouden: boolean }) {
+/* ── Eén ingevulde waarde ───────────────────────────────────────────────────
+   Bij binnenkomst verschijnt hij als verse inkt. Verandert het getal later
+   echt, dan doet hij precies hetzelfde: één bewegingstaal voor het object. */
+function Waarde({ getal, eenheid, groot }: { getal: number; eenheid?: string; groot?: boolean }) {
+  const [staat, setStaat] = useState({ toont: getal, vers: 0 });
+
+  /* Tijdens het renderen bijstellen in plaats van in een effect: React
+     ondersteunt dat voor "state aanpassen als een prop verandert", en het
+     scheelt een renderronde per wijziging (react-hooks/set-state-in-effect). */
+  if (staat.toont !== getal) setStaat({ toont: getal, vers: staat.vers + 1 });
+
+  return (
+    <span
+      /* De sleutel verandert bij elke nieuwe waarde, zodat de inkt-animatie
+         opnieuw start in plaats van alleen de tekst te verwisselen. */
+      key={staat.vers}
+      className={`rp-inkt tabular-nums ${groot ? "rp-groot" : "rp-klein"}`}
+    >
+      {staat.toont.toLocaleString("nl-NL")}
+      {/* De spatie staat er echt en niet alleen als marge: zonder tekstspatie
+         plakt een schermlezer het aan elkaar tot "1.284uur". */}
+      {eenheid && <span className="rp-eenheid"> {eenheid}</span>}
+    </span>
+  );
+}
+
+/* ── De stempel ─────────────────────────────────────────────────────────────
+   Het merkmoment: het vinkje, als afgedrukte stempel op het rapport. Bewust
+   een drukwerk-element en geen knutselspul (punaises en plakband zijn op deze
+   site expliciet afgekeurd). De inkt is doorschijnend en de ring heeft open
+   plekken, want een echte stempel drukt nooit helemaal vol af. */
+function Stempel() {
+  /* ⚠️ Eerste versie was een strakke cirkel met een vinkje erin, en dat leest
+     als een succes-icoontje uit een UI-kit: het gladste element op een vel dat
+     juist gedrukt moet lijken. Wat een stempel een stempel maakt is de
+     ONREGELMATIGHEID: de ring is nergens even dik, hij loopt niet rond, en de
+     inkt laat gaten waar het rubber het papier niet raakte. Daarom een
+     handgetekend pad in plaats van <circle>, met een ruwe rand eroverheen. */
+  return (
+    <svg viewBox="0 0 100 100" className="rp-stempel" aria-hidden>
+      <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+        {/* de ring, in drie ongelijke bogen met gaten ertussen */}
+        <path d="M77 26c9 12 10 30 -1 42" strokeWidth="6.5" />
+        <path d="M72 73c-13 11-33 12-46 3" strokeWidth="5.2" />
+        <path d="M21 70C10 57 11 34 25 23c8-6 19-8 29-6" strokeWidth="7" />
+        <path d="M63 19c4 1 8 3 11 5" strokeWidth="5.6" />
+        {/* het vinkje, met de dikte van een rubberstempel */}
+        <path d="M32 51.5l12.5 13.5L69 34" strokeWidth="10" />
+      </g>
+    </svg>
+  );
+}
+
+/* ── De sectie ───────────────────────────────────────────────────────────── */
+
+export function WereldCijfers({
+  cijfers,
+  bijhouden = true,
+}: {
+  cijfers: Cijfers | null;
+  /* false voor een voorbeeldrapport: dan blijven de meegegeven cijfers staan. */
+  bijhouden?: boolean;
+}) {
+  /* De beslissing of er iets te tonen valt staat bewust BUITEN het rapport, en
+     het bijhouden zit erin. Zolang er te weinig data is bestaat het rapport dus
+     niet, en wordt er ook niets opgehaald: geen enkel verzoek voor een sectie
+     die toch verborgen is. */
+  if (!cijfers) return null;
+  if (urenUit(cijfers.minuten) < DREMPELS.uren) return null;
+  return <Rapport begin={cijfers} bijhouden={bijhouden} />;
+}
+
+function Rapport({ begin, bijhouden }: { begin: Cijfers; bijhouden: boolean }) {
   const { cijfers, anker } = useBijgehoudenCijfers(begin, bijhouden);
 
   const uren = urenUit(cijfers.minuten);
-  /* Zakt het onder de drempel (kan in de praktijk niet, maar wel als er ooit
-     data wordt opgeschoond), dan verdwijnt het bord weer netjes. */
   if (uren < DREMPELS.uren) return null;
 
-  const toonLeerkrachten = cijfers.leerkrachten >= DREMPELS.leerkrachten;
-  const toonUitwerkingen = cijfers.uitwerkingen >= DREMPELS.uitwerkingen;
-  const detailregel = toonLeerkrachten || toonUitwerkingen;
+  /* De "vakken" van het rapport. Alleen wat de drempel haalt komt op het vel;
+     een rapport met één regel is beter dan een regel met een mager getal. */
+  const regels: Array<{ vak: string; getal: number; eenheid?: string; groot?: boolean }> = [
+    { vak: "Tijd teruggegeven", getal: uren, eenheid: "uur", groot: true },
+  ];
+  if (cijfers.leerkrachten >= DREMPELS.leerkrachten)
+    regels.push({ vak: "Leerkrachten geholpen", getal: cijfers.leerkrachten });
+  if (cijfers.uitwerkingen >= DREMPELS.uitwerkingen)
+    regels.push({ vak: "Uitwerkingen gemaakt", getal: cijfers.uitwerkingen });
 
   return (
     <section ref={anker} className="relative overflow-x-clip">
-      {/* 🔑 Dit vlak is bewust GROTER dan het bord en ligt eronder, niet
-         ernaast. In de vorige versie stond hier een vorm waarvan de rand
-         precies achter de grote cijfers langs sneed; een vorm die de inhoud
-         volledig omvat geeft het bord juist iets om op te liggen en heeft
-         nergens een rand die iets doorsnijdt. */}
+      {/* 🔑 Dit vlak is GROTER dan het rapport en ligt eronder. Een eerdere
+         versie had een vorm waarvan de rand precies door de inhoud sneed; een
+         vorm die de inhoud volledig omvat geeft het vel juist iets om op te
+         liggen en heeft nergens een rand die iets doorknipt. */}
       <KaartVlak
         kleur={VLAK_PAPIER}
         vorm="kiezel"
-        breedte={980}
-        hoogte={520}
-        style={{ right: "-14%", top: -30, transform: "rotate(-4deg)" }}
+        breedte={1180}
+        hoogte={560}
+        style={{ right: "-16%", top: -50, transform: "rotate(-3deg)" }}
         className="-z-10 hidden lg:block"
         tel={5}
       />
 
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-20 pt-4 lg:pb-24">
-        <Confetti punten={[{ x: "4%", y: "78%", r: 4, amber: true }]} />
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-20 pt-6 lg:pb-24">
+        <Confetti punten={[{ x: "3%", y: "18%", r: 4, amber: true }, { x: "97%", y: "84%", r: 5 }]} />
 
-        {/* Kop links, bord rechts. De sectie gebruikt zo de volle breedte en
-           blijft laag, in plaats van een stapel in de linkerhelft met leegte
-           ernaast. */}
-        <div className="grid items-center gap-x-12 gap-y-8 lg:grid-cols-[minmax(0,19rem)_1fr]">
-          <div>
-            <h2
-              data-reveal
-              className="font-display text-[clamp(1.875rem,3.4vw,2.75rem)] font-black leading-[1.05] tracking-tight [text-wrap:balance]"
-              style={{ color: DONKER }}
-            >
-              Samen teruggewonnen
-            </h2>
-            {/* Bronvermelding. Elke geloofwaardige teller die we bekeken hebben
-               heeft er een: een getal zonder herkomst is een claim. */}
-            {/* Deze zin heeft er even uit gestaan omdat hij NIET WAAR was: de
-               cijfers kwamen alleen uit de serverrendering, dus het bord stond
-               stil zolang je op de pagina was. Hij mag terug nu het bord zich
-               echt bijhoudt (useBijgehoudenCijfers hierboven). Blijf hem
-               nalopen als die lus ooit sneuvelt. */}
-            <p data-reveal className="mt-4 text-base leading-7 text-ink/65">
-              Opgeteld uit het werk dat de tools overnemen: rapporten, oudercontact,
-              toetsanalyse, lesvoorbereiding. Werk van na schooltijd. Het bord loopt
-              bij zolang je hier bent.
-            </p>
-          </div>
+        {/* Het mapje. Het vel schuift er met een transform net uit, zodat het
+           mint langs de onderkant en de rechterkant zichtbaar blijft: één
+           element dat diepte én kleur geeft, zonder er een rekwisiet bij te
+           halen. */}
+        <div data-reveal className="rp-map">
+          <article className="rp-vel">
+            <header className="rp-kop">
+              <h2 className="rp-titel">Het rapport van Avinka</h2>
+              {/* Bewust GEEN schooljaar: de cijfers tellen alles bij elkaar,
+                 dus een periode op het vel zou een claim zijn die niet klopt. */}
+              <p className="rp-periode">opgemaakt door alle leerkrachten samen</p>
+            </header>
 
-          {/* De kast. Een klapbord zonder behuizing is een stel losse kaartjes. */}
-          {/* min-w-0 op de rasterkolom: zonder dat mag een grid-cel niet
-             krimpen onder de breedte van zijn inhoud, en dan heeft de
-             max-width op de kast geen effect. */}
-          <div data-reveal className="cb-kast min-w-0 justify-self-start lg:justify-self-end">
-            <Aflezing waarde={uren} label="uur" />
-            {detailregel && (
-              <>
-                <div aria-hidden className="my-5 h-px bg-white/[0.13]" />
-                <div className="flex flex-wrap items-center gap-x-9 gap-y-4">
-                  {toonLeerkrachten && (
-                    <Aflezing klein waarde={cijfers.leerkrachten} label="leerkrachten" />
-                  )}
-                  {toonUitwerkingen && (
-                    <Aflezing klein waarde={cijfers.uitwerkingen} label="uitwerkingen" />
-                  )}
+            <div className="rp-body">
+              <dl className="rp-regels">
+                {regels.map((r) => (
+                  <div key={r.vak} className={`rp-regel ${r.groot ? "is-groot" : ""}`}>
+                    <dt className="rp-vak">{r.vak}</dt>
+                    {/* De stippellijn van een voorgedrukt formulier. Puur
+                       decoratief, dus buiten de voorleesvolgorde. */}
+                    <span aria-hidden className="rp-leider" />
+                    <dd className="rp-cijfer">
+                      <Waarde getal={r.getal} eenheid={r.eenheid} groot={r.groot} />
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+
+              <aside className="rp-opmerking">
+                <p className="rp-oplabel">opmerking van de leerkracht</p>
+                {/* Geen grapje om het grapje: dit is een claim die elders op de
+                   pagina ook staat en die klopt (de tool rekent, de AI schrijft
+                   alleen de taal eromheen). */}
+                <p className="rp-hand">Rekent zelf. Verzint nooit een getal.</p>
+                <div className="rp-stempelvak">
+                  <Stempel />
                 </div>
-              </>
-            )}
-          </div>
+              </aside>
+            </div>
+          </article>
         </div>
+
+        {/* Bronvermelding. Elke geloofwaardige teller die we bekeken hebben
+           heeft er een: een getal zonder herkomst is een claim. */}
+        <p data-reveal className="mt-7 max-w-2xl text-base leading-7 text-ink/65">
+          Opgeteld uit het werk dat de tools overnemen: rapporten, oudercontact,
+          toetsanalyse, lesvoorbereiding. Werk van na schooltijd. Het rapport
+          loopt bij zolang je hier bent.
+        </p>
       </div>
 
-      <BordStijl />
+      <RapportStijl />
     </section>
   );
 }
 
-function BordStijl() {
+function RapportStijl() {
   return (
     <style>{`
-      /* De kast: donkergroen, zodat de crème kleppen eruit springen. Dat is
-         hoe een echt klapbord werkt, en donkere objecten op papier zijn al
-         onderdeel van deze pagina (de toolkaarten in de galerij).
-         De lichte binnenrand bovenaan en de donkere onderin laten de kleppen
-         ín de kast liggen in plaats van erop. */
-      .cb-kast {
-        /* --kb is de maat van de regel, --kh die van de kaart. Ze zijn
-           gescheiden omdat de kaart krimpt bij een langer getal en het
-           bijschrift niet mee mag krimpen. */
-        --kb: clamp(66px, 8vw, 104px);
-        --kh: var(--kb);
-        /* De kartonkleur staat op de kast en niet op de kaart, zodat ook het
-           puntje tussen de duizendtallen hem kan erven. */
-        --kaart: var(--w-klapkaart, #fdfaf1);
-        background: ${DONKER};
-        border-radius: 20px;
-        /* Zonder deze grens groeit de kast met het getal mee tot buiten het
-           scherm: bij 100.000 uitwerkingen was hij 418px breed in een venster
-           van 390 en werd hij afgesneden. Met de grens wrapt de inhoud. */
-        max-width: 100%;
-        padding: clamp(18px, 2.4vw, 30px);
-        transform: rotate(-0.8deg);
-        box-shadow:
-          ${schaduw(30, 60, -28, 0.5)},
-          inset 0 1px 0 rgba(255,255,255,0.09),
-          inset 0 -22px 34px -26px rgba(0,0,0,0.75);
+      /* ── het mapje en het vel ── */
+      .rp-map {
+        background: ${MINT};
+        border-radius: 14px;
+        transform: rotate(-0.9deg);
+        box-shadow: ${schaduw(26, 52, -26, 0.42)};
       }
-      /* De detailregel is kleiner, maar het is hetzelfde apparaat. */
-      .cb-klein { --kb: clamp(40px, 4.6vw, 58px); }
-
-      /* De duizendtalpunt: een smal tussenstuk, geen kaart. Hij zit op de
-         hoogte van de kaartvoet, zoals een punt op de schrijfregel staat. */
-      .cb-punt {
-        position: relative;
-        width: calc(var(--kh) * 0.24);
-        align-self: stretch;
-      }
-      .cb-punt::after {
-        content: "";
-        position: absolute;
-        left: 50%;
-        bottom: calc(var(--kh) * 0.17);
-        width: calc(var(--kh) * 0.1);
-        height: calc(var(--kh) * 0.1);
-        margin-left: calc(var(--kh) * -0.05);
-        border-radius: 9999px;
-        background: var(--kaart, #fdfaf1);
+      .rp-vel {
+        background: #fffefb;
+        /* Een document heeft scherpere hoeken dan een UI-kaart. Op 12px las
+           dit vel als een card; op 5px als papier. */
+        border-radius: 5px;
+        /* ⚠️ Stond op -11/-13 en dan was de mint een groene schaduw in plaats
+           van een mapje. Verder eruit geschoven, en het vel staat schever dan
+           de map zodat je twee losse voorwerpen ziet en geen dubbele rand. */
+        transform: translate(-22px, -26px) rotate(1.15deg);
+        padding: clamp(22px, 3vw, 40px) clamp(22px, 3.4vw, 46px);
+        box-shadow: ${schaduw(20, 44, -22, 0.34)};
       }
 
-      .cb-woord { color: rgba(255,255,255,0.92); }
-      .cb-klein .cb-woord { color: rgba(255,255,255,0.72); }
-
-      .cb-kaart {
-        height: var(--kh);
-        width: calc(var(--kh) * 0.7);
-        border-radius: 11px;
-        /* Binnen een donkere kast hoort de schaduw van een kaart donker te
-           zijn, niet het groen dat de rest van de pagina op papier gebruikt. */
-        box-shadow: 0 6px 14px -6px rgba(0,0,0,0.55);
+      /* ── de kop van het formulier ── */
+      .rp-kop {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 6px 20px;
+        border-bottom: 2px solid rgba(var(--w-schaduw-rgb, 23,80,58), 0.13);
+        padding-bottom: clamp(14px, 1.8vw, 22px);
       }
-      .cb-kaart > div { font-size: calc(var(--kh) * 0.64); color: ${DONKER}; }
-
-      .cb-vlak {
-        background-color: var(--kaart);
-        /* Licht en schaduw over de kaartkleur heen, geen tweede en derde
-           kartontint: anders sluipen er kleuren het systeem in die nergens
-           gedefinieerd zijn en bij een thema niet meebewegen. */
-        background-image: linear-gradient(
-          158deg,
-          rgba(255,255,255,0.7) 0%,
-          rgba(255,255,255,0) 54%,
-          rgba(0,0,0,0.05) 100%
-        );
+      .rp-titel {
+        font-family: var(--font-display), Georgia, serif;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        line-height: 1.05;
+        font-size: clamp(1.7rem, 3.1vw, 2.6rem);
+        color: ${DONKER};
       }
-      /* ⚠️ De naad stond op zwart 0,22 met een wit randje van 0,7 eronder, en
-         die combinatie las als een doorhaling dwars door de cijfers in plaats
-         van als de kier tussen twee kleppen. Vooral op de kleine kaarten, waar
-         de lijn evenveel gewicht heeft maar het cijfer half zo groot is.
-         Allebei zachter nu: je moet de kier zien, niet de streep. */
-      .cb-naad { background: rgba(0,0,0,0.14); }
-      .cb-naad-licht { background: rgba(255,255,255,0.45); }
-      .cb-pen {
-        width: 5px;
-        height: 5px;
-        margin-top: -2.5px;
-        border-radius: 9999px;
-        /* Het asje is een lichte pen tegen de donkere kast. In de vorige
-           versie lag het bord op papier en was de pen juist donker; op deze
-           ondergrond zou die volledig wegvallen. */
-        background: rgba(255,255,255,0.34);
+      /* ⚠️ Deze twee kleine labels stonden op 0,55 en 0,5 dekking. Op wit is
+         dat ongeveer 3,2:1 bij een letter van 15 pixels, en daar geldt de eis
+         van 4,5:1. Op 0,62 halen ze 4,7:1. Nagemeten in de browser. */
+      .rp-periode {
+        font-size: clamp(0.95rem, 1.3vw, 1.05rem);
+        color: rgba(34, 28, 58, 0.62);
       }
 
-      .cb-val {
-        z-index: 25;
-        animation: cbVal ${KLEP_MS / 2}ms cubic-bezier(0.45,0.05,0.75,0.4) forwards;
-        backface-visibility: hidden;
+      /* ── de body: regels links, opmerking rechts ── */
+      .rp-body {
+        display: grid;
+        gap: clamp(24px, 3vw, 44px);
+        padding-top: clamp(18px, 2.2vw, 28px);
       }
-      .cb-vang {
-        z-index: 25;
-        animation: cbVang ${KLEP_MS / 2}ms cubic-bezier(0.15,0.6,0.35,1) ${KLEP_MS / 2}ms both;
-        backface-visibility: hidden;
+      @media (min-width: 900px) {
+        /* Zo blijft het vel breed en laag in plaats van langwerpig: de
+           opmerking staat naast de regels, niet eronder. */
+        .rp-body { grid-template-columns: minmax(0, 1fr) minmax(230px, 20rem); }
       }
-      @keyframes cbVal  { from { transform: rotateX(0deg); }  to { transform: rotateX(-90deg); } }
-      @keyframes cbVang { from { transform: rotateX(90deg); } to { transform: rotateX(0deg); } }
 
-      /* 🔑 DIT verkoopt de omslag, niet de rotatie zelf. Een vlak dat van het
-         licht wegdraait wordt donkerder, een vlak dat eronder vandaan komt
-         licht op. Zonder deze twee lagen stond de klep bij het narekenen op
-         53 graden en was er op het scherm bijna niets van te zien. */
-      .cb-val::before, .cb-vang::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        border-radius: inherit;
-        pointer-events: none;
-        background: rgba(0,0,0,0.6);
+      /* ⚠️ De rechterkolom (handschrift + stempel) is hoger dan de regels, en
+         met een vaste tussenruimte bleef er linksonder een gat van tachtig
+         pixels staan. De regels verdelen zich nu over de volle hoogte. */
+      .rp-regels {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: clamp(10px, 1.4vw, 18px);
+        min-height: 100%;
       }
-      .cb-val::before  { animation: cbDonker ${KLEP_MS / 2}ms cubic-bezier(0.45,0.05,0.75,0.4) forwards; }
-      .cb-vang::before { animation: cbLicht ${KLEP_MS / 2}ms cubic-bezier(0.15,0.6,0.35,1) ${KLEP_MS / 2}ms both; }
-      @keyframes cbDonker { from { opacity: 0; }   to { opacity: 0.45; } }
-      @keyframes cbLicht  { from { opacity: 0.45; } to { opacity: 0; } }
+      .rp-regel { display: flex; align-items: baseline; gap: 10px; }
+      .rp-vak {
+        font-size: clamp(1rem, 1.45vw, 1.15rem);
+        font-weight: 600;
+        color: rgba(34, 28, 58, 0.78);
+        white-space: nowrap;
+      }
+      /* De stippellijn van een voorgedrukt formulier. Hij hangt aan de
+         basislijn van de tekst, niet aan het midden van de regel; anders
+         zweeft hij los tussen label en cijfer. */
+      .rp-leider {
+        flex: 1 1 auto;
+        min-width: 18px;
+        border-bottom: 2px dotted rgba(34, 28, 58, 0.22);
+        transform: translateY(-0.32em);
+      }
+      .rp-cijfer {
+        font-family: var(--font-display), Georgia, serif;
+        font-weight: 900;
+        letter-spacing: -0.035em;
+        line-height: 0.95;
+        color: ${DONKER};
+        white-space: nowrap;
+      }
+      .rp-groot { font-size: clamp(2.5rem, 5.4vw, 4.1rem); }
+      .rp-klein { font-size: clamp(1.5rem, 2.7vw, 2.15rem); color: ${KOP}; }
+      /* De eenheid hoort BIJ het getal en is geen los label in een eigen
+         kolom. Als los woord viel "uur" na drie letters stil en bleef er een
+         gat rechts naast de hoofdregel staan. */
+      .rp-eenheid {
+        font-size: 0.4em;
+        font-weight: 800;
+        letter-spacing: 0;
+        margin-left: 0.1em;
+        color: ${KOP};
+      }
+
+      /* ── de opmerking ── */
+      .rp-opmerking { position: relative; }
+      @media (min-width: 900px) {
+        /* 🔑 Geen streepje maar een VOUW. Een rechte lijn tussen twee kolommen
+           is een tabelrand; een haarlijn met een zachte schaduw aan de ene
+           kant en een lichtrand aan de andere leest als papier dat een keer
+           dubbelgevouwen is geweest. Dat verkoopt het vel als vel, en het
+           kost één regel meer dan een border. */
+        .rp-opmerking {
+          padding-left: clamp(24px, 2.8vw, 38px);
+          border-left: 1px solid rgba(var(--w-schaduw-rgb, 23,80,58), 0.16);
+        }
+        /* ⚠️ De schaduw van de vouw MOET een los laagje zijn. Met een
+           box-shadow op de kolom zelf legt de browser hem om het hele blok
+           heen, en dan leest de rechterkolom als een tweede kaart bovenop het
+           vel: precies de kaart-in-kaart die DESIGN.md verbiedt. Dit laagje
+           ligt alleen links van de vouwlijn en dooft naar buiten uit. */
+        .rp-opmerking::before {
+          content: "";
+          position: absolute;
+          left: -15px;
+          top: -14px;
+          bottom: -14px;
+          width: 15px;
+          pointer-events: none;
+          background: linear-gradient(
+            to right,
+            rgba(var(--w-schaduw-rgb, 23,80,58), 0) 0%,
+            rgba(var(--w-schaduw-rgb, 23,80,58), 0.075) 100%
+          );
+        }
+      }
+      .rp-oplabel {
+        font-size: 0.95rem;
+        color: rgba(34, 28, 58, 0.62);
+        margin-bottom: 0.5rem;
+      }
+      .rp-hand {
+        font-family: var(--font-hand), cursive;
+        font-size: clamp(1.35rem, 2.1vw, 1.7rem);
+        line-height: 1.35;
+        color: ${KOP};
+        /* het schrijven: van links naar rechts vrijkomen */
+        clip-path: inset(0 0 0 0);
+      }
+      /* Een stempel wordt ergens neergedrukt, hij staat niet netjes in een
+         vakje. Deze zakt onder de tekst door en steekt links buiten de
+         kolomlijn, alsof iemand hem schuin heeft aangedrukt. */
+      .rp-stempelvak { margin-top: clamp(14px, 1.8vw, 22px); }
+      @media (min-width: 900px) {
+        .rp-stempelvak { margin-left: clamp(-46px, -3.4vw, -26px); }
+      }
+      .rp-stempel {
+        width: clamp(58px, 6vw, 74px);
+        height: auto;
+        color: var(--color-brand, #2f9e6e);
+        /* doorschijnende inkt: een stempel drukt nooit helemaal vol af */
+        opacity: 0.7;
+        transform: rotate(-13deg);
+      }
+
+      /* ── de beweging: het formulier wordt ingevuld ──
+         Alles hangt aan .is-in van de GROEP (het mapje), niet aan een reveal
+         per element. 🔑 De waarnemer kijkt per element en de vertraging telt
+         vanaf het moment dat dát element de drempel passeert; met losse
+         reveals starten elementen die in dezelfde scrollstap binnenkomen dus
+         tegelijk, en dan is de volgorde weg. */
+      /* ⚠️ Hier stond opacity:0 op de cijfers, het handschrift en de
+         stempel zolang de reveal nog niet gestart was. Dat is precies de val
+         waar de ontwerpregel voor waarschuwt: inhoud onzichtbaar maken in
+         afwachting van een klasse. Start de waarnemer om wat voor reden dan
+         ook niet, dan staat het vel er mét regels maar ZONDER cijfers.
+         Nu staat alles standaard gewoon zichtbaar en begint de animatie pas
+         op het moment dat .is-in erbij komt (het eerste keyframe zet de
+         doorzichtigheid dan zelf op nul). Het vel zit op dat moment nog in
+         zijn eigen reveal, dus je ziet er niets van knipperen. */
+      .anim .rp-map.is-in .rp-inkt {
+        animation: rpInkt 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+      .anim .rp-map.is-in .rp-regel:nth-child(1) .rp-inkt { animation-delay: 0.18s; }
+      .anim .rp-map.is-in .rp-regel:nth-child(2) .rp-inkt { animation-delay: 0.30s; }
+      .anim .rp-map.is-in .rp-regel:nth-child(3) .rp-inkt { animation-delay: 0.42s; }
+      @keyframes rpInkt {
+        from { opacity: 0; transform: translateY(7px); }
+        to   { opacity: 1; transform: none; }
+      }
+
+      /* Het handschrift komt van links vrij, alsof het geschreven wordt. */
+      .anim .rp-map.is-in .rp-hand {
+        animation: rpSchrijf 0.8s cubic-bezier(0.35, 0.6, 0.25, 1) 0.54s both;
+      }
+      @keyframes rpSchrijf {
+        from { opacity: 1; clip-path: inset(0 100% 0 0); }
+        to   { opacity: 1; clip-path: inset(0 0 0 0); }
+      }
+
+      /* De stempel valt als laatste, met de korte pop die DESIGN.md voor het
+         vinkje voorschrijft: onder 300ms, vanaf ongeveer 1.2, nooit vanaf 0. */
+      .anim .rp-map.is-in .rp-stempel {
+        animation: rpStempel 0.26s cubic-bezier(0.3, 1.5, 0.5, 1) 1.12s both;
+      }
+      @keyframes rpStempel {
+        from { opacity: 0; transform: rotate(-21deg) scale(1.3); }
+        to   { opacity: 0.7; transform: rotate(-13deg) scale(1); }
+      }
+
+      /* Een verse waarde die later binnenkomt gebruikt dezelfde inkt. Dit
+         geldt ook als de reveal al geweest is, want de sleutel van het element
+         verandert en de animatie start opnieuw. */
+      .anim .rp-map.is-in .rp-inkt { will-change: opacity, transform; }
 
       @media (prefers-reduced-motion: reduce) {
-        .cb-val, .cb-vang { display: none; }
+        .rp-inkt, .rp-hand, .rp-stempel { animation: none !important; opacity: 1 !important; }
+        .rp-stempel { opacity: 0.7 !important; }
+        .rp-hand { clip-path: none !important; }
       }
     `}</style>
   );
