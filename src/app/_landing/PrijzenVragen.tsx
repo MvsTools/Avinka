@@ -295,17 +295,12 @@ export function WereldPrijzen({
             /* Dicht = je hebt dit al, of het zit al in wat je hebt. Dan is de
                kaart geen aanbod meer maar informatie. */
             const dicht = stand.soort === "huidig" || stand.soort === "inbegrepen";
-            /* De held mag alleen uitgelicht blijven zolang hij ook echt te
-               kiezen is; een dichte kaart met "Meest gekozen" erop nodigt uit
-               tot iets wat niet kan.
-               ⚠️ Dit gaat alleen over het SIERAAD: de chip en de vorm
-               erachter. De MAAT van de heldkaart hangt aan `plan.held` en
-               blijft dus altijd hetzelfde, ook als hij dicht is. Anders is de
-               kaartenrij in de ene stand 34px hoger dan in de andere, en dan
-               landt de golf van het mintveld per bezoeker op een andere plek
-               in de kaart. En een prijstabel hoort niet te verspringen zodra
-               je van abonnement wisselt. */
-            const uitgelicht = Boolean(plan.held) && !dicht;
+            /* De held-uitlichting (chip + blob) hangt puur aan `plan.held`,
+               niet aan `dicht`. Die twee eerder wél aan elkaar knopen gaf een
+               kaart die van uiterlijk verschilde per bezoeker — precies wat
+               niet de bedoeling is: de kaart blijft in alle standen identiek,
+               alleen de knop onderin verandert. */
+            const uitgelicht = Boolean(plan.held);
             /* Blijft er nog maar één stap over (Compleet-klant die alleen naar
                Pro kan), dan is dat de enige actie op de pagina en verdient hij
                het volle gewicht, ook al is Pro niet de held. */
