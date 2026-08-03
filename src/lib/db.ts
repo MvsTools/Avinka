@@ -6,6 +6,7 @@
 // ════════════════════════════════════════════════════════════════════════
 import { createClient } from "@/utils/supabase/client";
 import { streakLeeftNog } from "@/lib/streak";
+import { haalStreakVakanties } from "@/lib/planning";
 import {
   type Abonnement,
   type AbonnementRow,
@@ -419,20 +420,23 @@ export async function getPerDag(): Promise<PerDag> {
   return (data.per_dag as PerDag) ?? {};
 }
 
-// Huidige streak (opeenvolgende werkdagen actief) + je persoonlijke record.
+// Huidige streak (opeenvolgende schooldagen actief) + je persoonlijke record +
+// verdiende vrijstellingen (vangen een gemiste schooldag op, zie streak.ts).
 // streak is 0 als de reeks inmiddels verbroken is (zie streakLeeftNog).
-export type StreakInfo = { streak: number; record: number };
+export type StreakInfo = { streak: number; record: number; freezes: number };
 export async function getStreak(): Promise<StreakInfo> {
   const sb = createClient();
   const { data, error } = await sb
     .from("statistiek")
-    .select("streak, streak_max, laatste_actief")
+    .select("streak, streak_max, streak_freezes, laatste_actief")
     .maybeSingle();
-  if (error || !data) return { streak: 0, record: 0 };
+  if (error || !data) return { streak: 0, record: 0, freezes: 0 };
   const opgeslagen = (data.streak as number) ?? 0;
   const record = (data.streak_max as number) ?? 0;
+  const freezes = (data.streak_freezes as number) ?? 0;
   const laatste = (data.laatste_actief as string | null) ?? null;
-  return { streak: streakLeeftNog(laatste, new Date()) ? opgeslagen : 0, record };
+  const vakanties = await haalStreakVakanties(sb);
+  return { streak: streakLeeftNog(laatste, new Date(), vakanties) ? opgeslagen : 0, record, freezes };
 }
 
 export type CommunityStats = {

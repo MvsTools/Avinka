@@ -19,7 +19,7 @@ import {
 import { metEigenVakanties } from "./eigen-vakanties";
 import { beschikbareSchooljaren, maakSchooljaar, periodesVan, schooljaarVoor } from "./schooljaar";
 import type { PlanItem, PlanningBron, Roosterblok, Taak } from "./types";
-import { isRegio, STANDAARD_REGIO, type Regio } from "./vakanties";
+import { isRegio, STANDAARD_REGIO, type Regio, type Vakantie } from "./vakanties";
 
 /** De vakantieregio van deze leerkracht. Niet ingevuld? Dan het landelijke midden. */
 export async function haalRegio(supabase: SupabaseClient): Promise<Regio> {
@@ -74,6 +74,23 @@ export async function haalItems(
     .gte("tot_datum", van)
     .order("datum");
   return ((data as ItemRij[] | null) ?? []).map(naarItem);
+}
+
+/**
+ * De vakanties om een streak tegen af te zetten (zie src/lib/streak.ts): de
+ * landelijke regio-kalender, aangevuld met de eigen schoolagenda als die
+ * gekoppeld is — precies zoals Mijn schooljaar dat ook al doet, zie
+ * metEigenVakanties. Kijkt alleen terug (een streak kijkt nooit vooruit), dus
+ * we halen ook maar een klein stukje agenda op, niet het hele schooljaar.
+ */
+export async function haalStreakVakanties(
+  supabase: SupabaseClient,
+  nu: string = vandaag(),
+): Promise<Vakantie[]> {
+  const regio = await haalRegio(supabase);
+  const jaren = beschikbareSchooljaren(regio, nu);
+  const items = await haalItems(supabase, plus(nu, -120), nu);
+  return jaren.flatMap((jaar) => metEigenVakanties(jaar, items).vakanties);
 }
 
 /**

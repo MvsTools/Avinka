@@ -118,6 +118,7 @@ export default function StatistiekenView() {
   const [comm, setComm] = useState<CommunityStats | null>(null);
   const [streak, setStreak] = useState(0);
   const [record, setRecord] = useState(0);
+  const [freezes, setFreezes] = useState(0);
   const [openTools, setOpenTools] = useState<Set<string>>(new Set());
   const toggleTool = (id: string) =>
     setOpenTools((s) => {
@@ -134,6 +135,7 @@ export default function StatistiekenView() {
     getStreak().then((s) => {
       setStreak(s.streak);
       setRecord(s.record);
+      setFreezes(s.freezes);
     });
   }, []);
 
@@ -206,7 +208,7 @@ export default function StatistiekenView() {
               )}
             </p>
           </div>
-          <StreakVlam streak={streak} record={record} />
+          <StreakVlam streak={streak} record={record} freezes={freezes} />
         </div>
       </div>
 
@@ -408,7 +410,15 @@ function Highlights({
 }
 
 // Duolingo-achtige vlam met je streak (opeenvolgende werkdagen actief).
-function StreakVlam({ streak, record }: { streak: number; record: number }) {
+function StreakVlam({
+  streak,
+  record,
+  freezes,
+}: {
+  streak: number;
+  record: number;
+  freezes: number;
+}) {
   const dood = streak === 0;
   const mijlpaal = huidigeMijlpaal(streak);
   const volgende = volgendeMijlpaal(streak);
@@ -464,6 +474,14 @@ function StreakVlam({ streak, record }: { streak: number; record: number }) {
       ) : null}
       {record > streak && record > 0 && (
         <p className="mt-1.5 text-xs text-white/55">Record: {record}</p>
+      )}
+      {freezes > 0 && (
+        <p
+          className="mt-1.5 text-xs text-white/75"
+          title="Vangt automatisch één gemiste schooldag op zonder dat je streak breekt"
+        >
+          ❄️ {freezes} {freezes === 1 ? "vrijstelling" : "vrijstellingen"}
+        </p>
       )}
     </div>
   );

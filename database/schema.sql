@@ -226,9 +226,13 @@ create table if not exists public.statistiek (
   tellers        jsonb not null default '{}'::jsonb,
   minuten        jsonb not null default '{}'::jsonb,  -- bespaarde minuten per soort (adaptief opgeteld)
   per_dag        jsonb not null default '{}'::jsonb,  -- per dag: { 'YYYY-MM-DD': { m: minuten, n: acties } } voor periode-filters
-  streak         int not null default 0,    -- opeenvolgende werkdagen actief
+  streak         int not null default 0,    -- opeenvolgende schooldagen actief
   streak_max     int not null default 0,    -- langste streak ooit (voor het "record")
-  laatste_actief date,                       -- laatste werkdag waarop iets gedaan is
+  -- Verdiende vrijstellingen: elke 10 schooldagen streak (2 weken) verdien je
+  -- er één bij, max. 2 in voorraad — die vangt automatisch precies één
+  -- gemiste schooldag op zonder dat de streak breekt.
+  streak_freezes int not null default 0,
+  laatste_actief date,                       -- laatste schooldag waarop iets gedaan is
   updated_at     timestamptz default now()
 );
 -- MIGRATIE voor een bestaande database (één keer draaien):
@@ -237,6 +241,7 @@ create table if not exists public.statistiek (
 --   alter table public.statistiek add column if not exists laatste_actief date;
 --   alter table public.statistiek add column if not exists minuten jsonb not null default '{}'::jsonb;
 --   alter table public.statistiek add column if not exists per_dag jsonb not null default '{}'::jsonb;
+--   alter table public.statistiek add column if not exists streak_freezes int not null default 0;
 -- EENMALIGE backfill van per_dag: zet het bestaande lifetime-totaal op 1 augustus (begin van
 -- het huidige schooljaar), zodat het meetelt in "Dit schooljaar" maar Vandaag/Deze week/Deze
 -- maand schoon op echte nieuwe data blijven.

@@ -7,7 +7,10 @@ import {
   getAantalVerwijzingenProef,
   getMijnReview,
   slaReviewOp,
+  getStreak,
+  getAbonnement,
 } from "@/lib/db";
+import { STREAK_MIJLPALEN } from "@/lib/streak";
 
 // Beloningsladder op basis van het aantal mensen dat zich via jouw uitnodiging aanmeldt.
 type Beloning = { vanaf: number; emoji: string; reward: string };
@@ -37,6 +40,16 @@ export default function BeloningenView({ lidSinds }: { lidSinds: string }) {
   const [link, setLink] = useState("");
   const [gekopieerd, setGekopieerd] = useState(false);
 
+  // ── Streak ── (record = hoogst ooit bereikte streak, streak_max; dat telt
+  // voor de beloning, niet de actuele streak — anders zou een gebroken en
+  // opnieuw opgebouwde streak steeds opnieuw kunnen "verdienen".)
+  const [streakRecord, setStreakRecord] = useState(0);
+
+  // Jaarklanten krijgen via het schooljaar-abonnement al "zomer gratis"
+  // (2 maanden) — het jubileum-cadeau (ook 1 maand gratis) stapelt daar niet
+  // bovenop en geldt dus alleen voor maandklanten (zie abonnementen-tiers).
+  const [abonVorm, setAbonVorm] = useState<"maand" | "jaar" | null>(null);
+
   // ── Review ──
   const [review, setReview] = useState<ReviewData | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -63,6 +76,8 @@ export default function BeloningenView({ lidSinds }: { lidSinds: string }) {
         setMagTonen(r.magTonen);
       }
     });
+    getStreak().then((s) => setStreakRecord(s.record));
+    getAbonnement().then((a) => setAbonVorm(a.vorm));
   }, []);
 
   async function kopieer() {
@@ -206,6 +221,31 @@ export default function BeloningenView({ lidSinds }: { lidSinds: string }) {
           ))}
         </div>
 
+        {/* Groep: streak */}
+        <SubKop>Voor je streak</SubKop>
+        <div className="divide-y divide-black/5">
+          {STREAK_MIJLPALEN.map((m) => (
+            <Rij
+              key={m.vanaf}
+              emoji={m.emoji}
+              titel={`${m.vanaf} dagen op rij — ${m.titel}`}
+              reward={m.reward}
+              waarde={streakRecord}
+              doel={m.vanaf}
+              behaald={streakRecord >= m.vanaf}
+              rechts={
+                streakRecord >= m.vanaf ? (
+                  <span className="text-emerald-600">Behaald ✓</span>
+                ) : (
+                  <span className="text-ink/50">
+                    {streakRecord}/{m.vanaf}
+                  </span>
+                )
+              }
+            />
+          ))}
+        </div>
+
         {/* Groep: overige beloningen */}
         <SubKop>Andere manieren om te sparen</SubKop>
         <div className="divide-y divide-black/5">
@@ -297,33 +337,25 @@ export default function BeloningenView({ lidSinds }: { lidSinds: string }) {
             )}
           </Rij>
 
-          {/* Jaarabonnement */}
-          <Rij
-            emoji="📅"
-            titel="Neem een jaarabonnement"
-            reward="2 maanden gratis"
-            waarde={0}
-            doel={1}
-            behaald={false}
-            rechts={<span className="text-ink/40">Binnenkort</span>}
-          />
-
-          {/* Jubileum */}
-          <Rij
-            emoji="🎂"
-            titel="Een jaar trouw lid"
-            reward="1 maand gratis"
-            waarde={maanden}
-            doel={jubileumDoel}
-            behaald={maanden >= jubileumDoel}
-            rechts={
-              maanden >= jubileumDoel ? (
-                <span className="text-emerald-600">Behaald ✓</span>
-              ) : (
-                <span className="text-ink/50">{maanden}/12 mnd</span>
-              )
-            }
-          />
+          {/* Jubileum — alleen voor maandklanten: het jaarabonnement geeft al
+              "zomer gratis", dus dit stapelt daar niet bovenop. */}
+          {abonVorm !== "jaar" && (
+            <Rij
+              emoji="🎂"
+              titel="Een jaar trouw lid"
+              reward="1 maand gratis"
+              waarde={maanden}
+              doel={jubileumDoel}
+              behaald={maanden >= jubileumDoel}
+              rechts={
+                maanden >= jubileumDoel ? (
+                  <span className="text-emerald-600">Behaald ✓</span>
+                ) : (
+                  <span className="text-ink/50">{maanden}/12 mnd</span>
+                )
+              }
+            />
+          )}
         </div>
       </div>
 
