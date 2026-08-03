@@ -3,15 +3,15 @@
 import { useState } from "react";
 import { dagbeeld, dagnaam, kort, komendeItems, randKleur, verschil } from "@/lib/planning";
 import type { PlanningBron, PlanItem } from "@/lib/planning";
-import { STIP } from "./schooljaar-stijl";
 import { Kaartvenster, Afspraakregel, Dagstatus } from "./SchooljaarDagkaart";
+import DagTegel from "./DagTegel";
 
 // De rij bovenaan Start (fase 3, "de lesdag"): de datum, hoeveel weken het nog
 // is tot de volgende vakantie, en wat er vandaag speelt (agenda + taken met
 // een deadline vandaag). Rekent met dezelfde `dagbeeld` als Mijn schooljaar,
 // dus het klopt altijd met wat je daar ziet. Kleur volgt de betekenis: de
 // vakantietegel krijgt dezelfde groentint als een vakantie overal in Mijn
-// schooljaar, en elke afspraak zijn eigen STIP-kleur — geen kleur zonder reden.
+// schooljaar. Geen kleur zonder reden.
 //
 // Elk vakje is een knop die verder inzoomt: je lesrooster van vandaag, de
 // periode waar je in zit, of je hele agenda — met dezelfde onderdelen
@@ -82,49 +82,19 @@ function AgendaIcon({ className }: { className?: string }) {
 /** Eén tegel: icoon-badge + label boven, eigen inhoud eronder, ingesprongen
  *  onder het icoon zodat de inhoud een vaste, rustige linkerlijn houdt. Klik
  *  erop en er gaat een paneel open met meer over dat onderwerp. */
-function Tegel({
-  icon,
-  badge,
-  label,
-  labelKleur = "text-ink/40",
-  achtergrond = "border-black/5 bg-white",
-  onClick,
-  children,
-}: {
-  icon: React.ReactNode;
-  badge: string;
-  label: string;
-  labelKleur?: string;
-  achtergrond?: string;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={
-        "rounded-3xl border px-5 py-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md " +
-        achtergrond
-      }
-    >
-      <div className="flex items-center gap-3">
-        <span className={"flex h-10 w-10 shrink-0 items-center justify-center rounded-xl " + badge}>{icon}</span>
-        <p className={"text-xs font-bold uppercase tracking-wider " + labelKleur}>{label}</p>
-      </div>
-      <div className="mt-2 pl-[52px]">{children}</div>
-    </button>
-  );
-}
-
+// `extraTegel` schuift een vierde tegel in dezelfde rij (de overdracht van je
+// collega's). Zit er geen in, dan blijven het gewoon drie kolommen — een lege
+// vierde plek zou de rij scheef trekken.
 export default function VandaagRij({
   bron,
   vandaag,
   groepen = [],
+  extraTegel,
 }: {
   bron: PlanningBron;
   vandaag: string;
   groepen?: number[];
+  extraTegel?: React.ReactNode;
 }) {
   const { schooljaar } = bron;
   const beeld = dagbeeld(bron, vandaag);
@@ -170,8 +140,12 @@ export default function VandaagRij({
 
   return (
     <>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Tegel
+      {/* auto-fit in plaats van een vast aantal kolommen: de overdracht-tegel
+          verschijnt alleen als je een groep deelt, en een vaste vierde kolom
+          zou anders leeg blijven staan. Lege sporen vallen bij auto-fit
+          vanzelf weg, dus drie tegels verdelen de rij netjes met z'n drieën. */}
+      <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(220px,1fr))]">
+        <DagTegel
           icon={<CalendarIcon className="h-5 w-5" />}
           badge="bg-ink/[0.06] text-ink/70"
           label="Vandaag"
@@ -181,9 +155,9 @@ export default function VandaagRij({
             {hoofdletter(dagnaam(vandaag))} {kort(vandaag)}
           </p>
           {datumKlein && <p className="mt-0.5 text-sm text-ink/60">{datumKlein}</p>}
-        </Tegel>
+        </DagTegel>
 
-        <Tegel
+        <DagTegel
           icon={<SunIcon className="h-5 w-5" />}
           badge="bg-brand text-white"
           label={beeld.vakantie ? "Vakantie" : "Volgende vakantie"}
@@ -203,46 +177,39 @@ export default function VandaagRij({
               )}
             </>
           )}
-        </Tegel>
+        </DagTegel>
 
-        <Tegel
+        <DagTegel
           icon={<AgendaIcon className="h-5 w-5" />}
           badge="bg-ink/[0.06] text-ink/70"
           label="Deze dag"
           onClick={() => setOpen("agenda")}
         >
+          {/* Eén dikke regel + één fijne regel, net als de tegels ernaast. De
+              hele lijst stond hier eerst uitgeschreven, waardoor deze tegel twee
+              keer zo hoog werd als de rest en de rij rommelig oogde. De lijst
+              staat één klik verderop, in het venster. */}
           {regels.length ? (
             <>
               <p className="truncate text-lg font-bold leading-tight text-ink">
                 {regels[0].soort === "afspraak" ? regels[0].item.titel : regels[0].item.tekst}
               </p>
-              <p className="mt-0.5 text-sm text-ink/60">
+              <p className="truncate text-sm text-ink/60">
                 {regels[0].soort === "afspraak" && !regels[0].item.heleDag && regels[0].item.begin
                   ? regels[0].item.begin
                   : "Vandaag"}
+                {regels.length > 1 && ` · nog ${regels.length - 1} andere`}
               </p>
-              {regels.length > 1 && (
-                <ul className="mt-2 flex flex-col gap-1 border-t border-black/5 pt-2">
-                  {regels.slice(1, 4).map((r, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-ink/70">
-                      {r.soort === "afspraak" ? (
-                        <span aria-hidden className={"h-2 w-2 shrink-0 rounded-full " + STIP[r.item.soort]} />
-                      ) : (
-                        <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-ink/30" />
-                      )}
-                      <span className="min-w-0 flex-1 truncate">
-                        {r.soort === "afspraak" ? r.item.titel : r.item.tekst}
-                      </span>
-                    </li>
-                  ))}
-                  {regels.length > 4 && <li className="text-sm text-ink/50">+ {regels.length - 4} meer</li>}
-                </ul>
-              )}
             </>
           ) : (
             <p className="text-lg font-bold leading-tight text-ink">Niets gepland</p>
           )}
-        </Tegel>
+        </DagTegel>
+
+        {/* De overdracht-tegel levert zelf ook zijn opengeklapte paneel, en dat
+            gaat als `col-span-full` over de hele rij — vandaar dat hij ín het
+            raster staat en niet ernaast. */}
+        {extraTegel}
       </div>
 
       {open === "dag" && (

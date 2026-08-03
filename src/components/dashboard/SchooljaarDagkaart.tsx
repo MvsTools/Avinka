@@ -24,16 +24,28 @@ export function Kaartvenster({
 }) {
   const kaart = useRef<HTMLDivElement>(null);
 
-  // Escape sluit, en het venster krijgt de aandacht zodat je met het toetsenbord
-  // niet achter het kaartje verdwaalt.
+  // De sluit-functie komt vrijwel altijd binnen als een verse arrow-functie
+  // (`sluit={() => setOpen(null)}`), dus als afhankelijkheid verandert hij bij
+  // ELKE render van de ouder. Stond hij in de dependency-array, dan draaide de
+  // focus-regel hieronder telkens opnieuw — en pakte het venster de aandacht af
+  // van wat er op dat moment gebeurde. In een venster met een tekstveld betekent
+  // dat: één letter typen en je staat er weer buiten. Daarom via een ref, zodat
+  // het effect alleen bij openen draait maar wél de nieuwste functie aanroept.
+  const sluitRef = useRef(sluit);
+  useEffect(() => {
+    sluitRef.current = sluit;
+  });
+
+  // Escape sluit, en het venster krijgt bij openen de aandacht zodat je met het
+  // toetsenbord niet achter het kaartje verdwaalt.
   useEffect(() => {
     const toets = (e: KeyboardEvent) => {
-      if (e.key === "Escape") sluit();
+      if (e.key === "Escape") sluitRef.current();
     };
     document.addEventListener("keydown", toets);
     kaart.current?.focus();
     return () => document.removeEventListener("keydown", toets);
-  }, [sluit]);
+  }, []);
 
   return (
     <div

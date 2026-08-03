@@ -11,8 +11,8 @@ export const VOORWAARDEN = {
 };
 
 export const PRIVACY = {
-  versie: "2026-07-02",
-  weergave: "2 juli 2026",
+  versie: "2026-08-03",
+  weergave: "3 augustus 2026",
 };
 
 // Korte samenvatting van wat er in de LAATSTE inhoudelijke wijziging veranderde.
@@ -20,7 +20,7 @@ export const PRIVACY = {
 // leerkracht in de her-akkoord-pop-up. Laat leeg als er (nog) niets inhoudelijks
 // is veranderd; de pop-up toont dan alleen de nette vraag om opnieuw akkoord te gaan.
 export const WIJZIGING_SAMENVATTING: string[] = [
-  "We hebben opgeschreven dat een abonnement persoonlijk is en niet bedoeld is om met collega's te delen.",
-  "Er geldt voortaan een redelijkheidsgrens voor het gebruik van de AI-functies. Die is ruim: normaal gebruik loopt er niet tegenaan, ook niet in een drukke rapportperiode.",
-  "Je ziet je actuele stand terug in je instellingen, onder “Verbruik”.",
+  "Je kunt een groep voortaan samen draaien met collega's. Deel je een groep, dan kun je elkaar een korte overdracht sturen.",
+  "Zo'n bericht wordt vervangen zodra diezelfde persoon een nieuw bericht stuurt, en verdwijnt vanzelf na 30 dagen zonder wijziging. Er blijft dus geen geschiedenis staan.",
+  "Wat je met een collega deelt hangt af van de rol die je hem geeft: alles, of alles behalve de rapportteksten.",
 ];

@@ -124,6 +124,12 @@ export default function PrivacyPage() {
             <strong>Klasplattegronden</strong> die je opslaat, met de voornamen die je daarin
             hebt gezet.
           </li>
+          <li>
+            <strong>De overdracht</strong> voor collega&apos;s met wie je een groep deelt:
+            één kort bericht per persoon, dat wordt vervangen zodra diegene een nieuw bericht
+            stuurt. Er blijft dus geen geschiedenis staan, en na 30 dagen zonder wijziging
+            verdwijnt het bericht vanzelf.
+          </li>
         </ul>
         <p>
           Wat we <strong>bewust níét</strong> automatisch bewaren: toetsanalyses met cijfers
@@ -264,6 +270,10 @@ export default function PrivacyPage() {
             <strong>Concept-rapportteksten:</strong> maximaal 90 dagen na de laatste
             bewerking, daarna worden ze automatisch verwijderd. Geen permanent archief van
             leerlinggegevens.
+          </li>
+          <li>
+            <strong>De overdracht:</strong> maximaal 30 dagen na het laatste bericht, en
+            eerder als diezelfde persoon een nieuw bericht stuurt (dat vervangt het oude).
           </li>
           <li>
             <strong>Account-, klas- en eigen gegevens:</strong> zolang je een account hebt.

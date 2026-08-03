@@ -2,7 +2,19 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { addTaak, getTaken, setTaakGedaan, setTaakDeadline, type Taak } from "@/lib/db";
+import {
+  addTaak,
+  getTaken,
+  setTaakGedaan,
+  setTaakDeadline,
+  getAlleDuoTaken,
+  getGedeeldeKlassen,
+  getKlasCollegas,
+  getMijnGebruikerId,
+  setDuoTaakGedaan,
+  type Taak,
+  type DuoTaak,
+} from "@/lib/db";
 
 // Compact takenlijst-knopje in de header, naast de streak. Ingeklapt zie je
 // alleen hoeveel er openstaat; klik opent een klein paneeltje met je open taken.
@@ -15,8 +27,32 @@ export default function TakenOverzicht() {
   const [invoer, setInvoer] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
+  // Gedeelde taken van de groepen die je met een collega draait.
+  const [duoTaken, setDuoTaken] = useState<DuoTaak[]>([]);
+  const [klasNamen, setKlasNamen] = useState<Record<string, string>>({});
+  const [namen, setNamen] = useState<Record<string, string>>({});
+  const [mijnId, setMijnId] = useState<string | null>(null);
+
   useEffect(() => {
     getTaken().then(setTaken);
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      const [mij, gedeeld, alle] = await Promise.all([
+        getMijnGebruikerId(),
+        getGedeeldeKlassen(),
+        getAlleDuoTaken(),
+      ]);
+      setMijnId(mij);
+      setDuoTaken(alle);
+      setKlasNamen(Object.fromEntries(gedeeld.map((g) => [g.klasId, g.klasNaam])));
+      // Voornamen erbij, zodat je ziet voor wie een taak is in plaats van een id.
+      const collegas = await Promise.all(gedeeld.map((g) => getKlasCollegas(g.klasId)));
+      const n: Record<string, string> = {};
+      collegas.flat().forEach((c) => (n[c.userId] = c.voornaam || "Collega"));
+      setNamen(n);
+    })();
   }, []);
 
   // Klik buiten het paneeltje sluit het.
@@ -45,6 +81,16 @@ export default function TakenOverzicht() {
       if (b.deadline) return 1;
       return 0;
     });
+
+  // Gedeelde taken die op JOUW bord liggen: aan jou toegewezen, óf aan niemand
+  // (dan is het van de hele groep en zien alle collega's 'm hier staan).
+  const duoOpen = duoTaken.filter((t) => !t.gedaan);
+  const duoVoorMij = duoOpen.filter((t) => !t.toegewezenAan || t.toegewezenAan === mijnId);
+
+  function vinkDuoAf(taak: DuoTaak) {
+    setDuoTaken((ts) => ts.map((t) => (t.id === taak.id ? { ...t, gedaan: true } : t)));
+    setDuoTaakGedaan(taak.id, true);
+  }
 
   function vinkAf(taak: Taak) {
     // Wekelijkse taak afvinken = niet "klaar", maar een week vooruit plannen.
@@ -84,7 +130,8 @@ export default function TakenOverzicht() {
           📋
         </span>
         <span className="text-sm font-bold text-ink">
-          {open.length} {open.length === 1 ? "taak" : "taken"}
+          {open.length + duoVoorMij.length}{" "}
+          {open.length + duoVoorMij.length === 1 ? "taak" : "taken"}
         </span>
         <svg
           viewBox="0 0 24 24"
@@ -101,8 +148,15 @@ export default function TakenOverzicht() {
       </button>
 
       {uit && (
-        <div className="absolute right-0 top-full z-30 mt-2 w-72 rounded-2xl border border-black/10 bg-white p-2 shadow-xl">
-          {open.length === 0 ? (
+        <div className="absolute right-0 top-full z-30 mt-2 w-80 rounded-2xl border border-black/10 bg-white p-2 shadow-xl">
+          {/* Persoonlijk en samen blijven gescheiden: het zijn twee lijsten die
+              toevallig op dezelfde plek samenkomen, geen één grote hoop. */}
+          {duoOpen.length > 0 && open.length > 0 && (
+            <p className="px-2 pb-1 pt-1 text-xs font-bold uppercase tracking-wide text-ink/40">
+              Persoonlijk
+            </p>
+          )}
+          {open.length === 0 && duoOpen.length === 0 ? (
             <p className="px-2 py-3 text-sm text-ink/55">Niets meer open. Lekker bezig!</p>
           ) : (
             <ul className="flex max-h-72 flex-col overflow-y-auto">
@@ -141,6 +195,51 @@ export default function TakenOverzicht() {
               ))}
             </ul>
           )}
+          {/* ── Samen: alle open taken van de groep, ook die van je collega ── */}
+          {duoOpen.length > 0 && (
+            <>
+              <p className="border-t border-black/5 px-2 pb-1 pt-2 text-xs font-bold uppercase tracking-wide text-ink/40">
+                Samen
+              </p>
+              <ul className="flex max-h-52 flex-col overflow-y-auto">
+                {duoOpen.map((t) => {
+                  const vanIemandAnders = !!t.toegewezenAan && t.toegewezenAan !== mijnId;
+                  return (
+                    <li key={t.id}>
+                      <button
+                        type="button"
+                        onClick={() => vinkDuoAf(t)}
+                        className="group flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition hover:bg-cream"
+                        title="Afvinken"
+                      >
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-black/15 text-white transition group-hover:border-brand group-hover:bg-brand">
+                          <svg viewBox="0 0 24 24" className="h-3 w-3 opacity-0 transition group-hover:opacity-100" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                            <path d="M5 12l5 5L20 7" />
+                          </svg>
+                        </span>
+                        <span
+                          className={
+                            "min-w-0 flex-1 text-sm " +
+                            (vanIemandAnders ? "text-ink/45" : "text-ink/80")
+                          }
+                        >
+                          {t.tekst}
+                        </span>
+                        <span className="shrink-0 rounded-full bg-cream px-2 py-0.5 text-xs font-semibold text-ink/55">
+                          {t.toegewezenAan
+                            ? t.toegewezenAan === mijnId
+                              ? "Ik"
+                              : namen[t.toegewezenAan] || "Collega"
+                            : klasNamen[t.klasId] || "Samen"}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
+
           <form onSubmit={voegToe} className="mt-1 flex items-center gap-2 border-t border-black/5 px-2 pt-2">
             <input
               value={invoer}
