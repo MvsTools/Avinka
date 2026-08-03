@@ -28,8 +28,14 @@ export default function DagTegel({
     <button
       type="button"
       onClick={onClick}
+      // ⚠️ `flex flex-col` is hier geen opmaakvoorkeur maar een reparatie: een
+      // <button> centreert zijn inhoud verticaal zodra hij hoger wordt dan die
+      // inhoud. De tegels zijn even hoog (het langste blok bepaalt dat), dus in
+      // de kortere tegels zakte alles naar het midden en stond het label van de
+      // langste tegel hoger dan de rest. Als flex-kolom begint de inhoud
+      // gewoon bovenaan, in alle vier.
       className={
-        "rounded-3xl border px-5 py-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md " +
+        "flex flex-col rounded-3xl border px-5 py-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md " +
         achtergrond
       }
     >
