@@ -106,7 +106,7 @@ export default function ProefScherm() {
       </div>
 
       <div className="relative z-10 mt-10">
-        <WereldCijfers cijfers={cijfers} />
+        <WereldCijfers cijfers={cijfers} bijhouden={false} />
       </div>
     </div>
   );

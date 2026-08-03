@@ -9,7 +9,7 @@ import Footer from "@/components/Footer";
 import { heeftBetaaldAbonnement } from "@/lib/abonnement";
 import { getAbonnementServer } from "@/lib/abonnement-server";
 import Landing from "./_landing/Landing";
-import type { Cijfers } from "./_landing/Cijfers";
+import { haalCijfers } from "@/lib/cijfers";
 
 /* ──────────────────────────────────────────────────────────────────────────
    DE LANDINGSPAGINA.
@@ -69,22 +69,9 @@ function zoekAfbeelding(basis: string) {
    kunnen beoordelen, niet iets wat een bezoeker tegenkomt. */
 const DEMO_CIJFERS = { minuten: 77_040, leerkrachten: 37, uitwerkingen: 9_412 };
 
-async function haalCijfers(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-): Promise<Cijfers | null> {
-  try {
-    const { data, error } = await supabase.rpc("avinka_landing_cijfers");
-    if (error || !data) return null;
-    const d = data as { minuten?: number; leerkrachten?: number; uitwerkingen?: number };
-    return {
-      minuten: Number(d.minuten ?? 0),
-      leerkrachten: Number(d.leerkrachten ?? 0),
-      uitwerkingen: Number(d.uitwerkingen ?? 0),
-    };
-  } catch {
-    return null;
-  }
-}
+/* Het ophalen zelf staat in lib/cijfers.ts, samen met de cache. Die bron wordt
+   gedeeld met /api/cijfers, waar de browser elke halve minuut op klopt om het
+   bord te laten bijlopen: één implementatie, één cache. */
 
 export default async function Home({
   searchParams,
@@ -119,7 +106,8 @@ export default async function Home({
         fotoBestand={zoekAfbeelding("michael")}
         ingelogd={Boolean(user)}
         toonPrijzen={toonPrijzen}
-        cijfers={params.cijfers === "demo" ? DEMO_CIJFERS : await haalCijfers(supabase)}
+        cijfers={params.cijfers === "demo" ? DEMO_CIJFERS : await haalCijfers()}
+        bijhouden={params.cijfers !== "demo"}
       />
       <Footer maxWidth="max-w-5xl" />
     </div>

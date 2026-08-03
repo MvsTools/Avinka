@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { Confetti, DONKER, VLAK_PAPIER, KaartVlak, schaduw } from "./Wereld";
+import type { Cijfers } from "@/lib/cijfers";
+
+export type { Cijfers };
 
 /* ── "Samen teruggewonnen": het klapbord ────────────────────────────────────
    De cijfers van de hele gemeenschap, als één apparaat op het papier tussen
@@ -56,12 +59,11 @@ export const UUR_PER_SCHOOLDAG = 7.5;
    Mag omhoog zodra de proefgroep groter is. */
 const DREMPELS = { dagen: 20, leerkrachten: 15, uitwerkingen: 250 };
 
-export type Cijfers = {
-  /* werkelijk bespaarde minuten over alle gebruikers heen */
-  minuten: number;
-  leerkrachten: number;
-  uitwerkingen: number;
-};
+/* Hoe vaak de browser opnieuw kijkt of er iets veranderd is. Het bord
+   verspringt pas als er een hele schooldag bij komt, dus vaker heeft geen zin.
+   De databasekant wordt hier niet zwaarder van: het antwoord komt uit een
+   centrale cache van dezelfde duur (zie lib/cijfers.ts). */
+const KIJK_INTERVAL_MS = 30_000;
 
 export function schooldagenUit(minuten: number) {
   return Math.floor(minuten / 60 / UUR_PER_SCHOOLDAG);
@@ -240,12 +242,90 @@ function Aflezing({ waarde, label, klein }: { waarde: number; label: string; kle
 
 /* ── De sectie ───────────────────────────────────────────────────────────── */
 
-export function WereldCijfers({ cijfers }: { cijfers: Cijfers | null }) {
+export function WereldCijfers({
+  cijfers,
+  bijhouden = true,
+}: {
+  cijfers: Cijfers | null;
+  /* false voor een voorbeeldbord: dan blijven de meegegeven cijfers staan. */
+  bijhouden?: boolean;
+}) {
+  /* De beslissing of er iets te tonen valt staat bewust BUITEN het bord, en
+     het bijhouden zit erin. Zolang er te weinig data is bestaat het bord dus
+     niet, en wordt er ook niets opgehaald: geen enkel verzoek voor een sectie
+     die toch verborgen is. Zodra hij er staat gaat het bijhouden vanzelf mee. */
   if (!cijfers) return null;
+  if (schooldagenUit(cijfers.minuten) < DREMPELS.dagen) return null;
+  return <Bord begin={cijfers} bijhouden={bijhouden} />;
+}
+
+/* ── Het bord bijhouden ──────────────────────────────────────────────────────
+   Elke halve minuut opnieuw kijken of er iets veranderd is, zodat het bord
+   echt meeloopt in plaats van stil te staan tot je de pagina herlaadt.
+
+   🔑 TWEE SPAARZAAMHEDEN, want een teller die altijd doorvraagt is precies het
+   soort verspilling dat dit product zegt te bestrijden:
+   1. alleen als de bezoeker het bord daadwerkelijk in beeld heeft. Het staat
+      onderaan een lange pagina, dus de meeste bezoekers komen er nooit; die
+      veroorzaken zo geen enkel verzoek.
+   2. alleen als het tabblad zichtbaar is. Een pagina die op de achtergrond
+      staat te pollen kost accuduur en levert niemand iets op.
+   De databasekant wordt er sowieso niet zwaarder van: het antwoord komt uit
+   een gedeelde cache van 30 seconden (lib/cijfers.ts), dus of er nu één
+   bezoeker kijkt of duizend, de database wordt even vaak bevraagd.
+   ──────────────────────────────────────────────────────────────────────────── */
+function useBijgehoudenCijfers(begin: Cijfers, bijhouden: boolean) {
+  const [cijfers, setCijfers] = useState(begin);
+  const anker = useRef<HTMLElement>(null);
+  const inBeeld = useRef(false);
+
+  useEffect(() => {
+    const el = anker.current;
+    /* Niet bijhouden bij een voorbeeldbord (?cijfers=demo en de proefpagina).
+       Zonder deze uitzondering haalt het bord na een halve minuut de échte
+       cijfers op, die onder de drempel liggen, en verdwijnt het voorbeeld
+       waar je juist naar aan het kijken bent. */
+    if (!el || !bijhouden) return;
+
+    const kijker = new IntersectionObserver(
+      ([ingang]) => {
+        inBeeld.current = ingang.isIntersecting;
+      },
+      { rootMargin: "200px" },
+    );
+    kijker.observe(el);
+
+    let gestopt = false;
+    const haal = async () => {
+      if (gestopt || document.hidden || !inBeeld.current) return;
+      try {
+        const antwoord = await fetch("/api/cijfers");
+        if (!antwoord.ok || antwoord.status === 204) return;
+        const nieuw = (await antwoord.json()) as Cijfers;
+        if (!gestopt) setCijfers(nieuw);
+      } catch {
+        /* Netwerk weg of server even niet bereikbaar: het bord blijft gewoon
+           op zijn laatste stand staan. Dat is een prima uitkomst. */
+      }
+    };
+
+    const tik = setInterval(haal, KIJK_INTERVAL_MS);
+    return () => {
+      gestopt = true;
+      clearInterval(tik);
+      kijker.disconnect();
+    };
+  }, [bijhouden]);
+
+  return { cijfers, anker };
+}
+
+function Bord({ begin, bijhouden }: { begin: Cijfers; bijhouden: boolean }) {
+  const { cijfers, anker } = useBijgehoudenCijfers(begin, bijhouden);
 
   const dagen = schooldagenUit(cijfers.minuten);
-  /* Haalt de bovenste regel het niet, dan is er nog niets te vertellen en
-     blijft de hele sectie weg. Geen lege kop, geen nul. */
+  /* Zakt het onder de drempel (kan in de praktijk niet, maar wel als er ooit
+     data wordt opgeschoond), dan verdwijnt het bord weer netjes. */
   if (dagen < DREMPELS.dagen) return null;
 
   const toonLeerkrachten = cijfers.leerkrachten >= DREMPELS.leerkrachten;
@@ -253,7 +333,7 @@ export function WereldCijfers({ cijfers }: { cijfers: Cijfers | null }) {
   const detailregel = toonLeerkrachten || toonUitwerkingen;
 
   return (
-    <section className="relative overflow-x-clip">
+    <section ref={anker} className="relative overflow-x-clip">
       {/* 🔑 Dit vlak is bewust GROTER dan het bord en ligt eronder, niet
          ernaast. In de vorige versie stond hier een vorm waarvan de rand
          precies achter de grote cijfers langs sneed; een vorm die de inhoud
@@ -286,17 +366,15 @@ export function WereldCijfers({ cijfers }: { cijfers: Cijfers | null }) {
             </h2>
             {/* Bronvermelding. Elke geloofwaardige teller die we bekeken hebben
                heeft er een: een getal zonder herkomst is een claim. */}
-            {/* ⚠️ Hier stond "Het bord loopt bij terwijl je kijkt." Dat was
-               NIET WAAR. De cijfers komen uit de serverrendering en veranderen
-               daarna niet meer; het bord staat stil zolang je op de pagina
-               bent. Dezelfde soort fout als "Onbeperkt gebruik" op de
-               prijzenkop: een zin die klopte in het ontwerp maar niet in de
-               code. Wil je het wél laten bijlopen, dan moet de teller elke
-               zoveel seconden opnieuw opgehaald worden. */}
+            {/* Deze zin heeft er even uit gestaan omdat hij NIET WAAR was: de
+               cijfers kwamen alleen uit de serverrendering, dus het bord stond
+               stil zolang je op de pagina was. Hij mag terug nu het bord zich
+               echt bijhoudt (useBijgehoudenCijfers hierboven). Blijf hem
+               nalopen als die lus ooit sneuvelt. */}
             <p data-reveal className="mt-4 text-base leading-7 text-ink/65">
               Opgeteld uit de tijd die de tools echt bespaarden, met een schooldag
-              van {String(UUR_PER_SCHOOLDAG).replace(".", ",")} uur. Bijgewerkt bij
-              elk bezoek.
+              van {String(UUR_PER_SCHOOLDAG).replace(".", ",")} uur. Het bord loopt
+              bij zolang je hier bent.
             </p>
           </div>
 

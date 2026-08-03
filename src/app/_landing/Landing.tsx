@@ -449,6 +449,7 @@ export default function Landing({
   ingelogd = false,
   toonPrijzen = true,
   cijfers = null,
+  bijhouden = true,
 }: {
   fotoBestand?: string;
   ingelogd?: boolean;
@@ -456,6 +457,9 @@ export default function Landing({
   /* De gemeenschapscijfers voor het klapbord. null = nog geen data, en dan
      laat WereldCijfers zichzelf helemaal weg. Zie Cijfers.tsx. */
   cijfers?: Cijfers | null;
+  /* false bij een voorbeeldbord (?cijfers=demo): dan blijft het bord staan op
+     de meegegeven getallen in plaats van de echte op te halen. */
+  bijhouden?: boolean;
 }) {
   const root = useRef<HTMLDivElement>(null);
   // null op de server (eerste paint), daarna de echte systeemvoorkeur.
@@ -1220,7 +1224,7 @@ export default function Landing({
            Zolang er nog te weinig data is laat de sectie zichzelf helemaal
            weg, inclusief de kop. Er staat dus nooit een nul of een pijnlijk
            laag getal op de voorpagina. ── */}
-        <WereldCijfers cijfers={cijfers} />
+        <WereldCijfers cijfers={cijfers} bijhouden={bijhouden} />
 
         {/* ── 8. Prijzen: het eigen mintveld. Vóór deze verbouwing lagen
            maker, ervaringen, prijzen én vragen allemaal op hetzelfde papier;
