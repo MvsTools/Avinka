@@ -324,7 +324,7 @@ function Rapport({
          🔑 REGEL: een golf heeft ALTIJD een flinke laag van zijn eigen kleur
          onder zich nodig, anders knipt de sectiegrens hem af. Hier: mint vanaf
          38%, golf 180 hoog, ruim honderd pixel massieve mint eronder. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 top-[40%]" aria-hidden>
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 top-[30%]" aria-hidden>
         <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
         {/* Vorm "zacht": een rustige dubbele deining die links en rechts op
            dezelfde hoogte begint en eindigt. Hij was als enige nog ongebruikt,
@@ -333,7 +333,7 @@ function Rapport({
            sjabloon. "speels" stond hier eerst, maar dat is de golf van de
            polaroids een sectie hoger, én hij loopt zo schuin weg dat hij bij
            deze hoogte als een schuine streep las in plaats van als een golf. */}
-        <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="zacht" hoogte="h-[100px] sm:h-[155px]" />
+        <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="zacht" hoogte="h-[145px] sm:h-[230px]" />
         {/* Alleen afsluiten als er gewoon papier volgt. Volgen de prijzen (ook
            mint), dan loopt het veld door en zou een golf hier een naad maken. */}
         {!prijzenVolgt && <Golf kleur="var(--w-papier, #fcfbf7)" vorm="rust" hoogte="h-[70px] sm:h-[110px]" />}
