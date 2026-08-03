@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { Confetti, DONKER, Golf, KOP, MINT, MINT_LICHT, VLAK_MINT, KaartVlak, schaduw } from "./Wereld";
 import type { Cijfers } from "@/lib/cijfers";
 
@@ -216,16 +217,28 @@ function Rol({ teken }: { teken: string }) {
    grote getal ze, om de rangorde te bewaren, maar dan is het geen scorebord
    maar één kaartje met een trucje. De rangorde komt nu uit de MAAT en de
    KLEUR van de kaartjes, niet uit het weglaten van de vakjes. */
+/* Hoeveel de cijfers krimpen naarmate het getal langer wordt. Tot en met vier
+   cijfers verandert er niets; daarboven een wortel, zodat het kaartje wel
+   meegroeit maar niet het hele cluster uit elkaar duwt en de cijfers leesbaar
+   blijven (5 cijfers = 89%, 7 cijfers = 76%). */
+function cijferSchaal(aantalCijfers: number) {
+  return aantalCijfers <= 4 ? 1 : Math.max(0.72, Math.sqrt(4 / aantalCijfers));
+}
+
 function Waarde({ getal, eenheid, groot }: { getal: number; eenheid?: string; groot?: boolean }) {
   const geschreven = getal.toLocaleString("nl-NL");
   const tekens = geschreven.split("");
+  const aantalCijfers = tekens.filter((t) => t !== ".").length;
   /* De sleutel is de POSITIE VAN RECHTS. Op de positie van links zou bij
      999 → 1.000 elke kaart een plek verspringen en rolt het hele getal om in
      plaats van alleen de cijfers die echt veranderen. */
   const sleutelVoor = (i: number) => tekens.slice(i + 1).filter((t) => t !== ".").length + 1;
 
   return (
-    <span className={`rp-inkt ${groot ? "rp-groot" : "rp-klein"}`}>
+    <span
+      className={`rp-inkt ${groot ? "rp-groot" : "rp-klein"}`}
+      style={{ "--schaal": cijferSchaal(aantalCijfers).toFixed(3) } as CSSProperties}
+    >
       {/* Het getal één keer, leesbaar, voor de schermlezer. De losse cijfers
          hieronder staan op aria-hidden: die zouden anders als "1 punt 2 8 4"
          worden voorgelezen. */}
@@ -606,9 +619,13 @@ function RapportStijl() {
       }
 
       /* het hoofddocument */
+      /* ⚠️ Dit stond op een VASTE breedte, en dan groeit een langer getal
+         gewoon zijn kaartje uit. Nagemeten: "9.412" liep er nu al 23 pixel
+         overheen en "100.000" zou er 108 overheen lopen. Met een minimum in
+         plaats van een vaste maat groeit het kaartje mee. */
       .rp-kaart {
         --hoek: -1.2deg;
-        width: clamp(272px, 31vw, 368px);
+        min-width: clamp(272px, 31vw, 368px);
         background: #ffffff;
         border-radius: 2.6rem 1.5rem 2.4rem 1.7rem;
         padding: clamp(24px, 2.6vw, 34px) clamp(24px, 2.8vw, 36px)
@@ -653,7 +670,11 @@ function RapportStijl() {
         line-height: 0.9;
         color: ${DONKER};
       }
-      .rp-groot { font-size: clamp(2.5rem, 4.6vw, 3.3rem); }
+      /* 🔑 Meegroeien is niet genoeg: bij zes cijfers wordt het kaartje zó
+         breed dat het het cluster uit elkaar duwt. Vanaf VIJF cijfers krimpt
+         de letter daarom mee, met een wortel zodat het nooit onleesbaar wordt
+         (5 cijfers = 89%, 7 cijfers = 76%). Onder de vijf verandert er niets. */
+      .rp-groot { font-size: calc(clamp(2.5rem, 4.6vw, 3.3rem) * var(--schaal, 1)); }
 
       /* ── het scorebord ───────────────────────────────────────────────────
          Elk cijfer in een eigen vakje, op alle drie de kaartjes. Dat is wat
@@ -740,7 +761,7 @@ function RapportStijl() {
 
       /* ── de twee losse cijfers, elk een eigen kleur en vorm ── */
       .rp-briefje {
-        width: clamp(158px, 17vw, 205px);
+        min-width: clamp(158px, 17vw, 205px);
         padding: clamp(16px, 1.9vw, 22px) clamp(18px, 2vw, 24px);
       }
       .rp-briefje:nth-child(1) {
@@ -763,7 +784,7 @@ function RapportStijl() {
         line-height: 0.95;
         color: ${DONKER};
       }
-      .rp-klein { font-size: clamp(2.05rem, 3.1vw, 2.8rem); }
+      .rp-klein { font-size: calc(clamp(2.05rem, 3.1vw, 2.8rem) * var(--schaal, 1)); }
       .rp-brieflabel {
         display: block;
         margin-top: 0.15rem;
