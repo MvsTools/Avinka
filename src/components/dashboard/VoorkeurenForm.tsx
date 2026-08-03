@@ -31,6 +31,23 @@ const communicatieApps = [
   { waarde: "", label: "Geen" },
   { waarde: "parro", label: "Parro" },
   { waarde: "social_schools", label: "Social Schools" },
+  { waarde: "isy", label: "Isy" },
+  { waarde: "konnect", label: "Konnect" },
+];
+const commAppsMetEigenAdres = ["isy", "konnect"];
+// Vast domein-staartje per systeem — de leerkracht vult alleen het voorste
+// stukje in (zie ook avinka-communicatie-app.js / avinka-lvs-app.js).
+const commStaartje: Record<string, string> = {
+  isy: ".isy-school.nl",
+  konnect: ".ouderportaal.nl",
+};
+const lvsStaartje: Record<string, string> = {
+  esis: ".rovictonline.nl",
+};
+const lvsSystemen = [
+  { waarde: "", label: "Geen" },
+  { waarde: "parnassys", label: "ParnasSys" },
+  { waarde: "esis", label: "Esis" },
 ];
 
 // Eén keuzerij met knoppen, zoals de toon-knoppen. waarde/zet werken op het
@@ -186,6 +203,9 @@ export default function VoorkeurenForm() {
     lengte: "gemiddeld",
     aanspreekvorm: "je",
     communicatie_app: "",
+    communicatie_url: "",
+    lvs_systeem: "",
+    lvs_url: "",
   });
   const [geladen, setGeladen] = useState(false);
   const [status, setStatus] = useState<"" | "bezig" | "klaar" | "fout">("");
@@ -367,6 +387,76 @@ export default function VoorkeurenForm() {
         }}
         extra={badge("communicatie_app")}
       />
+      {commAppsMetEigenAdres.includes(v.communicatie_app) && (
+        <div className="mt-3 max-w-md">
+          <div className="flex min-h-5 items-center gap-2">
+            <label htmlFor="v-comm-url" className="text-sm font-bold text-ink">
+              Voorste stukje van jullie{" "}
+              {communicatieApps.find((a) => a.waarde === v.communicatie_app)?.label}-adres
+            </label>
+            {badge("communicatie_url")}
+          </div>
+          <div className="mt-1.5 flex items-center gap-2">
+            <input
+              id="v-comm-url"
+              value={v.communicatie_url}
+              onChange={(e) => {
+                setV({ ...v, communicatie_url: e.target.value });
+                raak("communicatie_url");
+              }}
+              placeholder="bijv. bottel"
+              className="min-w-0 flex-1 rounded-xl border border-black/10 bg-cream px-4 py-3 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+            />
+            <span className="whitespace-nowrap text-sm font-semibold text-ink/45">
+              {commStaartje[v.communicatie_app]}
+            </span>
+          </div>
+          <p className="mt-1.5 text-xs text-ink/45">
+            Alleen het voorste stukje hoef je in te vullen (te vinden in de adresbalk
+            als je bent ingelogd) — het stukje hierna vult Avinka vanzelf aan.
+          </p>
+        </div>
+      )}
+      <KeuzeRij
+        titel="Leerlingvolgsysteem"
+        hint="(voor de “open in ...”-knop bij bijv. een gespreksverslag)"
+        opties={lvsSystemen}
+        waarde={v.lvs_systeem}
+        zet={(w) => {
+          setV({ ...v, lvs_systeem: w });
+          raak("lvs_systeem");
+        }}
+        extra={badge("lvs_systeem")}
+      />
+      {v.lvs_systeem === "esis" && (
+        <div className="mt-3 max-w-md">
+          <div className="flex min-h-5 items-center gap-2">
+            <label htmlFor="v-lvs-url" className="text-sm font-bold text-ink">
+              Voorste stukje van jullie Esis-adres
+            </label>
+            {badge("lvs_url")}
+          </div>
+          <div className="mt-1.5 flex items-center gap-2">
+            <input
+              id="v-lvs-url"
+              value={v.lvs_url}
+              onChange={(e) => {
+                setV({ ...v, lvs_url: e.target.value });
+                raak("lvs_url");
+              }}
+              placeholder="bijv. esis97"
+              className="min-w-0 flex-1 rounded-xl border border-black/10 bg-cream px-4 py-3 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+            />
+            <span className="whitespace-nowrap text-sm font-semibold text-ink/45">
+              {lvsStaartje.esis}
+            </span>
+          </div>
+          <p className="mt-1.5 text-xs text-ink/45">
+            Alleen het voorste stukje hoef je in te vullen (te vinden in de adresbalk
+            als je bent ingelogd) — het stukje hierna vult Avinka vanzelf aan.
+          </p>
+        </div>
+      )}
     </div>
 
     </>

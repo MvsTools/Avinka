@@ -33,11 +33,11 @@ import type { Roosterblok } from "@/lib/planning/types";
 // Volgende stap: verslepen (verplaatsen en langer/korter door te slepen).
 
 const DAGNAMEN = ["maandag", "dinsdag", "woensdag", "donderdag", "vrijdag"];
-const DAG_ID = ["ma", "di", "wo", "do", "vr"]; // weekdag-nummer → zoals de tool bewaart
+export const DAG_ID = ["ma", "di", "wo", "do", "vr"]; // weekdag-nummer → zoals de tool bewaart
 
 // Terugval-vakken voor het toevoegen, als een rooster (zeldzaam) geen eigen
 // vakkenlijst heeft meegekregen. Zelfde ids als de kleurencatalogus.
-const STANDAARD_VAKKEN: { id: string; naam: string }[] = [
+export const STANDAARD_VAKKEN: { id: string; naam: string }[] = [
   { id: "dagopening", naam: "Dagopening" },
   { id: "rekenen", naam: "Rekenen" },
   { id: "taal", naam: "Taal" },
@@ -145,7 +145,7 @@ const EIGEN_KLEUREN: { bg: string; tx: string }[] = [
 ];
 
 /** Een uniek id voor een nieuw blok. */
-function nieuwId(): string {
+export function nieuwId(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) return "les-" + crypto.randomUUID();
   return "les-" + Date.now() + "-" + Math.round(Math.random() * 1e6);
 }
@@ -188,7 +188,7 @@ function aantekeningenPerVak(blokken: Basisrooster["blokken"]): Map<string, stri
  * Eén tekening voor het knopje in de balk én de slotjes in de blokken zelf, zodat
  * je ze meteen bij elkaar plaatst.
  */
-function SlotIcoon({ dicht, grootte = 14 }: { dicht: boolean; grootte?: number }) {
+export function SlotIcoon({ dicht, grootte = 14 }: { dicht: boolean; grootte?: number }) {
   return (
     <svg
       width={grootte}
@@ -209,7 +209,7 @@ function SlotIcoon({ dicht, grootte = 14 }: { dicht: boolean; grootte?: number }
   );
 }
 
-type Gekozen = { id: string; x: number; y: number; kant: "links" | "rechts" };
+export type Gekozen = { id: string; x: number; y: number; kant: "links" | "rechts" };
 
 export default function RoosterBewerken({
   schooljaar,
@@ -1326,7 +1326,7 @@ function VakkenInstellingen({
   );
 }
 
-function VakKiezer({
+export function VakKiezer({
   vakken,
   setup,
   x,
@@ -1343,8 +1343,10 @@ function VakKiezer({
   y: number;
   kant: "links" | "rechts";
   kies: (vak: string, naam: string) => void;
-  eigenVak: (naam: string) => void;
-  verwijderVak: (id: string) => void;
+  // Weggelaten (weekstand): een nieuw vak aanmaken of een bestaand vak
+  // verwijderen blijft basisrooster-gebied.
+  eigenVak?: (naam: string) => void;
+  verwijderVak?: (id: string) => void;
   sluit: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -1400,43 +1402,47 @@ function VakKiezer({
                 />
                 <span className="truncate">{v.naam}</span>
               </button>
-              <button
-                onClick={() => verwijderVak(v.id)}
-                aria-label={`${v.naam} uit de lijst halen`}
-                className="mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded text-ink/30 opacity-0 transition hover:bg-black/10 hover:text-red-600 group-hover/vak:opacity-100"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
-                  <path d="M6 6l12 12M18 6L6 18" />
-                </svg>
-              </button>
+              {verwijderVak && (
+                <button
+                  onClick={() => verwijderVak(v.id)}
+                  aria-label={`${v.naam} uit de lijst halen`}
+                  className="mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded text-ink/30 opacity-0 transition hover:bg-black/10 hover:text-red-600 group-hover/vak:opacity-100"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+                    <path d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </button>
+              )}
             </div>
           );
         })}
       </div>
 
       {/* Een compleet nieuw vak dat nog niet in de lijst staat. */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const t = eigenNaam.trim();
-          if (t) eigenVak(t);
-        }}
-        className="mt-1 flex items-center gap-1 border-t border-black/5 pt-1.5"
-      >
-        <input
-          value={eigenNaam}
-          onChange={(e) => setEigenNaam(e.target.value)}
-          placeholder="Eigen vak…"
-          className="min-w-0 flex-1 rounded-lg border border-black/10 bg-white px-2 py-1.5 text-sm text-ink outline-none placeholder:text-ink/35 focus:border-brand-dark/40"
-        />
-        <button
-          type="submit"
-          aria-label="Eigen vak toevoegen"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-dark text-lg font-bold text-white transition-transform duration-150 active:scale-[0.94]"
+      {eigenVak && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const t = eigenNaam.trim();
+            if (t) eigenVak(t);
+          }}
+          className="mt-1 flex items-center gap-1 border-t border-black/5 pt-1.5"
         >
-          +
-        </button>
-      </form>
+          <input
+            value={eigenNaam}
+            onChange={(e) => setEigenNaam(e.target.value)}
+            placeholder="Eigen vak…"
+            className="min-w-0 flex-1 rounded-lg border border-black/10 bg-white px-2 py-1.5 text-sm text-ink outline-none placeholder:text-ink/35 focus:border-brand-dark/40"
+          />
+          <button
+            type="submit"
+            aria-label="Eigen vak toevoegen"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-dark text-lg font-bold text-white transition-transform duration-150 active:scale-[0.94]"
+          >
+            +
+          </button>
+        </form>
+      )}
     </div>
   );
 }
@@ -1526,7 +1532,7 @@ function TijdRij({
   );
 }
 
-function Blokkaart({
+export function Blokkaart({
   blok,
   x,
   y,
@@ -1550,7 +1556,8 @@ function Blokkaart({
   beginLater: () => void;
   eindeEerder: () => void;
   eindeLater: () => void;
-  zetKleur: (opt: { bg: string; tekst: string }) => void;
+  // Weggelaten (weekstand): vakkleuren blijven basisrooster-gebied.
+  zetKleur?: (opt: { bg: string; tekst: string }) => void;
   zetOmschrijving: (tekst: string, overal: boolean) => void;
   /** Aantal blokken van hetzelfde vak, inclusief dit blok. */
   aantalZelfdeVak: number;
@@ -1586,11 +1593,14 @@ function Blokkaart({
           vakje ervoor toont de kleur van dit vak; klik erop om hem te wijzigen. */}
       <div className="flex items-center gap-2">
         <button
-          onClick={() => setPaletOpen((o) => !o)}
-          aria-label={`Kleur van ${blok.naam} kiezen`}
-          aria-expanded={paletOpen}
-          title="Kleur kiezen"
-          className="h-6 w-6 shrink-0 rounded-md transition-transform hover:scale-110 active:scale-95"
+          onClick={zetKleur ? () => setPaletOpen((o) => !o) : undefined}
+          aria-label={zetKleur ? `Kleur van ${blok.naam} kiezen` : blok.naam}
+          aria-expanded={zetKleur ? paletOpen : undefined}
+          title={zetKleur ? "Kleur kiezen" : undefined}
+          className={
+            "h-6 w-6 shrink-0 rounded-md transition-transform " +
+            (zetKleur ? "hover:scale-110 active:scale-95" : "cursor-default")
+          }
           style={{
             background: blok.kleur?.bg,
             boxShadow: `inset 0 0 0 1px ${blok.kleur?.tekst ?? "#000"}55`,
@@ -1690,7 +1700,7 @@ function Blokkaart({
 
       {/* Het kleurmenu, onder het vakje. De kleur hoort bij het vak, dus alle
           blokken van dit vak kleuren meteen mee. Wit = geen kleur. */}
-      {paletOpen && (
+      {zetKleur && paletOpen && (
         <>
           <div className="fixed inset-0 z-[55]" onClick={() => setPaletOpen(false)} />
           <div className="absolute left-3 top-11 z-[56] grid grid-cols-6 gap-1.5 rounded-xl border border-black/10 bg-white p-2 shadow-xl">
@@ -1761,7 +1771,7 @@ type Drag = {
   bewogen: boolean;
 };
 
-function Bewerkraster({
+export function Bewerkraster({
   lessen,
   gekozenId,
   kies,
@@ -1773,6 +1783,7 @@ function Bewerkraster({
   kopieerDag,
   nieuwOp,
   voorbeeld,
+  dagInfo,
 }: {
   lessen: Roosterblok[];
   gekozenId: string | null;
@@ -1794,6 +1805,11 @@ function Bewerkraster({
     kant: "links" | "rechts",
   ) => void;
   voorbeeld: { weekdag: number; start: number; duur: number } | null;
+  /** Meegegeven voor een concrete week (niet het sjabloon): per weekdag een
+   *  korte datumtekst ("12 aug"), en of die dag vrij is (weekend/vakantie/
+   *  vrije dag) — dan toont die kolom het vertrouwde gestreepte vlak i.p.v.
+   *  een bewerkbare kolom. Weggelaten (het basisrooster) verandert er niets. */
+  dagInfo?: { datumLabel: string; vrij: boolean; vrijLabel?: string }[];
 }) {
   const PX = 1.7; // px per minuut; ruim genoeg dat ook een 10-min-blok (15px) de
   //                letterstaartjes (p/g/j) volledig toont
@@ -2095,7 +2111,7 @@ function Bewerkraster({
 
   // Muis over de lege ruimte: alvast een plek tonen onder de cursor.
   function beweegLeeg(e: ReactMouseEvent, weekdag: number) {
-    if (dragRef.current || slotstand) return;
+    if (dragRef.current || slotstand || dagInfo?.[weekdag]?.vrij) return;
     if (e.target !== e.currentTarget) {
       setHover(null);
       return;
@@ -2113,7 +2129,7 @@ function Bewerkraster({
 
   // Klik op een lege plek in een dagkolom → een nieuw vak toevoegen op die tijd.
   function klikLeeg(e: ReactMouseEvent, weekdag: number) {
-    if (slotstand) return; // in de slotstand voeg je niets toe, je klikt alleen slotjes
+    if (slotstand || dagInfo?.[weekdag]?.vrij) return; // in de slotstand voeg je niets toe, je klikt alleen slotjes
     if (e.target !== e.currentTarget) return; // alleen de lege achtergrond, geen blok
     if (performance.now() - sleepEinde.current < 250) return; // net gesleept: geen toevoeg
     const T = tijdBijMuis(e.clientY, (e.currentTarget as HTMLElement).getBoundingClientRect());
@@ -2137,7 +2153,7 @@ function Bewerkraster({
     <>
     <div className="overflow-x-auto">
       <div className="min-w-[46rem] overflow-hidden rounded-3xl border border-black/5 bg-white shadow-sm">
-        {/* Dagkoppen — geen datums, want dit is het sjabloon. */}
+        {/* Dagkoppen — zonder dagInfo geen datums, want dit is het sjabloon. */}
         <div className="grid grid-cols-[3.5rem_repeat(5,minmax(0,1fr))] border-b border-black/5">
           <div />
           {DAGNAMEN.map((naam, weekdag) => (
@@ -2145,7 +2161,14 @@ function Bewerkraster({
               key={naam}
               className="flex items-center justify-between gap-1 border-l border-black/5 px-2 py-2"
             >
-              <span className="truncate text-sm font-bold text-ink">{naam}</span>
+              <span className="truncate text-sm font-bold text-ink">
+                {naam}
+                {dagInfo?.[weekdag] && (
+                  <span className="ml-1.5 font-normal text-ink/45">
+                    {dagInfo[weekdag].datumLabel}
+                  </span>
+                )}
+              </span>
               <button
                 onClick={(e) => openKopieer(weekdag, e.currentTarget)}
                 aria-label={`${naam} kopiëren naar een andere dag`}
@@ -2182,6 +2205,20 @@ function Bewerkraster({
           </div>
 
           {[0, 1, 2, 3, 4].map((weekdag) => {
+            // Een vrije dag (weekend/vakantie/vrije dag) tonen we als niet-
+            // bewerkbaar, net als in het alleen-lezen weekoverzicht: geen
+            // blokken, geen klikken om iets toe te voegen.
+            if (dagInfo?.[weekdag]?.vrij) {
+              return (
+                <div key={weekdag} className="relative border-l border-black/5">
+                  <div className="absolute inset-0 flex items-start justify-center bg-[repeating-linear-gradient(135deg,rgba(0,0,0,0.03)_0_6px,transparent_6px_12px)] pt-4">
+                    <span className="rounded-lg bg-white/80 px-2 py-1 text-xs font-bold text-ink/50">
+                      {dagInfo[weekdag].vrijLabel ?? "Geen les"}
+                    </span>
+                  </div>
+                </div>
+              );
+            }
             const dagBlokken = lessen.filter((b) => b.weekdag === weekdag);
             const schik = schikDag(dagBlokken);
             // De voorbeeld-plek: bij een open kiezertje de gekozen plek (steviger),

@@ -9,11 +9,17 @@ import type { Soort } from "../agenda-herken";
 import { plus, vandaag } from "./datum";
 import { markeerDubbelingen } from "./dubbelingen";
 import { mijnGroepen } from "./relevantie";
-import { isBasisrooster, naarBlokken, type Basisrooster } from "./rooster";
+import {
+  isBasisrooster,
+  isRoosterWeekData,
+  naarBlokken,
+  type Basisrooster,
+  type RoosterSetup,
+} from "./rooster";
 import { metEigenVakanties } from "./eigen-vakanties";
 import { beschikbareSchooljaren, maakSchooljaar, periodesVan, schooljaarVoor } from "./schooljaar";
-import type { PlanItem, PlanningBron, Taak } from "./types";
-import { isRegio, STANDAARD_REGIO, type Regio } from "./vakanties";
+import type { PlanItem, PlanningBron, Roosterblok, Taak } from "./types";
+import { isRegio, STANDAARD_REGIO, type Regio, type Vakantie } from "./vakanties";
 
 /** De vakantieregio van deze leerkracht. Niet ingevuld? Dan het landelijke midden. */
 export async function haalRegio(supabase: SupabaseClient): Promise<Regio> {
@@ -71,6 +77,23 @@ export async function haalItems(
 }
 
 /**
+ * De vakanties om een streak tegen af te zetten (zie src/lib/streak.ts): de
+ * landelijke regio-kalender, aangevuld met de eigen schoolagenda als die
+ * gekoppeld is — precies zoals Mijn schooljaar dat ook al doet, zie
+ * metEigenVakanties. Kijkt alleen terug (een streak kijkt nooit vooruit), dus
+ * we halen ook maar een klein stukje agenda op, niet het hele schooljaar.
+ */
+export async function haalStreakVakanties(
+  supabase: SupabaseClient,
+  nu: string = vandaag(),
+): Promise<Vakantie[]> {
+  const regio = await haalRegio(supabase);
+  const jaren = beschikbareSchooljaren(regio, nu);
+  const items = await haalItems(supabase, plus(nu, -120), nu);
+  return jaren.flatMap((jaar) => metEigenVakanties(jaar, items).vakanties);
+}
+
+/**
  * De groep(en) van deze leerkracht, uit zijn instellingen. Daarmee zetten we de
  * afspraken van andere groepen opzij. In dat veld staat vrije tekst ("Groep 7",
  * "7", "1/2"), dus we halen er de nummers uit; lukt dat niet, dan filteren we
@@ -96,6 +119,34 @@ export async function haalBasisrooster(
     .maybeSingle();
   const ruw = (data as { data?: unknown } | null)?.data;
   return isBasisrooster(ruw) ? ruw : null;
+}
+
+type RoosterWeekRij = { maandag: string; data: unknown };
+
+/**
+ * De weken die van het basisrooster afwijken, in een bereik. De kleuren komen
+ * altijd uit het HUIDIGE basisrooster (rooster_week bewaart alleen blokken,
+ * nooit een eigen vakkenlijst) — wijzig je later een vakkleur, dan zie je die
+ * ook meteen terug in een al bestaande weekafwijking.
+ */
+export async function haalRoosterWeken(
+  supabase: SupabaseClient,
+  van: string,
+  tot: string,
+  setup: RoosterSetup,
+): Promise<Record<string, Roosterblok[]>> {
+  const { data } = await supabase
+    .from("rooster_week")
+    .select("maandag, data")
+    .gte("maandag", van)
+    .lte("maandag", tot);
+  const rijen = (data as RoosterWeekRij[] | null) ?? [];
+  const uit: Record<string, Roosterblok[]> = {};
+  for (const rij of rijen) {
+    if (!isRoosterWeekData(rij.data)) continue;
+    uit[rij.maandag] = naarBlokken({ setup, blokken: rij.data.blokken });
+  }
+  return uit;
 }
 
 export type AgendaBron = {
@@ -166,6 +217,10 @@ export async function haalPlanning(
     haalBasisrooster(supabase, schooljaar.id),
   ]);
 
+  // De weekafwijkingen hebben het basisrooster (voor zijn vakkleuren) al
+  // nodig, dus die vraag doen we pas hierna.
+  const weekOverrides = await haalRoosterWeken(supabase, van, tot, rooster?.setup ?? {});
+
   // Staat dezelfde afspraak in twee agenda's, dan tonen we hem één keer.
   const items = markeerDubbelingen(ruwe, volgorde);
 
@@ -178,6 +233,7 @@ export async function haalPlanning(
     items,
     taken,
     blokken: naarBlokken(rooster),
+    weekOverrides,
   };
 }
 

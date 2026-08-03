@@ -1972,9 +1972,10 @@ async function vulMijnKlas(toevoegFn){
 <script>/* WIJS-SMART */
 (function(){
   function api(u,o){ return fetch(u, Object.assign({headers:{accept:'application/json'}}, o||{})); }
-  async function haalKlas(){ try{ var r=await api('/api/klas'); if(!r.ok)return {naam:'',leerlingen:[]}; var d=await r.json(); window.avinkaKlasGeslacht={}; ((d&&d.leerlingenData)||[]).forEach(function(l){ if(l&&l.naam) window.avinkaKlasGeslacht[l.naam.toLowerCase()] = l.geslacht==='j'?'jongen':(l.geslacht==='m'?'meisje':''); }); return {naam:d.naam||'', leerlingen:d.leerlingen||[]}; }catch(e){ return {naam:'',leerlingen:[]}; } }
+  var avinkaKlasId='';
+  async function haalKlas(){ try{ var r=await api('/api/klas'); if(!r.ok)return {naam:'',leerlingen:[]}; var d=await r.json(); avinkaKlasId=d.id||''; window.avinkaKlasGeslacht={}; ((d&&d.leerlingenData)||[]).forEach(function(l){ if(l&&l.naam) window.avinkaKlasGeslacht[l.naam.toLowerCase()] = l.geslacht==='j'?'jongen':(l.geslacht==='m'?'meisje':''); }); return {naam:d.naam||'', leerlingen:d.leerlingen||[]}; }catch(e){ return {naam:'',leerlingen:[]}; } }
   async function haalRapporten(){ try{ var r=await api('/api/rapporten'); if(!r.ok)return []; var d=await r.json(); return d.rapporten||[]; }catch(e){ return []; } }
-  async function slaOp(naam,verhaal){ if(!naam||!verhaal||!verhaal.trim())return; try{ await fetch('/api/rapporten',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({naam:naam,verhaal:verhaal})}); }catch(e){} }
+  async function slaOp(naam,verhaal){ if(!naam||!verhaal||!verhaal.trim())return; try{ await fetch('/api/rapporten',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({naam:naam,verhaal:verhaal,klas_id:avinkaKlasId})}); }catch(e){} }
   function NL(arr){ return arr.join(String.fromCharCode(10)); }
   function groepUitNaam(naam){ if(!naam)return ''; var s=String(naam); if(s.indexOf('1/2')>=0||s.indexOf('1 / 2')>=0)return '1/2'; for(var i=0;i<s.length;i++){ var c=s.charCodeAt(i); if(c>=49&&c<=56) return s.charAt(i); } return ''; }
   function zet(id,val){ var e=document.getElementById(id); if(e&&val){ e.value=val; if(e.value) e.classList.add('filled'); } }

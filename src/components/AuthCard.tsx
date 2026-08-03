@@ -7,9 +7,25 @@ import { PROEF_DAGEN } from "@/lib/abonnement";
 
 // Eén formulier voor zowel inloggen als registreren — scheelt dubbele code.
 // mode bepaalt de teksten, de velden en welke actie er draait.
-export default function AuthCard({ mode }: { mode: "signin" | "signup" }) {
+//
+// `volgende` is de pagina waar je ná het inloggen heen moet, in plaats van het
+// dashboard. Nodig bij een uitnodigingslink: wie nog niet ingelogd is belandt
+// eerst hier, en zonder dit zou de uitnodiging bij het inloggen wegvallen.
+export default function AuthCard({
+  mode,
+  volgende,
+}: {
+  mode: "signin" | "signup";
+  volgende?: string;
+}) {
   const isSignup = mode === "signup";
   const actie = isSignup ? signup : login;
+
+  // Wissel je hier tussen inloggen en registreren, dan moet de bestemming mee.
+  // Zonder dit raakt een uitnodiging alsnog kwijt bij iemand die nog geen
+  // account heeft — precies de persoon die je uitnodigt.
+  const metVolgende = (pad: string) =>
+    volgende ? `${pad}?volgende=${encodeURIComponent(volgende)}` : pad;
 
   const [state, formAction, pending] = useActionState<AuthState, FormData>(
     actie,
@@ -104,6 +120,7 @@ export default function AuthCard({ mode }: { mode: "signin" | "signup" }) {
       )}
 
       <form action={formAction} className="mt-6 space-y-4">
+        {volgende && <input type="hidden" name="volgende" value={volgende} />}
         {isSignup && (
           <div>
             <label htmlFor="voornaam" className="block text-sm font-bold text-ink">
@@ -274,14 +291,14 @@ export default function AuthCard({ mode }: { mode: "signin" | "signup" }) {
         {isSignup ? (
           <>
             Heb je al een account?{" "}
-            <Link href="/sign-in" className="font-bold text-brand hover:underline">
+            <Link href={metVolgende("/sign-in")} className="font-bold text-brand hover:underline">
               Inloggen
             </Link>
           </>
         ) : (
           <>
             Nog geen account?{" "}
-            <Link href="/sign-up" className="font-bold text-brand hover:underline">
+            <Link href={metVolgende("/sign-up")} className="font-bold text-brand hover:underline">
               Maak er gratis een
             </Link>
           </>

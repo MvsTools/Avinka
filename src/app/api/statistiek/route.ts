@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { amsterdamDatum, isWeekend, vorigeWerkdag } from "@/lib/streak";
+import { amsterdamDatum, isVrijeDag, volgendeStreakStand } from "@/lib/streak";
+import { haalStreakVakanties } from "@/lib/planning";
 import { minutenVoor, type TijdSignaal } from "@/lib/tijdwinst";
 
 // Cumulatieve tellers per gebruiker (Mijn statistieken).
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
 
   const { data } = await sb
     .from("statistiek")
-    .select("tellers, minuten, per_dag, streak, streak_max, laatste_actief")
+    .select("tellers, minuten, per_dag, streak, streak_max, streak_freezes, laatste_actief")
     .maybeSingle();
   const tellers = { ...((data?.tellers as Record<string, number>) ?? {}) };
   tellers[type] = (tellers[type] ?? 0) + 1;
@@ -65,18 +66,39 @@ export async function POST(req: Request) {
   const dag = perDag[vandaag] ?? { m: 0, n: 0 };
   perDag[vandaag] = { m: dag.m + gewonnen, n: dag.n + 1 };
 
-  // ── Streak bijwerken (alleen op werkdagen; weekend telt niet mee) ──
+  // ── Streak bijwerken (alleen op schooldagen; weekend én schoolvakantie
+  //    tellen niet mee, breken de reeks ook niet). Een verdiende vrijstelling
+  //    vangt precies één gemiste schooldag op — zie volgendeStreakStand. ──
+  const vakanties = await haalStreakVakanties(sb, vandaag);
+  const laatsteVoor = (data?.laatste_actief as string | null) ?? null;
   let streak = (data?.streak as number) ?? 0;
   let streakMax = (data?.streak_max as number) ?? 0;
-  let laatste = (data?.laatste_actief as string | null) ?? null;
-  if (!isWeekend(vandaag) && laatste !== vandaag) {
-    streak = laatste === vorigeWerkdag(vandaag) ? streak + 1 : 1;
-    laatste = vandaag;
-    if (streak > streakMax) streakMax = streak;
+  let streakFreezes = (data?.streak_freezes as number) ?? 0;
+  let laatste = laatsteVoor;
+  if (!isVrijeDag(vandaag, vakanties) && laatste !== vandaag) {
+    const uitkomst = volgendeStreakStand(
+      vandaag,
+      laatsteVoor,
+      { streak, streakMax, freezes: streakFreezes },
+      vakanties,
+    );
+    streak = uitkomst.streak;
+    streakMax = uitkomst.streakMax;
+    streakFreezes = uitkomst.freezes;
+    laatste = uitkomst.laatste;
   }
 
   const { error } = await sb.from("statistiek").upsert(
-    { user_id: user.id, tellers, minuten, per_dag: perDag, streak, streak_max: streakMax, laatste_actief: laatste },
+    {
+      user_id: user.id,
+      tellers,
+      minuten,
+      per_dag: perDag,
+      streak,
+      streak_max: streakMax,
+      streak_freezes: streakFreezes,
+      laatste_actief: laatste,
+    },
     { onConflict: "user_id" },
   );
   if (error) return NextResponse.json({ error: "db_error" }, { status: 500 });

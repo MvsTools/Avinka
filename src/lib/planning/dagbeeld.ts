@@ -46,6 +46,10 @@ export function dagbeeld(bron: PlanningBron, datum: string): Dagbeeld {
         ? ("vrije dag" as const)
         : undefined;
 
+  // Wijkt de week van deze datum af van het basisrooster, dan gelden de
+  // blokken van díé week; anders gewoon het basisrooster zelf.
+  const weekblokken = bron.weekOverrides[maandagVan(datum)] ?? blokken;
+
   return {
     datum,
     weekdag: weekdag(datum),
@@ -56,7 +60,7 @@ export function dagbeeld(bron: PlanningBron, datum: string): Dagbeeld {
     items: items_,
     blokken: vrij
       ? []
-      : blokken
+      : weekblokken
           .filter((b) => b.weekdag === weekdag(datum))
           .sort((a, b) => a.begin.localeCompare(b.begin)),
     taken: taken.filter((t) => t.deadline === datum),
@@ -75,9 +79,7 @@ export function weekbeeld(bron: PlanningBron, datumInDeWeek: string): Weekbeeld 
     weeknummer: weeknummer(maandag),
     dagen,
     periode: dagen.find((d) => d.periode)?.periode,
-    // Fase 2 vult dit: een week wijkt af zodra je hem los van je basisrooster
-    // hebt aangepast. Tot die tijd is elke week gewoon je basisrooster.
-    afwijkend: false,
+    afwijkend: Boolean(bron.weekOverrides[maandag]),
   };
 }
 
