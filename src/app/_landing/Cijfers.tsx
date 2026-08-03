@@ -322,9 +322,32 @@ function Rapport({
          van de prijzen. Resultaat: een kaarsrechte lijn op de sectierand in
          plaats van een golf. Nagemeten met een kleurscan op drie x-posities.
          🔑 REGEL: een golf heeft ALTIJD een flinke laag van zijn eigen kleur
-         onder zich nodig, anders knipt de sectiegrens hem af. Hier: mint vanaf
-         38%, golf 180 hoog, ruim honderd pixel massieve mint eronder. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 top-[30%]" aria-hidden>
+         onder zich nodig, anders knipt de sectiegrens hem af.
+
+         ⚠️ EN HET MOET ÉÉN DOORLOPEND VELD ZIJN. Eerst begon de mint
+         halverwege deze sectie, en dan is het een bandje: erboven papier,
+         eronder mint. Dat leest als decoratie in plaats van als overgang.
+         Het mintveld loopt nu van de bovenrand van deze sectie onafgebroken
+         door de prijzen heen tot aan de veelgestelde vragen: één golf erin,
+         één golf eruit (die laatste zit in PrijzenVragen).
+
+         🔑 DE GOLF STEEKT BOVEN DE SECTIE UIT, en dat is de enige manier om
+         het veld al bij de bovenrand te laten beginnen. Golf tekent zijn
+         papieren kam namelijk IN de bovenkant van het mintvak; zit dat vak
+         binnen de sectie, dan begint de mint pas onder die kam en heb je weer
+         een bandje. Met een negatieve top valt de kam in de ruimte erboven en
+         loopt de mint door tot de rand. Het vlak dat daar uit de
+         ervaringen-sectie hangt wordt dan door de GOLF afgesneden in plaats
+         van door een rechte sectiegrens, en zo hoort het op deze pagina. */}
+      <div
+        /* ⚠️ Hoe ver hij omhoog mag steken is een MEETKWESTIE, geen smaak: de
+           papieren band van de golf valt in de ervaringen-sectie en mag de
+           polaroids daar niet raken. Op 768px kwam de onderrand van een
+           polaroid tot vlak op de kam; deze waarden houden op elke gemeten
+           breedte lucht (390, 600, 768, 900, 1100, 1280, 1440). */
+        className="pointer-events-none absolute inset-x-0 bottom-0 top-[-115px] sm:top-[-175px]"
+        aria-hidden
+      >
         <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
         {/* Vorm "zacht": een rustige dubbele deining die links en rechts op
            dezelfde hoogte begint en eindigt. Hij was als enige nog ongebruikt,
@@ -339,7 +362,7 @@ function Rapport({
         {!prijzenVolgt && <Golf kleur="var(--w-papier, #fcfbf7)" vorm="rust" hoogte="h-[70px] sm:h-[110px]" />}
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-28 pt-6 lg:pb-32">
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-28 pt-10 lg:pb-32 lg:pt-12">
         <Confetti
           punten={[
             { x: "2%", y: "22%", r: 4, amber: true },
