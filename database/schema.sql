@@ -1073,7 +1073,19 @@ language sql security definer set search_path = public as $$
   limit 1;
 $$;
 
--- ── 19) DUO-COLLEGA'S — samen één klas draaien (duobaan) ───────────────────
+-- ── 19) COLLEGA'S BIJ DEZE GROEP — samen één klas draaien ──────────────────
+--
+-- ⚠️ Heette eerst "duo-collega's" en was toen een PAAR (twee leerkrachten met
+-- een duobaan). Sinds 3-8-2026 kunnen het er meer zijn — denk aan een
+-- onderwijsassistent erbij. Daarom hangt alles wat gedeeld wordt nu aan de
+-- KLAS, niet aan het paar: één takenlijst en één overdracht-briefje per groep,
+-- die iederéén ziet die aan die groep hangt. Bij een paar-model zouden twee
+-- collega's van dezelfde groep elkaars taken niet zien.
+--
+-- De tabelnaam `duo_koppels` is blijven staan (te veel verwijzingen om te
+-- hernoemen), maar lees hem als LIDMAATSCHAP: gebruiker_a is de eigenaar van
+-- de klas die uitnodigt, gebruiker_b de collega, en `rol` bepaalt hoeveel die
+-- mag zien.
 -- Twee leerkrachten die dezelfde klas delen. Vóór dit blok was ELKE RLS-
 -- policy in dit bestand letterlijk "auth.uid() = user_id" — dit is de eerste
 -- plek waar een ander account bij je gegevens mag. Daarom: bestaande policies
@@ -1092,16 +1104,28 @@ create table if not exists public.duo_koppels (
   -- weet je nog niet wie er straks op de link/code klikt.
   gebruiker_b     uuid references auth.users(id) on delete cascade,
   klas_id         uuid not null references public.klassen(id) on delete cascade,
-  gedeelde_map_id uuid references public.bestanden(id) on delete set null,
   status          text not null default 'uitgenodigd', -- 'uitgenodigd' | 'actief'
+  -- 'volledig'  = alles, zoals je duo-partner: klas, rapporten, bestanden,
+  --               taken en overdracht.
+  -- 'meekijken' = de dagelijkse samenwerking (klas, gedeelde map, taken,
+  --               overdracht) maar GEEN rapporten. Voor een assistent: die
+  --               werkt met de kinderen, maar geschreven oordelen over
+  --               kinderen zijn een ander soort gegeven.
+  rol             text not null default 'volledig',
   code            text unique,
   created_at      timestamptz default now(),
   constraint duo_verschillende_mensen check (gebruiker_b is null or gebruiker_a <> gebruiker_b)
 );
--- Voorkomt een dubbel koppel voor hetzelfde paar + dezelfde klas, ongeacht
--- wie van de twee A of B is.
-create unique index if not exists idx_duo_koppels_paar
-  on public.duo_koppels (least(gebruiker_a, gebruiker_b), greatest(gebruiker_a, gebruiker_b), klas_id);
+-- Voorkomt dat dezelfde collega twee keer aan dezelfde klas hangt.
+-- ⚠️ `where gebruiker_b is not null` is essentieel: bij een openstaande
+-- uitnodiging is gebruiker_b nog leeg, en least/greatest negeren NULL — de rij
+-- telt dan als (a, a, klas). Zonder deze voorwaarde kun je dus maar één
+-- uitnodiging tegelijk laten openstaan, terwijl je juist twee collega's in één
+-- keer wilt kunnen vragen.
+drop index if exists idx_duo_koppels_paar;
+create unique index if not exists idx_duo_koppels_lid
+  on public.duo_koppels (least(gebruiker_a, gebruiker_b), greatest(gebruiker_a, gebruiker_b), klas_id)
+  where gebruiker_b is not null;
 create index if not exists idx_duo_koppels_a on public.duo_koppels(gebruiker_a);
 create index if not exists idx_duo_koppels_b on public.duo_koppels(gebruiker_b);
 
@@ -1115,10 +1139,15 @@ drop policy if exists "eigen duo koppel" on public.duo_koppels;
 drop policy if exists "eigen duo koppel lezen" on public.duo_koppels;
 create policy "eigen duo koppel lezen" on public.duo_koppels
   for select using (auth.uid() in (gebruiker_a, gebruiker_b));
+-- ⚠️ Bijwerken mag ALLEEN de eigenaar van de klas (gebruiker_a). Zodra er
+-- rollen bestaan, is "de ander mag deze rij ook bijwerken" een gat: een
+-- meekijkende collega zou zijn eigen `rol` op 'volledig' kunnen zetten en zo
+-- alsnog bij de rapporten komen. De uitgenodigde heeft bijwerken ook niet
+-- nodig — loskoppelen gaat via delete, dat mogen ze allebei.
 drop policy if exists "eigen duo koppel bijwerken" on public.duo_koppels;
 create policy "eigen duo koppel bijwerken" on public.duo_koppels
-  for update using (auth.uid() in (gebruiker_a, gebruiker_b))
-  with check (auth.uid() in (gebruiker_a, gebruiker_b));
+  for update using (auth.uid() = gebruiker_a)
+  with check (auth.uid() = gebruiker_a);
 drop policy if exists "eigen duo koppel verwijderen" on public.duo_koppels;
 create policy "eigen duo koppel verwijderen" on public.duo_koppels
   for delete using (auth.uid() in (gebruiker_a, gebruiker_b));
@@ -1166,69 +1195,94 @@ end;
 $$;
 grant execute on function public.duo_koppel_accepteren(text) to authenticated;
 
--- Wie is mijn duo-partner? Naam + mailadres van de ánder in het koppel.
--- Moet via security definer: `auth.users` is voor gewone gebruikers niet
--- leesbaar, en dat hoort ook zo te blijven. Deze functie geeft daarom alleen
--- de tegenpartij van een koppel waar je zélf in zit, en alleen als het koppel
--- actief is. Zo blijft het onmogelijk om met een willekeurig koppel-id
--- mailadressen van anderen op te vragen.
-create or replace function public.duo_partner(p_koppel_id uuid)
-returns table (voornaam text, email text)
+-- Wie hoort er bij deze groep? De eigenaar plus elke collega met een actieve
+-- koppeling, mét naam en mailadres. Moet via security definer: `auth.users` is
+-- voor gewone gebruikers niet leesbaar en dat hoort zo te blijven. Je krijgt
+-- alleen iets terug voor een groep waar je zélf bij hoort, dus met een
+-- willekeurig klas-id kun je geen mailadressen van vreemden opvragen.
+create or replace function public.klas_collegas(p_klas uuid)
+returns table (user_id uuid, voornaam text, email text, rol text, is_eigenaar boolean)
 language sql stable security definer set search_path = public as $$
-  select coalesce(u.raw_user_meta_data ->> 'first_name', ''), u.email::text
+  select u.id,
+         coalesce(u.raw_user_meta_data ->> 'first_name', ''),
+         u.email::text,
+         'volledig',
+         true
+  from public.klassen k
+  join auth.users u on u.id = k.user_id
+  where k.id = p_klas and public.klas_toegang(p_klas)
+  union all
+  select u.id,
+         coalesce(u.raw_user_meta_data ->> 'first_name', ''),
+         u.email::text,
+         dk.rol,
+         false
   from public.duo_koppels dk
-  join auth.users u
-    on u.id = case when dk.gebruiker_a = auth.uid() then dk.gebruiker_b else dk.gebruiker_a end
-  where dk.id = p_koppel_id
-    and dk.status = 'actief'
-    and auth.uid() in (dk.gebruiker_a, dk.gebruiker_b)
-  limit 1;
+  join auth.users u on u.id = dk.gebruiker_b
+  where dk.klas_id = p_klas and dk.status = 'actief' and public.klas_toegang(p_klas);
 $$;
-grant execute on function public.duo_partner(uuid) to authenticated;
--- ⚠️ De grant hierboven sluit `anon` NIET buiten: Postgres/Supabase geven
--- standaard uitvoerrecht aan PUBLIC. Zonder deze revoke is de functie dus ook
--- zonder inlog aan te roepen. (Zonder sessie is auth.uid() leeg en komt er
--- niets terug, maar daar wil je niet van afhankelijk zijn bij een functie die
--- mailadressen teruggeeft.)
-revoke execute on function public.duo_partner(uuid) from public, anon;
+grant execute on function public.klas_collegas(uuid) to authenticated;
+revoke execute on function public.klas_collegas(uuid) from public, anon;
 
--- Algemene helper: ben ik een actieve duo-partner van deze eigenaar (voor
--- IETS, ongeacht welke klas)? De policies hieronder checken zelf preciezer
--- (gekoppeld aan de juiste klas_id/gedeelde_map_id), dus die roepen dit niet
--- aan — deze functie is voor app-code die simpelweg "heb ik een duo-partner"
--- wil weten (bijv. src/lib/db.ts via een RPC-aanroep).
-create or replace function public.is_duo_partner(eigenaar uuid)
+-- De twee toegangsvragen die alle policies hieronder stellen. Als functie,
+-- want ze worden op vijf plekken gebruikt en moeten overal hetzelfde
+-- antwoord geven.
+--
+-- ⚠️ Allebei security definer: ze kijken in `duo_koppels`, en een meekijkende
+-- collega mag díé tabel niet volledig lezen. Zonder definer zou de policy
+-- zichzelf in de staart bijten.
+create or replace function public.klas_toegang(p_klas uuid)
 returns boolean language sql stable security definer set search_path = public as $$
-  select exists (
-    select 1 from public.duo_koppels
-    where status = 'actief'
-      and ((gebruiker_a = auth.uid() and gebruiker_b = eigenaar)
-        or (gebruiker_b = auth.uid() and gebruiker_a = eigenaar))
-  );
+  select exists (select 1 from public.klassen k where k.id = p_klas and k.user_id = auth.uid())
+      or exists (
+        select 1 from public.duo_koppels dk
+        where dk.klas_id = p_klas and dk.status = 'actief' and dk.gebruiker_b = auth.uid()
+      );
 $$;
-grant execute on function public.is_duo_partner(uuid) to authenticated;
+grant execute on function public.klas_toegang(uuid) to authenticated;
+revoke execute on function public.klas_toegang(uuid) from public, anon;
 
--- Klas-koppeling: je duo-partner mag de gezamenlijke klas ook lezen/bewerken.
+-- Zelfde vraag, maar alleen voor wie álles mag: de eigenaar en collega's met
+-- rol 'volledig'. Dit is de grens waar rapporten achter liggen.
+create or replace function public.klas_toegang_volledig(p_klas uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.klassen k where k.id = p_klas and k.user_id = auth.uid())
+      or exists (
+        select 1 from public.duo_koppels dk
+        where dk.klas_id = p_klas and dk.status = 'actief'
+          and dk.gebruiker_b = auth.uid() and dk.rol = 'volledig'
+      );
+$$;
+grant execute on function public.klas_toegang_volledig(uuid) to authenticated;
+revoke execute on function public.klas_toegang_volledig(uuid) from public, anon;
+
+-- Opgeruimd: hoorden bij het oude paar-model.
+drop function if exists public.duo_partner(uuid);
+drop function if exists public.is_duo_partner(uuid);
+
+-- Klas-koppeling: een collega met rol 'volledig' mag de gezamenlijke klas ook
+-- bewerken.
 -- ⚖️ BEWUSTE KEUZE van de eigenaar (3-8), niet per ongeluk zo breed: als duo
 -- ben je SAMEN verantwoordelijk voor de klas, dus beiden mogen alles — ook
 -- verwijderen. Deze policy dus NIET later "veiliger" maken door delete eruit
 -- te halen of `user_id` vast te pinnen; dat is eerder overwogen en afgewezen.
 drop policy if exists "duo-partner klas" on public.klassen;
 create policy "duo-partner klas" on public.klassen
-  for all using (
-    exists (
-      select 1 from public.duo_koppels dk
-      where dk.klas_id = klassen.id and dk.status = 'actief'
-        and auth.uid() in (dk.gebruiker_a, dk.gebruiker_b)
-    )
-  )
-  with check (
-    exists (
-      select 1 from public.duo_koppels dk
-      where dk.klas_id = klassen.id and dk.status = 'actief'
-        and auth.uid() in (dk.gebruiker_a, dk.gebruiker_b)
-    )
-  );
+  for all using (public.klas_toegang_volledig(klassen.id))
+  with check (public.klas_toegang_volledig(klassen.id));
+
+-- Een meekijkende collega moet de klas wél kúnnen zien — anders weet hij niet
+-- eens over welke groep de gedeelde taken gaan. Alleen lezen, niet wijzigen.
+drop policy if exists "meekijkende collega klas" on public.klassen;
+create policy "meekijkende collega klas" on public.klassen
+  for select using (public.klas_toegang(klassen.id));
+
+-- De gedeelde map hoort bij de GROEP, niet bij een koppel: met drie mensen wil
+-- je één gedeelde map, niet één per koppeling. (Stond eerst als
+-- `gedeelde_map_id` op duo_koppels.)
+alter table public.klassen add column if not exists gedeelde_map_id uuid
+  references public.bestanden(id) on delete set null;
+alter table public.duo_koppels drop column if exists gedeelde_map_id;
 
 -- "Welke klas is voor MIJ actief" mag niet langer alleen de gedeelde
 -- klassen.actief-vlag zijn: die kolom hoort bij de eigenaar-rij en twee
@@ -1246,22 +1300,14 @@ alter table public.rapporten add column if not exists klas_id uuid
   references public.klassen(id) on delete set null;
 create index if not exists idx_rapporten_klas on public.rapporten(klas_id);
 
+-- ⚠️ Hier ligt de grens van de rol 'meekijken': rapporten zijn geschreven
+-- oordelen over kinderen, en die deel je alleen met een collega die
+-- medeverantwoordelijk is voor de groep — niet met iedereen die meehelpt.
+-- Vandaar `klas_toegang_volledig` en niet `klas_toegang`.
 drop policy if exists "duo-partner rapporten" on public.rapporten;
 create policy "duo-partner rapporten" on public.rapporten
-  for all using (
-    klas_id is not null and exists (
-      select 1 from public.duo_koppels dk
-      where dk.klas_id = rapporten.klas_id and dk.status = 'actief'
-        and auth.uid() in (dk.gebruiker_a, dk.gebruiker_b)
-    )
-  )
-  with check (
-    klas_id is not null and exists (
-      select 1 from public.duo_koppels dk
-      where dk.klas_id = rapporten.klas_id and dk.status = 'actief'
-        and auth.uid() in (dk.gebruiker_a, dk.gebruiker_b)
-    )
-  );
+  for all using (klas_id is not null and public.klas_toegang_volledig(rapporten.klas_id))
+  with check (klas_id is not null and public.klas_toegang_volledig(rapporten.klas_id));
 
 -- Nu klas_id bestaat, moet "eigen rapporten" aangescherpt: zonder deze check
 -- zou je een rapport kunnen posten met andermans klas_id — onschadelijk
@@ -1298,31 +1344,33 @@ $$;
 -- de policy wordt voor elke rij gecheckt, ongeacht of er een duo-koppel is.
 grant execute on function public.binnen_gedeelde_map(uuid, uuid) to authenticated;
 
+-- De gedeelde map staat nu op de klas; iedereen die bij de groep hoort mag
+-- erin (ook meekijkers — dat is werkmateriaal, geen kindbeoordeling).
 drop policy if exists "duo-partner bestanden" on public.bestanden;
 create policy "duo-partner bestanden" on public.bestanden
   for all using (
     exists (
-      select 1 from public.duo_koppels dk
-      where dk.status = 'actief'
-        and dk.gedeelde_map_id is not null
-        and auth.uid() in (dk.gebruiker_a, dk.gebruiker_b)
-        and public.binnen_gedeelde_map(bestanden.id, dk.gedeelde_map_id)
+      select 1 from public.klassen k
+      where k.gedeelde_map_id is not null
+        and public.klas_toegang(k.id)
+        and public.binnen_gedeelde_map(bestanden.id, k.gedeelde_map_id)
     )
   )
   with check (
     exists (
-      select 1 from public.duo_koppels dk
-      where dk.status = 'actief'
-        and dk.gedeelde_map_id is not null
-        and auth.uid() in (dk.gebruiker_a, dk.gebruiker_b)
-        and public.binnen_gedeelde_map(bestanden.id, dk.gedeelde_map_id)
+      select 1 from public.klassen k
+      where k.gedeelde_map_id is not null
+        and public.klas_toegang(k.id)
+        and public.binnen_gedeelde_map(bestanden.id, k.gedeelde_map_id)
     )
   );
 
 -- ── Gedeelde takenlijst: los van je eigen persoonlijke takenlijst ────────
+-- ⚠️ Hangt aan de KLAS, niet aan een koppel: anders zien twee collega's van
+-- dezelfde groep elkaars taken niet.
 create table if not exists public.duo_taken (
   id             uuid primary key default gen_random_uuid(),
-  duo_koppel_id  uuid not null references public.duo_koppels(id) on delete cascade,
+  klas_id        uuid not null references public.klassen(id) on delete cascade,
   tekst          text not null,
   gedaan         boolean not null default false,
   toegewezen_aan uuid references auth.users(id) on delete set null,
@@ -1331,7 +1379,7 @@ create table if not exists public.duo_taken (
   created_at     timestamptz default now(),
   updated_at     timestamptz default now()
 );
-create index if not exists idx_duo_taken_koppel on public.duo_taken(duo_koppel_id);
+create index if not exists idx_duo_taken_klas on public.duo_taken(klas_id);
 
 drop trigger if exists trg_duo_taken_updated on public.duo_taken;
 create trigger trg_duo_taken_updated
@@ -1340,21 +1388,10 @@ create trigger trg_duo_taken_updated
 
 alter table public.duo_taken enable row level security;
 drop policy if exists "duo taken voor het koppel" on public.duo_taken;
-create policy "duo taken voor het koppel" on public.duo_taken
-  for all using (
-    exists (
-      select 1 from public.duo_koppels dk
-      where dk.id = duo_taken.duo_koppel_id and dk.status = 'actief'
-        and auth.uid() in (dk.gebruiker_a, dk.gebruiker_b)
-    )
-  )
-  with check (
-    exists (
-      select 1 from public.duo_koppels dk
-      where dk.id = duo_taken.duo_koppel_id and dk.status = 'actief'
-        and auth.uid() in (dk.gebruiker_a, dk.gebruiker_b)
-    )
-  );
+drop policy if exists "duo taken voor de groep" on public.duo_taken;
+create policy "duo taken voor de groep" on public.duo_taken
+  for all using (public.klas_toegang(duo_taken.klas_id))
+  with check (public.klas_toegang(duo_taken.klas_id));
 grant select, insert, update, delete on public.duo_taken to authenticated;
 
 -- ── Overdracht op Start: ÉÉN rij per koppel, altijd overschreven ─────────
@@ -1362,7 +1399,7 @@ grant select, insert, update, delete on public.duo_taken to authenticated;
 -- hier. Elke nieuwe overdracht vervangt de vorige; er ontstaat geen archief
 -- van eerdere, mogelijk kind-specifieke opmerkingen.
 create table if not exists public.duo_overdracht (
-  duo_koppel_id uuid primary key references public.duo_koppels(id) on delete cascade,
+  klas_id       uuid primary key references public.klassen(id) on delete cascade,
   tekst         text not null default '',
   auteur        uuid references auth.users(id) on delete set null,
   bijgewerkt    timestamptz default now()
@@ -1370,19 +1407,8 @@ create table if not exists public.duo_overdracht (
 
 alter table public.duo_overdracht enable row level security;
 drop policy if exists "duo overdracht voor het koppel" on public.duo_overdracht;
-create policy "duo overdracht voor het koppel" on public.duo_overdracht
-  for all using (
-    exists (
-      select 1 from public.duo_koppels dk
-      where dk.id = duo_overdracht.duo_koppel_id and dk.status = 'actief'
-        and auth.uid() in (dk.gebruiker_a, dk.gebruiker_b)
-    )
-  )
-  with check (
-    exists (
-      select 1 from public.duo_koppels dk
-      where dk.id = duo_overdracht.duo_koppel_id and dk.status = 'actief'
-        and auth.uid() in (dk.gebruiker_a, dk.gebruiker_b)
-    )
-  );
+drop policy if exists "duo overdracht voor de groep" on public.duo_overdracht;
+create policy "duo overdracht voor de groep" on public.duo_overdracht
+  for all using (public.klas_toegang(duo_overdracht.klas_id))
+  with check (public.klas_toegang(duo_overdracht.klas_id));
 grant select, insert, update, delete on public.duo_overdracht to authenticated;
