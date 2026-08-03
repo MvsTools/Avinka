@@ -17,14 +17,25 @@ export type { Cijfers };
    Een rij "groot getal, klein label" is het meest versleten patroon van het
    web en staat niet voor niets op de verboden lijst in DESIGN.md. Het probleem
    is niet alleen dat het saai is: een getal dat bij het inscrollen van 0 naar
-   171 telt leest als marketing. Bij een klapbord is de beweging zélf het
+   1.284 telt leest als marketing. Bij een klapbord is de beweging zélf het
    bewijs dat er iets veranderd is, want een klep valt alleen als er echt een
-   dag bij komt.
+   uur bij komt.
 
-   DE EENHEID IS DE SCHOOLDAG
-   Niet het uur. Uren zijn abstract; een schooldag kan elke leerkracht zich
-   voorstellen. Hetzelfde mechaniek waarmee Ecosia zaadjes telt in plaats van
-   zoekopdrachten en The Ocean Cleanup vrachtwagenladingen in plaats van kilo's.
+   DE EENHEID IS HET UUR, EN DAT IS EEN CORRECTIE
+   Hier stond eerst de SCHOOLDAG (bespaarde minuten gedeeld door 7,5 uur),
+   omdat een dag tastbaarder is dan een uur. Dat was fout, en de eigenaar ving
+   het: een schooldag is precies het deel van de dag waarin dit werk niet kán,
+   want dan staan de kinderen voor je. Avinka neemt werk van NA schooltijd over
+   (rapporten, oudercontact, toetsanalyse, lesvoorbereiding), dus bespaarde
+   vrije tijd omrekenen naar een eenheid werktijd klopt niet.
+
+   Overwogen als tastbaar alternatief: de avond van twee uur, gelijk aan de
+   belofte "win elke week 2 uur terug". Bewust niet gedaan. Een kleinere
+   eenheid maakt hetzelfde getal groter (90 uur is 12 schooldagen of 45
+   avonden) en dat is precies het soort oppoetsen dat deze pagina vermijdt.
+   Bovendien is "avond" een aanname over wanneer iemand dat werk doet. Het uur
+   heeft geen omrekening en dus niets om over te struikelen, en het is de
+   eenheid waarin de belofte op deze pagina al staat.
 
    ⚠️ DE COMPOSITIE IS HERBOUWD (tweede ronde)
    De eerste versie was drie regels onder elkaar, los op het papier. Dat was
@@ -41,8 +52,8 @@ export type { Cijfers };
      daaronder de details. Dat scheelt een derde van de hoogte.
    - de kop staat links, het bord rechts. De sectie gebruikt nu de volle
      breedte in plaats van een halve kolom met leegte ernaast.
-   - het label bij het hoofdgetal is "schooldagen", niet "schooldagen
-     teruggewonnen": dat woord staat al in de kop tien centimeter hoger.
+   - het label bij het hoofdgetal is kaal ("uur"), niet "uur teruggewonnen":
+     dat woord staat al in de kop tien centimeter hoger.
 
    EERLIJKHEID
    Er staat hier nooit een verzonnen of pijnlijk laag cijfer. Elke regel heeft
@@ -50,23 +61,20 @@ export type { Cijfers };
    is; is de bovenste regel niet gehaald, dan blijft de hele sectie weg.
    ────────────────────────────────────────────────────────────────────────── */
 
-/* Eén schooldag is 7,5 uur. Dat staat ook zichtbaar bij het bord: een teller
-   zonder bronvermelding is een claim, met bronvermelding een cijfer. */
-export const UUR_PER_SCHOOLDAG = 7.5;
-
 /* Per regel de ondergrens waaronder we hem niet tonen. Bewust voorzichtig:
    liever een bord met één regel dan een regel waar "3 leerkrachten" op staat.
+   Honderd uur is een eerste mijlpaal die de moeite van het vertellen waard is.
    Mag omhoog zodra de proefgroep groter is. */
-const DREMPELS = { dagen: 20, leerkrachten: 15, uitwerkingen: 250 };
+const DREMPELS = { uren: 100, leerkrachten: 15, uitwerkingen: 250 };
 
 /* Hoe vaak de browser opnieuw kijkt of er iets veranderd is. Het bord
-   verspringt pas als er een hele schooldag bij komt, dus vaker heeft geen zin.
+   verspringt pas als er een heel uur bij komt, dus vaker heeft geen zin.
    De databasekant wordt hier niet zwaarder van: het antwoord komt uit een
    centrale cache van dezelfde duur (zie lib/cijfers.ts). */
 const KIJK_INTERVAL_MS = 30_000;
 
-export function schooldagenUit(minuten: number) {
-  return Math.floor(minuten / 60 / UUR_PER_SCHOOLDAG);
+export function urenUit(minuten: number) {
+  return Math.floor(minuten / 60);
 }
 
 /* ── Eén kaartje van het bord ────────────────────────────────────────────── */
@@ -217,7 +225,7 @@ function Aflezing({ waarde, label, klein }: { waarde: number; label: string; kle
       {/* ⚠️ aria-hidden op de kaarten, en dat is een reparatie geen luiheid.
          Elke kaart bevat het cijfer TWEE keer (boven- en onderhelft, plus
          tijdens het klappen nog twee kleppen), dus een schermlezer las
-         "1 1 7 7 1 1 schooldagen". Dat is met kijken niet te zien; het kwam
+         "1 1 7 7 1 1 uur". Dat is met kijken niet te zien; het kwam
          boven water bij het uitlezen van de toegankelijkheidsboom. Het echte
          getal staat nu één keer, onzichtbaar, vóór het woord. */}
       <div aria-hidden className="flex items-stretch gap-[4px]">
@@ -255,7 +263,7 @@ export function WereldCijfers({
      niet, en wordt er ook niets opgehaald: geen enkel verzoek voor een sectie
      die toch verborgen is. Zodra hij er staat gaat het bijhouden vanzelf mee. */
   if (!cijfers) return null;
-  if (schooldagenUit(cijfers.minuten) < DREMPELS.dagen) return null;
+  if (urenUit(cijfers.minuten) < DREMPELS.uren) return null;
   return <Bord begin={cijfers} bijhouden={bijhouden} />;
 }
 
@@ -323,10 +331,10 @@ function useBijgehoudenCijfers(begin: Cijfers, bijhouden: boolean) {
 function Bord({ begin, bijhouden }: { begin: Cijfers; bijhouden: boolean }) {
   const { cijfers, anker } = useBijgehoudenCijfers(begin, bijhouden);
 
-  const dagen = schooldagenUit(cijfers.minuten);
+  const uren = urenUit(cijfers.minuten);
   /* Zakt het onder de drempel (kan in de praktijk niet, maar wel als er ooit
      data wordt opgeschoond), dan verdwijnt het bord weer netjes. */
-  if (dagen < DREMPELS.dagen) return null;
+  if (uren < DREMPELS.uren) return null;
 
   const toonLeerkrachten = cijfers.leerkrachten >= DREMPELS.leerkrachten;
   const toonUitwerkingen = cijfers.uitwerkingen >= DREMPELS.uitwerkingen;
@@ -372,8 +380,8 @@ function Bord({ begin, bijhouden }: { begin: Cijfers; bijhouden: boolean }) {
                echt bijhoudt (useBijgehoudenCijfers hierboven). Blijf hem
                nalopen als die lus ooit sneuvelt. */}
             <p data-reveal className="mt-4 text-base leading-7 text-ink/65">
-              Opgeteld uit de tijd die de tools echt bespaarden, met een schooldag
-              van {String(UUR_PER_SCHOOLDAG).replace(".", ",")} uur. Het bord loopt
+              Opgeteld uit het werk dat de tools overnemen: rapporten, oudercontact,
+              toetsanalyse, lesvoorbereiding. Werk van na schooltijd. Het bord loopt
               bij zolang je hier bent.
             </p>
           </div>
@@ -383,7 +391,7 @@ function Bord({ begin, bijhouden }: { begin: Cijfers; bijhouden: boolean }) {
              krimpen onder de breedte van zijn inhoud, en dan heeft de
              max-width op de kast geen effect. */}
           <div data-reveal className="cb-kast min-w-0 justify-self-start lg:justify-self-end">
-            <Aflezing waarde={dagen} label="schooldagen" />
+            <Aflezing waarde={uren} label="uur" />
             {detailregel && (
               <>
                 <div aria-hidden className="my-5 h-px bg-white/[0.13]" />

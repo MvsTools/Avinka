@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { UUR_PER_SCHOOLDAG, WereldCijfers, schooldagenUit } from "../_landing/Cijfers";
+import { WereldCijfers, urenUit } from "../_landing/Cijfers";
 import { DONKER, SPECKLE_STIJL } from "../_landing/Wereld";
 
 /* ⚠️ TIJDELIJKE PROEFPAGINA — /cijfers-proef. Weghalen zodra het bord is
@@ -15,22 +15,22 @@ import { DONKER, SPECKLE_STIJL } from "../_landing/Wereld";
    er veel minder vaak een dag bij. */
 
 const START = { minuten: 77_040, leerkrachten: 37, uitwerkingen: 9_412 };
-const MIN_PER_SCHOOLDAG = UUR_PER_SCHOOLDAG * 60;
+const MINUTEN_PER_UUR = 60;
 
 export default function ProefScherm() {
   const [cijfers, setCijfers] = useState(START);
   const [loopt, setLoopt] = useState(true);
 
-  const dagErbij = () =>
+  const uurErbij = () =>
     setCijfers((c) => ({
       ...c,
-      minuten: c.minuten + MIN_PER_SCHOOLDAG,
-      uitwerkingen: c.uitwerkingen + 7,
+      minuten: c.minuten + MINUTEN_PER_UUR,
+      uitwerkingen: c.uitwerkingen + 2,
     }));
 
   useEffect(() => {
     if (!loopt) return;
-    const t = setInterval(dagErbij, 4200);
+    const t = setInterval(uurErbij, 4200);
     return () => clearInterval(t);
   }, [loopt]);
 
@@ -44,18 +44,18 @@ export default function ProefScherm() {
           Het klapbord, met echte bediening
         </h1>
         <p className="mt-3 max-w-2xl text-lg leading-8 text-ink/70">
-          Testcijfers, niet de echte. Nu op {schooldagenUit(cijfers.minuten)} schooldagen.
-          Zet het oplopen uit en klik zelf, dan zie je één kaartje omslaan; laat het lopen
-          en je ziet af en toe twee kaartjes tegelijk gaan.
+          Testcijfers, niet de echte. Nu op {urenUit(cijfers.minuten)} uur. Zet het
+          oplopen uit en klik zelf, dan zie je één kaartje omslaan; laat het lopen en je
+          ziet af en toe twee kaartjes tegelijk gaan.
         </p>
 
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={dagErbij}
+            onClick={uurErbij}
             className="rounded-xl bg-brand px-5 py-3 font-bold text-white transition hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           >
-            Er komt een dag bij
+            Er komt een uur bij
           </button>
           <button
             type="button"
@@ -92,7 +92,7 @@ export default function ProefScherm() {
             bijna geen data (sectie hoort te verdwijnen)
           </button>
           {/* Wat gebeurt er als het echt gaat lopen? 1000 leerkrachten die elk
-             ~2 uur per week terugwinnen is ruim 12.000 schooldagen per jaar. */}
+             ~2 uur per week terugwinnen is bijna 100.000 uur per jaar. */}
           <button
             type="button"
             onClick={() =>
