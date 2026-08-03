@@ -36,6 +36,7 @@ export default function DuoOverdracht() {
   const [mijnId, setMijnId] = useState<string | null>(null);
   const [invoer, setInvoer] = useState<Record<string, string>>({});
   const [versturen, setVersturen] = useState(false);
+  const [fout, setFout] = useState(false);
   const [open, setOpen] = useState(false);
   const [actieveGroep, setActieveGroep] = useState<string>("");
   const onderaan = useRef<HTMLDivElement>(null);
@@ -103,9 +104,15 @@ export default function DuoOverdracht() {
     const tekst = (invoer[klasId] ?? "").trim();
     if (!tekst || versturen) return;
     setVersturen(true);
+    setFout(false);
     const ok = await zetDuoOverdracht(klasId, tekst);
     setVersturen(false);
-    if (!ok) return;
+    // Een knop die niets doet en niets zegt is het ergste soort fout: je blijft
+    // typen en denkt dat het aankomt. Zeg het dus, en houd de tekst staan.
+    if (!ok) {
+      setFout(true);
+      return;
+    }
     const nu = new Date().toISOString();
     setBerichten((v) => {
       const anderen = (v[klasId] ?? []).filter((b) => b.auteur !== mijnId);
@@ -278,6 +285,11 @@ export default function DuoOverdracht() {
                 {versturen ? "Bezig…" : "Versturen"}
               </button>
             </div>
+            {fout && (
+              <p className="mt-2 text-sm text-red-600">
+                Versturen lukte niet. Je tekst staat er nog, probeer het zo nog eens.
+              </p>
+            )}
             {/* Kort houden: drie feiten, geen alinea. De volledige uitleg over
                 bewaren staat in /privacy. */}
             <p className="mt-1.5 text-xs text-ink/45">
