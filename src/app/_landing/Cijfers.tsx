@@ -212,10 +212,10 @@ function Rol({ teken }: { teken: string }) {
 
 /* ── Eén waarde op het bord ─────────────────────────────────────────────────
    Bij binnenkomst verschijnt hij als verse inkt; daarna rolt hij per cijfer.
-   Het grote getal krijgt VAKJES om elk cijfer, zoals een scorebord: dat laat
-   zien dat het een aflezing is en geen stuk tekst. De kleine getallen op de
-   briefjes rollen wel mee maar krijgen geen vakjes — anders wordt het druk en
-   verdwijnt de rangorde tussen hoofdgetal en bijvangst. */
+   ELK cijfer krijgt een vakje, op alle drie de kaartjes. Eerst had alleen het
+   grote getal ze, om de rangorde te bewaren, maar dan is het geen scorebord
+   maar één kaartje met een trucje. De rangorde komt nu uit de MAAT en de
+   KLEUR van de kaartjes, niet uit het weglaten van de vakjes. */
 function Waarde({ getal, eenheid, groot }: { getal: number; eenheid?: string; groot?: boolean }) {
   const geschreven = getal.toLocaleString("nl-NL");
   const tekens = geschreven.split("");
@@ -240,7 +240,7 @@ function Waarde({ getal, eenheid, groot }: { getal: number; eenheid?: string; gr
                net zo goed een cijfer zijn dat toevallig omrolt. */
             <span key={`p${i}`} className="rp-punt" />
           ) : (
-            <span key={sleutelVoor(i)} className={groot ? "rp-cel" : "rp-cel-los"}>
+            <span key={sleutelVoor(i)} className="rp-cel">
               <Rol teken={teken} />
             </span>
           ),
@@ -656,11 +656,9 @@ function RapportStijl() {
       .rp-groot { font-size: clamp(2.5rem, 4.6vw, 3.3rem); }
 
       /* ── het scorebord ───────────────────────────────────────────────────
-         Elk cijfer in een eigen vakje. Dat is wat een aflezing onderscheidt
-         van een stuk tekst: je ziet dat er posities zijn die kunnen
-         verspringen, ook als ze op dit moment stilstaan. Alleen het GROTE
-         getal krijgt vakjes; de briefjes rollen wel mee maar blijven kaal,
-         anders wordt het druk en verdwijnt de rangorde. */
+         Elk cijfer in een eigen vakje, op alle drie de kaartjes. Dat is wat
+         een aflezing onderscheidt van een stuk tekst: je ziet dat er posities
+         zijn die kunnen verspringen, ook als ze op dit moment stilstaan. */
       .rp-rij { display: inline-flex; align-items: baseline; gap: 0.06em; }
       .rp-cel {
         display: inline-flex;
@@ -669,7 +667,11 @@ function RapportStijl() {
         border-radius: 0.28em;
         background: rgba(47, 158, 110, 0.09);
       }
-      .rp-cel-los { display: inline-flex; justify-content: center; }
+      /* Het vakje moet op elke kaartkleur leesbaar blijven, dus het is per
+         kaart een andere tint: donkerder op mint, lichter op donkergroen. Eén
+         vaste kleur zou op het donkere kaartje verdwijnen. */
+      .rp-briefje:nth-child(1) .rp-cel { background: rgba(var(--w-schaduw-rgb, 23,80,58), 0.1); }
+      .rp-briefje:nth-child(2) .rp-cel { background: rgba(255, 255, 255, 0.11); }
       /* De duizendtalpunt krijgt bewust geen vakje: een punt in een
          cijfervakje kan net zo goed een cijfer zijn dat toevallig omrolt. */
       .rp-punt {
