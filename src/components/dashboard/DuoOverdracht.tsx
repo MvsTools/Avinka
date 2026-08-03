@@ -315,26 +315,9 @@ export default function DuoOverdracht({
 
           {/* ── Onderin: typen ── */}
           <div className="mt-3 border-t border-black/5 pt-3">
-            {/* De hulpknop hoort bij de vraag, niet bij het versturen: hij helpt
-                je zeggen wat je wilt zeggen. Vandaar op de regel van het label
-                en niet naast Versturen, waar hij met die knop zou concurreren. */}
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <label htmlFor="overdracht-invoer" className="text-sm font-semibold text-ink">
-                Wat wil je delen met je collega&apos;s?
-              </label>
-              <button
-                type="button"
-                onClick={vraagAi}
-                disabled={aiBezig || versturen}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-brand/30 bg-brand-soft px-3 py-1.5 text-sm font-semibold text-brand-dark transition hover:border-brand disabled:opacity-50"
-              >
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden>
-                  <path d="M13 2.5l1.9 5.6 5.6 1.9-5.6 1.9L13 17.5l-1.9-5.6L5.5 10l5.6-1.9L13 2.5z" />
-                  <path d="M5.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z" />
-                </svg>
-                {heeftTekst ? "Netter maken" : "Begin voor mij"}
-              </button>
-            </div>
+            <label htmlFor="overdracht-invoer" className="text-sm font-semibold text-ink">
+              Wat wil je delen met je collega&apos;s?
+            </label>
 
             {/* Het voorstel staat náást je eigen tekst, niet eroverheen: je
                 vergelijkt en kiest zelf. */}
@@ -384,7 +367,11 @@ export default function DuoOverdracht({
               </p>
             )}
 
-            <div className="mt-1.5 flex items-end gap-2">
+            {/* Onder het veld staat één rij bediening: typen, hulp, wegsturen.
+                De twee knoppen zitten in een eigen groepje, zodat ze op een
+                smal scherm samen onder het veld springen in plaats van dat er
+                eentje alleen achterblijft. */}
+            <div className="mt-1.5 flex flex-wrap items-end gap-2">
               <textarea
                 ref={veld}
                 id="overdracht-invoer"
@@ -399,16 +386,38 @@ export default function DuoOverdracht({
                   }
                 }}
                 rows={2}
-                className="min-w-0 flex-1 resize-y rounded-xl border border-black/10 bg-cream px-4 py-2.5 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+                className="min-w-[12rem] flex-1 resize-y rounded-xl border border-black/10 bg-cream px-4 py-2.5 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
               />
-              <button
-                type="button"
-                onClick={() => verstuur(actieveGroep)}
-                disabled={!(invoer[actieveGroep] ?? "").trim() || versturen}
-                className="shrink-0 rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-dark disabled:opacity-50"
-              >
-                {versturen ? "Bezig…" : "Versturen"}
-              </button>
+              <div className="flex shrink-0 items-end gap-2">
+                {/* Bewust neutraal van vorm: alleen het sterretje is groen.
+                    Zo staat er één groene knop in beeld en zie je meteen welke
+                    het bericht wegstuurt. */}
+                <button
+                  type="button"
+                  onClick={vraagAi}
+                  disabled={aiBezig || versturen}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-ink/70 transition hover:border-black/20 disabled:opacity-50"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4 text-brand"
+                    fill="currentColor"
+                    aria-hidden
+                  >
+                    <path d="M13 2.5l1.9 5.6 5.6 1.9-5.6 1.9L13 17.5l-1.9-5.6L5.5 10l5.6-1.9L13 2.5z" />
+                    <path d="M5.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z" />
+                  </svg>
+                  {heeftTekst ? "Netter maken" : "Begin voor mij"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => verstuur(actieveGroep)}
+                  disabled={!(invoer[actieveGroep] ?? "").trim() || versturen}
+                  className="rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-dark disabled:opacity-50"
+                >
+                  {versturen ? "Bezig…" : "Versturen"}
+                </button>
+              </div>
             </div>
             {fout && (
               <p className="mt-2 text-sm text-red-600">
