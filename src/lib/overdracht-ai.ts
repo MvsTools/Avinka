@@ -23,7 +23,6 @@ import {
   type PlanningBron,
   type Soort,
 } from "@/lib/planning";
-import { SOORT_INFO } from "@/lib/agenda-herken";
 import { haalMaskering } from "@/lib/ai-maskering";
 
 // Een korte, taalkundige klus. Zelfde keuze als bij Oudercontact: hier hoeft
@@ -60,10 +59,11 @@ van, dat de leerkracht daarna zelf aanvult.
   oordelen, geen namen van kinderen, geen bijzonderheden die er niet staan.
 - Schrijf nooit alsof je weet hoe de dag is verlopen. Je weet wat er gepland stond,
   meer niet.
-- Laat weg wat een collega toch al weet of niet hoeft te horen.
+- Laat weg wat een collega toch al weet. Meld dus nooit dat er een studiedag,
+  een vakantie, een vergadering of een schoolactiviteit is: dat staat in de
+  schoolagenda en weet je collega van school zelf.
 - Staat er een toets, een oudergesprek of een rapportmoment tussen, begin daarmee.
-  Dat is voor een collega het belangrijkste nieuws van de dag; het gewone rooster
-  komt daarna en mag kort.
+  Daar hangt gedeeld werk aan; het gewone rooster komt daarna en mag kort.
 - Wat morgen komt zet je aan het eind.`;
 
 // ── De feiten van vandaag (gewone code, geen AI) ──────────────────────────
@@ -76,34 +76,21 @@ export type Dagfeiten = {
 };
 
 // De agenda weet al wat vóór soort afspraak iets is (zie agenda-herken.ts:
-// "cito", "dictee" en "eindtoets" worden een toets, "spreekavond" en "10
-// minuten" een gesprek, enzovoort). Dat is precies de indeling die een
-// overdracht in de praktijk ook gebruikt: een toets, een oudergesprek en een
-// rapportmoment zijn ander nieuws dan zomaar een afspraak, en een collega wil
-// die als eerste horen. Eén platte lijst met titels gooide dat verschil weg.
+// "cito" en "dictee" worden een toets, "spreekavond" en "10 minuten" een
+// gesprek, "studiedag" een dag zonder les).
 //
-// De volgorde hieronder is de volgorde waarin de regels de prompt in gaan, dus
-// belangrijkste eerst.
-const AGENDA_VOLGORDE: Soort[] = [
-  "toets",
-  "gesprek",
-  "rapport",
-  "vrij",
-  "vergadering",
-  "activiteit",
-  "overig",
-];
+// ⚠️ Maar we noemen ze niet allemaal. Een studiedag, een vergadering, een
+// schoolreis of de schoolfotograaf staat in de schoolagenda en weet je collega
+// dus toch al: dat in een overdracht zetten is vulling. Wat overblijft zijn de
+// drie soorten waar GEDEELD WERK aan vastzit, en waar dus altijd een vervolg
+// bij hoort: een toets moet nagekeken, een oudergesprek teruggekoppeld, een
+// rapport samen geschreven. Op deze volgorde, belangrijkste eerst.
+const AGENDA_VOLGORDE: Soort[] = ["toets", "gesprek", "rapport"];
 
-const AGENDA_LABEL: Record<Soort, string> = {
+const AGENDA_LABEL: Partial<Record<Soort, string>> = {
   toets: "Toets",
   gesprek: "Gesprekken met ouders",
   rapport: "Rapporten",
-  vrij: "Geen les",
-  vergadering: "Vergadering",
-  activiteit: "Activiteit",
-  overig: "Verder in de agenda",
-  // Vakanties zeggen we zelf, in de zin over of er les is.
-  vakantie: "Vakantie",
 };
 
 /** Eén afspraak als tekst. De tijd alleen waar hij iets toevoegt. */
@@ -112,13 +99,8 @@ function noem(item: PlanItem, metTijd: boolean): string {
 }
 
 /** Per soort één regel, op volgorde van belang. Hooguit vijf per soort. */
-function agendaRegels(
-  items: PlanItem[],
-  wanneer: string,
-  metTijd: boolean,
-  overslaan: Soort[] = [],
-): string[] {
-  return AGENDA_VOLGORDE.filter((soort) => !overslaan.includes(soort)).flatMap((soort) => {
+function agendaRegels(items: PlanItem[], wanneer: string, metTijd: boolean): string[] {
+  return AGENDA_VOLGORDE.flatMap((soort) => {
     const groep = items.filter((i) => i.soort === soort).slice(0, 5);
     if (!groep.length) return [];
     return [
@@ -149,11 +131,10 @@ export function feitenVanVandaag(bron: PlanningBron, vandaag: string): Dagfeiten
   const morgenItems = dagbeeld(bron, morgen).items.filter((i) => i.soort !== "vakantie");
 
   if (beeld.vrij) {
-    // Is de dag vrij door een studiedag of margedag, dan staat de reden in die
-    // afspraak zelf. Anders komt hij uit de vakantieregeling.
-    const reden =
-      beeld.vakantie?.naam ?? afspraken.find((i) => SOORT_INFO[i.soort]?.vrij)?.titel;
-    regels.push(reden ? `Vandaag is er geen les: ${reden}.` : "Vandaag is er geen les.");
+    // Wel zeggen dát er geen les was, niet waarom. Anders schrijft de AI over
+    // lessen die er niet waren; en de reden (studiedag, vakantie) kent je
+    // collega van school zelf.
+    regels.push("Vandaag was er geen les.");
   } else if (lessen.length) {
     regels.push(
       "Op het rooster stond vandaag: " +
@@ -167,9 +148,7 @@ export function feitenVanVandaag(bron: PlanningBron, vandaag: string): Dagfeiten
     );
   }
 
-  // Is de dag al vrij verklaard, dan zou de "vrij"-afspraak dat een tweede keer
-  // zeggen. Morgen mag hij juist wél apart genoemd worden: dat is nieuws.
-  const vandaagRegels = agendaRegels(afspraken, "vandaag", true, beeld.vrij ? ["vrij"] : []);
+  const vandaagRegels = agendaRegels(afspraken, "vandaag", true);
   const morgenRegels = agendaRegels(morgenItems, `morgen (${dagnaam(morgen)})`, false);
   regels.push(...vandaagRegels, ...morgenRegels);
 
