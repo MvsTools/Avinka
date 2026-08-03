@@ -12,6 +12,7 @@ import {
   type DuoOverdracht as Bericht,
 } from "@/lib/db";
 import { Kaartvenster } from "./SchooljaarDagkaart";
+import DagTegel from "./DagTegel";
 
 type Groep = { klasId: string; klasNaam: string };
 
@@ -135,64 +136,48 @@ export default function DuoOverdracht() {
 
   return (
     <>
-      <button
-        type="button"
+      <DagTegel
         onClick={() => (open ? setOpen(false) : openen())}
-        className={
-          "rounded-3xl border px-5 py-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md " +
-          (totaalNieuw > 0 ? "border-brand/30 bg-brand-soft" : "border-black/5 bg-white")
+        label="Overdracht"
+        labelKleur={totaalNieuw > 0 ? "text-brand-dark" : "text-ink/40"}
+        achtergrond={totaalNieuw > 0 ? "border-brand/30 bg-brand-soft" : "border-black/5 bg-white"}
+        badge={
+          "text-sm font-bold " + (totaalNieuw > 0 ? "bg-brand text-white" : "bg-ink/[0.06] text-ink/70")
+        }
+        icon={
+          totaalNieuw > 0 ? (
+            totaalNieuw
+          ) : (
+            <svg
+              viewBox="0 0 24 24"
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M4 6h16v10H8l-4 3z" />
+            </svg>
+          )
         }
       >
-        <div className="flex items-center gap-3">
-          <span
-            className={
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold " +
-              (totaalNieuw > 0 ? "bg-brand text-white" : "bg-ink/[0.06] text-ink/70")
-            }
-          >
-            {totaalNieuw > 0 ? (
-              totaalNieuw
-            ) : (
-              <svg
-                viewBox="0 0 24 24"
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <path d="M4 6h16v10H8l-4 3z" />
-              </svg>
-            )}
-          </span>
-          <p
-            className={
-              "text-xs font-bold uppercase tracking-wider " +
-              (totaalNieuw > 0 ? "text-brand-dark" : "text-ink/40")
-            }
-          >
-            Overdracht
+        {totaalNieuw > 0 ? (
+          <p className="text-lg font-bold leading-tight text-ink">
+            {totaalNieuw === 1 ? "1 nieuw bericht" : `${totaalNieuw} nieuwe berichten`}
           </p>
-        </div>
-        <div className="mt-2 pl-[52px]">
-          {totaalNieuw > 0 ? (
-            <p className="text-lg font-bold leading-tight text-ink">
-              {totaalNieuw === 1 ? "1 nieuw bericht" : `${totaalNieuw} nieuwe berichten`}
+        ) : laatste ? (
+          <>
+            <p className="truncate text-lg font-bold leading-tight text-ink">{laatste.tekst}</p>
+            <p className="truncate text-sm text-ink/60">
+              {laatste.auteur === mijnId ? "Van jou" : `Van ${namen[laatste.auteur] || "collega"}`}
             </p>
-          ) : laatste ? (
-            <>
-              <p className="truncate text-lg font-bold leading-tight text-ink">{laatste.tekst}</p>
-              <p className="mt-0.5 truncate text-sm text-ink/60">
-                {laatste.auteur === mijnId ? "Van jou" : `Van ${namen[laatste.auteur] || "collega"}`}
-              </p>
-            </>
-          ) : (
-            <p className="text-lg font-bold leading-tight text-ink">Nog geen overdracht</p>
-          )}
-        </div>
-      </button>
+          </>
+        ) : (
+          <p className="text-lg font-bold leading-tight text-ink">Nog geen overdracht</p>
+        )}
+      </DagTegel>
 
       {open && (
         <Kaartvenster titel="Overdracht" sluit={() => setOpen(false)}>
