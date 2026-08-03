@@ -545,11 +545,14 @@ function RapportStijl() {
          Nu liggen er drie papieren naast elkaar, elk met één cijfer. Dezelfde
          drie getallen als in de vorige versie, maar als compositie in plaats
          van als lijstje in één kaart. */
-      /* ⚠️ De maten zijn nagerekend, niet gegokt. Bij een tussenruimte van
-         52px was rapport + briefjes + herkomst samen 1142 breed in een kolom
-         van 1104, en dan wipte de herkomst naar een tweede regel onder de
-         kaart terwijl rechts alles leeg bleef. Nu: 368 + 38 + 434 + 38 + 192
-         = 1070 en het past. */
+      /* ⚠️ DE BREEDTES ZIJN NAGEREKEND EN MOETEN NAGEREKEND BLIJVEN. Alles
+         samen moet onder de 1104 van de tekstkolom blijven, anders wipt de
+         uitleg naar een tweede rij onder de kaart en blijft rechts alles leeg.
+         Dat is al twee keer gebeurd: één keer met te veel tussenruimte, en één
+         keer toen de kaartjes met hun getal mee gingen groeien (373 + 469 +
+         222 + 2x34 = 1132). Nu: 373 + 30 + 447 + 30 + 205 = 1085.
+         🔑 Meet bij een wijziging hier het AANTAL RIJEN, niet alleen de
+         breedtes — die tellen op zonder dat je het ziet. */
       .rp-bijgewerkt {
         margin-top: 0.45rem;
         margin-bottom: clamp(18px, 2.2vw, 28px);
@@ -571,7 +574,7 @@ function RapportStijl() {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: clamp(18px, 2.4vw, 34px);
+        gap: clamp(16px, 2.1vw, 30px);
       }
       /* Naast elkaar in plaats van onder elkaar, elk op een eigen hoogte.
          Onder elkaar was het een kolom naast een kaart, en dan blijft de
@@ -760,9 +763,15 @@ function RapportStijl() {
       }
 
       /* ── de twee losse cijfers, elk een eigen kleur en vorm ── */
+      /* ⚠️ De inhoud stond links terwijl het kaartje een MINIMUM-breedte heeft.
+         Bij een kort getal als "37" bleef er dan rechts een gat staan en hing
+         alles scheef in het vlak. Op een scorebord-tegel hoort het getal
+         gecentreerd; het rapport en de uitleg blijven links, want dat zijn
+         documenten en die lees je van links naar rechts. */
       .rp-briefje {
-        min-width: clamp(158px, 17vw, 205px);
+        min-width: clamp(150px, 15vw, 185px);
         padding: clamp(16px, 1.9vw, 22px) clamp(18px, 2vw, 24px);
+        text-align: center;
       }
       .rp-briefje:nth-child(1) {
         --hoek: -2.6deg;
@@ -821,7 +830,7 @@ function RapportStijl() {
          368 + 34 + 434 + 34 + 222 = 1092, past nog steeds. */
       .rp-bron {
         --hoek: -1.8deg;
-        width: clamp(178px, 17.5vw, 222px);
+        width: clamp(172px, 16vw, 205px);
         /* crème: de vierde kleur van de verzameling */
         background: var(--color-cream, #fbf6ee);
         border-radius: 2rem 1.4rem 2.2rem 1.3rem;
