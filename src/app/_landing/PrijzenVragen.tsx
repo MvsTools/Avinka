@@ -294,12 +294,12 @@ export function WereldPrijzen({
             /* Dicht = je hebt dit al, of het zit al in wat je hebt. Dan is de
                kaart geen aanbod meer maar informatie. */
             const dicht = stand.soort === "huidig" || stand.soort === "inbegrepen";
-            /* De held-uitlichting (chip + blob) hangt puur aan `plan.held`,
-               niet aan `dicht`. Die twee eerder wél aan elkaar knopen gaf een
-               kaart die van uiterlijk verschilde per bezoeker — precies wat
-               niet de bedoeling is: de kaart blijft in alle standen identiek,
-               alleen de knop onderin verandert. */
-            const uitgelicht = Boolean(plan.held);
+            /* "Meest gekozen" is een AANRADER, en die hoort niet meer op je
+               scherm te staan zodra je 'm al gevolgd bent. Heb je Compleet of
+               Pro, dan verdwijnt de chip op de Compleet-kaart; heb je Start
+               (of ben je uitgelogd/in de proef), dan blijft hij staan, want
+               dan is het nog een zinnig advies. */
+            const uitgelicht = Boolean(plan.held) && (!huidigPlan || RANG[huidigPlan] < RANG[plan.id]);
             /* Blijft er nog maar één stap over (Compleet-klant die alleen naar
                Pro kan), dan is dat de enige actie op de pagina en verdient hij
                het volle gewicht, ook al is Pro niet de held. */
@@ -389,9 +389,14 @@ export function WereldPrijzen({
                   </p>
                 ) : (
                   <BlobKnop
-                    /* Overstappen gebeurt in het dashboard, waar de betaling
-                       en de opzegtermijn staan; de voorpagina stuurt er alleen
-                       naartoe. Nieuwe bezoekers gaan naar het aanmelden. */
+                    /* ⚠️ De TEKST op deze knop is altijd "Probeer gratis",
+                       ingelogd of uitgelogd, kiesbaar of upgrade — hier stond
+                       "Upgrade naar {naam}" voor wie moet overstappen, en dat
+                       maakte de kaart weer iets dat per bezoeker verschilt.
+                       Alleen de bestemming verschilt: overstappen gebeurt in
+                       het dashboard, waar de betaling en de opzegtermijn
+                       staan; de voorpagina stuurt er alleen naartoe. Nieuwe
+                       bezoekers gaan naar het aanmelden. */
                     href={
                       stand.soort === "upgrade"
                         ? /* wijzig=1 klapt de pakketten daar meteen open (anders
@@ -407,7 +412,7 @@ export function WereldPrijzen({
                     maat="klein"
                     className="mt-8 w-full"
                   >
-                    {stand.soort === "upgrade" ? `Upgrade naar ${plan.naam}` : "Probeer gratis"}
+                    Probeer gratis
                   </BlobKnop>
                 )}
               </div>
