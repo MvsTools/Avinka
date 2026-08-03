@@ -15,7 +15,6 @@
 // voornamen van kinderen en de schoolnaam verlaten het apparaat niet.
 
 import { dagbeeld, dagnaam, kort, plus, type PlanningBron } from "@/lib/planning";
-import type { DuoTaak } from "@/lib/db";
 import { haalMaskering } from "@/lib/ai-maskering";
 
 // Een korte, taalkundige klus. Zelfde keuze als bij Oudercontact: hier hoeft
@@ -63,11 +62,14 @@ export type Dagfeiten = {
   leeg: boolean;
 };
 
+// ⚠️ De gedeelde takenlijst zit hier BEWUST niet in. Die staat al op Start, met
+// afvinken en een naam erbij, dus je collega ziet hem gewoon. En een bericht is
+// een momentopname die 30 dagen blijft staan terwijl die lijst leeft: vink je
+// een taak vanavond af, dan zegt de overdracht morgen nog dat hij openstaat.
 export function feitenVanVandaag(
   bron: PlanningBron,
   vandaag: string,
   groepNaam: string,
-  taken: DuoTaak[],
 ): Dagfeiten {
   const beeld = dagbeeld(bron, vandaag);
   const regels: string[] = [
@@ -86,8 +88,6 @@ export function feitenVanVandaag(
   const morgenItems = dagbeeld(bron, morgen)
     .items.filter((i) => i.soort !== "vakantie")
     .slice(0, 3);
-
-  const openTaken = taken.filter((t) => !t.gedaan).slice(0, 8);
 
   if (beeld.vrij) {
     regels.push(
@@ -126,15 +126,9 @@ export function feitenVanVandaag(
     );
   }
 
-  if (openTaken.length) {
-    regels.push(
-      "Gedeelde taken die nog openstaan: " + openTaken.map((t) => t.tekst).join("; ") + ".",
-    );
-  }
-
   // De eerste twee regels zijn alleen context. Staat er verder niets, dan valt
   // er niets te schrijven en zou de AI het gat gaan vullen.
-  const leeg = !lessen.length && !afspraken.length && !morgenItems.length && !openTaken.length;
+  const leeg = !lessen.length && !afspraken.length && !morgenItems.length;
   return { regels, leeg };
 }
 

@@ -5,7 +5,6 @@ import {
   getGedeeldeKlassen,
   getKlasCollegas,
   getDuoOverdrachten,
-  getDuoTaken,
   getOverdrachtGelezen,
   markeerOverdrachtGelezen,
   zetDuoOverdracht,
@@ -166,8 +165,7 @@ export default function DuoOverdracht({
     if (getypt) {
       antwoord = await maakNetter(getypt);
     } else {
-      const taken = await getDuoTaken(groep.klasId);
-      const feiten = feitenVanVandaag(bron, vandaag, groep.klasNaam, taken);
+      const feiten = feitenVanVandaag(bron, vandaag, groep.klasNaam);
       if (feiten.leeg) {
         // Zonder feiten valt er niets te schrijven, en dan gaat de AI het gat
         // vullen met iets dat niet gebeurd is. Dus vragen we het niet eens.
