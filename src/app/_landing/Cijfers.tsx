@@ -325,17 +325,32 @@ function Rapport({
          het mintveld van de prijzen. De papieren liggen dus met hun bovenkant
          op papier en met hun onderkant op mint, precies zoals de makerskaart
          dat al doet. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 top-[48%]" aria-hidden>
+      {/* ⚠️ DE GOLF VIEL WEG, EN DIT IS WAAROM.
+         Het mintvlak liep van 48% tot de sectiegrens: 219 pixels. De golf zelf
+         is 210 pixels hoog, dus er bleef 9 pixel mint over. De dalen van de
+         golf reikten daardoor tot vlak boven de sectiegrens en het laatste
+         stuk was over de volle breedte papier; pas ná de grens begon de mint
+         van de prijzen. Resultaat: een kaarsrechte lijn op de sectierand in
+         plaats van een golf. Nagemeten met een kleurscan op drie x-posities.
+         🔑 REGEL: een golf heeft ALTIJD een flinke laag van zijn eigen kleur
+         onder zich nodig, anders knipt de sectiegrens hem af. Hier: mint vanaf
+         38%, golf 180 hoog, ruim honderd pixel massieve mint eronder. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 top-[40%]" aria-hidden>
         <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
-        {/* Fors hoger dan de standaard (60/96px): op die maat was het een
-           streepje in plaats van een golf, en dan doet de overgang geen werk. */}
-        <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="speels" hoogte="h-[130px] sm:h-[210px]" />
+        {/* Vorm "zacht": een rustige dubbele deining die links en rechts op
+           dezelfde hoogte begint en eindigt. Hij was als enige nog ongebruikt,
+           en dat is geen toeval maar beleid: elke overgang op deze pagina
+           heeft zijn eigen golfvorm, anders leest de decoratie als een
+           sjabloon. "speels" stond hier eerst, maar dat is de golf van de
+           polaroids een sectie hoger, én hij loopt zo schuin weg dat hij bij
+           deze hoogte als een schuine streep las in plaats van als een golf. */}
+        <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="zacht" hoogte="h-[100px] sm:h-[155px]" />
         {/* Alleen afsluiten als er gewoon papier volgt. Volgen de prijzen (ook
            mint), dan loopt het veld door en zou een golf hier een naad maken. */}
         {!prijzenVolgt && <Golf kleur="var(--w-papier, #fcfbf7)" vorm="rust" hoogte="h-[70px] sm:h-[110px]" />}
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-20 pt-6 lg:pb-24">
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-28 pt-6 lg:pb-32">
         <Confetti
           punten={[
             { x: "2%", y: "22%", r: 4, amber: true },
@@ -546,9 +561,10 @@ function RapportStijl() {
       }
       .rp-onder {
         margin-top: clamp(8px, 1vw, 12px);
-        font-size: clamp(1rem, 1.35vw, 1.1rem);
-        line-height: 1.5;
-        color: rgba(34, 28, 58, 0.72);
+        font-size: clamp(1rem, 1.35vw, 1.12rem);
+        font-weight: 600;
+        line-height: 1.45;
+        color: rgba(34, 28, 58, 0.8);
         /* ruimte vrijhouden voor de stempel rechtsonder */
         padding-right: clamp(52px, 5.4vw, 68px);
       }
@@ -557,24 +573,36 @@ function RapportStijl() {
          Geen map eronder en geen kop: het rapport blijft het hoofddocument.
          Elk briefje heeft een eigen hoek, anders liggen ze als een tabel op
          elkaar gestapeld en is het weer een lijstje. */
-      /* ⚠️ "Gewoon saai wit vierkant" was de klacht, en terecht. Elk papiertje
-         heeft nu de soort die bij zijn inhoud hoort, zoals in een schoolschrift:
-         cijfers op RUITJES, tekst met een KANTLIJN. Heel licht gehouden — het
-         moet als papier lezen, niet als patroon. Het ruitjesmotief komt uit de
-         themavariant "Diep bos", die de eigenaar destijds als enige onderdeel
-         daarvan wilde bewaren. */
+      /* ⚠️ Hier heeft een ruitjespatroon gezeten om de briefjes op
+         rekenpapier te laten lijken. Afgekeurd: op zo'n klein vlak wordt het
+         een patroon in plaats van papier, en het vecht met de cijfers die er
+         juist uit moeten springen. Het karakter komt nu uit de TYPOGRAFIE en
+         uit hoe het papier reageert als je erover gaat. */
       .rp-briefje {
         width: clamp(158px, 17vw, 205px);
-        background-color: #fffefb;
-        background-image:
-          repeating-linear-gradient(to right, rgba(34,28,58,0.05) 0 1px, transparent 1px 16px),
-          repeating-linear-gradient(to bottom, rgba(34,28,58,0.05) 0 1px, transparent 1px 16px);
+        background: #fffefb;
         border-radius: 5px;
         padding: clamp(13px, 1.5vw, 18px) clamp(15px, 1.7vw, 20px);
         box-shadow: ${schaduw(12, 28, -14, 0.28)};
       }
-      .rp-briefje:nth-child(1) { transform: rotate(-2.3deg) translateY(clamp(-26px, -2vw, -14px)); }
-      .rp-briefje:nth-child(2) { transform: rotate(1.8deg) translateY(clamp(14px, 2vw, 26px)); }
+      /* 🔑 De hoek en de hoogte staan in variabelen, zodat de hover ze kan
+         bijstellen zonder ze te overschrijven. Ga je er met de muis over, dan
+         gaat het papiertje iets rechter liggen en komt het omhoog: je pakt het
+         op. Dat is het enige speelse dat de kaartjes hebben, en het is
+         onzichtbaar tot je het zoekt. Dezelfde beweging als de toolkaarten in
+         de galerij, dus geen nieuw idioom. */
+      .rp-briefje:nth-child(1) { --hoek: -2.3deg; --lift: clamp(-26px, -2vw, -14px); }
+      .rp-briefje:nth-child(2) { --hoek: 1.8deg; --lift: clamp(14px, 2vw, 26px); }
+      .rp-briefje, .rp-bron, .rp-map {
+        transform: rotate(var(--hoek, 0deg)) translateY(var(--lift, 0px));
+        transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+          box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .rp-briefje:hover, .rp-bron:hover, .rp-map:hover {
+        transform: rotate(calc(var(--hoek, 0deg) * 0.35))
+          translateY(calc(var(--lift, 0px) - 5px));
+        box-shadow: ${schaduw(26, 52, -22, 0.36)};
+      }
       .rp-briefgetal {
         display: block;
         font-family: var(--font-display), Georgia, serif;
@@ -583,12 +611,20 @@ function RapportStijl() {
         line-height: 0.95;
         color: ${DONKER};
       }
-      .rp-klein { font-size: clamp(1.55rem, 2.4vw, 2rem); }
+      /* ⚠️ De briefjes waren typografisch te dun: een middelgroot cijfer met
+         een lichtgrijs woordje eronder leest als een bijschrift, niet als een
+         mededeling. Het cijfer is nu fors groter (het is het onderwerp van het
+         papiertje) en het woord staat in merkgroen op gewicht 700 strak tegen
+         de onderkant van het cijfer aan. Dat maakt van elk briefje één blok in
+         plaats van twee losse regels. */
+      .rp-klein { font-size: clamp(2.05rem, 3.1vw, 2.8rem); }
       .rp-brieflabel {
         display: block;
-        margin-top: 0.3rem;
-        font-size: clamp(0.9rem, 1.15vw, 1rem);
-        color: rgba(34, 28, 58, 0.66);
+        margin-top: 0.15rem;
+        font-size: clamp(0.95rem, 1.2vw, 1.05rem);
+        font-weight: 700;
+        letter-spacing: -0.005em;
+        color: ${KOP};
       }
 
       /* ── de stempel ── */
@@ -624,7 +660,7 @@ function RapportStijl() {
                  clamp(22px, 2.2vw, 28px);
         box-shadow: ${schaduw(12, 28, -14, 0.24)};
         /* een derde hoek, anders liggen twee papieren precies parallel */
-        transform: rotate(-1.5deg);
+        --hoek: -1.5deg;
       }
       /* De letters op dit kaartje zijn voller dan op de rest. Als lichte
          kleine tekst las het als de kleine lettertjes onderaan een formulier,
@@ -726,6 +762,12 @@ function RapportStijl() {
       }
 
       @media (prefers-reduced-motion: reduce) {
+        /* Het oppakken vervalt; de schaduw mag wel meebewegen, dat is geen
+           verplaatsing. */
+        .rp-briefje, .rp-bron, .rp-map { transition: box-shadow 0.4s ease; }
+        .rp-briefje:hover, .rp-bron:hover, .rp-map:hover {
+          transform: rotate(var(--hoek, 0deg)) translateY(var(--lift, 0px));
+        }
         .rp-inkt, .rp-stempel, .rp-puls { animation: none !important; }
         .rp-inkt, .rp-stempel { opacity: 1 !important; }
         .rp-stempel { opacity: 0.72 !important; }
