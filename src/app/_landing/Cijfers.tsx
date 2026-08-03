@@ -429,11 +429,13 @@ function Rapport({
               <p className="rp-hoofd">
                 <Waarde getal={uren} eenheid="uur" groot />
               </p>
-              {/* ⚠️ Stond eerst "teruggegeven na schooltijd". Dat las stroef en zei
-                 niets over wat het oplevert. Deze zegt wél waar het over gaat
-                 (bespaarde tijd) en houdt vast dat het werk van ná schooltijd
-                 is, want dat was het inzicht waar de hele eenheid op berust. */}
-              <p className="rp-onder">bespaard op werk na schooltijd</p>
+              {/* ⚠️ Twee eerdere versies: "teruggegeven na schooltijd" (las
+                 stroef) en "bespaard op werk na schooltijd" (te omslachtig).
+                 "Administratie" is het woord waar een leerkracht meteen iets
+                 bij voelt, en het dekt precies wat de tools overnemen. Dat het
+                 om werk van ná schooltijd gaat zit er nu impliciet in: dáár
+                 doe je je administratie. */}
+              <p className="rp-onder">administratie bespaard</p>
 
               {/* De stempel valt over de rand van het kaartje heen. Dat is wat
                  hem gedrukt laat lijken in plaats van geplaatst: niemand
@@ -444,7 +446,7 @@ function Rapport({
           {(toonLeerkrachten || toonUitwerkingen) && (
             <div className="rp-briefjes">
               {toonLeerkrachten && <Briefje getal={cijfers.leerkrachten} label="leerkrachten" />}
-              {toonUitwerkingen && <Briefje getal={cijfers.uitwerkingen} label="taken afgevinkt" />}
+              {toonUitwerkingen && <Briefje getal={cijfers.uitwerkingen} label="keer afgevinkt" />}
             </div>
           )}
 
