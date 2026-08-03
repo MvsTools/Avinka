@@ -248,8 +248,8 @@ export default function DuoOverdracht() {
                     {/* Kort houden: drie feiten, geen alinea. De volledige uitleg
                         over bewaren staat in /privacy. */}
                     <p className="mt-1.5 text-xs text-ink/45">
-                      Vervangt je vorige briefje · weg na 30 dagen · geen medische of
-                      gezinsgegevens
+                      Vervangt je vorige briefje · weg na 30 dagen · geen privacygevoelige
+                      informatie
                     </p>
                   </div>
                 </div>
