@@ -110,10 +110,13 @@ export function schaduw(y: number, blur: number, spread: number, alpha: number, 
   return `${-Math.round(y * SCHADUW_HELLING)}px ${y}px ${blur}px ${spread}px rgba(${kleur},${alpha})`;
 }
 
-/* Rand en schaduw van de organische kaarten (regie-kaartjes én de makers-
-   kaart), zodat die twee gegarandeerd hetzelfde aanvoelen. */
+/* Rand van de organische kaarten. Hier stond ook een bijpassende
+   KAART_SCHADUW — schaduw(34, 66, -34, 0.6) — zodat de regie-kaartjes en de
+   makerskaart gegarandeerd hetzelfde aanvoelden. Die is weg omdat de
+   makerskaart een klein colofon-kaartje is geworden en een grote-kaart-
+   schaduw hem laat zweven; hij draagt nu zijn eigen, kortere schaduw (zie
+   WereldMaker). Privacy.tsx heeft een eigen kopie van allebei. */
 const KAART_RAND = "var(--w-kaart-rand, #d4e5dc)";
-const KAART_SCHADUW = schaduw(34, 66, -34, 0.6);
 
 /* Witte kaart met grote ronding: dé kaartvorm van deze wereld. */
 export const KAART =
@@ -743,7 +746,37 @@ export function WereldHerken() {
 }
 
 
-/* 6. De maker: mint-veld met liniaal-silhouet, één witte kaart. */
+/* 6. De maker: een COLOFON, geen sectie over één persoon.
+   ── Waarom dit stuk is gehalveerd ──────────────────────────────────────
+   Wat hier stond was een kaart van bijna een heel scherm hoog: een portret
+   van 208px, een display-kop van 36px ("Ik ben Michael. Net als jij sta ik
+   voor de klas."), twee alinea's van vier regels en daaronder nóg een
+   mintblok met de slotzin. Alles klopte los van elkaar, maar samen kreeg
+   één persoon evenveel ruimte als het hele productverhaal erboven. Voor een
+   serieus product is dat de verkeerde verhouding: het kaartje moet
+   vertrouwen wekken, niet de pagina overnemen.
+
+   Het is nu een colofon-kaartje: een klein, liggend object dat links in het
+   veld ligt met open mint ernaast, ongeveer 40rem breed in plaats van
+   paginabreed. Wat eruit ging en waarom:
+   - de display-kop. Die deed inhoudelijk hetzelfde als de handgeschreven
+     regel eronder ("van een leerkracht, voor leerkrachten") en was hier de
+     tweede titel binnen één blok.
+   - het aparte mintblok met de slotzin. Die zin is het punt van het
+     verhaal, dus die is gebléven — maar nu als gewone tweede regel in
+     kopkleur, waar hij precies dezelfde nadruk krijgt voor een fractie van
+     de hoogte.
+   - de alinea over "een bredere missie". Dat is een zin over de maker, niet
+     over de lezer.
+   Wat bleef: de foto in de organische vorm met het mintvlak dat er schuin
+   onderuit steekt (het enige echt eigen detail van dit kaartje), de naam en
+   de rol, en de tagline in handschrift.
+
+   ⚠️ De VELDOPBOUW is met opzet niet aangeraakt: de mint begint nog steeds
+   op de halve hoogte van de sectie, de padding boven en onder is nog steeds
+   gelijk (dus de kleurnaad valt nog steeds halverwege de kaart) en de
+   kam-golf is dezelfde. Alleen de maten van de achtergrondvormen zijn
+   meegekrompen met de sectie — zie de opmerkingen daar. */
 export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
   return (
     <section className="relative overflow-hidden">
@@ -768,12 +801,29 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            het vlak boven de golf uit het papier in steken — precies de fout
            die eerder bij het polaroid-vlak is hersteld. */}
         <div className="absolute inset-0 overflow-hidden">
+          {/* De liniaal stond hiervóór BUITEN deze laag, met `bottom` gemeten
+             vanaf de sectie (150px) en een breedte van 460. Dat kon toen: de
+             sectie was ruim 900px hoog, dus de mintrand lag er honderden
+             pixels boven. Bij een sectie van rond de 450px zou diezelfde
+             liniaal met zijn linkerpunt dwars door de golf het papier in
+             steken — een mintkleurig silhouet op papier, precies wat de
+             veldregels verbieden. Nu ligt hij ín het geclipte mintvakje en
+             wordt hij door de golf hieronder netjes op de kleurrand
+             afgesneden, dezelfde ingreep als bij het vlak hiernaast: hij komt
+             onder het veld vandaan in plaats van eroverheen te liggen.
+             Kleiner (320 i.p.v. 460) omdat hij anders in de halve sectie het
+             grootste ding van het beeld wordt. */}
+          <SilhouetLiniaal
+            kleur={MINT_DIEP}
+            veld={MINT_LICHT}
+            style={{ width: 320, left: -90, bottom: 60, transform: "rotate(-12deg)" }}
+          />
           <KaartVlak
             kleur={VLAK_MINT}
             vorm="ei"
-            breedte={660}
-            hoogte={400}
-            style={{ right: "-8%", top: -80, transform: "rotate(7deg)" }}
+            breedte={480}
+            hoogte={260}
+            style={{ right: "-6%", top: -50, transform: "rotate(7deg)" }}
             className="hidden lg:block"
             tel={5}
           />
@@ -781,8 +831,6 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
 
         <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="kam" />
       </div>
-      {/* De liniaal hoort in het mintveld te liggen, dus onderin de sectie. */}
-      <SilhouetLiniaal kleur={MINT_DIEP} veld={MINT_LICHT} style={{ width: 460, left: -120, bottom: 150, transform: "rotate(-14deg)" }} />
       {/* De bovenhelft van deze sectie (nog papier) had niets. Samen met de
          onderkant van de privacysectie was dat het grootste gat in het
          achtergrondweefsel van de pagina. Rechts, tegenover de liniaal die
@@ -793,29 +841,37 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         <KaartVlak
           kleur={VLAK_PAPIER}
           vorm="wig"
-          breedte={600}
-          hoogte={320}
-          style={{ right: "-12%", top: 70, transform: "rotate(-8deg)" }}
+          breedte={460}
+          hoogte={240}
+          style={{ right: "-12%", top: 40, transform: "rotate(-8deg)" }}
           className="hidden lg:block"
           tel={6}
         />
       )}
 
-      <div className="relative z-10 mx-auto w-full max-w-4xl px-6 pb-32 pt-32 lg:pb-36 lg:pt-36">
-        {/* De kaart hoort nu bij de familie: organische radii, tonale rand en
-           het vinkje-badge op de bovenrand, net als de regie-kaartjes. Hij was
-           daarvoor een strak afgerond blok met drie lange alinea's, waardoor
-           hij als een lap tekst las in plaats van als een kennismaking. */}
+      {/* max-w-5xl in plaats van max-w-4xl: de linkerrand van het kaartje valt
+         nu precies op de tekstkolom van de intro- en herken-sectie. Het
+         kaartje zelf is smaller dan die kolom en staat er links in (mr-auto),
+         zodat er open mintveld naast blijft — een klein ding dat ergens ligt,
+         niet een blok dat de pagina afsluit. */}
+      <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pb-20 pt-20 lg:pb-24 lg:pt-24">
         <div
           data-reveal
-          className="relative border-[2.5px] px-8 py-12 sm:px-14 sm:py-14"
+          className="relative mr-auto w-full max-w-[40rem] border-2 px-7 py-7 sm:px-9 sm:py-9"
           style={{
             /* niet puur wit: een warme papiertoon houdt de kaart in dezelfde
                wereld als het gespikkelde papier van de pagina */
             background: "var(--w-kaart-warm, #fffdf9)",
-            borderRadius: "3.2rem 2.4rem 3.4rem 2.6rem / 2.6rem 3.4rem 2.4rem 3.2rem",
+            /* dezelfde ongelijke radii-familie als de grote kaarten, maar
+               meegeschaald: 3,2rem op een kaartje van deze hoogte maakte van
+               de hoeken het onderwerp */
+            borderRadius: "2.2rem 1.6rem 2.4rem 1.8rem / 1.8rem 2.4rem 1.6rem 2.2rem",
             borderColor: KAART_RAND,
-            boxShadow: KAART_SCHADUW,
+            /* eigen, kortere schaduw i.p.v. KAART_SCHADUW (34/66): die is
+               gemaakt voor de grote kaarten en laat dit kaartje een halve
+               meter boven de pagina zweven. Zelfde lichtrichting, dichter bij
+               het papier — het is een klein object. */
+            boxShadow: schaduw(20, 44, -24, 0.5),
             rotate: "-0.6deg",
           }}
         >
@@ -827,24 +883,19 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
               { x: "2%", y: "86%", r: 4 },
             ]}
           />
-          {/* Hier hing een groen vinkje-badge over de bovenrand. Eruit op
-             verzoek: het vinkje van het merk zit al in het mintblok onderaan
-             deze kaart, en op een kennismaking met de maker voegt een
-             afvink-teken niets toe. */}
 
-          <div className="relative flex flex-col gap-10 sm:flex-row sm:items-stretch sm:gap-12">
-            {/* Portretkolom: de foto in een organische vorm in plaats van een
-               cirkel, met een zacht mintvlak dat er schuin onderuit steekt.
-               Naam en rol staan hier, niet onderaan de tekst: dan leest het
-               als een kennismaking en niet als een ondertekende brief. Het
-               naamblok wordt naar beneden geduwd (mt-auto), want anders bleef
-               er een groot leeg wit gat onder in de linkerhelft van de kaart. */}
-            <div className="flex shrink-0 flex-col sm:w-52">
-              <div className="relative h-32 w-32 sm:h-52 sm:w-52">
+          {/* Op smalle schermen staan foto en naam NAAST elkaar en zakt de
+             tekst eronder; vanaf sm wordt de foto-plus-naam een smalle
+             linkerkolom en komt de tekst ernaast. Zo blijft het kaartje in
+             allebei de standen liggend van vorm, in plaats van op mobiel een
+             hoge toren te worden. */}
+          <div className="relative flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-8">
+            <div className="flex shrink-0 items-center gap-5 sm:w-44 sm:flex-col sm:items-start sm:gap-4">
+              <div className="relative h-20 w-20 shrink-0 sm:h-24 sm:w-24">
                 {/* het vlak steekt naar één kant uit, niet rondom: anders
                    valt het samen met de foto en wordt het een ring */}
                 <span
-                  className="absolute -bottom-5 -left-6 -right-1 -top-1"
+                  className="absolute -bottom-2.5 -left-3 -right-0.5 -top-0.5"
                   style={{ background: MINT, borderRadius: VLAKVORMEN.kiezel, rotate: "-9deg" }}
                   aria-hidden
                 />
@@ -856,50 +907,51 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={`/${fotoBestand}`} alt="Michael van Spanje" className="h-full w-full object-cover" />
                   ) : (
-                    <span className="font-display text-4xl font-black" style={{ color: DONKER }}>MvS</span>
+                    <span className="font-display text-xl font-black" style={{ color: DONKER }}>MvS</span>
                   )}
                 </span>
               </div>
-              <div className="mt-8 sm:mt-auto sm:pt-10">
-                <p className="text-3xl leading-none text-ink/85" style={{ fontFamily: "var(--font-hand)" }}>Michael</p>
-                <p className="mt-1.5 text-sm text-ink/60">Leerkracht &amp; maker van Avinka</p>
+              {/* De naam is de kop van dit blok. Hij staat als h2 in de
+                 documentstructuur — de sectie moet een kop hebben — maar
+                 hoeft daar niet groot voor te zijn: een colofon zet de naam
+                 klein, en het gewicht van de kaart hoort bij het portret en
+                 de zin ernaast te liggen. */}
+              <div>
+                <h2 className="font-display text-lg font-black leading-tight tracking-tight" style={{ color: DONKER }}>
+                  Michael van Spanje
+                </h2>
+                {/* ink/70, niet de ink/60 die hier eerst stond: op de warme
+                   papiertoon haalt 60% net geen 4,5:1 en dit is gewone tekst
+                   op 14px. Optisch scheelt het niets, op de contrasttoets
+                   alles (4,4 → 6,0). */}
+                <p className="mt-0.5 text-sm leading-snug text-ink/70">Leerkracht &amp; maker van Avinka</p>
               </div>
             </div>
 
-            <div>
-              <p className="text-2xl leading-none" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
+            <div className="sm:pt-0.5">
+              <p
+                className="text-lg leading-tight [text-wrap:balance]"
+                style={{ fontFamily: "var(--font-hand)", color: KOP }}
+              >
                 van een leerkracht, voor leerkrachten
               </p>
-              <h2 className="mt-3 font-display text-3xl font-black leading-[1.06] tracking-tight [text-wrap:balance] sm:text-4xl" style={{ color: DONKER }}>
-                Ik ben Michael. Net als jij sta ik voor de klas.
-              </h2>
-              <p className="mt-6 text-lg leading-8 text-ink/75">
-                Ik weet hoeveel tijd er gaat naar rapporten, analyses en
-                verslagen. Daarom bouw ik hulpmiddelen die dat werk sneller en
-                eenvoudiger maken. Geen ingewikkelde techniek, wel zorgvuldig
-                met de gegevens van je leerlingen.
+              {/* text-base, terwijl de rest van de pagina zijn lopende tekst
+                 op text-lg zet. Dat is geen slordigheid maar de hele pointe
+                 van dit blok: een colofon is bijtekst. Eén stap kleiner dan
+                 het productverhaal erboven zegt zonder woorden hoe je dit
+                 kaartje moet wegen. (Er stond even 17px tussenin — dat is
+                 geen trede van de schaal en dus drift, niet ontwerp.) */}
+              <p className="mt-3 text-base leading-7 text-ink/75">
+                Ik sta zelf voor de klas en weet hoeveel tijd rapporten,
+                analyses en verslagen kosten.
               </p>
-              <p className="mt-4 text-lg leading-8 text-ink/75">
-                Wat begon als een oplossing voor mijn eigen werk, werd een
-                bredere missie: laten zien dat slimmer werken juist eenvoudig
-                kan zijn.
+              {/* De zin die je moet onthouden. Stond eerst in een eigen
+                 mintblok van ruim 110px hoog; als tweede regel in kopkleur
+                 krijgt hij dezelfde nadruk zonder dat er een blok bij komt. */}
+              <p className="mt-2.5 text-base font-semibold leading-7" style={{ color: KOP }}>
+                Daarom bouw ik Avinka: die tijd hoort bij je leerlingen te
+                liggen, niet bij het papierwerk.
               </p>
-              {/* De slotregel was vet gedrukte tekst op wit en verdween
-                 daardoor in de rest van de kaart, terwijl het juist de zin is
-                 die je moet onthouden. Nu is het een eigen mintblok in de vorm
-                 van de kaarten zelf: het geeft de kaart kleur én zet de zin
-                 apart als het punt van het verhaal.
-                 Er hing ook een vinkje-badge over de bovenrand van dit blok;
-                 die is er samen met die van de kaart zelf uit. */}
-              <div
-                className="relative mt-8 px-7 py-6"
-                style={{ background: MINT, borderRadius: "2.4rem 1.6rem 2.2rem 1.5rem" }}
-              >
-                <p className="text-lg font-bold leading-8" style={{ color: DONKER }}>
-                  Goede leerkrachten horen hun tijd te besteden aan leerlingen,
-                  niet aan papierwerk.
-                </p>
-              </div>
             </div>
           </div>
         </div>
