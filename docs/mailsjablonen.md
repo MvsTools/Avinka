@@ -59,7 +59,7 @@ scherm staan waar je een wachtwoord kiest.
         <table cellpadding="0" cellspacing="0" border="0"><tr>
           <td align="center" bgcolor="#25855a" style="border-radius:12px;">
             <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email"
-               style="display:inline-block;padding:14px 30px;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;">Bevestig mijn e-mailadres</a>
+               style="display:inline-block;padding:14px 30px;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;">Bevestig mijn adres</a>
           </td>
         </tr></table>
       </td></tr>
@@ -104,13 +104,14 @@ in de link verschillen.
         <table cellpadding="0" cellspacing="0" border="0"><tr>
           <td align="center" bgcolor="#25855a" style="border-radius:12px;">
             <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/nieuw-wachtwoord"
-               style="display:inline-block;padding:14px 30px;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;">Nieuw wachtwoord instellen</a>
+               style="display:inline-block;padding:14px 30px;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;">Wachtwoord instellen</a>
           </td>
         </tr></table>
       </td></tr>
       <tr><td style="padding:24px 36px 0;">
         <p style="margin:0;font-size:15px;line-height:1.65;color:#4a4458;">Deze link is een uur geldig en werkt één keer.</p>
-        <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#6b6880;">Heb je dit niet aangevraagd? Dan hoef je niets te doen. Je huidige wachtwoord blijft gewoon werken.</p>
+        <p style="margin:16px 0 0;font-size:15px;line-height:1.65;color:#4a4458;"><strong style="color:#221c3a;">Heb je dit niet aangevraagd?</strong><br>Dan verandert er niets. Je wachtwoord blijft hetzelfde zolang je niet op de knop klikt, en deze mail alleen geeft niemand toegang tot je account.</p>
+        <p style="margin:12px 0 0;font-size:15px;line-height:1.65;color:#6b6880;">Meestal komt zo&#39;n mail doordat iemand zijn eigen adres verkeerd typte. Krijg je hem vaker, of vertrouw je het niet? Mail dan <a href="mailto:support@avinka.nl" style="color:#25855a;font-weight:bold;">support@avinka.nl</a>, dan kijken we met je mee.</p>
       </td></tr>
       <tr><td style="padding:24px 36px 30px;">
         <div style="border-top:1px solid #ece7e0;padding-top:16px;">
@@ -146,7 +147,7 @@ in de link verschillen.
         <table cellpadding="0" cellspacing="0" border="0"><tr>
           <td align="center" bgcolor="#25855a" style="border-radius:12px;">
             <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email_change"
-               style="display:inline-block;padding:14px 30px;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;">Bevestig dit e-mailadres</a>
+               style="display:inline-block;padding:14px 30px;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;">Bevestig dit adres</a>
           </td>
         </tr></table>
       </td></tr>
