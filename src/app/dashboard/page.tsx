@@ -11,6 +11,7 @@ import TakenOverzicht from "@/components/dashboard/TakenOverzicht";
 import VandaagRij from "@/components/dashboard/VandaagRij";
 import DuoOverdracht from "@/components/dashboard/DuoOverdracht";
 import CollegaUitnodigen from "@/components/dashboard/CollegaUitnodigen";
+import KaartMelding from "@/components/dashboard/KaartMelding";
 import { amsterdamDatum } from "@/lib/streak";
 import { haalMijnGroepen, haalPlanning } from "@/lib/planning";
 
@@ -41,9 +42,11 @@ export default async function DashboardStart() {
   // Kijk je bij de actieve groep alleen mee, dan kun je daar geen rapporten
   // vastleggen. Dat hoort hier te staan en niet pas ín de tool: anders kom je
   // er pas achter als je al een rapport hebt getypt.
+  // Achter een uitroepteken, dus de tekst mag iets voller: je leest hem alleen
+  // als je er zelf naar vraagt.
   const meekijkNotitie = (slug: string) =>
     slug === "rapporten" && !rapportGrens.magRapporten
-      ? `Je kijkt mee bij ${rapportGrens.klasNaam || "deze groep"}, dus opslaan kan hier niet.`
+      ? `Je kijkt mee bij ${rapportGrens.klasNaam || "deze groep"}. Meelezen kan, maar rapporten opslaan hoort bij de leerkracht van de groep.`
       : "";
 
   return (
@@ -93,10 +96,18 @@ export default async function DashboardStart() {
                 className={
                   slot
                     ? "group relative flex items-stretch gap-5 rounded-3xl border border-black/5 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-                    : "group flex items-stretch gap-5 rounded-3xl border border-black/5 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md " +
+                    : "group relative flex items-stretch gap-5 rounded-3xl border border-black/5 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md " +
                       tool.rand
                 }
               >
+                {/* Kijk je bij deze groep alleen mee, dan kun je hier niets
+                    vastleggen. Als klein uitroepteken in de hoek: het geldt
+                    maar voor één kaart en zelden, dus het hoeft de kaart niet
+                    zwaarder te maken. Botst niet met het slotje hieronder,
+                    want dat verschijnt alleen bij een vergrendelde tool. */}
+                {!slot && meekijkNotitie(tool.slug) && (
+                  <KaartMelding tekst={meekijkNotitie(tool.slug)} />
+                )}
                 {slot && (
                   <span className="absolute right-5 top-5 text-ink/30" title="Zit niet in je pakket">
                     {/* slotje */}
@@ -129,12 +140,6 @@ export default async function DashboardStart() {
                   <p className={"mt-1 leading-7 " + (slot ? "text-ink/45" : "text-ink/70")}>
                     {tool.tekst}
                   </p>
-                  {/* Bewust een kale grijze regel en geen gekleurd blokje: het
-                      is een mededeling, geen waarschuwing, en de kaart blijft
-                      gewoon te openen (meelezen mag wel). */}
-                  {meekijkNotitie(tool.slug) && !slot && (
-                    <p className="mt-2 text-sm text-ink/50">{meekijkNotitie(tool.slug)}</p>
-                  )}
                   <span className="mt-auto inline-block pt-3 text-sm font-bold text-brand">
                     {slot ? "Bekijk abonnementen →" : "Openen →"}
                   </span>
