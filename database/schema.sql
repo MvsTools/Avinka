@@ -1444,3 +1444,44 @@ create policy "eigen leesstand" on public.duo_overdracht_gelezen
   for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 grant select, insert, update, delete on public.duo_overdracht_gelezen to authenticated;
 grant select, insert, update, delete on public.duo_overdracht to authenticated;
+
+
+-- ============================================================================
+-- SLOTBLOK: uitgelogde bezoekers buiten de functies zetten
+-- ----------------------------------------------------------------------------
+-- Dit hoort ONDERAAN te blijven staan, want elke functie moet al bestaan.
+--
+-- `grant execute ... to authenticated` sluit anon NIET buiten: PostgreSQL geeft
+-- EXECUTE op een nieuwe functie standaard aan PUBLIC, en anon valt daaronder.
+-- Zonder dit blok staan bijna alle functies open voor wie niet is ingelogd.
+--
+-- ⚠️ BOUW JE EEN NIEUWE FUNCTIE: zet hem hier ook in de lijst. De controle
+-- onderaan dit bestand laat zien of je er een vergeten bent.
+--
+-- Zie database/migratie-anon-uitsluiten.sql voor de uitleg per functie en voor
+-- de twee functies die BEWUST open blijven.
+-- ============================================================================
+
+revoke execute on function public.wijs_admin_overzicht() from public, anon;
+revoke execute on function public.wijs_admin_conversie() from public, anon;
+revoke execute on function public.wijs_admin_groei(integer) from public, anon;
+revoke execute on function public.wijs_admin_snapshots(integer) from public, anon;
+revoke execute on function public.wijs_admin_tijdwinst(integer) from public, anon;
+revoke execute on function public.wijs_admin_verbruik(integer) from public, anon;
+revoke execute on function public.wijs_admin_verbruik_tijd(integer) from public, anon;
+revoke execute on function public.wijs_admin_feedback(integer) from public, anon;
+revoke execute on function public.wijs_admin_feedback_status(uuid, text) from public, anon;
+revoke execute on function public.wijs_admin_beta_eigen_format_lijst() from public, anon;
+revoke execute on function public.wijs_admin_zet_beta_eigen_format(text, boolean) from public, anon;
+revoke execute on function public.wijs_is_admin() from public, anon;
+revoke execute on function public.wijs_aantal_verwijzingen(text) from public, anon;
+revoke execute on function public.wijs_aantal_verwijzingen_proef(text) from public, anon;
+revoke execute on function public.wijs_snapshot_abon() from public, anon;
+revoke execute on function public.wijs_community_stats() from public, anon;
+revoke execute on function public.registreer_herakkoord(text, text) from public, anon;
+revoke execute on function public.registreer_toestemming() from public, anon;
+revoke execute on function public.set_updated_at() from public, anon;
+
+-- Blijft open voor anon (deellink zonder account), maar met een EIGEN recht in
+-- plaats van via de brede PUBLIC-regel.
+revoke execute on function public.gedeeld_draaiboek(text) from public;
