@@ -3,6 +3,7 @@ import { createClient } from "@/utils/supabase/server";
 import { tools } from "@/lib/tools";
 import { BETALINGEN_LIVE, magToolGebruiken } from "@/lib/abonnement";
 import { getAbonnementServer } from "@/lib/abonnement-server";
+import { haalRapportGrens } from "@/lib/actieve-klas";
 import OnboardingCard from "@/components/dashboard/OnboardingCard";
 import WelkomModal from "@/components/dashboard/WelkomModal";
 import StreakBadge from "@/components/dashboard/StreakBadge";
@@ -29,12 +30,21 @@ export default async function DashboardStart() {
 
   // Welke tools zitten in het pakket van deze leerkracht? Zolang betalingen
   // niet live zijn, is alles open (de vlag regelt dat in magToolGebruiken).
-  const [ab, planning, groepen] = await Promise.all([
+  const [ab, planning, groepen, rapportGrens] = await Promise.all([
     BETALINGEN_LIVE ? getAbonnementServer() : Promise.resolve(null),
     haalPlanning(supabase, { nu: vandaag }),
     haalMijnGroepen(supabase),
+    haalRapportGrens(supabase),
   ]);
   const vergrendeld = (slug: string) => (ab ? !magToolGebruiken(ab, slug) : false);
+
+  // Kijk je bij de actieve groep alleen mee, dan kun je daar geen rapporten
+  // vastleggen. Dat hoort hier te staan en niet pas ín de tool: anders kom je
+  // er pas achter als je al een rapport hebt getypt.
+  const meekijkNotitie = (slug: string) =>
+    slug === "rapporten" && !rapportGrens.magRapporten
+      ? `Je kijkt mee bij ${rapportGrens.klasNaam || "deze groep"}, dus opslaan kan hier niet.`
+      : "";
 
   return (
     <div className="flex flex-col gap-8">
@@ -119,6 +129,12 @@ export default async function DashboardStart() {
                   <p className={"mt-1 leading-7 " + (slot ? "text-ink/45" : "text-ink/70")}>
                     {tool.tekst}
                   </p>
+                  {/* Bewust een kale grijze regel en geen gekleurd blokje: het
+                      is een mededeling, geen waarschuwing, en de kaart blijft
+                      gewoon te openen (meelezen mag wel). */}
+                  {meekijkNotitie(tool.slug) && !slot && (
+                    <p className="mt-2 text-sm text-ink/50">{meekijkNotitie(tool.slug)}</p>
+                  )}
                   <span className="mt-auto inline-block pt-3 text-sm font-bold text-brand">
                     {slot ? "Bekijk abonnementen →" : "Openen →"}
                   </span>

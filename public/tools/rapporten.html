@@ -1980,17 +1980,19 @@ async function vulMijnKlas(toevoegFn){
   async function haalKlas(){ try{ var r=await api('/api/klas'); if(!r.ok)return {naam:'',leerlingen:[]}; var d=await r.json(); avinkaKlasId=d.id||''; avinkaMagRapporten=(d.magRapporten!==false); window.avinkaKlasGeslacht={}; ((d&&d.leerlingenData)||[]).forEach(function(l){ if(l&&l.naam) window.avinkaKlasGeslacht[l.naam.toLowerCase()] = l.geslacht==='j'?'jongen':(l.geslacht==='m'?'meisje':''); }); if(!avinkaMagRapporten) toonMeekijkMelding(); return {naam:d.naam||'', leerlingen:d.leerlingen||[]}; }catch(e){ return {naam:'',leerlingen:[]}; } }
   async function haalRapporten(){ try{ var r=await api('/api/rapporten'); if(!r.ok)return []; var d=await r.json(); return d.rapporten||[]; }catch(e){ return []; } }
 
-  /* Eén blijvende melding boven de tool: je kijkt mee, dus je kunt hier wel
-     meelezen maar niets vastleggen. Blijft staan (niet wegklikbaar), want het
-     geldt zolang je bij deze groep meekijkt. */
+  /* Eén stille regel boven de tool: je kijkt mee, dus meelezen kan wel maar
+     opslaan niet. Bewust kaal en grijs, geen gekleurd waarschuwingsblok: de
+     echte melding staat al op Start bij de toolkaart, en wie hier tóch komt
+     hoeft niet te schrikken. Pas als je echt probeert op te slaan wordt het
+     luider (zie meldOpslaanMislukt). */
   function toonMeekijkMelding(){
     if(document.getElementById('avinka-meekijk'))return;
     var m=document.querySelector('main'); if(!m)return;
     var d=document.createElement('div');
     d.id='avinka-meekijk';
     d.setAttribute('role','status');
-    d.style.cssText='margin:0 auto 18px;max-width:900px;border-radius:16px;background:#fff7ed;border:1px solid #fdba74;padding:14px 18px;color:#7c2d12;line-height:1.6';
-    d.innerHTML='<strong>Je kijkt mee bij deze groep.</strong><br>Rapporten horen bij de leerkracht die verantwoordelijk is voor de groep, dus je kunt hier niets opslaan. Je collega kan je rol veranderen bij Instellingen, onder Collega&#39;s bij deze groep.';
+    d.style.cssText='margin:0 auto 16px;max-width:900px;padding:0 4px;color:#6b7280;font-size:14px;line-height:1.6';
+    d.textContent='Je kijkt mee bij deze groep. Meelezen kan, opslaan niet.';
     m.insertBefore(d, m.firstChild);
   }
 

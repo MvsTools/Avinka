@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { haalActieveKlas } from "@/lib/actieve-klas";
 
 // Geeft de klassenlijst van de INGELOGDE leerkracht terug, zodat de tools
 // (Plattegrond, Rapporten, Oudercontact) de namen kunnen invullen.
@@ -13,39 +14,21 @@ export async function GET() {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  // Heeft de leerkracht een gedeelde duo-klas gekozen als actief? Die
-  // voorkeur staat los van klassen.actief (zie schema.sql sectie 19) — een
-  // gedeelde klas mag de eigenaar zijn eigen "actief"-vlag niet omgooien.
-  const { data: instelling } = await supabase
-    .from("instellingen")
-    .select("actieve_duo_klas_id")
-    .maybeSingle();
-  const duoKlasId = instelling?.actieve_duo_klas_id as string | null | undefined;
-
-  const KLAS_COLS = "id, naam, leerlingen, leerlingen_data";
+  // Welke groep actief is (eigen klas of een gedeelde die je koos) staat in
+  // src/lib/actieve-klas.ts, zodat de Start-pagina exact hetzelfde antwoord
+  // krijgt als de tools.
   let data: {
     id: string;
     naam: string;
     leerlingen: string[] | null;
     leerlingen_data: unknown;
   } | null = null;
-  if (duoKlasId) {
-    const r = await supabase.from("klassen").select(KLAS_COLS).eq("id", duoKlasId).maybeSingle();
-    data = r.data;
-  }
-  if (!data) {
-    // Geen (geldige) gedeelde voorkeur: de gewone eigen-klas-volgorde.
-    const { data: eigen, error } = await supabase
-      .from("klassen")
-      .select(KLAS_COLS)
-      .order("actief", { ascending: false })
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    if (error) {
-      return NextResponse.json({ error: "db_error" }, { status: 500 });
-    }
-    data = eigen;
+  try {
+    data = await haalActieveKlas(supabase, "id, naam, leerlingen, leerlingen_data");
+  } catch {
+    // Een lege klas teruggeven zou de tool laten zeggen "je hebt nog geen klas
+    // ingevuld", terwijl de klas er gewoon is. Liever een eerlijke fout.
+    return NextResponse.json({ error: "db_error" }, { status: 500 });
   }
 
   const namen: string[] = data?.leerlingen ?? [];
