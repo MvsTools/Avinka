@@ -1035,7 +1035,12 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                     </div>
                     <div>
                       <dt>het leukste aan mijn werk</dt>
-                      <dd>een veilige plek bieden</dd>
+                      {/* ⚠️ Niet inkorten. Ik had hier "een veilige plek
+                         bieden" van gemaakt zodat het op één regel paste; de
+                         eigenaar zette het terug. Zijn woorden gaan voor de
+                         regelval — hij loopt hier gewoon om naar een tweede
+                         regel, precies zoals in een echt vriendenboekje. */}
+                      <dd>een veilige leeromgeving bieden</dd>
                     </div>
                     <div>
                       <dt>het minst leuke</dt>
