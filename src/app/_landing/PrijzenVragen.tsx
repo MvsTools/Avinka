@@ -160,18 +160,13 @@ export function WereldPrijzen({
       >
         <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
 
-        {/* Hier stond een vlak links achter de Start-kaart (wig, -14% links).
-           Dat moest weg. Het rechtervlak blijft: zachte tint-op-tint, draagt
-           de hoek onder Pro. */}
-        <KaartVlak
-          kleur={VLAK_MINT}
-          vorm="ei"
-          breedte={620}
-          hoogte={360}
-          style={{ right: "-10%", bottom: 60, transform: "rotate(7deg)" }}
-          className="hidden lg:block"
-          tel={5}
-        />
+        {/* Hier stonden twee vlakken (links achter Start, rechts onder Pro).
+           Allebei weg: dit mintveld loopt zonder eigen afsluitende golf door
+           tot in de vragensectie (zie "halve kaart"-commit), dus "rechts
+           onder Pro" lag in werkelijkheid vlak vóór de vragen-golf — precies
+           waar díe sectie inmiddels haar eigen linksboven/rechtsonder-paar
+           heeft (zie WereldVragen). Twee vlakken vlak na elkaar op dezelfde
+           naad las als een ongewild trio, niet als twee bewuste paren. */}
 
         {/* De entree van dit veld: papier dat van bovenaf in de mint hapt.
            Zit nu HIER (op de meethoogte) in plaats van los bovenaan de
@@ -488,8 +483,8 @@ export function WereldVragen({ items, mintBoven = false }: { items: Vraag[]; min
             kleur={VLAK_MINT}
             vorm="koepel"
             breedte={700}
-            hoogte={330}
-            style={{ left: "-14%", top: -220, transform: "rotate(-6deg)" }}
+            hoogte={260}
+            style={{ left: "-14%", top: -20, transform: "rotate(-6deg)" }}
             className="hidden lg:block"
             tel={5}
           />
