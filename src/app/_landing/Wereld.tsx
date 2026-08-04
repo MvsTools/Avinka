@@ -1165,9 +1165,28 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                   </dl>
                 </div>
               </div>
-              {/* De binnenkant van de kaft: hetzelfde karton van de andere
-                 kant. Meer hoort er niet op. */}
-              <div className="w-blad-achter w-schrift-achter" />
+              {/* ── De binnenkant van de kaft ──
+                 Was een leeg groen vlak, en dat was de helft van de eerste
+                 spread. Nu plakken er drie geeltjes: precies dezelfde als op
+                 het bureau in de film bovenaan de pagina (accent-soft, klein,
+                 scheef, harde slagschaduw). Dat is geen nieuw rekwisiet maar
+                 een terugverwijzing — het werk uit de film ligt hier in zijn
+                 eigen schrift, en dat is meteen waarom Avinka bestaat.
+                 ⚠️ Handschrift in plaats van de gedrukte letter van de film:
+                 op een geeltje in je eigen schrift schrijf je zelf.
+                 De onderste blijft boven de 25%-lijn, want daar zit het
+                 bladerpijltje in de hoek. */}
+              <div className="w-blad-achter w-schrift-achter">
+                <span className="w-geeltje" style={{ top: "9%", left: "8%", rotate: "-6deg" }}>
+                  rapporten af vóór vrijdag
+                </span>
+                <span className="w-geeltje" style={{ top: "36%", right: "7%", rotate: "5deg" }}>
+                  toetsen groep 7 analyseren
+                </span>
+                <span className="w-geeltje" style={{ top: "62%", left: "12%", rotate: "-3deg" }}>
+                  oudergesprekken plannen
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -1687,6 +1706,23 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           background: color-mix(in srgb, ${DONKER} 88%, #ffffff);
           border-radius: 1.4rem 0 0 1.6rem;
         }
+        /* De geeltjes op de binnenkant van de kaft. Maten en schaduw komen van
+           de geeltjes in de film (bg-accent-soft, kleine radius, harde
+           slagschaduw); alleen de letter is hier handschrift. */
+        .w-geeltje {
+          position: absolute;
+          z-index: 2;
+          width: 6.6rem;
+          padding: 9px 10px 11px;
+          background: var(--color-accent-soft, #fff2d6);
+          border-radius: 2px;
+          font-family: var(--font-hand), "Segoe Script", cursive;
+          font-size: 0.82rem;
+          line-height: 1.25;
+          color: rgba(34, 28, 58, 0.82);
+          box-shadow: 0 12px 24px -12px rgba(8, 5, 20, 0.55);
+        }
+
         /* De vouw: waar het karton omgeknikt is, blijft het donkerder. */
         .w-schrift-achter::before {
           content: "";
