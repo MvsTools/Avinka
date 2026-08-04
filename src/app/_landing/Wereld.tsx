@@ -910,10 +910,17 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
              wat het wél is. */}
           <div className="w-mkr-tekst">
             <h2 className="w-mkr-kop">Even voorstellen</h2>
+            {/* De richting komt van de eigenaar: Avinka is er voor het werk na
+               schooltijd. Zijn eigen formulering was "ondersteunen in taken";
+               dat is één stap te ambtelijk voor een pagina die verder in
+               gewone taal staat, dus het is "helpen met het werk dat na
+               schooltijd blijft liggen" geworden.
+               De tweede zin doet het werk van de KOP: bij "Even voorstellen"
+               hoort een mens, en die zin verbindt het product aan hem zonder
+               het verhaal van het schrift over te doen. */}
             <p className="w-schrift-tekst">
-              Avinka is niet bedacht in een vergaderzaal. Elke tool komt uit
-              werk dat ik zelf moest doen, na schooltijd, met dezelfde
-              deadlines als jij.
+              Avinka is gebouwd om leerkrachten te helpen met het werk dat na
+              schooltijd blijft liggen. Ik ken dat werk, want ik doe het zelf.
             </p>
             {/* De uitnodiging om te bladeren, met hetzelfde handgeschreven
                boogpijltje als bij de polaroids ("klik op een foto om de
