@@ -813,12 +813,21 @@ function useOpenbladeren() {
       raf = 0;
       const r = el.getBoundingClientRect();
       const h = window.innerHeight;
-      /* Dicht zolang de bovenkant onder 88% van het scherm zit, open zodra
-         hij op 38% staat. Die twee waarden zijn de hele afstelling: ze zijn
-         zo gekozen dat het schriftje openligt op het moment dat het blok
-         midden in beeld staat, niet pas als je er alweer voorbij bent. */
-      const p = (h * 0.88 - r.top) / (h * 0.5);
-      el.style.setProperty("--open", String(Math.min(1, Math.max(0, p))));
+      /* ⚠️ DE AFSTELLING, EN DIE IS BIJGESTELD. Eerst begon het opendraaien
+         al zodra de bovenkant op 88% van het scherm stond en was hij binnen
+         een halve schermhoogte om. Gevolg: je zag "Even voorstellen" amper,
+         want tegen de tijd dat het schrift goed in beeld stond lag het al
+         open. Nu blijft hij dicht tot 58% — dat is bijna een halve
+         schermhoogte scrollen waarin je alleen de kaft ziet — en doet hij er
+         daarna 0,62 schermhoogte over.
+         Wil je het sneller of trager: alleen deze twee getallen aanpassen. */
+      const rauw = (h * 0.58 - r.top) / (h * 0.62);
+      const p = Math.min(1, Math.max(0, rauw));
+      /* Smoothstep in plaats van lineair. Een kaft die met een constante
+         snelheid omvalt ziet eruit als een schuifregelaar; met deze curve
+         komt hij traag op gang, zwaait door het midden en legt zichzelf
+         rustig neer. Dezelfde beweging die je met je hand zou maken. */
+      el.style.setProperty("--open", String(p * p * (3 - 2 * p)));
     };
 
     const vraagFrame = () => {
@@ -865,6 +874,31 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
          (Spiegelbeeld van de regie-sectie, waar de mint juist bovenin zit.) */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 top-1/2" aria-hidden>
         <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
+
+        {/* ── RUITJESPAPIER ────────────────────────────────────────────────
+           Dit is de enige sectie met een patroon in het veld, en dat is met
+           opzet: hier ligt een schrift, dus hier is het papier geruit. Het
+           komt uit de variantenronde — de eigenaar wees destijds bij "Diep
+           bos" de vakjes aan als iets dat hij leuk vond, maar het is toen
+           niet overgenomen. Hier heeft het eindelijk een reden.
+
+           🔑 HET MOET AAN DE ONDERKANT UITDOVEN. Het mintveld van deze sectie
+           loopt door tot in de ervaringen-sectie (zelfde tint, expres geen
+           naad). Een patroon dat op de sectiegrens ophoudt maakt dáár alsnog
+           een kaarsrechte lijn — precies de fout die de golfregels moeten
+           voorkomen. Met een masker vervaagt het aan allebei de uiteinden en
+           is er nergens een rand.
+           De maat (26px) is ongeveer de ruit van een rekenschrift; kleiner
+           werd het een raster en ging het trillen op een gewoon scherm. */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `repeating-linear-gradient(to right, rgba(var(--w-schaduw-rgb, 23,80,58), 0.075) 0 1px, transparent 1px 26px), repeating-linear-gradient(to bottom, rgba(var(--w-schaduw-rgb, 23,80,58), 0.075) 0 1px, transparent 1px 26px)`,
+            maskImage: "linear-gradient(to bottom, transparent 4%, #000 26%, #000 58%, transparent 92%)",
+            WebkitMaskImage:
+              "linear-gradient(to bottom, transparent 4%, #000 26%, #000 58%, transparent 92%)",
+          }}
+        />
 
         {/* Rechts van de makerskaart begint het mintveld dat doorloopt tot in
            de ervaringen-sectie, en die hele rechterbovenhoek was leeg: de
@@ -973,16 +1007,24 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           <div className="w-schrift-kaft">
             <div className="w-schrift-voor">
               {/* Het etiket, zoals op elk schoolschrift: iets scheef geplakt,
-                 want niemand plakt dat recht. */}
+                 want niemand plakt dat recht.
+                 🔑 Hier zit ook de oplossing voor "hij moet wel genoemd
+                 worden maar niet centraal staan": op een schrift-etiket staan
+                 voorgedrukte regels voor NAAM en GROEP, en die zijn met de
+                 hand ingevuld. Zijn naam staat er dus, in zijn eigen
+                 handschrift, ter grootte van een invulregel. */}
               <div className="w-schrift-etiket">
                 <h2 className="w-schrift-titel">Even voorstellen</h2>
-              </div>
-              {/* Twee lijntjes onder het etiket: de plek waar op een echt
-                 schrift "naam" en "groep" staan. Leeg gelaten — het schrift
-                 vult zichzelf in zodra het opengaat. */}
-              <div className="w-schrift-regels" aria-hidden>
-                <span />
-                <span />
+                <dl className="w-schrift-invul">
+                  <div>
+                    <dt>naam</dt>
+                    <dd>Michael van Spanje</dd>
+                  </div>
+                  <div>
+                    <dt>vak</dt>
+                    <dd>leerkracht &amp; maker</dd>
+                  </div>
+                </dl>
               </div>
             </div>
 
@@ -1062,6 +1104,24 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           background: linear-gradient(to right, rgba(var(--w-schaduw-rgb, 23,80,58), 0.16), transparent);
           opacity: calc(1 - var(--open));
         }
+        /* Het ezelsoor: de rechteronderhoek is omgevouwen, zoals bij elk
+           schrift dat echt gebruikt wordt. Twee driehoeken over elkaar — de
+           onderste is de mintkleur die door het gat heen zichtbaar wordt, de
+           bovenste het stukje papier dat is omgeslagen (iets donkerder, want
+           je kijkt tegen de achterkant aan). */
+        .w-schrift-blad::after {
+          content: "";
+          position: absolute;
+          right: -1px;
+          bottom: -1px;
+          width: clamp(30px, 3.4vw, 44px);
+          aspect-ratio: 1;
+          background:
+            linear-gradient(to bottom left, var(--w-veld, #ecf6f0) 50%, transparent 50.5%),
+            linear-gradient(to top right, #f4efe2 50%, transparent 50.5%);
+          border-bottom-right-radius: 0.35rem;
+          filter: drop-shadow(-2px -2px 3px rgba(var(--w-schaduw-rgb, 23,80,58), 0.12));
+        }
         .w-schrift-inhoud { position: relative; }
         .w-schrift-naam {
           font-family: var(--font-display), Georgia, serif;
@@ -1129,10 +1189,11 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         }
         .w-schrift-etiket {
           position: absolute;
-          left: 14%;
-          right: 12%;
-          top: 22%;
-          padding: clamp(14px, 1.8vw, 20px) clamp(16px, 2vw, 22px);
+          left: 13%;
+          right: 11%;
+          top: 20%;
+          padding: clamp(14px, 1.8vw, 20px) clamp(16px, 2vw, 22px)
+                   clamp(16px, 2vw, 20px);
           background: var(--color-cream, #fbf6ee);
           border-radius: 0.5rem 0.6rem 0.5rem 0.55rem;
           rotate: -1.4deg;
@@ -1143,35 +1204,70 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           font-weight: 900;
           letter-spacing: -0.03em;
           line-height: 1.05;
-          font-size: clamp(1.4rem, 2.6vw, 2rem);
+          font-size: clamp(1.35rem, 2.4vw, 1.85rem);
           color: ${DONKER};
           text-wrap: balance;
         }
-        .w-schrift-regels {
-          position: absolute;
-          left: 16%;
-          right: 16%;
-          top: 62%;
+        /* De invulregels van een schrift-etiket: een voorgedrukt woordje en
+           een lijn waar met de hand op geschreven is. De lijn hoort ONDER de
+           tekst door te lopen, niet ernaast — daarom een border-bottom op de
+           regel zelf en niet een los streepje. */
+        .w-schrift-invul {
+          margin-top: clamp(10px, 1.4vw, 14px);
           display: flex;
           flex-direction: column;
-          gap: 14px;
+          gap: 7px;
         }
-        .w-schrift-regels span {
-          display: block;
-          height: 2px;
-          background: rgba(255, 255, 255, 0.22);
+        .w-schrift-invul > div {
+          display: flex;
+          align-items: baseline;
+          gap: 8px;
+          border-bottom: 1px solid rgba(var(--w-schaduw-rgb, 23,80,58), 0.28);
+          padding-bottom: 2px;
         }
-        .w-schrift-regels span:last-child { width: 55%; }
+        .w-schrift-invul dt {
+          flex: none;
+          font-size: 0.72rem;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+          text-transform: lowercase;
+          color: rgba(34, 28, 58, 0.5);
+        }
+        .w-schrift-invul dd {
+          margin: 0;
+          font-family: var(--font-hand), "Segoe Script", cursive;
+          font-size: clamp(0.95rem, 1.5vw, 1.1rem);
+          line-height: 1.2;
+          color: ${KOP};
+          /* Handschrift staat nooit precies op de lijn. */
+          transform: rotate(-0.6deg) translateY(-1px);
+        }
 
+        /* ⚠️ De binnenkant is MINT en niet crème, en dat is een kleurbesluit.
+           Open was het schrift crème-op-crème met één foto: correct en saai.
+           De binnenkant van een groene kaft hoort groen te zijn, dus nu is de
+           open stand groen links en papier rechts. Meteen het antwoord op
+           "het is een beetje saai zo": de kleur zit in het voorwerp zelf, niet
+           in versiering eromheen. */
         .w-schrift-achter {
           transform: rotateY(180deg);
-          background: var(--w-kaart-warm, #fffdf9);
+          background: ${MINT};
           border: 2px solid ${KAART_RAND};
           border-right: none;
           border-radius: 1.4rem 0 0 1.6rem;
           display: grid;
           place-items: center;
           padding: clamp(18px, 2.2vw, 28px);
+        }
+        /* De rug ligt na het opendraaien aan de rechterkant van dit vlak: daar
+           zit de vouw, dus daar hoort de schaduw. */
+        .w-schrift-achter::after {
+          content: "";
+          position: absolute;
+          inset: 0 0 0 auto;
+          width: 34px;
+          background: linear-gradient(to left, rgba(var(--w-schaduw-rgb, 23,80,58), 0.14), transparent);
+          pointer-events: none;
         }
         /* De foto in de organische vorm van deze wereld — het enige detail dat
            alle eerdere pogingen hebben overleefd. */
