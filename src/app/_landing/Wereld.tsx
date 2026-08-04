@@ -1056,9 +1056,13 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                      etiket: dit is de eerste bladzijde die je ziet, en een
                      foto zonder naam stelt niemand voor. */}
                   <p className="w-blad-naam">Michael van Spanje</p>
-                  {/* "van Avinka" eraf: dat brak over twee regels en het is
-                     overbodig op de site van Avinka zelf. */}
-                  <p className="w-blad-rol">leerkracht &amp; maker</p>
+                  {/* ⚠️ Hier stond "leerkracht & maker". "Maker" was mijn
+                     woord, niet dat van de eigenaar — hij schrijft zelf over
+                     "als enkele leerkracht" — en het klinkt in het Nederlands
+                     als jargon. Gewoon leerkracht dus; dát hij Avinka bouwt
+                     staat al in de alinea links, en nog een keer in het
+                     schrift zelf. */}
+                  <p className="w-blad-rol">leerkracht</p>
                 </div>
               </div>
               {/* De achterkant van dit blad is de LINKERbladzijde zodra je
@@ -1089,9 +1093,14 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                       <dt>naam</dt>
                       <dd>Michael van Spanje</dd>
                     </div>
+                    {/* "vak: leerkracht & maker" is er ook uit. Los van dat
+                       "maker" raar klinkt, is leerkracht geen vák — op een
+                       schriftetiket vul je bij vak iets als rekenen in. Twee
+                       ingevulde regels is bovendien hoe zo'n etiket er
+                       meestal uitziet. */}
                     <div>
-                      <dt>vak</dt>
-                      <dd>leerkracht &amp; maker</dd>
+                      <dt>groep</dt>
+                      <dd>[ ? ]</dd>
                     </div>
                     <div>
                       <dt>van</dt>
