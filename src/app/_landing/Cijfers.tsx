@@ -472,10 +472,39 @@ function Rapport({
       </div>
 
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-28 pt-10 lg:pb-32 lg:pt-12">
+        {/* ⚠️ HET AMBERSTIPJE OP 2%/22% LAG BOVENOP HET LEVENDE STIPJE, EN DAT
+           WAS GEEN TOEVAL. Het .rp-stip-hartslagje stond ooit los in een
+           pilletje op het rapport en is pas later naar de "bijgewerkt"-regel
+           verhuisd (zie de aantekening bij die regel hieronder) — regelrecht
+           naar de plek waar dit decoratieve punt al stond. Twee ronde puntjes
+           vlak op elkaar, allebei linksboven, lazen als één vieze vlek.
+           Het punt staat nu in de LINKSONDERHOEK, in de vaste padding-bottom
+           van dit blok (pb-28/pb-32, dus altijd 112/128px lege ruimte ná het
+           rapport-cluster, op elke breedte). Dat is geen schatting op basis
+           van hoe hoog het cluster wordt — het is een garantie: die padding
+           blijft leeg, ook als het cluster meegroeit met grotere cijfers.
+           Meteen ook de hoek die tot nu toe leeg bleef terwijl rechtsonder al
+           een punt stond (95%/72%, verderop). */}
         <Confetti
           punten={[
-            { x: "2%", y: "22%", r: 4, amber: true },
-            { x: "63%", y: "8%", r: 4 },
+            { x: "2%", y: "95%", r: 4, amber: true },
+            /* Dit punt stond op y=8%, vlak naast de kop op x=63%. De kop is
+               groot (tot 2,75rem) en "Avinka in cijfers" kan op een smal
+               scherm als 390px al een flink deel van de kolombreedte vullen,
+               dus was niet met zekerheid te zeggen dat de tekst daar nooit tot
+               x=63% reikt. Zelfde garantie als hierboven: in de padding VÓÓR
+               de kop (dezelfde 40/48px) staat op geen enkele breedte tekst,
+               dus dat scheelt het giswerk. */
+            { x: "63%", y: "2%", r: 4 },
+            /* Dit punt lag al vrij en blijft staan. Op de volle 1104px
+               kolombreedte eindigt het rapport-cluster rond 1092px (zie de
+               nagerekende breedtes verderop in dit bestand), dus 95%
+               (≈1094px) valt net ná de kaartjes. Op mobiel staan de kaartjes
+               nooit breder dan de smalste kaart plus wat lucht, dus ook daar
+               blijft rechts ruimte over. Groeien de kaartjes verder mee met
+               grotere cijfers, dan wipt het cluster naar een nieuwe rij
+               (bestaande regel, zie de breedte-aantekening bij .rp-bron) in
+               plaats van dit stipje te bereiken. */
             { x: "95%", y: "72%", r: 5, amber: true },
           ]}
         />
