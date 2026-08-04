@@ -20,6 +20,16 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Wie in zijn systeem heeft gezegd dat beweging hem hindert, moet ook geen
+   pagina onder zich weg zien schuiven. Sinds er een "Prijzen"-knop in de
+   bovenbalk staat is dat geen theorie meer: die springt bijna negenduizend
+   pixel naar beneden. Dan is een directe sprong het vriendelijkst. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }

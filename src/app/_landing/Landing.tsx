@@ -700,6 +700,33 @@ export default function Landing({
              tweede-keus-actie hetzelfde crème plaatje krijgt als het logo:
              die leest op allebei de ondergronden. */}
           <nav className="flex items-center gap-2 sm:gap-3">
+            {/* ── Prijzen ──────────────────────────────────────────────────
+               De enige link in de balk die niet naar een andere pagina gaat
+               maar naar beneden: wie de prijs wil weten, wil niet eerst een
+               halve landingspagina doorscrollen. Springt naar de sectie
+               `#prijzen` (die id staat al in PrijzenVragen.tsx).
+
+               Een gewone <a> en geen <Link>: dit is een sprong bínnen de
+               pagina, daar heeft de router niets te doen.
+
+               ⚠️ Hetzelfde crème plaatje als Inloggen, en dat is geen
+               kopieerwerk maar noodzaak: de balk is tijdens de film
+               doorzichtig en die film begint op de donkergroene avondlaag.
+               Kale tekst is daar onleesbaar. De rangorde komt niet uit de
+               kleur van dit knopje maar uit de groene knop ernaast. */}
+            {/* ⚠️ NIET op de telefoon, en dat is gemeten, geen voorkeur. Op
+               390px blijft er na het logo 264px over voor de balk; drie
+               knoppen vragen er 287. Met dit knopje erbij brak "Probeer
+               gratis" over twee regels (64px hoog in plaats van 44) en werd
+               de hele balk krap. De hoofdactie mag daar niet voor wijken:
+               op een telefoon scrol je de pagina toch, en de prijzen komen
+               vanzelf. */}
+            <a
+              href="#prijzen"
+              className="hidden rounded-xl bg-cream/95 px-3.5 py-3 text-sm font-semibold text-ink/80 shadow-sm ring-1 ring-black/5 transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:inline-block sm:py-2 sm:text-base"
+            >
+              Prijzen
+            </a>
             {ingelogd ? (
               <>
                 <Link
