@@ -971,8 +971,8 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           <div className="w-schrift-blad w-papier">
             <div className="w-schrift-inhoud">
               <p className="w-blad-kern">
-                Daarom bouw ik Avinka: die tijd hoort bij je leerlingen te
-                liggen, niet bij het papierwerk.
+                Goede leerkrachten horen hun tijd te besteden aan leerlingen,
+                niet aan papierwerk.
               </p>
             </div>
           </div>
@@ -1004,17 +1004,27 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           </button>
 
           <div className="w-schrift-stapel">
-            {/* Blad 3 — slaat als laatste om. */}
+            {/* Blad 3 — slaat als laatste om. Voorkant is de rechterbladzijde
+               van de tweede spread, achterkant de linker van de derde. */}
             <div className={`w-blad w-blad-3 ${omgeslagen > 2 ? "is-om" : ""}`}>
               <div className="w-blad-voor w-papier">
                 <div className="w-schrift-inhoud">
                   <p className="w-blad-tekst">
-                    Ik sta zelf voor de klas en weet hoeveel tijd rapporten,
-                    analyses en verslagen kosten.
+                    Daarom bouw ik hulpmiddelen die dat werk sneller en
+                    eenvoudiger maken. Geen ingewikkelde techniek, wel
+                    zorgvuldig met de gegevens van je leerlingen.
                   </p>
                 </div>
               </div>
-              <div className="w-blad-achter w-papier" />
+              <div className="w-blad-achter w-papier">
+                <div className="w-schrift-inhoud">
+                  <p className="w-blad-tekst">
+                    Wat begon als een oplossing voor mijn eigen werk, werd een
+                    bredere missie: laten zien dat slimmer werken juist
+                    eenvoudig kan zijn.
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Blad 2 — de foto. Dit is de bladzijde waar het schrift op
@@ -1051,7 +1061,19 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                   <p className="w-blad-rol">leerkracht &amp; maker</p>
                 </div>
               </div>
-              <div className="w-blad-achter w-papier" />
+              {/* De achterkant van dit blad is de LINKERbladzijde zodra je
+                 doorbladert. Daar staat het begin van het verhaal — dezelfde
+                 woorden die ooit in het grote makersblok stonden en die de
+                 eigenaar toen had goedgekeurd. Ze zijn niet weg, ze staan nu
+                 op de plek waar je ze pas leest als je ze wilt lezen. */}
+              <div className="w-blad-achter w-papier">
+                <div className="w-schrift-inhoud">
+                  <p className="w-blad-tekst">
+                    Ik ben Michael. Net als jij sta ik voor de klas, en ik weet
+                    hoeveel tijd er gaat naar rapporten, analyses en verslagen.
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Blad 1 — de kaft, slaat als eerste om. */}
@@ -1233,6 +1255,12 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            Elk een halve bladzijde groot, dus je klikt gewoon op het schrift.
            Het pijltje staat aan de buitenrand, waar je duim bij een echt boek
            ook zit. */
+        /* ⚠️ De pijltjes stonden verticaal in het midden en lagen daarmee
+           dwars over de tekst — op de linkerbladzijde liep het pijltje pal
+           door "analyses en verslagen" heen. Ze staan nu in de ONDERHOEK,
+           waar op elke bladzijde ruimte over is (de tekst vult nooit het hele
+           blad). De knop zelf blijft de halve bladzijde groot, dus je kunt nog
+           steeds gewoon op het papier klikken. */
         .w-blad-knop {
           position: absolute;
           top: 0;
@@ -1240,8 +1268,8 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           width: 50%;
           z-index: 3;
           display: flex;
-          align-items: center;
-          padding: 0 6px;
+          align-items: flex-end;
+          padding: 0 10px 12px;
           border: 0;
           background: none;
           cursor: pointer;
@@ -1286,10 +1314,12 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            het hele schrift; alle omslaande bladen liggen er absoluut
            overheen. Iets hoger dan eerst (17 → 20rem), zodat het schrift lang
            genoeg in beeld blijft om er in drie stappen doorheen te bladeren. */
+        /* 22rem en niet 20: de langste bladzijde telt acht regels, en er moet
+           onderaan ruimte overblijven voor het bladerpijltje in de hoek. */
         .w-schrift-blad {
           grid-column: 2;
           position: relative;
-          min-height: 20rem;
+          min-height: 22rem;
         }
         /* Het papier zelf: dit is wat elke bladzijde EN elke achterkant van
            een blad krijgt. Losgetrokken van .w-schrift-blad omdat de
@@ -1311,21 +1341,42 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            meebeweegt met de schermbreedte gooit de uitlijning elke keer om. */
         .w-papier {
           --regel: 30px;
-          --kantlijn: 26px;
+          /* Ruimer dan eerst (26): de eerste schrijfregel plakte tegen de
+             bovenrand van de bladzijde. Een schrift heeft daar altijd een
+             stukje wit. */
+          --kantlijn: 38px;
           /* Gemeten, niet berekend: met een merkteken zonder afmetingen op de
-             basislijn van de eerste regel ligt die basislijn 26,8px onder de
-             kantlijn. Afgerond naar 27, zodat de 1px-lijn precies onder de
-             letters valt in plaats van erdoorheen. */
-          --lijnzakking: 27px;
+             basislijn van de eerste regel ligt die basislijn 26,1px onder de
+             kantlijn. Op 26 valt de schrijflijn dus precies op de basislijn en
+             staan de letters erop.
+             ⚠️ Op 28 leek het goed op papier — 1,9px verschil — maar op het
+             scherm zag je een duidelijk gaatje tussen de letters en de lijn.
+             Bij handschrift valt zoiets meteen op, want daar hóórt geen ruimte
+             te zitten. Verander je de lettergrootte, meet dit dan opnieuw. */
+          --lijnzakking: 26px;
+          --eerste-lijn: calc(var(--kantlijn) + var(--lijnzakking));
           padding: var(--kantlijn) clamp(16px, 2vw, 24px);
+          /* ⚠️ DE DEKPLAAT BOVENAAN IS GEEN VERSIERING MAAR EEN REPARATIE.
+             Een repeating-gradient herhaalt vanaf zijn ankerpunt naar BEIDE
+             kanten. Er liep dus ook een lijn 30px bóven de eerste schrijfregel,
+             dwars door de bovenste tekstregel heen. Die eerste laag is een
+             ondoorzichtige baan papier tot net boven de eerste lijn; daarmee
+             begint het lijntjespatroon precies waar het schrift begint.
+             Volgorde van de lagen: dekplaat, lijnen, papier. */
           background:
+            linear-gradient(
+              to bottom,
+              var(--w-kaart-warm, #fffdf9) 0 calc(var(--eerste-lijn) - 1px),
+              transparent calc(var(--eerste-lijn) - 1px)
+            ),
             repeating-linear-gradient(
               to bottom,
               rgba(var(--w-schaduw-rgb, 23,80,58), 0.13) 0 1px,
               transparent 1px var(--regel)
             ),
             var(--w-kaart-warm, #fffdf9);
-          background-position: 0 calc(var(--kantlijn) + var(--lijnzakking));
+          background-repeat: no-repeat, repeat, no-repeat;
+          background-position: 0 0, 0 var(--eerste-lijn), 0 0;
           border: 2px solid ${KAART_RAND};
           border-left: none;
           border-radius: 0 1.4rem 1.6rem 0;
@@ -1638,14 +1689,19 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           .w-blad-knop { display: none; }
           .w-blad { position: relative; inset: auto; transform-style: flat; }
           .w-blad, .w-blad.is-om { transform: none; transition: none; }
-          .w-blad-voor {
+          /* ⚠️ De achterkanten stonden hier op display:none, want ze wáren
+             leeg. Sinds er tekst op staat (de linkerbladzijde van elke
+             spread) zou dat de helft van het verhaal wegpoetsen op de
+             telefoon. Ze staan nu gewoon onder hun eigen voorkant, wat ook de
+             leesvolgorde is: eerst de bladzijde, dan de achterkant ervan.
+             Alleen de binnenkant van de KAFT blijft weg: daar staat niets. */
+          .w-blad-voor,
+          .w-blad-achter {
             position: relative;
             inset: auto;
             backface-visibility: visible;
           }
-          /* De achterkanten zijn hier lege vellen: op mobiel slaat er niets
-             om, dus zouden het drie loze blokken zijn. */
-          .w-blad-achter { display: none; }
+          .w-schrift-achter { display: none; }
 
           .w-schrift-voor { padding: clamp(16px, 4vw, 22px); border-radius: 1.5rem 1.4rem 0 0; }
           .w-schrift-voor::before { width: 10px; }
