@@ -13,7 +13,15 @@ import { useEffect, useRef, useState } from "react";
  * Aanwijzen én klikken allebei: aanwijzen bestaat niet op een telefoon, en
  * alleen-klikken voelt op een muis als een extra handeling. Toetsenbord komt
  * er via focus gratis bij. */
-export default function KaartMelding({ tekst }: { tekst: string }) {
+export default function KaartMelding({
+  tekst,
+  className = "absolute right-5 top-5 z-10",
+}: {
+  tekst: string;
+  /* Waar in de kaart het uitroepteken hangt. Standaard rechtsboven; los mee te
+     geven omdat niet elke kaart daar evenveel ruimte heeft. */
+  className?: string;
+}) {
   const [open, setOpen] = useState(false);
   const wikkel = useRef<HTMLSpanElement>(null);
 
@@ -30,7 +38,7 @@ export default function KaartMelding({ tekst }: { tekst: string }) {
   return (
     <span
       ref={wikkel}
-      className="absolute right-5 top-5 z-10"
+      className={className}
       /* Bewust pointerEnter met een muis-controle en niet mouseEnter: bij een
          tik op een telefoon doet de browser alsof je ook met de muis aanwijst.
          Zonder deze controle opent de eerste tik de uitleg en sluit de klik

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import KaartMelding from "./KaartMelding";
 import {
   getKlassen,
   addKlas,
@@ -209,7 +210,7 @@ export default function KlasManager() {
   }
 
   function zetGeslacht(index: number, g: Leerling["geslacht"]) {
-    if (!sel) return;
+    if (!sel || !magBewerken) return;
     patchSel(
       sel.leerlingenData.map((l, i) =>
         i === index ? { ...l, geslacht: l.geslacht === g ? "" : g } : l,
@@ -289,84 +290,87 @@ export default function KlasManager() {
 
       {sel && (
         <div className="flex flex-col gap-6">
-          {/* Boven: instellingen van deze klas — compact, twee velden naast elkaar */}
-          <div className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="groep" className="block text-sm font-bold text-ink">
-                  Naam van deze klas <span className="font-normal text-ink/50">(optioneel)</span>
-                </label>
-                <input
-                  id="groep"
-                  value={sel.naam}
-                  onChange={(e) => hernoem(e.target.value)}
-                  disabled={!magBewerken}
-                  placeholder="Bijv. Groep 5 of De Dolfijnen"
-                  className="mt-1.5 w-full rounded-xl border border-black/10 bg-cream px-4 py-2.5 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
-                />
-              </div>
-              <div>
-                <label htmlFor="leerling" className="block text-sm font-bold text-ink">
-                  Leerling toevoegen{" "}
-                  <span className="font-normal text-ink/50">(Enter)</span>
-                </label>
-                <div className="mt-1.5 flex gap-2">
+          {/* Boven: instellingen van deze klas — compact, twee velden naast elkaar.
+              Kijk je alleen mee, dan staat hier NIETS: elk veld in deze kaart
+              wijzigt de klas van je collega. Uitgezette velden laten staan is
+              rommel op het scherm en nodigt uit tot proberen; het uitroepteken
+              op de namenlijst hieronder vertelt waarom ze weg zijn. */}
+          {magBewerken && (
+            <div className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="groep" className="block text-sm font-bold text-ink">
+                    Naam van deze klas <span className="font-normal text-ink/50">(optioneel)</span>
+                  </label>
                   <input
-                    id="leerling"
-                    ref={inputRef}
-                    disabled={!magBewerken}
-                    value={invoer}
-                    onChange={(e) => setInvoer(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        voegToe();
-                      }
-                    }}
-                    placeholder="Bijv. Sanne"
-                    autoComplete="off"
-                    className="w-full rounded-xl border border-black/10 bg-cream px-4 py-2.5 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+                    id="groep"
+                    value={sel.naam}
+                    onChange={(e) => hernoem(e.target.value)}
+                    placeholder="Bijv. Groep 5 of De Dolfijnen"
+                    className="mt-1.5 w-full rounded-xl border border-black/10 bg-cream px-4 py-2.5 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
                   />
-                  <button
-                    onClick={voegToe}
-                    aria-label="Toevoegen"
-                    disabled={!magBewerken}
-                    className="shrink-0 rounded-xl bg-brand px-4 py-2.5 text-base font-bold text-white shadow-sm shadow-brand/20 transition hover:bg-brand-dark disabled:opacity-40"
-                  >
-                    +
-                  </button>
                 </div>
-                <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  <span className="text-xs text-ink/55">Geslacht:</span>
-                  {(
-                    [
-                      ["j", "♂", "Jongen", "#3f6fb1"],
-                      ["m", "♀", "Meisje", "#c2497e"],
-                    ] as const
-                  ).map(([g, sym, lab, kl]) => {
-                    const aan = nieuwGeslacht === g;
-                    return (
-                      <button
-                        key={g}
-                        type="button"
-                        onClick={() => setNieuwGeslacht(aan ? "" : g)}
-                        className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
-                          aan ? "" : "border-black/10 text-ink/55 hover:border-black/25"
-                        }`}
-                        style={aan ? { color: kl, borderColor: kl, backgroundColor: `${kl}14` } : undefined}
-                      >
-                        <span style={{ color: kl }}>{sym}</span>
-                        {lab}
-                      </button>
-                    );
-                  })}
-                  <span className="text-xs text-ink/40">
-                    {nieuwGeslacht === "" ? "of laat leeg" : "— blijft staan voor de volgende"}
-                  </span>
+                <div>
+                  <label htmlFor="leerling" className="block text-sm font-bold text-ink">
+                    Leerling toevoegen{" "}
+                    <span className="font-normal text-ink/50">(Enter)</span>
+                  </label>
+                  <div className="mt-1.5 flex gap-2">
+                    <input
+                      id="leerling"
+                      ref={inputRef}
+                        value={invoer}
+                      onChange={(e) => setInvoer(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          voegToe();
+                        }
+                      }}
+                      placeholder="Bijv. Sanne"
+                      autoComplete="off"
+                      className="w-full rounded-xl border border-black/10 bg-cream px-4 py-2.5 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+                    />
+                    <button
+                      onClick={voegToe}
+                      aria-label="Toevoegen"
+                        className="shrink-0 rounded-xl bg-brand px-4 py-2.5 text-base font-bold text-white shadow-sm shadow-brand/20 transition hover:bg-brand-dark disabled:opacity-40"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <span className="text-xs text-ink/55">Geslacht:</span>
+                    {(
+                      [
+                        ["j", "♂", "Jongen", "#3f6fb1"],
+                        ["m", "♀", "Meisje", "#c2497e"],
+                      ] as const
+                    ).map(([g, sym, lab, kl]) => {
+                      const aan = nieuwGeslacht === g;
+                      return (
+                        <button
+                          key={g}
+                          type="button"
+                          onClick={() => setNieuwGeslacht(aan ? "" : g)}
+                          className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
+                            aan ? "" : "border-black/10 text-ink/55 hover:border-black/25"
+                          }`}
+                          style={aan ? { color: kl, borderColor: kl, backgroundColor: `${kl}14` } : undefined}
+                        >
+                          <span style={{ color: kl }}>{sym}</span>
+                          {lab}
+                        </button>
+                      );
+                    })}
+                    <span className="text-xs text-ink/40">
+                      {nieuwGeslacht === "" ? "of laat leeg" : "— blijft staan voor de volgende"}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Onder: de namenlijst met slotje */}
           <div className="relative rounded-3xl border border-black/5 bg-white p-6 shadow-sm sm:p-7">
@@ -381,14 +385,13 @@ export default function KlasManager() {
               </div>
             </div>
 
-            {/* Kijk je bij deze groep alleen mee, dan is de lijst van je
-                collega en pas je hem niet aan. Vóóraf zeggen, niet pas als het
-                misgaat: het toevoegen leek eerder gewoon te lukken. */}
+            {/* Zelfde uitroepteken als op de toolkaarten op Start, zodat het
+                overal hetzelfde betekent: er geldt hier iets, klik voor waarom. */}
             {!magBewerken && (
-              <p className="mb-3 pl-9 text-sm text-ink/55">
-                Je kijkt mee bij deze groep. De klassenlijst is van je collega, dus die
-                pas je hier niet aan.
-              </p>
+              <KaartMelding
+                className="absolute right-4 top-4 z-10"
+                tekst="Je kijkt mee bij deze groep. De klassenlijst is van je collega: je ziet de namen wel, maar je past ze niet aan."
+              />
             )}
             {bewaarFout && (
               <p
@@ -492,7 +495,8 @@ export default function KlasManager() {
               verhaaltje).
             </p>
             <div className="mt-3 flex gap-2">
-              {(
+              {magBewerken &&
+                (
                 [
                   { g: "j" as const, label: "Jongen", sym: "♂", kleur: "#3f6fb1" },
                   { g: "m" as const, label: "Meisje", sym: "♀", kleur: "#c2497e" },
@@ -521,6 +525,7 @@ export default function KlasManager() {
             <div className="mt-7 border-t border-black/5 pt-4">
               <button
                 onClick={() => verwijderLeerling(profielIdx!)}
+                hidden={!magBewerken}
                 className="text-sm font-semibold text-ink/40 transition hover:text-rose-600"
               >
                 Leerling verwijderen
