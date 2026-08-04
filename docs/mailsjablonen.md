@@ -110,8 +110,7 @@ in de link verschillen.
       </td></tr>
       <tr><td style="padding:24px 36px 0;">
         <p style="margin:0;font-size:15px;line-height:1.65;color:#4a4458;">Deze link is een uur geldig en werkt één keer.</p>
-        <p style="margin:16px 0 0;font-size:15px;line-height:1.65;color:#4a4458;"><strong style="color:#221c3a;">Heb je dit niet aangevraagd?</strong><br>Dan verandert er niets. Je wachtwoord blijft hetzelfde zolang je niet op de knop klikt, en deze mail alleen geeft niemand toegang tot je account.</p>
-        <p style="margin:12px 0 0;font-size:15px;line-height:1.65;color:#6b6880;">Meestal komt zo&#39;n mail doordat iemand zijn eigen adres verkeerd typte. Krijg je hem vaker, of vertrouw je het niet? Mail dan <a href="mailto:support@avinka.nl" style="color:#25855a;font-weight:bold;">support@avinka.nl</a>, dan kijken we met je mee.</p>
+        <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#6b6880;">Heb je dit niet aangevraagd? Dan kun je deze mail negeren, je wachtwoord verandert niet. Twijfel je? Mail <a href="mailto:support@avinka.nl" style="color:#25855a;font-weight:bold;">support@avinka.nl</a>.</p>
       </td></tr>
       <tr><td style="padding:24px 36px 30px;">
         <div style="border-top:1px solid #ece7e0;padding-top:16px;">
