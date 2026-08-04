@@ -1098,9 +1098,11 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                        schriftetiket vul je bij vak iets als rekenen in. Twee
                        ingevulde regels is bovendien hoe zo'n etiket er
                        meestal uitziet. */}
+                    {/* Groep 7 vanaf schooljaar 2026/2027. De eigenaar gaf dit
+                       zelf op; niet zelf invullen of aanpassen zonder hem. */}
                     <div>
                       <dt>groep</dt>
-                      <dd>[ ? ]</dd>
+                      <dd>7</dd>
                     </div>
                     <div>
                       <dt>van</dt>
