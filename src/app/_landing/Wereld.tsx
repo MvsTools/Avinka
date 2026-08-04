@@ -823,30 +823,10 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
       <div className="pointer-events-none absolute inset-x-0 bottom-0 top-1/2" aria-hidden>
         <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
 
-        {/* ── RUITJESPAPIER ────────────────────────────────────────────────
-           Dit is de enige sectie met een patroon in het veld, en dat is met
-           opzet: hier ligt een schrift, dus hier is het papier geruit. Het
-           komt uit de variantenronde — de eigenaar wees destijds bij "Diep
-           bos" de vakjes aan als iets dat hij leuk vond, maar het is toen
-           niet overgenomen. Hier heeft het eindelijk een reden.
-
-           🔑 HET MOET AAN DE ONDERKANT UITDOVEN. Het mintveld van deze sectie
-           loopt door tot in de ervaringen-sectie (zelfde tint, expres geen
-           naad). Een patroon dat op de sectiegrens ophoudt maakt dáár alsnog
-           een kaarsrechte lijn — precies de fout die de golfregels moeten
-           voorkomen. Met een masker vervaagt het aan allebei de uiteinden en
-           is er nergens een rand.
-           De maat (26px) is ongeveer de ruit van een rekenschrift; kleiner
-           werd het een raster en ging het trillen op een gewoon scherm. */}
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `repeating-linear-gradient(to right, rgba(var(--w-schaduw-rgb, 23,80,58), 0.075) 0 1px, transparent 1px 26px), repeating-linear-gradient(to bottom, rgba(var(--w-schaduw-rgb, 23,80,58), 0.075) 0 1px, transparent 1px 26px)`,
-            maskImage: "linear-gradient(to bottom, transparent 4%, #000 26%, #000 58%, transparent 92%)",
-            WebkitMaskImage:
-              "linear-gradient(to bottom, transparent 4%, #000 26%, #000 58%, transparent 92%)",
-          }}
-        />
+        {/* ⚠️ Hier lag ruitjespapier over het mintveld. Eruit op verzoek: het
+           schrift zelf heeft al lijnen, en dan is een tweede lijnenspel in de
+           achtergrond eronder ruis in plaats van sfeer. Het veld is weer
+           gewoon veld. */}
 
         {/* Rechts van de makerskaart begint het mintveld dat doorloopt tot in
            de ervaringen-sectie, en die hele rechterbovenhoek was leeg: de
@@ -1058,17 +1038,17 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                         </span>
                       )}
                     </div>
-                    {/* ⚠️ Hier stond "dat ben ik, voor de klas". Eruit: die
-                       foto is niet in een lokaal genomen, dus dat beweert iets
-                       wat je niet ziet. Komt er ooit een echte klasfoto, dan
-                       mag die zin terug. */}
-                    <p className="w-schrift-onderschrift">dat ben ik</p>
+                    {/* ⚠️ Hier stond een onderschrift ("dat ben ik"). Eruit op
+                       verzoek: de naam staat er al onder, dus het zei niets
+                       wat je niet al zag. */}
                   </div>
                   {/* Naam en rol horen op deze bladzijde en niet alleen op het
                      etiket: dit is de eerste bladzijde die je ziet, en een
                      foto zonder naam stelt niemand voor. */}
                   <p className="w-blad-naam">Michael van Spanje</p>
-                  <p className="w-blad-rol">leerkracht &amp; maker van Avinka</p>
+                  {/* "van Avinka" eraf: dat brak over twee regels en het is
+                     overbodig op de site van Avinka zelf. */}
+                  <p className="w-blad-rol">leerkracht &amp; maker</p>
                 </div>
               </div>
               <div className="w-blad-achter w-papier" />
@@ -1315,16 +1295,37 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            een blad krijgt. Losgetrokken van .w-schrift-blad omdat de
            omslaande bladen dezelfde look nodig hebben zonder in de stroom te
            staan. */
+        /* ── DE SCHRIJFLIJNEN EN DE TEKST HOREN OP ELKAAR ──────────────────
+           De tekst moet ÓP de lijnen staan, niet ertussen of erdoorheen. Dat
+           lukt alleen als drie dingen exact op elkaar zijn afgestemd, en ze
+           staan daarom alle drie hier bij elkaar in variabelen:
+             --regel      de regelafstand (en dus de line-height van de tekst)
+             --kantlijn   de padding boven, waar de eerste regel begint
+             --lijnzakking hoeveel de lijn onder de bovenkant van een regel
+                          valt, oftewel waar de schrijflijn hoort
+           De lijn wordt getekend aan het BEGIN van elke herhaling, en met
+           background-position schuiven we die naar de juiste hoogte.
+           ⚠️ Verander je de lettergrootte van het handschrift, dan moet
+           --lijnzakking mee: hij is gemeten op de echte letter, niet berekend.
+           Padding met vaste waarden en niet met clamp(), want een padding die
+           meebeweegt met de schermbreedte gooit de uitlijning elke keer om. */
         .w-papier {
-          padding: clamp(18px, 2.2vw, 26px) clamp(16px, 2vw, 24px);
+          --regel: 30px;
+          --kantlijn: 26px;
+          /* Gemeten, niet berekend: met een merkteken zonder afmetingen op de
+             basislijn van de eerste regel ligt die basislijn 26,8px onder de
+             kantlijn. Afgerond naar 27, zodat de 1px-lijn precies onder de
+             letters valt in plaats van erdoorheen. */
+          --lijnzakking: 27px;
+          padding: var(--kantlijn) clamp(16px, 2vw, 24px);
           background:
             repeating-linear-gradient(
               to bottom,
-              transparent 0 30px,
-              rgba(var(--w-schaduw-rgb, 23,80,58), 0.10) 30px 31px
+              rgba(var(--w-schaduw-rgb, 23,80,58), 0.13) 0 1px,
+              transparent 1px var(--regel)
             ),
             var(--w-kaart-warm, #fffdf9);
-          background-position: 0 12px;
+          background-position: 0 calc(var(--kantlijn) + var(--lijnzakking));
           border: 2px solid ${KAART_RAND};
           border-left: none;
           border-radius: 0 1.4rem 1.6rem 0;
@@ -1401,36 +1402,38 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         }
 
         /* ── tekst ÓP een bladzijde ──
-           Regelafstand exact gelijk aan de schrijflijnen (30px), zodat de
-           tekst op de lijnen loopt in plaats van er dwars doorheen. Verandert
-           de ene, verander dan de andere mee. */
+           In het handschrift van de pagina, want dit is een schrift: gedrukte
+           letters op schrijflijnen zien er altijd uit als een tekstvak met een
+           patroontje erachter. De regelafstand is exact de regelafstand van de
+           lijnen; elke marge hieronder is daarom een veelvoud daarvan, anders
+           schuift alles wat eronder staat van de lijn af. */
         .w-blad-tekst,
-        .w-blad-kern {
-          font-size: 1rem;
-          line-height: 30px;
-          color: rgba(34, 28, 58, 0.8);
+        .w-blad-kern,
+        .w-blad-naam,
+        .w-blad-rol {
+          font-family: var(--font-hand), "Segoe Script", cursive;
+          line-height: var(--regel);
+          margin: 0;
+        }
+        .w-blad-tekst {
+          font-size: 1.22rem;
+          color: rgba(34, 28, 58, 0.86);
         }
         .w-blad-kern {
-          font-weight: 600;
+          font-size: 1.22rem;
           color: ${KOP};
         }
         /* Naam en rol onder de foto, op de eerste bladzijde. Gecentreerd
            onder de afdruk, want die staat er ook gecentreerd op. */
         .w-blad-naam {
-          margin-top: clamp(10px, 1.4vw, 16px);
           text-align: center;
-          font-family: var(--font-display), Georgia, serif;
-          font-weight: 900;
-          letter-spacing: -0.02em;
-          line-height: 30px;
-          font-size: 1.05rem;
+          font-size: 1.32rem;
           color: ${DONKER};
         }
         .w-blad-rol {
           text-align: center;
-          font-size: 0.9rem;
-          line-height: 30px;
-          color: rgba(34, 28, 58, 0.7);
+          font-size: 1.05rem;
+          color: rgba(34, 28, 58, 0.72);
         }
 
         /* ── de kaft ──
@@ -1549,9 +1552,17 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            een UI-element, geen foto in een schrift. Een echte afdruk heeft
            een witte rand, ligt nooit helemaal recht en werpt een kleine
            schaduw op het papier eronder. Dat is alles wat er nodig was. */
+        /* 🔑 DE FOTO MOET EEN HEEL AANTAL REGELS BESLAAN. Alles wat tussen de
+           tekst staat en géén veelvoud van de regelafstand hoog is, duwt de
+           regels eronder van de lijnen af — en dan klopt de rest van de
+           bladzijde niet meer. Daarom staan de maten hier vast (geen clamp)
+           en rekent de ondermarge het verschil weg tot precies zes regels.
+           Verander je de fotohoogte, dan rekent de marge vanzelf mee. */
         .w-schrift-afdruk {
+          --fotohoogte: 145px;
+          --randje: 14px; /* 8px boven + 6px onder */
           width: fit-content;
-          margin: 0 auto;
+          margin: 0 auto calc(var(--regel) * 6 - var(--fotohoogte) - var(--randje));
           padding: 8px 8px 6px;
           background: #ffffff;
           border-radius: 3px;
@@ -1560,9 +1571,11 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
             0 1px 0 rgba(var(--w-schaduw-rgb, 23,80,58), 0.10),
             0 10px 20px -12px rgba(var(--w-schaduw-rgb, 23,80,58), 0.5);
         }
+        /* Vaste maat, want de hoogte telt mee in de regelberekening hierboven.
+           132 bij 145 is ongeveer de verhouding van een pasfoto. */
         .w-schrift-foto {
-          width: clamp(7rem, 13vw, 9rem);
-          aspect-ratio: 1 / 1.1;
+          width: 132px;
+          height: var(--fotohoogte);
           display: grid;
           place-items: center;
           overflow: hidden;
