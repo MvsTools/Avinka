@@ -1213,9 +1213,9 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                    afgescheurd) — anders is het een vierde geeltje in plaats
                    van een antwoord op de eerste drie. */}
                 <div className="w-afvinklijst">
-                  <span>nagekeken</span>
-                  <span>verstuurd</span>
-                  <span>klaar voor morgen</span>
+                  <span>Nakijken</span>
+                  <span>mail bijwerken</span>
+                  <span>toetsen analyseren</span>
                 </div>
               </div>
             </div>
@@ -1793,7 +1793,9 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         .w-afvinklijst {
           position: absolute;
           left: 14%;
-          right: 9%;
+          /* Smaller aan de rechterkant dan het stapeltje erboven: twee
+             briefjes die precies even breed zijn lezen als één blok. */
+          right: 19%;
           bottom: 19%;
           padding: 10px 12px 12px;
           background: #fdfcf7;
