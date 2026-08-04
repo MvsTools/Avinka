@@ -73,6 +73,10 @@ export default function DuoCollega() {
     DuoUitnodiging | null | "laden" | "fout"
   >(uitnodigingsCode ? "laden" : null);
   const [accepterenBezig, setAccepterenBezig] = useState(false);
+  /* Naam van de groep waar je zojuist bij kwam. Niet meteen dichtklappen na
+     het accepteren: dan weet je niet of het gelukt is, en al helemaal niet dat
+     je zelf nog moet wisselen als je een eigen klas hebt. */
+  const [geaccepteerd, setGeaccepteerd] = useState<string | null>(null);
   const [handmatigeCode, setHandmatigeCode] = useState("");
 
   async function laadAlles() {
@@ -115,7 +119,9 @@ export default function DuoCollega() {
   useEffect(() => {
     if (!uitnodigingsCode || !voorbeeld || accepterenBezig) return;
     function bijToets(e: KeyboardEvent) {
-      if (e.key === "Escape") verwijderDuoParam();
+      if (e.key !== "Escape") return;
+      if (geaccepteerd) sluitBevestiging();
+      else verwijderDuoParam();
     }
     window.addEventListener("keydown", bijToets);
     return () => window.removeEventListener("keydown", bijToets);
@@ -141,11 +147,12 @@ export default function DuoCollega() {
   async function accepteer() {
     if (!uitnodigingsCode) return;
     setAccepterenBezig(true);
+    const naam =
+      typeof voorbeeld === "object" && voorbeeld !== null ? voorbeeld.klasNaam : "";
     const ok = await accepteerDuoUitnodiging(uitnodigingsCode);
     setAccepterenBezig(false);
     if (ok) {
-      setVoorbeeld(null);
-      verwijderDuoParam();
+      setGeaccepteerd(naam || "deze groep");
       laadAlles();
       // Accepteren vult school en groep in (zie duo_koppel_accepteren). Het
       // formulier daaronder heeft zijn waarden al geladen en zou anders leeg
@@ -154,6 +161,12 @@ export default function DuoCollega() {
     } else {
       setVoorbeeld("fout");
     }
+  }
+
+  function sluitBevestiging() {
+    setGeaccepteerd(null);
+    setVoorbeeld(null);
+    verwijderDuoParam();
   }
 
   async function nodigUit() {
@@ -278,11 +291,41 @@ export default function DuoCollega() {
           className="fixed inset-0 z-[70] flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm"
         >
           <div className="w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl sm:p-8">
-            {voorbeeld === "laden" && (
+            {/* Gelukt. Bewust een eigen scherm en niet gewoon dichtklappen:
+                dit is het moment om te zeggen dát het gelukt is, en om te
+                vertellen waar je wisselt als de groep niet vanzelf aanging
+                (dat gebeurt alleen als je zelf nog geen klas met leerlingen
+                hebt — zie duo_koppel_accepteren). */}
+            {geaccepteerd && (
+              <>
+                <h2 id="duo-uitnodiging-kop" className="font-serif text-2xl font-semibold text-ink">
+                  Je hoort nu bij {geaccepteerd}
+                </h2>
+                <p className="mt-3 leading-7 text-ink/75">
+                  Jullie delen vanaf nu de rapporten, bestanden, taken en de overdracht van
+                  deze groep.
+                </p>
+                <p className="mt-3 rounded-2xl bg-brand-soft px-4 py-3 text-sm leading-6 text-ink/75">
+                  Werk je zelf al met een eigen klas? Dan blijven je tools daarnaar kijken.
+                  Kies {geaccepteerd} bij <strong className="font-semibold">Mijn klas</strong> als
+                  je wilt dat ze deze groep gebruiken.
+                </p>
+                <div className="mt-6 flex justify-end">
+                  <button
+                    onClick={sluitBevestiging}
+                    className="rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-dark"
+                  >
+                    Klaar
+                  </button>
+                </div>
+              </>
+            )}
+
+            {!geaccepteerd && voorbeeld === "laden" && (
               <p className="text-ink/70">Uitnodiging laden…</p>
             )}
 
-            {voorbeeld === "fout" && (
+            {!geaccepteerd && voorbeeld === "fout" && (
               <>
                 <h2 id="duo-uitnodiging-kop" className="font-serif text-2xl font-semibold text-ink">
                   Deze uitnodiging werkt niet meer
@@ -302,7 +345,7 @@ export default function DuoCollega() {
               </>
             )}
 
-            {typeof voorbeeld === "object" && voorbeeld !== null && (
+            {!geaccepteerd && typeof voorbeeld === "object" && voorbeeld !== null && (
               <>
                 <h2 id="duo-uitnodiging-kop" className="font-serif text-2xl font-semibold text-ink">
                   {voorbeeld.uitnodigerVoornaam || "Een collega"} nodigt je uit

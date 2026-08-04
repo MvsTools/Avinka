@@ -1205,14 +1205,16 @@ grant execute on function public.duo_koppel_voorbeeld(text) to authenticated;
 create or replace function public.duo_koppel_accepteren(p_code text)
 returns uuid language plpgsql security definer set search_path = public as $$
 declare
-  gevonden_id uuid;
-  uitnodiger  uuid;
+  gevonden_id   uuid;
+  uitnodiger    uuid;
+  gedeelde_klas uuid;
 begin
   update public.duo_koppels
   set gebruiker_b = auth.uid(), status = 'actief'
   where code = p_code and status = 'uitgenodigd' and gebruiker_b is null
     and gebruiker_a <> auth.uid() -- niet je eigen uitnodiging accepteren
-  returning id, gebruiker_a into gevonden_id, uitnodiger;
+  returning id, gebruiker_a, klas_id
+       into gevonden_id, uitnodiger, gedeelde_klas;
 
   if gevonden_id is null then
     return null;
@@ -1231,6 +1233,22 @@ begin
         when coalesce(doel.standaardgroep, '') = '' then excluded.standaardgroep
         else doel.standaardgroep
       end;
+
+  -- Heb je zelf nog geen klas met leerlingen, dan is deze gedeelde groep
+  -- vanaf nu jouw actieve klas: anders kijken je tools nog naar je eigen
+  -- (lege) klas en zie je niets van de groep waar je net bij kwam.
+  -- ⚠️ Bewust NIET altijd: een leerkracht met een eigen groep hoort daar te
+  -- blijven kijken. Die krijgt in het scherm te zien waar hij kan wisselen.
+  if not exists (
+    select 1 from public.klassen k
+    where k.user_id = auth.uid()
+      and coalesce(array_length(k.leerlingen, 1), 0) > 0
+  ) then
+    insert into public.instellingen (user_id, actieve_duo_klas_id)
+    values (auth.uid(), gedeelde_klas)
+    on conflict (user_id) do update
+    set actieve_duo_klas_id = excluded.actieve_duo_klas_id;
+  end if;
 
   return gevonden_id;
 end;
