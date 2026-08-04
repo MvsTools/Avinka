@@ -160,13 +160,24 @@ export function WereldPrijzen({
       >
         <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
 
-        {/* Hier stonden twee vlakken (links achter Start, rechts onder Pro).
-           Allebei weg: dit mintveld loopt zonder eigen afsluitende golf door
-           tot in de vragensectie (zie "halve kaart"-commit), dus "rechts
-           onder Pro" lag in werkelijkheid vlak vóór de vragen-golf — precies
-           waar díe sectie inmiddels haar eigen linksboven/rechtsonder-paar
-           heeft (zie WereldVragen). Twee vlakken vlak na elkaar op dezelfde
-           naad las als een ongewild trio, niet als twee bewuste paren. */}
+        {/* Het vlak op de BOVENRAND van dit mintveld — exact hetzelfde
+           principe als het vlak linksboven bij "Veilig omgaan met AI": een
+           negatieve top laat het boven de rand uitsteken, en de flip-golf
+           hieronder snijdt hem precies op de kleurgrens af. Je ziet dus geen
+           snede maar een vorm die onder het veld vandaan komt.
+           🔑 De volgorde in deze laag IS de ingreep: mint, dan het vlak,
+           dan de golf. Staat het vlak ná de golf, dan ligt het eroverheen.
+           ⚠️ De laag heeft overflow-hidden, dus het deel boven de rand wordt
+           weggeknipt; wat je overhoudt is precies de vorm onder de golf. */}
+        <KaartVlak
+          kleur={VLAK_MINT}
+          vorm="koepel"
+          breedte={700}
+          hoogte={330}
+          style={{ left: "-14%", top: -60, transform: "rotate(-6deg)" }}
+          className="hidden lg:block"
+          tel={2}
+        />
 
         {/* De entree van dit veld: papier dat van bovenaf in de mint hapt.
            Zit nu HIER (op de meethoogte) in plaats van los bovenaan de
@@ -473,28 +484,18 @@ export function WereldVragen({ items, mintBoven = false }: { items: Vraag[]; min
         >
           <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
 
-          {/* ⚠️ HIER GING HET MIS: de onderkant van dit vlak (top + hoogte)
-             stond precies op de hoogte van de golfcurve (110). Dan zie je bij
-             "koepel" niet de golf die 'm afsnijdt, maar de eigen — bijna
-             rechte — onderrand van de vorm zelf (de onderhoeken van "koepel"
-             hebben maar 24-26% ronding). Dat las als een willekeurige rechte
-             knip, niet als de golf.
-             Het vlak moet daarom ver VOORBIJ de curve doorlopen (bottom nu
-             ruim in de vragenlijst hieronder), zodat de Golf — die er ná dit
-             vlak in de laag staat — hem middenin snijdt en je de echte
-             golfvorm ziet in plaats van de vlakke onderkant van de vorm. */}
-          <KaartVlak
-            kleur={VLAK_MINT}
-            vorm="koepel"
-            breedte={750}
-            hoogte={480}
-            style={{ left: "-14%", top: -110, transform: "rotate(-6deg)" }}
-            className="hidden lg:block"
-            tel={5}
-          />
+          {/* ⚠️ Hier stond een vlak linksboven, en dat hoort hier NIET.
+             Dit is de ONDERKANT van het mintveld: alles wat hier hangt wordt
+             door de afsluitende golf afgekapt, en dat las telkens als een
+             willekeurige knip onderin de sectie. Een vlak op een golfrand
+             hoort aan de BOVENkant van een veld te zitten, waar het onder de
+             kleurrand vandaan lijkt te komen (zoals bij "Veilig omgaan met
+             AI"). Het is daarom verhuisd naar de bovenrand van dit mintveld
+             — dat is halverwege de prijskaarten, zie WereldPrijzen. */}
+
           {/* Rechtsonder: hier blijft de mint juist diep staan, dus dit vlak
              steekt onderuit de sectie en wordt pas op de allerlaatste rand
-             afgekapt — het tegenwicht van het vlak linksboven. */}
+             afgekapt. */}
           <KaartVlak
             kleur={VLAK_MINT}
             vorm="schelp"
