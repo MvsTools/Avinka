@@ -42,7 +42,7 @@ scherm staan waar je een wachtwoord kiest.
 
 ## 1. Confirm signup
 
-**Subject:** `Bevestig je aanmelding bij Avinka`
+**Subject:** `Bevestig je aanmelding`
 
 ```html
 <style>
@@ -84,7 +84,7 @@ scherm staan waar je een wachtwoord kiest.
 
 ## 2. Reset password
 
-**Subject:** `Een nieuw wachtwoord instellen voor Avinka`
+**Subject:** `Wachtwoord opnieuw instellen`
 
 Zelfde opzet; alleen de kop, de tekst, het opschrift van de knop en het `type`
 in de link verschillen.
@@ -129,7 +129,7 @@ in de link verschillen.
 
 ## 3. Change email address
 
-**Subject:** `Bevestig je nieuwe e-mailadres voor Avinka`
+**Subject:** `Bevestig je nieuwe e-mailadres`
 
 ```html
 <style>
