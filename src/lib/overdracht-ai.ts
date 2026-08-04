@@ -60,8 +60,7 @@ Regels:
 
 // Wat we tonen als er te weinig staat. Onze woorden, niet die van het model,
 // zodat de toon klopt met de rest van het platform.
-const TE_WEINIG =
-  "Er staat nog te weinig om een bericht van te maken. Typ eerst een paar steekwoorden, bijvoorbeeld wat er anders liep of wie vandaag aandacht nodig had.";
+const TE_WEINIG = "Typ eerst een paar steekwoorden.";
 
 export type AiAntwoord = { ok: true; tekst: string } | { ok: false; melding: string };
 

@@ -352,43 +352,36 @@ export default function DuoOverdracht() {
 
             {/* Het voorstel staat náást je eigen tekst, niet eroverheen: je
                 vergelijkt en kiest zelf. */}
-            {(aiBezig || voorstel) && (
+            {/* Alleen een blok als er ook echt iets te lezen valt. Tijdens het
+                wachten schoof hier een leeg kader in beeld met het woord
+                "Voorstel" erboven, en dat is veel gedoe voor een klein scherm
+                dat daarna toch weer van hoogte verspringt. Het wachten staat nu
+                gewoon op de knop zelf. */}
+            {voorstel && !aiBezig && (
               <div
                 aria-live="polite"
                 className="mt-2 rounded-2xl border border-brand/25 bg-brand-soft/60 px-4 py-3"
               >
-                <p className="text-xs font-bold uppercase tracking-wider text-brand-dark">
-                  Voorstel
-                </p>
-                {aiBezig ? (
-                  <p className="mt-1 text-sm text-ink/60">Even schrijven…</p>
-                ) : (
-                  <>
-                    <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-ink/80">
-                      {voorstel}
-                    </p>
-                    <div className="mt-2.5 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={neemVoorstelOver}
-                        // Bewust niet gevuld groen: Versturen staat er vlak
-                        // onder en dat is de knop die het bericht wegstuurt.
-                        // Twee volle groene knoppen boven elkaar leest als twee
-                        // keer dezelfde eindstap.
-                        className="rounded-xl border border-brand bg-white px-4 py-1.5 text-sm font-bold text-brand-dark transition hover:bg-brand-soft"
-                      >
-                        Gebruiken
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setVoorstel(null)}
-                        className="rounded-xl border border-black/10 px-4 py-1.5 text-sm font-semibold text-ink/60 transition hover:border-black/20"
-                      >
-                        Toch niet
-                      </button>
-                    </div>
-                  </>
-                )}
+                <p className="whitespace-pre-wrap text-sm leading-6 text-ink/80">{voorstel}</p>
+                <div className="mt-2.5 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={neemVoorstelOver}
+                    // Bewust niet gevuld groen: Versturen staat er vlak onder en
+                    // dat is de knop die het bericht wegstuurt. Twee volle groene
+                    // knoppen boven elkaar leest als twee keer dezelfde eindstap.
+                    className="rounded-xl border border-brand bg-white px-4 py-1.5 text-sm font-bold text-brand-dark transition hover:bg-brand-soft"
+                  >
+                    Gebruiken
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVoorstel(null)}
+                    className="rounded-xl border border-black/10 px-4 py-1.5 text-sm font-semibold text-ink/60 transition hover:border-black/20"
+                  >
+                    Toch niet
+                  </button>
+                </div>
               </div>
             )}
 
@@ -433,7 +426,7 @@ export default function DuoOverdracht() {
                   <path d="M13 2.5l1.9 5.6 5.6 1.9-5.6 1.9L13 17.5l-1.9-5.6L5.5 10l5.6-1.9L13 2.5z" />
                   <path d="M5.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z" />
                 </svg>
-                Netter maken
+                {aiBezig ? "Even schrijven…" : "Netter maken"}
               </button>
               <button
                 type="button"
