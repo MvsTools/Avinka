@@ -175,13 +175,15 @@ const GOLVEN = {
      nadrukkelijk weg naar rechts, zodat het mintveld daar veel dieper
      doorloopt dan aan de linkerkant. */
   speels: maakGolf({ start: 22, eind: 92, amp: 17, golven: 1.3, fase: 0.5 }),
-  /* zakt links flink dieper weg dan rechts, in precies één zachte slag —
-     golven:1 met fase 0 raakt zijn start- en eindhoogte exact, dus rechts
-     blijft op dezelfde hoogte staan terwijl hij links breed en smooth over
-     de eerste vraag heen vloeit. Sluit het mintveld bij de prijzen/vragen
-     af: was eerst "ribbel" (twee ondiepe deiningen, bijna symmetrisch), dat
-     oogde te gehakt voor een vloeiende overgang over lopende tekst heen. */
-  zwaai: maakGolf({ start: 85, eind: 52, amp: 9, golven: 1, fase: 0 }),
+  /* Blijft rechts diep in de mint hangen, klimt dan op naar links tot een
+     kam die bijna alle mint wegneemt — en zakt daarna, nog verder naar
+     links, weer een stukje terug. Zonder die terugzak was het geen golf
+     meer maar een rechte schuine lijn: dit ⚠️ is precies waarom golven<1
+     hier staat (met golven:1 blijft de klim monotoon; pas onder de 1 volle
+     slag ontstaat de kam mét terugzak op hetzelfde stuk). Gebruikt met een
+     Golf die zijn VOLLE vak beslaat (niet alleen een randje onderaan),
+     anders is de beweging te klein om iets voor te stellen. */
+  stijging: maakGolf({ start: 65, eind: 60, amp: 55, golven: 0.7, fase: -2.23 }),
 } as const;
 
 export function Golf({

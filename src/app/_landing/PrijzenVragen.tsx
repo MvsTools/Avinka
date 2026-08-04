@@ -478,25 +478,21 @@ export function WereldVragen({ items, mintBoven = false }: { items: Vraag[]; min
         >
           <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
 
-          {/* Linksonder op de rand, tegenover het vlak dat in de cijfersectie
-             rechtsboven hangt: samen omlijsten ze de staart van het veld.
-             Hij duikt de golf in, dus het papier van de golf snijdt hem op de
-             kleurrand af — zelfde ingreep als overal elders. */}
-          <KaartVlak
-            kleur={VLAK_MINT}
-            vorm="koepel"
-            breedte={700}
-            hoogte={330}
-            style={{ left: "-15%", bottom: -90, transform: "rotate(-6deg)" }}
-            className="hidden lg:block"
-            tel={5}
-          />
+          {/* ⚠️ Het vlak rechtsonder is weg: bij "zwaai" dook het nog netjes de
+             (kleine) golf in, maar nu de golf het HELE vak beslaat en links
+             bijna geen mint meer overlaat, kwam dit vlak op kaal papier te
+             hangen — een losse mintvlek zonder golf om 'm af te snijden. */}
 
-          {/* "zwaai" i.p.v. "ribbel": rechts blijft op dezelfde hoogte staan
-             (waar hij al precies tussen vraag 1 en 2 viel), maar links vloeit
-             hij nu in één brede, zachte slag over de eerste vraag heen in
-             plaats van er met twee ondiepe deiningen overheen te hakkelen. */}
-          <Golf kleur="var(--w-papier, #fcfbf7)" vorm="zwaai" hoogte="h-[70px] sm:h-[110px]" />
+          {/* ⚠️ Niet "zwaai": die golf zat als een randje ONDERAAN het vak
+             (h-70/110px in een vak van 310-355px) en kon dus alleen een
+             beetje op en neer deinen. Om de grens van rechts helemaal tot
+             BOVEN de eerste vraag te laten klimmen, moet de golf het VOLLE
+             vak beslaan — vandaar dezelfde hoogte als de container zelf. */}
+          <Golf
+            kleur="var(--w-papier, #fcfbf7)"
+            vorm="stijging"
+            hoogte="h-[355px] sm:h-[310px] lg:h-[355px]"
+          />
         </div>
       )}
 
