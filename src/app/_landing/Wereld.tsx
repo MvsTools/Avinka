@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "react";
 
 /* ── De Wereld van /nieuw5 ──────────────────────────────────────────────────
@@ -777,7 +777,82 @@ export function WereldHerken() {
    gelijk (dus de kleurnaad valt nog steeds halverwege de kaart) en de
    kam-golf is dezelfde. Alleen de maten van de achtergrondvormen zijn
    meegekrompen met de sectie — zie de opmerkingen daar. */
+/* ── Het schriftje openen op scrollpositie ─────────────────────────────────
+   De kaft draait open terwijl je scrollt: dicht als de sectie onderin beeld
+   komt, helemaal open als hij op driekwart van het scherm staat. Bewust géén
+   animatie die één keer afspeelt — de eigenaar vroeg om iets dat opengaat
+   TIJDENS het scrollen, dus de stand hangt aan de scrollpositie en loopt ook
+   terug als je omhoog scrolt.
+
+   🔑 De hoek gaat naar een CSS-variabele op de wrapper (--open), niet naar de
+   transform van de kaft zelf. Zo blijft de hele vormgeving in het stijlblad
+   staan en schrijft dit effect maar één getal.
+
+   Waarom rAF en geen scroll-handler die direct schrijft: een scroll-gebeurtenis
+   vuurt vaker dan het scherm ververst, en elke schrijfactie naar style dwingt
+   de browser tot herberekenen. Nu hoogstens één keer per frame, en alleen als
+   het element in beeld is (dezelfde spaarzaamheid als het cijferbord). */
+function useOpenbladeren() {
+  const anker = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = anker.current;
+    if (!el) return;
+
+    /* Wie beweging heeft afgezet krijgt het schriftje gewoon open te zien.
+       Dicht laten zou erger zijn dan geen animatie: dan is de inhoud weg. */
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      el.style.setProperty("--open", "1");
+      return;
+    }
+
+    let inBeeld = false;
+    let raf = 0;
+
+    const meet = () => {
+      raf = 0;
+      const r = el.getBoundingClientRect();
+      const h = window.innerHeight;
+      /* Dicht zolang de bovenkant onder 88% van het scherm zit, open zodra
+         hij op 38% staat. Die twee waarden zijn de hele afstelling: ze zijn
+         zo gekozen dat het schriftje openligt op het moment dat het blok
+         midden in beeld staat, niet pas als je er alweer voorbij bent. */
+      const p = (h * 0.88 - r.top) / (h * 0.5);
+      el.style.setProperty("--open", String(Math.min(1, Math.max(0, p))));
+    };
+
+    const vraagFrame = () => {
+      if (!inBeeld || raf) return;
+      raf = requestAnimationFrame(meet);
+    };
+
+    const kijker = new IntersectionObserver(
+      ([ingang]) => {
+        inBeeld = ingang.isIntersecting;
+        vraagFrame();
+      },
+      { rootMargin: "40% 0px" },
+    );
+    kijker.observe(el);
+
+    window.addEventListener("scroll", vraagFrame, { passive: true });
+    window.addEventListener("resize", vraagFrame);
+    meet();
+
+    return () => {
+      kijker.disconnect();
+      window.removeEventListener("scroll", vraagFrame);
+      window.removeEventListener("resize", vraagFrame);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  return anker;
+}
+
 export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
+  const boek = useOpenbladeren();
+
   return (
     <section className="relative overflow-hidden">
       {/* Het mintveld begon eerst bovenaan deze sectie, en dan zat de golf
@@ -849,170 +924,337 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         />
       )}
 
-      {/* ⚠️ DE OMHULLENDE KAART IS HIER WEG, EN DAT IS DE HELE INGREEP.
-         Er stond een kaart met de tekst erin, en daarvóór een grotere kaart
-         met dezelfde tekst erin. De eigenaar wees aan dat het probleem niet de
-         inhoud was en ook niet het formaat, maar de WEERGAVE: "zo'n hele grote
-         massale kaart". Een kleinere kaart is dan geen oplossing, dat is
-         dezelfde vorm in het klein.
-         Nu staat de tekst gewoon op het veld en is er nog één voorwerp over:
-         het tegeltje met de foto. Dat is meteen de grap — zie hieronder. */}
+      {/* 🔑 HET CONCEPT: EEN SCHRIFTJE DAT OPENGAAT TERWIJL JE SCROLLT.
+         Idee van de eigenaar zelf, na vier afgekeurde pogingen van mij die
+         allemaal hetzelfde waren: een rechthoek met een foto en tekst erin.
+         Een kaart kleiner maken of anders indelen is geen andere vorm.
+
+         Waarom een schrift en niet zomaar een boekje: het is het voorwerp van
+         deze doelgroep, en het is het enige dat hier nog vrij was. Het rapport
+         is al vergeven aan "Avinka in cijfers", de polaroids hangen bij de
+         ervaringen. Een schrift heeft bovendien van nature precies wat we
+         nodig hebben: een etiket waar je je naam op schrijft. Daar staat dus
+         "Even voorstellen" op, en het schrift opent naar de bladzijde waar je
+         hem leert kennen.
+
+         DE COMPOSITIE (en niet alleen de mechaniek — dat is hier de
+         terugkerende valkuil): dicht zie je alleen de kaft, rechts op het
+         veld. De linkerhelft is gewoon leeg mintveld, zoals een schrift op
+         een tafel ligt. Bij het opendraaien vult de kaft die lege helft en
+         wordt de rechterbladzijde vrijgegeven. Er beweegt dus niets naar de
+         zijkant en er springt geen ruimte bij: de plek is er al, hij wordt
+         alleen ingevuld. */}
       <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pb-20 pt-20 lg:pb-24 lg:pt-24">
         <Confetti punten={[{ x: "3%", y: "88%", r: 4 }]} />
 
-        {/* 🔑 HET CONCEPT: EEN TEAMPAGINA MET ÉÉN GEZICHT.
-           Een kop als "Het team achter Avinka" zet een verwachting neer die
-           iedereen kent — een raster met zes tot twintig koppen. Daaronder
-           ligt er één. De lege ruimte rechts van die tegel is niet toevallig
-           overgebleven maar is het onderwerp: precies daar hadden de andere
-           gezichten gestaan.
-           Dat is ook exact wat de eigenaar hier wil zeggen: dit wordt gemaakt
-           door één leerkracht, niet door een instantie. Hij staat er dus wél,
-           maar hij is niet het onderwerp — de bezetting is het onderwerp.
-           ⚠️ Bewust GEEN lege plekken getekend (stippellijn-vakjes voor de
-           collega's die er niet zijn). Dat leest als een team dat is
-           weggelopen, en het is precies het soort tekening dat hier eerder is
-           afgekeurd. De leegte moet gewone ruimte zijn. */}
-        <h2
-          data-reveal
-          className="font-display text-[clamp(1.7rem,3.2vw,2.5rem)] font-black leading-[1.05] tracking-tight"
-          style={{ color: DONKER }}
-        >
-          Het team achter Avinka
-        </h2>
+        <div ref={boek} data-reveal className="w-schrift">
+          {/* De rechterbladzijde: ligt er altijd, wordt alleen vrijgegeven.
+             Schrijflijnen als achtergrond, want dat is wat een schrift een
+             schrift maakt — niet een tekening van een schrift. */}
+          <div className="w-schrift-blad">
+            <div className="w-schrift-inhoud">
+              <p className="w-schrift-naam">Michael van Spanje</p>
+              <p className="w-schrift-rol">leerkracht &amp; maker van Avinka</p>
+              <p className="w-schrift-tekst">
+                Ik sta zelf voor de klas en weet hoeveel tijd rapporten,
+                analyses en verslagen kosten.
+              </p>
+              <p className="w-schrift-kern">
+                Daarom bouw ik Avinka: die tijd hoort bij je leerlingen te
+                liggen, niet bij het papierwerk.
+              </p>
+            </div>
+          </div>
 
-        <div
-          data-reveal
-          className="mt-8 grid gap-x-10 gap-y-7 sm:mt-10 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start"
-        >
-          {/* ── de tegel ──
-             Het enige voorwerp dat overblijft. Klein, licht scheef, met de
-             schaduw van deze wereld; hij komt overeind als je erover gaat,
-             dezelfde fysica als de polaroids en de toolkaarten — maar zonder
-             draad, want dat motief mag niet terugkomen. */}
-          <figure className="w-mkr-tegel">
-            <div className="relative h-24 w-24 shrink-0 sm:h-28 sm:w-28">
-                {/* het vlak steekt naar één kant uit, niet rondom: anders
-                   valt het samen met de foto en wordt het een ring */}
-                <span
-                  className="absolute -bottom-2.5 -left-3 -right-0.5 -top-0.5"
-                  style={{ background: MINT, borderRadius: VLAKVORMEN.kiezel, rotate: "-9deg" }}
-                  aria-hidden
-                />
-                <span
-                  className="relative flex h-full w-full items-center justify-center overflow-hidden"
-                  style={{ background: MINT_DIEP, borderRadius: VLAKVORMEN.ei, rotate: "3deg" }}
-                >
-                  {fotoBestand ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={`/${fotoBestand}`} alt="Michael van Spanje" className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="font-display text-xl font-black" style={{ color: DONKER }}>MvS</span>
-                  )}
-                </span>
+          {/* De kaft. Draait open om de rug (de linkerrand) en komt op de
+             linkerhelft te liggen; wat je dan ziet is de achterkant, en daar
+             zit de foto. Dat is waarom je hem dicht níét ziet: het schrift
+             stelt hem voor, niet andersom. */}
+          <div className="w-schrift-kaft">
+            <div className="w-schrift-voor">
+              {/* Het etiket, zoals op elk schoolschrift: iets scheef geplakt,
+                 want niemand plakt dat recht. */}
+              <div className="w-schrift-etiket">
+                <h2 className="w-schrift-titel">Even voorstellen</h2>
+              </div>
+              {/* Twee lijntjes onder het etiket: de plek waar op een echt
+                 schrift "naam" en "groep" staan. Leeg gelaten — het schrift
+                 vult zichzelf in zodra het opengaat. */}
+              <div className="w-schrift-regels" aria-hidden>
+                <span />
+                <span />
+              </div>
             </div>
 
-            {/* Naam en rol staan ÍN de tegel, zoals op elke teampagina. Dat is
-               wat de vorm herkenbaar maakt: pas als het er precies zo uitziet
-               als het bekende raster, valt op dat er maar één in staat. */}
-            <figcaption className="mt-4">
-              <span
-                className="block font-display text-base font-black leading-tight tracking-tight"
-                style={{ color: DONKER }}
-              >
-                Michael van Spanje
-              </span>
-              {/* ink/70 en niet ink/60: op de warme papiertoon haalt 60% net
-                 geen 4,5:1 bij deze lettergrootte (4,4 → 6,0). */}
-              <span className="mt-0.5 block text-sm leading-snug text-ink/70">
-                leerkracht &amp; maker
-              </span>
-            </figcaption>
-          </figure>
-
-          {/* ── de lege plek, met de clou erin ──
-             Deze kolom begint op dezelfde hoogte als de tegel, want dáár
-             hadden de andere gezichten gestaan. De regel in handschrift is het
-             enige dat die ruimte vult, en dat is precies genoeg.
-             ⚠️ Eén handgeschreven regel in deze sectie, niet twee. De
-             tagline "van een leerkracht, voor leerkrachten" is hier vervallen:
-             die zei in andere woorden hetzelfde als de clou, en het
-             handgeschreven opstapje stond eerder al in te veel secties. */}
-          <div className="sm:pt-1">
-            <p
-              className="text-2xl leading-tight [text-wrap:balance] sm:text-[1.7rem]"
-              style={{ fontFamily: "var(--font-hand)", color: KOP }}
-            >
-              Ja, dat is het hele team.
-            </p>
-            <p className="mt-4 max-w-[46ch] text-base leading-7 text-ink/75">
-              Ik sta zelf voor de klas en weet hoeveel tijd rapporten, analyses
-              en verslagen kosten.
-            </p>
-            {/* De zin die je moet onthouden. Stond ooit in een eigen mintblok
-               van ruim 110px hoog; als losse regel in kopkleur krijgt hij
-               dezelfde nadruk zonder dat er een blok bij komt. */}
-            <p
-              className="mt-2.5 max-w-[46ch] text-base font-semibold leading-7"
-              style={{ color: KOP }}
-            >
-              Daarom bouw ik Avinka: die tijd hoort bij je leerlingen te liggen,
-              niet bij het papierwerk.
-            </p>
+            <div className="w-schrift-achter">
+              <div className="w-schrift-foto">
+                {fotoBestand ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={`/${fotoBestand}`}
+                    alt="Michael van Spanje"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="font-display text-2xl font-black" style={{ color: DONKER }}>
+                    MvS
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* De tegel als voorwerp: licht scheef, met de schaduw van deze wereld,
-         en hij komt overeind als je erover gaat. Dezelfde beweging als de
-         toolkaarten en de polaroids, dus geen nieuw idioom — alleen zonder
-         draad, want dat motief mag niet terugkomen. Bij prefers-reduced-motion
-         blijft de schaduw bewegen maar het object niet. */}
+      {/* ⚠️ In dit stijlblok mag geen accent-aanhalingsteken staan, ook niet
+         in een opmerking: dat sluit de tekst van het blok af en dan valt de
+         hele pagina om. Dat is hier één keer gebeurd. */}
       <style>{`
-        .w-mkr-tegel {
-          display: block;
-          width: fit-content;
-          margin: 0;
-          padding: clamp(16px, 1.8vw, 20px) clamp(18px, 2vw, 24px) clamp(18px, 2vw, 22px);
-          background: var(--w-kaart-warm, #fffdf9);
-          border: 2px solid ${KAART_RAND};
-          border-radius: 1.8rem 1.3rem 2rem 1.4rem / 1.4rem 2rem 1.3rem 1.8rem;
-          box-shadow: ${schaduw(20, 44, -24, 0.5)};
-          transform: rotate(-1.6deg);
-          transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-            box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-        .w-mkr-tegel:hover {
-          transform: rotate(-0.4deg) translateY(-6px);
-          box-shadow: ${schaduw(30, 66, -30, 0.55)};
+        /* ── het schrift ──
+           Twee bladzijden naast elkaar. De rechter staat gewoon in de stroom
+           en bepaalt dus de hoogte; de kaft ligt er absoluut overheen. Zo
+           verspringt er niets als hij opengaat: de ruimte was er al.
+           --open loopt van 0 (dicht) tot 1 (open) en wordt door de scroll
+           gezet; alle beweging hieronder hangt aan dat ene getal. */
+        .w-schrift {
+          --open: 0;
+          position: relative;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          width: 100%;
+          max-width: 46rem;
+          margin-right: auto;
+          perspective: 1800px;
+          rotate: -0.8deg;
         }
 
-        /* 🔑 HET WORDT NEERGELEGD, HET VERSCHIJNT NIET.
-           Eén klein fysiek moment: de tegel komt schuiner en iets hoger
-           binnen en zakt op zijn plek, alsof iemand hem op tafel legt. Dat is
-           dezelfde taal als de polaroids (een echt voorwerp met gewicht),
-           maar zonder draad en zonder dat er een tweede bewegingsnummer bij
-           komt — de rest van de sectie gebruikt gewoon de bestaande reveal.
-           ⚠️ De vulling staat op BACKWARDS en niet op BOTH. Met both blijft de
-           eindwaarde van de animatie op het element staan en wint die het van
-           de hover-transform, waardoor het oppakken niet meer werkt. Het
-           laatste keyframe is exact de ruststand, dus je ziet geen sprong op
-           het moment dat de animatie loslaat.
-           (En let op: in dit stijlblok mag geen accent-aanhalingsteken staan,
-           ook niet in een opmerking — dat sluit de tekst van het blok af en
-           dan valt de hele pagina om. Dat is hier één keer gebeurd.) */
-        .anim [data-reveal].is-in .w-mkr-tegel {
-          animation: wMkrNeerleggen 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.12s backwards;
+        /* ── de rechterbladzijde ──
+           Warm papier met schrijflijnen. De lijnen komen uit een verloop en
+           niet uit losse elementen: zo lopen ze altijd door tot onderaan,
+           hoeveel tekst er ook staat. */
+        .w-schrift-blad {
+          grid-column: 2;
+          position: relative;
+          min-height: 19rem;
+          padding: clamp(22px, 2.6vw, 34px) clamp(20px, 2.4vw, 32px);
+          background:
+            repeating-linear-gradient(
+              to bottom,
+              transparent 0 30px,
+              rgba(var(--w-schaduw-rgb, 23,80,58), 0.10) 30px 31px
+            ),
+            var(--w-kaart-warm, #fffdf9);
+          background-position: 0 12px;
+          border: 2px solid ${KAART_RAND};
+          border-left: none;
+          border-radius: 0 1.4rem 1.6rem 0;
+          box-shadow: ${schaduw(20, 44, -24, 0.5)};
         }
-        @keyframes wMkrNeerleggen {
-          from { transform: rotate(-6.5deg) translateY(-14px); }
-          to   { transform: rotate(-1.6deg) translateY(0); }
+        /* De schaduw van de kaft die over het papier valt, vlak bij de rug.
+           Verdwijnt naarmate het schrift opengaat: bij een open schrift ligt
+           er niets meer boven deze bladzijde. */
+        .w-schrift-blad::before {
+          content: "";
+          position: absolute;
+          inset: 0 auto 0 0;
+          width: 42px;
+          border-radius: 0 40% 40% 0 / 0 50% 50% 0;
+          background: linear-gradient(to right, rgba(var(--w-schaduw-rgb, 23,80,58), 0.16), transparent);
+          opacity: calc(1 - var(--open));
+        }
+        .w-schrift-inhoud { position: relative; }
+        .w-schrift-naam {
+          font-family: var(--font-display), Georgia, serif;
+          font-weight: 900;
+          letter-spacing: -0.02em;
+          line-height: 1.15;
+          font-size: clamp(1.15rem, 1.9vw, 1.4rem);
+          color: ${DONKER};
+        }
+        .w-schrift-rol {
+          margin-top: 0.1rem;
+          font-size: 0.95rem;
+          line-height: 1.5;
+          color: rgba(34, 28, 58, 0.7);
+        }
+        .w-schrift-tekst {
+          margin-top: 1.15rem;
+          font-size: 1rem;
+          line-height: 30px;
+          color: rgba(34, 28, 58, 0.78);
+        }
+        /* line-height 30px is geen willekeurige waarde: het is exact de
+           regelafstand van de schrijflijnen hierboven, zodat de tekst ÓP de
+           lijnen loopt in plaats van er dwars doorheen. Verandert de ene,
+           verander dan de andere mee. */
+        .w-schrift-kern {
+          margin-top: 30px;
+          font-size: 1rem;
+          font-weight: 600;
+          line-height: 30px;
+          color: ${KOP};
+        }
+
+        /* ── de kaft ──
+           Draait om de rug (linkerrand). Dicht ligt hij op de rechterhelft,
+           open op de linker. Twee kanten: de voorkant met het etiket, de
+           achterkant met de foto. */
+        .w-schrift-kaft {
+          position: absolute;
+          inset: 0 0 0 50%;
+          transform-origin: left center;
+          transform-style: preserve-3d;
+          transform: rotateY(calc(var(--open) * -178deg));
+          will-change: transform;
+        }
+        .w-schrift-voor,
+        .w-schrift-achter {
+          position: absolute;
+          inset: 0;
+          backface-visibility: hidden;
+          border-radius: 0 1.4rem 1.6rem 0;
+          overflow: hidden;
+        }
+        .w-schrift-voor {
+          background: ${DONKER};
+          box-shadow: ${schaduw(22, 50, -22, 0.55)};
+        }
+        /* De rug: een iets donkerder baan langs de vouw, met twee nietjes. */
+        .w-schrift-voor::before {
+          content: "";
+          position: absolute;
+          inset: 0 auto 0 0;
+          width: 16px;
+          background: rgba(0, 0, 0, 0.16);
+        }
+        .w-schrift-etiket {
+          position: absolute;
+          left: 14%;
+          right: 12%;
+          top: 22%;
+          padding: clamp(14px, 1.8vw, 20px) clamp(16px, 2vw, 22px);
+          background: var(--color-cream, #fbf6ee);
+          border-radius: 0.5rem 0.6rem 0.5rem 0.55rem;
+          rotate: -1.4deg;
+          box-shadow: 0 10px 22px -16px rgba(0, 0, 0, 0.5);
+        }
+        .w-schrift-titel {
+          font-family: var(--font-display), Georgia, serif;
+          font-weight: 900;
+          letter-spacing: -0.03em;
+          line-height: 1.05;
+          font-size: clamp(1.4rem, 2.6vw, 2rem);
+          color: ${DONKER};
+          text-wrap: balance;
+        }
+        .w-schrift-regels {
+          position: absolute;
+          left: 16%;
+          right: 16%;
+          top: 62%;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        }
+        .w-schrift-regels span {
+          display: block;
+          height: 2px;
+          background: rgba(255, 255, 255, 0.22);
+        }
+        .w-schrift-regels span:last-child { width: 55%; }
+
+        .w-schrift-achter {
+          transform: rotateY(180deg);
+          background: var(--w-kaart-warm, #fffdf9);
+          border: 2px solid ${KAART_RAND};
+          border-right: none;
+          border-radius: 1.4rem 0 0 1.6rem;
+          display: grid;
+          place-items: center;
+          padding: clamp(18px, 2.2vw, 28px);
+        }
+        /* De foto in de organische vorm van deze wereld — het enige detail dat
+           alle eerdere pogingen hebben overleefd. */
+        /* ⚠️ Niet groter maken. De foto heeft een roze achtergrond en die
+           hoort niet bij de palette; op 78% was hij het grootste kleurvlak
+           van de hele sectie geworden. Op deze maat is het een portret op een
+           bladzijde in plaats van een roze vlak met een gezicht erin. */
+        .w-schrift-foto {
+          width: min(62%, 12rem);
+          aspect-ratio: 1;
+          display: grid;
+          place-items: center;
+          overflow: hidden;
+          background: ${MINT_DIEP};
+          border-radius: var(--w-vorm-ei, 72% 28% 58% 42% / 44% 56% 42% 58%);
+          rotate: 3deg;
+        }
+
+        /* ── mobiel: geen boek, wel hetzelfde schrift ──
+           Een opengeslagen schrift naast elkaar past niet op 390px, en een
+           kaft die over de halve breedte draait wordt daar een truc zonder
+           inhoud. Onder sm valt het schrift dus uit elkaar in drie lagen
+           boven elkaar: het kaftje met het etiket, de foto, en de bladzijde.
+           ⚠️ De kaft mag hier NIET verdwijnen. In de eerste versie stond hij
+           op display:none, en daarmee was "Even voorstellen" op de telefoon
+           helemaal weg — dat is de kop van de sectie. Hij wordt hier dus een
+           strook in plaats van een kaft. */
+        @media (max-width: 639px) {
+          .w-schrift {
+            grid-template-columns: 1fr;
+            perspective: none;
+            rotate: -0.6deg;
+          }
+          .w-schrift-blad {
+            grid-column: 1;
+            border-left: 2px solid ${KAART_RAND};
+            border-radius: 0 0 1.4rem 1.5rem;
+          }
+          .w-schrift-blad::before { display: none; }
+          .w-schrift-kaft {
+            position: relative;
+            inset: auto;
+            order: -1;
+            transform: none;
+            transform-style: flat;
+            display: flex;
+            flex-direction: column;
+          }
+          .w-schrift-voor,
+          .w-schrift-achter {
+            position: relative;
+            inset: auto;
+            transform: none;
+            backface-visibility: visible;
+          }
+          .w-schrift-voor {
+            padding: clamp(16px, 4vw, 22px);
+            border-radius: 1.5rem 1.4rem 0 0;
+          }
+          .w-schrift-voor::before { width: 10px; }
+          /* Ruimte aan beide kanten: het etiket staat scheef, en zonder marge
+             rechts loopt de gedraaide hoek tegen de rand van de kaft aan en
+             wordt hij door de overflow afgeknipt. Dan lijkt het een fout in
+             plaats van een geplakt etiket. */
+          .w-schrift-etiket {
+            position: relative;
+            left: auto;
+            right: auto;
+            top: auto;
+            margin: 0 12px 0 16px;
+          }
+          .w-schrift-regels { display: none; }
+          .w-schrift-achter {
+            border-right: 2px solid ${KAART_RAND};
+            border-bottom: none;
+            border-radius: 0;
+            padding: clamp(20px, 5vw, 28px);
+          }
+          .w-schrift-foto { width: 10rem; }
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .w-mkr-tegel { transition: box-shadow 0.4s ease; }
-          .w-mkr-tegel:hover { transform: rotate(-1.6deg); }
-          .anim [data-reveal].is-in .w-mkr-tegel { animation: none; }
+          .w-schrift-kaft { transition: none; }
         }
       `}</style>
       {/* Het mintveld loopt hier NIET meer dood: het gaat gewoon door tot de
