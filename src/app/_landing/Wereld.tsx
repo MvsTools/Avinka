@@ -968,8 +968,14 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
              is geen z-index-geknutsel nodig dat bij de helft moet omklappen. */}
         <div data-reveal className="w-schrift">
           {/* Blad 4, de onderste: ligt er altijd. */}
+          {/* SPREAD 3, RECHTS: de laatste bladzijde, met de zin die je moet
+             onthouden. Ligt er altijd; de omslaande bladen liggen erbovenop. */}
           <div className="w-schrift-blad w-papier">
             <div className="w-schrift-inhoud">
+              <p className="w-blad-tekst">
+                Geen ingewikkelde techniek, wel zorgvuldig met de gegevens van
+                je leerlingen.
+              </p>
               <p className="w-blad-kern">
                 Goede leerkrachten horen hun tijd te besteden aan leerlingen,
                 niet aan papierwerk.
@@ -1007,17 +1013,33 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
             {/* Blad 3 — slaat als laatste om. Voorkant is de rechterbladzijde
                van de tweede spread, achterkant de linker van de derde. */}
             <div className={`w-blad w-blad-3 ${omgeslagen > 2 ? "is-om" : ""}`}>
+              {/* SPREAD 2, RECHTS: de vragen lopen door op de rechterbladzijde,
+                 zoals in een echt vriendenboekje. */}
               <div className="w-blad-voor w-papier">
                 <div className="w-schrift-inhoud">
-                  <p className="w-blad-tekst">
-                    Daarom bouw ik hulpmiddelen die dat werk sneller en
-                    eenvoudiger maken. Geen ingewikkelde techniek, wel
-                    zorgvuldig met de gegevens van je leerlingen.
-                  </p>
+                  <dl className="w-blad-vragen">
+                    <div>
+                      <dt>waar ik tijd aan verlies</dt>
+                      <dd>rapporten en verslagen</dd>
+                    </div>
+                    <div>
+                      <dt>wat ik daaraan doe</dt>
+                      {/* Kort houden: "Avinka bouwen, naast de klas" liep om
+                         naar een tweede regel en dan schuift de rest van de
+                         bladzijde van de lijnen af. */}
+                      <dd>Avinka bouwen</dd>
+                    </div>
+                    <div>
+                      <dt>het leukste aan mijn werk</dt>
+                      <dd>[ ? ]</dd>
+                    </div>
+                  </dl>
                 </div>
               </div>
+              {/* SPREAD 3, LINKS: de tweede omslag. */}
               <div className="w-blad-achter w-papier">
                 <div className="w-schrift-inhoud">
+                  <p className="w-blad-kop">Waarom ik Avinka heb gemaakt</p>
                   <p className="w-blad-tekst">
                     Wat begon als een oplossing voor mijn eigen werk, werd een
                     bredere missie: laten zien dat slimmer werken juist
@@ -1070,12 +1092,27 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                  woorden die ooit in het grote makersblok stonden en die de
                  eigenaar toen had goedgekeurd. Ze zijn niet weg, ze staan nu
                  op de plek waar je ze pas leest als je ze wilt lezen. */}
+              {/* ── SPREAD 2, LINKS: het vriendenboekje ────────────────────
+                 Idee van de eigenaar, en het klopt precies: een vriendenboekje
+                 is een schoolvoorwerp dat van nature bestaat uit voorgedrukte
+                 vragen met handgeschreven antwoorden. Dat is exact het
+                 mechaniek dat het etiket op de kaft al gebruikt, dus het is
+                 geen nieuw idioom maar hetzelfde idee op ware grootte.
+                 Bijkomend voordeel: zo kun je persoonlijke dingen vertellen
+                 zonder dat het een cv wordt. De vraag doet het werk. */}
               <div className="w-blad-achter w-papier">
                 <div className="w-schrift-inhoud">
-                  <p className="w-blad-tekst">
-                    Ik ben Michael. Net als jij sta ik voor de klas, en ik weet
-                    hoeveel tijd er gaat naar rapporten, analyses en verslagen.
-                  </p>
+                  <p className="w-blad-kop">Persoonlijke vragen</p>
+                  <dl className="w-blad-vragen">
+                    <div>
+                      <dt>ik geef les in</dt>
+                      <dd>groep 7</dd>
+                    </div>
+                    <div>
+                      <dt>dat doe ik al</dt>
+                      <dd>[ ? ] jaar</dd>
+                    </div>
+                  </dl>
                 </div>
               </div>
             </div>
@@ -1481,10 +1518,45 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           font-size: 1.22rem;
           color: rgba(34, 28, 58, 0.86);
         }
+        /* Eén lege regel ervoor, zodat de slotzin niet tegen de alinea erboven
+           aan plakt. Een hele regel en geen halve: alles moet op het raster
+           blijven staan. */
         .w-blad-kern {
           font-size: 1.22rem;
           color: ${KOP};
+          margin-top: var(--regel);
         }
+        /* ── het vriendenboekje ──
+           Een voorgedrukt vraagje, daaronder het handgeschreven antwoord. Elk
+           paar beslaat dus precies twee regels; de kop plus een lege regel
+           erna nemen er twee. Alles blijft daarmee op het lijnenraster staan.
+           ⚠️ Houd de antwoorden kort genoeg voor één regel. Loopt er eentje om,
+           dan schuift alles daaronder een regel op — dat mag, maar dan moet je
+           wel nakijken of de bladzijde nog past. */
+        .w-blad-kop {
+          font-family: var(--font-display), Georgia, serif;
+          font-weight: 900;
+          letter-spacing: -0.02em;
+          font-size: 1.02rem;
+          line-height: var(--regel);
+          margin: 0 0 var(--regel);
+          color: ${DONKER};
+        }
+        .w-blad-vragen { margin: 0; }
+        .w-blad-vragen dt {
+          font-size: 0.76rem;
+          line-height: var(--regel);
+          letter-spacing: 0.03em;
+          color: rgba(34, 28, 58, 0.5);
+        }
+        .w-blad-vragen dd {
+          margin: 0;
+          font-family: var(--font-hand), "Segoe Script", cursive;
+          font-size: 1.15rem;
+          line-height: var(--regel);
+          color: ${KOP};
+        }
+
         /* Naam en rol onder de foto, op de eerste bladzijde. Gecentreerd
            onder de afdruk, want die staat er ook gecentreerd op. */
         .w-blad-naam {
