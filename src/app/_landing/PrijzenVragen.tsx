@@ -478,10 +478,33 @@ export function WereldVragen({ items, mintBoven = false }: { items: Vraag[]; min
         >
           <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
 
-          {/* ⚠️ Het vlak rechtsonder is weg: bij "zwaai" dook het nog netjes de
-             (kleine) golf in, maar nu de golf het HELE vak beslaat en links
-             bijna geen mint meer overlaat, kwam dit vlak op kaal papier te
-             hangen — een losse mintvlek zonder golf om 'm af te snijden. */}
+          {/* Linksboven: waar deze golf bijna geen mint meer overlaat, dus
+             het grootste deel van dit vlak wordt door "stijging" afgekapt —
+             er blijft alleen een sliver zichtbaar, precies zoals het vlak
+             rechtsboven in de cijfersectie daar door zíjn golf wordt
+             afgesneden. Vóór de Golf in de laag, dus de Golf snijdt 'm af in
+             plaats van eroverheen te liggen. */}
+          <KaartVlak
+            kleur={VLAK_MINT}
+            vorm="koepel"
+            breedte={700}
+            hoogte={330}
+            style={{ left: "-14%", top: -220, transform: "rotate(-6deg)" }}
+            className="hidden lg:block"
+            tel={5}
+          />
+          {/* Rechtsonder: hier blijft de mint juist diep staan, dus dit vlak
+             steekt onderuit de sectie en wordt pas op de allerlaatste rand
+             afgekapt — het tegenwicht van het vlak linksboven. */}
+          <KaartVlak
+            kleur={VLAK_MINT}
+            vorm="schelp"
+            breedte={620}
+            hoogte={340}
+            style={{ right: "-12%", bottom: -70, transform: "rotate(6deg)" }}
+            className="hidden lg:block"
+            tel={2}
+          />
 
           {/* ⚠️ Niet "zwaai": die golf zat als een randje ONDERAAN het vak
              (h-70/110px in een vak van 310-355px) en kon dus alleen een
