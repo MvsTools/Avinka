@@ -473,18 +473,21 @@ export function WereldVragen({ items, mintBoven = false }: { items: Vraag[]; min
         >
           <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
 
-          {/* Linksboven, met zijn onderrand tegen de golf aan: van x=0 tot
-             x≈430 (waar dit vlak breed is) ligt de curve van "stijging" vrij
-             constant op zo'n 90-110px vanaf de bovenkant van dit vak. De
-             onderkant van dit vlak (top + hoogte) staat daarom op exact 110,
-             zodat het er nette tegenaan rust in plaats van een willekeurige
-             sliver ergens middenin te tonen. Vóór de Golf in de laag, dus de
-             Golf snijdt 'm netjes af op de kleurgrens. */}
+          {/* ⚠️ HIER GING HET MIS: de onderkant van dit vlak (top + hoogte)
+             stond precies op de hoogte van de golfcurve (110). Dan zie je bij
+             "koepel" niet de golf die 'm afsnijdt, maar de eigen — bijna
+             rechte — onderrand van de vorm zelf (de onderhoeken van "koepel"
+             hebben maar 24-26% ronding). Dat las als een willekeurige rechte
+             knip, niet als de golf.
+             Het vlak moet daarom ver VOORBIJ de curve doorlopen (bottom nu
+             ruim in de vragenlijst hieronder), zodat de Golf — die er ná dit
+             vlak in de laag staat — hem middenin snijdt en je de echte
+             golfvorm ziet in plaats van de vlakke onderkant van de vorm. */}
           <KaartVlak
             kleur={VLAK_MINT}
             vorm="koepel"
             breedte={750}
-            hoogte={220}
+            hoogte={480}
             style={{ left: "-14%", top: -110, transform: "rotate(-6deg)" }}
             className="hidden lg:block"
             tel={5}
