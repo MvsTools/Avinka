@@ -1177,15 +1177,46 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                  De onderste blijft boven de 25%-lijn, want daar zit het
                  bladerpijltje in de hoek. */}
               <div className="w-blad-achter w-schrift-achter">
-                <span className="w-geeltje" style={{ top: "9%", left: "8%", rotate: "-6deg" }}>
-                  rapporten af vóór vrijdag
-                </span>
-                <span className="w-geeltje" style={{ top: "36%", right: "7%", rotate: "5deg" }}>
-                  toetsen groep 7 analyseren
-                </span>
-                <span className="w-geeltje" style={{ top: "62%", left: "12%", rotate: "-3deg" }}>
-                  oudergesprekken plannen
-                </span>
+                {/* Het stapeltje onder de paperclip. De onderste twee steken
+                   alleen met een rand uit; dat is genoeg om te zien dat er
+                   meer ligt. De bovenste is de enige die je leest, dus daar
+                   staat de meest sprekende taak op. */}
+                <div className="w-klem">
+                  <span className="w-geeltje" style={{ rotate: "-4.5deg", top: 10, left: 2 }}>
+                    oudergesprekken plannen
+                  </span>
+                  <span className="w-geeltje" style={{ rotate: "3deg", top: 5, left: 9 }}>
+                    toetsen groep 7 analyseren
+                  </span>
+                  <span className="w-geeltje" style={{ rotate: "-1deg", top: 0, left: 5 }}>
+                    rapporten af vóór vrijdag
+                  </span>
+                  {/* De paperclip klemt óver de bovenrand van de kaft heen.
+                     Daarom mag deze kant niet clippen (zie w-schrift-achter):
+                     een paperclip die keurig binnen het karton blijft, klemt
+                     niets vast en is dus een tekeningetje. */}
+                  <svg className="w-clip" viewBox="0 0 24 58" fill="none" aria-hidden>
+                    <path
+                      d="M16 10v34a6 6 0 0 1-12 0V12a8 8 0 0 1 16 0v36"
+                      stroke="currentColor"
+                      strokeWidth="2.6"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </div>
+
+                {/* ── onderin: hetzelfde werk, maar dan af ──
+                   Bovenaan ligt wat er nog moet, onderaan wat er gedaan is.
+                   Dat is in één blik het hele verhaal van dit product, en het
+                   gebruikt het motief waar de naam vandaan komt: afvinken.
+                   Bewust een ANDER papiertje dan de geeltjes (wit, gelinieerd,
+                   afgescheurd) — anders is het een vierde geeltje in plaats
+                   van een antwoord op de eerste drie. */}
+                <div className="w-afvinklijst">
+                  <span>nagekeken</span>
+                  <span>verstuurd</span>
+                  <span>klaar voor morgen</span>
+                </div>
               </div>
             </div>
           </div>
@@ -1702,17 +1733,34 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            hij openligt, en verder leeg — er hoort niets op de binnenkant van
            een kaft. Hier stond een mintgroen vlak met een uitgeknipte foto,
            en dat las als een paneel in plaats van als karton. */
+        /* ⚠️ overflow ZICHTBAAR op deze kant, anders knipt de kaft de
+           paperclip af op zijn eigen bovenrand — en een clip die netjes
+           binnen het karton blijft klemt niets vast. */
         .w-schrift-achter {
           background: color-mix(in srgb, ${DONKER} 88%, #ffffff);
           border-radius: 1.4rem 0 0 1.6rem;
+          overflow: visible;
         }
-        /* De geeltjes op de binnenkant van de kaft. Maten en schaduw komen van
-           de geeltjes in de film (bg-accent-soft, kleine radius, harde
-           slagschaduw); alleen de letter is hier handschrift. */
+        /* ── het stapeltje onder de klem ──
+           Ligt links bovenin op de binnenkaft. De klem hangt eroverheen en
+           steekt boven de kaft uit, dus deze kant mag niet clippen. */
+        /* In pixels en niet in procenten: de klem moet op een vaste afstand
+           van de bovenrand blijven, want de paperclip hangt erover heen. Met
+           een percentage verschuift dat mee met de bladhoogte en klemt hij
+           opeens niets meer vast. */
+        .w-klem {
+          position: absolute;
+          left: 13%;
+          top: 34px;
+          width: 7.4rem;
+          height: 5.4rem;
+        }
+        /* De geeltjes: maten, kleur en schaduw komen van de geeltjes op het
+           bureau in de film (accent-soft, kleine radius, harde slagschaduw);
+           alleen de letter is hier handschrift. */
         .w-geeltje {
           position: absolute;
-          z-index: 2;
-          width: 6.6rem;
+          width: 6.9rem;
           padding: 9px 10px 11px;
           background: var(--color-accent-soft, #fff2d6);
           border-radius: 2px;
@@ -1721,6 +1769,60 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           line-height: 1.25;
           color: rgba(34, 28, 58, 0.82);
           box-shadow: 0 12px 24px -12px rgba(8, 5, 20, 0.55);
+        }
+        /* De paperclip. Metaalkleur uit het veld gehaald in plaats van grijs:
+           een koud grijs valt op deze warme pagina meteen op als vreemd. */
+        .w-clip {
+          position: absolute;
+          /* 34px klem-top plus deze waarde = 14px bóven de kaftrand */
+          top: -48px;
+          left: 46%;
+          width: 22px;
+          height: 54px;
+          color: #dfe8e2;
+          rotate: 2deg;
+          filter: drop-shadow(0 3px 4px rgba(8, 5, 20, 0.35));
+        }
+
+        /* ── het afgevinkte lijstje onderin ──
+           Wit gelinieerd papiertje, afgescheurd: een ander soort briefje dan
+           de geeltjes, want het is het antwoord op die geeltjes en geen vierde
+           taak. De vinkjes staan in de merkkleur; daar komt de naam vandaan. */
+        /* ⚠️ Niet lager zetten: op 9% lag dit briefje over het bladerpijltje
+           in de onderhoek. Gemeten, niet geschat. */
+        .w-afvinklijst {
+          position: absolute;
+          left: 14%;
+          right: 9%;
+          bottom: 19%;
+          padding: 10px 12px 12px;
+          background: #fdfcf7;
+          border-radius: 2px;
+          rotate: -1.6deg;
+          box-shadow: 0 12px 24px -12px rgba(8, 5, 20, 0.5);
+          font-family: var(--font-hand), "Segoe Script", cursive;
+          font-size: 0.8rem;
+          line-height: 1.15;
+          color: rgba(34, 28, 58, 0.62);
+        }
+        .w-afvinklijst span {
+          display: block;
+          padding: 3px 0 3px 17px;
+          position: relative;
+          text-decoration: line-through;
+          text-decoration-color: rgba(34, 28, 58, 0.35);
+        }
+        .w-afvinklijst span + span { border-top: 1px solid rgba(23, 80, 58, 0.1); }
+        .w-afvinklijst span::before {
+          content: "";
+          position: absolute;
+          left: 1px;
+          top: 8px;
+          width: 9px;
+          height: 5px;
+          border-left: 2px solid var(--color-brand, #2f9e6e);
+          border-bottom: 2px solid var(--color-brand, #2f9e6e);
+          rotate: -45deg;
         }
 
         /* De vouw: waar het karton omgeknikt is, blijft het donkerder. */
