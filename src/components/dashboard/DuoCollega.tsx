@@ -78,6 +78,10 @@ export default function DuoCollega() {
      je zelf nog moet wisselen als je een eigen klas hebt. */
   const [geaccepteerd, setGeaccepteerd] = useState<string | null>(null);
   const [handmatigeCode, setHandmatigeCode] = useState("");
+  /* Een mislukte rol- of loskoppelactie liet hiervoor niets zien: de knop deed
+     gewoon niets en je bleef zitten met de vraag of je het wel goed had
+     aangeklikt. */
+  const [actieFout, setActieFout] = useState("");
 
   async function laadAlles() {
     const [k, d, b] = await Promise.all([getKlassen(), getDuoKoppels(), getBestanden()]);
@@ -194,14 +198,28 @@ export default function DuoCollega() {
   }
 
   async function loskoppelen(koppel: DuoKoppel) {
+    setActieFout("");
     const wie = koppel.status === "actief" ? "Deze collega loskoppelen?" : "Uitnodiging intrekken?";
     if (!confirm(`${wie} Gedeelde toegang stopt meteen.`)) return;
     if (await verbreekDuo(koppel.id)) laadAlles();
+    else setActieFout("Loskoppelen is niet gelukt. Probeer het zo nog eens.");
+  }
+
+  // Zelf uit een groep van een ander stappen. Dezelfde handeling als
+  // loskoppelen (het is één koppelrij), maar vanaf de andere kant en dus met
+  // andere woorden: je verwijdert niet iemand, je gaat er zelf uit.
+  async function verlaatGroep(koppel: DuoKoppel, klasNaam: string) {
+    setActieFout("");
+    if (!confirm(`${klasNaam || "Deze groep"} verlaten? Je toegang stopt meteen.`)) return;
+    if (await verbreekDuo(koppel.id)) laadAlles();
+    else setActieFout("Verlaten is niet gelukt. Probeer het zo nog eens.");
   }
 
   async function wisselRol(koppel: DuoKoppel) {
+    setActieFout("");
     const nieuw: DuoRol = koppel.rol === "volledig" ? "meekijken" : "volledig";
     if (await zetDuoRol(koppel.id, nieuw)) laadAlles();
+    else setActieFout("De rol wijzigen is niet gelukt. Alleen de eigenaar van de groep mag dat.");
   }
 
   async function kiesGedeeldeMap(klasId: string, mapId: string) {
@@ -228,6 +246,15 @@ export default function DuoCollega() {
 
   // Alles wat je deelt, gegroepeerd per groep: de actieve collega's plus de
   // uitnodigingen die nog open staan.
+  /* Ben ik de eigenaar van deze groep, of ben ik er als collega bijgekomen?
+     Dat bepaalt wat je met de andere leden mag. Zonder dit onderscheid hangen
+     de knoppen aan de verkeerde persoon: de koppelrij beschrijft "de ander", en
+     vanuit een collega gezien is die ander juist de eigenaar. Een meekijker zag
+     daardoor bij de eigenaar een knop "Rol wijzigen" (die de database terecht
+     weigerde) en een knop die eruitzag alsof hij de eigenaar loskoppelde. */
+  const ikBenEigenaar = (klasId: string) =>
+    klassen.find((k) => k.id === klasId)?.eigenKlas === true;
+
   const groepen = [...new Set(koppels.map((k) => k.klasId))].map((klasId) => ({
     klasId,
     klasNaam: koppels.find((k) => k.klasId === klasId)?.klasNaam || klasNaamVan(klasId),
@@ -248,6 +275,15 @@ export default function DuoCollega() {
         delen dan de klas, een gezamenlijke takenlijst, een gedeelde map en de overdracht.
         Bijzondere persoonsgegevens (medisch, gezinssituatie, diagnoses) horen hier nooit in.
       </p>
+
+      {actieFout && (
+        <p
+          role="alert"
+          className="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700"
+        >
+          {actieFout}
+        </p>
+      )}
 
       {/* ── Code met de hand invullen ── */}
       {/* Vangnet: de link kan onderweg sneuvelen (doorgestuurd, afgekapt in een
@@ -427,7 +463,11 @@ export default function DuoCollega() {
                         <span className="rounded-full bg-cream px-2.5 py-1 text-xs font-semibold text-ink/60">
                           {ROL_TEKST[lid.rol]}
                         </span>
-                        {koppel && (
+                        {/* Alleen de eigenaar van de groep beheert de leden.
+                            Ben je er zelf als collega bij gekomen, dan hoort
+                            hier niets: je stapt eruit met de knop onder de
+                            lijst, en de rol van een ander is niet aan jou. */}
+                        {koppel && ikBenEigenaar(g.klasId) && (
                           <>
                             <button
                               onClick={() => wisselRol(koppel)}
@@ -487,6 +527,18 @@ export default function DuoCollega() {
                   </li>
                 ))}
               </ul>
+
+              {/* Zelf uit de groep stappen. Alleen voor wie er als collega bij
+                  is gekomen; de eigenaar verlaat zijn eigen groep niet, die
+                  koppelt collega's los in de lijst hierboven. */}
+              {!ikBenEigenaar(g.klasId) && g.actief.length > 0 && (
+                <button
+                  onClick={() => verlaatGroep(g.actief[0], g.klasNaam)}
+                  className="mt-1.5 rounded-lg text-xs font-semibold text-ink/50 transition hover:text-red-600"
+                >
+                  Deze groep verlaten
+                </button>
+              )}
 
               {g.actief.length > 0 && (
                 <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
