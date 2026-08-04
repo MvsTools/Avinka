@@ -1973,9 +1973,50 @@ async function vulMijnKlas(toevoegFn){
 (function(){
   function api(u,o){ return fetch(u, Object.assign({headers:{accept:'application/json'}}, o||{})); }
   var avinkaKlasId='';
-  async function haalKlas(){ try{ var r=await api('/api/klas'); if(!r.ok)return {naam:'',leerlingen:[]}; var d=await r.json(); avinkaKlasId=d.id||''; window.avinkaKlasGeslacht={}; ((d&&d.leerlingenData)||[]).forEach(function(l){ if(l&&l.naam) window.avinkaKlasGeslacht[l.naam.toLowerCase()] = l.geslacht==='j'?'jongen':(l.geslacht==='m'?'meisje':''); }); return {naam:d.naam||'', leerlingen:d.leerlingen||[]}; }catch(e){ return {naam:'',leerlingen:[]}; } }
+  /* Mag je voor de actieve groep rapporten schrijven? Kijk je alleen mee bij
+     de groep van een collega, dan niet. Standaard true, zodat een oudere
+     server die dit veld nog niet meestuurt niets kapotmaakt. */
+  var avinkaMagRapporten=true;
+  async function haalKlas(){ try{ var r=await api('/api/klas'); if(!r.ok)return {naam:'',leerlingen:[]}; var d=await r.json(); avinkaKlasId=d.id||''; avinkaMagRapporten=(d.magRapporten!==false); window.avinkaKlasGeslacht={}; ((d&&d.leerlingenData)||[]).forEach(function(l){ if(l&&l.naam) window.avinkaKlasGeslacht[l.naam.toLowerCase()] = l.geslacht==='j'?'jongen':(l.geslacht==='m'?'meisje':''); }); if(!avinkaMagRapporten) toonMeekijkMelding(); return {naam:d.naam||'', leerlingen:d.leerlingen||[]}; }catch(e){ return {naam:'',leerlingen:[]}; } }
   async function haalRapporten(){ try{ var r=await api('/api/rapporten'); if(!r.ok)return []; var d=await r.json(); return d.rapporten||[]; }catch(e){ return []; } }
-  async function slaOp(naam,verhaal){ if(!naam||!verhaal||!verhaal.trim())return; try{ await fetch('/api/rapporten',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({naam:naam,verhaal:verhaal,klas_id:avinkaKlasId})}); }catch(e){} }
+
+  /* Eén blijvende melding boven de tool: je kijkt mee, dus je kunt hier wel
+     meelezen maar niets vastleggen. Blijft staan (niet wegklikbaar), want het
+     geldt zolang je bij deze groep meekijkt. */
+  function toonMeekijkMelding(){
+    if(document.getElementById('avinka-meekijk'))return;
+    var m=document.querySelector('main'); if(!m)return;
+    var d=document.createElement('div');
+    d.id='avinka-meekijk';
+    d.setAttribute('role','status');
+    d.style.cssText='margin:0 auto 18px;max-width:900px;border-radius:16px;background:#fff7ed;border:1px solid #fdba74;padding:14px 18px;color:#7c2d12;line-height:1.6';
+    d.innerHTML='<strong>Je kijkt mee bij deze groep.</strong><br>Rapporten horen bij de leerkracht die verantwoordelijk is voor de groep, dus je kunt hier niets opslaan. Je collega kan je rol veranderen bij Instellingen, onder Collega&#39;s bij deze groep.';
+    m.insertBefore(d, m.firstChild);
+  }
+
+  /* Opslaan meldt het nu als het mislukt. Stond hier eerder als een fetch in
+     een lege catch: een mislukte opslag zag er dan precies zo uit als een
+     geslaagde, en je raakte een heel getypt rapport kwijt zonder het te
+     merken. Eén melding per sessie, anders krijg je bij elk kind een venster. */
+  var slaOpFoutGemeld=false;
+  function meldOpslaanMislukt(reden){
+    if(slaOpFoutGemeld)return; slaOpFoutGemeld=true;
+    var tekst = reden==='geen_rapportrecht'
+      ? 'Dit rapport is niet opgeslagen.\n\nJe kijkt mee bij deze groep, dus je kunt hier geen rapporten vastleggen. Vraag je collega om je rol te veranderen als dat wel de bedoeling is.'
+      : 'Dit rapport is niet opgeslagen.\n\nEr ging iets mis bij het bewaren. Kopieer je tekst voor de zekerheid even, en probeer het zo nog eens.';
+    if(typeof avinkaAlert==='function') avinkaAlert(tekst); else alert(tekst);
+  }
+  async function slaOp(naam,verhaal){
+    if(!naam||!verhaal||!verhaal.trim())return;
+    if(!avinkaMagRapporten){ meldOpslaanMislukt('geen_rapportrecht'); return; }
+    try{
+      var r=await fetch('/api/rapporten',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({naam:naam,verhaal:verhaal,klas_id:avinkaKlasId})});
+      if(!r.ok){
+        var reden=''; try{ reden=((await r.json())||{}).error||''; }catch(e){}
+        meldOpslaanMislukt(reden);
+      }
+    }catch(e){ meldOpslaanMislukt(''); }
+  }
   function NL(arr){ return arr.join(String.fromCharCode(10)); }
   function groepUitNaam(naam){ if(!naam)return ''; var s=String(naam); if(s.indexOf('1/2')>=0||s.indexOf('1 / 2')>=0)return '1/2'; for(var i=0;i<s.length;i++){ var c=s.charCodeAt(i); if(c>=49&&c<=56) return s.charAt(i); } return ''; }
   function zet(id,val){ var e=document.getElementById(id); if(e&&val){ e.value=val; if(e.value) e.classList.add('filled'); } }

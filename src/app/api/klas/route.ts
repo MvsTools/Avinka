@@ -55,10 +55,26 @@ export async function GET() {
       ? ruw
       : namen.map((n) => ({ naam: n, geslacht: "" }));
 
+  // Mag je voor DEZE groep rapporten schrijven? Kijk je alleen mee, dan niet:
+  // rapporten zijn geschreven oordelen over kinderen en die horen bij wie
+  // medeverantwoordelijk is voor de groep.
+  //
+  // De database weigert zo'n rij sowieso (policy "duo-partner rapporten"),
+  // maar zonder dit antwoord merkt de tool dat pas ná het schrijven van een
+  // heel rapport. Nu kan hij het vooraf zeggen.
+  let magRapporten = true;
+  if (data?.id) {
+    const { data: volledig } = await supabase.rpc("klas_toegang_volledig", {
+      p_klas: data.id,
+    });
+    magRapporten = volledig === true;
+  }
+
   return NextResponse.json({
     id: data?.id ?? "", // voor tools die een rapport/bestand aan deze klas koppelen (duo-collega's)
     naam: data?.naam ?? "",
     leerlingen: namen, // platte namenlijst — bestaande tools blijven werken
     leerlingenData, // [{naam, geslacht}] — voor tools die hij/zij willen gebruiken
+    magRapporten,
   });
 }

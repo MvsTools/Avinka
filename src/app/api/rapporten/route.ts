@@ -38,6 +38,17 @@ export async function POST(request: NextRequest) {
   }
 
   if (klasId) {
+    // Kijk je bij deze groep alleen mee, dan schrijf je er geen rapporten.
+    // De database weigert het ook (policy "duo-partner rapporten"), maar dan
+    // komt er een kale 500 terug die niets uitlegt. Hier zeggen we wat er aan
+    // de hand is, zodat de tool het kan tonen.
+    const { data: volledig } = await supabase.rpc("klas_toegang_volledig", {
+      p_klas: klasId,
+    });
+    if (volledig !== true) {
+      return NextResponse.json({ error: "geen_rapportrecht" }, { status: 403 });
+    }
+
     // Gescoped op de klas: zoek een bestaande rij voor DIT kind in DEZE klas
     // (van jezelf óf je duo-partner, RLS staat dat toe) en werk die bij, in
     // plaats van er een dubbele rij naast te zetten.
