@@ -988,9 +988,19 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            zoals een schrift er echt uitziet, en de tekst staat gewoon op het
            veld ernaast. */}
         <div className="w-mkr-rij">
+          {/* ── links: de kop en de uitleg ──
+             Hier stonden naam en rol, en dat was dubbelop: die staan al op
+             het etiket van het schrift, waar ze ook horen. Links hoort wat
+             een sectie nodig heeft — een kop en uitleg waar je naar kijkt.
+             De eerste alinea is de enige die iets NIEUWS zegt en meteen het
+             punt van deze hele sectie: er zit geen bedrijf achter. */}
           <div className="w-mkr-tekst">
-            <p className="w-schrift-naam">Michael van Spanje</p>
-            <p className="w-schrift-rol">leerkracht &amp; maker van Avinka</p>
+            <h2 className="w-mkr-kop">Even voorstellen</h2>
+            <p className="w-schrift-tekst">
+              Achter Avinka zit geen bedrijf met een supportafdeling. Er zit
+              één leerkracht achter, die het naast zijn werk voor de klas
+              bouwt.
+            </p>
             <p className="w-schrift-tekst">
               Ik sta zelf voor de klas en weet hoeveel tijd rapporten,
               analyses en verslagen kosten.
@@ -1046,8 +1056,11 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                  voorgedrukte regels voor NAAM en GROEP, en die zijn met de
                  hand ingevuld. Zijn naam staat er dus, in zijn eigen
                  handschrift, ter grootte van een invulregel. */}
+              {/* ⚠️ Hier stond "Even voorstellen" als kop op het etiket. Die
+                 is naar links verhuisd, waar hij de kop van de sectie is —
+                 en dat maakt het etiket meteen kloppender: op een schoolschrift
+                 staat geen titel, daar staat wie het schrift is van. */}
               <div className="w-schrift-etiket">
-                <h2 className="w-schrift-titel">Even voorstellen</h2>
                 <dl className="w-schrift-invul">
                   <div>
                     <dt>naam</dt>
@@ -1056,6 +1069,10 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                   <div>
                     <dt>vak</dt>
                     <dd>leerkracht &amp; maker</dd>
+                  </div>
+                  <div>
+                    <dt>van</dt>
+                    <dd>Avinka</dd>
                   </div>
                 </dl>
               </div>
@@ -1095,6 +1112,19 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           .w-mkr-rij { grid-template-columns: minmax(0, 1fr) 32rem; }
         }
         .w-mkr-tekst { max-width: 42ch; }
+        .w-mkr-kop {
+          font-family: var(--font-display), Georgia, serif;
+          font-weight: 900;
+          letter-spacing: -0.03em;
+          line-height: 1.02;
+          font-size: clamp(1.9rem, 3.6vw, 2.75rem);
+          color: ${DONKER};
+          margin-bottom: clamp(14px, 1.8vw, 20px);
+          text-wrap: balance;
+        }
+        /* De eerste alinea na de kop hoeft geen extra ruimte: de kop heeft
+           zijn eigen marge al. */
+        .w-mkr-kop + .w-schrift-tekst { margin-top: 0; }
 
         .w-schrift {
           --open: 0;
@@ -1381,7 +1411,11 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
             border-radius: 0 0 1.4rem 1.5rem;
           }
           .w-schrift-blad::before { display: none; }
-          .w-schrift { order: -1; }
+          /* ⚠️ Hier stond order:-1, zodat het schrift bóven de tekst kwam.
+             Dat klopte toen "Even voorstellen" nog op de kaft stond: dan was
+             het schrift de kop van de sectie. Nu staat die kop links (op
+             mobiel dus bovenaan) en zou het schrift ervóór zetten betekenen
+             dat je een voorwerp ziet zonder te weten waarom. */
           .w-schrift-kaft {
             position: relative;
             inset: auto;
