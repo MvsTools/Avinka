@@ -1299,8 +1299,36 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
              ⚠️ Alles in één transform, niet in de losse rotate-eigenschap.
              Die wordt vóór transform toegepast en dan draait de kleine
              tafelhoek mee met het perspectief in plaats van erop. */
-          transform: rotateY(14deg) rotate(-1.2deg);
-          transform-origin: 62% 50%;
+          /* ⚠️ ROTATEX ERBIJ, en dat is het verschil tussen "gedraaid plat
+             vlak" en "voorwerp op tafel". Alleen om de Y-as draaien maakt van
+             het schrift een deur; met een kanteling van 9 graden kijk je er
+             van bovenaf op, en dan zie je de ONDERKANT van het blok — daar zit
+             de snede van de bladen, en die maakt de dikte zichtbaar. */
+          transform: rotateX(9deg) rotateY(14deg) rotate(-1.2deg);
+          transform-origin: 62% 60%;
+          transform-style: preserve-3d;
+        }
+        /* De contactschaduw onder het hele schrift. Los element en geen
+           box-shadow, want een box-shadow draait mee met het gekantelde vlak
+           en gaat dan met het schrift de diepte in; deze ligt plat op de
+           ondergrond waar hij hoort.
+           Naar linksonder, want het licht op deze pagina komt van rechtsboven
+           (zie SCHADUW_HELLING). */
+        .w-schrift::after {
+          content: "";
+          position: absolute;
+          left: 3%;
+          right: 1%;
+          bottom: -22px;
+          height: 46px;
+          transform: translateZ(-14px);
+          background: radial-gradient(
+            60% 50% at 46% 40%,
+            rgba(var(--w-schaduw-rgb, 23,80,58), 0.34),
+            transparent 72%
+          );
+          filter: blur(9px);
+          pointer-events: none;
         }
 
         /* ── de stapel bladen ──
@@ -1396,12 +1424,18 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            waar op elke bladzijde ruimte over is (de tekst vult nooit het hele
            blad). De knop zelf blijft de halve bladzijde groot, dus je kunt nog
            steeds gewoon op het papier klikken. */
+        /* ⚠️ translateZ EN z-index. Sinds het schrift zelf preserve-3d is,
+           telt z-index binnen die ruimte niet meer: de browser sorteert op
+           echte diepte, en de bladen liggen tot 6px naar voren. De knoppen
+           verdwenen daardoor áchter het papier — zichtbaar én onklikbaar.
+           30px zet ze ruim voor de hele stapel. */
         .w-blad-knop {
           position: absolute;
           top: 0;
           bottom: 0;
           width: 50%;
           z-index: 3;
+          transform: translateZ(30px);
           display: flex;
           align-items: flex-end;
           padding: 0 10px 12px;
@@ -1520,10 +1554,24 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           border: 2px solid ${KAART_RAND};
           border-left: none;
           border-radius: 0 1.4rem 1.6rem 0;
+          /* ── DE SNEDE: de dikte van het papierblok ──
+             Dit is wat van een plat vlak een voorwerp maakt. Zes randen recht
+             naar BENEDEN (geen enkele naar opzij), elk een tint donkerder: dat
+             leest als de opeengestapelde vellen waar je nu, door de kanteling,
+             tegenaan kijkt. Daarna pas de zachte slagschaduw.
+             ⚠️ Waarom geen echt gekanteld vlak in 3D: de bladzijde gebruikt
+             allebei zijn pseudo-elementen al (de vouwschaduw bij de rug en het
+             ezelsoor in de hoek), en de kaftkanten moeten overflow:hidden
+             houden voor hun ronde hoeken — en dat plat een 3D-kind alsnog.
+             Gestapelde randen doen hier hetzelfde werk en breken niets. */
           box-shadow:
-            2px 3px 0 -1px #f6f2e6,
-            4px 6px 0 -2px #efeadb,
-            ${schaduw(20, 44, -24, 0.5)};
+            0 2px 0 #f7f3e8,
+            0 4px 0 #f1ecdf,
+            0 6px 0 #eae4d4,
+            0 8px 0 #e2dbc8,
+            0 10px 0 #d9d1bc,
+            0 12px 0 #cfc7b0,
+            ${schaduw(22, 46, -22, 0.5)};
         }
         /* De schaduw bij de rug: papier krult altijd iets weg van de vouw,
            dus daar is het donkerder. Staat op ELK blad, want elk blad heeft
@@ -1669,9 +1717,15 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         .w-schrift-achter {
           border-radius: 0 1.4rem 1.6rem 0;
         }
+        /* De kaft is karton: dikker per laag dan papier, donkerder, en geen
+           losse vellen maar één massief blok. */
         .w-schrift-voor {
           background: ${DONKER};
-          box-shadow: ${schaduw(22, 50, -22, 0.55)};
+          box-shadow:
+            0 3px 0 color-mix(in srgb, ${DONKER} 78%, #000000),
+            0 6px 0 color-mix(in srgb, ${DONKER} 62%, #000000),
+            0 9px 0 color-mix(in srgb, ${DONKER} 46%, #000000),
+            ${schaduw(24, 52, -22, 0.55)};
         }
         /* De rug: een iets donkerder baan langs de vouw, met twee nietjes. */
         .w-schrift-voor::before {
