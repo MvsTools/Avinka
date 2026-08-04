@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "react";
 
 /* ── De Wereld van /nieuw5 ──────────────────────────────────────────────────
@@ -796,81 +796,19 @@ export function WereldHerken() {
    het stijlblad mee (elk blad heeft zijn eigen diepte in de stapel). */
 const BLADEN = 3;
 
-function useOpenbladeren() {
-  const anker = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = anker.current;
-    if (!el) return;
-
-    /* Wie beweging heeft afgezet krijgt het schrift doorgebladerd te zien:
-       alle bladen om, dus de laatste bladzijde ligt open. Halverwege blijven
-       steken zou de inhoud verbergen. */
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      for (let i = 0; i < BLADEN; i++) el.style.setProperty(`--p${i + 1}`, "1");
-      return;
-    }
-
-    let inBeeld = false;
-    let raf = 0;
-
-    const meet = () => {
-      raf = 0;
-      const r = el.getBoundingClientRect();
-      const h = window.innerHeight;
-      /* ⚠️ DE AFSTELLING. Dicht blijven tot de bovenkant op 72% van het
-         scherm staat — dat is ruim een kwart schermhoogte waarin je alleen de
-         kaft met het etiket ziet — en daarna 0,80 schermhoogte om er
-         doorheen te bladeren. Bij drie bladen is dat ongeveer 240 pixel
-         scrollen per blad: een normale duw met je vinger.
-         Wil je het trager: het tweede getal omhoog. Wil je later beginnen:
-         het eerste omlaag. */
-      const rauw = (h * 0.72 - r.top) / (h * 0.8);
-      const p = Math.min(1, Math.max(0, rauw));
-
-      /* Elk blad krijgt zijn eigen deel van de scroll: blad 1 tussen 0 en
-         1/3, blad 2 tussen 1/3 en 2/3, blad 3 daarna. Zo slaan ze één voor
-         één om in plaats van tegelijk.
-         🔑 Per blad opnieuw een smoothstep, niet één over het geheel. Anders
-         zou het middelste blad met constante snelheid omvallen terwijl de
-         buitenste twee wel afremmen, en dat zie je meteen. */
-      for (let i = 0; i < BLADEN; i++) {
-        const q = Math.min(1, Math.max(0, p * BLADEN - i));
-        el.style.setProperty(`--p${i + 1}`, String(q * q * (3 - 2 * q)));
-      }
-    };
-
-    const vraagFrame = () => {
-      if (!inBeeld || raf) return;
-      raf = requestAnimationFrame(meet);
-    };
-
-    const kijker = new IntersectionObserver(
-      ([ingang]) => {
-        inBeeld = ingang.isIntersecting;
-        vraagFrame();
-      },
-      { rootMargin: "40% 0px" },
-    );
-    kijker.observe(el);
-
-    window.addEventListener("scroll", vraagFrame, { passive: true });
-    window.addEventListener("resize", vraagFrame);
-    meet();
-
-    return () => {
-      kijker.disconnect();
-      window.removeEventListener("scroll", vraagFrame);
-      window.removeEventListener("resize", vraagFrame);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
-
-  return anker;
-}
+/* ⚠️ HET BLADEREN ZAT EERST AAN DE SCROLL VAST, en dat is er op verzoek uit.
+   De eigenaar wil er zélf doorheen kunnen bladeren: dat maakt van een
+   filmpje-dat-afspeelt een voorwerp dat je vasthebt — precies het verschil
+   dat de polaroids ook maken.
+   START OP 1: het schrift ligt dus al open op de eerste bladzijde (foto en
+   naam), niet dicht. Terugbladeren naar de kaft kan wel; daar staat het
+   etiket met zijn naam erop. */
+const START_BLAD = 1;
 
 export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
-  const boek = useOpenbladeren();
+  const [omgeslagen, setOmgeslagen] = useState(START_BLAD);
+  const verder = () => setOmgeslagen((n) => Math.min(BLADEN, n + 1));
+  const terug = () => setOmgeslagen((n) => Math.max(0, n - 1));
 
   return (
     <section className="relative overflow-hidden">
@@ -1016,10 +954,26 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
               één leerkracht achter, die het naast zijn werk voor de klas
               bouwt.
             </p>
-            {/* Zonder dit zinnetje is er geen enkele aanleiding om te
-               ontdekken dat het schrift meebeweegt. Het staat er als
-               onderschrift, niet als knop: je hoeft niets te doen. */}
-            <p className="w-mkr-wenk">blader maar door het schrift hiernaast</p>
+            {/* De uitnodiging om te bladeren, met hetzelfde handgeschreven
+               boogpijltje als bij de polaroids ("klik op een foto om de
+               ervaring te lezen"). Dezelfde soort handeling, dus dezelfde
+               aanwijzing — een tweede vormtaal verzinnen voor hetzelfde
+               gebaar maakt een pagina rommelig. */}
+            <p className="w-mkr-wenk">
+              blader zelf door mijn schrift
+              <svg
+                viewBox="0 0 40 28"
+                className="h-6 w-9 shrink-0"
+                fill="none"
+                stroke={KOP}
+                strokeWidth="2"
+                strokeLinecap="round"
+                aria-hidden
+              >
+                <path d="M2 4 C 14 6, 26 10, 32 22" />
+                <path d="M26 20 L 32.5 23 L 34 16" />
+              </svg>
+            </p>
           </div>
 
         {/* ── HET SCHRIFT WAAR JE DOORHEEN BLADERT ─────────────────────────
@@ -1032,7 +986,7 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
              daar bovenop liggen de bladen die omslaan, in een 3D-stapel. De
              browser sorteert ze zelf op diepte dankzij preserve-3d, dus er
              is geen z-index-geknutsel nodig dat bij de helft moet omklappen. */}
-        <div ref={boek} data-reveal className="w-schrift">
+        <div data-reveal className="w-schrift">
           {/* Blad 4, de onderste: ligt er altijd. */}
           <div className="w-schrift-blad w-papier">
             <div className="w-schrift-inhoud">
@@ -1043,9 +997,35 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
             </div>
           </div>
 
+          {/* De twee bladerknoppen. Ze bedekken elk een halve bladzijde, dus
+             je kunt gewoon op het schrift klikken — maar het zijn échte
+             knoppen, met een label en een zichtbaar pijltje aan de buitenrand.
+             🔑 Zichtbaar, niet verstopt achter hover: bedieningselementen
+             wegmoffelen tot je erover gaat is op deze site een afgekeurde
+             gewoonte. Ze staan boven de bladen (z-index) zodat de 3D-stapel
+             de klik niet opvangt. */}
+          <button
+            type="button"
+            className="w-blad-knop w-blad-terug"
+            onClick={terug}
+            disabled={omgeslagen === 0}
+            aria-label="Vorige bladzijde"
+          >
+            <span aria-hidden>‹</span>
+          </button>
+          <button
+            type="button"
+            className="w-blad-knop w-blad-verder"
+            onClick={verder}
+            disabled={omgeslagen === BLADEN}
+            aria-label="Volgende bladzijde"
+          >
+            <span aria-hidden>›</span>
+          </button>
+
           <div className="w-schrift-stapel">
             {/* Blad 3 — slaat als laatste om. */}
-            <div className="w-blad w-blad-3">
+            <div className={`w-blad w-blad-3 ${omgeslagen > 2 ? "is-om" : ""}`}>
               <div className="w-blad-voor w-papier">
                 <div className="w-schrift-inhoud">
                   <p className="w-blad-tekst">
@@ -1057,8 +1037,10 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
               <div className="w-blad-achter w-papier" />
             </div>
 
-            {/* Blad 2 — de foto. */}
-            <div className="w-blad w-blad-2">
+            {/* Blad 2 — de foto. Dit is de bladzijde waar het schrift op
+               openligt als je aankomt: eerst een gezicht en een naam, dan pas
+               de woorden. */}
+            <div className={`w-blad w-blad-2 ${omgeslagen > 1 ? "is-om" : ""}`}>
               <div className="w-blad-voor w-papier">
                 <div className="w-schrift-inhoud">
                   <div className="w-schrift-afdruk">
@@ -1082,13 +1064,18 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                        mag die zin terug. */}
                     <p className="w-schrift-onderschrift">dat ben ik</p>
                   </div>
+                  {/* Naam en rol horen op deze bladzijde en niet alleen op het
+                     etiket: dit is de eerste bladzijde die je ziet, en een
+                     foto zonder naam stelt niemand voor. */}
+                  <p className="w-blad-naam">Michael van Spanje</p>
+                  <p className="w-blad-rol">leerkracht &amp; maker van Avinka</p>
                 </div>
               </div>
               <div className="w-blad-achter w-papier" />
             </div>
 
             {/* Blad 1 — de kaft, slaat als eerste om. */}
-            <div className="w-blad w-blad-1">
+            <div className={`w-blad w-blad-1 ${omgeslagen > 0 ? "is-om" : ""}`}>
               <div className="w-blad-voor w-schrift-voor">
                 {/* Het etiket, zoals op elk schoolschrift: iets scheef
                    geplakt, want niemand plakt dat recht. Voorgedrukte woordjes
@@ -1159,6 +1146,9 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         /* De wenk naar het schrift, in het handschrift van de pagina. Klein
            en gedempt: het is een onderschrift, geen knop. */
         .w-mkr-wenk {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
           margin-top: clamp(18px, 2.2vw, 26px);
           font-family: var(--font-hand), "Segoe Script", cursive;
           font-size: 1.15rem;
@@ -1167,9 +1157,6 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         }
 
         .w-schrift {
-          --p1: 0;
-          --p2: 0;
-          --p3: 0;
           position: relative;
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -1219,13 +1206,93 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           background: linear-gradient(to left, rgba(var(--w-schaduw-rgb, 23,80,58), 0.13), transparent);
         }
 
-        /* Elk blad zijn eigen hoek én zijn eigen plek in de stapel. De
-           translateZ is minimaal (een blad papier is dun) maar genoeg om de
-           sortering eenduidig te maken; zonder die verschillen flikkeren
-           vlakken die precies samenvallen. */
-        .w-blad-1 { transform: translateZ(2.4px) rotateY(calc(var(--p1) * -178deg)); }
-        .w-blad-2 { transform: translateZ(1.6px) rotateY(calc(var(--p2) * -178deg)); }
-        .w-blad-3 { transform: translateZ(0.8px) rotateY(calc(var(--p3) * -178deg)); }
+        /* Elk blad zijn eigen plek in de stapel. De translateZ is minimaal
+           (een blad papier is dun) maar genoeg om de sortering eenduidig te
+           maken; zonder die verschillen flikkeren vlakken die precies
+           samenvallen.
+           🔑 Het omslaan is nu een OVERGANG en geen scrollstand: de klik zet
+           de klasse, de browser doet de beweging. De curve remt aan het eind
+           af zoals een blad dat neervalt; 0,72s is lang genoeg om het te
+           volgen en kort genoeg om drie keer achter elkaar te doen. */
+        /* 🔑 DE VOLGORDE IS HIER HET HELE VERHAAL: eerst draaien, dán de
+           diepte. In CSS wordt de RECHTSE bewerking als eerste op het element
+           toegepast, dus rotateY(...) translateZ(...) betekent: verschuif het
+           blad in zijn EIGEN richting en draai dat mee. Een blad dat omslaat
+           neemt zijn dikte dus mee naar de andere kant en ligt daar onderop —
+           precies zoals papier zich gedraagt.
+           Andersom (translateZ eerst) blijft de verschuiving in de richting
+           van de kijker staan, hoe ver het blad ook gedraaid is. Dan ligt de
+           kaft na het omslaan nog steeds bovenop en zie je de binnenkant van
+           het karton in plaats van de bladzijde die je net omsloeg. Dat was
+           hier de bug. */
+        .w-blad {
+          transform: rotateY(0deg) translateZ(var(--z));
+          transition: transform 0.72s cubic-bezier(0.22, 1, 0.32, 1);
+        }
+        .w-blad.is-om { transform: rotateY(-178deg) translateZ(var(--z)); }
+        /* ⚠️ TWEE FOUTEN OP RIJ HIER, allebei het waard om vast te leggen.
+           1. Met 0,8px verschil in diepte lagen de omgeslagen bladen zo goed
+              als in hetzelfde vlak. De browser kon niet bepalen welke bovenop
+              hoorde en viel terug op de volgorde in de opmaak: na het omslaan
+              van de foto zag je nog steeds de binnenkant van de kaft.
+           2. De reparatie was ELK BLAD EEN EIGEN EINDHOEK geven, want een
+              stapel omgeslagen bladen waaiert ook uiteen. Dat is precies fout:
+              vlakken onder een verschillende hoek SNIJDEN elkaar, en dan
+              tekent de browser links van de snijlijn het ene blad en rechts
+              het andere. Zichtbaar als een groene baan dwars door de
+              linkerbladzijde.
+           🔑 De regel: houd omslaande vlakken EVENWIJDIG en zet ze alleen uit
+           elkaar in de diepte. Evenwijdige vlakken kunnen elkaar niet snijden,
+           dus de sortering is altijd eenduidig. Stappen van 2px is genoeg.
+           Het blad dat als EERSTE omslaat ligt onderop; dat is de kaft. */
+        .w-blad-1 { --z: 6px; }
+        .w-blad-2 { --z: 4px; }
+        .w-blad-3 { --z: 2px; }
+
+        /* ── de bladerknoppen ──
+           Elk een halve bladzijde groot, dus je klikt gewoon op het schrift.
+           Het pijltje staat aan de buitenrand, waar je duim bij een echt boek
+           ook zit. */
+        .w-blad-knop {
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          width: 50%;
+          z-index: 3;
+          display: flex;
+          align-items: center;
+          padding: 0 6px;
+          border: 0;
+          background: none;
+          cursor: pointer;
+          font-size: 1.6rem;
+          line-height: 1;
+          color: ${KOP};
+          transition: opacity 0.3s ease;
+        }
+        .w-blad-terug { left: 0; justify-content: flex-start; }
+        .w-blad-verder { right: 0; justify-content: flex-end; }
+        .w-blad-knop span {
+          display: grid;
+          place-items: center;
+          width: 2rem;
+          height: 2rem;
+          border-radius: 999px;
+          background: var(--color-cream, #fbf6ee);
+          box-shadow: ${schaduw(6, 16, -8, 0.4)};
+          transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .w-blad-knop:hover span { transform: scale(1.08); }
+        .w-blad-terug:hover span { transform: translateX(-2px) scale(1.08); }
+        .w-blad-verder:hover span { transform: translateX(2px) scale(1.08); }
+        .w-blad-knop:focus-visible {
+          outline: 2px solid var(--color-brand, #2f9e6e);
+          outline-offset: 4px;
+          border-radius: 1rem;
+        }
+        /* Uitgeschakeld betekent hier: er is geen bladzijde meer die kant op.
+           Niet weghalen maar dempen, zodat de plek niet verspringt. */
+        .w-blad-knop:disabled { cursor: default; opacity: 0; }
 
         /* ── de rechterbladzijde ──
            Warm papier met schrijflijnen. De lijnen komen uit een verloop en
@@ -1346,6 +1413,24 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         .w-blad-kern {
           font-weight: 600;
           color: ${KOP};
+        }
+        /* Naam en rol onder de foto, op de eerste bladzijde. Gecentreerd
+           onder de afdruk, want die staat er ook gecentreerd op. */
+        .w-blad-naam {
+          margin-top: clamp(10px, 1.4vw, 16px);
+          text-align: center;
+          font-family: var(--font-display), Georgia, serif;
+          font-weight: 900;
+          letter-spacing: -0.02em;
+          line-height: 30px;
+          font-size: 1.05rem;
+          color: ${DONKER};
+        }
+        .w-blad-rol {
+          text-align: center;
+          font-size: 0.9rem;
+          line-height: 30px;
+          color: rgba(34, 28, 58, 0.7);
         }
 
         /* ── de kaft ──
@@ -1535,8 +1620,11 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
              uitgeklapt. Een uitnodiging voor iets dat er niet is, is erger
              dan geen uitnodiging. */
           .w-mkr-wenk { display: none; }
+          /* De bladerknoppen ook: hier ligt alles al open, dus er valt niets
+             te bladeren en twee zwevende pijltjes zouden nergens heen wijzen. */
+          .w-blad-knop { display: none; }
           .w-blad { position: relative; inset: auto; transform-style: flat; }
-          .w-blad-1, .w-blad-2, .w-blad-3 { transform: none; }
+          .w-blad, .w-blad.is-om { transform: none; transition: none; }
           .w-blad-voor {
             position: relative;
             inset: auto;
@@ -1578,8 +1666,13 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           .w-schrift-foto { width: 8.5rem; }
         }
 
+        /* Wie beweging heeft afgezet bladert nog steeds — het blad staat
+           alleen meteen op zijn eindstand in plaats van om te zwaaien. De
+           inhoud blijft dus bereikbaar; dat is het verschil met de animatie
+           helemaal uitzetten. */
         @media (prefers-reduced-motion: reduce) {
-          .w-schrift-kaft { transition: none; }
+          .w-blad { transition: none; }
+          .w-blad-knop span { transition: none; }
         }
       `}</style>
       {/* Het mintveld loopt hier NIET meer dood: het gaat gewoon door tot de
