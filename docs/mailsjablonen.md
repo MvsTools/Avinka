@@ -151,7 +151,7 @@ in de link verschillen.
         </tr></table>
       </td></tr>
       <tr><td style="padding:24px 36px 0;">
-        <p style="margin:0;font-size:15px;line-height:1.65;color:#6b6880;">Heb je dit niet aangevraagd? Neem dan contact op via support@avinka.nl, want dan probeert iemand anders bij je account te komen.</p>
+        <p style="margin:0;font-size:15px;line-height:1.65;color:#6b6880;">Heb je dit niet aangevraagd? Neem dan contact op via <a href="mailto:support@avinka.nl" style="color:#25855a;font-weight:bold;">support@avinka.nl</a>.</p>
       </td></tr>
       <tr><td style="padding:24px 36px 30px;">
         <div style="border-top:1px solid #ece7e0;padding-top:16px;">
