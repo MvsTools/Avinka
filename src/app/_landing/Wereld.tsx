@@ -916,11 +916,14 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                gewone taal staat, dus het is "helpen met het werk dat na
                schooltijd blijft liggen" geworden.
                De tweede zin doet het werk van de KOP: bij "Even voorstellen"
-               hoort een mens, en die zin verbindt het product aan hem zonder
-               het verhaal van het schrift over te doen. */}
+               hoort een mens. Hij staat er letterlijk zoals de eigenaar hem
+               heeft aangeleverd; niet gladstrijken. Er stond eerst "Ik ken dat
+               werk, want ik doe het zelf" (van mij) — deze zegt meer, want hij
+               nodigt uit in plaats van alleen te bevestigen. */}
             <p className="w-schrift-tekst">
               Avinka is gebouwd om leerkrachten te helpen met het werk dat na
-              schooltijd blijft liggen. Ik ken dat werk, want ik doe het zelf.
+              schooltijd blijft liggen. Ik doe aanpassingen op basis van eigen
+              ervaringen, maar sta graag open voor alle feedback.
             </p>
             {/* De uitnodiging om te bladeren, met hetzelfde handgeschreven
                boogpijltje als bij de polaroids ("klik op een foto om de
