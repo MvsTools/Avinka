@@ -1056,13 +1056,13 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                      etiket: dit is de eerste bladzijde die je ziet, en een
                      foto zonder naam stelt niemand voor. */}
                   <p className="w-blad-naam">Michael van Spanje</p>
-                  {/* ⚠️ Hier stond "leerkracht & maker". "Maker" was mijn
-                     woord, niet dat van de eigenaar — hij schrijft zelf over
-                     "als enkele leerkracht" — en het klinkt in het Nederlands
-                     als jargon. Gewoon leerkracht dus; dát hij Avinka bouwt
-                     staat al in de alinea links, en nog een keer in het
-                     schrift zelf. */}
-                  <p className="w-blad-rol">leerkracht</p>
+                  {/* ⚠️ Hier stond eerst "leerkracht & maker" en daarna alleen
+                     "leerkracht". Allebei mis: "maker" was mijn woord en klinkt
+                     als jargon, en zonder titel erbij verdween het gewicht.
+                     De eigenaar koos zelf "oprichter": dat zegt dat dit geen
+                     hobbyproject is maar een bedrijf met iemand die ervoor
+                     staat — precies wat een school wil weten. */}
+                  <p className="w-blad-rol">leerkracht &amp; oprichter</p>
                 </div>
               </div>
               {/* De achterkant van dit blad is de LINKERbladzijde zodra je
