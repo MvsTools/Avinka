@@ -1243,15 +1243,10 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            niets met elkaar te maken hebben. Nu begint de kop op dezelfde
            hoogte als de bovenrand van het schrift en lees je de sectie van
            linksboven naar rechts. */
-        /* De perspectief staat HIER en niet op het schrift zelf: een element
-           kijkt nooit door zijn eigen perspectief heen, dat werkt alleen op
-           zijn kinderen. Het schrift heeft daarnaast zijn eigen perspectief
-           voor de bladen die erin omslaan; die twee bijten elkaar niet. */
         .w-mkr-rij {
           display: grid;
           gap: clamp(28px, 4vw, 56px);
           align-items: start;
-          perspective: 1700px;
         }
         @media (min-width: 900px) {
           .w-mkr-rij { grid-template-columns: minmax(0, 1fr) 32rem; }
@@ -1290,17 +1285,7 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           width: 100%;
           max-width: 32rem;
           perspective: 1500px;
-          /* 🔑 HET SCHRIFT STAAT SCHUIN, en dat is realisme en geen effect.
-             Een schrift dat kaarsrecht naar je toe ligt bestaat alleen in een
-             productfoto; op een tafel ligt hij altijd een slag gedraaid. Met
-             deze hoek wijkt de rechterhelft van je af en kijk je er van
-             linksvoor in — je moet als het ware naar rechts kijken om de
-             bladzijde te zien.
-             ⚠️ Alles in één transform, niet in de losse rotate-eigenschap.
-             Die wordt vóór transform toegepast en dan draait de kleine
-             tafelhoek mee met het perspectief in plaats van erop. */
-          transform: rotateY(14deg) rotate(-1.2deg);
-          transform-origin: 62% 50%;
+          rotate: -1.2deg;
         }
 
         /* ── de stapel bladen ──
