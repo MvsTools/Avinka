@@ -256,18 +256,12 @@ function SilhouetVliegtuig({ kleur, style, tel }: { kleur: string; style: CSSPro
   );
 }
 
-function SilhouetLiniaal({ kleur, veld, style, tel }: { kleur: string; veld: string; style: CSSProperties; tel?: number }) {
-  return (
-    <SilhouetWrap par={0.04} style={style} tel={tel}>
-      <svg viewBox="0 0 200 46" className="block w-full">
-        <rect width="200" height="46" rx="9" fill={kleur} />
-        {[20, 44, 68, 92, 116, 140, 164, 188].map((x, i) => (
-          <rect key={x} x={x} y="0" width="3.5" height={i % 2 ? 12 : 18} rx="1.5" fill={veld} />
-        ))}
-      </svg>
-    </SilhouetWrap>
-  );
-}
+/* ⚠️ De liniaal is weg. Hij lag als enige nog in de makers-sectie en die is
+   er 4-8 uit gehaald: daar ligt inmiddels een schrift met lijnen, een foto en
+   vier bladzijden tekst, en dan is nog een stuk schoolgerei geen sfeer meer
+   maar een derde ding dat om aandacht vraagt. De tekening zelf staat in de
+   geschiedenis als hij ooit terug moet (het was een rechthoek met streepjes,
+   twintig regels). */
 
 /* Losse drijvende spikkels: een paar stipjes die heel traag omhoog zweven
    binnen een kleurveld, als stof in het licht. */
@@ -838,23 +832,11 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            het vlak boven de golf uit het papier in steken — precies de fout
            die eerder bij het polaroid-vlak is hersteld. */}
         <div className="absolute inset-0 overflow-hidden">
-          {/* De liniaal stond hiervóór BUITEN deze laag, met `bottom` gemeten
-             vanaf de sectie (150px) en een breedte van 460. Dat kon toen: de
-             sectie was ruim 900px hoog, dus de mintrand lag er honderden
-             pixels boven. Bij een sectie van rond de 450px zou diezelfde
-             liniaal met zijn linkerpunt dwars door de golf het papier in
-             steken — een mintkleurig silhouet op papier, precies wat de
-             veldregels verbieden. Nu ligt hij ín het geclipte mintvakje en
-             wordt hij door de golf hieronder netjes op de kleurrand
-             afgesneden, dezelfde ingreep als bij het vlak hiernaast: hij komt
-             onder het veld vandaan in plaats van eroverheen te liggen.
-             Kleiner (320 i.p.v. 460) omdat hij anders in de halve sectie het
-             grootste ding van het beeld wordt. */}
-          <SilhouetLiniaal
-            kleur={MINT_DIEP}
-            veld={MINT_LICHT}
-            style={{ width: 320, left: -90, bottom: 60, transform: "rotate(-12deg)" }}
-          />
+          {/* ⚠️ Hier lag een liniaal-silhouet linksonder. Eruit op verzoek.
+             Terecht ook: er ligt in deze sectie al een schrift met lijnen, een
+             foto en vier bladzijden tekst. Nog een stuk schoolgerei in de
+             achtergrond is dan geen sfeer meer maar een derde ding dat om
+             aandacht vraagt. Het mintvlak rechts blijft; dat draagt de golf. */}
           <KaartVlak
             kleur={VLAK_MINT}
             vorm="ei"
@@ -917,28 +899,21 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            veld ernaast. */}
         <div className="w-mkr-rij">
           {/* ── links: de kop en de uitleg ──
-             Hier stonden naam en rol, en dat was dubbelop: die staan al op
-             het etiket van het schrift, waar ze ook horen. Links hoort wat
-             een sectie nodig heeft — een kop en uitleg waar je naar kijkt.
-             De eerste alinea is de enige die iets NIEUWS zegt en meteen het
-             punt van deze hele sectie: er zit geen bedrijf achter. */}
+             🔑 DE TAAKVERDELING TUSSEN LINKS EN HET SCHRIFT, en dat is waar
+             deze alinea drie keer op stukliep:
+             het SCHRIFT vertelt wie hij is en waarom hij Avinka maakte;
+             LINKS moet vertellen wat dat voor de LEZER betekent.
+             Zolang hier stond "ik bouw het zelf, geen bedrijf, geen
+             supportafdeling" zei het in andere woorden hetzelfde als
+             bladzijde 3 van het schrift, alleen zakelijker. En het definieerde
+             Avinka bovendien met wat het NIET is, wat altijd zwakker leest dan
+             wat het wél is. */}
           <div className="w-mkr-tekst">
             <h2 className="w-mkr-kop">Even voorstellen</h2>
-            {/* ⚠️ Hier stonden ook de twee zinnen die nu ín het schrift
-               staan, en dan las je ze twee keer in één sectie. Links blijft
-               alleen wat het schrift NIET vertelt: wie er achter Avinka zit.
-               De rest lees je door te bladeren — dat is de hele reden dat het
-               schrift er is. */}
-            {/* ⚠️ Deze alinea stond in de DERDE persoon ("er zit één
-               leerkracht achter, die het bouwt") terwijl het schrift ernaast
-               in de ik-vorm staat. Dat wringt: je leest eerst over iemand en
-               daarna van iemand. Nu allebei ik-vorm.
-               Hij is ook korter: sinds het schrift het verhaal vertelt, hoeft
-               deze kolom alleen nog te zeggen wát je voor je hebt en je naar
-               het schrift te sturen. */}
             <p className="w-schrift-tekst">
-              Ik bouw Avinka zelf, naast mijn werk voor de klas. Geen bedrijf,
-              geen supportafdeling. Dit is wie je voor je hebt.
+              Avinka is niet bedacht in een vergaderzaal. Elke tool komt uit
+              werk dat ik zelf moest doen, na schooltijd, met dezelfde
+              deadlines als jij.
             </p>
             {/* De uitnodiging om te bladeren, met hetzelfde handgeschreven
                boogpijltje als bij de polaroids ("klik op een foto om de
