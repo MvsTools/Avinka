@@ -198,7 +198,11 @@ export default function DuoCollega() {
         setUitnodigenBezig(false);
         if (r.ok) {
           setVerstuurdNaar(d.naar ?? adres);
-          setNieuweLink(d.link ?? "");
+          // Bewust GEEN linkveld tonen als de mail gelukt is: je hebt net iets
+          // verstuurd, en dan leest een kopieerknop als "je moet nog iets".
+          // De link blijft bereikbaar bij de openstaande uitnodiging hierboven,
+          // en daar hoort hij ook thuis.
+          setNieuweLink("");
           setGekozenEmail("");
           laadAlles();
           return;
@@ -770,7 +774,8 @@ export default function DuoCollega() {
             {verstuurdNaar && (
               <p role="status" className="mt-3 max-w-md rounded-2xl bg-brand-soft px-4 py-3 text-sm leading-6 text-ink/75">
                 De uitnodiging is verstuurd naar <strong className="font-semibold text-ink">{verstuurdNaar}</strong>.
-                Zodra je collega hem accepteert, verschijnt die hierboven in de lijst.
+                Zodra je collega hem accepteert, verschijnt die hierboven in de lijst. Komt de
+                mail niet aan? Dan kun je de link daar alsnog kopiëren en zelf doorsturen.
               </p>
             )}
 
