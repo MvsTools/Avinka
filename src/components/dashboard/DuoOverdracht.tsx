@@ -77,6 +77,58 @@ export default function DuoOverdracht() {
     })();
   }, []);
 
+  /* Berichten opnieuw ophalen zodra je terugkomt op het tabblad of de
+     overdracht opent. Zonder dit haalde het scherm zijn berichten één keer op
+     bij het laden van het dashboard en daarna nooit meer, dus moest je de
+     pagina verversen om te zien dat je collega iets had geschreven.
+     Bewust geen timer die elke zoveel seconden navraagt: dat loopt door
+     terwijl niemand kijkt. Dit gebeurt alleen op een moment dat je er ook
+     echt naar kijkt.
+     Bewust ALLEEN de berichten en de leesstand: de namen van je collega's
+     veranderen niet terwijl jij van tabblad wisselt, dus die hoeven niet mee. */
+  useEffect(() => {
+    if (groepen.length === 0) return;
+
+    let bezig = false;
+
+    /* ⚠️ `metLeesstand` staat UIT bij het openen van het paneel. Openen
+       markeert de berichten namelijk als gelezen: het zet de leesstand hier
+       alvast op "nu" en schrijft dat tegelijk naar de database. Zou ik op dat
+       moment de leesstand ophalen, dan is die schrijfactie waarschijnlijk nog
+       onderweg, krijg ik de oude waarde terug en springt de ongelezen-teller
+       terug alsof je niets gelezen had. Bij het terugkomen op een tabblad
+       speelt dat niet, en dáár is de leesstand juist nuttig: heb je het op je
+       telefoon gelezen, dan hoort de teller hier ook weg te zijn. */
+    async function haalOp(metLeesstand: boolean) {
+      if (bezig || document.visibilityState !== "visible") return;
+      bezig = true;
+      try {
+        const ids = groepen.map((g) => g.klasId);
+        const alle = await Promise.all(ids.map((id) => getDuoOverdrachten(id)));
+        const b: Record<string, Bericht[]> = {};
+        ids.forEach((id, i) => (b[id] = alle[i]));
+        setBerichten(b);
+
+        if (metLeesstand) {
+          const gelezen = await Promise.all(ids.map((id) => getOverdrachtGelezen(id)));
+          const gl: Record<string, string | null> = {};
+          ids.forEach((id, i) => (gl[id] = gelezen[i]));
+          setGelezenOp(gl);
+        }
+      } finally {
+        bezig = false;
+      }
+    }
+
+    function bijTerugkomst() {
+      haalOp(true);
+    }
+
+    if (open) haalOp(false);
+    document.addEventListener("visibilitychange", bijTerugkomst);
+    return () => document.removeEventListener("visibilitychange", bijTerugkomst);
+  }, [groepen, open]);
+
   // Bij openen (en na versturen) onderaan het gesprek beginnen, zoals een
   // berichtenapp doet: het nieuwste bericht is waar je naar kijkt.
   useEffect(() => {
