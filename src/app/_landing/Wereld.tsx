@@ -1017,21 +1017,29 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                  zoals in een echt vriendenboekje. */}
               <div className="w-blad-voor w-papier">
                 <div className="w-schrift-inhoud">
+                  {/* ⚠️ De laatste vraag is met opzet de laatste. Het antwoord
+                     "werk na schooltijd" is precies het probleem waar de
+                     volgende bladzijde het antwoord op is — je slaat om van de
+                     klacht naar de reden. De eigenaar zei het zelf: "boem,
+                     volgende bladzijde". Zet er dus niets achter.
+                     Kort houden trouwens: een antwoord dat omloopt naar een
+                     tweede regel schuift alles eronder van de lijnen af. */}
                   <dl className="w-blad-vragen">
                     <div>
-                      <dt>waar ik tijd aan verlies</dt>
-                      <dd>rapporten en verslagen</dd>
+                      <dt>op school</dt>
+                      <dd>Regenboog Osseveld</dd>
                     </div>
                     <div>
-                      <dt>wat ik daaraan doe</dt>
-                      {/* Kort houden: "Avinka bouwen, naast de klas" liep om
-                         naar een tweede regel en dan schuift de rest van de
-                         bladzijde van de lijnen af. */}
-                      <dd>Avinka bouwen</dd>
+                      <dt>ik woon in</dt>
+                      <dd>Apeldoorn</dd>
                     </div>
                     <div>
                       <dt>het leukste aan mijn werk</dt>
-                      <dd>[ ? ]</dd>
+                      <dd>contact met de kinderen</dd>
+                    </div>
+                    <div>
+                      <dt>het minst leuke</dt>
+                      <dd>werk na schooltijd</dd>
                     </div>
                   </dl>
                 </div>
@@ -1102,15 +1110,23 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                  zonder dat het een cv wordt. De vraag doet het werk. */}
               <div className="w-blad-achter w-papier">
                 <div className="w-schrift-inhoud">
+                  {/* Alle antwoorden zijn door de eigenaar zelf opgegeven.
+                     Niets hiervan invullen of bijstellen zonder hem: het zijn
+                     feiten over een echt persoon, inclusief zijn school en
+                     woonplaats. */}
                   <p className="w-blad-kop">Persoonlijke vragen</p>
                   <dl className="w-blad-vragen">
+                    <div>
+                      <dt>leeftijd</dt>
+                      <dd>30</dd>
+                    </div>
                     <div>
                       <dt>ik geef les in</dt>
                       <dd>groep 7</dd>
                     </div>
                     <div>
                       <dt>dat doe ik al</dt>
-                      <dd>[ ? ] jaar</dd>
+                      <dd>7 jaar</dd>
                     </div>
                   </dl>
                 </div>
@@ -1362,12 +1378,17 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            het hele schrift; alle omslaande bladen liggen er absoluut
            overheen. Iets hoger dan eerst (17 → 20rem), zodat het schrift lang
            genoeg in beeld blijft om er in drie stappen doorheen te bladeren. */
-        /* 22rem en niet 20: de langste bladzijde telt acht regels, en er moet
-           onderaan ruimte overblijven voor het bladerpijltje in de hoek. */
+        /* ⚠️ DE HOOGTE VOLGT UIT DE LANGSTE BLADZIJDE, NIET UIT SMAAK.
+           "Waarom ik Avinka heb gemaakt" is de volste: een kop van twee regels,
+           een lege regel en zes regels tekst — negen regels, 270px. Daaronder
+           moet het bladerpijltje passen (32px plus 12px marge). Op 22rem lag
+           dat pijltje 7px ovér de laatste tekstregel; nagemeten, niet gegokt.
+           Kortere bladzijden houden gewoon lege regels over, en dat is precies
+           hoe een schrift eruitziet. */
         .w-schrift-blad {
           grid-column: 2;
           position: relative;
-          min-height: 22rem;
+          min-height: 25rem;
         }
         /* Het papier zelf: dit is wat elke bladzijde EN elke achterkant van
            een blad krijgt. Losgetrokken van .w-schrift-blad omdat de
