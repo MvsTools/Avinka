@@ -450,8 +450,14 @@ export default function KlasManager() {
                   return (
                     <li key={i} className="relative">
                       <button
-                        onClick={() => setProfielIdx(i)}
-                        className="flex w-full items-center gap-2 rounded-xl border border-black/5 bg-white py-1.5 pl-1.5 pr-6 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-md"
+                        onClick={() => magBewerken && setProfielIdx(i)}
+                        disabled={!magBewerken}
+                        className={
+                          "flex w-full items-center gap-2 rounded-xl border border-black/5 bg-white py-1.5 pl-1.5 pr-6 text-left shadow-sm transition" +
+                          (magBewerken
+                            ? " hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-md"
+                            : " cursor-default")
+                        }
                       >
                         <span
                           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-serif text-sm font-semibold"
@@ -476,9 +482,11 @@ export default function KlasManager() {
                 })}
               </ul>
             )}
-            <p className="mt-4 text-xs text-ink/45">
-              Tik op een leerlingkaart om het geslacht in te stellen.
-            </p>
+            {magBewerken && (
+              <p className="mt-4 text-xs text-ink/45">
+                Tik op een leerlingkaart om het geslacht in te stellen.
+              </p>
+            )}
           </div>
         </div>
       )}
