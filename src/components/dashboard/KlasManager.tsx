@@ -6,6 +6,7 @@ import {
   getKlassen,
   addKlas,
   saveKlas,
+  magKlasBewerken,
   deleteKlas,
   setActieveKlas,
   getActieveKlasId,
@@ -44,6 +45,11 @@ export default function KlasManager() {
   const [nieuwGeslacht, setNieuwGeslacht] = useState<Leerling["geslacht"]>("");
   const [geladen, setGeladen] = useState(false);
   const [bewaard, setBewaard] = useState(false);
+  /* Mag ik DEZE groep bewerken? Je eigen klas altijd; een gedeelde groep
+     alleen met de rol 'volledig'. Zonder dit kon een meekijkende collega een
+     kind toevoegen, "Bewaard" te zien krijgen, en na herladen was het weg. */
+  const [magBewerken, setMagBewerken] = useState(true);
+  const [bewaarFout, setBewaarFout] = useState(false);
   const [profielIdx, setProfielIdx] = useState<number | null>(null);
   const [klasWeg, setKlasWeg] = useState<Klas | null>(null);
   const [ab, setAb] = useState<Abonnement | null>(null);
@@ -87,6 +93,20 @@ export default function KlasManager() {
     })();
   }, []);
 
+  // Bewerkrechten van de gekozen groep. Bij je eigen klas is dit meteen waar;
+  // we vragen het toch aan de database, zodat het scherm en het slot dezelfde
+  // bron gebruiken en niet uit elkaar kunnen lopen.
+  useEffect(() => {
+    if (!selId) return;
+    let actueel = true;
+    magKlasBewerken(selId).then((ok) => {
+      if (actueel) setMagBewerken(ok);
+    });
+    return () => {
+      actueel = false;
+    };
+  }, [selId]);
+
   // Abonnement laden (bepaalt hoeveel groepen je mag beheren).
   useEffect(() => {
     getAbonnement().then(setAb);
@@ -101,6 +121,7 @@ export default function KlasManager() {
     const data = sel.leerlingenData;
     const t = setTimeout(async () => {
       const ok = await saveKlas(id, { naam, leerlingenData: data });
+      setBewaarFout(!ok);
       if (ok) {
         setBewaard(true);
         setTimeout(() => setBewaard(false), 1500);
@@ -126,6 +147,9 @@ export default function KlasManager() {
     );
   }
 
+  // Alle wijzigingen lopen via patchSel; door hier én in voegToe/
+  // verwijderLeerling te stoppen kan geen enkele knop er stiekem langs, ook
+  // niet eentje die later wordt toegevoegd zonder aan rechten te denken.
   function hernoem(naam: string) {
     setKlassen((ks) => ks.map((k) => (k.id === selId ? { ...k, naam } : k)));
   }
@@ -172,14 +196,14 @@ export default function KlasManager() {
   // ── Leerling-acties ─────────────────────────────────────────────────────────
   function voegToe() {
     const naam = netjes(invoer);
-    if (!naam || !sel) return;
+    if (!naam || !sel || !magBewerken) return;
     patchSel([...sel.leerlingenData, { naam, geslacht: nieuwGeslacht }]);
     setInvoer("");
     inputRef.current?.focus();
   }
 
   function verwijderLeerling(index: number) {
-    if (!sel) return;
+    if (!sel || !magBewerken) return;
     patchSel(sel.leerlingenData.filter((_, i) => i !== index));
     setProfielIdx(null);
   }
@@ -276,6 +300,7 @@ export default function KlasManager() {
                   id="groep"
                   value={sel.naam}
                   onChange={(e) => hernoem(e.target.value)}
+                  disabled={!magBewerken}
                   placeholder="Bijv. Groep 5 of De Dolfijnen"
                   className="mt-1.5 w-full rounded-xl border border-black/10 bg-cream px-4 py-2.5 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
                 />
@@ -289,6 +314,7 @@ export default function KlasManager() {
                   <input
                     id="leerling"
                     ref={inputRef}
+                    disabled={!magBewerken}
                     value={invoer}
                     onChange={(e) => setInvoer(e.target.value)}
                     onKeyDown={(e) => {
@@ -304,7 +330,8 @@ export default function KlasManager() {
                   <button
                     onClick={voegToe}
                     aria-label="Toevoegen"
-                    className="shrink-0 rounded-xl bg-brand px-4 py-2.5 text-base font-bold text-white shadow-sm shadow-brand/20 transition hover:bg-brand-dark"
+                    disabled={!magBewerken}
+                    className="shrink-0 rounded-xl bg-brand px-4 py-2.5 text-base font-bold text-white shadow-sm shadow-brand/20 transition hover:bg-brand-dark disabled:opacity-40"
                   >
                     +
                   </button>
@@ -354,6 +381,25 @@ export default function KlasManager() {
               </div>
             </div>
 
+            {/* Kijk je bij deze groep alleen mee, dan is de lijst van je
+                collega en pas je hem niet aan. Vóóraf zeggen, niet pas als het
+                misgaat: het toevoegen leek eerder gewoon te lukken. */}
+            {!magBewerken && (
+              <p className="mb-3 pl-9 text-sm text-ink/55">
+                Je kijkt mee bij deze groep. De klassenlijst is van je collega, dus die
+                pas je hier niet aan.
+              </p>
+            )}
+            {bewaarFout && (
+              <p
+                role="alert"
+                className="mb-3 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700"
+              >
+                Deze wijziging is niet opgeslagen. Herlaad de pagina om te zien wat er
+                wél bewaard is.
+              </p>
+            )}
+
             <div className="flex items-center justify-between gap-3 pl-9">
               <h2 className="text-sm font-bold text-ink">
                 {sel.leerlingenData.length === 0
@@ -401,6 +447,7 @@ export default function KlasManager() {
                       <button
                         onClick={() => verwijderLeerling(i)}
                         aria-label={`${l.naam} verwijderen`}
+                        hidden={!magBewerken}
                         className="absolute right-1 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full text-ink/25 transition hover:bg-rose-100 hover:text-rose-600"
                       >
                         ✕

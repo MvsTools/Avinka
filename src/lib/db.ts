@@ -257,22 +257,42 @@ export async function addKlas(naam: string): Promise<Klas | null> {
   return mapKlas(data as KlasRow, user.id);
 }
 
+// ⚠️ Let op de `.select()` achter de update, en haal die er nooit af.
+// Een update die door RLS wordt tegengehouden raakt NUL rijen en dat is voor
+// Postgres geen fout: `error` blijft leeg en dit gaf dus "gelukt" terug terwijl
+// er niets was opgeslagen. Een meekijkende collega kreeg zo een kind aan de
+// klas toegevoegd te zien, met een "Bewaard"-melding erbij, en na herladen was
+// het weg. Door de gewijzigde rij op te vragen weet je het echt: geen rij terug
+// betekent niet opgeslagen.
 export async function saveKlas(
   id: string,
   k: { naam: string; leerlingenData: Leerling[] },
 ): Promise<boolean> {
   const sb = createClient();
   const namen = k.leerlingenData.map((l) => l.naam);
-  const { error } = await sb
+  const { data, error } = await sb
     .from("klassen")
     .update({ naam: k.naam, leerlingen: namen, leerlingen_data: k.leerlingenData })
-    .eq("id", id);
-  return !error;
+    .eq("id", id)
+    .select("id");
+  return !error && Array.isArray(data) && data.length > 0;
 }
 
+// Mag ik deze groep bewerken? Je eigen klas altijd; een gedeelde groep alleen
+// met de rol 'volledig'. Zelfde bron als de database gebruikt, zodat het
+// scherm en het slot niet uit elkaar kunnen lopen.
+export async function magKlasBewerken(klasId: string): Promise<boolean> {
+  const sb = createClient();
+  const { data, error } = await sb.rpc("klas_toegang_volledig", { p_klas: klasId });
+  return !error && data === true;
+}
+
+// Zelfde valkuil als bij saveKlas: een delete die RLS tegenhoudt raakt nul
+// rijen zonder fout. Vandaar ook hier de .select().
 export async function deleteKlas(id: string): Promise<boolean> {
   const sb = createClient();
-  const { error } = await sb.from("klassen").delete().eq("id", id);
+  const { data, error } = await sb.from("klassen").delete().eq("id", id).select("id");
+  if (!error && Array.isArray(data) && data.length === 0) return false;
   return !error;
 }
 
