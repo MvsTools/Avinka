@@ -1,4 +1,5 @@
 import AdminOverzicht from "@/components/admin/AdminOverzicht";
+import AdminMailTest from "@/components/admin/AdminMailTest";
 
 export default function AdminOverzichtPage() {
   return (
@@ -10,6 +11,9 @@ export default function AdminOverzichtPage() {
         </p>
       </div>
       <AdminOverzicht />
+      {/* Hulpmiddel bij het opzetten van de mail; mag weg zodra de echte
+          mails draaien (zie docs/plan-mail.md). */}
+      <AdminMailTest />
     </div>
   );
 }

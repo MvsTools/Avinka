@@ -64,9 +64,14 @@ export default function DuoCollega() {
   const [gekozenKlas, setGekozenKlas] = useState("");
   const [gekozenRol, setGekozenRol] = useState<DuoRol>("volledig");
   const [nieuweLink, setNieuweLink] = useState("");
+  /* Het adres van je collega. Leeg = de oude werkwijze: je krijgt een link die
+     je zelf doorstuurt. Ingevuld = het bericht gaat automatisch de deur uit,
+     en dan is de uitnodiging ALLEEN te accepteren door precies dat adres. */
+  const [gekozenEmail, setGekozenEmail] = useState("");
+  const [verstuurdNaar, setVerstuurdNaar] = useState("");
   const [gekopieerd, setGekopieerd] = useState(false);
   const [uitnodigenBezig, setUitnodigenBezig] = useState(false);
-  const [uitnodigenFout, setUitnodigenFout] = useState(false);
+  const [uitnodigenFout, setUitnodigenFout] = useState("");
 
   const uitnodigingsCode = zoekParams.get("duo");
   const [voorbeeld, setVoorbeeld] = useState<
@@ -176,14 +181,60 @@ export default function DuoCollega() {
   async function nodigUit() {
     if (!gekozenKlas) return;
     setUitnodigenBezig(true);
-    setUitnodigenFout(false);
+    setUitnodigenFout("");
+    setVerstuurdNaar("");
+    const adres = gekozenEmail.trim();
+
+    // Met adres: de server maakt de uitnodiging én verstuurt de mail. Dat moet
+    // daar gebeuren, want de verzendsleutel hoort niet in de browser.
+    if (adres) {
+      try {
+        const r = await fetch("/api/duo/uitnodigen", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ klasId: gekozenKlas, rol: gekozenRol, email: adres }),
+        });
+        const d = await r.json();
+        setUitnodigenBezig(false);
+        if (r.ok) {
+          setVerstuurdNaar(d.naar ?? adres);
+          // Bewust GEEN linkveld tonen als de mail gelukt is: je hebt net iets
+          // verstuurd, en dan leest een kopieerknop als "je moet nog iets".
+          // De link blijft bereikbaar bij de openstaande uitnodiging hierboven,
+          // en daar hoort hij ook thuis.
+          setNieuweLink("");
+          setGekozenEmail("");
+          laadAlles();
+          return;
+        }
+        // De uitnodiging bestaat soms wél terwijl de mail niet aankwam. Dan is
+        // de link nog steeds bruikbaar, dus die tonen we alsnog.
+        if (d.link) setNieuweLink(d.link);
+        setUitnodigenFout(
+          d.error === "ongeldig_adres"
+            ? "Dat lijkt geen geldig e-mailadres."
+            : d.error === "eigen_adres"
+              ? "Dat is je eigen adres. Vul het adres van je collega in."
+              : d.error === "mail_mislukt"
+                ? "De uitnodiging staat klaar, maar de mail is niet verstuurd. Stuur de link hieronder zelf even door."
+                : "Het uitnodigen lukte niet. Probeer het zo nog eens.",
+        );
+        laadAlles();
+      } catch {
+        setUitnodigenBezig(false);
+        setUitnodigenFout("Geen verbinding met de server. Probeer het zo nog eens.");
+      }
+      return;
+    }
+
+    // Zonder adres: de oude weg, een link die je zelf doorstuurt.
     const code = await maakDuoUitnodiging(gekozenKlas, gekozenRol);
     setUitnodigenBezig(false);
     if (code) {
       setNieuweLink(`${window.location.origin}/dashboard/instellingen?duo=${code}`);
       laadAlles();
     } else {
-      setUitnodigenFout(true);
+      setUitnodigenFout("Het maken van de link lukte niet. Probeer het zo nog eens.");
     }
   }
 
@@ -381,7 +432,41 @@ export default function DuoCollega() {
               </>
             )}
 
-            {!geaccepteerd && typeof voorbeeld === "object" && voorbeeld !== null && (
+            {/* De uitnodiging is per mail verstuurd, maar niet aan het adres
+                waarmee jij bent ingelogd. Bewust NIET vertellen voor wie hij
+                dan wél was: is de link bij de verkeerde persoon beland, dan
+                hoeft die niet ook nog het adres van een collega te weten. */}
+            {!geaccepteerd &&
+              typeof voorbeeld === "object" &&
+              voorbeeld !== null &&
+              !voorbeeld.pastBijMij && (
+                <>
+                  <h2 id="duo-uitnodiging-kop" className="font-serif text-2xl font-semibold text-ink">
+                    Deze uitnodiging is voor een ander adres
+                  </h2>
+                  <p className="mt-3 leading-7 text-ink/75">
+                    Hij is per mail verstuurd naar een ander e-mailadres dan waarmee je nu
+                    bent ingelogd. Log in met het adres waarop je de uitnodiging kreeg, of
+                    maak daarmee een account aan.
+                  </p>
+                  <p className="mt-3 leading-7 text-ink/60">
+                    Klopt er iets niet? Vraag je collega om een nieuwe uitnodiging.
+                  </p>
+                  <div className="mt-6 flex justify-end">
+                    <button
+                      onClick={verwijderDuoParam}
+                      className="rounded-xl border border-black/10 px-5 py-2.5 text-sm font-semibold text-ink/70 transition hover:border-black/20"
+                    >
+                      Sluiten
+                    </button>
+                  </div>
+                </>
+              )}
+
+            {!geaccepteerd &&
+              typeof voorbeeld === "object" &&
+              voorbeeld !== null &&
+              voorbeeld.pastBijMij && (
               <>
                 <h2 id="duo-uitnodiging-kop" className="font-serif text-2xl font-semibold text-ink">
                   {voorbeeld.uitnodigerVoornaam || "Een collega"} nodigt je uit
@@ -639,6 +724,35 @@ export default function DuoCollega() {
                 : "Werkt mee aan de takenlijst, de gedeelde map en de overdracht, en leest de rapporten mee. Schrijft ze niet en past de klassenlijst niet aan."}
             </p>
 
+            {/* Het adres van je collega. Leeg laten mag: dan krijg je de oude
+                link die je zelf doorstuurt. Dat blijft bestaan als vangnet,
+                want mail hapert vaker dan je denkt: een streng spamfilter op
+                schoolmail, een typefout, of je collega zit naast je en je wilt
+                het in tien seconden regelen. */}
+            <label htmlFor="duo-email" className="mt-4 block text-sm font-bold text-ink">
+              E-mailadres van je collega{" "}
+              <span className="font-normal text-ink/50">(optioneel)</span>
+            </label>
+            <input
+              id="duo-email"
+              type="email"
+              value={gekozenEmail}
+              onChange={(e) => setGekozenEmail(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  nodigUit();
+                }
+              }}
+              placeholder="leeg laten = je krijgt een link om zelf te versturen"
+              autoComplete="off"
+              className="mt-1.5 w-full max-w-md rounded-xl border border-black/10 bg-cream px-4 py-2.5 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+            />
+            <p className="mt-1.5 text-xs text-ink/50">
+              Vul je een adres in, dan gaat de uitnodiging vanzelf de deur uit en is hij
+              alleen te accepteren door precies dat adres.
+            </p>
+
             <button
               onClick={nodigUit}
               disabled={!gekozenKlas || uitnodigenBezig}
@@ -646,12 +760,22 @@ export default function DuoCollega() {
             >
               {uitnodigenBezig
                 ? "Bezig…"
-                : `Maak uitnodigingslink${gekozenKlas ? ` voor ${klasNaamVan(gekozenKlas)}` : ""}`}
+                : gekozenEmail.trim()
+                  ? "Verstuur uitnodiging"
+                  : `Maak uitnodigingslink${gekozenKlas ? ` voor ${klasNaamVan(gekozenKlas)}` : ""}`}
             </button>
 
             {uitnodigenFout && (
-              <p className="mt-3 text-sm text-red-600">
-                Het maken van de link lukte niet. Probeer het zo nog eens.
+              <p role="alert" className="mt-3 max-w-md text-sm font-semibold text-red-600">
+                {uitnodigenFout}
+              </p>
+            )}
+
+            {verstuurdNaar && (
+              <p role="status" className="mt-3 max-w-md rounded-2xl bg-brand-soft px-4 py-3 text-sm leading-6 text-ink/75">
+                De uitnodiging is verstuurd naar <strong className="font-semibold text-ink">{verstuurdNaar}</strong>.
+                Zodra je collega hem accepteert, verschijnt die hierboven in de lijst. Komt de
+                mail niet aan? Dan kun je de link daar alsnog kopiëren en zelf doorsturen.
               </p>
             )}
 
