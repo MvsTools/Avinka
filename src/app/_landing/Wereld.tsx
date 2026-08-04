@@ -929,16 +929,27 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                alleen wat het schrift NIET vertelt: wie er achter Avinka zit.
                De rest lees je door te bladeren — dat is de hele reden dat het
                schrift er is. */}
+            {/* ⚠️ Deze alinea stond in de DERDE persoon ("er zit één
+               leerkracht achter, die het bouwt") terwijl het schrift ernaast
+               in de ik-vorm staat. Dat wringt: je leest eerst over iemand en
+               daarna van iemand. Nu allebei ik-vorm.
+               Hij is ook korter: sinds het schrift het verhaal vertelt, hoeft
+               deze kolom alleen nog te zeggen wát je voor je hebt en je naar
+               het schrift te sturen. */}
             <p className="w-schrift-tekst">
-              Achter Avinka zit geen bedrijf met een supportafdeling. Er zit
-              één leerkracht achter, die het naast zijn werk voor de klas
-              bouwt.
+              Ik bouw Avinka zelf, naast mijn werk voor de klas. Geen bedrijf,
+              geen supportafdeling. Dit is wie je voor je hebt.
             </p>
             {/* De uitnodiging om te bladeren, met hetzelfde handgeschreven
                boogpijltje als bij de polaroids ("klik op een foto om de
                ervaring te lezen"). Dezelfde soort handeling, dus dezelfde
                aanwijzing — een tweede vormtaal verzinnen voor hetzelfde
-               gebaar maakt een pagina rommelig. */}
+               gebaar maakt een pagina rommelig.
+               ⚠️ WEL EEN ANDER PAD, en dat was fout overgenomen. Bij de
+               polaroids wijst het pijltje naar BENEDEN, want daar hangen de
+               foto's onder de tekst. Hier ligt het schrift ERNAAST, en dan
+               wijst een pijl naar beneden naar leeg veld. Dit is dezelfde
+               hand en dezelfde dikte, maar de boog loopt naar rechts. */}
             <p className="w-mkr-wenk">
               blader zelf door mijn schrift
               <svg
@@ -950,8 +961,8 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                 strokeLinecap="round"
                 aria-hidden
               >
-                <path d="M2 4 C 14 6, 26 10, 32 22" />
-                <path d="M26 20 L 32.5 23 L 34 16" />
+                <path d="M2 20 C 10 23, 22 21, 32 13" />
+                <path d="M25 12.5 L 33.5 12 L 30 19" />
               </svg>
             </p>
           </div>
@@ -1192,10 +1203,15 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            Het schrift heeft een vaste maat en de tekst krijgt de rest. Zo
            blijft het schrift een voorwerp met een eigen formaat in plaats van
            een blok dat met het scherm meerekt. */
+        /* ⚠️ Boven uitlijnen en niet centreren. Met align-items:center zweefde
+           de kop halverwege het schrift, en dan lijkt het of de twee helften
+           niets met elkaar te maken hebben. Nu begint de kop op dezelfde
+           hoogte als de bovenrand van het schrift en lees je de sectie van
+           linksboven naar rechts. */
         .w-mkr-rij {
           display: grid;
           gap: clamp(28px, 4vw, 56px);
-          align-items: center;
+          align-items: start;
         }
         @media (min-width: 900px) {
           .w-mkr-rij { grid-template-columns: minmax(0, 1fr) 32rem; }
