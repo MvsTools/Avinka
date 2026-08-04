@@ -38,15 +38,11 @@ export function uitnodigingTekst(u: Uitnodiging): string {
     "Hallo,",
     "",
     `${wie} draait ${u.klasNaam} en wil dat samen met jou doen in Avinka.`,
-    "Accepteer je, dan delen jullie de rapporten, bestanden, taken en de",
-    "overdracht van die groep.",
     "",
     u.link,
     "",
     "Heb je nog geen Avinka-account? Maak er dan een aan met dit e-mailadres.",
     "De uitnodiging is aan dit adres gekoppeld en werkt niet op een ander.",
-    "",
-    "Wil je niet meedoen? Dan hoef je niets te doen.",
     "",
     "Met vriendelijke groet,",
     "Avinka",
@@ -62,7 +58,7 @@ export function uitnodigingHtml(u: Uitnodiging): string {
     <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:20px;font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
       <tr><td style="padding:34px 36px 0;">
         <h1 style="margin:0;font-family:Fraunces,Georgia,'Times New Roman',serif;font-size:26px;line-height:1.25;color:#221c3a;">${wie} nodigt je uit</h1>
-        <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Om <strong style="color:#221c3a;">${klas}</strong> samen te draaien in Avinka. Jullie delen dan de rapporten, bestanden, taken en de overdracht van die groep.</p>
+        <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Om <strong style="color:#221c3a;">${klas}</strong> samen te draaien in Avinka.</p>
       </td></tr>
       <tr><td align="center" style="padding:26px 36px 0;">
         <table cellpadding="0" cellspacing="0" border="0"><tr>
@@ -73,7 +69,6 @@ export function uitnodigingHtml(u: Uitnodiging): string {
       </td></tr>
       <tr><td style="padding:24px 36px 0;">
         <p style="margin:0;font-size:15px;line-height:1.65;color:#4a4458;">Heb je nog geen Avinka-account? Maak er dan een aan met <strong style="color:#221c3a;">dit e-mailadres</strong>. De uitnodiging is eraan gekoppeld en werkt niet op een ander adres.</p>
-        <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#6b6880;">Wil je niet meedoen? Dan hoef je niets te doen.</p>
       </td></tr>
       <tr><td style="padding:24px 36px 30px;">
         <div style="border-top:1px solid #ece7e0;padding-top:16px;">
