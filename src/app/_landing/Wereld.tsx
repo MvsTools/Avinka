@@ -1026,7 +1026,7 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                      tweede regel schuift alles eronder van de lijnen af. */}
                   <dl className="w-blad-vragen">
                     <div>
-                      <dt>op school</dt>
+                      <dt>school</dt>
                       <dd>Regenboog Osseveld</dd>
                     </div>
                     <div>
@@ -1035,7 +1035,7 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                     </div>
                     <div>
                       <dt>het leukste aan mijn werk</dt>
-                      <dd>contact met de kinderen</dd>
+                      <dd>een veilige plek bieden</dd>
                     </div>
                     <div>
                       <dt>het minst leuke</dt>
