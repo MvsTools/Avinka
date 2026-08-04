@@ -39,14 +39,14 @@ export default async function DashboardStart() {
   ]);
   const vergrendeld = (slug: string) => (ab ? !magToolGebruiken(ab, slug) : false);
 
-  // Kijk je bij de actieve groep alleen mee, dan kun je daar geen rapporten
-  // vastleggen. Dat hoort hier te staan en niet pas ín de tool: anders kom je
-  // er pas achter als je al een rapport hebt getypt.
+  // Kijk je bij de actieve groep alleen mee, dan kun je de rapporten wél lezen
+  // maar niet vastleggen. Dat hoort hier te staan en niet pas ín de tool:
+  // anders kom je er pas achter als je al een rapport hebt getypt.
   // Achter een uitroepteken, dus de tekst mag iets voller: je leest hem alleen
   // als je er zelf naar vraagt.
   const meekijkNotitie = (slug: string) =>
-    slug === "rapporten" && !rapportGrens.magRapporten
-      ? `Je kijkt mee bij ${rapportGrens.klasNaam || "deze groep"}. Meelezen kan, maar rapporten opslaan hoort bij de leerkracht van de groep.`
+    slug === "rapporten" && !rapportGrens.magRapportenBewerken
+      ? `Je kijkt mee bij ${rapportGrens.klasNaam || "deze groep"}. Je kunt de rapporten lezen, maar niet wijzigen of opslaan.`
       : "";
 
   return (

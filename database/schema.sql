@@ -1342,12 +1342,21 @@ alter table public.rapporten add column if not exists klas_id uuid
   references public.klassen(id) on delete set null;
 create index if not exists idx_rapporten_klas on public.rapporten(klas_id);
 
--- ⚠️ Hier ligt de grens van de rol 'meekijken': rapporten zijn geschreven
--- oordelen over kinderen, en die deel je alleen met een collega die
--- medeverantwoordelijk is voor de groep — niet met iedereen die meehelpt.
--- Vandaar `klas_toegang_volledig` en niet `klas_toegang`.
+-- ⚠️ Hier ligt de grens van de rol 'meekijken', en die loopt tussen LEZEN en
+-- SCHRIJVEN. Beslissing van de eigenaar (4-8): een collega die meedraait moet
+-- kunnen weten wat er over een kind geschreven is, ook al legt hij het zelf
+-- niet vast. Vastleggen blijft bij wie medeverantwoordelijk is voor de groep.
+--
+-- ⚠️ De 403-controle in /api/rapporten hoort hierbij en is niet optioneel:
+-- door het leesrecht vindt "bestaat er al een rapport voor dit kind" ook bij
+-- een meekijker een rij, en de update daarop raakt nul rijen zónder fout.
+-- Zonder die controle ziet opslaan eruit alsof het lukte.
 drop policy if exists "duo-partner rapporten" on public.rapporten;
-create policy "duo-partner rapporten" on public.rapporten
+drop policy if exists "duo-partner rapporten lezen" on public.rapporten;
+create policy "duo-partner rapporten lezen" on public.rapporten
+  for select using (klas_id is not null and public.klas_toegang(rapporten.klas_id));
+drop policy if exists "duo-partner rapporten schrijven" on public.rapporten;
+create policy "duo-partner rapporten schrijven" on public.rapporten
   for all using (klas_id is not null and public.klas_toegang_volledig(rapporten.klas_id))
   with check (klas_id is not null and public.klas_toegang_volledig(rapporten.klas_id));
 

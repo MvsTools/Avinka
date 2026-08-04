@@ -44,7 +44,7 @@ function gedeeldeMapNaam(klasNaam: string): string {
 
 const ROL_TEKST: Record<DuoRol, string> = {
   volledig: "Volledig",
-  meekijken: "Meekijken (geen rapporten)",
+  meekijken: "Meekijken (leest mee)",
 };
 
 export default function DuoCollega() {
@@ -517,7 +517,9 @@ export default function DuoCollega() {
               ))}
             </div>
 
-            {/* Rol: bepaalt of rapporten meegaan. Bewust een keuze vooraf en niet
+            {/* Rol: bepaalt of iemand rapporten mag VASTLEGGEN. Lezen mag
+                sinds 4-8 allebei; het verschil zit in het schrijven en in het
+                aanpassen van de klassenlijst. Bewust een keuze vooraf en niet
                 iets wat je achteraf moet ontdekken. */}
             <div className="mt-3 flex flex-wrap gap-2">
               {(["volledig", "meekijken"] as DuoRol[]).map((r) => (
@@ -538,8 +540,8 @@ export default function DuoCollega() {
             </div>
             <p className="mt-1.5 text-xs text-ink/50">
               {gekozenRol === "volledig"
-                ? "Ziet en bewerkt alles van deze groep, inclusief rapporten."
-                : "Werkt mee aan de groep, de takenlijst, de gedeelde map en de overdracht, maar ziet geen rapporten."}
+                ? "Ziet en bewerkt alles van deze groep, inclusief de rapporten en de klassenlijst."
+                : "Werkt mee aan de takenlijst, de gedeelde map en de overdracht, en leest de rapporten mee. Schrijft ze niet en past de klassenlijst niet aan."}
             </p>
 
             <button

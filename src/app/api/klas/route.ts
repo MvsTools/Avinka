@@ -38,19 +38,19 @@ export async function GET() {
       ? ruw
       : namen.map((n) => ({ naam: n, geslacht: "" }));
 
-  // Mag je voor DEZE groep rapporten schrijven? Kijk je alleen mee, dan niet:
-  // rapporten zijn geschreven oordelen over kinderen en die horen bij wie
-  // medeverantwoordelijk is voor de groep.
+  // Mag je voor DEZE groep rapporten BEWERKEN? Kijk je alleen mee, dan niet:
+  // rapporten zijn geschreven oordelen over kinderen en die legt vast wie er
+  // ook verantwoordelijk voor is. Lezen mag een meekijker sinds 4-8 wel.
   //
-  // De database weigert zo'n rij sowieso (policy "duo-partner rapporten"),
-  // maar zonder dit antwoord merkt de tool dat pas ná het schrijven van een
-  // heel rapport. Nu kan hij het vooraf zeggen.
-  let magRapporten = true;
+  // De database weigert het schrijven zelf ook (policy "duo-partner rapporten
+  // schrijven"), maar zonder dit antwoord merkt de tool dat pas ná het typen
+  // van een heel rapport. Nu kan hij het vooraf zeggen.
+  let magRapportenBewerken = true;
   if (data?.id) {
     const { data: volledig } = await supabase.rpc("klas_toegang_volledig", {
       p_klas: data.id,
     });
-    magRapporten = volledig === true;
+    magRapportenBewerken = volledig === true;
   }
 
   return NextResponse.json({
@@ -58,6 +58,6 @@ export async function GET() {
     naam: data?.naam ?? "",
     leerlingen: namen, // platte namenlijst — bestaande tools blijven werken
     leerlingenData, // [{naam, geslacht}] — voor tools die hij/zij willen gebruiken
-    magRapporten,
+    magRapportenBewerken,
   });
 }

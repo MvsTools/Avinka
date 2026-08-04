@@ -49,14 +49,15 @@ export async function haalActieveKlas<T = Record<string, unknown>>(
 /* Mag je voor de actieve groep rapporten schrijven?
  *
  * Nee als je er alleen meekijkt: rapporten zijn geschreven oordelen over
- * kinderen en horen bij wie medeverantwoordelijk is voor de groep. De
- * database bewaakt dit zelf ook (policy "duo-partner rapporten"); dit is er
- * om het te kunnen zéggen vóór iemand een heel rapport heeft getypt.
+ * kinderen en die legt vast wie er ook verantwoordelijk voor is. LEZEN mag
+ * een meekijker wel (beslissing 4-8). De database bewaakt het schrijven zelf
+ * ook (policy "duo-partner rapporten schrijven"); dit is er om het te kunnen
+ * zéggen vóór iemand een heel rapport heeft getypt.
  *
  * Zonder groep is er niets te beperken: dan schrijf je gewoon voor jezelf. */
 export async function haalRapportGrens(
   supabase: SupabaseClient,
-): Promise<{ klasNaam: string; magRapporten: boolean }> {
+): Promise<{ klasNaam: string; magRapportenBewerken: boolean }> {
   // Hier bewust NIET laten klappen: dit voedt alleen een regeltje op een
   // toolkaart. Gaat er iets mis, dan laten we die regel weg in plaats van de
   // hele Start-pagina te breken. Het slot zelf zit in de database, niet hier.
@@ -67,12 +68,12 @@ export async function haalRapportGrens(
       "id, naam",
     );
   } catch {
-    return { klasNaam: "", magRapporten: true };
+    return { klasNaam: "", magRapportenBewerken: true };
   }
-  if (!klas?.id) return { klasNaam: "", magRapporten: true };
+  if (!klas?.id) return { klasNaam: "", magRapportenBewerken: true };
 
   const { data: volledig } = await supabase.rpc("klas_toegang_volledig", {
     p_klas: klas.id,
   });
-  return { klasNaam: (klas.naam ?? "").trim(), magRapporten: volledig === true };
+  return { klasNaam: (klas.naam ?? "").trim(), magRapportenBewerken: volledig === true };
 }
