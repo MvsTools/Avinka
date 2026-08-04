@@ -115,15 +115,31 @@ export default function KlasManager() {
 
   // ── Automatisch bewaren van de geselecteerde klas ─────────────────────────
   const sig = sel ? JSON.stringify({ n: sel.naam, d: sel.leerlingenData }) : "";
+  /* Wat er voor deze klas al in de database staat. Zonder dit schreef het
+     scherm de klas terug bij élk bezoek en bij élke klaswisseling, want dan
+     telt "de zojuist geladen stand" als een wijziging. Dat viel niet op zolang
+     zo'n overbodige opslag stilletjes slaagde — maar bij een groep waar je
+     alleen meekijkt mislukt hij, en dan stond er meteen bij het openen een
+     rode melding over iets wat je niet eens gedaan had. */
+  const bekendeStand = useRef<{ id: string; sig: string }>({ id: "", sig: "" });
   useEffect(() => {
     if (!geladen || !sel) return;
     const id = sel.id;
+
+    // Eerste keer dat we deze klas zien: dít is de stand uit de database.
+    if (bekendeStand.current.id !== id) {
+      bekendeStand.current = { id, sig };
+      return;
+    }
+    if (bekendeStand.current.sig === sig) return;
+
     const naam = sel.naam.trim();
     const data = sel.leerlingenData;
     const t = setTimeout(async () => {
       const ok = await saveKlas(id, { naam, leerlingenData: data });
       setBewaarFout(!ok);
       if (ok) {
+        bekendeStand.current = { id, sig };
         setBewaard(true);
         setTimeout(() => setBewaard(false), 1500);
       }
