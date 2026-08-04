@@ -101,23 +101,19 @@ export default function ProefScherm() {
           </button>
         </div>
 
-        {/* De drempels testen: hieronder valt de onderste regel weg, en bij
-           heel weinig data verdwijnt de hele sectie. */}
+        {/* ⚠️ Hier stonden knoppen om de DREMPELS te testen (weinig data → de
+           sectie hoort te verdwijnen). Die drempels bestaan niet meer: het bord
+           staat er nu altijd, en de eerlijkheid komt uit de statusregel op het
+           rapport. Wat wél te testen blijft is de andere kant: hoe het eruit
+           ziet als de getallen groot worden. */}
         <div className="mt-4 flex flex-wrap items-center gap-3 text-base">
-          <span className="text-ink/50">Drempels uitproberen:</span>
+          <span className="text-ink/50">Uitersten bekijken:</span>
           <button
             type="button"
-            onClick={() => setCijfers({ minuten: 77_040, leerkrachten: 9, uitwerkingen: 120 })}
+            onClick={() => setCijfers({ minuten: 5_400, leerkrachten: 2, uitwerkingen: 225 })}
             className="underline underline-offset-4 hover:text-brand-dark"
           >
-            weinig leerkrachten en uitwerkingen
-          </button>
-          <button
-            type="button"
-            onClick={() => setCijfers({ minuten: 2_000, leerkrachten: 4, uitwerkingen: 30 })}
-            className="underline underline-offset-4 hover:text-brand-dark"
-          >
-            bijna geen data (sectie hoort te verdwijnen)
+            zoals het er nu echt voorstaat
           </button>
           {/* Wat gebeurt er als het echt gaat lopen? 1000 leerkrachten die elk
              ~2 uur per week terugwinnen is bijna 100.000 uur per jaar. */}
@@ -133,7 +129,11 @@ export default function ProefScherm() {
         </div>
       </div>
 
-      <div className="relative z-10 mt-10">
+      {/* ⚠️ Ruim boven het rapport, want de mintgolf van die sectie steekt
+         175px boven zijn eigen sectie uit (zo begint het veld al bij de
+         bovenrand, zie Cijfers.tsx). Met minder ruimte schuift die golf over
+         de knoppen hierboven heen en is de bediening onbruikbaar. */}
+      <div className="relative z-10 mt-52">
         <WereldCijfers cijfers={cijfers} bijhouden={false} />
       </div>
 
