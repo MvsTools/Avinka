@@ -18,9 +18,11 @@ import {
   type Klas,
   type DuoKoppel,
   type DuoRol,
+  type DuoUitnodiging,
   type KlasCollega,
   type Bestand,
 } from "@/lib/db";
+import { meldVoorkeurenGewijzigd } from "@/lib/voorkeuren-verversen";
 
 // Collega's bij deze groep: samen één klas draaien. Was eerst alleen voor een
 // duobaan (twee leerkrachten), maar er kunnen er meer bij — een assistent
@@ -68,7 +70,7 @@ export default function DuoCollega() {
 
   const uitnodigingsCode = zoekParams.get("duo");
   const [voorbeeld, setVoorbeeld] = useState<
-    { klasNaam: string; status: string } | null | "laden" | "fout"
+    DuoUitnodiging | null | "laden" | "fout"
   >(uitnodigingsCode ? "laden" : null);
   const [accepterenBezig, setAccepterenBezig] = useState(false);
   const [handmatigeCode, setHandmatigeCode] = useState("");
@@ -108,6 +110,17 @@ export default function DuoCollega() {
     bekijkDuoUitnodiging(uitnodigingsCode).then((v) => setVoorbeeld(v ?? "fout"));
   }, [uitnodigingsCode]);
 
+  // Escape sluit de pop-up, net als "Later". Niet tijdens het accepteren: dan
+  // loopt er een verzoek en zou je het scherm kwijtraken zonder de uitkomst.
+  useEffect(() => {
+    if (!uitnodigingsCode || !voorbeeld || accepterenBezig) return;
+    function bijToets(e: KeyboardEvent) {
+      if (e.key === "Escape") verwijderDuoParam();
+    }
+    window.addEventListener("keydown", bijToets);
+    return () => window.removeEventListener("keydown", bijToets);
+  });
+
   function verwijderDuoParam() {
     const params = new URLSearchParams(zoekParams.toString());
     params.delete("duo");
@@ -134,6 +147,10 @@ export default function DuoCollega() {
       setVoorbeeld(null);
       verwijderDuoParam();
       laadAlles();
+      // Accepteren vult school en groep in (zie duo_koppel_accepteren). Het
+      // formulier daaronder heeft zijn waarden al geladen en zou anders leeg
+      // blijven staan terwijl ze wél gevuld zijn.
+      meldVoorkeurenGewijzigd();
     } else {
       setVoorbeeld("fout");
     }
@@ -247,50 +264,88 @@ export default function DuoCollega() {
         </div>
       )}
 
-      {/* ── Uitnodiging accepteren (via ?duo=code) ── */}
+      {/* ── Uitnodiging accepteren (via ?duo=code) ──────────────────────────
+         Als pop-up en niet als kaartje in de pagina: wie via een uitnodiging
+         een account aanmaakt, landt hier en moest anders eerst langs het hele
+         instellingenscherm naar beneden scrollen om te vinden waarvoor hij
+         kwam. De velden School en Groep staan er wél achter, zodat je ze ziet
+         invullen zodra je accepteert. */}
       {uitnodigingsCode && voorbeeld && (
-        <div className="mt-5 rounded-2xl border border-brand/30 bg-brand-soft p-5">
-          {voorbeeld === "laden" && <p className="text-sm text-ink/70">Uitnodiging laden…</p>}
-          {voorbeeld === "fout" && (
-            <>
-              <p className="text-sm font-semibold text-ink">
-                Deze uitnodiging is niet (meer) geldig.
-              </p>
-              <p className="mt-1 text-sm text-ink/65">
-                Misschien is hij al geaccepteerd of ingetrokken. Vraag je collega om een
-                nieuwe link.
-              </p>
-              <button
-                onClick={verwijderDuoParam}
-                className="mt-3 rounded-xl border border-black/10 bg-white px-5 py-2.5 text-sm font-semibold text-ink/70 hover:border-black/20"
-              >
-                Sluiten
-              </button>
-            </>
-          )}
-          {typeof voorbeeld === "object" && voorbeeld !== null && (
-            <>
-              <p className="text-sm text-ink">
-                Je bent uitgenodigd om <strong>{voorbeeld.klasNaam}</strong> samen te
-                draaien. Als je accepteert, delen jullie deze groep.
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  onClick={accepteer}
-                  disabled={accepterenBezig}
-                  className="rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-dark disabled:opacity-50"
-                >
-                  {accepterenBezig ? "Bezig…" : "Uitnodiging accepteren"}
-                </button>
-                <button
-                  onClick={verwijderDuoParam}
-                  className="rounded-xl border border-black/10 px-5 py-2.5 text-sm font-semibold text-ink/70 hover:border-black/20"
-                >
-                  Niet nu
-                </button>
-              </div>
-            </>
-          )}
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="duo-uitnodiging-kop"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm"
+        >
+          <div className="w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl sm:p-8">
+            {voorbeeld === "laden" && (
+              <p className="text-ink/70">Uitnodiging laden…</p>
+            )}
+
+            {voorbeeld === "fout" && (
+              <>
+                <h2 id="duo-uitnodiging-kop" className="font-serif text-2xl font-semibold text-ink">
+                  Deze uitnodiging werkt niet meer
+                </h2>
+                <p className="mt-3 leading-7 text-ink/75">
+                  Misschien is hij al geaccepteerd of ingetrokken. Vraag je collega om een
+                  nieuwe link.
+                </p>
+                <div className="mt-6 flex justify-end">
+                  <button
+                    onClick={verwijderDuoParam}
+                    className="rounded-xl border border-black/10 px-5 py-2.5 text-sm font-semibold text-ink/70 transition hover:border-black/20"
+                  >
+                    Sluiten
+                  </button>
+                </div>
+              </>
+            )}
+
+            {typeof voorbeeld === "object" && voorbeeld !== null && (
+              <>
+                <h2 id="duo-uitnodiging-kop" className="font-serif text-2xl font-semibold text-ink">
+                  {voorbeeld.uitnodigerVoornaam || "Een collega"} nodigt je uit
+                </h2>
+                <p className="mt-3 leading-7 text-ink/75">
+                  Om <strong className="font-semibold text-ink">{voorbeeld.klasNaam}</strong> samen
+                  te draaien. Jullie delen dan de rapporten, bestanden, taken en de overdracht
+                  van die groep.
+                </p>
+
+                {/* Alleen tonen als er echt iets over te nemen valt: heeft de
+                   uitnodiger zelf niets ingevuld, dan is deze belofte leeg. */}
+                {(voorbeeld.schoolnaam || voorbeeld.standaardgroep) && (
+                  <div className="mt-4 rounded-2xl bg-brand-soft px-4 py-3">
+                    <p className="text-sm font-bold text-ink/80">
+                      We vullen dan ook vast voor je in:
+                    </p>
+                    <p className="mt-1 text-sm text-ink/70">
+                      {[voorbeeld.schoolnaam, voorbeeld.standaardgroep]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </div>
+                )}
+
+                <div className="mt-6 flex flex-wrap justify-end gap-2">
+                  <button
+                    onClick={verwijderDuoParam}
+                    className="rounded-xl border border-black/10 px-5 py-2.5 text-sm font-semibold text-ink/70 transition hover:border-black/20"
+                  >
+                    Later
+                  </button>
+                  <button
+                    onClick={accepteer}
+                    disabled={accepterenBezig}
+                    className="rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-dark disabled:opacity-50"
+                  >
+                    {accepterenBezig ? "Bezig…" : "Accepteren"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
 

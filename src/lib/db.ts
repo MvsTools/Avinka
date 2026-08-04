@@ -707,18 +707,36 @@ export async function zetDuoRol(koppelId: string, rol: DuoRol): Promise<boolean>
   return !error;
 }
 
+export type DuoUitnodiging = {
+  klasNaam: string;
+  status: string;
+  /* Voornaam van de uitnodiger. Leeg als die geen voornaam heeft ingevuld;
+     de pop-up valt dan terug op "Een collega". */
+  uitnodigerVoornaam: string;
+  /* School en groep van de uitnodiger: wat je overneemt als je accepteert.
+     Leeg betekent dat de uitnodiger ze zelf nog niet heeft ingevuld. */
+  schoolnaam: string;
+  standaardgroep: string;
+};
+
 // Voorbeeld van een uitnodiging op basis van de code, vóór acceptatie —
 // via security-definer RPC (RLS laat de rij zelf nog niet zien, zie schema.sql).
 export async function bekijkDuoUitnodiging(
   code: string,
-): Promise<{ klasNaam: string; status: string } | null> {
+): Promise<DuoUitnodiging | null> {
   const sb = createClient();
   const c = code.trim().toUpperCase();
   if (!c) return null;
   const { data, error } = await sb.rpc("duo_koppel_voorbeeld", { p_code: c });
   const rij = Array.isArray(data) ? data[0] : data;
   if (error || !rij) return null;
-  return { klasNaam: rij.klas_naam as string, status: rij.status as string };
+  return {
+    klasNaam: rij.klas_naam as string,
+    status: rij.status as string,
+    uitnodigerVoornaam: ((rij.uitnodiger_voornaam as string) || "").trim(),
+    schoolnaam: ((rij.schoolnaam as string) || "").trim(),
+    standaardgroep: ((rij.standaardgroep as string) || "").trim(),
+  };
 }
 
 // Accepteert de uitnodiging — pas hierna krijg je (en de uitnodiger, over en

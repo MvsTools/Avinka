@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { getVoorkeuren, saveVoorkeuren, type Voorkeuren } from "@/lib/db";
+import { VOORKEUREN_VERVERSEN } from "@/lib/voorkeuren-verversen";
 
 // Voorkeuren staan in je eigen account (Supabase, per user-id afgeschermd).
 // BEWUST geen localStorage-import meer: die data is apparaat-gebonden en lekte
@@ -224,6 +225,24 @@ export default function VoorkeurenForm() {
       }
       setGeladen(true);
     })();
+  }, []);
+
+  // Zijn de voorkeuren buiten dit formulier om gewijzigd (accepteren van een
+  // duo-uitnodiging vult school en groep in), haal ze dan opnieuw op.
+  //
+  // `eersteNaLaden` gaat bewust weer aan: zonder dat zou het automatisch
+  // bewaren hieronder de zojuist geladen waarden meteen terugschrijven. Dat is
+  // niet schadelijk, maar het zet wel een "Opgeslagen" neer bij iets waar jij
+  // niets aan hebt gedaan.
+  useEffect(() => {
+    async function opnieuwLaden() {
+      const db = await getVoorkeuren();
+      if (!db) return;
+      eersteNaLaden.current = true;
+      setV(db);
+    }
+    window.addEventListener(VOORKEUREN_VERVERSEN, opnieuwLaden);
+    return () => window.removeEventListener(VOORKEUREN_VERVERSEN, opnieuwLaden);
   }, []);
 
   // Automatisch bewaren (kort uitgesteld) bij elke wijziging. De eerste keer net

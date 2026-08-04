@@ -1167,12 +1167,29 @@ grant select, insert, update, delete on public.duo_koppels to authenticated;
 -- Uitnodiging bekijken via de code, vóór acceptatie (B staat nog niet in de
 -- rij, dus de RLS-policy hierboven laat 'm nog niets zien). Geeft alleen
 -- weer wat nodig is om de uitnodiging te tonen — geen kinddata.
+--
+-- Voornaam, schoolnaam en standaardgroep van de uitnodiger komen mee zodat de
+-- pop-up kan zeggen van wie de uitnodiging komt en wat je overneemt. Dat zijn
+-- gegevens van een ander, dus bewust precies deze drie en niets meer, alleen
+-- voor wie de geheime code heeft en alleen zolang de uitnodiging openstaat.
 create or replace function public.duo_koppel_voorbeeld(p_code text)
-returns table (klas_naam text, status text)
+returns table (
+  klas_naam           text,
+  status              text,
+  uitnodiger_voornaam text,
+  schoolnaam          text,
+  standaardgroep      text
+)
 language sql security definer set search_path = public as $$
-  select k.naam, dk.status
+  select k.naam,
+         dk.status,
+         coalesce(u.raw_user_meta_data ->> 'first_name', ''),
+         coalesce(i.schoolnaam, ''),
+         coalesce(i.standaardgroep, '')
   from public.duo_koppels dk
   join public.klassen k on k.id = dk.klas_id
+  join auth.users u on u.id = dk.gebruiker_a
+  left join public.instellingen i on i.user_id = dk.gebruiker_a
   where dk.code = p_code and dk.status = 'uitgenodigd' and dk.gebruiker_b is null
   limit 1;
 $$;
@@ -1181,15 +1198,40 @@ grant execute on function public.duo_koppel_voorbeeld(text) to authenticated;
 -- Uitnodiging accepteren: moet via security definer, want vóór dit moment
 -- staat de accepterende gebruiker nergens in de rij en mag hij 'm dus niet
 -- via een gewone update raken (RLS zou dat blokkeren — terecht).
+--
+-- Vult meteen school en groep in, want die neem je over van je collega. Dat
+-- gebeurt hier en niet in de browser, zodat de waarden niet te vervalsen zijn.
+-- NOOIT overschrijven wat iemand zelf al heeft ingevuld: alleen lege velden.
 create or replace function public.duo_koppel_accepteren(p_code text)
 returns uuid language plpgsql security definer set search_path = public as $$
-declare gevonden_id uuid;
+declare
+  gevonden_id uuid;
+  uitnodiger  uuid;
 begin
   update public.duo_koppels
   set gebruiker_b = auth.uid(), status = 'actief'
   where code = p_code and status = 'uitgenodigd' and gebruiker_b is null
     and gebruiker_a <> auth.uid() -- niet je eigen uitnodiging accepteren
-  returning id into gevonden_id;
+  returning id, gebruiker_a into gevonden_id, uitnodiger;
+
+  if gevonden_id is null then
+    return null;
+  end if;
+
+  insert into public.instellingen as doel (user_id, schoolnaam, standaardgroep)
+  select auth.uid(), coalesce(i.schoolnaam, ''), coalesce(i.standaardgroep, '')
+  from public.instellingen i
+  where i.user_id = uitnodiger
+  on conflict (user_id) do update
+  set schoolnaam = case
+        when coalesce(doel.schoolnaam, '') = '' then excluded.schoolnaam
+        else doel.schoolnaam
+      end,
+      standaardgroep = case
+        when coalesce(doel.standaardgroep, '') = '' then excluded.standaardgroep
+        else doel.standaardgroep
+      end;
+
   return gevonden_id;
 end;
 $$;
@@ -1481,6 +1523,8 @@ revoke execute on function public.wijs_community_stats() from public, anon;
 revoke execute on function public.registreer_herakkoord(text, text) from public, anon;
 revoke execute on function public.registreer_toestemming() from public, anon;
 revoke execute on function public.set_updated_at() from public, anon;
+revoke execute on function public.duo_koppel_voorbeeld(text) from public, anon;
+revoke execute on function public.duo_koppel_accepteren(text) from public, anon;
 
 -- Blijft open voor anon (deellink zonder account), maar met een EIGEN recht in
 -- plaats van via de brede PUBLIC-regel.
