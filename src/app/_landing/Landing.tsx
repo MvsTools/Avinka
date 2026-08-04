@@ -16,14 +16,19 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { signout } from "@/app/auth/actions";
-import { PROEF_DAGEN } from "@/lib/abonnement";
+import { PROEF_DAGEN, type PlanId } from "@/lib/abonnement";
+import { WereldCijfers, type Cijfers } from "./Cijfers";
 import {
   SPECKLE_STIJL,
   BlobKnop,
   Confetti,
+  Golf,
   KaartVlak,
+  MINT_LICHT,
+  RUIS_OP_PAPIER,
   KOP,
   Lichtbron,
+  VLAK_MINT,
   VLAK_PAPIER,
   WereldFx,
   WereldIntro,
@@ -446,11 +451,25 @@ function abonneerReduced(cb: () => void) {
 export default function Landing({
   fotoBestand,
   ingelogd = false,
-  toonPrijzen = true,
+  huidigPlan = null,
+  cijfers = null,
+  bijhouden = true,
 }: {
   fotoBestand?: string;
   ingelogd?: boolean;
-  toonPrijzen?: boolean;
+  /* Het betaalde pakket dat deze bezoeker heeft, of null (uitgelogd, proef of
+     verlopen). De prijzensectie staat er altijd; dit bepaalt alleen welke
+     kaarten dichtgaan en waar de knoppen heen wijzen.
+     ⚠️ Hier stond `toonPrijzen`: wie betaalde zag de hele sectie niet. Dat gaf
+     een pagina die zonder uitleg van vorm veranderde, én er was vanaf de
+     voorpagina geen weg meer om over te stappen. */
+  huidigPlan?: PlanId | null;
+  /* De gemeenschapscijfers voor het klapbord. null = nog geen data, en dan
+     laat WereldCijfers zichzelf helemaal weg. Zie Cijfers.tsx. */
+  cijfers?: Cijfers | null;
+  /* false bij een voorbeeldbord (?cijfers=demo): dan blijft het bord staan op
+     de meegegeven getallen in plaats van de echte op te halen. */
+  bijhouden?: boolean;
 }) {
   const root = useRef<HTMLDivElement>(null);
   // null op de server (eerste paint), daarna de echte systeemvoorkeur.
@@ -1129,25 +1148,58 @@ export default function Landing({
            is en niet een tas losse tools, heeft de film bovenaan al laten
            zien; hier hoeft dat niet nog eens in tekst. Na de kaarten gaat de
            pagina direct door naar de privacybelofte. ── */}
+        {/* ⚠️ Dit was een papieren sectie, en daarmee liep het papier drie
+           secties lang door: intro → tools → zo werkt het. De pagina wisselt
+           overal af tussen papier en een golvend mintveld, en precies op de
+           plek waar de tools staan viel dat ritme stil. Nu is dit een eigen
+           veld met een golf aan beide kanten, en gaat de pagina weer netjes
+           om en om: mint (herken) → papier (intro) → MINT (tools) → papier
+           (zo werkt het) → mint (privacy).
+           De verticale ruimte moest daarvoor omhoog (pt-6 → pt-28): een golf
+           is ~120px hoog en liep anders dwars door de kop. */}
         <section
           id="tools"
-          className="relative isolate overflow-hidden pb-24 pt-6 scroll-mt-20"
+          className="relative isolate overflow-hidden pb-28 pt-28 scroll-mt-20 lg:pb-32 lg:pt-32"
+          style={{ background: MINT_LICHT }}
         >
+          <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="hapMidden" hoogte="h-[70px] sm:h-[118px]" />
+
+          {/* De grote vorm van deze sectie. Hij hangt met zijn bovenkant boven
+             de golf uit; de golf ligt op z-[5] en dit vlak op -z-10, dus het
+             papier van de golf snijdt hem precies op de kleurrand af. Je ziet
+             daardoor geen vorm die tegen een rand aan botst maar een vorm die
+             onder het veld vandaan komt — dezelfde ingreep als bij "Veilig
+             omgaan met AI", de polaroids en de cijfers.
+             Rechts, want de kop staat links: zo draagt hij de lege hoek naast
+             het handgeschreven duwtje in plaats van achter tekst te liggen. */}
+          <KaartVlak
+            kleur={VLAK_MINT}
+            vorm="kiezel"
+            breedte={900}
+            hoogte={520}
+            style={{ right: "-12%", top: -120, transform: "rotate(4deg)" }}
+            className="-z-10 hidden lg:block"
+            tel={4}
+          />
+
           {/* Hier stonden drie verf-klodders achter de kaarten. Die kaarten
              zijn zelf al het kleurrijkste van de hele pagina (donker, groen,
              amber), dus een drukke achtergrond ging ermee concurreren in
              plaats van hem te dragen. Er ligt nu één uitvergrote kaartvorm
              links — dezelfde blob-vorm als de kaarten zelf, alleen enorm en
              tint-op-tint — en verder niets. */}
-          <KaartVlak
-            kleur={VLAK_PAPIER}
-            vorm="kiezel"
-            breedte={940}
-            hoogte={430}
-            style={{ left: "-8%", top: 90, transform: "rotate(-4deg)" }}
-            className="-z-10 hidden lg:block"
-            tel={3}
-          />
+          {/* Papier: uit sinds de opruiming, zie RUIS_OP_PAPIER in Wereld.tsx. */}
+          {RUIS_OP_PAPIER && (
+            <KaartVlak
+              kleur={VLAK_PAPIER}
+              vorm="kiezel"
+              breedte={940}
+              hoogte={430}
+              style={{ left: "-8%", top: 90, transform: "rotate(-4deg)" }}
+              className="-z-10 hidden lg:block"
+              tel={3}
+            />
+          )}
           {/* De rechter is bewust lang en vlak. Hij was 620 breed, 330 hoog en
              7° gedraaid, en dan daalt zijn linkerflank net zo steil als de
              rechterflank van het vlak hiernaast — twee steile randen naar
@@ -1156,17 +1208,27 @@ export default function Landing({
              Nu loopt hij ~300px verder door naar links, is hij lager en staat
              hij bijna recht (3°). Daardoor overlapt hij het vlak links en komt
              zijn flank er in een flauwe hoek bovenop in plaats van ertegenaan. */}
-          <KaartVlak
-            kleur={VLAK_PAPIER}
-            vorm="wig"
-            breedte={920}
-            hoogte={300}
-            style={{ right: "-11%", top: 60, transform: "rotate(3deg)" }}
-            className="-z-10 hidden lg:block"
-            tel={6}
-          />
-          <Confetti punten={[{ x: "6%", y: "84%", r: 4 }, { x: "93%", y: "22%", r: 5, amber: true }]} />
+          {/* Papier: uit sinds de opruiming. */}
+          {RUIS_OP_PAPIER && (
+            <KaartVlak
+              kleur={VLAK_PAPIER}
+              vorm="wig"
+              breedte={920}
+              hoogte={300}
+              style={{ right: "-11%", top: 60, transform: "rotate(3deg)" }}
+              className="-z-10 hidden lg:block"
+              tel={6}
+            />
+          )}
+          {/* Papier: uit sinds de opruiming. */}
+          {RUIS_OP_PAPIER && (
+            <Confetti punten={[{ x: "6%", y: "84%", r: 4 }, { x: "93%", y: "22%", r: 5, amber: true }]} />
+          )}
           <ToolRail />
+          {/* Terug naar papier voor "Zo werkt het". Een andere golfvorm dan
+             bovenaan: dezelfde vorm boven en onder maakt van een veld een
+             gestempelde band. */}
+          <Golf kleur="var(--w-papier, #fcfbf7)" vorm="kam" hoogte="h-[70px] sm:h-[110px]" />
         </section>
 
         {/* ── 3b. Zo werkt het: de drie stappen. Staat hier omdat je net hebt
@@ -1203,21 +1265,39 @@ export default function Landing({
         {/* ── 6. De maker ── */}
         <WereldMaker fotoBestand={fotoBestand} />
 
-        {/* ── 7. Ervaringen: polaroids aan de levende draad. Onder deze
-           sectie is de plek gereserveerd voor de "Avinka in cijfers"-band
-           met live tellers, zodra er echte data is. ── */}
+        {/* ── 7. Ervaringen: polaroids aan de levende draad. ── */}
         <WereldPolaroids />
+
+        {/* ── 7b. Samen teruggewonnen: het klapbord met de echte cijfers.
+           Staat hier omdat de polaroids het zachte bewijs zijn (wat mensen
+           zéggen) en dit het harde (wat er gemeten is). Samen vormen ze het
+           bewijsblok, en dat hoort vlak vóór de prijzen te staan: dat is het
+           moment waarop iemand beslist.
+
+           Zolang er nog te weinig data is laat de sectie zichzelf helemaal
+           weg, inclusief de kop. Er staat dus nooit een nul of een pijnlijk
+           laag getal op de voorpagina. ── */}
+        {/* Sluit sinds kort ALTIJD zelf af (eigen golf terug naar papier),
+           ook al is de sectie hierna (prijzen) ook mint. Anders versmolten
+           "Avinka in cijfers" en "Eén vast bedrag" tot één ononderbroken
+           mintvlek — inhoudelijk twee aparte secties, visueel niet meer te
+           onderscheiden. Zie de golf onderin Cijfers.tsx. */}
+        <WereldCijfers cijfers={cijfers} bijhouden={bijhouden} />
 
         {/* ── 8. Prijzen: het eigen mintveld. Vóór deze verbouwing lagen
            maker, ervaringen, prijzen én vragen allemaal op hetzelfde papier;
-           dit veld brengt de afwisseling terug in de staart van de pagina. ── */}
-        {/* Wie al betaalt hoeft geen prijzen meer te zien; proef- en verlopen
-           accounts wél, want die kunnen nog een plan kiezen. */}
-        {toonPrijzen && <WereldPrijzen />}
+           dit veld brengt de afwisseling terug in de staart van de pagina.
+           Opent nu ook altijd met haar eigen entreegolf, om dezelfde reden. ── */}
+        {/* Voor iedereen zichtbaar; de sectie past zich aan de bezoeker aan
+           in plaats van te verdwijnen. Zie PrijzenVragen.tsx voor de vijf
+           standen. */}
+        <WereldPrijzen huidigPlan={huidigPlan} />
 
         {/* ── 9. Veelgestelde vragen: het lichtste blok van de pagina, geen
-           kaders maar haarlijnen. ── */}
-        <WereldVragen items={FAQ} />
+           kaders maar haarlijnen.
+           Het mintveld van de prijzen loopt hier nog even door — tot voorbij
+           de eerste vraag — en pas dáár golft het terug naar papier. ── */}
+        <WereldVragen items={FAQ} mintBoven />
 
         {/* ── 10. Slot: het donkergroene veld, één keer op de pagina. ── */}
         <WereldSlot />

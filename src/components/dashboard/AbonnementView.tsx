@@ -27,13 +27,26 @@ export default function AbonnementView() {
 
   useEffect(() => {
     getAbonnement().then(setAb);
+    const q = new URLSearchParams(window.location.search);
     // Terug van Mollie? Toon een melding op basis van ?betaald=.
-    const p = new URLSearchParams(window.location.search).get("betaald");
+    const p = q.get("betaald");
     if (p === "1") setMelding("ok");
     else if (p === "0") setMelding("mislukt");
-    // Haal de parameter weg uit de URL, zodat de melding/pop-up niet opnieuw
+
+    /* Binnengekomen via "Upgrade naar …" op de voorpagina (?wijzig=1). Dan is
+       de keuze al gemaakt en zou het raar zijn om hier eerst nog op "Wijzig"
+       te moeten klikken: de pakketten staan meteen open. ?vorm= neemt ook de
+       maand/schooljaar-keuze van die pagina mee, zodat je 'm niet twee keer
+       hoeft te maken. */
+    if (q.get("wijzig") === "1") setToonPakketten(true);
+    const v = q.get("vorm");
+    if (v === "jaar" || v === "maand") setVorm(v);
+
+    // Haal de parameters weg uit de URL, zodat de melding niet opnieuw
     // verschijnt als de pagina ververst wordt.
-    if (p) window.history.replaceState(null, "", window.location.pathname);
+    if (p || q.get("wijzig") || v) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
   }, []);
 
   // Start het afrekenen: vraag een betaal-URL en stuur de gebruiker erheen.

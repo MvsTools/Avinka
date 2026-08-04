@@ -35,6 +35,19 @@ import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "re
    Waarom variabelen en niet vijf kopieën van de pagina: een kopie loopt na
    de eerste inhoudelijke wijziging meteen uit de pas, en dan vergelijk je
    geen skins meer maar vijf verschillende pagina's. ──────────────────────── */
+/* ── DE SCHAKELAAR VOOR ACHTERGRONDRUIS OP PAPIER ──────────────────────────
+   De pagina wisselt lege papiervelden af met mintvelden die door golven
+   worden begrensd. Achtergrondvormen (blobs, silhouetten, confettistipjes)
+   stonden in ALLEBEI, en op het kale papier werden ze ruis: er is daar geen
+   veld dat ze draagt, dus ze zweven.
+
+   Afspraak sinds 3-8: die vormen horen ALLEEN in de golvende mintvelden.
+   Zet deze schakelaar op `true` en alles wat op papier stond komt precies
+   terug zoals het was — de code is niet weggegooid, alleen uitgeschakeld.
+   ⚠️ De vormen IN de mintvelden hangen hier niet aan; die blijven altijd staan.
+   ────────────────────────────────────────────────────────────────────────── */
+export const RUIS_OP_PAPIER = false;
+
 export const MINT = "var(--w-veld-diep, #cfe6d8)";
 export const MINT_LICHT = "var(--w-veld, #ecf6f0)";
 /* Alle tint-op-tint-accenten die BOVENOP het mintveld liggen (silhouetten,
@@ -162,10 +175,23 @@ const GOLVEN = {
      nadrukkelijk weg naar rechts, zodat het mintveld daar veel dieper
      doorloopt dan aan de linkerkant. */
   speels: maakGolf({ start: 22, eind: 92, amp: 17, golven: 1.3, fase: 0.5 }),
-  /* twee volle, ondiepe deiningen — de enige golf op de pagina die meer dan
-     anderhalve slag maakt. Sluit het prijzenveld af zonder een kant te
-     kiezen: hij begint en eindigt op bijna dezelfde hoogte. */
-  ribbel: maakGolf({ start: 58, eind: 52, amp: 15, golven: 2.05, fase: 0.8 }),
+  /* Blijft rechts diep in de mint hangen, deint (net als oploopLinks) een
+     stukje omhoog en omlaag, en klimt dan door naar een kam die bijna alle
+     mint wegneemt — links blijft dus een klein beetje mint over in plaats
+     van een kaarsrechte lijn naar boven.
+     ⚠️ TWEE MISLUKTE POGINGEN, ALLEBEI OP AMPLITUDE: eerst amp 55 (bijna
+     de halve vakhoogte), toen amp 30 — beide ver boven de 11-34 die elke
+     andere golf hier gebruikt. Deze golf is nu qua amp (19) en golven
+     (1.35) een letterlijk hergebruik van oploopLinks/oploopRechts, niet iets
+     nieuw verzonnens; alleen start/eind staan verder uit elkaar (10/94 i.p.v.
+     26/90) omdat deze golf verder moet reizen. Reken je dat om naar echte
+     pixels (het vak is hoger dan bij oploopLinks), dan komt hij nog zo'n 15%
+     boven de grootste bestaande golf (zacht, ~54px) uit — dat is de prijs
+     van de afstand die hij moet overbruggen, niet van een te grote amplitude
+     an sich. Gebruikt met een Golf die zijn VOLLE vak beslaat (niet alleen
+     een randje onderaan), anders is de reis te klein om iets voor te
+     stellen. */
+  stijging: maakGolf({ start: 10, eind: 94, amp: 19, golven: 1.35, fase: 1.2 }),
 } as const;
 
 export function Golf({
@@ -552,7 +578,10 @@ export function WereldIntro() {
          als een zijopmerking. Met een bredere kolom past de eerste zin op
          minder regels en kan hij groter staan zonder te versnipperen. */}
       <div className="relative mx-auto grid w-full max-w-5xl gap-10 px-6 pb-24 pt-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16 lg:pb-32 lg:pt-24">
-        <Confetti punten={[{ x: "2%", y: "18%", r: 4, amber: true }, { x: "96%", y: "70%", r: 5 }, { x: "88%", y: "8%", r: 3 }]} />
+        {/* Papier: alleen zichtbaar met de schakelaar aan (zie RUIS_OP_PAPIER). */}
+        {RUIS_OP_PAPIER && (
+          <Confetti punten={[{ x: "2%", y: "18%", r: 4, amber: true }, { x: "96%", y: "70%", r: 5 }, { x: "88%", y: "8%", r: 3 }]} />
+        )}
         <div>
           <h2
             data-reveal
@@ -728,6 +757,28 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
          (Spiegelbeeld van de regie-sectie, waar de mint juist bovenin zit.) */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 top-1/2" aria-hidden>
         <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
+
+        {/* Rechts van de makerskaart begint het mintveld dat doorloopt tot in
+           de ervaringen-sectie, en die hele rechterbovenhoek was leeg: de
+           liniaal ligt linksonder en verder lag hier niets tot ver in de
+           polaroids. Dit vlak vult hem en hangt met zijn bovenkant boven de
+           golf uit, zodat de kam-golf hem op de mintrand afsnijdt.
+           🔑 Het eigen overflow-vakje is nodig: deze laag zelf mag NIET
+           clippen (dan knipt hij een pixel van de golf) en zonder vakje zou
+           het vlak boven de golf uit het papier in steken — precies de fout
+           die eerder bij het polaroid-vlak is hersteld. */}
+        <div className="absolute inset-0 overflow-hidden">
+          <KaartVlak
+            kleur={VLAK_MINT}
+            vorm="ei"
+            breedte={660}
+            hoogte={400}
+            style={{ right: "-8%", top: -80, transform: "rotate(7deg)" }}
+            className="hidden lg:block"
+            tel={5}
+          />
+        </div>
+
         <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="kam" />
       </div>
       {/* De liniaal hoort in het mintveld te liggen, dus onderin de sectie. */}
@@ -736,15 +787,19 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
          onderkant van de privacysectie was dat het grootste gat in het
          achtergrondweefsel van de pagina. Rechts, tegenover de liniaal die
          onderin links ligt. */}
-      <KaartVlak
-        kleur={VLAK_PAPIER}
-        vorm="wig"
-        breedte={600}
-        hoogte={320}
-        style={{ right: "-12%", top: 70, transform: "rotate(-8deg)" }}
-        className="hidden lg:block"
-        tel={6}
-      />
+      {/* Dit vlak ligt in de PAPIEREN bovenhelft van deze sectie (de mint
+         begint pas halverwege), dus het valt onder de opruiming. */}
+      {RUIS_OP_PAPIER && (
+        <KaartVlak
+          kleur={VLAK_PAPIER}
+          vorm="wig"
+          breedte={600}
+          hoogte={320}
+          style={{ right: "-12%", top: 70, transform: "rotate(-8deg)" }}
+          className="hidden lg:block"
+          tel={6}
+        />
+      )}
 
       <div className="relative z-10 mx-auto w-full max-w-4xl px-6 pb-32 pt-32 lg:pb-36 lg:pt-36">
         {/* De kaart hoort nu bij de familie: organische radii, tonale rand en
@@ -764,7 +819,14 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
             rotate: "-0.6deg",
           }}
         >
-          <Confetti punten={[{ x: "94%", y: "8%", r: 5, amber: true }, { x: "2%", y: "86%", r: 4 }]} />
+          {/* Het stipje op 8% ligt in de papieren bovenhelft en gaat mee in de
+             opruiming; dat op 86% ligt in het mintveld en blijft dus staan. */}
+          <Confetti
+            punten={[
+              ...(RUIS_OP_PAPIER ? [{ x: "94%", y: "8%", r: 5, amber: true }] : []),
+              { x: "2%", y: "86%", r: 4 },
+            ]}
+          />
           {/* Hier hing een groen vinkje-badge over de bovenrand. Eruit op
              verzoek: het vinkje van het merk zit al in het mintblok onderaan
              deze kaart, en op een kennismaking met de maker voegt een

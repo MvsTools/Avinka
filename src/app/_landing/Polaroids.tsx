@@ -6,7 +6,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { Confetti, DONKER, Golf, KOP, MINT, MINT_LICHT, MINT_DIEP, KaartVlak, VLAK_MINT, VLAK_PAPIER } from "./Wereld";
+import { Confetti, DONKER, Golf, KOP, MINT, MINT_LICHT, MINT_DIEP, KaartVlak, VLAK_MINT } from "./Wereld";
 
 /* ── De polaroids: wat leerkrachten zeggen ─────────────────────────────────
    Ervaringen als instax-kaartjes aan één levende draad. Geen prikbord, geen
@@ -706,35 +706,32 @@ export function WereldPolaroids() {
         aria-hidden
       >
         <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
+
+        {/* ⚠️ Dit vlak stond BUITEN deze laag en dus bovenop de golf: het lag
+           over de overgang heen en stak met een mint-tint het papier in, waar
+           die tint niet hoort. Nu staat het ertussen — mint, dan het vlak, dan
+           de golf — zodat de golf hem precies op de kleurrand afsnijdt en hij
+           onder het veld vandaan lijkt te komen. Zelfde ingreep als bij het
+           vlak in de cijfersectie hieronder en dat bij "Veilig omgaan met AI".
+           🔑 De volgorde binnen de laag IS de ingreep. */}
+        <KaartVlak
+          kleur={VLAK_MINT}
+          vorm="schelp"
+          breedte={560}
+          hoogte={430}
+          style={{ left: "-9%", top: 40, transform: "rotate(-7deg)" }}
+          className="hidden lg:block"
+          tel={1}
+        />
+
         <Golf kleur="var(--w-papier, #fcfbf7)" vorm="speels" hoogte="h-[90px] sm:h-[130px] lg:h-[170px]" />
       </div>
-
-      {/* de achtergrond uit de referentie is óns bestaande wereldje: het
-         gespikkelde papier met zachte vlakken in de hoeken en losse stipjes.
-         Dit linker vlak ligt grotendeels op het mintveld hierboven, dus die
-         krijgt VLAK_MINT (het tint-op-tint-token "op een mintveld", inmiddels
-         zelf meegelicht) in plaats van VLAK_PAPIER — anders verdwijnt hij
-         tegen de lichtere mint. Eerder bewust donkerder gehouden (MINT), maar
-         dat bleek uiteindelijk ook te donker naast de rest van het pagina-
-         brede lichtere palet. */}
-      <KaartVlak
-        kleur={VLAK_MINT}
-        vorm="schelp"
-        breedte={560}
-        hoogte={430}
-        style={{ left: "-9%", top: 40, transform: "rotate(-7deg)" }}
-        className="hidden lg:block"
-        tel={1}
-      />
-      <KaartVlak
-        kleur={VLAK_PAPIER}
-        vorm="koepel"
-        breedte={640}
-        hoogte={360}
-        style={{ right: "-11%", bottom: 20, transform: "rotate(5deg)" }}
-        className="hidden lg:block"
-        tel={4}
-      />
+      {/* ⚠️ Hier lag een vlak rechtsonder (koepel, 640x360). Het liep dwars
+         door de polaroids van Kim en Eva heen en is verhuisd naar de
+         cijfersectie hieronder, waar de golf hem netjes op de mintrand
+         afsnijdt. Zelfde ingreep als bij "Veilig omgaan met AI": een vorm
+         hoort onder een kleurveld vandaan te komen, niet over inhoud heen te
+         liggen. */}
 
       <div className="relative mx-auto w-full max-w-6xl px-6 pb-24 pt-24 lg:pb-28 lg:pt-28">
         {/* Dit was de enige sectie van de pagina zonder stipjes; over ruim

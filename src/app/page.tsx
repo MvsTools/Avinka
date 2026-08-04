@@ -6,9 +6,10 @@ import { Bricolage_Grotesque, Kalam } from "next/font/google";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import Footer from "@/components/Footer";
-import { heeftBetaaldAbonnement } from "@/lib/abonnement";
+import { PLANNEN, heeftBetaaldAbonnement, type PlanId } from "@/lib/abonnement";
 import { getAbonnementServer } from "@/lib/abonnement-server";
 import Landing from "./_landing/Landing";
+import { haalCijfers } from "@/lib/cijfers";
 
 /* ──────────────────────────────────────────────────────────────────────────
    DE LANDINGSPAGINA.
@@ -53,10 +54,33 @@ function zoekAfbeelding(basis: string) {
   return varianten.find((f) => existsSync(path.join(process.cwd(), "public", f)));
 }
 
+/* De cijfers voor het klapbord ("Samen teruggewonnen").
+
+   Komt uit avinka_landing_cijfers(): een SECURITY DEFINER-functie die alleen
+   drie totalen teruggeeft en die anon mag aanroepen. Bewust een eigen, kleine
+   functie en niet wijs_community_stats(): die geeft ook de uitsplitsing per
+   tool en de streaks terug, en dat hoeft een bezoeker niet te kunnen opvragen.
+
+   Gaat er iets mis, dan geeft dit null terug en laat de sectie zichzelf
+   helemaal weg. Een landingspagina die stukloopt op een teller is erger dan
+   een landingspagina zonder teller.
+
+   Met ?cijfers=demo zie je het bord met testgetallen: dat is om het ontwerp te
+   kunnen beoordelen, niet iets wat een bezoeker tegenkomt. */
+const DEMO_CIJFERS = { minuten: 77_040, leerkrachten: 37, uitwerkingen: 9_412 };
+
+/* De geldige waarden voor ?plan= (zie hieronder). Uit PLANNEN afgeleid en niet
+   met de hand overgetikt, zodat een nieuw pakket vanzelf meedoet. */
+const PLAN_IDS: PlanId[] = PLANNEN.map((p) => p.id);
+
+/* Het ophalen zelf staat in lib/cijfers.ts, samen met de cache. Die bron wordt
+   gedeeld met /api/cijfers, waar de browser elke halve minuut op klopt om het
+   bord te laten bijlopen: één implementatie, één cache. */
+
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ startpagina?: string }>;
+  searchParams: Promise<{ startpagina?: string; cijfers?: string; plan?: string }>;
 }) {
   const supabase = await createClient();
   const {
@@ -72,10 +96,24 @@ export default async function Home({
     redirect("/dashboard");
   }
 
-  // Een ingelogde bezoeker die de startpagina tóch bekijkt: alleen wie al een
-  // betaald abonnement heeft, hoeft de prijzen niet meer te zien. Proef- en
-  // verlopen accounts wél (zij kunnen nog een plan kiezen).
-  const toonPrijzen = user ? !heeftBetaaldAbonnement(await getAbonnementServer()) : true;
+  // Welk betaald pakket heeft deze bezoeker? null = uitgelogd, in de proef of
+  // verlopen; dan staat de hele prijzensectie gewoon open.
+  //
+  // ⚠️ Hier stond `toonPrijzen`: wie al betaalde kreeg de prijzensectie
+  // helemaal niet te zien. Dat is teruggedraaid — de sectie is er nu altijd en
+  // past zich aan (pakketten die je al hebt gaan dicht, hogere pakketten
+  // krijgen een upgrade-knop). Zo verandert de pagina niet ongevraagd van vorm
+  // en kun je vanaf de voorpagina nog steeds overstappen.
+  //
+  // Met ?plan=start|compleet|pro bekijk je hoe de sectie er voor zo'n klant
+  // uitziet zonder dat je zo'n account nodig hebt. Net als ?cijfers=demo puur
+  // om het ontwerp te kunnen beoordelen: het verandert alleen wat je ziet.
+  // Toegang tot tools, credits en modellen komt overal elders uit de database
+  // en trekt zich hier niets van aan.
+  const abonnement = user ? await getAbonnementServer() : null;
+  const huidigPlan =
+    PLAN_IDS.find((p) => p === params.plan) ??
+    (abonnement && heeftBetaaldAbonnement(abonnement) ? abonnement.plan : null);
 
   return (
     <div
@@ -85,7 +123,9 @@ export default async function Home({
       <Landing
         fotoBestand={zoekAfbeelding("michael")}
         ingelogd={Boolean(user)}
-        toonPrijzen={toonPrijzen}
+        huidigPlan={huidigPlan}
+        cijfers={params.cijfers === "demo" ? DEMO_CIJFERS : await haalCijfers()}
+        bijhouden={params.cijfers !== "demo"}
       />
       <Footer maxWidth="max-w-5xl" />
     </div>
