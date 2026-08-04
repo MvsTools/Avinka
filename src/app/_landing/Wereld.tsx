@@ -849,49 +849,49 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         />
       )}
 
-      {/* max-w-5xl in plaats van max-w-4xl: de linkerrand van het kaartje valt
-         nu precies op de tekstkolom van de intro- en herken-sectie. Het
-         kaartje zelf is smaller dan die kolom en staat er links in (mr-auto),
-         zodat er open mintveld naast blijft — een klein ding dat ergens ligt,
-         niet een blok dat de pagina afsluit. */}
+      {/* ⚠️ DE OMHULLENDE KAART IS HIER WEG, EN DAT IS DE HELE INGREEP.
+         Er stond een kaart met de tekst erin, en daarvóór een grotere kaart
+         met dezelfde tekst erin. De eigenaar wees aan dat het probleem niet de
+         inhoud was en ook niet het formaat, maar de WEERGAVE: "zo'n hele grote
+         massale kaart". Een kleinere kaart is dan geen oplossing, dat is
+         dezelfde vorm in het klein.
+         Nu staat de tekst gewoon op het veld en is er nog één voorwerp over:
+         het tegeltje met de foto. Dat is meteen de grap — zie hieronder. */}
       <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pb-20 pt-20 lg:pb-24 lg:pt-24">
+        <Confetti punten={[{ x: "3%", y: "88%", r: 4 }]} />
+
+        {/* 🔑 HET CONCEPT: EEN TEAMPAGINA MET ÉÉN GEZICHT.
+           Een kop als "Het team achter Avinka" zet een verwachting neer die
+           iedereen kent — een raster met zes tot twintig koppen. Daaronder
+           ligt er één. De lege ruimte rechts van die tegel is niet toevallig
+           overgebleven maar is het onderwerp: precies daar hadden de andere
+           gezichten gestaan.
+           Dat is ook exact wat de eigenaar hier wil zeggen: dit wordt gemaakt
+           door één leerkracht, niet door een instantie. Hij staat er dus wél,
+           maar hij is niet het onderwerp — de bezetting is het onderwerp.
+           ⚠️ Bewust GEEN lege plekken getekend (stippellijn-vakjes voor de
+           collega's die er niet zijn). Dat leest als een team dat is
+           weggelopen, en het is precies het soort tekening dat hier eerder is
+           afgekeurd. De leegte moet gewone ruimte zijn. */}
+        <h2
+          data-reveal
+          className="font-display text-[clamp(1.7rem,3.2vw,2.5rem)] font-black leading-[1.05] tracking-tight"
+          style={{ color: DONKER }}
+        >
+          Het team achter Avinka
+        </h2>
+
         <div
           data-reveal
-          className="relative mr-auto w-full max-w-[40rem] border-2 px-7 py-7 sm:px-9 sm:py-9"
-          style={{
-            /* niet puur wit: een warme papiertoon houdt de kaart in dezelfde
-               wereld als het gespikkelde papier van de pagina */
-            background: "var(--w-kaart-warm, #fffdf9)",
-            /* dezelfde ongelijke radii-familie als de grote kaarten, maar
-               meegeschaald: 3,2rem op een kaartje van deze hoogte maakte van
-               de hoeken het onderwerp */
-            borderRadius: "2.2rem 1.6rem 2.4rem 1.8rem / 1.8rem 2.4rem 1.6rem 2.2rem",
-            borderColor: KAART_RAND,
-            /* eigen, kortere schaduw i.p.v. KAART_SCHADUW (34/66): die is
-               gemaakt voor de grote kaarten en laat dit kaartje een halve
-               meter boven de pagina zweven. Zelfde lichtrichting, dichter bij
-               het papier — het is een klein object. */
-            boxShadow: schaduw(20, 44, -24, 0.5),
-            rotate: "-0.6deg",
-          }}
+          className="mt-8 grid gap-x-10 gap-y-7 sm:mt-10 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start"
         >
-          {/* Het stipje op 8% ligt in de papieren bovenhelft en gaat mee in de
-             opruiming; dat op 86% ligt in het mintveld en blijft dus staan. */}
-          <Confetti
-            punten={[
-              ...(RUIS_OP_PAPIER ? [{ x: "94%", y: "8%", r: 5, amber: true }] : []),
-              { x: "2%", y: "86%", r: 4 },
-            ]}
-          />
-
-          {/* Op smalle schermen staan foto en naam NAAST elkaar en zakt de
-             tekst eronder; vanaf sm wordt de foto-plus-naam een smalle
-             linkerkolom en komt de tekst ernaast. Zo blijft het kaartje in
-             allebei de standen liggend van vorm, in plaats van op mobiel een
-             hoge toren te worden. */}
-          <div className="relative flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-8">
-            <div className="flex shrink-0 items-center gap-5 sm:w-44 sm:flex-col sm:items-start sm:gap-4">
-              <div className="relative h-20 w-20 shrink-0 sm:h-24 sm:w-24">
+          {/* ── de tegel ──
+             Het enige voorwerp dat overblijft. Klein, licht scheef, met de
+             schaduw van deze wereld; hij komt overeind als je erover gaat,
+             dezelfde fysica als de polaroids en de toolkaarten — maar zonder
+             draad, want dat motief mag niet terugkomen. */}
+          <figure className="w-mkr-tegel">
+            <div className="relative h-24 w-24 shrink-0 sm:h-28 sm:w-28">
                 {/* het vlak steekt naar één kant uit, niet rondom: anders
                    valt het samen met de foto en wordt het een ring */}
                 <span
@@ -910,52 +910,111 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                     <span className="font-display text-xl font-black" style={{ color: DONKER }}>MvS</span>
                   )}
                 </span>
-              </div>
-              {/* De naam is de kop van dit blok. Hij staat als h2 in de
-                 documentstructuur — de sectie moet een kop hebben — maar
-                 hoeft daar niet groot voor te zijn: een colofon zet de naam
-                 klein, en het gewicht van de kaart hoort bij het portret en
-                 de zin ernaast te liggen. */}
-              <div>
-                <h2 className="font-display text-lg font-black leading-tight tracking-tight" style={{ color: DONKER }}>
-                  Michael van Spanje
-                </h2>
-                {/* ink/70, niet de ink/60 die hier eerst stond: op de warme
-                   papiertoon haalt 60% net geen 4,5:1 en dit is gewone tekst
-                   op 14px. Optisch scheelt het niets, op de contrasttoets
-                   alles (4,4 → 6,0). */}
-                <p className="mt-0.5 text-sm leading-snug text-ink/70">Leerkracht &amp; maker van Avinka</p>
-              </div>
             </div>
 
-            <div className="sm:pt-0.5">
-              <p
-                className="text-lg leading-tight [text-wrap:balance]"
-                style={{ fontFamily: "var(--font-hand)", color: KOP }}
+            {/* Naam en rol staan ÍN de tegel, zoals op elke teampagina. Dat is
+               wat de vorm herkenbaar maakt: pas als het er precies zo uitziet
+               als het bekende raster, valt op dat er maar één in staat. */}
+            <figcaption className="mt-4">
+              <span
+                className="block font-display text-base font-black leading-tight tracking-tight"
+                style={{ color: DONKER }}
               >
-                van een leerkracht, voor leerkrachten
-              </p>
-              {/* text-base, terwijl de rest van de pagina zijn lopende tekst
-                 op text-lg zet. Dat is geen slordigheid maar de hele pointe
-                 van dit blok: een colofon is bijtekst. Eén stap kleiner dan
-                 het productverhaal erboven zegt zonder woorden hoe je dit
-                 kaartje moet wegen. (Er stond even 17px tussenin — dat is
-                 geen trede van de schaal en dus drift, niet ontwerp.) */}
-              <p className="mt-3 text-base leading-7 text-ink/75">
-                Ik sta zelf voor de klas en weet hoeveel tijd rapporten,
-                analyses en verslagen kosten.
-              </p>
-              {/* De zin die je moet onthouden. Stond eerst in een eigen
-                 mintblok van ruim 110px hoog; als tweede regel in kopkleur
-                 krijgt hij dezelfde nadruk zonder dat er een blok bij komt. */}
-              <p className="mt-2.5 text-base font-semibold leading-7" style={{ color: KOP }}>
-                Daarom bouw ik Avinka: die tijd hoort bij je leerlingen te
-                liggen, niet bij het papierwerk.
-              </p>
-            </div>
+                Michael van Spanje
+              </span>
+              {/* ink/70 en niet ink/60: op de warme papiertoon haalt 60% net
+                 geen 4,5:1 bij deze lettergrootte (4,4 → 6,0). */}
+              <span className="mt-0.5 block text-sm leading-snug text-ink/70">
+                leerkracht &amp; maker
+              </span>
+            </figcaption>
+          </figure>
+
+          {/* ── de lege plek, met de clou erin ──
+             Deze kolom begint op dezelfde hoogte als de tegel, want dáár
+             hadden de andere gezichten gestaan. De regel in handschrift is het
+             enige dat die ruimte vult, en dat is precies genoeg.
+             ⚠️ Eén handgeschreven regel in deze sectie, niet twee. De
+             tagline "van een leerkracht, voor leerkrachten" is hier vervallen:
+             die zei in andere woorden hetzelfde als de clou, en het
+             handgeschreven opstapje stond eerder al in te veel secties. */}
+          <div className="sm:pt-1">
+            <p
+              className="text-2xl leading-tight [text-wrap:balance] sm:text-[1.7rem]"
+              style={{ fontFamily: "var(--font-hand)", color: KOP }}
+            >
+              Ja, dat is het hele team.
+            </p>
+            <p className="mt-4 max-w-[46ch] text-base leading-7 text-ink/75">
+              Ik sta zelf voor de klas en weet hoeveel tijd rapporten, analyses
+              en verslagen kosten.
+            </p>
+            {/* De zin die je moet onthouden. Stond ooit in een eigen mintblok
+               van ruim 110px hoog; als losse regel in kopkleur krijgt hij
+               dezelfde nadruk zonder dat er een blok bij komt. */}
+            <p
+              className="mt-2.5 max-w-[46ch] text-base font-semibold leading-7"
+              style={{ color: KOP }}
+            >
+              Daarom bouw ik Avinka: die tijd hoort bij je leerlingen te liggen,
+              niet bij het papierwerk.
+            </p>
           </div>
         </div>
       </div>
+
+      {/* De tegel als voorwerp: licht scheef, met de schaduw van deze wereld,
+         en hij komt overeind als je erover gaat. Dezelfde beweging als de
+         toolkaarten en de polaroids, dus geen nieuw idioom — alleen zonder
+         draad, want dat motief mag niet terugkomen. Bij prefers-reduced-motion
+         blijft de schaduw bewegen maar het object niet. */}
+      <style>{`
+        .w-mkr-tegel {
+          display: block;
+          width: fit-content;
+          margin: 0;
+          padding: clamp(16px, 1.8vw, 20px) clamp(18px, 2vw, 24px) clamp(18px, 2vw, 22px);
+          background: var(--w-kaart-warm, #fffdf9);
+          border: 2px solid ${KAART_RAND};
+          border-radius: 1.8rem 1.3rem 2rem 1.4rem / 1.4rem 2rem 1.3rem 1.8rem;
+          box-shadow: ${schaduw(20, 44, -24, 0.5)};
+          transform: rotate(-1.6deg);
+          transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+            box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .w-mkr-tegel:hover {
+          transform: rotate(-0.4deg) translateY(-6px);
+          box-shadow: ${schaduw(30, 66, -30, 0.55)};
+        }
+
+        /* 🔑 HET WORDT NEERGELEGD, HET VERSCHIJNT NIET.
+           Eén klein fysiek moment: de tegel komt schuiner en iets hoger
+           binnen en zakt op zijn plek, alsof iemand hem op tafel legt. Dat is
+           dezelfde taal als de polaroids (een echt voorwerp met gewicht),
+           maar zonder draad en zonder dat er een tweede bewegingsnummer bij
+           komt — de rest van de sectie gebruikt gewoon de bestaande reveal.
+           ⚠️ De vulling staat op BACKWARDS en niet op BOTH. Met both blijft de
+           eindwaarde van de animatie op het element staan en wint die het van
+           de hover-transform, waardoor het oppakken niet meer werkt. Het
+           laatste keyframe is exact de ruststand, dus je ziet geen sprong op
+           het moment dat de animatie loslaat.
+           (En let op: in dit stijlblok mag geen accent-aanhalingsteken staan,
+           ook niet in een opmerking — dat sluit de tekst van het blok af en
+           dan valt de hele pagina om. Dat is hier één keer gebeurd.) */
+        .anim [data-reveal].is-in .w-mkr-tegel {
+          animation: wMkrNeerleggen 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.12s backwards;
+        }
+        @keyframes wMkrNeerleggen {
+          from { transform: rotate(-6.5deg) translateY(-14px); }
+          to   { transform: rotate(-1.6deg) translateY(0); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .w-mkr-tegel { transition: box-shadow 0.4s ease; }
+          .w-mkr-tegel:hover { transform: rotate(-1.6deg); }
+          .anim [data-reveal].is-in .w-mkr-tegel { animation: none; }
+        }
+      `}</style>
       {/* Het mintveld loopt hier NIET meer dood: het gaat gewoon door tot de
          onderrand van de sectie en zet zich in de ervaringen-sectie eronder
          voort (zelfde MINT-tint, dus geen naad op de overgang). Daar krijgt
