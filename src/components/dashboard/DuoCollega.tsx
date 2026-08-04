@@ -18,9 +18,11 @@ import {
   type Klas,
   type DuoKoppel,
   type DuoRol,
+  type DuoUitnodiging,
   type KlasCollega,
   type Bestand,
 } from "@/lib/db";
+import { meldVoorkeurenGewijzigd } from "@/lib/voorkeuren-verversen";
 
 // Collega's bij deze groep: samen één klas draaien. Was eerst alleen voor een
 // duobaan (twee leerkrachten), maar er kunnen er meer bij — een assistent
@@ -42,7 +44,7 @@ function gedeeldeMapNaam(klasNaam: string): string {
 
 const ROL_TEKST: Record<DuoRol, string> = {
   volledig: "Volledig",
-  meekijken: "Meekijken (geen rapporten)",
+  meekijken: "Meekijken (leest mee)",
 };
 
 export default function DuoCollega() {
@@ -68,10 +70,18 @@ export default function DuoCollega() {
 
   const uitnodigingsCode = zoekParams.get("duo");
   const [voorbeeld, setVoorbeeld] = useState<
-    { klasNaam: string; status: string } | null | "laden" | "fout"
+    DuoUitnodiging | null | "laden" | "fout"
   >(uitnodigingsCode ? "laden" : null);
   const [accepterenBezig, setAccepterenBezig] = useState(false);
+  /* Naam van de groep waar je zojuist bij kwam. Niet meteen dichtklappen na
+     het accepteren: dan weet je niet of het gelukt is, en al helemaal niet dat
+     je zelf nog moet wisselen als je een eigen klas hebt. */
+  const [geaccepteerd, setGeaccepteerd] = useState<string | null>(null);
   const [handmatigeCode, setHandmatigeCode] = useState("");
+  /* Een mislukte rol- of loskoppelactie liet hiervoor niets zien: de knop deed
+     gewoon niets en je bleef zitten met de vraag of je het wel goed had
+     aangeklikt. */
+  const [actieFout, setActieFout] = useState("");
 
   async function laadAlles() {
     const [k, d, b] = await Promise.all([getKlassen(), getDuoKoppels(), getBestanden()]);
@@ -108,6 +118,19 @@ export default function DuoCollega() {
     bekijkDuoUitnodiging(uitnodigingsCode).then((v) => setVoorbeeld(v ?? "fout"));
   }, [uitnodigingsCode]);
 
+  // Escape sluit de pop-up, net als "Later". Niet tijdens het accepteren: dan
+  // loopt er een verzoek en zou je het scherm kwijtraken zonder de uitkomst.
+  useEffect(() => {
+    if (!uitnodigingsCode || !voorbeeld || accepterenBezig) return;
+    function bijToets(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      if (geaccepteerd) sluitBevestiging();
+      else verwijderDuoParam();
+    }
+    window.addEventListener("keydown", bijToets);
+    return () => window.removeEventListener("keydown", bijToets);
+  });
+
   function verwijderDuoParam() {
     const params = new URLSearchParams(zoekParams.toString());
     params.delete("duo");
@@ -128,15 +151,26 @@ export default function DuoCollega() {
   async function accepteer() {
     if (!uitnodigingsCode) return;
     setAccepterenBezig(true);
+    const naam =
+      typeof voorbeeld === "object" && voorbeeld !== null ? voorbeeld.klasNaam : "";
     const ok = await accepteerDuoUitnodiging(uitnodigingsCode);
     setAccepterenBezig(false);
     if (ok) {
-      setVoorbeeld(null);
-      verwijderDuoParam();
+      setGeaccepteerd(naam || "deze groep");
       laadAlles();
+      // Accepteren vult school en groep in (zie duo_koppel_accepteren). Het
+      // formulier daaronder heeft zijn waarden al geladen en zou anders leeg
+      // blijven staan terwijl ze wél gevuld zijn.
+      meldVoorkeurenGewijzigd();
     } else {
       setVoorbeeld("fout");
     }
+  }
+
+  function sluitBevestiging() {
+    setGeaccepteerd(null);
+    setVoorbeeld(null);
+    verwijderDuoParam();
   }
 
   async function nodigUit() {
@@ -164,14 +198,28 @@ export default function DuoCollega() {
   }
 
   async function loskoppelen(koppel: DuoKoppel) {
+    setActieFout("");
     const wie = koppel.status === "actief" ? "Deze collega loskoppelen?" : "Uitnodiging intrekken?";
     if (!confirm(`${wie} Gedeelde toegang stopt meteen.`)) return;
     if (await verbreekDuo(koppel.id)) laadAlles();
+    else setActieFout("Loskoppelen is niet gelukt. Probeer het zo nog eens.");
+  }
+
+  // Zelf uit een groep van een ander stappen. Dezelfde handeling als
+  // loskoppelen (het is één koppelrij), maar vanaf de andere kant en dus met
+  // andere woorden: je verwijdert niet iemand, je gaat er zelf uit.
+  async function verlaatGroep(koppel: DuoKoppel, klasNaam: string) {
+    setActieFout("");
+    if (!confirm(`${klasNaam || "Deze groep"} verlaten? Je toegang stopt meteen.`)) return;
+    if (await verbreekDuo(koppel.id)) laadAlles();
+    else setActieFout("Verlaten is niet gelukt. Probeer het zo nog eens.");
   }
 
   async function wisselRol(koppel: DuoKoppel) {
+    setActieFout("");
     const nieuw: DuoRol = koppel.rol === "volledig" ? "meekijken" : "volledig";
     if (await zetDuoRol(koppel.id, nieuw)) laadAlles();
+    else setActieFout("De rol wijzigen is niet gelukt. Alleen de eigenaar van de groep mag dat.");
   }
 
   async function kiesGedeeldeMap(klasId: string, mapId: string) {
@@ -198,6 +246,15 @@ export default function DuoCollega() {
 
   // Alles wat je deelt, gegroepeerd per groep: de actieve collega's plus de
   // uitnodigingen die nog open staan.
+  /* Ben ik de eigenaar van deze groep, of ben ik er als collega bijgekomen?
+     Dat bepaalt wat je met de andere leden mag. Zonder dit onderscheid hangen
+     de knoppen aan de verkeerde persoon: de koppelrij beschrijft "de ander", en
+     vanuit een collega gezien is die ander juist de eigenaar. Een meekijker zag
+     daardoor bij de eigenaar een knop "Rol wijzigen" (die de database terecht
+     weigerde) en een knop die eruitzag alsof hij de eigenaar loskoppelde. */
+  const ikBenEigenaar = (klasId: string) =>
+    klassen.find((k) => k.id === klasId)?.eigenKlas === true;
+
   const groepen = [...new Set(koppels.map((k) => k.klasId))].map((klasId) => ({
     klasId,
     klasNaam: koppels.find((k) => k.klasId === klasId)?.klasNaam || klasNaamVan(klasId),
@@ -218,6 +275,15 @@ export default function DuoCollega() {
         delen dan de klas, een gezamenlijke takenlijst, een gedeelde map en de overdracht.
         Bijzondere persoonsgegevens (medisch, gezinssituatie, diagnoses) horen hier nooit in.
       </p>
+
+      {actieFout && (
+        <p
+          role="alert"
+          className="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700"
+        >
+          {actieFout}
+        </p>
+      )}
 
       {/* ── Code met de hand invullen ── */}
       {/* Vangnet: de link kan onderweg sneuvelen (doorgestuurd, afgekapt in een
@@ -247,50 +313,118 @@ export default function DuoCollega() {
         </div>
       )}
 
-      {/* ── Uitnodiging accepteren (via ?duo=code) ── */}
+      {/* ── Uitnodiging accepteren (via ?duo=code) ──────────────────────────
+         Als pop-up en niet als kaartje in de pagina: wie via een uitnodiging
+         een account aanmaakt, landt hier en moest anders eerst langs het hele
+         instellingenscherm naar beneden scrollen om te vinden waarvoor hij
+         kwam. De velden School en Groep staan er wél achter, zodat je ze ziet
+         invullen zodra je accepteert. */}
       {uitnodigingsCode && voorbeeld && (
-        <div className="mt-5 rounded-2xl border border-brand/30 bg-brand-soft p-5">
-          {voorbeeld === "laden" && <p className="text-sm text-ink/70">Uitnodiging laden…</p>}
-          {voorbeeld === "fout" && (
-            <>
-              <p className="text-sm font-semibold text-ink">
-                Deze uitnodiging is niet (meer) geldig.
-              </p>
-              <p className="mt-1 text-sm text-ink/65">
-                Misschien is hij al geaccepteerd of ingetrokken. Vraag je collega om een
-                nieuwe link.
-              </p>
-              <button
-                onClick={verwijderDuoParam}
-                className="mt-3 rounded-xl border border-black/10 bg-white px-5 py-2.5 text-sm font-semibold text-ink/70 hover:border-black/20"
-              >
-                Sluiten
-              </button>
-            </>
-          )}
-          {typeof voorbeeld === "object" && voorbeeld !== null && (
-            <>
-              <p className="text-sm text-ink">
-                Je bent uitgenodigd om <strong>{voorbeeld.klasNaam}</strong> samen te
-                draaien. Als je accepteert, delen jullie deze groep.
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  onClick={accepteer}
-                  disabled={accepterenBezig}
-                  className="rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-dark disabled:opacity-50"
-                >
-                  {accepterenBezig ? "Bezig…" : "Uitnodiging accepteren"}
-                </button>
-                <button
-                  onClick={verwijderDuoParam}
-                  className="rounded-xl border border-black/10 px-5 py-2.5 text-sm font-semibold text-ink/70 hover:border-black/20"
-                >
-                  Niet nu
-                </button>
-              </div>
-            </>
-          )}
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="duo-uitnodiging-kop"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm"
+        >
+          <div className="w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl sm:p-8">
+            {/* Gelukt. Bewust een eigen scherm en niet gewoon dichtklappen:
+                dit is het moment om te zeggen dát het gelukt is, en om te
+                vertellen waar je wisselt als de groep niet vanzelf aanging
+                (dat gebeurt alleen als je zelf nog geen klas met leerlingen
+                hebt — zie duo_koppel_accepteren). */}
+            {geaccepteerd && (
+              <>
+                <h2 id="duo-uitnodiging-kop" className="font-serif text-2xl font-semibold text-ink">
+                  Je hoort nu bij {geaccepteerd}
+                </h2>
+                <p className="mt-3 leading-7 text-ink/75">
+                  Jullie delen vanaf nu de rapporten, bestanden, taken en de overdracht van
+                  deze groep.
+                </p>
+                <p className="mt-3 rounded-2xl bg-brand-soft px-4 py-3 text-sm leading-6 text-ink/75">
+                  Werk je zelf al met een eigen klas? Dan blijven je tools daarnaar kijken.
+                  Kies {geaccepteerd} bij <strong className="font-semibold">Mijn klas</strong> als
+                  je wilt dat ze deze groep gebruiken.
+                </p>
+                <div className="mt-6 flex justify-end">
+                  <button
+                    onClick={sluitBevestiging}
+                    className="rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-dark"
+                  >
+                    Klaar
+                  </button>
+                </div>
+              </>
+            )}
+
+            {!geaccepteerd && voorbeeld === "laden" && (
+              <p className="text-ink/70">Uitnodiging laden…</p>
+            )}
+
+            {!geaccepteerd && voorbeeld === "fout" && (
+              <>
+                <h2 id="duo-uitnodiging-kop" className="font-serif text-2xl font-semibold text-ink">
+                  Deze uitnodiging werkt niet meer
+                </h2>
+                <p className="mt-3 leading-7 text-ink/75">
+                  Misschien is hij al geaccepteerd of ingetrokken. Vraag je collega om een
+                  nieuwe link.
+                </p>
+                <div className="mt-6 flex justify-end">
+                  <button
+                    onClick={verwijderDuoParam}
+                    className="rounded-xl border border-black/10 px-5 py-2.5 text-sm font-semibold text-ink/70 transition hover:border-black/20"
+                  >
+                    Sluiten
+                  </button>
+                </div>
+              </>
+            )}
+
+            {!geaccepteerd && typeof voorbeeld === "object" && voorbeeld !== null && (
+              <>
+                <h2 id="duo-uitnodiging-kop" className="font-serif text-2xl font-semibold text-ink">
+                  {voorbeeld.uitnodigerVoornaam || "Een collega"} nodigt je uit
+                </h2>
+                <p className="mt-3 leading-7 text-ink/75">
+                  Om <strong className="font-semibold text-ink">{voorbeeld.klasNaam}</strong> samen
+                  te draaien. Jullie delen dan de rapporten, bestanden, taken en de overdracht
+                  van die groep.
+                </p>
+
+                {/* Alleen tonen als er echt iets over te nemen valt: heeft de
+                   uitnodiger zelf niets ingevuld, dan is deze belofte leeg. */}
+                {(voorbeeld.schoolnaam || voorbeeld.standaardgroep) && (
+                  <div className="mt-4 rounded-2xl bg-brand-soft px-4 py-3">
+                    <p className="text-sm font-bold text-ink/80">
+                      We vullen dan ook vast voor je in:
+                    </p>
+                    <p className="mt-1 text-sm text-ink/70">
+                      {[voorbeeld.schoolnaam, voorbeeld.standaardgroep]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </div>
+                )}
+
+                <div className="mt-6 flex flex-wrap justify-end gap-2">
+                  <button
+                    onClick={verwijderDuoParam}
+                    className="rounded-xl border border-black/10 px-5 py-2.5 text-sm font-semibold text-ink/70 transition hover:border-black/20"
+                  >
+                    Later
+                  </button>
+                  <button
+                    onClick={accepteer}
+                    disabled={accepterenBezig}
+                    className="rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-dark disabled:opacity-50"
+                  >
+                    {accepterenBezig ? "Bezig…" : "Accepteren"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
 
@@ -329,7 +463,11 @@ export default function DuoCollega() {
                         <span className="rounded-full bg-cream px-2.5 py-1 text-xs font-semibold text-ink/60">
                           {ROL_TEKST[lid.rol]}
                         </span>
-                        {koppel && (
+                        {/* Alleen de eigenaar van de groep beheert de leden.
+                            Ben je er zelf als collega bij gekomen, dan hoort
+                            hier niets: je stapt eruit met de knop onder de
+                            lijst, en de rol van een ander is niet aan jou. */}
+                        {koppel && ikBenEigenaar(g.klasId) && (
                           <>
                             <button
                               onClick={() => wisselRol(koppel)}
@@ -389,6 +527,18 @@ export default function DuoCollega() {
                   </li>
                 ))}
               </ul>
+
+              {/* Zelf uit de groep stappen. Alleen voor wie er als collega bij
+                  is gekomen; de eigenaar verlaat zijn eigen groep niet, die
+                  koppelt collega's los in de lijst hierboven. */}
+              {!ikBenEigenaar(g.klasId) && g.actief.length > 0 && (
+                <button
+                  onClick={() => verlaatGroep(g.actief[0], g.klasNaam)}
+                  className="mt-1.5 rounded-lg text-xs font-semibold text-ink/50 transition hover:text-red-600"
+                >
+                  Deze groep verlaten
+                </button>
+              )}
 
               {g.actief.length > 0 && (
                 <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
@@ -462,7 +612,9 @@ export default function DuoCollega() {
               ))}
             </div>
 
-            {/* Rol: bepaalt of rapporten meegaan. Bewust een keuze vooraf en niet
+            {/* Rol: bepaalt of iemand rapporten mag VASTLEGGEN. Lezen mag
+                sinds 4-8 allebei; het verschil zit in het schrijven en in het
+                aanpassen van de klassenlijst. Bewust een keuze vooraf en niet
                 iets wat je achteraf moet ontdekken. */}
             <div className="mt-3 flex flex-wrap gap-2">
               {(["volledig", "meekijken"] as DuoRol[]).map((r) => (
@@ -483,8 +635,8 @@ export default function DuoCollega() {
             </div>
             <p className="mt-1.5 text-xs text-ink/50">
               {gekozenRol === "volledig"
-                ? "Ziet en bewerkt alles van deze groep, inclusief rapporten."
-                : "Werkt mee aan de groep, de takenlijst, de gedeelde map en de overdracht, maar ziet geen rapporten."}
+                ? "Ziet en bewerkt alles van deze groep, inclusief de rapporten en de klassenlijst."
+                : "Werkt mee aan de takenlijst, de gedeelde map en de overdracht, en leest de rapporten mee. Schrijft ze niet en past de klassenlijst niet aan."}
             </p>
 
             <button

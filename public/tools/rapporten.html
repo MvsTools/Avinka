@@ -1973,9 +1973,78 @@ async function vulMijnKlas(toevoegFn){
 (function(){
   function api(u,o){ return fetch(u, Object.assign({headers:{accept:'application/json'}}, o||{})); }
   var avinkaKlasId='';
-  async function haalKlas(){ try{ var r=await api('/api/klas'); if(!r.ok)return {naam:'',leerlingen:[]}; var d=await r.json(); avinkaKlasId=d.id||''; window.avinkaKlasGeslacht={}; ((d&&d.leerlingenData)||[]).forEach(function(l){ if(l&&l.naam) window.avinkaKlasGeslacht[l.naam.toLowerCase()] = l.geslacht==='j'?'jongen':(l.geslacht==='m'?'meisje':''); }); return {naam:d.naam||'', leerlingen:d.leerlingen||[]}; }catch(e){ return {naam:'',leerlingen:[]}; } }
+  /* Mag je voor de actieve groep rapporten schrijven? Kijk je alleen mee bij
+     de groep van een collega, dan niet. Standaard true, zodat een oudere
+     server die dit veld nog niet meestuurt niets kapotmaakt. */
+  var avinkaMagRapportenBewerken=true;
+  async function haalKlas(){ try{ var r=await api('/api/klas'); if(!r.ok)return {naam:'',leerlingen:[]}; var d=await r.json(); avinkaKlasId=d.id||''; avinkaMagRapportenBewerken=(d.magRapportenBewerken!==false); window.avinkaKlasGeslacht={}; ((d&&d.leerlingenData)||[]).forEach(function(l){ if(l&&l.naam) window.avinkaKlasGeslacht[l.naam.toLowerCase()] = l.geslacht==='j'?'jongen':(l.geslacht==='m'?'meisje':''); }); if(!avinkaMagRapportenBewerken){ toonMeekijkMelding(); zetLeesstandAan(); } return {naam:d.naam||'', leerlingen:d.leerlingen||[]}; }catch(e){ return {naam:'',leerlingen:[]}; } }
   async function haalRapporten(){ try{ var r=await api('/api/rapporten'); if(!r.ok)return []; var d=await r.json(); return d.rapporten||[]; }catch(e){ return []; } }
-  async function slaOp(naam,verhaal){ if(!naam||!verhaal||!verhaal.trim())return; try{ await fetch('/api/rapporten',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({naam:naam,verhaal:verhaal,klas_id:avinkaKlasId})}); }catch(e){} }
+
+  /* Eén stille regel boven de tool. Bewust kaal en grijs, geen gekleurd
+     waarschuwingsblok: de melding staat al op Start bij de toolkaart, en wie
+     hier tóch komt hoeft niet te schrikken. Pas als je echt probeert op te
+     slaan wordt het luider (zie meldOpslaanMislukt). */
+  function toonMeekijkMelding(){
+    if(document.getElementById('avinka-meekijk'))return;
+    var m=document.querySelector('main'); if(!m)return;
+    var d=document.createElement('div');
+    d.id='avinka-meekijk';
+    d.setAttribute('role','status');
+    d.style.cssText='margin:0 auto 16px;max-width:900px;padding:0 4px;color:#6b7280;font-size:14px;line-height:1.6';
+    d.textContent='Je kijkt mee bij deze groep. Je kunt de rapporten lezen, maar niet wijzigen of opslaan.';
+    m.insertBefore(d, m.firstChild);
+  }
+
+  /* Meekijken = meelezen. Dan hoef je niet eerst langs het instellingenscherm
+     en het namenscherm: die twee gaan over het SCHRIJVEN van een rapport, en
+     dat doe je hier niet. Je landt dus meteen op de naamkaarten, waar de
+     teksten van je collega staan. */
+  async function meekijkerNaarOverzicht(){
+    if(avinkaMagRapportenBewerken)return;
+    if(typeof maakKaarten!=='function'||typeof naamLijst==='undefined')return;
+    await autoVul();
+    if(!naamLijst.length)return;
+    maakKaarten();
+  }
+
+  /* Alles waarmee je een rapport zou schrijven, uitzetten op het
+     leerlingscherm. Zonder dit kun je als meekijker een tekst laten
+     genereren (die kost credits) en typen in een veld dat nooit bewaard
+     wordt — precies de stille mislukking die we hier aan het weghalen zijn. */
+  function zetLeesstandAan(){
+    var knop=document.getElementById('btn-genereer');
+    if(knop) knop.style.display='none';
+    var vragen=document.getElementById('vragen-container');
+    if(vragen) vragen.style.display='none';
+    var thema=document.getElementById('thema-balk');
+    if(thema) thema.style.display='none';
+    var veld=document.getElementById('verhaal-tekst');
+    if(veld){ veld.readOnly=true; veld.setAttribute('aria-readonly','true'); }
+  }
+
+  /* Opslaan meldt het nu als het mislukt. Stond hier eerder als een fetch in
+     een lege catch: een mislukte opslag zag er dan precies zo uit als een
+     geslaagde, en je raakte een heel getypt rapport kwijt zonder het te
+     merken. Eén melding per sessie, anders krijg je bij elk kind een venster. */
+  var slaOpFoutGemeld=false;
+  function meldOpslaanMislukt(reden){
+    if(slaOpFoutGemeld)return; slaOpFoutGemeld=true;
+    var tekst = reden==='geen_rapportrecht'
+      ? 'Dit rapport is niet opgeslagen.\n\nJe kijkt mee bij deze groep, dus je kunt hier geen rapporten vastleggen. Vraag je collega om je rol te veranderen als dat wel de bedoeling is.'
+      : 'Dit rapport is niet opgeslagen.\n\nEr ging iets mis bij het bewaren. Kopieer je tekst voor de zekerheid even, en probeer het zo nog eens.';
+    if(typeof avinkaAlert==='function') avinkaAlert(tekst); else alert(tekst);
+  }
+  async function slaOp(naam,verhaal){
+    if(!naam||!verhaal||!verhaal.trim())return;
+    if(!avinkaMagRapportenBewerken){ meldOpslaanMislukt('geen_rapportrecht'); return; }
+    try{
+      var r=await fetch('/api/rapporten',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({naam:naam,verhaal:verhaal,klas_id:avinkaKlasId})});
+      if(!r.ok){
+        var reden=''; try{ reden=((await r.json())||{}).error||''; }catch(e){}
+        meldOpslaanMislukt(reden);
+      }
+    }catch(e){ meldOpslaanMislukt(''); }
+  }
   function NL(arr){ return arr.join(String.fromCharCode(10)); }
   function groepUitNaam(naam){ if(!naam)return ''; var s=String(naam); if(s.indexOf('1/2')>=0||s.indexOf('1 / 2')>=0)return '1/2'; for(var i=0;i<s.length;i++){ var c=s.charCodeAt(i); if(c>=49&&c<=56) return s.charAt(i); } return ''; }
   function zet(id,val){ var e=document.getElementById(id); if(e&&val){ e.value=val; if(e.value) e.classList.add('filled'); } }
@@ -2001,7 +2070,7 @@ async function vulMijnKlas(toevoegFn){
   if(typeof genereerVerhaal==='function'){ var _g=genereerVerhaal; genereerVerhaal=function(){ var p=_g.apply(this,arguments); Promise.resolve(p).then(function(){ try{ var l=huidige(); if(l&&l.verhaal) slaOp(l.naam,l.verhaal); }catch(e){} }); return p; }; }
   var box=document.getElementById('verhaal-tekst');
   if(box) box.addEventListener('blur', function(){ try{ var l=huidige(); if(l){ l.verhaal=box.value; slaOp(l.naam, box.value); } }catch(e){} });
-  prefillStart();
+  prefillStart().then(meekijkerNaarOverzicht);
 })();
 </script>
 <script>/* Privacy-pop-up bij openen van Rapporten */

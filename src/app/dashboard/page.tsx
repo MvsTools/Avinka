@@ -3,6 +3,7 @@ import { createClient } from "@/utils/supabase/server";
 import { tools } from "@/lib/tools";
 import { BETALINGEN_LIVE, magToolGebruiken } from "@/lib/abonnement";
 import { getAbonnementServer } from "@/lib/abonnement-server";
+import { haalRapportGrens } from "@/lib/actieve-klas";
 import OnboardingCard from "@/components/dashboard/OnboardingCard";
 import WelkomModal from "@/components/dashboard/WelkomModal";
 import StreakBadge from "@/components/dashboard/StreakBadge";
@@ -10,6 +11,7 @@ import TakenOverzicht from "@/components/dashboard/TakenOverzicht";
 import VandaagRij from "@/components/dashboard/VandaagRij";
 import DuoOverdracht from "@/components/dashboard/DuoOverdracht";
 import CollegaUitnodigen from "@/components/dashboard/CollegaUitnodigen";
+import KaartMelding from "@/components/dashboard/KaartMelding";
 import { amsterdamDatum } from "@/lib/streak";
 import { haalMijnGroepen, haalPlanning } from "@/lib/planning";
 
@@ -29,12 +31,23 @@ export default async function DashboardStart() {
 
   // Welke tools zitten in het pakket van deze leerkracht? Zolang betalingen
   // niet live zijn, is alles open (de vlag regelt dat in magToolGebruiken).
-  const [ab, planning, groepen] = await Promise.all([
+  const [ab, planning, groepen, rapportGrens] = await Promise.all([
     BETALINGEN_LIVE ? getAbonnementServer() : Promise.resolve(null),
     haalPlanning(supabase, { nu: vandaag }),
     haalMijnGroepen(supabase),
+    haalRapportGrens(supabase),
   ]);
   const vergrendeld = (slug: string) => (ab ? !magToolGebruiken(ab, slug) : false);
+
+  // Kijk je bij de actieve groep alleen mee, dan kun je de rapporten wél lezen
+  // maar niet vastleggen. Dat hoort hier te staan en niet pas ín de tool:
+  // anders kom je er pas achter als je al een rapport hebt getypt.
+  // Achter een uitroepteken, dus de tekst mag iets voller: je leest hem alleen
+  // als je er zelf naar vraagt.
+  const meekijkNotitie = (slug: string) =>
+    slug === "rapporten" && !rapportGrens.magRapportenBewerken
+      ? `Je kijkt mee bij ${rapportGrens.klasNaam || "deze groep"}. Je kunt de rapporten lezen, maar niet wijzigen of opslaan.`
+      : "";
 
   return (
     <div className="flex flex-col gap-8">
@@ -83,10 +96,18 @@ export default async function DashboardStart() {
                 className={
                   slot
                     ? "group relative flex items-stretch gap-5 rounded-3xl border border-black/5 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-                    : "group flex items-stretch gap-5 rounded-3xl border border-black/5 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md " +
+                    : "group relative flex items-stretch gap-5 rounded-3xl border border-black/5 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md " +
                       tool.rand
                 }
               >
+                {/* Kijk je bij deze groep alleen mee, dan kun je hier niets
+                    vastleggen. Als klein uitroepteken in de hoek: het geldt
+                    maar voor één kaart en zelden, dus het hoeft de kaart niet
+                    zwaarder te maken. Botst niet met het slotje hieronder,
+                    want dat verschijnt alleen bij een vergrendelde tool. */}
+                {!slot && meekijkNotitie(tool.slug) && (
+                  <KaartMelding tekst={meekijkNotitie(tool.slug)} />
+                )}
                 {slot && (
                   <span className="absolute right-5 top-5 text-ink/30" title="Zit niet in je pakket">
                     {/* slotje */}

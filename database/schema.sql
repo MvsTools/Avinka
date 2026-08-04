@@ -1167,12 +1167,29 @@ grant select, insert, update, delete on public.duo_koppels to authenticated;
 -- Uitnodiging bekijken via de code, vóór acceptatie (B staat nog niet in de
 -- rij, dus de RLS-policy hierboven laat 'm nog niets zien). Geeft alleen
 -- weer wat nodig is om de uitnodiging te tonen — geen kinddata.
+--
+-- Voornaam, schoolnaam en standaardgroep van de uitnodiger komen mee zodat de
+-- pop-up kan zeggen van wie de uitnodiging komt en wat je overneemt. Dat zijn
+-- gegevens van een ander, dus bewust precies deze drie en niets meer, alleen
+-- voor wie de geheime code heeft en alleen zolang de uitnodiging openstaat.
 create or replace function public.duo_koppel_voorbeeld(p_code text)
-returns table (klas_naam text, status text)
+returns table (
+  klas_naam           text,
+  status              text,
+  uitnodiger_voornaam text,
+  schoolnaam          text,
+  standaardgroep      text
+)
 language sql security definer set search_path = public as $$
-  select k.naam, dk.status
+  select k.naam,
+         dk.status,
+         coalesce(u.raw_user_meta_data ->> 'first_name', ''),
+         coalesce(i.schoolnaam, ''),
+         coalesce(i.standaardgroep, '')
   from public.duo_koppels dk
   join public.klassen k on k.id = dk.klas_id
+  join auth.users u on u.id = dk.gebruiker_a
+  left join public.instellingen i on i.user_id = dk.gebruiker_a
   where dk.code = p_code and dk.status = 'uitgenodigd' and dk.gebruiker_b is null
   limit 1;
 $$;
@@ -1181,15 +1198,58 @@ grant execute on function public.duo_koppel_voorbeeld(text) to authenticated;
 -- Uitnodiging accepteren: moet via security definer, want vóór dit moment
 -- staat de accepterende gebruiker nergens in de rij en mag hij 'm dus niet
 -- via een gewone update raken (RLS zou dat blokkeren — terecht).
+--
+-- Vult meteen school en groep in, want die neem je over van je collega. Dat
+-- gebeurt hier en niet in de browser, zodat de waarden niet te vervalsen zijn.
+-- NOOIT overschrijven wat iemand zelf al heeft ingevuld: alleen lege velden.
 create or replace function public.duo_koppel_accepteren(p_code text)
 returns uuid language plpgsql security definer set search_path = public as $$
-declare gevonden_id uuid;
+declare
+  gevonden_id   uuid;
+  uitnodiger    uuid;
+  gedeelde_klas uuid;
 begin
   update public.duo_koppels
   set gebruiker_b = auth.uid(), status = 'actief'
   where code = p_code and status = 'uitgenodigd' and gebruiker_b is null
     and gebruiker_a <> auth.uid() -- niet je eigen uitnodiging accepteren
-  returning id into gevonden_id;
+  returning id, gebruiker_a, klas_id
+       into gevonden_id, uitnodiger, gedeelde_klas;
+
+  if gevonden_id is null then
+    return null;
+  end if;
+
+  insert into public.instellingen as doel (user_id, schoolnaam, standaardgroep)
+  select auth.uid(), coalesce(i.schoolnaam, ''), coalesce(i.standaardgroep, '')
+  from public.instellingen i
+  where i.user_id = uitnodiger
+  on conflict (user_id) do update
+  set schoolnaam = case
+        when coalesce(doel.schoolnaam, '') = '' then excluded.schoolnaam
+        else doel.schoolnaam
+      end,
+      standaardgroep = case
+        when coalesce(doel.standaardgroep, '') = '' then excluded.standaardgroep
+        else doel.standaardgroep
+      end;
+
+  -- Heb je zelf nog geen klas met leerlingen, dan is deze gedeelde groep
+  -- vanaf nu jouw actieve klas: anders kijken je tools nog naar je eigen
+  -- (lege) klas en zie je niets van de groep waar je net bij kwam.
+  -- ⚠️ Bewust NIET altijd: een leerkracht met een eigen groep hoort daar te
+  -- blijven kijken. Die krijgt in het scherm te zien waar hij kan wisselen.
+  if not exists (
+    select 1 from public.klassen k
+    where k.user_id = auth.uid()
+      and coalesce(array_length(k.leerlingen, 1), 0) > 0
+  ) then
+    insert into public.instellingen (user_id, actieve_duo_klas_id)
+    values (auth.uid(), gedeelde_klas)
+    on conflict (user_id) do update
+    set actieve_duo_klas_id = excluded.actieve_duo_klas_id;
+  end if;
+
   return gevonden_id;
 end;
 $$;
@@ -1300,12 +1360,21 @@ alter table public.rapporten add column if not exists klas_id uuid
   references public.klassen(id) on delete set null;
 create index if not exists idx_rapporten_klas on public.rapporten(klas_id);
 
--- ⚠️ Hier ligt de grens van de rol 'meekijken': rapporten zijn geschreven
--- oordelen over kinderen, en die deel je alleen met een collega die
--- medeverantwoordelijk is voor de groep — niet met iedereen die meehelpt.
--- Vandaar `klas_toegang_volledig` en niet `klas_toegang`.
+-- ⚠️ Hier ligt de grens van de rol 'meekijken', en die loopt tussen LEZEN en
+-- SCHRIJVEN. Beslissing van de eigenaar (4-8): een collega die meedraait moet
+-- kunnen weten wat er over een kind geschreven is, ook al legt hij het zelf
+-- niet vast. Vastleggen blijft bij wie medeverantwoordelijk is voor de groep.
+--
+-- ⚠️ De 403-controle in /api/rapporten hoort hierbij en is niet optioneel:
+-- door het leesrecht vindt "bestaat er al een rapport voor dit kind" ook bij
+-- een meekijker een rij, en de update daarop raakt nul rijen zónder fout.
+-- Zonder die controle ziet opslaan eruit alsof het lukte.
 drop policy if exists "duo-partner rapporten" on public.rapporten;
-create policy "duo-partner rapporten" on public.rapporten
+drop policy if exists "duo-partner rapporten lezen" on public.rapporten;
+create policy "duo-partner rapporten lezen" on public.rapporten
+  for select using (klas_id is not null and public.klas_toegang(rapporten.klas_id));
+drop policy if exists "duo-partner rapporten schrijven" on public.rapporten;
+create policy "duo-partner rapporten schrijven" on public.rapporten
   for all using (klas_id is not null and public.klas_toegang_volledig(rapporten.klas_id))
   with check (klas_id is not null and public.klas_toegang_volledig(rapporten.klas_id));
 
@@ -1444,3 +1513,46 @@ create policy "eigen leesstand" on public.duo_overdracht_gelezen
   for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 grant select, insert, update, delete on public.duo_overdracht_gelezen to authenticated;
 grant select, insert, update, delete on public.duo_overdracht to authenticated;
+
+
+-- ============================================================================
+-- SLOTBLOK: uitgelogde bezoekers buiten de functies zetten
+-- ----------------------------------------------------------------------------
+-- Dit hoort ONDERAAN te blijven staan, want elke functie moet al bestaan.
+--
+-- `grant execute ... to authenticated` sluit anon NIET buiten: PostgreSQL geeft
+-- EXECUTE op een nieuwe functie standaard aan PUBLIC, en anon valt daaronder.
+-- Zonder dit blok staan bijna alle functies open voor wie niet is ingelogd.
+--
+-- ⚠️ BOUW JE EEN NIEUWE FUNCTIE: zet hem hier ook in de lijst. De controle
+-- onderaan dit bestand laat zien of je er een vergeten bent.
+--
+-- Zie database/migratie-anon-uitsluiten.sql voor de uitleg per functie en voor
+-- de twee functies die BEWUST open blijven.
+-- ============================================================================
+
+revoke execute on function public.wijs_admin_overzicht() from public, anon;
+revoke execute on function public.wijs_admin_conversie() from public, anon;
+revoke execute on function public.wijs_admin_groei(integer) from public, anon;
+revoke execute on function public.wijs_admin_snapshots(integer) from public, anon;
+revoke execute on function public.wijs_admin_tijdwinst(integer) from public, anon;
+revoke execute on function public.wijs_admin_verbruik(integer) from public, anon;
+revoke execute on function public.wijs_admin_verbruik_tijd(integer) from public, anon;
+revoke execute on function public.wijs_admin_feedback(integer) from public, anon;
+revoke execute on function public.wijs_admin_feedback_status(uuid, text) from public, anon;
+revoke execute on function public.wijs_admin_beta_eigen_format_lijst() from public, anon;
+revoke execute on function public.wijs_admin_zet_beta_eigen_format(text, boolean) from public, anon;
+revoke execute on function public.wijs_is_admin() from public, anon;
+revoke execute on function public.wijs_aantal_verwijzingen(text) from public, anon;
+revoke execute on function public.wijs_aantal_verwijzingen_proef(text) from public, anon;
+revoke execute on function public.wijs_snapshot_abon() from public, anon;
+revoke execute on function public.wijs_community_stats() from public, anon;
+revoke execute on function public.registreer_herakkoord(text, text) from public, anon;
+revoke execute on function public.registreer_toestemming() from public, anon;
+revoke execute on function public.set_updated_at() from public, anon;
+revoke execute on function public.duo_koppel_voorbeeld(text) from public, anon;
+revoke execute on function public.duo_koppel_accepteren(text) from public, anon;
+
+-- Blijft open voor anon (deellink zonder account), maar met een EIGEN recht in
+-- plaats van via de brede PUBLIC-regel.
+revoke execute on function public.gedeeld_draaiboek(text) from public;

@@ -257,22 +257,42 @@ export async function addKlas(naam: string): Promise<Klas | null> {
   return mapKlas(data as KlasRow, user.id);
 }
 
+// ⚠️ Let op de `.select()` achter de update, en haal die er nooit af.
+// Een update die door RLS wordt tegengehouden raakt NUL rijen en dat is voor
+// Postgres geen fout: `error` blijft leeg en dit gaf dus "gelukt" terug terwijl
+// er niets was opgeslagen. Een meekijkende collega kreeg zo een kind aan de
+// klas toegevoegd te zien, met een "Bewaard"-melding erbij, en na herladen was
+// het weg. Door de gewijzigde rij op te vragen weet je het echt: geen rij terug
+// betekent niet opgeslagen.
 export async function saveKlas(
   id: string,
   k: { naam: string; leerlingenData: Leerling[] },
 ): Promise<boolean> {
   const sb = createClient();
   const namen = k.leerlingenData.map((l) => l.naam);
-  const { error } = await sb
+  const { data, error } = await sb
     .from("klassen")
     .update({ naam: k.naam, leerlingen: namen, leerlingen_data: k.leerlingenData })
-    .eq("id", id);
-  return !error;
+    .eq("id", id)
+    .select("id");
+  return !error && Array.isArray(data) && data.length > 0;
 }
 
+// Mag ik deze groep bewerken? Je eigen klas altijd; een gedeelde groep alleen
+// met de rol 'volledig'. Zelfde bron als de database gebruikt, zodat het
+// scherm en het slot niet uit elkaar kunnen lopen.
+export async function magKlasBewerken(klasId: string): Promise<boolean> {
+  const sb = createClient();
+  const { data, error } = await sb.rpc("klas_toegang_volledig", { p_klas: klasId });
+  return !error && data === true;
+}
+
+// Zelfde valkuil als bij saveKlas: een delete die RLS tegenhoudt raakt nul
+// rijen zonder fout. Vandaar ook hier de .select().
 export async function deleteKlas(id: string): Promise<boolean> {
   const sb = createClient();
-  const { error } = await sb.from("klassen").delete().eq("id", id);
+  const { data, error } = await sb.from("klassen").delete().eq("id", id).select("id");
+  if (!error && Array.isArray(data) && data.length === 0) return false;
   return !error;
 }
 
@@ -707,18 +727,36 @@ export async function zetDuoRol(koppelId: string, rol: DuoRol): Promise<boolean>
   return !error;
 }
 
+export type DuoUitnodiging = {
+  klasNaam: string;
+  status: string;
+  /* Voornaam van de uitnodiger. Leeg als die geen voornaam heeft ingevuld;
+     de pop-up valt dan terug op "Een collega". */
+  uitnodigerVoornaam: string;
+  /* School en groep van de uitnodiger: wat je overneemt als je accepteert.
+     Leeg betekent dat de uitnodiger ze zelf nog niet heeft ingevuld. */
+  schoolnaam: string;
+  standaardgroep: string;
+};
+
 // Voorbeeld van een uitnodiging op basis van de code, vóór acceptatie —
 // via security-definer RPC (RLS laat de rij zelf nog niet zien, zie schema.sql).
 export async function bekijkDuoUitnodiging(
   code: string,
-): Promise<{ klasNaam: string; status: string } | null> {
+): Promise<DuoUitnodiging | null> {
   const sb = createClient();
   const c = code.trim().toUpperCase();
   if (!c) return null;
   const { data, error } = await sb.rpc("duo_koppel_voorbeeld", { p_code: c });
   const rij = Array.isArray(data) ? data[0] : data;
   if (error || !rij) return null;
-  return { klasNaam: rij.klas_naam as string, status: rij.status as string };
+  return {
+    klasNaam: rij.klas_naam as string,
+    status: rij.status as string,
+    uitnodigerVoornaam: ((rij.uitnodiger_voornaam as string) || "").trim(),
+    schoolnaam: ((rij.schoolnaam as string) || "").trim(),
+    standaardgroep: ((rij.standaardgroep as string) || "").trim(),
+  };
 }
 
 // Accepteert de uitnodiging — pas hierna krijg je (en de uitnodiger, over en

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { haalActieveKlas } from "@/lib/actieve-klas";
 
 // Geeft de klassenlijst van de INGELOGDE leerkracht terug, zodat de tools
 // (Plattegrond, Rapporten, Oudercontact) de namen kunnen invullen.
@@ -13,39 +14,21 @@ export async function GET() {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  // Heeft de leerkracht een gedeelde duo-klas gekozen als actief? Die
-  // voorkeur staat los van klassen.actief (zie schema.sql sectie 19) — een
-  // gedeelde klas mag de eigenaar zijn eigen "actief"-vlag niet omgooien.
-  const { data: instelling } = await supabase
-    .from("instellingen")
-    .select("actieve_duo_klas_id")
-    .maybeSingle();
-  const duoKlasId = instelling?.actieve_duo_klas_id as string | null | undefined;
-
-  const KLAS_COLS = "id, naam, leerlingen, leerlingen_data";
+  // Welke groep actief is (eigen klas of een gedeelde die je koos) staat in
+  // src/lib/actieve-klas.ts, zodat de Start-pagina exact hetzelfde antwoord
+  // krijgt als de tools.
   let data: {
     id: string;
     naam: string;
     leerlingen: string[] | null;
     leerlingen_data: unknown;
   } | null = null;
-  if (duoKlasId) {
-    const r = await supabase.from("klassen").select(KLAS_COLS).eq("id", duoKlasId).maybeSingle();
-    data = r.data;
-  }
-  if (!data) {
-    // Geen (geldige) gedeelde voorkeur: de gewone eigen-klas-volgorde.
-    const { data: eigen, error } = await supabase
-      .from("klassen")
-      .select(KLAS_COLS)
-      .order("actief", { ascending: false })
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    if (error) {
-      return NextResponse.json({ error: "db_error" }, { status: 500 });
-    }
-    data = eigen;
+  try {
+    data = await haalActieveKlas(supabase, "id, naam, leerlingen, leerlingen_data");
+  } catch {
+    // Een lege klas teruggeven zou de tool laten zeggen "je hebt nog geen klas
+    // ingevuld", terwijl de klas er gewoon is. Liever een eerlijke fout.
+    return NextResponse.json({ error: "db_error" }, { status: 500 });
   }
 
   const namen: string[] = data?.leerlingen ?? [];
@@ -55,10 +38,26 @@ export async function GET() {
       ? ruw
       : namen.map((n) => ({ naam: n, geslacht: "" }));
 
+  // Mag je voor DEZE groep rapporten BEWERKEN? Kijk je alleen mee, dan niet:
+  // rapporten zijn geschreven oordelen over kinderen en die legt vast wie er
+  // ook verantwoordelijk voor is. Lezen mag een meekijker sinds 4-8 wel.
+  //
+  // De database weigert het schrijven zelf ook (policy "duo-partner rapporten
+  // schrijven"), maar zonder dit antwoord merkt de tool dat pas ná het typen
+  // van een heel rapport. Nu kan hij het vooraf zeggen.
+  let magRapportenBewerken = true;
+  if (data?.id) {
+    const { data: volledig } = await supabase.rpc("klas_toegang_volledig", {
+      p_klas: data.id,
+    });
+    magRapportenBewerken = volledig === true;
+  }
+
   return NextResponse.json({
     id: data?.id ?? "", // voor tools die een rapport/bestand aan deze klas koppelen (duo-collega's)
     naam: data?.naam ?? "",
     leerlingen: namen, // platte namenlijst — bestaande tools blijven werken
     leerlingenData, // [{naam, geslacht}] — voor tools die hij/zij willen gebruiken
+    magRapportenBewerken,
   });
 }
