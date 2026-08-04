@@ -981,22 +981,55 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
       <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pb-20 pt-20 lg:pb-24 lg:pt-24">
         <Confetti punten={[{ x: "3%", y: "88%", r: 4 }]} />
 
+        {/* ⚠️ DE OPZET IS OMGEKEERD (op verzoek): het schrift ligt aan één
+           kant en de tekst staat ernaast, niet erin. Een schrift waar je hele
+           productverhaal in past bestaat niet — dat was precies waarom het
+           onrealistisch aanvoelde. Nu ligt er een schrift met een foto erin,
+           zoals een schrift er echt uitziet, en de tekst staat gewoon op het
+           veld ernaast. */}
+        <div className="w-mkr-rij">
+          <div className="w-mkr-tekst">
+            <p className="w-schrift-naam">Michael van Spanje</p>
+            <p className="w-schrift-rol">leerkracht &amp; maker van Avinka</p>
+            <p className="w-schrift-tekst">
+              Ik sta zelf voor de klas en weet hoeveel tijd rapporten,
+              analyses en verslagen kosten.
+            </p>
+            <p className="w-schrift-kern">
+              Daarom bouw ik Avinka: die tijd hoort bij je leerlingen te
+              liggen, niet bij het papierwerk.
+            </p>
+          </div>
+
         <div ref={boek} data-reveal className="w-schrift">
-          {/* De rechterbladzijde: ligt er altijd, wordt alleen vrijgegeven.
-             Schrijflijnen als achtergrond, want dat is wat een schrift een
-             schrift maakt — niet een tekening van een schrift. */}
+          {/* De bladzijde: ligt er altijd, wordt alleen vrijgegeven. Papier
+             met schrijflijnen, en daarop één ingeplakte foto — dat is wat er
+             in een schrift zit. */}
           <div className="w-schrift-blad">
             <div className="w-schrift-inhoud">
-              <p className="w-schrift-naam">Michael van Spanje</p>
-              <p className="w-schrift-rol">leerkracht &amp; maker van Avinka</p>
-              <p className="w-schrift-tekst">
-                Ik sta zelf voor de klas en weet hoeveel tijd rapporten,
-                analyses en verslagen kosten.
-              </p>
-              <p className="w-schrift-kern">
-                Daarom bouw ik Avinka: die tijd hoort bij je leerlingen te
-                liggen, niet bij het papierwerk.
-              </p>
+              <div className="w-schrift-afdruk">
+                <div className="w-schrift-foto">
+                  {fotoBestand ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`/${fotoBestand}`}
+                      alt="Michael van Spanje"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="font-display text-2xl font-black" style={{ color: DONKER }}>
+                      MvS
+                    </span>
+                  )}
+                </div>
+                {/* Het onderschrift bij een ingeplakte foto, met de hand
+                   geschreven zoals de rest van dit schrift.
+                   ⚠️ Hier stond "dat ben ik, voor de klas". Eruit: die foto is
+                   niet in een lokaal genomen, dus dat is een bijschrift dat
+                   iets beweert wat je niet ziet. Zodra er ooit een echte foto
+                   in de klas komt mag die zin terug. */}
+                <p className="w-schrift-onderschrift">dat ben ik</p>
+              </div>
             </div>
           </div>
 
@@ -1028,23 +1061,14 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
               </div>
             </div>
 
-            <div className="w-schrift-achter">
-              <div className="w-schrift-foto">
-                {fotoBestand ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={`/${fotoBestand}`}
-                    alt="Michael van Spanje"
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span className="font-display text-2xl font-black" style={{ color: DONKER }}>
-                    MvS
-                  </span>
-                )}
-              </div>
-            </div>
+            {/* De achterkant van de kaft. Meer is het niet, en dat is precies
+               wat het realistisch maakt: als je een schrift openslaat kijk je
+               tegen de binnenkant van hetzelfde karton aan. Hier stond eerst
+               een mintgroen vlak met een uitgeknipte foto erin, en dat is
+               waar het nep van werd — dat is geen kaft maar een paneel. */}
+            <div className="w-schrift-achter" />
           </div>
+        </div>
         </div>
       </div>
 
@@ -1058,27 +1082,44 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            verspringt er niets als hij opengaat: de ruimte was er al.
            --open loopt van 0 (dicht) tot 1 (open) en wordt door de scroll
            gezet; alle beweging hieronder hangt aan dat ene getal. */
+        /* ── de rij: tekst links, schrift rechts ──
+           Het schrift heeft een vaste maat en de tekst krijgt de rest. Zo
+           blijft het schrift een voorwerp met een eigen formaat in plaats van
+           een blok dat met het scherm meerekt. */
+        .w-mkr-rij {
+          display: grid;
+          gap: clamp(28px, 4vw, 56px);
+          align-items: center;
+        }
+        @media (min-width: 900px) {
+          .w-mkr-rij { grid-template-columns: minmax(0, 1fr) 32rem; }
+        }
+        .w-mkr-tekst { max-width: 42ch; }
+
         .w-schrift {
           --open: 0;
           position: relative;
           display: grid;
           grid-template-columns: 1fr 1fr;
           width: 100%;
-          max-width: 46rem;
-          margin-right: auto;
-          perspective: 1800px;
-          rotate: -0.8deg;
+          max-width: 32rem;
+          perspective: 1500px;
+          rotate: -1.2deg;
         }
 
         /* ── de rechterbladzijde ──
            Warm papier met schrijflijnen. De lijnen komen uit een verloop en
            niet uit losse elementen: zo lopen ze altijd door tot onderaan,
            hoeveel tekst er ook staat. */
+        /* 🔑 DE STAPEL BLADEN. Hier zat een deel van het "onrealistisch": het
+           was één vel, en een schrift is een stapel. De losse box-shadows met
+           een negatieve spread zijn de randen van de bladen eronder — twee is
+           genoeg, drie werd een trapje. Daarna pas de echte slagschaduw. */
         .w-schrift-blad {
           grid-column: 2;
           position: relative;
-          min-height: 19rem;
-          padding: clamp(22px, 2.6vw, 34px) clamp(20px, 2.4vw, 32px);
+          min-height: 17rem;
+          padding: clamp(18px, 2.2vw, 26px) clamp(16px, 2vw, 24px);
           background:
             repeating-linear-gradient(
               to bottom,
@@ -1090,7 +1131,10 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           border: 2px solid ${KAART_RAND};
           border-left: none;
           border-radius: 0 1.4rem 1.6rem 0;
-          box-shadow: ${schaduw(20, 44, -24, 0.5)};
+          box-shadow:
+            2px 3px 0 -1px #f6f2e6,
+            4px 6px 0 -2px #efeadb,
+            ${schaduw(20, 44, -24, 0.5)};
         }
         /* De schaduw van de kaft die over het papier valt, vlak bij de rug.
            Verdwijnt naarmate het schrift opengaat: bij een open schrift ligt
@@ -1137,21 +1181,22 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           line-height: 1.5;
           color: rgba(34, 28, 58, 0.7);
         }
+        /* ⚠️ Deze drie stonden op een regelafstand van exact 30px, gelijk aan
+           de schrijflijnen, want toen liep de tekst óp de lijnen van de
+           bladzijde. Nu staat de tekst naast het schrift op het gewone veld
+           en is dat juist verkeerd: daar hoort de leesbare maat van de rest
+           van de pagina. */
         .w-schrift-tekst {
           margin-top: 1.15rem;
-          font-size: 1rem;
-          line-height: 30px;
+          font-size: 1.05rem;
+          line-height: 1.7;
           color: rgba(34, 28, 58, 0.78);
         }
-        /* line-height 30px is geen willekeurige waarde: het is exact de
-           regelafstand van de schrijflijnen hierboven, zodat de tekst ÓP de
-           lijnen loopt in plaats van er dwars doorheen. Verandert de ene,
-           verander dan de andere mee. */
         .w-schrift-kern {
-          margin-top: 30px;
-          font-size: 1rem;
+          margin-top: 0.85rem;
+          font-size: 1.05rem;
           font-weight: 600;
-          line-height: 30px;
+          line-height: 1.7;
           color: ${KOP};
         }
 
@@ -1187,13 +1232,18 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           width: 16px;
           background: rgba(0, 0, 0, 0.16);
         }
+        /* ⚠️ De maten hieronder horen bij een kaft van ongeveer 16rem breed.
+           Toen het schrift kleiner werd, brak eerst "Even voorstellen" over
+           twee regels en daarna ook de ingevulde naam — dan lees je een
+           etiket met zes regeltjes in plaats van een kop. Wordt het schrift
+           ooit weer groter, dan mogen deze mee omhoog. */
         .w-schrift-etiket {
           position: absolute;
-          left: 13%;
-          right: 11%;
-          top: 20%;
-          padding: clamp(14px, 1.8vw, 20px) clamp(16px, 2vw, 22px)
-                   clamp(16px, 2vw, 20px);
+          left: 10%;
+          right: 8%;
+          top: 17%;
+          padding: clamp(12px, 1.5vw, 16px) clamp(13px, 1.6vw, 17px)
+                   clamp(13px, 1.6vw, 16px);
           background: var(--color-cream, #fbf6ee);
           border-radius: 0.5rem 0.6rem 0.5rem 0.55rem;
           rotate: -1.4deg;
@@ -1204,7 +1254,7 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           font-weight: 900;
           letter-spacing: -0.03em;
           line-height: 1.05;
-          font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+          font-size: clamp(1.05rem, 1.5vw, 1.32rem);
           color: ${DONKER};
           text-wrap: balance;
         }
@@ -1236,28 +1286,31 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         .w-schrift-invul dd {
           margin: 0;
           font-family: var(--font-hand), "Segoe Script", cursive;
-          font-size: clamp(0.95rem, 1.5vw, 1.1rem);
-          line-height: 1.2;
+          font-size: 0.88rem;
+          line-height: 1.15;
+          white-space: nowrap;
           color: ${KOP};
           /* Handschrift staat nooit precies op de lijn. */
           transform: rotate(-0.6deg) translateY(-1px);
         }
 
-        /* ⚠️ De binnenkant is MINT en niet crème, en dat is een kleurbesluit.
-           Open was het schrift crème-op-crème met één foto: correct en saai.
-           De binnenkant van een groene kaft hoort groen te zijn, dus nu is de
-           open stand groen links en papier rechts. Meteen het antwoord op
-           "het is een beetje saai zo": de kleur zit in het voorwerp zelf, niet
-           in versiering eromheen. */
+        /* De binnenkant van de kaft: hetzelfde karton, van de andere kant
+           gezien. Iets lichter dan de voorkant omdat er licht op valt zodra
+           hij openligt, en verder leeg — er hoort niets op de binnenkant van
+           een kaft. Hier stond een mintgroen vlak met een uitgeknipte foto,
+           en dat las als een paneel in plaats van als karton. */
         .w-schrift-achter {
           transform: rotateY(180deg);
-          background: ${MINT};
-          border: 2px solid ${KAART_RAND};
-          border-right: none;
+          background: color-mix(in srgb, ${DONKER} 88%, #ffffff);
           border-radius: 1.4rem 0 0 1.6rem;
-          display: grid;
-          place-items: center;
-          padding: clamp(18px, 2.2vw, 28px);
+        }
+        /* De vouw: waar het karton omgeknikt is, blijft het donkerder. */
+        .w-schrift-achter::before {
+          content: "";
+          position: absolute;
+          inset: 0 0 0 auto;
+          width: 18px;
+          background: rgba(0, 0, 0, 0.18);
         }
         /* De rug ligt na het opendraaien aan de rechterkant van dit vlak: daar
            zit de vouw, dus daar hoort de schaduw. */
@@ -1271,19 +1324,40 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         }
         /* De foto in de organische vorm van deze wereld — het enige detail dat
            alle eerdere pogingen hebben overleefd. */
-        /* ⚠️ Niet groter maken. De foto heeft een roze achtergrond en die
-           hoort niet bij de palette; op 78% was hij het grootste kleurvlak
-           van de hele sectie geworden. Op deze maat is het een portret op een
-           bladzijde in plaats van een roze vlak met een gezicht erin. */
+        /* ── de ingeplakte foto ──
+           🔑 HIER ZAT HET GROOTSTE STUK "ONREALISTISCH". De foto stond als
+           blob-vorm uitgeknipt midden op een gekleurd vlak te zweven. Dat is
+           een UI-element, geen foto in een schrift. Een echte afdruk heeft
+           een witte rand, ligt nooit helemaal recht en werpt een kleine
+           schaduw op het papier eronder. Dat is alles wat er nodig was. */
+        .w-schrift-afdruk {
+          width: fit-content;
+          margin: 0 auto;
+          padding: 8px 8px 6px;
+          background: #ffffff;
+          border-radius: 3px;
+          rotate: -2.2deg;
+          box-shadow:
+            0 1px 0 rgba(var(--w-schaduw-rgb, 23,80,58), 0.10),
+            0 10px 20px -12px rgba(var(--w-schaduw-rgb, 23,80,58), 0.5);
+        }
         .w-schrift-foto {
-          width: min(62%, 12rem);
-          aspect-ratio: 1;
+          width: clamp(7rem, 13vw, 9rem);
+          aspect-ratio: 1 / 1.1;
           display: grid;
           place-items: center;
           overflow: hidden;
           background: ${MINT_DIEP};
-          border-radius: var(--w-vorm-ei, 72% 28% 58% 42% / 44% 56% 42% 58%);
-          rotate: 3deg;
+        }
+        /* Het onderschrift hoort ONDER de afdruk maar BINNEN het witte randje,
+           zoals bij een foto waar iemand op geschreven heeft. */
+        .w-schrift-onderschrift {
+          margin-top: 5px;
+          font-family: var(--font-hand), "Segoe Script", cursive;
+          font-size: 0.86rem;
+          line-height: 1.25;
+          text-align: center;
+          color: ${KOP};
         }
 
         /* ── mobiel: geen boek, wel hetzelfde schrift ──
@@ -1307,6 +1381,7 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
             border-radius: 0 0 1.4rem 1.5rem;
           }
           .w-schrift-blad::before { display: none; }
+          .w-schrift { order: -1; }
           .w-schrift-kaft {
             position: relative;
             inset: auto;
@@ -1316,18 +1391,18 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
             display: flex;
             flex-direction: column;
           }
-          .w-schrift-voor,
-          .w-schrift-achter {
+          .w-schrift-voor {
             position: relative;
             inset: auto;
             transform: none;
             backface-visibility: visible;
-          }
-          .w-schrift-voor {
             padding: clamp(16px, 4vw, 22px);
             border-radius: 1.5rem 1.4rem 0 0;
           }
           .w-schrift-voor::before { width: 10px; }
+          /* De binnenkant van de kaft heeft hier niets te doen: op mobiel
+             klapt er niets open, dus zou het een leeg groen vlak zijn. */
+          .w-schrift-achter { display: none; }
           /* Ruimte aan beide kanten: het etiket staat scheef, en zonder marge
              rechts loopt de gedraaide hoek tegen de rand van de kaft aan en
              wordt hij door de overflow afgeknipt. Dan lijkt het een fout in
@@ -1340,13 +1415,7 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
             margin: 0 12px 0 16px;
           }
           .w-schrift-regels { display: none; }
-          .w-schrift-achter {
-            border-right: 2px solid ${KAART_RAND};
-            border-bottom: none;
-            border-radius: 0;
-            padding: clamp(20px, 5vw, 28px);
-          }
-          .w-schrift-foto { width: 10rem; }
+          .w-schrift-foto { width: 8.5rem; }
         }
 
         @media (prefers-reduced-motion: reduce) {
