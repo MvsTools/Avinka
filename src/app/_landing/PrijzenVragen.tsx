@@ -473,18 +473,19 @@ export function WereldVragen({ items, mintBoven = false }: { items: Vraag[]; min
         >
           <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
 
-          {/* Linksboven: waar deze golf bijna geen mint meer overlaat, dus
-             het grootste deel van dit vlak wordt door "stijging" afgekapt —
-             er blijft alleen een sliver zichtbaar, precies zoals het vlak
-             rechtsboven in de cijfersectie daar door zíjn golf wordt
-             afgesneden. Vóór de Golf in de laag, dus de Golf snijdt 'm af in
-             plaats van eroverheen te liggen. */}
+          {/* Linksboven, met zijn onderrand tegen de golf aan: van x=0 tot
+             x≈430 (waar dit vlak breed is) ligt de curve van "stijging" vrij
+             constant op zo'n 90-110px vanaf de bovenkant van dit vak. De
+             onderkant van dit vlak (top + hoogte) staat daarom op exact 110,
+             zodat het er nette tegenaan rust in plaats van een willekeurige
+             sliver ergens middenin te tonen. Vóór de Golf in de laag, dus de
+             Golf snijdt 'm netjes af op de kleurgrens. */}
           <KaartVlak
             kleur={VLAK_MINT}
             vorm="koepel"
-            breedte={700}
-            hoogte={260}
-            style={{ left: "-14%", top: -20, transform: "rotate(-6deg)" }}
+            breedte={750}
+            hoogte={220}
+            style={{ left: "-14%", top: -110, transform: "rotate(-6deg)" }}
             className="hidden lg:block"
             tel={5}
           />
