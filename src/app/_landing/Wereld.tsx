@@ -974,7 +974,7 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
               </p>
               <p className="w-blad-kern">
                 Goede leerkrachten horen hun tijd te besteden aan leerlingen,
-                niet aan papierwerk.
+                niet aan administratie.
               </p>
             </div>
           </div>
