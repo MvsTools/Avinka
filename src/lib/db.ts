@@ -730,6 +730,12 @@ export async function zetDuoRol(koppelId: string, rol: DuoRol): Promise<boolean>
 export type DuoUitnodiging = {
   klasNaam: string;
   status: string;
+  /* Is deze uitnodiging aan JOUW mailadres gekoppeld? Bij een uitnodiging die
+     per mail is verstuurd mag alleen dat adres hem accepteren; bij een link
+     die iemand zelf doorstuurde staat dit altijd op waar. Bewust een ja/nee:
+     bij de verkeerde persoon hoeft de link niet ook nog te verklappen voor
+     wie hij bedoeld was. */
+  pastBijMij: boolean;
   /* Voornaam van de uitnodiger. Leeg als die geen voornaam heeft ingevuld;
      de pop-up valt dan terug op "Een collega". */
   uitnodigerVoornaam: string;
@@ -756,6 +762,9 @@ export async function bekijkDuoUitnodiging(
     uitnodigerVoornaam: ((rij.uitnodiger_voornaam as string) || "").trim(),
     schoolnaam: ((rij.schoolnaam as string) || "").trim(),
     standaardgroep: ((rij.standaardgroep as string) || "").trim(),
+    // Kent de database het veld nog niet (migratie niet gedraaid), dan niet
+    // blokkeren: dan gedraagt alles zich als vóór de mailuitnodiging.
+    pastBijMij: rij.past_bij_mij !== false,
   };
 }
 
