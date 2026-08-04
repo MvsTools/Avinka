@@ -53,14 +53,18 @@ Regels:
   invoer, beschrijf dan alleen het gedrag dat je ziet, zonder etiket.
 - Antwoord met alleen het bericht zelf: geen inleiding, geen aanhalingstekens,
   geen uitleg over wat je hebt gedaan.
-- Is er te weinig om een bericht van te maken, antwoord dan met exact dit ene
-  woord en verder niets: ${GEEN_INHOUD}
+- Dit is een berichtenscherm tussen collega's, geen formulier. Een kort antwoord
+  ("oke thanks", "gezien, dank je") is ook een geldig bericht: maak dat gewoon
+  netjes. Niet elk bericht hoeft over de groep te gaan.
+- Alleen als er echt geen taal in staat om iets van te maken (losse tekens,
+  toetsenbordgeklets), antwoord dan met exact dit ene woord en verder niets:
+  ${GEEN_INHOUD}
 - Schrijf nooit óver de leerkracht in de derde persoon en geef nooit een
   instructie terug in plaats van een bericht.`;
 
 // Wat we tonen als er te weinig staat. Onze woorden, niet die van het model,
 // zodat de toon klopt met de rest van het platform.
-const TE_WEINIG = "Typ eerst een paar steekwoorden.";
+const TE_WEINIG = "Hier kan ik geen bericht van maken.";
 
 export type AiAntwoord = { ok: true; tekst: string } | { ok: false; melding: string };
 
