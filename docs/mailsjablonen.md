@@ -104,7 +104,7 @@ in de link verschillen.
         <table cellpadding="0" cellspacing="0" border="0"><tr>
           <td align="center" bgcolor="#25855a" style="border-radius:12px;">
             <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/nieuw-wachtwoord"
-               style="display:inline-block;padding:14px 30px;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;">Wachtwoord instellen</a>
+               style="display:inline-block;padding:14px 30px;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;">Wachtwoord opnieuw instellen</a>
           </td>
         </tr></table>
       </td></tr>
