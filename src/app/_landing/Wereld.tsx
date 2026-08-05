@@ -668,13 +668,31 @@ export function WereldIntro() {
             className="text-[1.375rem] font-semibold leading-9 [text-wrap:balance] sm:text-2xl sm:leading-10"
             style={{ color: KOP }}
           >
-            Avinka brengt de hulpmiddelen voor je schoolwerk samen in één
-            omgeving.
+            {/* ⚠️ HIER STOND: "Avinka brengt de hulpmiddelen voor je schoolwerk
+               samen in één omgeving." Dat is de gereedschapskist in één zin —
+               een BAK waar spullen in zitten en waar jij naartoe komt. Het is
+               de zin die het oude frame het duidelijkst uitspreekt, en dus de
+               plek om het te veranderen.
+               🔑 Wat er stond blijft staan (alles op één plek); er komt alleen
+               bij dat Avinka zelf meekijkt. Bewust in die volgorde: eerst het
+               concrete dat je meteen snapt, dan het nieuwe.
+               ⚠️ Het woord "assistent" staat er met opzet NIET. Dat zegt op dit
+               moment elk product; "houdt bij wat eraan komt" is gedrag en dat
+               kan iemand die het niet gebouwd heeft niet nazeggen. */}
+            Bij Avinka staat je schoolwerk op één plek, en Avinka houdt bij wat
+            eraan komt.
           </p>
+          {/* ⚠️ DE TWEEDE ALINEA MOET DE EERSTE WAARMAKEN, anders is die eerste
+             zin een loze belofte. Daarom staat er nu ook HOE Avinka dat weet:
+             uit je eigen schooljaar. Zonder die bron leest "houdt bij wat eraan
+             komt" als magie, en het werkt pas als je je jaar hebt ingevuld —
+             precies het soort belofte waar deze pagina al eerder op is
+             gestruikeld. */}
           <p data-reveal className="mt-4 text-lg leading-8 text-ink/75" style={{ transitionDelay: "90ms" }}>
-            Je geeft aan wat je nodig hebt en Avinka helpt je met de uitwerking,
-            zodat terugkerende taken minder tijd kosten en je werk
-            overzichtelijk blijft.
+            Je vult je schooljaar één keer in, en Avinka ziet daarna zelf wat er
+            aankomt: rapporten, gesprekken, toetsen. Je geeft aan wat je nodig
+            hebt en Avinka helpt je met de uitwerking, zodat terugkerende taken
+            minder tijd kosten en je werk overzichtelijk blijft.
           </p>
         </div>
       </div>

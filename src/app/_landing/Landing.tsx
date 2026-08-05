@@ -1003,8 +1003,24 @@ export default function Landing({
                         <p className="text-sm font-black tracking-tight text-ink">
                           Welkom terug! 👋
                         </p>
+                        {/* ⚠️ HIER STOND "Kies een tool om mee te beginnen." en
+                           dat was de zuiverste formulering van het oude frame:
+                           een INSTRUCTIE aan de leerkracht om zelf iets te
+                           zoeken. De film ruimt de chaos op en zegt daarna:
+                           en nu mag jij weer.
+
+                           🔑 Nu zegt hij wat hij WEET in plaats van wat jij moet
+                           doen. Dat is de hele koerswijziging van het platform,
+                           en het kost één regel omdat de film het bewijs al
+                           bevat: het geeltje "rapporten af vóór vrijdag" is
+                           net naar binnen gevlogen en staat in de takenlijst
+                           ernaast. Er komt dus niets nieuws bij; wat er al lag
+                           wordt gelezen.
+                           ⚠️ Verzin hier geen nieuwe taak. Deze zin MOET slaan
+                           op een geeltje dat je even daarvoor hebt zien
+                           vliegen, anders is het een losse bewering. */}
                         <p className="mt-0.5 text-[10px] text-ink/60">
-                          Kies een tool om mee te beginnen.
+                          Vrijdag gaan de rapporten mee.
                         </p>
                       </div>
                       <div className="flex shrink-0 items-start gap-1.5">
