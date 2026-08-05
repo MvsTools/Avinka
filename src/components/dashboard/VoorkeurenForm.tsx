@@ -50,6 +50,16 @@ const lvsSystemen = [
   { waarde: "parnassys", label: "ParnasSys" },
   { waarde: "esis", label: "Esis" },
 ];
+// Bijna elke school werkt met IEP óf met Cito. Weten we welke, dan hoeft
+// Toetsanalyse niet elke keer te vragen en kunnen we in Mijn schooljaar zeggen
+// wáár je je toetsen klaarzet. "Allebei" bestaat echt (het ene vak IEP, het
+// andere Cito), en dan blijft de keuze gewoon staan.
+const toetsSystemen = [
+  { waarde: "", label: "Vraag het me" },
+  { waarde: "iep", label: "IEP" },
+  { waarde: "cito", label: "Cito" },
+  { waarde: "beide", label: "Allebei" },
+];
 
 // Eén keuzerij met knoppen, zoals de toon-knoppen. waarde/zet werken op het
 // veld in de Voorkeuren-state.
@@ -207,6 +217,7 @@ export default function VoorkeurenForm() {
     communicatie_url: "",
     lvs_systeem: "",
     lvs_url: "",
+    toets_systeem: "",
   });
   const [geladen, setGeladen] = useState(false);
   const [status, setStatus] = useState<"" | "bezig" | "klaar" | "fout">("");
@@ -394,6 +405,17 @@ export default function VoorkeurenForm() {
           raak("aanspreekvorm");
         }}
         extra={badge("aanspreekvorm")}
+      />
+      <KeuzeRij
+        titel="Toetssysteem"
+        hint="(dan slaat Toetsanalyse het keuzescherm over)"
+        opties={toetsSystemen}
+        waarde={v.toets_systeem}
+        zet={(w) => {
+          setV({ ...v, toets_systeem: w });
+          raak("toets_systeem");
+        }}
+        extra={badge("toets_systeem")}
       />
       <KeuzeRij
         titel="Communicatie-app"

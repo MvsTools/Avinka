@@ -14,7 +14,7 @@ import DuoOverdracht from "@/components/dashboard/DuoOverdracht";
 import CollegaUitnodigen from "@/components/dashboard/CollegaUitnodigen";
 import KaartMelding from "@/components/dashboard/KaartMelding";
 import { amsterdamDatum } from "@/lib/streak";
-import { haalMijnGroepen, haalPlanning, plus } from "@/lib/planning";
+import { haalMijnGroepen, haalPlanning, haalSchoolsystemen, plus } from "@/lib/planning";
 import type { PlanItem, PlanningBron } from "@/lib/planning";
 
 // ⚠️ TIJDELIJK — hoort bij `?voorbeeld` hieronder en gaat er samen mee weg.
@@ -69,11 +69,12 @@ export default async function DashboardStart({
 
   // Welke tools zitten in het pakket van deze leerkracht? Zolang betalingen
   // niet live zijn, is alles open (de vlag regelt dat in magToolGebruiken).
-  const [ab, planning, groepen, rapportGrens] = await Promise.all([
+  const [ab, planning, groepen, rapportGrens, systemen] = await Promise.all([
     BETALINGEN_LIVE ? getAbonnementServer() : Promise.resolve(null),
     haalPlanning(supabase, { nu: vandaag }),
     haalMijnGroepen(supabase),
     haalRapportGrens(supabase),
+    haalSchoolsystemen(supabase),
   ]);
   const vergrendeld = (slug: string) => (ab ? !magToolGebruiken(ab, slug) : false);
 
@@ -124,6 +125,7 @@ export default async function DashboardStart({
         bron={voorbeeld ? metVoorbeeldAfspraken(planning, vandaag) : planning}
         vandaag={vandaag}
         groepen={groepen}
+        systemen={systemen}
         maximaal={2}
         vergrendeld={tools.filter((t) => vergrendeld(t.slug)).map((t) => t.slug)}
       />

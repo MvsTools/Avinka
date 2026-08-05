@@ -9,6 +9,7 @@ import type { Soort } from "../agenda-herken";
 import { plus, vandaag } from "./datum";
 import { markeerDubbelingen } from "./dubbelingen";
 import { mijnGroepen } from "./relevantie";
+import type { Schoolsystemen } from "./aanleiding";
 import {
   isBasisrooster,
   isRoosterWeekData,
@@ -102,6 +103,24 @@ export async function haalStreakVakanties(
 export async function haalMijnGroepen(supabase: SupabaseClient): Promise<number[]> {
   const { data } = await supabase.from("instellingen").select("standaardgroep").maybeSingle();
   return mijnGroepen((data as { standaardgroep?: string } | null)?.standaardgroep);
+}
+
+/**
+ * Met welke systemen werkt deze school (Instellingen → Voorkeuren)? Daarmee
+ * wordt "maak een gespreksrooster" een concrete "zet de gesprekken open in
+ * Parro". Niets ingevuld = lege waarden, en dan blijft alles algemeen.
+ */
+export async function haalSchoolsystemen(supabase: SupabaseClient): Promise<Schoolsystemen> {
+  const { data } = await supabase
+    .from("instellingen")
+    .select("communicatie_app, lvs_systeem, toets_systeem")
+    .maybeSingle();
+  const r = (data ?? {}) as { communicatie_app?: string; lvs_systeem?: string; toets_systeem?: string };
+  return {
+    communicatieApp: r.communicatie_app ?? "",
+    lvsSysteem: r.lvs_systeem ?? "",
+    toetsSysteem: r.toets_systeem ?? "",
+  };
 }
 
 /**

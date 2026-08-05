@@ -59,8 +59,8 @@ const ACTIE: Partial<Record<Soort, string>> = {
  * voorgesteld, niet opgelegd (§5 van het plan). Ze gelden tot de dag vóór de
  * afspraak — daarna is klaarzetten te laat en neemt het andere signaal het over.
  *
- * ⚠️ Bewust GEEN systeemnamen (IEP, Cito, Parro): welk leerlingvolgsysteem een
- * school gebruikt weten we niet, en ernaast zitten is erger dan het weglaten.
+ * Dit is de ALGEMENE tekst, voor wie zijn systemen niet heeft ingevuld. Staat
+ * er wel iets in je instellingen, dan maakt `opMaat` hieronder het concreet.
  */
 const VOORBEREIDING: Partial<Record<Soort, { voor: number; knop: string; taak: string }>> = {
   toets: {
@@ -80,6 +80,101 @@ const VOORBEREIDING: Partial<Record<Soort, { voor: number; knop: string; taak: s
   },
 };
 
+/**
+ * Zo werkt jouw school — uit je instellingen. Weten we welk systeem je
+ * gebruikt, dan wordt een vage tip een concrete: "zet de gesprekken open in
+ * Parro" in plaats van "maak een gespreksrooster".
+ */
+export type Schoolsystemen = {
+  /** '' | parro | social_schools | isy | konnect */
+  communicatieApp?: string;
+  /** Eigen Isy/Konnect-adres; Parro en Social Schools hebben een vast adres. */
+  communicatieUrl?: string;
+  /** '' | parnassys | esis */
+  lvsSysteem?: string;
+  /** '' | iep | cito | beide */
+  toetsSysteem?: string;
+};
+
+const APP_NAAM: Record<string, string> = {
+  parro: "Parro",
+  social_schools: "Social Schools",
+  isy: "Isy",
+  konnect: "Konnect",
+};
+// ⚠️ Dezelfde adressen staan in public/avinka-communicatie-app.js (die is voor
+// de tools, deze voor het dashboard). Samen bijwerken.
+const APP_URL: Record<string, string> = {
+  parro: "https://talk.parro.com",
+  social_schools: "https://app.socialschools.eu",
+};
+const APP_STAARTJE: Record<string, string> = {
+  isy: ".isy-school.nl",
+  konnect: ".ouderportaal.nl",
+};
+
+/** Het volledige webadres van jullie communicatie-app, of "" als we het niet weten. */
+function appUrl(sys: Schoolsystemen): string {
+  const app = sys.communicatieApp ?? "";
+  if (APP_URL[app]) return APP_URL[app];
+  const staartje = APP_STAARTJE[app];
+  const voorstuk = (sys.communicatieUrl ?? "").trim().replace(/^https?:\/\//i, "").replace(/\/.*$/, "");
+  if (!staartje || !voorstuk) return "";
+  return voorstuk.includes(".") ? `https://${voorstuk}` : `https://${voorstuk}${staartje}`;
+}
+const LVS_NAAM: Record<string, string> = { parnassys: "ParnasSys", esis: "Esis" };
+const TOETS_NAAM: Record<string, string> = { iep: "IEP", cito: "Cito" };
+
+/**
+ * De voorbereidingstip toegespitst op de systemen van deze school.
+ *
+ * ⚠️ We beweren alleen wat we zeker weten. Van Parro is bekend dat je de
+ * gesprekken daar openzet en dat ouders zichzelf intekenen; of dat bij Isy of
+ * Konnect net zo gaat weten we niet, dus daar blijft de tekst algemeen en
+ * noemen we alleen de naam. Iets verkeerds beweren is erger dan iets algemeens
+ * zeggen — dezelfde regel als bij "Onbeperkt gebruik" op de prijzenpagina.
+ */
+function opMaat(
+  soort: Soort,
+  standaard: { knop: string; taak: string },
+  sys: Schoolsystemen,
+): { knop: string; taak: string; link?: string } {
+  if (soort === "gesprek" && sys.communicatieApp) {
+    const naam = APP_NAAM[sys.communicatieApp] ?? "je communicatie-app";
+    const link = appUrl(sys) || undefined;
+    // Weten we waar het moet gebeuren, dan brengt de knop je er meteen heen —
+    // dat scheelt de omweg via je takenlijst. Kennen we het adres niet (Isy en
+    // Konnect hebben er per school een), dan blijft het een taak.
+    return sys.communicatieApp === "parro"
+      ? {
+          knop: link ? `Openen in ${naam}` : `Openzetten in ${naam}`,
+          taak: `Gesprekken openzetten in ${naam}, dan tekenen ouders zelf in`,
+          link,
+        }
+      : {
+          knop: link ? `Openen in ${naam}` : `Inplannen in ${naam}`,
+          taak: `Gespreksrooster klaarzetten in ${naam}`,
+          link,
+        };
+  }
+  if (soort === "toets") {
+    // Het toetssysteem is preciezer dan het LVS: je zet je toetsen klaar in IEP
+    // of Cito, niet in de leerlingadministratie. Alleen bij "allebei" of niets
+    // vallen we terug op het LVS, en anders op de algemene tekst.
+    const naam =
+      TOETS_NAAM[sys.toetsSysteem ?? ""] ?? LVS_NAAM[sys.lvsSysteem ?? ""] ?? "";
+    if (naam) return { knop: `Klaarzetten in ${naam}`, taak: `Toetsen klaarzetten in ${naam}` };
+  }
+  if (soort === "rapport" && sys.lvsSysteem) {
+    const naam = LVS_NAAM[sys.lvsSysteem] ?? "je leerlingvolgsysteem";
+    return {
+      knop: `Bijwerken in ${naam}`,
+      taak: `Toetsgegevens bijwerken in ${naam}, zodat de rapporten kloppen`,
+    };
+  }
+  return standaard;
+}
+
 export type Aanleiding = {
   /** Van het agenda-item, dus stabiel tussen twee keer laden. */
   id: string;
@@ -96,6 +191,12 @@ export type Aanleiding = {
   taak?: string;
   /** Alleen bij "voorbereiden": staat hij er al op? Dan geen knop meer. */
   alOpDeLijst?: boolean;
+  /**
+   * Alleen bij "voorbereiden": het systeem waar het moet gebeuren, als we het
+   * adres kennen (Parro, Social Schools). Dan wordt de knop een link daarheen
+   * in plaats van een taak.
+   */
+  link?: string;
   /** Dagen tot de afspraak: 3 = over drie dagen, 0 = vandaag, -2 = eergisteren. */
   dagen: number;
   /** "Over 3 weken gaan de rapporten mee" */
@@ -161,6 +262,7 @@ export function aanleidingen(
   bron: PlanningBron,
   vandaag: string,
   eigenGroepen: number[] = [],
+  systemen: Schoolsystemen = {},
 ): Aanleiding[] {
   const gevonden: Aanleiding[] = [];
   const opDeLijst = new Set(bron.taken.filter((t) => !t.gedaan).map((t) => t.tekst));
@@ -197,6 +299,7 @@ export function aanleidingen(
     if (!toolFase && !voorFase) continue;
 
     const aard = toolFase ? ("doen" as const) : ("voorbereiden" as const);
+    const tip = voorFase ? opMaat(item.soort, voorbereiding!, systemen) : null;
     const wanneer =
       item.totDatum && item.totDatum !== item.datum
         ? bereikTekst(item.datum, item.totDatum)
@@ -208,15 +311,14 @@ export function aanleidingen(
       soort: item.soort,
       aard,
       tool: toolFase ? tool : undefined,
-      taak: voorFase ? voorbereiding!.taak : undefined,
-      alOpDeLijst: voorFase ? opDeLijst.has(voorbereiding!.taak) : undefined,
+      taak: tip?.taak,
+      link: tip?.link,
+      alOpDeLijst: tip ? opDeLijst.has(tip.taak) : undefined,
       dagen,
       kop: kopVoor(item, item.soort, dagen, aard),
       wanneer,
       detail: item.soort === "toets" ? item.titel : undefined,
-      actie: toolFase
-        ? (ACTIE[item.soort] ?? `Openen in ${tool!.naam}`)
-        : voorbereiding!.knop,
+      actie: toolFase ? (ACTIE[item.soort] ?? `Openen in ${tool!.naam}`) : tip!.knop,
     });
   }
 

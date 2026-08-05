@@ -16,7 +16,7 @@ import {
   volledig,
   weekdag,
 } from "@/lib/planning";
-import type { AgendaBron, Periode, PlanItem, PlanningBron } from "@/lib/planning";
+import type { AgendaBron, Periode, PlanItem, PlanningBron, Schoolsystemen } from "@/lib/planning";
 import SchooljaarMaand from "./SchooljaarMaand";
 import SchooljaarWeek from "./SchooljaarWeek";
 import AgendaKoppelen from "./AgendaKoppelen";
@@ -51,12 +51,14 @@ export default function SchooljaarView({
   vandaag,
   agendas,
   mijnGroepen,
+  systemen,
 }: {
   bron: PlanningBron;
   jaren: JaarKeuze[];
   vandaag: string;
   agendas: AgendaBron[];
   mijnGroepen: number[];
+  systemen?: Schoolsystemen;
 }) {
   const [tab, setTab] = useState<"jaar" | "week" | "agendas">(
     agendas.length ? "jaar" : "agendas",
@@ -174,7 +176,12 @@ export default function SchooljaarView({
               lijst; op Start staan hooguit de eerste twee. Bewust op de
               volledige bron: "Alleen mijn afspraken" gaat over de lijst
               eronder, en deze signalen zijn al op relevantie geschift. */}
-          <WatEraanKomt bron={volledigeBron} vandaag={vandaag} groepen={mijnGroepen} />
+          <WatEraanKomt
+            bron={volledigeBron}
+            vandaag={vandaag}
+            groepen={mijnGroepen}
+            systemen={systemen}
+          />
 
           {telDubbelingen(items) > 0 && (
             <p className="text-sm text-ink/55">

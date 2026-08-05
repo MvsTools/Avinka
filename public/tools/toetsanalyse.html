@@ -1111,6 +1111,8 @@
   </div>
 </div>
 
+<!-- Centrale instellingen: hier alleen voor "welk toetssysteem gebruik je". -->
+<script src="/avinka-voorkeuren.js"></script>
 <script>
 // ════════════════════════════════════════════════════════════
 // STATE
@@ -1406,8 +1408,27 @@ function terugNaarKeuze() {
   document.getElementById('cito-app').style.display = 'none';
   document.getElementById('mode-bar').style.display = 'none';
   document.getElementById('landing').style.display = '';
+  zelfGekozen = true;   // vanaf nu niet meer automatisch doorspringen
   window.scrollTo(0, 0);
 }
+
+// Werkt jouw school met één toetssysteem, dan hoef je die keuze niet elke keer
+// opnieuw te maken: Instellingen → Toetssysteem. Staat daar "Allebei" of niets,
+// dan verandert er niets en krijg je gewoon de twee tegels.
+//
+// Kwam je hier via "← Terug naar beginpagina", dan springen we NIET opnieuw
+// door — dan wil je juist het andere systeem.
+var zelfGekozen = false;
+(function () {
+  if (!window.avinkaVoorkeuren) return;
+  window.avinkaVoorkeuren.ready.then(function (v) {
+    var sys = v && v.toets_systeem;
+    if (sys !== 'iep' && sys !== 'cito') return;
+    var landing = document.getElementById('landing');
+    if (zelfGekozen || !landing || landing.style.display === 'none') return;
+    kiesToetssysteem(sys);
+  });
+})();
 function handleApiKey(input) {
   apiKey = input.value.trim();
   if (apiKey.startsWith('sk-ant-')) {

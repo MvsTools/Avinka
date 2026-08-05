@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { aanleidingen } from "@/lib/planning";
-import type { PlanningBron } from "@/lib/planning";
+import type { PlanningBron, Schoolsystemen } from "@/lib/planning";
 import TaakKnop from "./TaakKnop";
 
 // "Wat eraan komt" — het vooruitkijk-blok (fase 4 van Mijn schooljaar).
@@ -23,6 +23,7 @@ export default function WatEraanKomt({
   bron,
   vandaag,
   groepen = [],
+  systemen = {},
   maximaal,
   vergrendeld = [],
   titel = "Wat eraan komt",
@@ -30,13 +31,15 @@ export default function WatEraanKomt({
   bron: PlanningBron;
   vandaag: string;
   groepen?: number[];
+  /** Met welke systemen werkt deze school? Maakt de voorbereidingstips concreet. */
+  systemen?: Schoolsystemen;
   /** Op Start hooguit twee, zodat de tools eronder de held blijven. */
   maximaal?: number;
   /** Slugs van tools die niet in het pakket zitten; die wijzen naar het abonnement. */
   vergrendeld?: string[];
   titel?: string;
 }) {
-  const alles = aanleidingen(bron, vandaag, groepen);
+  const alles = aanleidingen(bron, vandaag, groepen, systemen);
   if (!alles.length) return null;
   const lijst = maximaal ? alles.slice(0, maximaal) : alles;
 
@@ -98,7 +101,20 @@ export default function WatEraanKomt({
                   groen = Avinka neemt dit van je over,
                   wit met een + = jouw eigen werk, gaat naar je takenlijst,
                   wit met een slotje = zit niet in je pakket. */}
-              {a.aard === "voorbereiden" ? (
+              {a.aard === "voorbereiden" && a.link ? (
+                // Weten we wáár het moet gebeuren, dan brengt de knop je er
+                // meteen heen. Wit en niet groen: dit is een ander programma,
+                // geen onderdeel van Avinka.
+                <a
+                  href={a.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 self-start rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-bold text-ink/75 transition-transform duration-150 hover:text-ink active:scale-[0.97] sm:self-auto"
+                >
+                  {a.actie}
+                  <span aria-hidden> ↗</span>
+                </a>
+              ) : a.aard === "voorbereiden" ? (
                 <TaakKnop
                   tekst={a.taak!}
                   deadline={a.item.datum}

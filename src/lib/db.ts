@@ -31,6 +31,7 @@ export type Voorkeuren = {
   communicatie_url: string; // eigen Isy/Konnect-webadres (Parro/Social Schools hebben een vast adres)
   lvs_systeem: string; // '' | parnassys | esis — voor de "open in je LVS"-knop
   lvs_url: string; // eigen Esis-webadres (ParnasSys heeft één vast adres)
+  toets_systeem: string; // '' | iep | cito | beide — welk toetssysteem de school gebruikt
 };
 export type Leerling = { naam: string; geslacht: "" | "j" | "m" };
 export type Klas = {
@@ -65,6 +66,7 @@ export async function getVoorkeuren(): Promise<Voorkeuren | null> {
     communicatie_url: "",
     lvs_systeem: "",
     lvs_url: "",
+    toets_systeem: "",
   };
   // Best-effort: deze kolommen bestaan mogelijk nog niet (migratie niet
   // gedraaid). Een aparte select faalt dan stilletjes en we houden gewoon "".
@@ -78,12 +80,13 @@ export async function getVoorkeuren(): Promise<Voorkeuren | null> {
   }
   const { data: ld } = await sb
     .from("instellingen")
-    .select("lvs_systeem, lvs_url, communicatie_url")
+    .select("lvs_systeem, lvs_url, communicatie_url, toets_systeem")
     .maybeSingle();
   if (ld) {
     v.lvs_systeem = (ld as { lvs_systeem?: string }).lvs_systeem ?? "";
     v.lvs_url = (ld as { lvs_url?: string }).lvs_url ?? "";
     v.communicatie_url = (ld as { communicatie_url?: string }).communicatie_url ?? "";
+    v.toets_systeem = (ld as { toets_systeem?: string }).toets_systeem ?? "";
   }
   return v;
 }
@@ -101,12 +104,21 @@ export async function saveVoorkeuren(v: Voorkeuren): Promise<boolean> {
   // Mogelijk bestaan de BRIN- of LVS-kolommen nog niet (migratie niet
   // gedraaid) → opnieuw zonder die velden, zodat het opslaan van de overige
   // voorkeuren nooit stilletjes mislukt.
-  const { school_brin, school_vestiging, lvs_systeem, lvs_url, communicatie_url, ...kern } = v;
+  const {
+    school_brin,
+    school_vestiging,
+    lvs_systeem,
+    lvs_url,
+    communicatie_url,
+    toets_systeem,
+    ...kern
+  } = v;
   void school_brin;
   void school_vestiging;
   void lvs_systeem;
   void lvs_url;
   void communicatie_url;
+  void toets_systeem;
   const { error: e2 } = await sb
     .from("instellingen")
     .upsert({ user_id: user.id, ...kern }, { onConflict: "user_id" });

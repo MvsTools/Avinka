@@ -28,6 +28,7 @@
     communicatie_url: "",
     lvs_systeem: "",
     lvs_url: "",
+    toets_systeem: "",
   };
   var data = Object.assign({}, STANDAARD);
 

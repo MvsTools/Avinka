@@ -40,6 +40,9 @@ const BRON: PlanningBron = {
     // Een toets die eraan komt: die moet je zelf klaarzetten, daar helpt geen
     // tool bij.
     item({ id: "6", datum: "2026-08-12", titel: "Toetsweek begrijpend lezen", soort: "toets" }),
+    // Verder weg dan de gesprekken hierboven: daar is de fase nog "zelf
+    // klaarzetten" in plaats van "Oudercontact openen".
+    item({ id: "7", datum: "2026-08-23", titel: "Rapportgesprekken", soort: "gesprek" }),
     item({ id: "4", datum: "2026-09-10", titel: "Schoolreis", soort: "activiteit" }),
     item({ id: "5", datum: "2026-08-20", titel: "Rapportgesprekken groep 8", soort: "gesprek" }),
   ],
@@ -105,15 +108,31 @@ export default function Proef() {
       </div>
 
       <div className="rounded-3xl border border-dashed border-ink/15 p-4 md:p-6">
+        <p className="mb-1 text-sm font-bold text-ink/50">
+          3. Hetzelfde, maar nu weet Avinka dat jullie Parro, ParnasSys en IEP gebruiken
+        </p>
+        <p className="mb-4 text-sm text-ink/50">
+          Zelfde afspraken, andere teksten: de tip wordt concreet in plaats van algemeen. Dit komt
+          uit Instellingen → Voorkeuren.
+        </p>
+        <WatEraanKomt
+          bron={BRON}
+          vandaag={VANDAAG}
+          groepen={[5]}
+          systemen={{ communicatieApp: "parro", lvsSysteem: "parnassys", toetsSysteem: "iep" }}
+        />
+      </div>
+
+      <div className="rounded-3xl border border-dashed border-ink/15 p-4 md:p-6">
         <p className="mb-4 text-sm font-bold text-ink/50">
-          3. Als een tool niet in je pakket zit (hier: Rapporten)
+          4. Als een tool niet in je pakket zit (hier: Rapporten)
         </p>
         <WatEraanKomt bron={BRON} vandaag={VANDAAG} groepen={[5]} vergrendeld={["rapporten"]} />
       </div>
 
       <div className="rounded-3xl border border-dashed border-ink/15 p-4 md:p-6">
         <p className="mb-2 text-sm font-bold text-ink/50">
-          4. Als er niets speelt — hoort helemaal niets te tonen
+          5. Als er niets speelt — hoort helemaal niets te tonen
         </p>
         <WatEraanKomt bron={{ ...BRON, items: [] }} vandaag={VANDAAG} />
         <p className="text-sm text-ink/40">— hier eindigt de pagina, dus goed —</p>
