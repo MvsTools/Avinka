@@ -56,9 +56,24 @@ import { DONKER, Golf, HAND_REGEL, KOP, KOP_BLOK, KOP_SECTIE, MINT_LICHT, KaartV
    kaart noemt daarom alleen nog wat er nooit met je gegevens gebeurt; dat
    blijft waar, met of zonder overeenkomst. Zie ook [[schoolroute-org-laag]].
 
-   ⚠️ "AI ermee trainen" leunt op de DPA + zero-data-retention-afspraak bij
-   Anthropic ([[ai-aanbieder-keuze]]). Die moet getekend zijn voordat dit
-   publiek gaat.
+   ⚠️ HIER STOND: "leunt op de DPA + zero-data-retention-afspraak bij
+   Anthropic; die moet getekend zijn voordat dit publiek gaat." Dat is
+   ACHTERHAALD en 5-8 rechtgezet door de eigenaar (uitgezocht met Scherm 2, en
+   het stond al sinds 2-8 goed in [[ai-aanbieder-keuze]]).
+
+   🔑 TWEE DINGEN DIE JE NIET DOOR ELKAAR MOET HALEN — dat is precies waar deze
+   opmerking op stukliep:
+   1. **Niet trainen op wat je verstuurt** = de standaard. Het staat in de
+      Commercial Terms of Service, sectie "Customer Content", en die accepteer
+      je bij het aanmaken van het API-account. Er valt niets te tekenen, en de
+      belofte hierboven staat dus gewoon.
+   2. **Niet BEWAREN** (zero-data-retention) is wél een aparte aanvraag per
+      organisatie. Die belofte doen we hier nergens, en dat moet zo blijven
+      zolang die route niet loopt.
+
+   ⚠️ De belofte hangt aan de ORGANISATIE, niet aan de sleutel: controleer bij
+   de omschakeling naar de zakelijke sleutel dat die organisatie onder de
+   commerciële voorwaarden valt (zie [[api-key-omschakeling]]).
 
    Zie [[referentie-eerst-regel]]: eerst het beeld, dan pas bouwen. ────── */
 
