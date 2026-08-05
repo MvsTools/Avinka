@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "react";
 
 /* ── De Wereld van /nieuw5 ──────────────────────────────────────────────────
@@ -110,13 +110,12 @@ export function schaduw(y: number, blur: number, spread: number, alpha: number, 
   return `${-Math.round(y * SCHADUW_HELLING)}px ${y}px ${blur}px ${spread}px rgba(${kleur},${alpha})`;
 }
 
-/* Rand van de organische kaarten. Hier stond ook een bijpassende
-   KAART_SCHADUW — schaduw(34, 66, -34, 0.6) — zodat de regie-kaartjes en de
-   makerskaart gegarandeerd hetzelfde aanvoelden. Die is weg omdat de
-   makerskaart een klein colofon-kaartje is geworden en een grote-kaart-
-   schaduw hem laat zweven; hij draagt nu zijn eigen, kortere schaduw (zie
-   WereldMaker). Privacy.tsx heeft een eigen kopie van allebei. */
-const KAART_RAND = "var(--w-kaart-rand, #d4e5dc)";
+/* ⚠️ Hier stonden KAART_RAND en KAART_SCHADUW — schaduw(34, 66, -34, 0.6) —
+   zodat de regie-kaartjes en de makerskaart gegarandeerd hetzelfde
+   aanvoelden. Allebei weg: de makerssectie draagt sinds 5-8 een CV dat zijn
+   eigen randen en schaduwen uit de RUIMTE haalt (echte vlakken, echte diepte)
+   in plaats van uit een gedeelde tekenwaarde. Privacy.tsx heeft een eigen
+   kopie van allebei en is daar niet van afhankelijk. */
 
 /* Witte kaart met grote ronding: dé kaartvorm van deze wereld. */
 export const KAART =
@@ -771,38 +770,31 @@ export function WereldHerken() {
    gelijk (dus de kleurnaad valt nog steeds halverwege de kaart) en de
    kam-golf is dezelfde. Alleen de maten van de achtergrondvormen zijn
    meegekrompen met de sectie — zie de opmerkingen daar. */
-/* ── Het schriftje openen op scrollpositie ─────────────────────────────────
-   De kaft draait open terwijl je scrollt: dicht als de sectie onderin beeld
-   komt, helemaal open als hij op driekwart van het scherm staat. Bewust géén
-   animatie die één keer afspeelt — de eigenaar vroeg om iets dat opengaat
-   TIJDENS het scrollen, dus de stand hangt aan de scrollpositie en loopt ook
-   terug als je omhoog scrolt.
+/* ── HET MAKERSBLOK IS EEN CV ──────────────────────────────────────────────
+   ⚠️ HET SCHRIFT IS ERUIT (5-8). Het was een schrift waar je zelf doorheen
+   bladerde: kaft met etiket, vriendenboekje, drie spreads. De eigenaar over
+   die ronde: "het gedraaide 3D-effect vind ik heel vet, maar het schriftje is
+   gewoon niet helemaal mijn ding". De VORM ging eruit, de RUIMTE bleef.
 
-   🔑 De hoek gaat naar een CSS-variabele op de wrapper (--open), niet naar de
-   transform van de kaft zelf. Zo blijft de hele vormgeving in het stijlblad
-   staan en schrijft dit effect maar één getal.
+   Wat er nu ligt is een CV — en dat is eigenlijk altijd al wat deze sectie
+   deed. Een blad met wie hij is en waar Avinka voor staat, als één document
+   dat schuin op het veld ligt.
 
-   Waarom rAF en geen scroll-handler die direct schrijft: een scroll-gebeurtenis
-   vuurt vaker dan het scherm ververst, en elke schrijfactie naar style dwingt
-   de browser tot herberekenen. Nu hoogstens één keer per frame, en alleen als
-   het element in beeld is (dezelfde spaarzaamheid als het cijferbord). */
-/* Hoeveel bladen er omslaan. Verandert dit, dan moeten de .w-blad-N-regels in
-   het stijlblad mee (elk blad heeft zijn eigen diepte in de stapel). */
-const BLADEN = 3;
+   🔑 DRIE DINGEN DIE HET SCHRIFT NIET GOED KON EN DIT WEL:
+   1. Een CV is één blad. Alles staat er tegelijk op, dus de missie zit niet
+      achter een klik. Dat is een harde les van deze pagina: de tijdwinst per
+      tool zat ook ooit achter een interactie en dat was fout. Wat je moet
+      lezen, laat je zien.
+   2. Een CV heeft van nature de volgorde die de eigenaar vroeg: eerst wie je
+      bent, dan waar je voor staat.
+   3. Een document is dunner dan een schrift, en juist daardoor kan het op een
+      stapel losse vellen liggen. Dat is een rijkere vorm dan een dicht blok:
+      hij is met de hand neergelegd in plaats van gefabriceerd.
 
-/* ⚠️ HET BLADEREN ZAT EERST AAN DE SCROLL VAST, en dat is er op verzoek uit.
-   De eigenaar wil er zélf doorheen kunnen bladeren: dat maakt van een
-   filmpje-dat-afspeelt een voorwerp dat je vasthebt — precies het verschil
-   dat de polaroids ook maken.
-   START OP 1: het schrift ligt dus al open op de eerste bladzijde (foto en
-   naam), niet dicht. Terugbladeren naar de kaft kan wel; daar staat het
-   etiket met zijn naam erop. */
-const START_BLAD = 1;
+   Wat bleef: de hele ruimte (kanteling, perspectief, echte randen, meedraaien
+   met de muis). Dat was het deel dat werkte. */
 
 export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
-  const [omgeslagen, setOmgeslagen] = useState(START_BLAD);
-  const verder = () => setOmgeslagen((n) => Math.min(BLADEN, n + 1));
-  const terug = () => setOmgeslagen((n) => Math.max(0, n - 1));
   const sceneRef = useRef<HTMLDivElement>(null);
 
   /* ── HET SCHRIFT DRAAIT MEE MET JE MUIS ────────────────────────────────
@@ -933,59 +925,49 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         />
       )}
 
-      {/* 🔑 HET CONCEPT: EEN SCHRIFTJE DAT OPENGAAT TERWIJL JE SCROLLT.
-         Idee van de eigenaar zelf, na vier afgekeurde pogingen van mij die
-         allemaal hetzelfde waren: een rechthoek met een foto en tekst erin.
-         Een kaart kleiner maken of anders indelen is geen andere vorm.
+      {/* 🔑 HET CONCEPT: EEN CV DIE SCHUIN OP HET VELD LIGT.
+         De compositie is dezelfde als altijd — links de kop en één zin voor de
+         lezer, rechts het voorwerp — maar het voorwerp is nu een document in
+         plaats van een schrift.
 
-         Waarom een schrift en niet zomaar een boekje: het is het voorwerp van
-         deze doelgroep, en het is het enige dat hier nog vrij was. Het rapport
-         is al vergeven aan "Avinka in cijfers", de polaroids hangen bij de
-         ervaringen. Een schrift heeft bovendien van nature precies wat we
-         nodig hebben: een etiket waar je je naam op schrijft. Daar staat dus
-         "Even voorstellen" op, en het schrift opent naar de bladzijde waar je
-         hem leert kennen.
+         DE OPBOUW VAN HET DOCUMENT, en die is niet willekeurig:
+         1. een donkergroene kopband met de naam, de rol en de foto. Dat is de
+            eerste seconde: er staat een mens achter dit product.
+         2. links een smalle kolom met de harde feiten (groep, jaren, school,
+            woonplaats). Kort, want dit is de aanleiding en niet het verhaal.
+         3. rechts de brede kolom: waarom Avinka bestaat en waar het heen gaat.
+            Dít is waar de sectie voor bedoeld is en het krijgt dus de meeste
+            ruimte — de eigenaar: "beetje persoonlijke info, daarna vooral over
+            Avinka".
+         4. onderaan, met de hand geschreven, de zin die je moet onthouden.
 
-         DE COMPOSITIE (en niet alleen de mechaniek — dat is hier de
-         terugkerende valkuil): dicht zie je alleen de kaft, rechts op het
-         veld. De linkerhelft is gewoon leeg mintveld, zoals een schrift op
-         een tafel ligt. Bij het opendraaien vult de kaft die lege helft en
-         wordt de rechterbladzijde vrijgegeven. Er beweegt dus niets naar de
-         zijkant en er springt geen ruimte bij: de plek is er al, hij wordt
-         alleen ingevuld. */}
-      {/* ⚠️ DE RUIMTE BOVEN IS GEEN SMAAKKWESTIE MEER — hij is nagemeten.
-         Een blad dat rechtop staat, steekt boven het schrift uit: het draait om
-         de rug en zwaait daarbij zijn hele breedte de ruimte in, en die ruimte
-         wijst door de kanteling schuin omhoog. Uitslag = halve schriftbreedte ×
-         sin(kantelhoek) ≈ 89px op het steilste punt (muis in de bovenhoek).
-         De sectie heeft overflow:hidden — nodig voor de golf — dus alles wat
-         daarboven uitkomt wordt AFGEKNIPT. Met de oude pt-20/pt-24 gebeurde dat
-         ook echt: 19px van de bovenkant van het blad viel weg, precies op het
-         moment dat je ernaar kijkt.
-         🔑 De padding boven en onder blijft aan elkaar gelijk. Dat is geen
+         ⚠️ Waarom de handgeschreven zin daar staat en niet in de gedrukte
+         kolom: op een CV zet je zelf niet wat je gelooft — dat schrijf je
+         eronder. Het is het enige stuk van dit document dat niet uit een
+         printer komt, en daarom leest het als de persoon in plaats van als de
+         sollicitant. */}
+      {/* De padding boven en onder blijft aan elkaar gelijk. Dat is geen
          netheid: de mint begint op de halve hoogte van deze sectie, dus zodra
          die twee uit de pas lopen valt de kleurnaad niet meer halverwege het
-         schrift. Verander je er één, verander dan allebei. */}
-      <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pb-28 pt-28 lg:pb-36 lg:pt-36">
+         document. Verander je er één, verander dan allebei.
+         (Hij stond op pt-28/pt-36 omdat een omslaand blad van het schrift ver
+         boven de sectie uit zwaaide en door overflow:hidden werd afgeknipt. Er
+         slaat nu niets meer om, dus het mag weer krapper — maar het document
+         is wél hoger dan het schrift was, dus niet terug naar pt-20.) */}
+      <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pb-24 pt-24 lg:pb-28 lg:pt-28">
         <Confetti punten={[{ x: "3%", y: "88%", r: 4 }]} />
 
-        {/* ⚠️ DE OPZET IS OMGEKEERD (op verzoek): het schrift ligt aan één
-           kant en de tekst staat ernaast, niet erin. Een schrift waar je hele
-           productverhaal in past bestaat niet — dat was precies waarom het
-           onrealistisch aanvoelde. Nu ligt er een schrift met een foto erin,
-           zoals een schrift er echt uitziet, en de tekst staat gewoon op het
-           veld ernaast. */}
         <div className="w-mkr-rij">
           {/* ── links: de kop en de uitleg ──
-             🔑 DE TAAKVERDELING TUSSEN LINKS EN HET SCHRIFT, en dat is waar
+             🔑 DE TAAKVERDELING TUSSEN LINKS EN HET DOCUMENT, en dat is waar
              deze alinea drie keer op stukliep:
-             het SCHRIFT vertelt wie hij is en waarom hij Avinka maakte;
+             het CV vertelt wie hij is en waar Avinka voor staat;
              LINKS moet vertellen wat dat voor de LEZER betekent.
              Zolang hier stond "ik bouw het zelf, geen bedrijf, geen
-             supportafdeling" zei het in andere woorden hetzelfde als
-             bladzijde 3 van het schrift, alleen zakelijker. En het definieerde
-             Avinka bovendien met wat het NIET is, wat altijd zwakker leest dan
-             wat het wél is. */}
+             supportafdeling" zei het in andere woorden hetzelfde als het
+             document ernaast, alleen zakelijker. En het definieerde Avinka
+             bovendien met wat het NIET is, wat altijd zwakker leest dan wat
+             het wél is. */}
           <div className="w-mkr-tekst">
             <h2 className="w-mkr-kop">Even voorstellen</h2>
             {/* De richting komt van de eigenaar: Avinka is er voor het werk na
@@ -998,312 +980,191 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                heeft aangeleverd; niet gladstrijken. Er stond eerst "Ik ken dat
                werk, want ik doe het zelf" (van mij) — deze zegt meer, want hij
                nodigt uit in plaats van alleen te bevestigen. */}
-            <p className="w-schrift-tekst">
+            <p className="w-mkr-inleiding">
               Avinka is gebouwd om leerkrachten te helpen met het werk dat na
               schooltijd blijft liggen. Ik doe aanpassingen op basis van eigen
               ervaringen, maar sta graag open voor alle feedback.
             </p>
-            {/* De uitnodiging om te bladeren, met hetzelfde handgeschreven
-               boogpijltje als bij de polaroids ("klik op een foto om de
-               ervaring te lezen"). Dezelfde soort handeling, dus dezelfde
-               aanwijzing — een tweede vormtaal verzinnen voor hetzelfde
-               gebaar maakt een pagina rommelig.
-               ⚠️ WEL EEN ANDER PAD, en dat was fout overgenomen. Bij de
-               polaroids wijst het pijltje naar BENEDEN, want daar hangen de
-               foto's onder de tekst. Hier ligt het schrift ERNAAST, en dan
-               wijst een pijl naar beneden naar leeg veld. Dit is dezelfde
-               hand en dezelfde dikte, maar de boog loopt naar rechts. */}
-            <p className="w-mkr-wenk">
-              blader zelf door mijn schrift
-              <svg
-                viewBox="0 0 40 28"
-                className="h-6 w-9 shrink-0"
-                fill="none"
-                stroke={KOP}
-                strokeWidth="2"
-                strokeLinecap="round"
-                aria-hidden
-              >
-                <path d="M2 20 C 10 23, 22 21, 32 13" />
-                <path d="M25 12.5 L 33.5 12 L 30 19" />
-              </svg>
-            </p>
+            {/* ⚠️ HIER STOND "blader zelf door mijn schrift" met een
+               handgeschreven boogpijltje. Weg, en niet vervangen: er valt
+               niets meer te bladeren. Een uitnodiging tot een handeling die
+               niet bestaat is erger dan geen uitnodiging — dat stond al in de
+               mobiele regels van het schrift en geldt nu voor de hele pagina.
+               Het handgeschreven opstapje stond bovendien ooit in 6 van de 9
+               secties en is toen bewust teruggebracht; dit is er weer één
+               minder waar het niets doet. */}
           </div>
 
-        {/* ── HET SCHRIFT WAAR JE DOORHEEN BLADERT ─────────────────────────
-             Niet één kaft die opengaat, maar drie bladen die één voor één
-             omslaan terwijl je scrollt. Elke bladzijde vertelt één ding.
-             Dat lost het echte bezwaar op: het schrift dééd maar één keer
-             iets, en verder stond er een tekstkolom naast een voorwerp.
-
-             De onderste bladzijde ligt er altijd (die bepaalt ook de hoogte);
-             daar bovenop liggen de bladen die omslaan, in een 3D-stapel. De
-             browser sorteert ze zelf op diepte dankzij preserve-3d, dus er
-             is geen z-index-geknutsel nodig dat bij de helft moet omklappen. */}
-        {/* ⚠️ DE WRAPPER IS GEEN OPSMUK MAAR DE REPARATIE VAN DE VORIGE POGING.
-           De eerste 3D-versie heeft nooit gerenderd en zag er daardoor uit als
-           een fout: het schrift droeg zelf `data-reveal`, en de reveal-regel
-           `.anim [data-reveal].is-in { transform: none }` in Landing.tsx wist
-           elke transform op datzelfde element weg. De kanteling verdween dus
-           en de dikte lag op een kaarsrecht vlak.
+        {/* ⚠️ DE WRAPPER IS GEEN OPSMUK MAAR EEN REPARATIE, en die les geldt
+           voor élk voorwerp dat hier ooit komt te liggen. De eerste 3D-poging
+           heeft nooit gerenderd en zag er daardoor uit als een fout: het
+           voorwerp droeg zelf data-reveal, en de reveal-regel
+           .anim [data-reveal].is-in { transform: none } in Landing.tsx wist
+           elke transform op datzelfde element weg. De kanteling verdween dus en
+           de dikte lag op een kaarsrecht vlak.
            🔑 De regel: een element met data-reveal mag GEEN eigen transform
            dragen. Zet de reveal op de buitenkant en de vormgeving op een laag
-           erbinnen. (`rotate:` overleefde het wél — dat is sinds CSS Transforms
-           2 een eigen eigenschap en valt niet onder `transform: none`. Precies
-           daarom stond de scheefstand van -1,2deg er wel en de kanteling niet.) */}
-        <div data-reveal className="w-schrift">
-          {/* --om is het enige dat React hier doorgeeft: hoeveel bladen er al
-             om zijn. Het stijlblad rekent daar de dikte van beide helften uit,
-             zodat de massa van het schrift meeverschuift terwijl je bladert
-             (zie .w-schrift-blok). Eén getal, de rest is opmaak. */}
-          <div
-            className={`w-schrift-scene ${omgeslagen === 0 ? "is-dicht" : ""}`}
-            ref={sceneRef}
-            style={{ "--om": omgeslagen, "--bladen": BLADEN } as CSSProperties}
-          >
-          {/* ── DE DIKTE ─────────────────────────────────────────────────────
-             Hier zat het echte "plat". Een opengeslagen schrift is geen vel
-             papier: het is een blok van een paar honderd bladen met twee
-             stapels naast elkaar en een dal ertussen. Dit blok is de ONDERKANT
-             van dat voorwerp — het achterplat, plus de drie zijkanten die je
-             bij deze kijkhoek werkelijk ziet: de snede onderaan, en de twee
-             buitenranden links en rechts.
+           erbinnen. (De losse eigenschap rotate overleefde het wél — die valt
+           sinds CSS Transforms 2 niet onder transform: none. Precies daarom
+           stond de scheefstand er toen wel en de kanteling niet.) */}
+        <div data-reveal className="w-cv">
+          <div className="w-cv-scene" ref={sceneRef}>
+            {/* ── DE LOSSE VELLEN ERONDER ────────────────────────────────
+               Twee vellen die onder het document uit steken, elk een andere
+               kant op gedraaid. Ze doen één ding: het verschil maken tussen
+               een voorwerp dat GEFABRICEERD is en een voorwerp dat NEERGELEGD
+               is. Een blok met vier rechte hoeken op een veld leest als een
+               UI-kaart; een stapeltje dat niet helemaal recht ligt leest als
+               papier op een bureau.
+               🔑 Ze draaien in het VLAK van het papier (rotate, niet rotateY),
+               dus ze blijven evenwijdig aan het document. Dat is geen detail:
+               vlakken onder een verschillende hoek in de ruimte snijden elkaar,
+               en dan tekent de browser links van de snijlijn het ene vel en
+               rechts het andere. Dat is bij het schrift een keer gebeurd en het
+               kostte een halve avond.
+               ⚠️ Ze liggen dieper dan de onderkant van het blok (zie --dik),
+               niet ertussenin. Ertussenin zouden ze dwars door de zijkanten
+               heen steken. */}
+            <span className="w-cv-vel w-cv-vel-a" aria-hidden />
+            <span className="w-cv-vel w-cv-vel-b" aria-hidden />
 
-             🔑 Het zijn ECHTE vlakken in de ruimte (rotateX/rotateY van 90
-             graden), geen getekende randjes. Dat is het verschil dat je merkt
-             zodra het schrift met de muis meedraait: getekende randen blijven
-             even breed, echte randen worden smaller als je er recht op kijkt.
-
-             De snede heeft de streping van gestapelde bladen. Fijn houden: op
-             deze schaal is één lijn per 2px al een stapel, en grover leest als
-             een ribbel in plaats van als papier. */}
-          <div className="w-schrift-blok" aria-hidden>
-            {/* rechts: wat je nog moet omslaan */}
-            <span className="w-blok-plat w-blok-r" />
-            <span className="w-blok-snede w-snede-r" />
-            <span className="w-blok-zij w-zij-r" />
-            {/* links: wat je al gehad hebt */}
-            <span className="w-blok-plat w-blok-l" />
-            <span className="w-blok-snede w-snede-l" />
-            <span className="w-blok-zij w-zij-l" />
-          </div>
-
-          {/* Blad 4, de onderste: ligt er altijd. */}
-          {/* SPREAD 3, RECHTS: de laatste bladzijde, met de zin die je moet
-             onthouden. Ligt er altijd; de omslaande bladen liggen erbovenop. */}
-          <div className="w-schrift-blad w-papier">
-            <div className="w-schrift-inhoud">
-              <p className="w-blad-tekst">
-                Geen ingewikkelde techniek, wel zorgvuldig met de gegevens van
-                je leerlingen.
-              </p>
-              <p className="w-blad-kern">
-                Goede leerkrachten horen hun tijd te besteden aan leerlingen,
-                niet aan administratie.
-              </p>
+            {/* ── DE DIKTE ───────────────────────────────────────────────
+               Het achterplat plus de twee randen die je bij deze stand echt
+               ziet: de snede onderaan en de zijkant links.
+               🔑 Het zijn ECHTE vlakken in de ruimte (rotateX/rotateY van 90
+               graden), geen getekende randjes. Dat merk je zodra het document
+               met de muis meedraait: een getekende rand blijft even breed, een
+               echte rand wordt smaller als je er recht op kijkt. */}
+            <div className="w-cv-blok" aria-hidden>
+              <span className="w-cv-plat" />
+              <span className="w-cv-snede" />
+              <span className="w-cv-zij" />
             </div>
-          </div>
 
-          {/* De twee bladerknoppen. Ze bedekken elk een halve bladzijde, dus
-             je kunt gewoon op het schrift klikken — maar het zijn échte
-             knoppen, met een label en een zichtbaar pijltje aan de buitenrand.
-             🔑 Zichtbaar, niet verstopt achter hover: bedieningselementen
-             wegmoffelen tot je erover gaat is op deze site een afgekeurde
-             gewoonte. Ze staan boven de bladen (z-index) zodat de 3D-stapel
-             de klik niet opvangt. */}
-          <button
-            type="button"
-            className="w-blad-knop w-blad-terug"
-            onClick={terug}
-            disabled={omgeslagen === 0}
-            aria-label="Vorige bladzijde"
-          >
-            <span aria-hidden>‹</span>
-          </button>
-          <button
-            type="button"
-            className="w-blad-knop w-blad-verder"
-            onClick={verder}
-            disabled={omgeslagen === BLADEN}
-            aria-label="Volgende bladzijde"
-          >
-            <span aria-hidden>›</span>
-          </button>
-
-          <div className="w-schrift-stapel">
-            {/* Blad 3 — slaat als laatste om. Voorkant is de rechterbladzijde
-               van de tweede spread, achterkant de linker van de derde. */}
-            <div className={`w-blad w-blad-3 ${omgeslagen > 2 ? "is-om" : ""}`}>
-              {/* SPREAD 2, RECHTS: de vragen lopen door op de rechterbladzijde,
-                 zoals in een echt vriendenboekje. */}
-              <div className="w-blad-voor w-papier">
-                <div className="w-schrift-inhoud">
-                  {/* ⚠️ De laatste vraag is met opzet de laatste. Het antwoord
-                     "werk na schooltijd" is precies het probleem waar de
-                     volgende bladzijde het antwoord op is — je slaat om van de
-                     klacht naar de reden. De eigenaar zei het zelf: "boem,
-                     volgende bladzijde". Zet er dus niets achter.
-                     Kort houden trouwens: een antwoord dat omloopt naar een
-                     tweede regel schuift alles eronder van de lijnen af. */}
-                  <dl className="w-blad-vragen">
-                    <div>
-                      <dt>school</dt>
-                      <dd>Regenboog Osseveld</dd>
-                    </div>
-                    <div>
-                      <dt>ik woon in</dt>
-                      <dd>Apeldoorn</dd>
-                    </div>
-                    <div>
-                      <dt>het leukste aan mijn werk</dt>
-                      {/* ⚠️ Niet inkorten. Ik had hier "een veilige plek
-                         bieden" van gemaakt zodat het op één regel paste; de
-                         eigenaar zette het terug. Zijn woorden gaan voor de
-                         regelval — hij loopt hier gewoon om naar een tweede
-                         regel, precies zoals in een echt vriendenboekje. */}
-                      <dd>een veilige leeromgeving bieden</dd>
-                    </div>
-                    <div>
-                      <dt>het minst leuke</dt>
-                      <dd>werk na schooltijd</dd>
-                    </div>
-                  </dl>
+            {/* Het document zelf. Dit is het enige dat in de stroom staat, dus
+               het bepaalt de hoogte; het blok en de vellen liggen er absoluut
+               omheen. Zo hoeft er nergens een hoogte te worden ingevuld die je
+               bij elke tekstwijziging opnieuw moet natrekken. */}
+            <article className="w-cv-blad">
+              {/* ── de kopband ──
+                 Naam links, foto rechts. Dit is de eerste seconde van het hele
+                 blok: er staat een mens achter dit product, en die heeft een
+                 gezicht en een naam. Donkergroen omdat dit de enige plek in de
+                 sectie is die om aandacht mag vragen. */}
+              <header className="w-cv-band">
+                <div>
+                  <p className="w-cv-naam">Michael van Spanje</p>
+                  {/* ⚠️ "oprichter" is het woord van de eigenaar zelf en het
+                     zegt iets wat "maker" niet zegt: dit is geen hobbyproject
+                     maar een bedrijf met iemand die ervoor staat. Precies wat
+                     een school wil weten. Niet terugveranderen. */}
+                  <p className="w-cv-rol">leerkracht &amp; oprichter van Avinka</p>
                 </div>
-              </div>
-              {/* SPREAD 3, LINKS: de tweede omslag. */}
-              <div className="w-blad-achter w-papier">
-                <div className="w-schrift-inhoud">
-                  <p className="w-blad-kop">Waarom ik Avinka heb gemaakt</p>
-                  <p className="w-blad-tekst">
+                {/* De pasfoto zoals op een echt CV: recht geplakt, met een wit
+                   randje eromheen. Het randje is niet alleen versiering — het
+                   houdt de achtergrond van de foto weg van het donkergroen,
+                   dat anders op elkaar botst. */}
+                <div className="w-cv-pas">
+                  {fotoBestand ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`/${fotoBestand}`}
+                      alt="Michael van Spanje"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="font-display text-xl font-black" style={{ color: DONKER }}>
+                      MvS
+                    </span>
+                  )}
+                </div>
+              </header>
+
+              {/* ── het lijf: personalia links, verhaal rechts ──
+                 De verhouding IS de boodschap. De eigenaar: "beetje
+                 persoonlijke info, daarna vooral over Avinka". De feiten staan
+                 dus in een smalle kolom en het verhaal krijgt bijna drie keer
+                 zoveel ruimte.
+                 Een haarlijn ertussen en verder niets: geen getint zijbalkje.
+                 Zo'n gekleurde kolom is precies het CV-sjabloon dat iedereen
+                 kent, en deze pagina werkt overal met haarlijnen (de vragen,
+                 "Zo werkt het"). */}
+              <div className="w-cv-body">
+                {/* Alle gegevens hieronder komen van de eigenaar zelf. Niets
+                   hiervan invullen, afronden of bijstellen zonder hem: het zijn
+                   feiten over een echt persoon, inclusief zijn school. */}
+                <dl className="w-cv-feiten">
+                  <div>
+                    <dt>leeftijd</dt>
+                    <dd>30</dd>
+                  </div>
+                  <div>
+                    <dt>lesgeeft aan</dt>
+                    <dd>groep 7</dd>
+                  </div>
+                  <div>
+                    <dt>voor de klas</dt>
+                    <dd>7 jaar</dd>
+                  </div>
+                  {/* School en woonplaats op twee regels: samen op één regel
+                     liep de waarde in deze smalle kolom om, en dan is het geen
+                     feitenlijstje meer maar een alinea. */}
+                  <div>
+                    <dt>school</dt>
+                    <dd>Regenboog Osseveld</dd>
+                  </div>
+                  <div>
+                    <dt>woont in</dt>
+                    <dd>Apeldoorn</dd>
+                  </div>
+                </dl>
+
+                <div className="w-cv-verhaal">
+                  {/* Deze twee alinea-s stonden op de laatste bladzijden van
+                     het schrift en waren daarvóór al door de eigenaar
+                     goedgekeurd in het oude makersblok. Ze zijn niet opnieuw
+                     geschreven, alleen verplaatst naar de plek waar ze zonder
+                     klik te lezen zijn. */}
+                  <h3 className="w-cv-sectiekop">Waarom Avinka bestaat</h3>
+                  <p>
                     Wat begon als een oplossing voor mijn eigen werk, werd een
                     bredere missie: laten zien dat slimmer werken juist
                     eenvoudig kan zijn.
                   </p>
+                  <h3 className="w-cv-sectiekop">Waar ik voor sta</h3>
+                  <p>
+                    Geen ingewikkelde techniek, wel zorgvuldig met de gegevens
+                    van je leerlingen.
+                  </p>
+                  {/* ⚠️ NIEUWE TEKST (5-8), nog niet door de eigenaar gezien —
+                     alles hierboven is oude, goedgekeurde tekst. Hij staat er
+                     om twee redenen: de eigenaar vroeg om "vooral over Avinka",
+                     en zonder dit blok eindigde deze kolom 90px eerder dan de
+                     feiten ernaast, wat een gat onderin het document gaf.
+                     Inhoudelijk is het een herformulering van zijn eigen zin
+                     hiernaast ("ik doe aanpassingen op basis van eigen
+                     ervaringen, maar sta graag open voor alle feedback"), dus
+                     er wordt niets nieuws beloofd. Vervangen mag altijd — houd
+                     het dan wel op ongeveer deze lengte. */}
+                  <h3 className="w-cv-sectiekop">Waar het heen gaat</h3>
+                  <p>
+                    Avinka groeit mee met wat leerkrachten zelf vragen. Elke
+                    tool die erbij komt, begint bij werk dat echt blijft liggen.
+                  </p>
                 </div>
               </div>
-            </div>
 
-            {/* Blad 2 — de foto. Dit is de bladzijde waar het schrift op
-               openligt als je aankomt: eerst een gezicht en een naam, dan pas
-               de woorden. */}
-            <div className={`w-blad w-blad-2 ${omgeslagen > 1 ? "is-om" : ""}`}>
-              <div className="w-blad-voor w-papier">
-                <div className="w-schrift-inhoud">
-                  <div className="w-schrift-afdruk">
-                    <div className="w-schrift-foto">
-                      {fotoBestand ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={`/${fotoBestand}`}
-                          alt="Michael van Spanje"
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <span className="font-display text-2xl font-black" style={{ color: DONKER }}>
-                          MvS
-                        </span>
-                      )}
-                    </div>
-                    {/* ⚠️ Hier stond een onderschrift ("dat ben ik"). Eruit op
-                       verzoek: de naam staat er al onder, dus het zei niets
-                       wat je niet al zag. */}
-                  </div>
-                  {/* Naam en rol horen op deze bladzijde en niet alleen op het
-                     etiket: dit is de eerste bladzijde die je ziet, en een
-                     foto zonder naam stelt niemand voor. */}
-                  <p className="w-blad-naam">Michael van Spanje</p>
-                  {/* ⚠️ Hier stond eerst "leerkracht & maker" en daarna alleen
-                     "leerkracht". Allebei mis: "maker" was mijn woord en klinkt
-                     als jargon, en zonder titel erbij verdween het gewicht.
-                     De eigenaar koos zelf "oprichter": dat zegt dat dit geen
-                     hobbyproject is maar een bedrijf met iemand die ervoor
-                     staat — precies wat een school wil weten. */}
-                  <p className="w-blad-rol">leerkracht &amp; oprichter</p>
-                </div>
-              </div>
-              {/* De achterkant van dit blad is de LINKERbladzijde zodra je
-                 doorbladert. Daar staat het begin van het verhaal — dezelfde
-                 woorden die ooit in het grote makersblok stonden en die de
-                 eigenaar toen had goedgekeurd. Ze zijn niet weg, ze staan nu
-                 op de plek waar je ze pas leest als je ze wilt lezen. */}
-              {/* ── SPREAD 2, LINKS: het vriendenboekje ────────────────────
-                 Idee van de eigenaar, en het klopt precies: een vriendenboekje
-                 is een schoolvoorwerp dat van nature bestaat uit voorgedrukte
-                 vragen met handgeschreven antwoorden. Dat is exact het
-                 mechaniek dat het etiket op de kaft al gebruikt, dus het is
-                 geen nieuw idioom maar hetzelfde idee op ware grootte.
-                 Bijkomend voordeel: zo kun je persoonlijke dingen vertellen
-                 zonder dat het een cv wordt. De vraag doet het werk. */}
-              <div className="w-blad-achter w-papier">
-                <div className="w-schrift-inhoud">
-                  {/* Alle antwoorden zijn door de eigenaar zelf opgegeven.
-                     Niets hiervan invullen of bijstellen zonder hem: het zijn
-                     feiten over een echt persoon, inclusief zijn school en
-                     woonplaats. */}
-                  <p className="w-blad-kop">Persoonlijke vragen</p>
-                  <dl className="w-blad-vragen">
-                    <div>
-                      <dt>leeftijd</dt>
-                      <dd>30</dd>
-                    </div>
-                    <div>
-                      <dt>ik geef les in</dt>
-                      <dd>groep 7</dd>
-                    </div>
-                    <div>
-                      <dt>dat doe ik al</dt>
-                      <dd>7 jaar</dd>
-                    </div>
-                  </dl>
-                </div>
-              </div>
-            </div>
-
-            {/* Blad 1 — de kaft, slaat als eerste om. */}
-            <div className={`w-blad w-blad-1 ${omgeslagen > 0 ? "is-om" : ""}`}>
-              <div className="w-blad-voor w-schrift-voor">
-                {/* Het etiket, zoals op elk schoolschrift: iets scheef
-                   geplakt, want niemand plakt dat recht. Voorgedrukte woordjes
-                   met de hand ingevuld — daar staat zijn naam, ter grootte van
-                   een invulregel. */}
-                <div className="w-schrift-etiket">
-                  <dl className="w-schrift-invul">
-                    <div>
-                      <dt>naam</dt>
-                      <dd>Michael van Spanje</dd>
-                    </div>
-                    {/* "vak: leerkracht & maker" is er ook uit. Los van dat
-                       "maker" raar klinkt, is leerkracht geen vák — op een
-                       schriftetiket vul je bij vak iets als rekenen in. Twee
-                       ingevulde regels is bovendien hoe zo'n etiket er
-                       meestal uitziet. */}
-                    {/* Groep 7 vanaf schooljaar 2026/2027. De eigenaar gaf dit
-                       zelf op; niet zelf invullen of aanpassen zonder hem. */}
-                    <div>
-                      <dt>groep</dt>
-                      <dd>7</dd>
-                    </div>
-                    <div>
-                      <dt>van</dt>
-                      <dd>Avinka</dd>
-                    </div>
-                  </dl>
-                </div>
-              </div>
-              {/* ── De binnenkant van de kaft ──
-                 ⚠️ HIER PLAKTEN DRIE GEELTJES MET TAKEN, EEN PAPERCLIP EN EEN
-                 AFGEVINKT LIJSTJE. Eruit op verzoek van de eigenaar: "die
-                 hebben niks te maken met mijzelf". Hij heeft gelijk — dit is de
-                 sectie "Even voorstellen", en wat je daar neerlegt hoort over
-                 de persoon te gaan. Een stapeltje losse taken is een
-                 productargument, en dat staat hierboven al op de pagina.
-                 🔑 De vorm doet nu het werk dat die briefjes moesten doen: op
-                 de binnenkaft zie je karton, de vouw en daarnaast de dikte van
-                 het blok papier. Dat is precies wat er op de binnenkant van een
-                 echte kaft te zien is — niets, en dat mag ook. */}
-              <div className="w-blad-achter w-schrift-achter" />
-            </div>
-          </div>
+              {/* ── de zin die je moet onthouden ──
+                 Met de hand, onder een haarlijn, als enige stuk van dit
+                 document dat niet uit een printer komt. Op een CV zet je niet
+                 wat je gelooft — dat schrijf je eronder. Daardoor leest deze
+                 regel als de persoon en niet als de sollicitant, en daarom
+                 staat hij ook niet in de gedrukte kolom hierboven. */}
+              <p className="w-cv-hand">
+                Goede leerkrachten horen hun tijd te besteden aan leerlingen,
+                niet aan administratie.
+              </p>
+            </article>
           </div>
         </div>
         </div>
@@ -1313,30 +1174,26 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
          in een opmerking: dat sluit de tekst van het blok af en dan valt de
          hele pagina om. Dat is hier één keer gebeurd. */}
       <style>{`
-        /* ── het schrift ──
-           Twee bladzijden naast elkaar. De rechter staat gewoon in de stroom
-           en bepaalt dus de hoogte; de kaft ligt er absoluut overheen. Zo
-           verspringt er niets als hij opengaat: de ruimte was er al.
-           --open loopt van 0 (dicht) tot 1 (open) en wordt door de scroll
-           gezet; alle beweging hieronder hangt aan dat ene getal. */
-        /* ── de rij: tekst links, schrift rechts ──
-           Het schrift heeft een vaste maat en de tekst krijgt de rest. Zo
-           blijft het schrift een voorwerp met een eigen formaat in plaats van
-           een blok dat met het scherm meerekt. */
-        /* ⚠️ Boven uitlijnen en niet centreren. Met align-items:center zweefde
-           de kop halverwege het schrift, en dan lijkt het of de twee helften
-           niets met elkaar te maken hebben. Nu begint de kop op dezelfde
-           hoogte als de bovenrand van het schrift en lees je de sectie van
-           linksboven naar rechts. */
-        .w-mkr-rij {
-          display: grid;
-          gap: clamp(28px, 4vw, 56px);
-          align-items: start;
+        /* ── de opbouw: kop bovenaan, document eronder ──
+           ⚠️ DIT STOND JARENLANG NAAST ELKAAR: tekst links, voorwerp rechts.
+           Dat werkte zolang het voorwerp ongeveer even hoog was als de tekst.
+           Het CV is dat niet — 180px tekst naast een document van 550px laat
+           de halve linkerkolom leeg hangen, en die leegte leest als een fout in
+           plaats van als ruimte.
+           🔑 De eigenaar vroeg om iets dat "meer lijkt op die grote kaart die
+           we eerst hadden". Een grote kaart is BREED. Zodra het document de
+           volle kolom pakt is er geen lege helft meer, kan de tekst erbinnen
+           over twee kolommen, en wordt het document lager in plaats van hoger.
+           Eén ingreep die drie problemen tegelijk oplost.
+
+           Het document ligt tegen de rechterkant. Zo loopt de blik diagonaal:
+           kop linksboven, document rechtsonder — en de kanteling kijkt vanaf
+           daar terug naar de kop. Gecentreerd zou het die richting weghalen. */
+        .w-mkr-rij { display: block; }
+        .w-mkr-tekst {
+          max-width: 42ch;
+          margin-bottom: clamp(28px, 4vw, 48px);
         }
-        @media (min-width: 900px) {
-          .w-mkr-rij { grid-template-columns: minmax(0, 1fr) 32rem; }
-        }
-        .w-mkr-tekst { max-width: 42ch; }
         .w-mkr-kop {
           font-family: var(--font-display), Georgia, serif;
           font-weight: 900;
@@ -1349,992 +1206,322 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         }
         /* De eerste alinea na de kop hoeft geen extra ruimte: de kop heeft
            zijn eigen marge al. */
-        .w-mkr-kop + .w-schrift-tekst { margin-top: 0; }
-        /* De wenk naar het schrift, in het handschrift van de pagina. Klein
-           en gedempt: het is een onderschrift, geen knop. */
-        .w-mkr-wenk {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          margin-top: clamp(18px, 2.2vw, 26px);
-          font-family: var(--font-hand), "Segoe Script", cursive;
-          font-size: 1.15rem;
-          line-height: 1.3;
-          color: ${KOP};
+        .w-mkr-inleiding {
+          margin: 0;
+          font-size: 1.05rem;
+          line-height: 1.7;
+          color: rgba(34, 28, 58, 0.78);
         }
 
         /* ── DE RUIMTE ────────────────────────────────────────────────────
-           .w-schrift is alleen nog de KIJKDOOS: hij bepaalt de maat en waar de
-           kijker staat. Alles wat vorm heeft zit in .w-schrift-scene, één laag
-           dieper — verplicht, want dit element draagt data-reveal en dat wist
-           elke transform hier weg (zie de opmerking bij de opmaak).
+           .w-cv is alleen de KIJKDOOS: hij bepaalt de maat en waar de kijker
+           staat. Alles wat vorm heeft zit in .w-cv-scene, één laag dieper —
+           verplicht, want dit element draagt data-reveal en dat wist elke
+           transform hier weg (zie de opmerking bij de opmaak).
 
-           🔑 De perspectief-afstand is van 1500 naar 900px gegaan, en dat is
-           de belangrijkste enkele waarde van dit hele blok. 1500px is een
-           telelens: alle diepte wordt platgedrukt en een blad dat omslaat
-           beweegt over een vlak. 900px zet de kijker zo dicht bij het schrift
-           als je zit wanneer je er echt in schrijft, en pas dan buigt een
-           omslaand blad zichtbaar door de ruimte.
-           Verder dan dit niet: onder ~700px gaat de bladzijde bol staan en
-           lees je een fish-eye in plaats van een schrift.
+           🔑 De perspectief-afstand is de belangrijkste enkele waarde van dit
+           blok. Rond 1500px kijk je door een telelens: alle diepte wordt
+           platgedrukt en het document leest weer als een plaatje. 1000px zet de
+           kijker zo dicht bij het papier als je zit wanneer je het echt leest.
+           Verder omlaag niet: onder ~800px gaat een document van deze hoogte
+           merkbaar bol staan en wordt de bovenste regel kleiner dan de onderste.
 
-           perspective-origin ligt rechts-boven van het midden, niet in het
-           midden: de kijker staat schuin voor het schrift, aan de buitenkant
-           van de pagina. Samen met de Y-draaiing hieronder kijkt het schrift
-           daardoor de pagina IN. */
-        .w-schrift {
+           perspective-origin ligt rechts-boven van het midden: de kijker staat
+           schuin voor het document, aan de buitenkant van de pagina. Samen met
+           de Y-draaiing hieronder kijkt het document daardoor de pagina IN. */
+        .w-cv {
           position: relative;
           width: 100%;
-          max-width: 32rem;
-          perspective: 900px;
-          perspective-origin: 68% 22%;
+          max-width: 46rem;
+          margin-left: auto;
+          perspective: 1400px;
+          perspective-origin: 62% 24%;
         }
+
         /* ── DE STAND VAN HET VOORWERP ────────────────────────────────────
-           Drie draaiingen, en ze doen alle drie iets anders:
-           - X (+19deg) kantelt de bovenkant van je af: je kijkt er OP neer, en
+           - X (+16deg) kantelt de bovenkant van je af: je kijkt er OP neer, en
              daardoor zie je de snede aan de onderkant. Dit is de draaiing die
-             het van een plaatje een voorwerp maakt.
-           - Y (-9deg) draait het schrift NAAR LINKS, de pagina in.
-             ⚠️ Dit stond eerst op +9 en dat was fout. Het schrift ligt al
-             helemaal rechts op de pagina, en draaide toen ook nog eens naar
-             rechts: het keek dus het beeld uit, weg van alles waar het bij
-             hoort. Eigenaar: "dan kijkt die een soort van naar buiten beeld".
-             🔑 De regel erachter: een gekanteld voorwerp KIJKT ergens heen, en
-             dat moet naar de inhoud zijn, niet naar de rand van het scherm.
-             Bij een voorwerp links op de pagina hoort dus het omgekeerde teken.
-           - Z (-1,4deg) is de oude scheefstand: niets ligt kaarsrecht op tafel.
-             Die stond eerst als de losse eigenschap rotate op .w-schrift; nu
-             hoort hij gewoon bij de andere twee.
+             er een voorwerp van maakt.
+             ⚠️ Lager dan bij het schrift (dat stond op 19). Dit document is
+             hoger dan het schrift breed was, en elke graad kanteling vergroot
+             het verschil tussen de bovenste en de onderste tekstregel. Op 16
+             graden is de bovenste regel ~12% kleiner dan de onderste; dat leest
+             als diepte. Boven de ~19 gaat het document liggen in plaats van
+             staan en wordt de kop merkbaar moeilijker te lezen.
+           - Y (-9deg) draait het NAAR LINKS, de pagina in.
+             🔑 Dit stond ooit op +9 en dat was fout: het document ligt al
+             helemaal rechts op de pagina en keek toen ook nog eens naar rechts,
+             dus het beeld uit. Eigenaar: "dan kijkt die een soort van naar
+             buiten beeld". De regel: een gekanteld voorwerp KIJKT ergens heen,
+             en dat moet naar de inhoud zijn, niet naar de schermrand.
+           - Z (-1,6deg) is de scheefstand: niets ligt kaarsrecht op tafel.
 
-           🔑 DE HOEK VOLGT UIT DE DIKTE, NIET UIT SMAAK — en dat is de fout
-           van de eerste ronde. Van een rand die loodrecht op de bladzijde staat
-           zie je maar dikte × sin(hoek). Op 11 graden en 14px dik is dat
-           2,7px: rekenkundig aanwezig, met het oog niets. Zo bleef het schrift
-           plat terwijl de 3D wél werkte. Op 19 graden en 26px dik is het 8,5px
-           en zie je het meteen. Ga je aan één van de twee draaien, reken dan na
-           of er nog rand overblijft.
-
-           ⚠️ Verder dan ~22 graden niet: dan wordt de bovenste tekstregel
-           merkbaar smaller dan de onderste en gaat de bladzijde liggen in
-           plaats van staan. Dit is de rand waar leesbaar en ruimtelijk elkaar
-           kruisen. */
-        .w-schrift-scene {
-          --kantel-x: 19deg;
+           ⚠️ De X-uitslag van de muis is kleiner dan de Y-uitslag, met opzet:
+           X duwt de bovenrand omhoog en dat kost ruimte in de sectie, Y kost
+           niets want links en rechts is ruimte zat. */
+        .w-cv-scene {
+          --kantel-x: 16deg;
           --kantel-y: -9deg;
-          /* De dikte van het schrift, in één getal (zie .w-schrift-blok). Op
-             deze schaal (~500px voor een A5-breedte) is 26px ongeveer 7mm:
-             een volgeschreven schrift, niet een pak papier. */
-          --dik: 26px;
+          /* De dikte van de stapel, in één getal (zie .w-cv-blok). Op deze
+             schaal (~480px voor een A4-breedte) is 18px ongeveer 4mm: een
+             uitdraai van een stuk of veertig vellen. */
+          --dik: 18px;
           position: relative;
-          display: grid;
-          grid-template-columns: 1fr 1fr;
           transform-style: preserve-3d;
           transform:
             rotateX(calc(var(--kantel-x) + var(--muis-y, 0) * -2deg))
             rotateY(calc(var(--kantel-y) + var(--muis-x, 0) * 4.5deg))
-            rotateZ(-1.4deg);
-        }
-        /* ⚠️ De X-uitslag is kleiner dan de Y-uitslag, en dat is met opzet:
-           elke graad extra kanteling laat een omslaand blad hóger uitzwaaien
-           (zie de opmerking bij de padding van deze sectie). Y kost niets, want
-           daar is links en rechts ruimte zat. */
-
-        /* Onder de 900px staat het schrift ONDER de tekst in plaats van
-           ernaast. Dan zwaait een opstaand blad de handgeschreven regel in, en
-           die staat daar nog gewoon. Het schrift krijgt hier dus zijn eigen
-           ruimte boven zich; de gewone tussenruimte van de rij is te weinig. */
-        @media (min-width: 640px) and (max-width: 899px) {
-          /* 4,5rem is nagemeten: op 3,5rem raakte de bovenkant van een
-             opstaand blad de handgeschreven regel nog net (7px overlap). */
-          .w-schrift { margin-top: 4.5rem; }
+            rotateZ(-1.6deg);
         }
 
-        /* ── HET BLOK: de dikte van het schrift ───────────────────────────
-           Het achterplat plus de drie zijkanten die je bij deze stand ziet.
-           Alles hangt aan --dik, zodat de dikte in één getal te sturen is.
-           14px is geen willekeurige keus: dat is ongeveer een schoolschrift
-           van 40 bladen op deze schaal (het schrift is hier ~500px breed, een
-           A5-schrift is 148mm — dus ~3,4px per millimeter, en 4mm dik komt op
-           14px uit). */
-        .w-schrift-blok {
+        /* ── HET BLOK: de dikte ───────────────────────────────────────────
+           Het achterplat en de twee randen die je bij deze stand ziet. Alles
+           hangt aan --dik zodat de dikte in één getal te sturen is. */
+        .w-cv-blok {
           position: absolute;
           inset: 0;
           transform-style: preserve-3d;
           pointer-events: none;
         }
-        .w-schrift-blok > span { position: absolute; display: block; }
-
-        /* 🔑 HET SCHRIFT IS AAN BEIDE KANTEN VERSCHILLEND DIK, EN DAT IS WAT
-           DE DIKTE VERRAADT. Eerst had ik er één slab van gemaakt over de
-           volle breedte: dat is een blok hout met een bladzijde erop, en je
-           ziet meteen dat het niet klopt zonder te kunnen zeggen waarom.
-
-           Het schrift ligt open op de eerste bladzijde. Rechts ligt dus het
-           hele blok papier dat je nog moet omslaan, links alleen de kaft plat
-           op tafel. En terwijl je doorbladert VERSCHUIFT DIE MASSA: links
-           groeit, rechts slinkt. Dat is de rijkste aanwijzing van allemaal,
-           want het is precies wat je bij een echt boek voelt en ziet.
-
-           Alles volgt uit --om (hoeveel bladen om zijn), dat React doorgeeft:
-             --vord  hoe ver je bent, van 0 (net open) tot 1 (bij de laatste)
-             --dik-l / --dik-r  de twee dikten
-           DUN is de ondergrens: ook een kant zonder papier heeft nog een kaft,
-           en een kaft met dikte nul is weer een vel papier.
-           ⚠️ De clamp is niet overbodig: bij --om 0 zou --vord negatief worden
-           en dan wordt een dikte negatief, wat in CSS geen fout geeft maar
-           vlakken binnenstebuiten keert. */
-        .w-schrift-blok {
-          --dun: 5px;
-          --vord: clamp(0, calc((var(--om, 1) - 1) / (var(--bladen, 3) - 1)), 1);
-          --dik-l: calc(var(--dun) + (var(--dik) - var(--dun)) * var(--vord));
-          --dik-r: calc(var(--dik) - (var(--dik) - var(--dun)) * var(--vord));
+        .w-cv-blok > span { position: absolute; display: block; }
+        /* Het achterplat raakt de tafel, dus dit vlak draagt de slagschaduw op
+           het mintveld. Warm grijs en geen wit: de onderkant van een stapel
+           papier vangt geen licht. */
+        .w-cv-plat {
+          inset: 0;
+          transform: translateZ(calc(var(--dik) * -1));
+          background: #e6dcc6;
+          border-radius: 5px;
+          box-shadow: ${schaduw(30, 62, -22, 0.5)};
         }
-        /* Het achterplat van een helft: het karton dat de tafel raakt. Dit
-           vlak draagt daarom ook de slagschaduw op het mintveld. */
-        .w-blok-plat {
-          top: 0;
-          bottom: 0;
-          background: color-mix(in srgb, ${DONKER} 82%, #000000);
-          box-shadow: ${schaduw(30, 60, -20, 0.55)};
-        }
-        .w-blok-r {
-          left: 50%;
-          right: 0;
-          border-radius: 0 1.5rem 1.5rem 0;
-          transform: translateZ(calc(var(--dik-r) * -1));
-        }
-        .w-blok-l {
+        /* De snede: de stapel vellen die je van voren ziet. De streping is de
+           opeenstapeling zelf — één lijn per 2px, want dat is op deze schaal
+           ongeveer één vel. Grover en het worden ribbels. */
+        .w-cv-snede {
           left: 0;
-          right: 50%;
-          border-radius: 1.5rem 0 0 1.5rem;
-          transform: translateZ(calc(var(--dik-l) * -1));
-        }
-
-        /* De snede aan de onderkant: de stapel bladen die je van voren ziet.
-           De streping is de opeenstapeling zelf — één lijn per 2px, want dat
-           is op deze schaal ongeveer één blad. Grover en het worden ribbels.
-           🔑 Dit is een ECHT vlak: het staat loodrecht op de bladzijde
-           (rotateX 90deg) en wordt dus vanzelf smaller als je het schrift met
-           je muis vlakker draait. Een getekende rand doet dat niet — en dat is
-           het verschil tussen dit en een randje in de verf. */
-        .w-blok-snede {
+          right: 0;
           top: 100%;
+          height: var(--dik);
           transform-origin: 50% 0;
           transform: rotateX(-90deg);
           background:
             repeating-linear-gradient(
               to bottom,
-              rgba(23, 80, 58, 0.16) 0 1px,
+              rgba(23, 80, 58, 0.15) 0 1px,
               transparent 1px 2px
             ),
             linear-gradient(to bottom, #fdfaf2, #e8e0cd);
-          border-radius: 0 0 3px 3px;
+          border-radius: 0 0 4px 4px;
         }
-        .w-snede-r { left: 50%; right: 0; height: var(--dik-r); }
-        .w-snede-l { left: 0; right: 50%; height: var(--dik-l); }
-
-        /* De buitenranden: dezelfde stapel, van opzij gezien. Ze staan er
-           allebei altijd; welke je ziet hangt af van de Y-draaiing, en dat
-           regelt de browser zelf via backface-visibility. */
-        .w-blok-zij {
+        /* De zijkant links. Dezelfde stapel, van opzij gezien. Dit is de rand
+           die je door de Y-draaiing ziet; de rechterkant draait juist van je
+           weg en heeft dus geen vlak nodig. */
+        .w-cv-zij {
           top: 0;
           bottom: 0;
-          backface-visibility: hidden;
-          background:
-            repeating-linear-gradient(
-              to right,
-              rgba(23, 80, 58, 0.16) 0 1px,
-              transparent 1px 2px
-            ),
-            linear-gradient(to right, #f2ead8, #fdfaf2);
-        }
-        .w-zij-r {
-          left: 100%;
-          width: var(--dik-r);
-          transform-origin: 0 50%;
-          transform: rotateY(90deg);
-          border-radius: 0 3px 3px 0;
-        }
-        .w-zij-l {
           right: 100%;
-          width: var(--dik-l);
+          width: var(--dik);
           transform-origin: 100% 50%;
           transform: rotateY(-90deg);
-          border-radius: 3px 0 0 3px;
-        }
-
-        /* Dicht schrift: dan ligt ALLES rechts en is de linkerhelft gewoon
-           leeg veld — dat is de compositie waar dit blok op gebouwd is (de
-           kaft vult die lege helft bij het opendraaien). Een kartonnen plaat
-           op een lege helft zou daar zweven. */
-        .is-dicht .w-blok-l,
-        .is-dicht .w-snede-l,
-        .is-dicht .w-zij-l { opacity: 0; }
-
-        /* De dikte verandert mee met het omslaan, dus in hetzelfde tempo en op
-           dezelfde curve als het blad zelf. Zonder dit springt de massa van de
-           ene kant naar de andere op het moment van de klik, terwijl het blad
-           nog onderweg is. */
-        .w-blok-plat,
-        .w-blok-snede,
-        .w-blok-zij {
-          transition:
-            transform 0.72s cubic-bezier(0.22, 1, 0.32, 1),
-            height 0.72s cubic-bezier(0.22, 1, 0.32, 1),
-            width 0.72s cubic-bezier(0.22, 1, 0.32, 1),
-            opacity 0.5s ease;
-        }
-
-        /* ── de stapel bladen ──
-           Ligt precies over de rechterhelft, waar de bladzijde ook ligt. Elk
-           blad draait om de rug (de linkerrand). preserve-3d laat de browser
-           de bladen zelf op diepte sorteren: een blad dat voorbij de 90 graden
-           is, ligt fysiek links en wordt dus vanzelf achter de bladen
-           getekend die nog dicht liggen. */
-        .w-schrift-stapel {
-          position: absolute;
-          inset: 0 0 0 50%;
-          transform-style: preserve-3d;
-        }
-        .w-blad {
-          position: absolute;
-          inset: 0;
-          transform-origin: left center;
-          transform-style: preserve-3d;
-          will-change: transform;
-        }
-        .w-blad-voor,
-        .w-blad-achter {
-          position: absolute;
-          inset: 0;
           backface-visibility: hidden;
-          overflow: hidden;
-        }
-        .w-blad-achter { transform: rotateY(180deg); }
-        /* De achterkant van een papieren blad ligt na het omslaan links, dus
-           daar zit de vouw aan de rechterkant en zijn de ronde hoeken
-           gespiegeld. */
-        .w-blad-achter.w-papier {
-          border-left: 2px solid ${KAART_RAND};
-          border-right: none;
-          border-radius: 1.4rem 0 0 1.6rem;
-          box-shadow: none;
-        }
-        .w-blad-achter.w-papier::before {
-          inset: 0 0 0 auto;
-          background: linear-gradient(to left, rgba(var(--w-schaduw-rgb, 23,80,58), 0.13), transparent);
-        }
-
-        /* Elk blad zijn eigen plek in de stapel. De translateZ is minimaal
-           (een blad papier is dun) maar genoeg om de sortering eenduidig te
-           maken; zonder die verschillen flikkeren vlakken die precies
-           samenvallen.
-           🔑 Het omslaan is nu een OVERGANG en geen scrollstand: de klik zet
-           de klasse, de browser doet de beweging. De curve remt aan het eind
-           af zoals een blad dat neervalt; 0,72s is lang genoeg om het te
-           volgen en kort genoeg om drie keer achter elkaar te doen. */
-        /* 🔑 DE VOLGORDE IS HIER HET HELE VERHAAL: eerst draaien, dán de
-           diepte. In CSS wordt de RECHTSE bewerking als eerste op het element
-           toegepast, dus rotateY(...) translateZ(...) betekent: verschuif het
-           blad in zijn EIGEN richting en draai dat mee. Een blad dat omslaat
-           neemt zijn dikte dus mee naar de andere kant en ligt daar onderop —
-           precies zoals papier zich gedraagt.
-           Andersom (translateZ eerst) blijft de verschuiving in de richting
-           van de kijker staan, hoe ver het blad ook gedraaid is. Dan ligt de
-           kaft na het omslaan nog steeds bovenop en zie je de binnenkant van
-           het karton in plaats van de bladzijde die je net omsloeg. Dat was
-           hier de bug. */
-        .w-blad {
-          transform: rotateY(0deg) translateZ(var(--z));
-          transition:
-            transform 0.72s cubic-bezier(0.22, 1, 0.32, 1),
-            --draai 0.72s cubic-bezier(0.22, 1, 0.32, 1);
-        }
-        .w-blad.is-om { transform: rotateY(-178deg) translateZ(var(--z)); }
-
-        /* ── HET BLAD VANGT LICHT TERWIJL HET OMGAAT ──────────────────────
-           Zonder dit blijft het omslaan plat: de bladzijde draait wél echt door
-           de ruimte, maar hij houdt de hele weg dezelfde kleur, en dan zie je
-           een kaartje kantelen in plaats van papier dat opstaat.
-
-           🔑 De truc is --draai: één getal dat met dezelfde curve en in
-           dezelfde tijd van 0 naar 1 loopt als de draaiing zelf. Custom
-           properties kunnen alleen overgaan als ze met @property een TYPE
-           hebben — zonder die regel springt een variabele van waarde naar
-           waarde en gebeurt er niets zichtbaars.
-           ⚠️ De draaiing zelf hangt met opzet NIET aan --draai. Kent een
-           browser @property niet, dan valt alleen de schaduw weg en blijft het
-           omslaan gewoon werken; zou de transform eraan hangen, dan klapte de
-           bladzijde daar zonder overgang om.
-
-           De dekking piekt halverwege en is aan beide uiteinden nul: papier
-           dat plat ligt vangt geen schaduw, papier dat rechtop staat wel.
-           Vandaar de max()-vorm — die maakt van een oplopend getal een
-           dakvorm, zonder abs(), dat nog niet overal werkt.
-
-           De schaduw zit aan de RUG, want daar buigt het blad weg van het
-           licht. Op de achterkant hoeft dat niet gespiegeld te worden: dat
-           vlak staat zelf al 180 graden om, dus zijn linkerkant is jouw
-           rechterkant. */
-        @property --draai {
-          syntax: "<number>";
-          inherits: false;
-          initial-value: 0;
-        }
-        .w-blad { --draai: 0; }
-        .w-blad.is-om { --draai: 1; }
-        .w-blad-voor::after,
-        .w-blad-achter::after {
-          content: "";
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          pointer-events: none;
-          background: linear-gradient(
-            to right,
-            rgba(12, 46, 32, 0.5),
-            rgba(12, 46, 32, 0.16) 38%,
-            rgba(12, 46, 32, 0.04) 72%,
-            rgba(12, 46, 32, 0)
-          );
-          opacity: calc(
-            1 - max(calc(var(--draai) * 2 - 1), calc(1 - var(--draai) * 2))
-          );
-        }
-        /* ⚠️ TWEE FOUTEN OP RIJ HIER, allebei het waard om vast te leggen.
-           1. Met 0,8px verschil in diepte lagen de omgeslagen bladen zo goed
-              als in hetzelfde vlak. De browser kon niet bepalen welke bovenop
-              hoorde en viel terug op de volgorde in de opmaak: na het omslaan
-              van de foto zag je nog steeds de binnenkant van de kaft.
-           2. De reparatie was ELK BLAD EEN EIGEN EINDHOEK geven, want een
-              stapel omgeslagen bladen waaiert ook uiteen. Dat is precies fout:
-              vlakken onder een verschillende hoek SNIJDEN elkaar, en dan
-              tekent de browser links van de snijlijn het ene blad en rechts
-              het andere. Zichtbaar als een groene baan dwars door de
-              linkerbladzijde.
-           🔑 De regel: houd omslaande vlakken EVENWIJDIG en zet ze alleen uit
-           elkaar in de diepte. Evenwijdige vlakken kunnen elkaar niet snijden,
-           dus de sortering is altijd eenduidig. Stappen van 2px is genoeg.
-           Het blad dat als EERSTE omslaat ligt onderop; dat is de kaft. */
-        .w-blad-1 { --z: 6px; }
-        .w-blad-2 { --z: 4px; }
-        .w-blad-3 { --z: 2px; }
-
-        /* ── de bladerknoppen ──
-           Elk een halve bladzijde groot, dus je klikt gewoon op het schrift.
-           Het pijltje staat aan de buitenrand, waar je duim bij een echt boek
-           ook zit. */
-        /* ⚠️ De pijltjes stonden verticaal in het midden en lagen daarmee
-           dwars over de tekst — op de linkerbladzijde liep het pijltje pal
-           door "analyses en verslagen" heen. Ze staan nu in de ONDERHOEK,
-           waar op elke bladzijde ruimte over is (de tekst vult nooit het hele
-           blad). De knop zelf blijft de halve bladzijde groot, dus je kunt nog
-           steeds gewoon op het papier klikken. */
-        /* ⚠️ z-index doet in een 3D-stapel niet meer wat je denkt: binnen een
-           preserve-3d-laag sorteert de browser op WAAR iets in de ruimte ligt,
-           niet op het getal. De knoppen moeten dus echt naar voren gezet
-           worden, en niet naar boven. 24px is genoeg om ook boven de kaft uit
-           te komen (die ligt op 6px) en klein genoeg om de knop niet merkbaar
-           te vergroten — op 900px perspectief is dat 2,7%. */
-        .w-blad-knop {
-          position: absolute;
-          top: 0;
-          bottom: 0;
-          width: 50%;
-          transform: translateZ(24px);
-          z-index: 3;
-          display: flex;
-          align-items: flex-end;
-          padding: 0 10px 12px;
-          border: 0;
-          background: none;
-          cursor: pointer;
-          font-size: 1.6rem;
-          line-height: 1;
-          color: ${KOP};
-          transition: opacity 0.3s ease;
-        }
-        .w-blad-terug { left: 0; justify-content: flex-start; }
-        .w-blad-verder { right: 0; justify-content: flex-end; }
-        .w-blad-knop span {
-          display: grid;
-          place-items: center;
-          width: 2rem;
-          height: 2rem;
-          border-radius: 999px;
-          background: var(--color-cream, #fbf6ee);
-          box-shadow: ${schaduw(6, 16, -8, 0.4)};
-          transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-        .w-blad-knop:hover span { transform: scale(1.08); }
-        .w-blad-terug:hover span { transform: translateX(-2px) scale(1.08); }
-        .w-blad-verder:hover span { transform: translateX(2px) scale(1.08); }
-        .w-blad-knop:focus-visible {
-          outline: 2px solid var(--color-brand, #2f9e6e);
-          outline-offset: 4px;
-          border-radius: 1rem;
-        }
-        /* Uitgeschakeld betekent hier: er is geen bladzijde meer die kant op.
-           Niet weghalen maar dempen, zodat de plek niet verspringt. */
-        .w-blad-knop:disabled { cursor: default; opacity: 0; }
-
-        /* ── de rechterbladzijde ──
-           Warm papier met schrijflijnen. De lijnen komen uit een verloop en
-           niet uit losse elementen: zo lopen ze altijd door tot onderaan,
-           hoeveel tekst er ook staat. */
-        /* 🔑 DE STAPEL BLADEN. Hier zat een deel van het "onrealistisch": het
-           was één vel, en een schrift is een stapel. De losse box-shadows met
-           een negatieve spread zijn de randen van de bladen eronder — twee is
-           genoeg, drie werd een trapje. Daarna pas de echte slagschaduw. */
-        /* De onderste bladzijde staat in de stroom en bepaalt de hoogte van
-           het hele schrift; alle omslaande bladen liggen er absoluut
-           overheen. Iets hoger dan eerst (17 → 20rem), zodat het schrift lang
-           genoeg in beeld blijft om er in drie stappen doorheen te bladeren. */
-        /* ⚠️ DE HOOGTE VOLGT UIT DE LANGSTE BLADZIJDE, NIET UIT SMAAK.
-           "Waarom ik Avinka heb gemaakt" is de volste: een kop van twee regels,
-           een lege regel en zes regels tekst — negen regels, 270px. Daaronder
-           moet het bladerpijltje passen (32px plus 12px marge). Op 22rem lag
-           dat pijltje 7px ovér de laatste tekstregel; nagemeten, niet gegokt.
-           Kortere bladzijden houden gewoon lege regels over, en dat is precies
-           hoe een schrift eruitziet. */
-        .w-schrift-blad {
-          grid-column: 2;
-          position: relative;
-          min-height: 25rem;
-        }
-        /* Het papier zelf: dit is wat elke bladzijde EN elke achterkant van
-           een blad krijgt. Losgetrokken van .w-schrift-blad omdat de
-           omslaande bladen dezelfde look nodig hebben zonder in de stroom te
-           staan. */
-        /* ── DE SCHRIJFLIJNEN EN DE TEKST HOREN OP ELKAAR ──────────────────
-           De tekst moet ÓP de lijnen staan, niet ertussen of erdoorheen. Dat
-           lukt alleen als drie dingen exact op elkaar zijn afgestemd, en ze
-           staan daarom alle drie hier bij elkaar in variabelen:
-             --regel      de regelafstand (en dus de line-height van de tekst)
-             --kantlijn   de padding boven, waar de eerste regel begint
-             --lijnzakking hoeveel de lijn onder de bovenkant van een regel
-                          valt, oftewel waar de schrijflijn hoort
-           De lijn wordt getekend aan het BEGIN van elke herhaling, en met
-           background-position schuiven we die naar de juiste hoogte.
-           ⚠️ Verander je de lettergrootte van het handschrift, dan moet
-           --lijnzakking mee: hij is gemeten op de echte letter, niet berekend.
-           Padding met vaste waarden en niet met clamp(), want een padding die
-           meebeweegt met de schermbreedte gooit de uitlijning elke keer om. */
-        .w-papier {
-          --regel: 30px;
-          /* Ruimer dan eerst (26): de eerste schrijfregel plakte tegen de
-             bovenrand van de bladzijde. Een schrift heeft daar altijd een
-             stukje wit. */
-          --kantlijn: 38px;
-          /* Gemeten, niet berekend: met een merkteken zonder afmetingen op de
-             basislijn van de eerste regel ligt die basislijn 26,1px onder de
-             kantlijn. Op 26 valt de schrijflijn dus precies op de basislijn en
-             staan de letters erop.
-             ⚠️ Op 28 leek het goed op papier — 1,9px verschil — maar op het
-             scherm zag je een duidelijk gaatje tussen de letters en de lijn.
-             Bij handschrift valt zoiets meteen op, want daar hóórt geen ruimte
-             te zitten. Verander je de lettergrootte, meet dit dan opnieuw. */
-          --lijnzakking: 26px;
-          --eerste-lijn: calc(var(--kantlijn) + var(--lijnzakking));
-          padding: var(--kantlijn) clamp(16px, 2vw, 24px);
-          /* ⚠️ DE DEKPLAAT BOVENAAN IS GEEN VERSIERING MAAR EEN REPARATIE.
-             Een repeating-gradient herhaalt vanaf zijn ankerpunt naar BEIDE
-             kanten. Er liep dus ook een lijn 30px bóven de eerste schrijfregel,
-             dwars door de bovenste tekstregel heen. Die eerste laag is een
-             ondoorzichtige baan papier tot net boven de eerste lijn; daarmee
-             begint het lijntjespatroon precies waar het schrift begint.
-             Volgorde van de lagen: dekplaat, lijnen, papier. */
-          background:
-            linear-gradient(
-              to bottom,
-              var(--w-kaart-warm, #fffdf9) 0 calc(var(--eerste-lijn) - 1px),
-              transparent calc(var(--eerste-lijn) - 1px)
-            ),
-            repeating-linear-gradient(
-              to bottom,
-              rgba(var(--w-schaduw-rgb, 23,80,58), 0.13) 0 1px,
-              transparent 1px var(--regel)
-            ),
-            var(--w-kaart-warm, #fffdf9);
-          background-repeat: no-repeat, repeat, no-repeat;
-          background-position: 0 0, 0 var(--eerste-lijn), 0 0;
-          border: 2px solid ${KAART_RAND};
-          border-left: none;
-          border-radius: 0 1.4rem 1.6rem 0;
-          box-shadow:
-            2px 3px 0 -1px #f6f2e6,
-            4px 6px 0 -2px #efeadb,
-            ${schaduw(20, 44, -24, 0.5)};
-        }
-        /* De schaduw bij de rug: papier krult altijd iets weg van de vouw,
-           dus daar is het donkerder. Staat op ELK blad, want elk blad heeft
-           een rug. (Dit hing eerst aan --open en werd lichter naarmate het
-           schrift openging; met meerdere bladen slaat dat nergens meer op —
-           de vouw blijft de vouw.) */
-        .w-papier::before {
-          content: "";
-          position: absolute;
-          inset: 0 auto 0 0;
-          width: 38px;
-          border-radius: 0 40% 40% 0 / 0 50% 50% 0;
-          background: linear-gradient(to right, rgba(var(--w-schaduw-rgb, 23,80,58), 0.13), transparent);
-          pointer-events: none;
-        }
-        /* Het ezelsoor: de rechteronderhoek is omgevouwen, zoals bij elk
-           schrift dat echt gebruikt wordt. Alleen op de ONDERSTE bladzijde —
-           op elk blad zou het een kunstje worden dat drie keer voorbijkomt.
-           Twee driehoeken over elkaar: de onderste is de veldkleur die door
-           het gat zichtbaar wordt, de bovenste het omgeslagen stukje papier
-           (iets donkerder, want je kijkt tegen de achterkant aan). */
-        .w-schrift-blad.w-papier::after {
-          content: "";
-          position: absolute;
-          right: -1px;
-          bottom: -1px;
-          width: clamp(30px, 3.4vw, 44px);
-          aspect-ratio: 1;
-          background:
-            linear-gradient(to bottom left, var(--w-veld, #ecf6f0) 50%, transparent 50.5%),
-            linear-gradient(to top right, #f4efe2 50%, transparent 50.5%);
-          border-bottom-right-radius: 0.35rem;
-          filter: drop-shadow(-2px -2px 3px rgba(var(--w-schaduw-rgb, 23,80,58), 0.12));
-        }
-        .w-schrift-inhoud { position: relative; }
-        .w-schrift-naam {
-          font-family: var(--font-display), Georgia, serif;
-          font-weight: 900;
-          letter-spacing: -0.02em;
-          line-height: 1.15;
-          font-size: clamp(1.15rem, 1.9vw, 1.4rem);
-          color: ${DONKER};
-        }
-        .w-schrift-rol {
-          margin-top: 0.1rem;
-          font-size: 0.95rem;
-          line-height: 1.5;
-          color: rgba(34, 28, 58, 0.7);
-        }
-        /* ⚠️ Deze drie stonden op een regelafstand van exact 30px, gelijk aan
-           de schrijflijnen, want toen liep de tekst óp de lijnen van de
-           bladzijde. Nu staat de tekst naast het schrift op het gewone veld
-           en is dat juist verkeerd: daar hoort de leesbare maat van de rest
-           van de pagina. */
-        .w-schrift-tekst {
-          margin-top: 1.15rem;
-          font-size: 1.05rem;
-          line-height: 1.7;
-          color: rgba(34, 28, 58, 0.78);
-        }
-        .w-schrift-kern {
-          margin-top: 0.85rem;
-          font-size: 1.05rem;
-          font-weight: 600;
-          line-height: 1.7;
-          color: ${KOP};
-        }
-
-        /* ── tekst ÓP een bladzijde ──
-           In het handschrift van de pagina, want dit is een schrift: gedrukte
-           letters op schrijflijnen zien er altijd uit als een tekstvak met een
-           patroontje erachter. De regelafstand is exact de regelafstand van de
-           lijnen; elke marge hieronder is daarom een veelvoud daarvan, anders
-           schuift alles wat eronder staat van de lijn af. */
-        .w-blad-tekst,
-        .w-blad-kern,
-        .w-blad-naam,
-        .w-blad-rol {
-          font-family: var(--font-hand), "Segoe Script", cursive;
-          line-height: var(--regel);
-          margin: 0;
-        }
-        .w-blad-tekst {
-          font-size: 1.22rem;
-          color: rgba(34, 28, 58, 0.86);
-        }
-        /* Eén lege regel ervoor, zodat de slotzin niet tegen de alinea erboven
-           aan plakt. Een hele regel en geen halve: alles moet op het raster
-           blijven staan. */
-        .w-blad-kern {
-          font-size: 1.22rem;
-          color: ${KOP};
-          margin-top: var(--regel);
-        }
-        /* ── het vriendenboekje ──
-           Een voorgedrukt vraagje, daaronder het handgeschreven antwoord. Elk
-           paar beslaat dus precies twee regels; de kop plus een lege regel
-           erna nemen er twee. Alles blijft daarmee op het lijnenraster staan.
-           ⚠️ Houd de antwoorden kort genoeg voor één regel. Loopt er eentje om,
-           dan schuift alles daaronder een regel op — dat mag, maar dan moet je
-           wel nakijken of de bladzijde nog past. */
-        .w-blad-kop {
-          font-family: var(--font-display), Georgia, serif;
-          font-weight: 900;
-          letter-spacing: -0.02em;
-          font-size: 1.02rem;
-          line-height: var(--regel);
-          margin: 0 0 var(--regel);
-          color: ${DONKER};
-        }
-        .w-blad-vragen { margin: 0; }
-        .w-blad-vragen dt {
-          font-size: 0.76rem;
-          line-height: var(--regel);
-          letter-spacing: 0.03em;
-          color: rgba(34, 28, 58, 0.5);
-        }
-        .w-blad-vragen dd {
-          margin: 0;
-          font-family: var(--font-hand), "Segoe Script", cursive;
-          font-size: 1.15rem;
-          line-height: var(--regel);
-          color: ${KOP};
-        }
-
-        /* Naam en rol onder de foto, op de eerste bladzijde. Gecentreerd
-           onder de afdruk, want die staat er ook gecentreerd op. */
-        .w-blad-naam {
-          text-align: center;
-          font-size: 1.32rem;
-          color: ${DONKER};
-        }
-        .w-blad-rol {
-          text-align: center;
-          font-size: 1.05rem;
-          color: rgba(34, 28, 58, 0.72);
-        }
-
-        /* ── de kaft ──
-           Alleen nog het uiterlijk: de stand en de draaiing komen van .w-blad,
-           want de kaft is gewoon het eerste blad van de stapel. */
-        .w-schrift-voor,
-        .w-schrift-achter {
-          border-radius: 0 1.4rem 1.6rem 0;
-        }
-        .w-schrift-voor {
-          background: ${DONKER};
-          box-shadow: ${schaduw(22, 50, -22, 0.55)};
-        }
-        /* De rug: een iets donkerder baan langs de vouw, met twee nietjes. */
-        .w-schrift-voor::before {
-          content: "";
-          position: absolute;
-          inset: 0 auto 0 0;
-          width: 16px;
-          background: rgba(0, 0, 0, 0.16);
-        }
-        /* ⚠️ De maten hieronder horen bij een kaft van ongeveer 16rem breed.
-           Toen het schrift kleiner werd, brak eerst "Even voorstellen" over
-           twee regels en daarna ook de ingevulde naam — dan lees je een
-           etiket met zes regeltjes in plaats van een kop. Wordt het schrift
-           ooit weer groter, dan mogen deze mee omhoog. */
-        .w-schrift-etiket {
-          position: absolute;
-          left: 10%;
-          right: 8%;
-          top: 17%;
-          padding: clamp(12px, 1.5vw, 16px) clamp(13px, 1.6vw, 17px)
-                   clamp(13px, 1.6vw, 16px);
-          background: var(--color-cream, #fbf6ee);
-          border-radius: 0.5rem 0.6rem 0.5rem 0.55rem;
-          rotate: -1.4deg;
-          box-shadow: 0 10px 22px -16px rgba(0, 0, 0, 0.5);
-        }
-        .w-schrift-titel {
-          font-family: var(--font-display), Georgia, serif;
-          font-weight: 900;
-          letter-spacing: -0.03em;
-          line-height: 1.05;
-          font-size: clamp(1.05rem, 1.5vw, 1.32rem);
-          color: ${DONKER};
-          text-wrap: balance;
-        }
-        /* De invulregels van een schrift-etiket: een voorgedrukt woordje en
-           een lijn waar met de hand op geschreven is. De lijn hoort ONDER de
-           tekst door te lopen, niet ernaast — daarom een border-bottom op de
-           regel zelf en niet een los streepje. */
-        .w-schrift-invul {
-          margin-top: clamp(10px, 1.4vw, 14px);
-          display: flex;
-          flex-direction: column;
-          gap: 7px;
-        }
-        .w-schrift-invul > div {
-          display: flex;
-          align-items: baseline;
-          gap: 8px;
-          border-bottom: 1px solid rgba(var(--w-schaduw-rgb, 23,80,58), 0.28);
-          padding-bottom: 2px;
-        }
-        .w-schrift-invul dt {
-          flex: none;
-          font-size: 0.72rem;
-          font-weight: 700;
-          letter-spacing: 0.04em;
-          text-transform: lowercase;
-          color: rgba(34, 28, 58, 0.5);
-        }
-        .w-schrift-invul dd {
-          margin: 0;
-          font-family: var(--font-hand), "Segoe Script", cursive;
-          font-size: 0.88rem;
-          line-height: 1.15;
-          white-space: nowrap;
-          color: ${KOP};
-          /* Handschrift staat nooit precies op de lijn. */
-          transform: rotate(-0.6deg) translateY(-1px);
-        }
-
-        /* De binnenkant van de kaft: hetzelfde karton, van de andere kant
-           gezien. Iets lichter dan de voorkant omdat er licht op valt zodra
-           hij openligt, en verder leeg — er hoort niets op de binnenkant van
-           een kaft. Hier stond een mintgroen vlak met een uitgeknipte foto,
-           en dat las als een paneel in plaats van als karton. */
-        /* ⚠️ overflow ZICHTBAAR op deze kant, anders knipt de kaft de
-           paperclip af op zijn eigen bovenrand — en een clip die netjes
-           binnen het karton blijft klemt niets vast. */
-        /* ── DE BINNENKAFT IS KARTON, GEEN GROEN VLAK ─────────────────────
-           🔑 Toen de geeltjes eruit gingen bleef er een dood groen vlak over
-           ter grootte van een halve bladzijde — de donkerste vorm van de hele
-           sectie, zonder dat er iets te zien was. Dat is geen leegte maar een
-           gat. De oplossing is niet er iets op leggen (dat was juist de wens
-           niet) maar het vlak MATERIAAL geven: karton heeft een weefsel, en
-           het vangt licht.
-
-           Drie lagen, van boven naar beneden:
-           1. het weefsel — twee kruisende strepenpatronen van 3px. Zo fijn dat
-              je het niet als patroon ziet, alleen als stof. Dekking bewust op
-              een paar procent; alles daarboven wordt ruit in plaats van linnen.
-           2. de belichting — licht van rechtsboven, dezelfde bron als de rest
-              van de pagina (zie SCHADUW_HELLING). Karton is dof, dus een brede
-              zachte plek en geen glans.
-           3. de kleur zelf.
-           ⚠️ Géén mix-blend-mode op deze laag: die verschuift de tint van wat
-           eronder ligt en maakt van de kaftrand een naad (dat is op deze pagina
-           eerder misgegaan met de korrellaag). */
-        .w-schrift-achter {
+          border-radius: 4px 0 0 4px;
           background:
             repeating-linear-gradient(
               to right,
-              rgba(255, 255, 255, 0.035) 0 1px,
-              transparent 1px 3px
+              rgba(23, 80, 58, 0.15) 0 1px,
+              transparent 1px 2px
             ),
-            repeating-linear-gradient(
-              to bottom,
-              rgba(0, 0, 0, 0.05) 0 1px,
-              transparent 1px 3px
-            ),
-            radial-gradient(
-              120% 90% at 78% 8%,
-              rgba(255, 255, 255, 0.14),
-              rgba(255, 255, 255, 0) 62%
-            ),
-            color-mix(in srgb, ${DONKER} 88%, #ffffff);
-          border-radius: 1.4rem 0 0 1.6rem;
+            linear-gradient(to right, #fdfaf2, #f0e9d8);
         }
-        /* ⚠️ HIER STONDEN .w-klem / .w-geeltje / .w-clip / .w-afvinklijst:
-           drie geeltjes met taken onder een paperclip, en een afgevinkt
-           lijstje eronder. Compleet weg op verzoek — zie de opmerking bij de
-           binnenkaft in de opmaak hierboven. Niet terugzetten zonder de
-           eigenaar; het gaat niet om de vormgeving maar om wat er hoort te
-           staan in een blok dat "Even voorstellen" heet. */
 
-        /* ── DE VOUW ──────────────────────────────────────────────────────
-           ⚠️ Hier stond een strook van 18px vlak zwart op 18%. Een vouw met
-           een harde rand is geen vouw maar een gedrukte streep, en dat was
-           precies wat je zag zodra het schrift schuin kwam te liggen.
-           Een echte knik in karton is een DAL: de knik zelf is het donkerst,
-           daarnaast loopt het over een paar centimeter terug naar de gewone
-           kleur, en pal op de vouwlijn zit een dun lichtrandje waar het karton
-           bol staat. Die drie stops staan hieronder. */
-        .w-schrift-achter::before {
-          content: "";
+        /* ── DE LOSSE VELLEN ──────────────────────────────────────────────
+           Liggen dieper dan de onderkant van het blok, zodat ze de zijkanten
+           niet doorsnijden, en steken met hun hoeken onder het document uit.
+           Alleen een draaiing IN het vlak (rotate), nooit in de ruimte. */
+        .w-cv-vel {
           position: absolute;
-          inset: 0 0 0 auto;
-          width: 56px;
-          background: linear-gradient(
-            to left,
-            rgba(0, 0, 0, 0.34) 0 2px,
-            rgba(255, 255, 255, 0.07) 3px 4px,
-            rgba(0, 0, 0, 0.16) 10px,
-            rgba(0, 0, 0, 0) 100%
-          );
+          inset: 0;
+          display: block;
+          border-radius: 4px;
+          background: #f8f2e4;
           pointer-events: none;
         }
-        /* De foto in de organische vorm van deze wereld — het enige detail dat
-           alle eerdere pogingen hebben overleefd. */
-        /* ── de ingeplakte foto ──
-           🔑 HIER ZAT HET GROOTSTE STUK "ONREALISTISCH". De foto stond als
-           blob-vorm uitgeknipt midden op een gekleurd vlak te zweven. Dat is
-           een UI-element, geen foto in een schrift. Een echte afdruk heeft
-           een witte rand, ligt nooit helemaal recht en werpt een kleine
-           schaduw op het papier eronder. Dat is alles wat er nodig was. */
-        /* 🔑 DE FOTO MOET EEN HEEL AANTAL REGELS BESLAAN. Alles wat tussen de
-           tekst staat en géén veelvoud van de regelafstand hoog is, duwt de
-           regels eronder van de lijnen af — en dan klopt de rest van de
-           bladzijde niet meer. Daarom staan de maten hier vast (geen clamp)
-           en rekent de ondermarge het verschil weg tot precies zes regels.
-           Verander je de fotohoogte, dan rekent de marge vanzelf mee. */
-        .w-schrift-afdruk {
-          --fotohoogte: 145px;
-          --randje: 14px; /* 8px boven + 6px onder */
-          width: fit-content;
-          margin: 0 auto calc(var(--regel) * 6 - var(--fotohoogte) - var(--randje));
-          padding: 8px 8px 6px;
-          background: #ffffff;
-          border-radius: 3px;
-          rotate: -2.2deg;
-          box-shadow:
-            0 1px 0 rgba(var(--w-schaduw-rgb, 23,80,58), 0.10),
-            0 10px 20px -12px rgba(var(--w-schaduw-rgb, 23,80,58), 0.5);
+        .w-cv-vel-a {
+          transform: translateZ(calc(var(--dik) * -1 - 3px)) rotate(1.7deg);
+          box-shadow: ${schaduw(10, 24, -12, 0.35)};
         }
-        /* Vaste maat, want de hoogte telt mee in de regelberekening hierboven.
-           132 bij 145 is ongeveer de verhouding van een pasfoto. */
-        .w-schrift-foto {
-          width: 132px;
-          height: var(--fotohoogte);
-          display: grid;
-          place-items: center;
-          overflow: hidden;
-          background: ${MINT_DIEP};
-        }
-        /* Het onderschrift hoort ONDER de afdruk maar BINNEN het witte randje,
-           zoals bij een foto waar iemand op geschreven heeft. */
-        .w-schrift-onderschrift {
-          margin-top: 5px;
-          font-family: var(--font-hand), "Segoe Script", cursive;
-          font-size: 0.86rem;
-          line-height: 1.25;
-          text-align: center;
-          color: ${KOP};
+        .w-cv-vel-b {
+          transform: translateZ(calc(var(--dik) * -1 - 7px)) rotate(-2.6deg);
+          background: #f4eddd;
+          box-shadow: ${schaduw(14, 30, -14, 0.3)};
         }
 
-        /* ── mobiel: geen boek, wel hetzelfde schrift ──
-           Een opengeslagen schrift naast elkaar past niet op 390px, en een
-           kaft die over de halve breedte draait wordt daar een truc zonder
-           inhoud. Onder sm valt het schrift dus uit elkaar in drie lagen
-           boven elkaar: het kaftje met het etiket, de foto, en de bladzijde.
-           ⚠️ De kaft mag hier NIET verdwijnen. In de eerste versie stond hij
-           op display:none, en daarmee was "Even voorstellen" op de telefoon
-           helemaal weg — dat is de kop van de sectie. Hij wordt hier dus een
-           strook in plaats van een kaft. */
-        /* ── mobiel: geen bladeren, wel hetzelfde schrift ──
-           Een blad dat om zijn rug draait heeft twee halve breedtes nodig, en
-           die zijn er op 390px niet. Bovendien: op een telefoon scrol je met
-           je duim door de pagina, en dan is een mechaniek die de scroll kaapt
-           precies wat je niet wil. Het schrift valt hier dus uit elkaar in
-           losse bladen ONDER elkaar — kaft, foto, en de twee zinnen. Zelfde
-           onderdelen, zelfde volgorde, alleen uitgeklapt.
-           ⚠️ De kaft moet blijven staan: daar staat wie het schrift is van. */
+        /* ── HET DOCUMENT ─────────────────────────────────────────────────
+           Kleine ronding en niet de grote organische radius van de kaarten op
+           deze pagina: papier heeft scherpe hoeken. Dat verschil is precies wat
+           dit een document maakt en geen UI-kaart.
+           Het verloop is de ene lichtbron van de pagina (rechtsboven), heel
+           subtiel — papier is dof. */
+        .w-cv-blad {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          border-radius: 5px;
+          background: linear-gradient(158deg, #fffefb, #faf5ea);
+        }
+
+        /* ── de kopband ── */
+        .w-cv-band {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: clamp(12px, 2vw, 20px);
+          padding: clamp(16px, 2.4vw, 22px) clamp(18px, 2.6vw, 26px);
+          background: ${DONKER};
+        }
+        .w-cv-naam {
+          margin: 0;
+          font-family: var(--font-display), Georgia, serif;
+          font-weight: 900;
+          letter-spacing: -0.025em;
+          line-height: 1.08;
+          font-size: clamp(1.3rem, 2.6vw, 1.65rem);
+          color: #ffffff;
+        }
+        .w-cv-rol {
+          margin: 0.3rem 0 0;
+          font-size: 0.92rem;
+          line-height: 1.35;
+          /* Wit op 78% haalt op dit donkergroen ruim boven 4,5:1. Lager niet:
+             dit is de enige regel op de pagina die uitlegt wie er achter
+             Avinka staat. */
+          color: rgba(255, 255, 255, 0.78);
+        }
+        /* De pasfoto. Vaste maat, want een foto die met de kolom meerekt wordt
+           op smalle schermen een pasje van niks. */
+        .w-cv-pas {
+          flex: none;
+          display: grid;
+          place-items: center;
+          width: 80px;
+          height: 94px;
+          overflow: hidden;
+          background: var(--color-cream, #fbf6ee);
+          border: 4px solid var(--color-cream, #fbf6ee);
+          border-radius: 3px;
+          box-shadow: 0 6px 14px -8px rgba(0, 0, 0, 0.55);
+        }
+
+        /* ── het lijf ── */
+        /* ── het lijf ──
+           🔑 DE HOOGTE VAN DIT DOCUMENT IS EEN GEVOLG, GEEN KEUZE. Hij wordt
+           bepaald door de langste van de twee kolommen. In een document van
+           32rem hield het verhaal ~230px over, liep elke alinea over vier
+           regels en werd het geheel 580px hoog. Op 46rem is de verhaalkolom
+           ~470px (zo'n 68 tekens per regel, de prettigste leesmaat) en past
+           alles naast de vijf feiten in plaats van eronder.
+           Wil je het lager: verbreed de tekstkolom, verklein niet de
+           regelafstand. */
+        .w-cv-body {
+          display: grid;
+          grid-template-columns: 10.5rem minmax(0, 1fr);
+          gap: clamp(20px, 3vw, 34px);
+          padding: clamp(20px, 2.8vw, 30px) clamp(20px, 3vw, 34px);
+        }
+        /* De feiten: label erboven, waarde eronder. Dat is de taal van een
+           formulier, en dat is precies wat een CV is. */
+        .w-cv-feiten {
+          display: flex;
+          flex-direction: column;
+          gap: clamp(11px, 1.5vw, 15px);
+          margin: 0;
+        }
+        .w-cv-feiten dt {
+          font-size: 0.7rem;
+          font-weight: 700;
+          letter-spacing: 0.09em;
+          text-transform: uppercase;
+          /* ⚠️ GEMETEN, NIET GESCHAT. Op 0,58 dekking haalde dit label 3,99:1
+             op het papier en dat is onder AA — ik had er 4,6 bij geschreven
+             zonder het na te rekenen. Op 0,70 en 11,2px is het 5,8:1.
+             Dit is de kleinste tekst van het hele document; ga hier niet
+             lichter zitten, en meet opnieuw als de papierkleur verandert. */
+          color: rgba(34, 28, 58, 0.7);
+        }
+        .w-cv-feiten dd {
+          margin: 0.18rem 0 0;
+          font-size: 0.94rem;
+          font-weight: 600;
+          line-height: 1.35;
+          color: ${DONKER};
+        }
+        /* Een haarlijn tussen de twee kolommen en verder niets. Een getint
+           zijbalkje is precies het CV-sjabloon dat iedereen kent; haarlijnen
+           zijn de taal die deze pagina zelf al spreekt. */
+        .w-cv-verhaal {
+          border-left: 1px solid rgba(var(--w-schaduw-rgb, 23,80,58), 0.16);
+          padding-left: clamp(20px, 3vw, 34px);
+        }
+        .w-cv-sectiekop {
+          margin: 0 0 0.35rem;
+          font-family: var(--font-display), Georgia, serif;
+          font-weight: 900;
+          letter-spacing: -0.015em;
+          line-height: 1.2;
+          font-size: 1.02rem;
+          color: ${DONKER};
+        }
+        .w-cv-verhaal p {
+          margin: 0 0 1.15rem;
+          font-size: 0.95rem;
+          line-height: 1.62;
+          color: rgba(34, 28, 58, 0.8);
+        }
+        .w-cv-verhaal p:last-child { margin-bottom: 0; }
+
+        /* ── de handgeschreven regel ──
+           Onder een haarlijn over de volle breedte, zoals de regel onderaan een
+           formulier waar je zelf iets invult. Iets scheef, want handschrift
+           staat nooit recht — en de draaiing gaat om de LINKERkant, anders
+           loopt het einde van de zin tegen de rand van het papier aan. */
+        .w-cv-hand {
+          margin: 0 clamp(20px, 3vw, 34px) clamp(20px, 2.8vw, 30px);
+          padding-top: clamp(14px, 2vw, 18px);
+          border-top: 1px solid rgba(var(--w-schaduw-rgb, 23,80,58), 0.16);
+          font-family: var(--font-hand), "Segoe Script", cursive;
+          font-size: 1.08rem;
+          line-height: 1.45;
+          color: ${KOP};
+          rotate: -0.7deg;
+          transform-origin: 0 50%;
+        }
+
+        /* ── mobiel: geen ruimte, wel hetzelfde document ───────────────────
+           Op 390px is er geen kijkhoek die nog klopt: een gekanteld document
+           van deze hoogte drukt de bovenste regels dicht en de twee kolommen
+           passen sowieso niet naast elkaar. Het document ligt hier dus plat en
+           de kolommen staan onder elkaar — zelfde onderdelen, zelfde volgorde.
+           De dikte en de losse vellen gaan uit: je ziet geen zijkant van iets
+           dat plat op het scherm ligt, en dan is het alleen nog een randje. */
         @media (max-width: 639px) {
-          .w-schrift {
-            perspective: none;
-            max-width: none;
-          }
-          /* Geen kanteling op de telefoon. Er is hier geen opengeslagen boek
-             om schuin naar te kijken — de bladen staan onder elkaar — en een
-             gekantelde kolom tekst is alleen maar slechter leesbaar. Het blok
-             (de dikte) heeft om dezelfde reden niets te doen: je ziet geen
-             zijkant van iets dat plat op het scherm ligt. */
-          .w-schrift-scene {
-            display: flex;
-            flex-direction: column;
-            grid-template-columns: 1fr;
+          .w-cv { perspective: none; max-width: none; }
+          .w-cv-scene {
             transform-style: flat;
             transform: none;
             rotate: -0.6deg;
           }
-          .w-schrift-blok { display: none; }
-          .w-schrift-stapel {
-            position: relative;
-            inset: auto;
-            order: 0;
-            transform-style: flat;
-            display: flex;
-            /* omgekeerd, want in de opmaak ligt de kaft onderaan (bovenop de
-               stapel) en op mobiel hoort hij vooraan */
-            flex-direction: column-reverse;
+          .w-cv-blok, .w-cv-vel { display: none; }
+          .w-cv-blad { box-shadow: ${schaduw(20, 44, -22, 0.45)}; }
+          /* De twee kolommen gaan onder elkaar; de haarlijn verhuist mee van
+             links naar boven, want daar ligt de scheiding nu. */
+          .w-cv-body { grid-template-columns: 1fr; }
+          .w-cv-verhaal {
+            border-left: none;
+            border-top: 1px solid rgba(var(--w-schaduw-rgb, 23,80,58), 0.16);
+            padding-left: 0;
+            padding-top: clamp(16px, 4vw, 20px);
           }
-          /* "blader maar door het schrift hiernaast" klopt hier niet: het
-             schrift staat eronder in plaats van ernaast, en het ligt al
-             uitgeklapt. Een uitnodiging voor iets dat er niet is, is erger
-             dan geen uitnodiging. */
-          .w-mkr-wenk { display: none; }
-          /* De bladerknoppen ook: hier ligt alles al open, dus er valt niets
-             te bladeren en twee zwevende pijltjes zouden nergens heen wijzen. */
-          .w-blad-knop { display: none; }
-          .w-blad { position: relative; inset: auto; transform-style: flat; }
-          .w-blad, .w-blad.is-om { transform: none; transition: none; }
-          /* ⚠️ De achterkanten stonden hier op display:none, want ze wáren
-             leeg. Sinds er tekst op staat (de linkerbladzijde van elke
-             spread) zou dat de helft van het verhaal wegpoetsen op de
-             telefoon. Ze staan nu gewoon onder hun eigen voorkant, wat ook de
-             leesvolgorde is: eerst de bladzijde, dan de achterkant ervan.
-             Alleen de binnenkant van de KAFT blijft weg: daar staat niets. */
-          .w-blad-voor,
-          .w-blad-achter {
-            position: relative;
-            inset: auto;
-            backface-visibility: visible;
-          }
-          /* 🐛 GEVONDEN 5-8, ZAT ER AL SINDS DIT BLOK BESTAAT: de achterkanten
-             staan op het bureaublad 180 graden om (dat is wat een achterkant
-             ís), en die draaiing werd hier nooit teruggezet. Zonder perspectief
-             is een halve slag om de verticale as gewoon een SPIEGELING — dus
-             stond "Persoonlijke vragen" en het hele stuk "Waarom ik Avinka heb
-             gemaakt" op elke telefoon in spiegelschrift, onleesbaar.
-             ⚠️ Alleen .w-blad losmaken is niet genoeg: de draaiing zit op het
-             kind, niet op het blad. Vandaar deze eigen regel.
-             Meteen ook de rest van de achterkant terugdraaien: die had zijn
-             vouw, zijn rand en zijn ronde hoeken aan de verkeerde kant, en die
-             regels wonnen het op specificiteit van de mobiele .w-papier. */
-          .w-blad-achter { transform: none; }
-          .w-blad-achter.w-papier {
-            border-left: 2px solid ${KAART_RAND};
-            border-right: 2px solid ${KAART_RAND};
-            border-radius: 0;
-          }
-          .w-blad-achter.w-papier::before { display: none; }
-          .w-schrift-achter { display: none; }
-
-          .w-schrift-voor { padding: clamp(16px, 4vw, 22px); border-radius: 1.5rem 1.4rem 0 0; }
-          .w-schrift-voor::before { width: 10px; }
-          /* Ruimte aan beide kanten: het etiket staat scheef, en zonder marge
-             rechts loopt de gedraaide hoek tegen de rand van de kaft aan en
-             wordt hij door de overflow afgeknipt. Dan lijkt het een fout in
-             plaats van een geplakt etiket. */
-          .w-schrift-etiket {
-            position: relative;
-            left: auto;
-            right: auto;
-            top: auto;
-            margin: 0 12px 0 16px;
-          }
-
-          .w-papier {
-            border-left: 2px solid ${KAART_RAND};
-            border-radius: 0;
-            box-shadow: none;
-          }
-          .w-papier::before { display: none; }
-          /* De onderste bladzijde sluit de stapel af en krijgt dus de ronding
-             en de schaduw van het hele schrift. */
-          .w-schrift-blad {
-            order: 1;
-            grid-column: 1;
-            min-height: 0;
-            border-radius: 0 0 1.4rem 1.5rem;
-            box-shadow: ${schaduw(18, 40, -22, 0.45)};
-          }
-          .w-schrift-foto { width: 8.5rem; }
-        }
-
-        /* Wie beweging heeft afgezet bladert nog steeds — het blad staat
-           alleen meteen op zijn eindstand in plaats van om te zwaaien. De
-           inhoud blijft dus bereikbaar; dat is het verschil met de animatie
-           helemaal uitzetten. */
-        @media (prefers-reduced-motion: reduce) {
-          .w-blad { transition: none; }
-          .w-blad-knop span { transition: none; }
         }
       `}</style>
       {/* Het mintveld loopt hier NIET meer dood: het gaat gewoon door tot de
