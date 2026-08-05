@@ -1121,6 +1121,7 @@
 
 <!-- Centrale instellingen: hier alleen voor "welk toetssysteem gebruik je". -->
 <script src="/avinka-voorkeuren.js"></script>
+<script src="/avinka-schermwacht.js"></script>
 <script>
 // ════════════════════════════════════════════════════════════
 // STATE
@@ -1434,42 +1435,14 @@ var NIET_INGELEZEN = { dia: 'Dia', boom: 'Boom' };
 // ── Geen flits van het keuzescherm ────────────────────────────────────────
 // Het antwoord op "welk toetssysteem gebruik jij" komt van de server, en zolang
 // dat onderweg is stond het keuzescherm er gewoon — dus zag je hem een seconde
-// staan voordat we doorsprongen. Nu houden we hem even achter en tonen we hem
-// pas als er iets te kiezen valt.
-//
-// Twee vangnetten, want een scherm dat nooit verschijnt is veel erger dan een
-// scherm dat te vroeg verschijnt:
-// 1. `verbergTot` doet alleen iets als er JS draait; zonder JS staat het
-//    keuzescherm er gewoon (het staat niet op display:none in de HTML zelf).
-// 2. Na 700 ms tonen we hem sowieso, ook als de server niets teruggeeft. Langer
-//    wachten zou betekenen dat wie niets heeft ingesteld naar een lege pagina
-//    zit te kijken, en dat is erger dan de flits die we hier oplossen.
-var landingTimer = null;
-function toonLanding() {
-  clearTimeout(landingTimer);
-  landingTimer = null;
-  var el = document.getElementById('landing');
-  // Niet terugzetten als er inmiddels een keuze is gemaakt.
-  if (el && !zelfGekozen && el.dataset.wacht === 'ja') {
-    el.dataset.wacht = '';
-    el.style.display = '';
-  }
-}
-function verbergTot(ms) {
-  var el = document.getElementById('landing');
-  if (!el || el.style.display === 'none') return;
-  el.dataset.wacht = 'ja';
-  el.style.display = 'none';
-  landingTimer = setTimeout(toonLanding, ms);
-}
+// staan voordat we doorsprongen. `avinka-schermwacht.js` houdt hem even vast en
+// toont hem alsnog als er iets te kiezen valt (of als de server zwijgt).
+var landingWacht = null;
 
 function pasToetssysteemToe(v) {
   var sys = (v && v.toets_systeem) || '';
   var landing = document.getElementById('landing');
   if (!landing || zelfGekozen) return 'niets';
-  // Wacht hij nog op ons, dan telt "verborgen" niet als "de gebruiker is al
-  // ergens anders" — dat is juist de stand waarin wij mogen beslissen.
-  if (landing.style.display === 'none' && landing.dataset.wacht !== 'ja') return 'niets';
 
   if (NIET_INGELEZEN[sys]) {
     document.getElementById('toets-melding-tekst').innerHTML =
@@ -1477,25 +1450,25 @@ function pasToetssysteemToe(v) {
       'Toetsanalyse nog niet inlezen — we weten nu wel dat je erop zit. Gebruik je daarnaast ' +
       'IEP of Cito, kies dat hieronder.';
     document.getElementById('toets-melding').style.display = '';
-    toonLanding();
+    if (landingWacht) landingWacht.toon();
     return 'melding';
   }
 
   if (sys !== 'iep' && sys !== 'cito') {
-    toonLanding();
+    if (landingWacht) landingWacht.toon();
     return 'niets';
   }
   // Doorspringen: het keuzescherm hoeft niet meer tevoorschijn te komen.
-  clearTimeout(landingTimer);
-  landingTimer = null;
-  landing.dataset.wacht = '';
+  if (landingWacht) landingWacht.laatStaan();
   kiesToetssysteem(sys);
   return 'doorgesprongen';
 }
 
-if (window.avinkaVoorkeuren) {
-  verbergTot(700);
-  window.avinkaVoorkeuren.ready.then(pasToetssysteemToe, toonLanding);
+if (window.avinkaVoorkeuren && window.avinkaSchermwacht) {
+  landingWacht = avinkaSchermwacht.houdVast(document.getElementById('landing'), 700);
+  window.avinkaVoorkeuren.ready.then(pasToetssysteemToe, function () {
+    if (landingWacht) landingWacht.toon();
+  });
 }
 function handleApiKey(input) {
   apiKey = input.value.trim();

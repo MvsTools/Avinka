@@ -12,13 +12,16 @@ import { useState } from "react";
 type Stand = "klaar" | "bezig" | "gedaan" | "mislukt";
 
 export default function TaakKnop({
-  tekst,
+  taken,
   deadline,
   label,
   alOpDeLijst = false,
 }: {
-  /** De tekst zoals hij op de takenlijst komt. */
-  tekst: string;
+  /**
+   * Wat er op de takenlijst komt. Meestal één regel, maar in de startweek
+   * staan er meerdere klussen tegelijk klaar en zet één knop ze allemaal neer.
+   */
+  taken: string[];
   /** De dag waarop het af moet zijn ("2026-08-25"). */
   deadline?: string;
   /** Wat er op de knop staat ("Toetsen klaarzetten"). */
@@ -42,7 +45,7 @@ export default function TaakKnop({
         >
           <path d="M5 12.5l4.5 4.5L19 7.5" />
         </svg>
-        Staat op je lijst
+        {taken.length > 1 ? `${taken.length} taken staan op je lijst` : "Staat op je lijst"}
       </span>
     );
   }
@@ -50,12 +53,21 @@ export default function TaakKnop({
   const zet = async () => {
     setStand("bezig");
     try {
-      const res = await fetch("/api/taken", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tekst, ...(deadline ? { deadline } : {}) }),
-      });
-      setStand(res.ok ? "gedaan" : "mislukt");
+      // Eén voor één: de API neemt één taak per keer aan, en zo weten we ook
+      // zeker dat een half gelukte poging zichtbaar mislukt in plaats van
+      // stilletjes de helft neer te zetten.
+      for (const tekst of taken) {
+        const res = await fetch("/api/taken", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tekst, ...(deadline ? { deadline } : {}) }),
+        });
+        if (!res.ok) {
+          setStand("mislukt");
+          return;
+        }
+      }
+      setStand("gedaan");
     } catch {
       setStand("mislukt");
     }

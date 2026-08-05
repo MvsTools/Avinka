@@ -487,6 +487,7 @@
   <script src="/avinka-masking.js"></script>
   <script src="/avinka-voorkeuren.js"></script>
   <script src="/avinka-communicatie-app.js"></script>
+  <script src="/avinka-schermwacht.js"></script>
 </head>
 <body>
 <div class="app">
@@ -1999,11 +2000,22 @@ async function vulMijnKlas(toevoegFn){
      en het namenscherm: die twee gaan over het SCHRIJVEN van een rapport, en
      dat doe je hier niet. Je landt dus meteen op de naamkaarten, waar de
      teksten van je collega staan. */
+  /* Kijk je bij deze groep alleen mee, dan hoor je meteen op de naamkaarten te
+     landen — niet eerst op het instellingenscherm. Dat antwoord komt van de
+     server (/api/klas), en zolang dat onderweg was stond scherm 1 er gewoon:
+     je zag de instellingen dus even oplichten voordat je werd doorgestuurd.
+     Precies dezelfde flits als in Toetsanalyse; zie avinka-schermwacht.js. */
   async function meekijkerNaarOverzicht(){
-    if(avinkaMagRapportenBewerken)return;
-    if(typeof maakKaarten!=='function'||typeof naamLijst==='undefined')return;
+    if(avinkaMagRapportenBewerken){ if(startWacht) startWacht.toon(); return; }
+    if(typeof maakKaarten!=='function'||typeof naamLijst==='undefined'){
+      if(startWacht) startWacht.toon();
+      return;
+    }
     await autoVul();
-    if(!naamLijst.length)return;
+    if(!naamLijst.length){ if(startWacht) startWacht.toon(); return; }
+    // maakKaarten() zet zelf het overzichtsscherm actief, dus scherm 1 hoeft
+    // niet meer tevoorschijn te komen.
+    if(startWacht) startWacht.laatStaan();
     maakKaarten();
   }
 
@@ -2070,7 +2082,13 @@ async function vulMijnKlas(toevoegFn){
   if(typeof genereerVerhaal==='function'){ var _g=genereerVerhaal; genereerVerhaal=function(){ var p=_g.apply(this,arguments); Promise.resolve(p).then(function(){ try{ var l=huidige(); if(l&&l.verhaal) slaOp(l.naam,l.verhaal); }catch(e){} }); return p; }; }
   var box=document.getElementById('verhaal-tekst');
   if(box) box.addEventListener('blur', function(){ try{ var l=huidige(); if(l){ l.verhaal=box.value; slaOp(l.naam, box.value); } }catch(e){} });
-  prefillStart().then(meekijkerNaarOverzicht);
+  var startWacht = window.avinkaSchermwacht
+    ? avinkaSchermwacht.houdVast(document.getElementById('scherm-start'), 700)
+    : null;
+  prefillStart().then(meekijkerNaarOverzicht, function(){
+    // Ging het ophalen mis, dan hoor je gewoon het normale scherm te zien.
+    if(startWacht) startWacht.toon();
+  });
 })();
 </script>
 <script>/* Privacy-pop-up bij openen van Rapporten */

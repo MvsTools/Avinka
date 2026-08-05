@@ -119,7 +119,7 @@ export default function WatEraanKomt({
                 </a>
               ) : a.aard === "voorbereiden" ? (
                 <TaakKnop
-                  tekst={a.taak!}
+                  taken={a.taken ?? []}
                   deadline={a.taakDatum ?? a.datum}
                   label={a.actie}
                   alOpDeLijst={a.alOpDeLijst}
