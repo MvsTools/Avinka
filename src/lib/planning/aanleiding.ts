@@ -138,11 +138,36 @@ const GESPREK_TIP: Record<string, string> = {
   basisonline: "Gesprekken openzetten in het Ouderportaal, dan kiezen ouders zelf een tijd",
   isy: "Gespreksdagen en tijden openzetten in Isy, dan kiezen ouders zelf een tijd",
 };
+
+/**
+ * Hulpouders en vervoer vragen — óók per systeem uitgezocht, want het zit er
+ * NIET overal in (augustus 2026):
+ *
+ * - Parro: vrijwilligers en materialen regel je bij een agenda-item; ouders
+ *   schrijven zich in.
+ * - Social Schools: agenda-item → "Meer opties" → materialen/vrijwilligers
+ *   vragen, met aantallen. Ouders melden zich met een plusje.
+ * - SchouderCom: een "oproepje" onder een bericht — een formuliertje waarin een
+ *   ouder ook kan invullen hoeveel kinderen er in zijn auto passen.
+ * - BasisOnline: intekenlijsten bij een activiteit.
+ * - ⚠️ Isy: heeft hier GEEN aparte module voor (wel Formulieren, Toestemmingen
+ *   en Nieuws). Dus geen belofte over "de inschrijflijst" — daar staat alleen
+ *   dat je het via Isy vraagt.
+ */
+const HULPOUDER_TIP: Record<string, string> = {
+  parro: "Hulpouders en vervoer vragen in Parro, via een inschrijving bij de activiteit",
+  social_schools:
+    "Hulpouders en vervoer vragen in Social Schools, via materialen/vrijwilligers bij het agenda-item",
+  schoudercom: "Hulpouders en vervoer vragen in SchouderCom, met een oproepje onder je bericht",
+  basisonline: "Hulpouders en vervoer vragen in het Ouderportaal, met een intekenlijst",
+  isy: "Hulpouders en vervoer vragen via Isy",
+};
 // ⚠️ Dezelfde adressen staan in public/avinka-communicatie-app.js (die is voor
 // de tools, deze voor het dashboard). Samen bijwerken.
 const APP_URL: Record<string, string> = {
   parro: "https://talk.parro.com",
   social_schools: "https://app.socialschools.eu",
+  basisonline: "https://ouders.basisonline.nl",
 };
 const APP_STAARTJE: Record<string, string> = {
   isy: ".isy-school.nl",
@@ -158,6 +183,20 @@ function appUrl(sys: Schoolsystemen): string {
   return voorstuk.includes(".") ? `https://${voorstuk}` : `https://${voorstuk}${staartje}`;
 }
 const LVS_NAAM: Record<string, string> = { parnassys: "ParnasSys", esis: "Esis" };
+// ⚠️ Alleen adressen die we ZEKER weten (nagezocht augustus 2026):
+// - IEP heeft één vast inlogadres voor alle scholen.
+// - Leerling in beeld loopt volgens Cito zelf via Basispoort; dat is de poort,
+//   niet de toets, dus de knop zegt ook "via Basispoort".
+// - Dia (Dia-groeiwijzer) en Boom hebben geen adres dat we hard kunnen maken →
+//   die krijgen alleen een taak, geen knop. Liever geen link dan een verkeerde.
+const TOETS_URL: Record<string, string> = {
+  iep: "https://www.ieplvs.nl/login",
+  cito: "https://www.basispoort.nl",
+};
+const TOETS_KNOP: Record<string, string> = {
+  iep: "Openen in IEP",
+  cito: "Openen via Basispoort",
+};
 const TOETS_NAAM: Record<string, string> = {
   iep: "IEP",
   cito: "Cito",
@@ -198,7 +237,14 @@ function opMaat(
     // vallen we terug op het LVS, en anders op de algemene tekst.
     const naam =
       TOETS_NAAM[sys.toetsSysteem ?? ""] ?? LVS_NAAM[sys.lvsSysteem ?? ""] ?? "";
-    if (naam) return { knop: `Klaarzetten in ${naam}`, taak: `Toetsen klaarzetten in ${naam}` };
+    if (naam) {
+      const sleutel = sys.toetsSysteem ?? "";
+      return {
+        knop: TOETS_KNOP[sleutel] ?? `Klaarzetten in ${naam}`,
+        taak: `Toetsen klaarzetten in ${naam}`,
+        link: TOETS_URL[sleutel],
+      };
+    }
   }
   if (soort === "activiteit" && sys.communicatieApp) {
     // Hulpouders vraag je waar de ouders zitten, dus dit signaal hoort naar de
@@ -207,7 +253,7 @@ function opMaat(
     const link = appUrl(sys) || undefined;
     return {
       knop: link ? `Oproep in ${naam}` : "Hulpouders vragen",
-      taak: `Oproep voor hulpouders en vervoer plaatsen in ${naam}`,
+      taak: HULPOUDER_TIP[sys.communicatieApp] ?? `Hulpouders en vervoer vragen via ${naam}`,
       link,
     };
   }
@@ -331,16 +377,23 @@ export function aanleidingen(
     const slug = SOORT_INFO[item.soort]?.tool;
     const tool = slug ? toolBySlug(slug) : undefined;
     // Geen knop naar een tool die niet op het dashboard staat.
-    const toolFase =
-      Boolean(venster && tool?.pad) && dagen <= venster!.voor && nogTeGaan >= -venster!.na;
+    const toolMogelijk = Boolean(venster && tool?.pad);
+    const toolFase = toolMogelijk && dagen <= venster!.voor && nogTeGaan >= -venster!.na;
     // Ervóór: het klaarzetten dat geen tool voor je doet. Loopt tot de dag
     // waarop het toolvenster begint, dus de twee bijten elkaar nooit.
+    //
+    // ⚠️ Die grens geldt ALLEEN als er ook echt een tool is. Zonder die
+    // uitzondering verdween het hulpouders-signaal volledig: bij een activiteit
+    // zijn beide vensters zes weken, dus "buiten het toolvenster" bestond niet —
+    // en de draaiboek-tool die het had moeten overnemen staat niet eens op het
+    // dashboard. Resultaat: een signaal dat we wel bouwden maar dat nooit
+    // verscheen.
     const voorFase =
       Boolean(voorbereiding) &&
       !toolFase &&
       dagen >= 1 &&
       dagen <= voorbereiding!.voor &&
-      dagen > (venster?.voor ?? 0);
+      (!toolMogelijk || dagen > venster!.voor);
 
     if (!toolFase && !voorFase) continue;
 
