@@ -152,7 +152,12 @@ function appUrl(sys: Schoolsystemen): string {
   return voorstuk.includes(".") ? `https://${voorstuk}` : `https://${voorstuk}${staartje}`;
 }
 const LVS_NAAM: Record<string, string> = { parnassys: "ParnasSys", esis: "Esis" };
-const TOETS_NAAM: Record<string, string> = { iep: "IEP", cito: "Cito" };
+const TOETS_NAAM: Record<string, string> = {
+  iep: "IEP",
+  cito: "Cito",
+  dia: "Dia",
+  boom: "Boom",
+};
 
 /**
  * De voorbereidingstip toegespitst op de systemen van deze school.

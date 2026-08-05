@@ -61,10 +61,15 @@ const lvsSystemen = [
 // Toetsanalyse niet elke keer te vragen en kunnen we in Mijn schooljaar zeggen
 // wáár je je toetsen klaarzet. "Allebei" bestaat echt (het ene vak IEP, het
 // andere Cito), en dan blijft de keuze gewoon staan.
+// De vier grote leerlingvolgsystemen in het basisonderwijs. Toetsanalyse leest
+// voorlopig alleen IEP en Cito in; kies je Dia of Boom, dan zegt de tool dat
+// eerlijk in plaats van te doen alsof.
 const toetsSystemen = [
   { waarde: "", label: "Vraag het me" },
   { waarde: "iep", label: "IEP" },
   { waarde: "cito", label: "Cito" },
+  { waarde: "dia", label: "Dia" },
+  { waarde: "boom", label: "Boom" },
   { waarde: "beide", label: "Allebei" },
 ];
 
