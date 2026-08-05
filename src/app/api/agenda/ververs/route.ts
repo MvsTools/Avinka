@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { ververBron } from "@/lib/agenda-opslaan";
+import { EIGEN_SYSTEEM } from "@/lib/agenda-eigen";
 
 // Een gekoppelde agenda opnieuw ophalen. Zonder id worden ze allemaal
 // bijgewerkt; dat is straks ook wat de nachtelijke verversing gebruikt.
@@ -22,8 +23,12 @@ export async function POST(request: Request) {
 
   let query = supabase
     .from("agenda_bronnen")
-    .select("id, naam, link_geheim, modus")
-    .eq("actief", true);
+    .select("id, naam, link_geheim, modus, systeem")
+    .eq("actief", true)
+    // Je eigen afspraken hebben niets op te halen. `ververBron` weigert ze ook
+    // zelf (daar zit het echte slot), maar dan zou je hier wel een nutteloze
+    // foutmelding over je eigen agenda terugkrijgen.
+    .neq("systeem", EIGEN_SYSTEEM);
   if (id) query = query.eq("id", id);
 
   const { data: bronnen, error } = await query;

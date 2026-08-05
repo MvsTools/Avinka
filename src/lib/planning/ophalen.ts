@@ -221,17 +221,44 @@ export type AgendaBron = {
  * hoofdagenda: staat dezelfde afspraak in twee agenda's, dan is die van de
  * hoofdagenda het origineel.
  */
+/**
+ * De GEKOPPELDE agenda's — dus zonder je eigen afspraken.
+ *
+ * ⚠️ Je eigen agenda is technisch ook een bron, maar hoort hier niet bij: hij
+ * zou anders in het koppelscherm verschijnen met een verversknop ernaast, en
+ * verversen betekent "alles van deze bron weggooien en opnieuw ophalen". Bij
+ * een agenda zonder link is dat gewoon weggooien. Ook telt hij zo niet mee in
+ * "Agenda's (1)" terwijl je er geen gekoppeld hebt.
+ */
 export async function haalBronnen(supabase: SupabaseClient): Promise<AgendaBron[]> {
   const { data } = await supabase
     .from("agenda_bronnen")
     .select("id, naam, systeem, modus, aantal_items, laatst_gelukt, laatste_fout")
     .eq("actief", true)
+    .neq("systeem", "eigen")
     .order("created_at");
   return (data as AgendaBron[] | null) ?? [];
 }
 
+/**
+ * De volgorde waarin agenda's elkaar overstemmen bij dubbele afspraken: wie
+ * vooraan staat wint.
+ *
+ * Je eigen afspraken staan bewust VOORAAN. Die heb je zelf ingetypt, dus als
+ * er iets lijkt op een afspraak uit de schoolagenda hoort de jouwe te blijven
+ * staan — anders typ je iets in en is het meteen "verdwenen".
+ */
 export async function haalBronvolgorde(supabase: SupabaseClient): Promise<string[]> {
-  return (await haalBronnen(supabase)).map((b) => b.id);
+  const { data } = await supabase
+    .from("agenda_bronnen")
+    .select("id, systeem, created_at")
+    .eq("actief", true)
+    .order("created_at");
+  const alle = (data as { id: string; systeem: string }[] | null) ?? [];
+  return [
+    ...alle.filter((b) => b.systeem === "eigen").map((b) => b.id),
+    ...alle.filter((b) => b.systeem !== "eigen").map((b) => b.id),
+  ];
 }
 
 export async function haalTaken(

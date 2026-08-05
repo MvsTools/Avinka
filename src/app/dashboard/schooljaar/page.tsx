@@ -7,6 +7,7 @@ import {
   vandaag,
 } from "@/lib/planning";
 import SchooljaarView from "@/components/dashboard/SchooljaarView";
+import { haalOfMaakEigenBron } from "@/lib/agenda-eigen";
 
 // Mijn schooljaar: het jaar van deze leerkracht, opgebouwd uit zijn eigen
 // gekoppelde agenda's. Het ophalen gebeurt hier op de server, zodat het scherm
@@ -25,6 +26,7 @@ export default async function SchooljaarPage({
   const jaren = await haalSchooljaren(supabase, nu);
   const jaarId = jaren.some((j) => j.id === gekozen) ? gekozen : jaren[0]?.id;
 
+  const { data: gebruiker } = await supabase.auth.getUser();
   const [bron, agendas, groepen, systemen, planContext] = await Promise.all([
     haalPlanning(supabase, { schooljaarId: jaarId, nu }),
     haalBronnen(supabase),
@@ -32,6 +34,16 @@ export default async function SchooljaarPage({
     haalSchoolsystemen(supabase),
     haalPlanningContext(supabase),
   ]);
+
+  // Welke afspraken heeft de leerkracht zelf ingevoerd? Die mag hij wijzigen en
+  // weghalen; wat uit een gekoppelde agenda komt niet.
+  const eigenBron = gebruiker.user
+    ? await haalOfMaakEigenBron(supabase, gebruiker.user.id)
+    : { fout: "geen sessie" };
+  const eigenBronId = "id" in eigenBron ? eigenBron.id : null;
+  const eigenAfspraken = eigenBronId
+    ? bron.items.filter((i) => i.bronId === eigenBronId).sort((a, b) => a.datum.localeCompare(b.datum))
+    : [];
 
   return (
     <SchooljaarView
@@ -42,6 +54,7 @@ export default async function SchooljaarPage({
       mijnGroepen={groepen}
       systemen={systemen}
       context={planContext}
+      eigenAfspraken={eigenAfspraken}
     />
   );
 }

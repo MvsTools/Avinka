@@ -27,6 +27,7 @@ import type {
 import SchooljaarMaand from "./SchooljaarMaand";
 import SchooljaarWeek from "./SchooljaarWeek";
 import AgendaKoppelen from "./AgendaKoppelen";
+import EigenAfspraken from "./EigenAfspraken";
 import { ETIKET } from "./schooljaar-stijl";
 import SchooljaarDagkaart from "./SchooljaarDagkaart";
 import FeitenRij from "./FeitenRij";
@@ -60,6 +61,7 @@ export default function SchooljaarView({
   mijnGroepen,
   systemen,
   context,
+  eigenAfspraken = [],
 }: {
   bron: PlanningBron;
   jaren: JaarKeuze[];
@@ -68,6 +70,8 @@ export default function SchooljaarView({
   mijnGroepen: number[];
   systemen?: Schoolsystemen;
   context?: AanleidingContext;
+  /** Afspraken die de leerkracht zelf heeft ingevoerd (te wijzigen en weg te halen). */
+  eigenAfspraken?: PlanItem[];
 }) {
   const [tab, setTab] = useState<"jaar" | "week" | "agendas">(
     agendas.length ? "jaar" : "agendas",
@@ -158,7 +162,10 @@ export default function SchooljaarView({
       </div>
 
       {tab === "agendas" ? (
-        <AgendaKoppelen agendas={agendas} />
+        <div className="flex flex-col gap-5">
+          <AgendaKoppelen agendas={agendas} />
+          <EigenAfspraken eigen={eigenAfspraken} vandaag={vandaag} />
+        </div>
       ) : tab === "week" ? (
         <SchooljaarWeek bron={bron} vandaag={vandaag} verlaatGuard={verlaatGuard} />
       ) : (
