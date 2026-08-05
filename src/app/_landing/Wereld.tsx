@@ -1063,11 +1063,16 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
               </div>
 
               <div className="w-cv-verhaal">
-                {/* Deze twee alinea-s stonden op de laatste bladzijden van het
-                   schrift en waren daarvóór al door de eigenaar goedgekeurd in
-                   het oude makersblok. Ze zijn niet opnieuw geschreven, alleen
-                   verplaatst naar de plek waar ze zonder klik te lezen zijn. */}
-                <h3 className="w-cv-sectiekop">Waarom Avinka bestaat</h3>
+                {/* De eerste alinea hieronder stond op de laatste bladzijde van
+                   het schrift en was daarvóór al goedgekeurd in het oude
+                   makersblok; die is niet herschreven, alleen verplaatst naar
+                   de plek waar hij zonder klik te lezen is. De koppen en de
+                   tweede alinea zijn 5-8 door de eigenaar bijgestuurd. */}
+                {/* De kop is die van de eigenaar zelf (5-8). Hij stond er als
+                   "Waarom Avinka bestaat" — dat gaat over het product, en dit
+                   blok gaat over de maker. Niet terugdraaien naar de
+                   product-formulering. */}
+                <h3 className="w-cv-sectiekop">Waarom ik Avinka heb gebouwd</h3>
                 <p>
                   Wat begon als een oplossing voor mijn eigen werk, werd een
                   bredere missie:{" "}
@@ -1082,10 +1087,23 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                   <mark className="w-cv-markeer">slimmer werken</mark> juist
                   eenvoudig kan zijn.
                 </p>
+                {/* ⚠️ HIER STOND ALLEEN "Geen ingewikkelde techniek, wel
+                   zorgvuldig met de gegevens van je leerlingen." De eigenaar
+                   wil dit blok meer de kant op van "leerkrachten helpen om werk
+                   na schooltijd efficiënter te doen" (5-8). Die richting staat
+                   nu vooraan; de oude zin is er niet uit gegooid maar erachter
+                   gezet, want daar zit de enige privacy-belofte van dit blok in.
+                   🔑 In de IK-vorm, en dat is geen stijlkeuze. De inleiding
+                   links zegt bijna hetzelfde ("Avinka is gebouwd om leerkrachten
+                   te helpen met het werk dat na schooltijd blijft liggen"), maar
+                   die gaat over het PRODUCT. Onder de kop "Waar ik voor sta"
+                   hoort een persoon te staan, anders staat dezelfde zin twee
+                   keer op dezelfde pagina in ander lettertype. */}
                 <h3 className="w-cv-sectiekop">Waar ik voor sta</h3>
                 <p>
-                  Geen ingewikkelde techniek, wel zorgvuldig met de gegevens van
-                  je leerlingen.
+                  Ik wil leerkrachten helpen om het werk na schooltijd
+                  efficiënter te doen. Zonder ingewikkelde techniek, en
+                  zorgvuldig met de gegevens van je leerlingen.
                 </p>
                 {/* ⚠️ HIER STOND EEN DERDE BLOK ("Waar het heen gaat"), tekst
                    van mij. Eruit toen het document weer naast de tekst moest
