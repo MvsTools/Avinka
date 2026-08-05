@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { serviceClient } from "@/lib/supabase-service";
 import { amsterdamDatum, isVrijeDag, volgendeStreakStand } from "@/lib/streak";
 import { haalStreakVakanties } from "@/lib/planning";
 import { minutenVoor, type TijdSignaal } from "@/lib/tijdwinst";
@@ -9,7 +10,19 @@ import { minutenVoor, type TijdSignaal } from "@/lib/tijdwinst";
 // - POST { type, signaal? } → telt er één bij op én telt de adaptieve tijdwinst
 //   op, berekend uit het omvang-signaal (woorden/items/leerlingen). Door de
 //   tools aangeroepen bij een afgeronde actie.
-// RLS zorgt dat je alleen bij je eigen tellers kunt.
+// RLS zorgt dat je alleen bij je eigen tellers kunt LEZEN.
+//
+// ⚠️ SCHRIJVEN GAAT MET DE SERVICESLEUTEL, en dat is geen detail: deze tellers
+// worden op de VOORPAGINA bij elkaar opgeteld (`avinka_landing_cijfers` →
+// "Avinka in cijfers"). Kon iedereen zijn eigen rij schrijven, dan kon één
+// account "1.284 uur bespaard" op de homepage zetten. De database houdt de
+// browser nu tegen (trigger `statistiek_bewaakt`); alleen deze route telt op,
+// en die telt per aanroep precies één actie.
+
+// Meer dan dit aantal acties op één dag is geen leerkracht maar een script.
+// Boven de grens blijft alles gewoon werken, het telt alleen niet meer mee.
+// Ruim gekozen: een zware dag met alle tools blijft er ver onder.
+const MAX_ACTIES_PER_DAG = 100;
 
 export async function GET() {
   const sb = await createClient();
@@ -64,6 +77,22 @@ export async function POST(req: Request) {
   // Per dag bijhouden (minuten + acties) voor de periode-filters op de statistiekenpagina.
   const perDag = { ...((data?.per_dag as Record<string, { m: number; n: number }>) ?? {}) };
   const dag = perDag[vandaag] ?? { m: 0, n: 0 };
+
+  // Dagplafond. Zonder dit kost het niets om deze route in een lus aan te roepen
+  // en zo het cijfer op de voorpagina op te blazen — elke aanroep telde door.
+  // We geven bewust GEEN fout terug: de gebruiker heeft niets fout gedaan en de
+  // tool moet gewoon blijven werken. Er wordt alleen niets meer bij opgeteld.
+  if (dag.n >= MAX_ACTIES_PER_DAG) {
+    return NextResponse.json({
+      ok: true,
+      geteld: false,
+      tellers: data?.tellers ?? {},
+      minuten: data?.minuten ?? {},
+      streak: (data?.streak as number) ?? 0,
+      gewonnen: 0,
+    });
+  }
+
   perDag[vandaag] = { m: dag.m + gewonnen, n: dag.n + 1 };
 
   // ── Streak bijwerken (alleen op schooldagen; weekend én schoolvakantie
@@ -88,7 +117,19 @@ export async function POST(req: Request) {
     laatste = uitkomst.laatste;
   }
 
-  const { error } = await sb.from("statistiek").upsert(
+  // Schrijven met de servicesleutel: de browser mag deze velden niet meer zelf
+  // zetten (zie de toelichting bovenaan). Ontbreekt de sleutel, dan tellen we
+  // niets en zeggen we dat ook — stilzwijgend doorgaan zou betekenen dat je
+  // statistieken maandenlang leeg blijven zonder dat iemand weet waarom.
+  const db = serviceClient();
+  if (!db) {
+    console.error(
+      "[api/statistiek] SUPABASE_SERVICE_ROLE_KEY ontbreekt — er is niets geteld",
+    );
+    return NextResponse.json({ ok: false, geteld: false, reden: "server_niet_klaar" });
+  }
+
+  const { error } = await db.from("statistiek").upsert(
     {
       user_id: user.id,
       tellers,

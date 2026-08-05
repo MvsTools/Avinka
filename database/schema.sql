@@ -314,6 +314,49 @@ create policy "eigen statistiek" on public.statistiek
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 grant select, insert, update, delete on public.statistiek to authenticated;
 
+-- ── SLOT OP DE TELLERS ────────────────────────────────────────────────────
+-- Volledige uitleg: database/migratie-statistiek-slot.sql.
+-- Deze tellers worden op de VOORPAGINA bij elkaar opgeteld
+-- (`avinka_landing_cijfers`) en in `wijs_community_stats`. Kon iedereen zijn
+-- eigen rij schrijven, dan kon één account "1.284 uur bespaard" op de homepage
+-- zetten. Alleen /api/statistiek telt nog op, met de servicesleutel en met een
+-- dagplafond tegen een lusje.
+create or replace function public.statistiek_bewaakt()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  -- ⚠️ BEWUST GEEN `security definer`: moet zien WIE er schrijft.
+  if current_user not in ('authenticated', 'anon') then return new; end if;
+
+  if tg_op = 'INSERT' then
+    new.tellers := '{}'::jsonb; new.minuten := '{}'::jsonb; new.per_dag := '{}'::jsonb;
+    new.streak := 0; new.streak_max := 0; new.streak_freezes := 0;
+    new.laatste_actief := null;
+    return new;
+  end if;
+
+  if new.tellers        is distinct from old.tellers
+  or new.minuten        is distinct from old.minuten
+  or new.per_dag        is distinct from old.per_dag
+  or new.streak         is distinct from old.streak
+  or new.streak_max     is distinct from old.streak_max
+  or new.streak_freezes is distinct from old.streak_freezes
+  or new.laatste_actief is distinct from old.laatste_actief
+  then
+    raise exception 'Je statistieken worden door de server bijgehouden.'
+      using errcode = '42501';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_statistiek_bewaakt on public.statistiek;
+create trigger trg_statistiek_bewaakt
+  before insert or update on public.statistiek
+  for each row execute function public.statistiek_bewaakt();
+
 -- Community-aggregaat voor "Mijn statistieken" (vergelijking met andere gebruikers).
 -- SECURITY DEFINER: leest álle tellers maar geeft ALLEEN totalen/aantallen terug —
 -- nooit gegevens van een individuele gebruiker. Daarom veilig voor alle ingelogden.
@@ -1752,6 +1795,7 @@ revoke execute on function public.wijs_ref_code() from public, anon;
 revoke execute on function public.wijs_koppel_verwijzing(text) from public, anon;
 revoke execute on function public.instellingen_bewaakt() from public, anon;
 revoke execute on function public.klassen_limiet_bewaakt() from public, anon;
+revoke execute on function public.statistiek_bewaakt() from public, anon;
 revoke execute on function public.wijs_snapshot_abon() from public, anon;
 revoke execute on function public.wijs_community_stats() from public, anon;
 revoke execute on function public.registreer_herakkoord(text, text) from public, anon;
