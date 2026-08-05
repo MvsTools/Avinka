@@ -200,6 +200,14 @@ grant select, insert, update, delete on public.instellingen to authenticated;
 grant select, insert, update, delete on public.klassen      to authenticated;
 grant select, insert, update, delete on public.teksten      to authenticated;
 
+-- ⚠️ DE SERVERROL HEEFT EIGEN RECHTEN NODIG. `service_role` (de rol achter
+-- SUPABASE_SERVICE_ROLE_KEY) erft NIETS van `authenticated`. Hij had hier lang
+-- helemaal geen rechten, waardoor élke serverkant-schrijfactie stukliep op
+-- "42501 permission denied" — zie database/migratie-service-role-rechten.sql.
+-- Bewust alleen de tabellen waar de server echt in schrijft, niet alles.
+-- 🔑 Bouw je een nieuwe serverkant-schrijfactie? Zet die tabel hier ook neer.
+grant select, insert, update on public.instellingen to service_role;
+
 -- ── 4) RAPPORTEN — opgeslagen rapportteksten per kind (Rapporten) ──────
 -- Concept/afgeronde rapportteksten zodat een leerkracht over meerdere sessies
 -- kan werken. Bewaartermijn-gedachte: tijdelijk, met "wissen"-knop in de tool.
@@ -313,6 +321,8 @@ drop policy if exists "eigen statistiek" on public.statistiek;
 create policy "eigen statistiek" on public.statistiek
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 grant select, insert, update, delete on public.statistiek to authenticated;
+-- De server telt op met de servicesleutel (zie hierboven bij instellingen).
+grant select, insert, update on public.statistiek to service_role;
 
 -- ── SLOT OP DE TELLERS ────────────────────────────────────────────────────
 -- Volledige uitleg: database/migratie-statistiek-slot.sql.

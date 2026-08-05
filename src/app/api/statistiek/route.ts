@@ -142,6 +142,12 @@ export async function POST(req: Request) {
     },
     { onConflict: "user_id" },
   );
-  if (error) return NextResponse.json({ error: "db_error" }, { status: 500 });
+  if (error) {
+    // De reden MOET in de log staan. Zonder deze regel zie je alleen "500" en
+    // moet je gaan raden — precies wat er bij de eerste test van dit slot
+    // gebeurde. Naar de gebruiker blijft het een nette, korte fout.
+    console.error("[api/statistiek] opslaan geweigerd:", error.code, error.message);
+    return NextResponse.json({ error: "db_error" }, { status: 500 });
+  }
   return NextResponse.json({ ok: true, tellers, minuten, streak, gewonnen });
 }
