@@ -1241,12 +1241,16 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            de achtergrondvlakken), niet als rechthoekig pasje. Vaste maat, want
            een foto die met de kolom meerekt wordt op smalle schermen een pasje
            van niks.
-           🔑 translateY duwt hem tot IN de golf: de foto breekt door de
-           kleurgrens heen in plaats van er netjes boven te blijven. Dat is een
-           van de vaste kenmerken van deze designtaal. z-index moet hoger dan 5
-           want dat is de laag van de golf zelf.
-           ⚠️ Hij zakt tot in de golf maar NIET tot onder de band: dan zou hij
-           over de personalia-strook vallen en die staat op zijn eigen laag. */
+           ⚠️ HIER STOND translateY(32px), waarmee de foto tot in de golf zakte
+           en door de kleurgrens heen brak. Eruit op verzoek: "mijn foto moet
+           ter hoogte van mijn naam, iets hoger dus". Hij staat nu gewoon
+           gecentreerd naast de naam.
+           🔑 De hoogte van de band verandert daar NIET van: een transform
+           verschuift alleen wat je ziet, niet wat het element in de opmaak
+           inneemt. De band was en blijft even hoog als de foto plus de ruimte
+           voor de golf.
+           z-index moet hoger dan 5 blijven: dat is de laag van de golf, en
+           anders verdwijnt de onderkant van de foto eronder. */
         .w-cv-pas {
           position: relative;
           z-index: 6;
@@ -1256,7 +1260,7 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           width: 88px;
           height: 100px;
           overflow: hidden;
-          transform: translateY(32px) rotate(2.5deg);
+          rotate: 2.5deg;
           background: var(--color-cream, #fbf6ee);
           border: 5px solid var(--color-cream, #fbf6ee);
           border-radius: ${VLAKVORMEN.kiezel};
