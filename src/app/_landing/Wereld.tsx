@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "react";
 
 /* ── De Wereld van /nieuw5 ──────────────────────────────────────────────────
@@ -768,98 +768,34 @@ export function WereldHerken() {
    ⚠️ De VELDOPBOUW is met opzet niet aangeraakt: de mint begint nog steeds
    op de halve hoogte van de sectie, de padding boven en onder is nog steeds
    gelijk (dus de kleurnaad valt nog steeds halverwege de kaart) en de
-   kam-golf is dezelfde. Alleen de maten van de achtergrondvormen zijn
-   meegekrompen met de sectie — zie de opmerkingen daar. */
 /* ── HET MAKERSBLOK IS EEN CV ──────────────────────────────────────────────
-   ⚠️ HET SCHRIFT IS ERUIT (5-8). Het was een schrift waar je zelf doorheen
-   bladerde: kaft met etiket, vriendenboekje, drie spreads. De eigenaar over
-   die ronde: "het gedraaide 3D-effect vind ik heel vet, maar het schriftje is
-   gewoon niet helemaal mijn ding". De VORM ging eruit, de RUIMTE bleef.
+   ⚠️ TWEE DINGEN ZIJN HIER ACHTER ELKAAR AFGEVALLEN. Lees dit vóór je iets
+   terugzet, want allebei zijn ze uitgeprobeerd en allebei zijn ze afgekeurd.
 
-   Wat er nu ligt is een CV — en dat is eigenlijk altijd al wat deze sectie
-   deed. Een blad met wie hij is en waar Avinka voor staat, als één document
-   dat schuin op het veld ligt.
+   1. HET SCHRIFT (4-8 tot 5-8). Een schrift waar je zelf doorheen bladerde:
+      kaft met etiket, vriendenboekje, drie spreads. Eigenaar: "het gedraaide
+      3D-effect vind ik heel vet, maar het schriftje is gewoon niet helemaal
+      mijn ding."
+   2. DE 3D-RUIMTE (5-8). Daarna lag hier een CV dat gekanteld in de ruimte
+      lag, met echte randen, een stapel losse vellen eronder en een kanteling
+      die met je muis meedraaide. Eigenaar: "haal dat 3D-gedeelte hier maar
+      weg, ziet er niet uit."
 
-   🔑 DRIE DINGEN DIE HET SCHRIFT NIET GOED KON EN DIT WEL:
-   1. Een CV is één blad. Alles staat er tegelijk op, dus de missie zit niet
-      achter een klik. Dat is een harde les van deze pagina: de tijdwinst per
-      tool zat ook ooit achter een interactie en dat was fout. Wat je moet
-      lezen, laat je zien.
-   2. Een CV heeft van nature de volgorde die de eigenaar vroeg: eerst wie je
-      bent, dan waar je voor staat.
-   3. Een document is dunner dan een schrift, en juist daardoor kan het op een
-      stapel losse vellen liggen. Dat is een rijkere vorm dan een dicht blok:
-      hij is met de hand neergelegd in plaats van gefabriceerd.
+   🔑 WAT ER OVERBLIJFT IS DE BEDOELING, NIET DE MECHANIEK. Wat elke ronde
+   overleefde was de INHOUD en de VOLGORDE: wie hij is, en daarna waar Avinka
+   voor staat. Wat er telkens uit ging was het apparaat eromheen. Bouw hier dus
+   geen nieuw mechaniek in; dit is een kaart en die hoort bij de andere kaarten
+   van deze wereld te horen.
 
-   Wat bleef: de hele ruimte (kanteling, perspectief, echte randen, meedraaien
-   met de muis). Dat was het deel dat werkte. */
+   Wat een CV hier goed doet:
+   - Alles staat er tegelijk op, dus de missie zit niet achter een klik. Dat is
+     een harde les van deze pagina: de tijdwinst per tool zat ook ooit achter
+     een interactie en dat was fout. Wat je moet lezen, laat je zien.
+   - Een CV heeft van nature de volgorde die de eigenaar vroeg: eerst wie je
+     bent, dan waar je voor staat.
+   - Het is een vorm die iedereen kent, dus er valt niets uit te leggen. */
 
 export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
-  const sceneRef = useRef<HTMLDivElement>(null);
-
-  /* ── HET SCHRIFT DRAAIT MEE MET JE MUIS ────────────────────────────────
-     De vaste kanteling maakt er een voorwerp van; dít maakt dat je het ziet
-     LIGGEN. Zodra je eroverheen gaat draait het een paar graden met je mee,
-     alsof je je hoofd een stukje verschuift. Zonder muis (telefoon, tablet)
-     gebeurt er niets: daar is geen "eroverheen gaan".
-
-     🔑 Dezelfde regel als bij de polaroids: alleen wat ONDER je muis ligt
-     beweegt, en er komt geen enkel element bij — het is de bestaande vorm die
-     anders in de ruimte staat.
-
-     De lus stopt zichzelf zodra hij is uitgedempt (net als de polaroid-lus):
-     in rust wordt er dus niets naar de DOM geschreven. De uitslag is klein
-     met opzet — 4 graden is genoeg om diepte te voelen, 10 graden wordt een
-     draaiend speeltje. */
-  useEffect(() => {
-    const el = sceneRef.current;
-    if (!el) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    /* Alleen bij een echte aanwijzer. Op een aanraakscherm zou dit blijven
-       hangen op de stand van je laatste tik. */
-    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
-
-    let doelX = 0;
-    let doelY = 0;
-    let x = 0;
-    let y = 0;
-    let raf = 0;
-
-    const stap = () => {
-      x += (doelX - x) * 0.12;
-      y += (doelY - y) * 0.12;
-      el.style.setProperty("--muis-x", x.toFixed(4));
-      el.style.setProperty("--muis-y", y.toFixed(4));
-      if (Math.abs(doelX - x) > 0.0015 || Math.abs(doelY - y) > 0.0015) {
-        raf = requestAnimationFrame(stap);
-      } else {
-        raf = 0;
-      }
-    };
-    const wek = () => {
-      if (!raf) raf = requestAnimationFrame(stap);
-    };
-    const beweeg = (e: PointerEvent) => {
-      const r = el.getBoundingClientRect();
-      if (!r.width || !r.height) return;
-      doelX = Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width - 0.5) * 2));
-      doelY = Math.max(-1, Math.min(1, ((e.clientY - r.top) / r.height - 0.5) * 2));
-      wek();
-    };
-    const weg = () => {
-      doelX = 0;
-      doelY = 0;
-      wek();
-    };
-
-    el.addEventListener("pointermove", beweeg);
-    el.addEventListener("pointerleave", weg);
-    return () => {
-      el.removeEventListener("pointermove", beweeg);
-      el.removeEventListener("pointerleave", weg);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
 
   return (
     <section className="relative overflow-hidden">
@@ -1001,56 +937,14 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
             </p>
           </div>
 
-        {/* ⚠️ DE WRAPPER IS GEEN OPSMUK MAAR EEN REPARATIE, en die les geldt
-           voor élk voorwerp dat hier ooit komt te liggen. De eerste 3D-poging
-           heeft nooit gerenderd en zag er daardoor uit als een fout: het
-           voorwerp droeg zelf data-reveal, en de reveal-regel
+        {/* ⚠️ DE SCHEEFSTAND STAAT MET OPZET OP `rotate:` EN NIET IN EEN
+           TRANSFORM. Dit element draagt data-reveal, en de reveal-regel
            .anim [data-reveal].is-in { transform: none } in Landing.tsx wist
-           elke transform op datzelfde element weg. De kanteling verdween dus en
-           de dikte lag op een kaarsrecht vlak.
-           🔑 De regel: een element met data-reveal mag GEEN eigen transform
-           dragen. Zet de reveal op de buitenkant en de vormgeving op een laag
-           erbinnen. (De losse eigenschap rotate overleefde het wél — die valt
-           sinds CSS Transforms 2 niet onder transform: none. Precies daarom
-           stond de scheefstand er toen wel en de kanteling niet.) */}
+           elke transform op datzelfde element weg. Sinds CSS Transforms 2 is
+           rotate een eigen eigenschap en valt hij daar niet onder, dus die
+           overleeft het wél. Dat kostte bij de 3D-poging een hele ronde: die
+           kanteling verdween en het zag eruit als een bouwfout. */}
         <div data-reveal className="w-cv">
-          <div className="w-cv-scene" ref={sceneRef}>
-            {/* ── DE LOSSE VELLEN ERONDER ────────────────────────────────
-               Twee vellen die onder het document uit steken, elk een andere
-               kant op gedraaid. Ze doen één ding: het verschil maken tussen
-               een voorwerp dat GEFABRICEERD is en een voorwerp dat NEERGELEGD
-               is. Een blok met vier rechte hoeken op een veld leest als een
-               UI-kaart; een stapeltje dat niet helemaal recht ligt leest als
-               papier op een bureau.
-               🔑 Ze draaien in het VLAK van het papier (rotate, niet rotateY),
-               dus ze blijven evenwijdig aan het document. Dat is geen detail:
-               vlakken onder een verschillende hoek in de ruimte snijden elkaar,
-               en dan tekent de browser links van de snijlijn het ene vel en
-               rechts het andere. Dat is bij het schrift een keer gebeurd en het
-               kostte een halve avond.
-               ⚠️ Ze liggen dieper dan de onderkant van het blok (zie --dik),
-               niet ertussenin. Ertussenin zouden ze dwars door de zijkanten
-               heen steken. */}
-            <span className="w-cv-vel w-cv-vel-a" aria-hidden />
-            <span className="w-cv-vel w-cv-vel-b" aria-hidden />
-
-            {/* ── DE DIKTE ───────────────────────────────────────────────
-               Het achterplat plus de twee randen die je bij deze stand echt
-               ziet: de snede onderaan en de zijkant links.
-               🔑 Het zijn ECHTE vlakken in de ruimte (rotateX/rotateY van 90
-               graden), geen getekende randjes. Dat merk je zodra het document
-               met de muis meedraait: een getekende rand blijft even breed, een
-               echte rand wordt smaller als je er recht op kijkt. */}
-            <div className="w-cv-blok" aria-hidden>
-              <span className="w-cv-plat" />
-              <span className="w-cv-snede" />
-              <span className="w-cv-zij" />
-            </div>
-
-            {/* Het document zelf. Dit is het enige dat in de stroom staat, dus
-               het bepaalt de hoogte; het blok en de vellen liggen er absoluut
-               omheen. Zo hoeft er nergens een hoogte te worden ingevuld die je
-               bij elke tekstwijziging opnieuw moet natrekken. */}
             <article className="w-cv-blad">
               {/* ── de kopband ──
                  Naam links, foto rechts. Dit is de eerste seconde van het hele
@@ -1184,7 +1078,6 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
               </div>
 
             </article>
-          </div>
         </div>
         </div>
       </div>
@@ -1247,167 +1140,46 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           color: rgba(34, 28, 58, 0.78);
         }
 
-        /* ── DE RUIMTE ────────────────────────────────────────────────────
-           .w-cv is alleen de KIJKDOOS: hij bepaalt de maat en waar de kijker
-           staat. Alles wat vorm heeft zit in .w-cv-scene, één laag dieper —
-           verplicht, want dit element draagt data-reveal en dat wist elke
-           transform hier weg (zie de opmerking bij de opmaak).
+        /* ── DE KAART ─────────────────────────────────────────────────────
+           ⚠️ HIER STOND EEN HELE 3D-RUIMTE: perspectief, een gekantelde scene,
+           echte randvlakken voor de dikte, twee losse vellen eronder en een
+           kanteling die met de muis meedraaide. Alles eruit op verzoek
+           ("haal dat 3D-gedeelte hier maar weg, ziet er niet uit").
+           🔑 De les die dit blok drie rondes lang heeft geleerd: het probleem
+           was nooit dat het effect niet WERKTE. Het werkte alle drie de keren.
+           Het hoorde alleen niet bij een pagina die verder helemaal plat is —
+           één element met een eigen ruimte staat los van de rest, hoe goed het
+           op zichzelf ook is. Zet hier dus geen nieuw mechaniek in; laat de
+           kaart een kaart zijn en haal het karakter uit de VORMTAAL.
 
-           🔑 De perspectief-afstand is de belangrijkste enkele waarde van dit
-           blok. Rond 1500px kijk je door een telelens: alle diepte wordt
-           platgedrukt en het document leest weer als een plaatje. 1000px zet de
-           kijker zo dicht bij het papier als je zit wanneer je het echt leest.
-           Verder omlaag niet: onder ~800px gaat een document van deze hoogte
-           merkbaar bol staan en wordt de bovenste regel kleiner dan de onderste.
-
-           perspective-origin ligt rechts-boven van het midden: de kijker staat
-           schuin voor het document, aan de buitenkant van de pagina. Samen met
-           de Y-draaiing hieronder kijkt het document daardoor de pagina IN. */
+           Wat er nu voor zorgt dat hij bij de rest hoort:
+           - dezelfde ronding als elke andere kaart van deze wereld
+             (--w-kaart-radius), dus hij verandert vanzelf mee in de themas
+           - dezelfde slagschaduw (--w-kaart-schaduw) en dus dezelfde lichtval
+           - de golf tussen de kopband en het papier
+           - de foto in een organische vorm die door die golf heen breekt
+           - een haal met de markeerstift, zoals in "Herken je dit?"
+           De scheefstand van een halve graad staat op de losse eigenschap
+           rotate en niet in een transform — zie de opmerking bij de opmaak. */
         .w-cv {
           position: relative;
           width: 100%;
           max-width: 32rem;
-          perspective: 1000px;
-          perspective-origin: 66% 26%;
         }
-
-        /* ── DE STAND VAN HET VOORWERP ────────────────────────────────────
-           - X (+16deg) kantelt de bovenkant van je af: je kijkt er OP neer, en
-             daardoor zie je de snede aan de onderkant. Dit is de draaiing die
-             er een voorwerp van maakt.
-             ⚠️ Lager dan bij het schrift (dat stond op 19). Dit document is
-             hoger dan het schrift breed was, en elke graad kanteling vergroot
-             het verschil tussen de bovenste en de onderste tekstregel. Op 16
-             graden is de bovenste regel ~12% kleiner dan de onderste; dat leest
-             als diepte. Boven de ~19 gaat het document liggen in plaats van
-             staan en wordt de kop merkbaar moeilijker te lezen.
-           - Y (-9deg) draait het NAAR LINKS, de pagina in.
-             🔑 Dit stond ooit op +9 en dat was fout: het document ligt al
-             helemaal rechts op de pagina en keek toen ook nog eens naar rechts,
-             dus het beeld uit. Eigenaar: "dan kijkt die een soort van naar
-             buiten beeld". De regel: een gekanteld voorwerp KIJKT ergens heen,
-             en dat moet naar de inhoud zijn, niet naar de schermrand.
-           - Z (-1,6deg) is de scheefstand: niets ligt kaarsrecht op tafel.
-
-           ⚠️ De X-uitslag van de muis is kleiner dan de Y-uitslag, met opzet:
-           X duwt de bovenrand omhoog en dat kost ruimte in de sectie, Y kost
-           niets want links en rechts is ruimte zat. */
-        .w-cv-scene {
-          --kantel-x: 16deg;
-          --kantel-y: -9deg;
-          /* De dikte van de stapel, in één getal (zie .w-cv-blok). Op deze
-             schaal (~480px voor een A4-breedte) is 18px ongeveer 4mm: een
-             uitdraai van een stuk of veertig vellen. */
-          --dik: 18px;
-          position: relative;
-          transform-style: preserve-3d;
-          transform:
-            rotateX(calc(var(--kantel-x) + var(--muis-y, 0) * -2deg))
-            rotateY(calc(var(--kantel-y) + var(--muis-x, 0) * 4.5deg))
-            rotateZ(-1.6deg);
-        }
-
-        /* ── HET BLOK: de dikte ───────────────────────────────────────────
-           Het achterplat en de twee randen die je bij deze stand ziet. Alles
-           hangt aan --dik zodat de dikte in één getal te sturen is. */
-        .w-cv-blok {
-          position: absolute;
-          inset: 0;
-          transform-style: preserve-3d;
-          pointer-events: none;
-        }
-        .w-cv-blok > span { position: absolute; display: block; }
-        /* Het achterplat raakt de tafel, dus dit vlak draagt de slagschaduw op
-           het mintveld. Warm grijs en geen wit: de onderkant van een stapel
-           papier vangt geen licht. */
-        .w-cv-plat {
-          inset: 0;
-          transform: translateZ(calc(var(--dik) * -1));
-          background: #e6dcc6;
-          border-radius: 5px;
-          box-shadow: ${schaduw(30, 62, -22, 0.5)};
-        }
-        /* De snede: de stapel vellen die je van voren ziet. De streping is de
-           opeenstapeling zelf — één lijn per 2px, want dat is op deze schaal
-           ongeveer één vel. Grover en het worden ribbels. */
-        .w-cv-snede {
-          left: 0;
-          right: 0;
-          top: 100%;
-          height: var(--dik);
-          transform-origin: 50% 0;
-          transform: rotateX(-90deg);
-          background:
-            repeating-linear-gradient(
-              to bottom,
-              rgba(23, 80, 58, 0.15) 0 1px,
-              transparent 1px 2px
-            ),
-            linear-gradient(to bottom, #fdfaf2, #e8e0cd);
-          border-radius: 0 0 4px 4px;
-        }
-        /* De zijkant links. Dezelfde stapel, van opzij gezien. Dit is de rand
-           die je door de Y-draaiing ziet; de rechterkant draait juist van je
-           weg en heeft dus geen vlak nodig. */
-        .w-cv-zij {
-          top: 0;
-          bottom: 0;
-          right: 100%;
-          width: var(--dik);
-          transform-origin: 100% 50%;
-          transform: rotateY(-90deg);
-          backface-visibility: hidden;
-          border-radius: 4px 0 0 4px;
-          background:
-            repeating-linear-gradient(
-              to right,
-              rgba(23, 80, 58, 0.15) 0 1px,
-              transparent 1px 2px
-            ),
-            linear-gradient(to right, #fdfaf2, #f0e9d8);
-        }
-
-        /* ── DE LOSSE VELLEN ──────────────────────────────────────────────
-           Liggen dieper dan de onderkant van het blok, zodat ze de zijkanten
-           niet doorsnijden, en steken met hun hoeken onder het document uit.
-           Alleen een draaiing IN het vlak (rotate), nooit in de ruimte. */
-        .w-cv-vel {
-          position: absolute;
-          inset: 0;
-          display: block;
-          border-radius: 4px;
-          background: #f8f2e4;
-          pointer-events: none;
-        }
-        .w-cv-vel-a {
-          transform: translateZ(calc(var(--dik) * -1 - 3px)) rotate(1.7deg);
-          box-shadow: ${schaduw(10, 24, -12, 0.35)};
-        }
-        .w-cv-vel-b {
-          transform: translateZ(calc(var(--dik) * -1 - 7px)) rotate(-2.6deg);
-          background: #f4eddd;
-          box-shadow: ${schaduw(14, 30, -14, 0.3)};
-        }
-
-        /* ── HET DOCUMENT ─────────────────────────────────────────────────
-           ⚠️ DIT HAD EERST EEN RONDING VAN 5px, omdat papier scherpe hoeken
-           heeft. Klopt, maar het was ook precies waarom de eigenaar het "simpel
-           en saai" en niet passend bij de pagina vond: élke kaart in deze
-           wereld heeft een grote, per hoek ONGELIJKE ronding. Een rechthoek is
-           hier de vreemde eend.
-           🔑 De vier waarden verschillen bewust een paar honderdsten van
-           elkaar. Precies dezelfde ronding op vier hoeken leest als een
-           vormpje uit een tekenprogramma; ongelijk leest als iets dat gemaakt
-           is. Dat is dezelfde truc als bij het etiket van het oude schrift.
-           Het verloop is de ene lichtbron van de pagina (rechtsboven), heel
-           subtiel — papier is dof. */
         .w-cv-blad {
           position: relative;
           display: flex;
           flex-direction: column;
           overflow: hidden;
-          border-radius: 1.7rem 2rem 1.75rem 1.9rem;
-          background: linear-gradient(158deg, #fffefb, #faf5ea);
+          border-radius: var(--w-kaart-radius, 2.5rem);
+          background: #ffffff;
+          box-shadow:
+            var(--w-kaart-schaduw, -14px 36px 80px -48px rgba(23, 80, 58, 0.55)),
+            0 0 0 1px rgba(34, 28, 58, 0.04);
+          /* Niets op deze pagina ligt kaarsrecht; de kaarten in "Herken je dit?"
+             staan om en om op 0,8 graden. Op de losse eigenschap rotate en niet
+             in een transform, anders wist de reveal hem weg. */
+          rotate: -0.7deg;
         }
 
         /* ── de kopband ──
@@ -1563,22 +1335,17 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         }
         .w-cv-verhaal p:last-child { margin-bottom: 0; }
 
-        /* ── mobiel: geen ruimte, wel hetzelfde document ───────────────────
-           Op 390px is er geen kijkhoek die nog klopt: een gekanteld document
-           van deze hoogte drukt de bovenste regels dicht en de twee kolommen
-           passen sowieso niet naast elkaar. Het document ligt hier dus plat en
-           de kolommen staan onder elkaar — zelfde onderdelen, zelfde volgorde.
-           De dikte en de losse vellen gaan uit: je ziet geen zijkant van iets
-           dat plat op het scherm ligt, en dan is het alleen nog een randje. */
+        /* ── mobiel ───────────────────────────────────────────────────────
+           De kaart pakt de volle breedte en gaat recht staan. Die scheefstand
+           van 0,7 graden werkt op een breed veld, maar tussen twee schermranden
+           op 24px afstand leest hij als een fout in plaats van als losheid. */
         @media (max-width: 639px) {
-          .w-cv { perspective: none; max-width: none; }
-          .w-cv-scene {
-            transform-style: flat;
-            transform: none;
-            rotate: -0.6deg;
-          }
-          .w-cv-blok, .w-cv-vel { display: none; }
-          .w-cv-blad { box-shadow: ${schaduw(20, 44, -22, 0.45)}; }
+          .w-cv { max-width: none; }
+          .w-cv-blad { rotate: none; }
+          /* De foto een maatje kleiner, anders houdt de naam er te weinig
+             breedte naast over en breekt "Michael van Spanje" over twee
+             regels — een naam hoort op één regel te staan. */
+          .w-cv-pas { width: 72px; height: 82px; }
           /* Twee kolommen in plaats van drie: op 390px is een derde van de
              breedte ~100px en dan loopt zowel het label als de waarde eronder
              om. School houdt zijn hele regel. */
