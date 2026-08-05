@@ -1355,13 +1355,17 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            verhuisd en dat de personalia een strook zijn in plaats van een
            kolom — geen smaak, maar hoogte.
 
-           ⚠️ Boven uitlijnen en niet centreren. Met align-items:center zweefde
-           de kop halverwege het document, en dan lijkt het of de twee helften
-           niets met elkaar te maken hebben. */
+           ⚠️ Ooit boven uitgelijnd i.p.v. gecentreerd, omdat het document toen
+           het kleine schriftje was: met align-items:center zweefde de kop
+           halverwege een véél te laag object en leek het of de twee helften
+           niets met elkaar te maken hadden. Nu het document de volle CV-kaart
+           is (vergelijkbare hoogte als de tekstkolom), speelt dat niet meer —
+           eigenaar bevestigde 6-8 dat het de kleinere schriftje-hoogte was,
+           niet een principiële afkeuring van centreren zelf. */
         .w-mkr-rij {
           display: grid;
           gap: clamp(28px, 4vw, 56px);
-          align-items: start;
+          align-items: center;
         }
         @media (min-width: 900px) {
           .w-mkr-rij { grid-template-columns: minmax(0, 1fr) 32rem; }
@@ -1500,8 +1504,13 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
             0 0 0 1px rgba(34, 28, 58, 0.04);
           /* Niets op deze pagina ligt kaarsrecht; de kaarten in "Herken je dit?"
              staan om en om op 0,8 graden. Op de losse eigenschap rotate en niet
-             in een transform, anders wist de reveal hem weg. */
-          rotate: -0.7deg;
+             in een transform, anders wist de reveal hem weg.
+             ⚠️ Stond op -0.7deg, maar de kaart staat al rechts in de rij en
+             kantelde daardoor visueel nog verder naar rechts (eigenaar 6-8:
+             "kantelt naar rechts terwijl die al rechts staat"). Omgedraaid
+             naar de andere kant, zodat de kanteling de positie tegenwerkt
+             i.p.v. verdubbelt. */
+          rotate: 0.7deg;
         }
 
         /* ── de kopband ──
@@ -1517,7 +1526,12 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           gap: clamp(12px, 2vw, 20px);
           padding: clamp(16px, 2.4vw, 22px) clamp(20px, 2.8vw, 26px)
                    clamp(34px, 4.4vw, 44px);
-          background: ${DONKER};
+          /* Terug naar KOP, op verzoek 6-8 na de mint-poging ("niet mooi").
+             De letterlijke huiskleur (#2f9e6e) kan hier niet: die ligt qua
+             helderheid tussen wit en donkere tekst in, dus geen van beide
+             haalt op de rol-regel de 4,5:1-norm (wit: 3,36:1, donker: 2,78:1).
+             KOP is wél uit dezelfde groenfamilie én leesbaar (wit erop ±6,4:1). */
+          background: ${KOP};
         }
         .w-cv-naam {
           margin: 0;
@@ -1532,10 +1546,8 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           margin: 0.3rem 0 0;
           font-size: 0.92rem;
           line-height: 1.35;
-          /* Wit op 78% haalt op dit donkergroen ruim boven 4,5:1. Lager niet:
-             dit is de enige regel op de pagina die uitlegt wie er achter
-             Avinka staat. */
-          color: rgba(255, 255, 255, 0.78);
+          /* Wit op 85% haalt op dit KOP-groen ruim boven 4,5:1 (±5,2:1). */
+          color: rgba(255, 255, 255, 0.85);
         }
         /* ── de foto ──
            In de organische vorm van deze wereld (dezelfde ongelijke radii als
