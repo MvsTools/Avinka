@@ -7,23 +7,17 @@ import { PRIVACY } from "@/lib/juridisch";
    PRIVACYVERKLARING — alle tekst staat in dit bestand.
    Wil je een zin aanpassen? Pas het hier aan.
 
-   BEDRIJFSGEGEVENS INGEVULD 5-8 door de eigenaar: naam, KvK en e-mailadres.
-   ⚠️ NOG ÉÉN GAT: het vestigingsadres mist de POSTCODE en de PLAATS. Zie de
-   constante hieronder — dat staat als [postcode + plaats] ook zichtbaar in de
-   gerenderde tekst, met opzet: een half adres in een privacyverklaring hoort
-   op te vallen.
-
-   ⚠️ DE VERSIE IS BEWUST NOG NIET GEBUMPT in lib/juridisch.ts. Elke
-   inhoudelijke wijziging hier zet bij iedereen een verplichte her-akkoord-
-   pop-up aan, en dit document is pas áf zodra het adres compleet is. Bump in
-   één keer zodra de postcode er staat — niet twee keer.
+   ✅ BEDRIJFSGEGEVENS COMPLEET (5-8, aangeleverd door de eigenaar): naam, adres,
+   KvK en e-mailadres. De versie is diezelfde dag gebumpt naar 2026-08-05 in
+   lib/juridisch.ts — privacy én voorwaarden tegelijk, want ze delen deze
+   gegevens. Wijzig je hier iets inhoudelijks, doe dan hetzelfde.
 
    NOG TE DOEN vóór livegang:
-   - postcode + plaats invullen, daarna de versie bumpen (privacy én
-     voorwaarden, want die delen deze gegevens)
    - Controleer of de genoemde leveranciers (Supabase, Anthropic, Mollie) kloppen
      met wat er live draait, en houd de sub-verwerkerslijst actueel.
    - Laat de definitieve tekst vóór livegang nakijken door een privacyjurist.
+     Vraag voor die jurist: moet bij een eenmanszaak ook de naam van de
+     ondernemer erbij, of volstaat handelsnaam + KvK?
 
    GEBOUWD (2-7): zelf-service account verwijderen + data-export in Instellingen
    (art. 15/17/20). Account verwijderen leunt op de SQL-functie
@@ -34,11 +28,15 @@ import { PRIVACY } from "@/lib/juridisch";
    - Toestemming vastleggen bij registratie (datum + versie), voor art. 7-verantwoording.
    ────────────────────────────────────────────────────────────────────────── */
 
+/* Avinka is de handelsnaam van een EENMANSZAAK. Voor de AVG is dat genoeg om
+   de verwerkingsverantwoordelijke te identificeren: handelsnaam + KvK-nummer +
+   vestigingsadres leiden naar één inschrijving. Sommige juristen willen er bij
+   een eenmanszaak ook de naam van de ondernemer bij ("handelsnaam van ...").
+   Dat is bewust NIET gedaan — het is een keuze van de eigenaar of hij zijn
+   eigen naam op een openbare pagina wil, en het staat op de vragenlijst voor
+   de jurist. */
 const BEDRIJF = "Avinka";
-/* ⚠️ HET ADRES IS NOG NIET COMPLEET: postcode en plaats ontbreken. Het blijft
-   met opzet zichtbaar in de gerenderde tekst staan — een half vestigingsadres
-   in een privacyverklaring moet opvallen, niet stilletjes goed lijken. */
-const ADRES = "Evert van 't Landstraat 24, [postcode + plaats]";
+const ADRES = "Evert van 't Landstraat 24, 7334 DR Apeldoorn";
 const KVK = "42015989";
 /* Het officiële adres van de zakelijke Google Workspace. support@avinka.nl is
    een alias en staat op /dashboard/hulp; een privacyverzoek hoort hier. */

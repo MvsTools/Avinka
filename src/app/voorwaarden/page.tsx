@@ -8,15 +8,10 @@ import { VOORWAARDEN } from "@/lib/juridisch";
    Dit is een eerste, leesbare versie. Laat 'm vóór livegang nakijken door een
    jurist.
 
-   BEDRIJFSGEGEVENS INGEVULD 5-8 door de eigenaar: naam, KvK en e-mailadres.
-   ⚠️ NOG ÉÉN GAT: het vestigingsadres mist de POSTCODE en de PLAATS. Dat staat
-   als [postcode + plaats] ook zichtbaar in de gerenderde tekst, met opzet.
-
-   ⚠️ DE VERSIE IS BEWUST NOG NIET GEBUMPT in lib/juridisch.ts. Elke
-   inhoudelijke wijziging hier zet bij iedereen een verplichte her-akkoord-
-   pop-up aan, en dit document is pas áf zodra het adres compleet is. Bump in
-   één keer zodra de postcode er staat — samen met de privacyverklaring, want
-   die deelt deze gegevens.
+   ✅ BEDRIJFSGEGEVENS COMPLEET (5-8, aangeleverd door de eigenaar): naam, adres,
+   KvK en e-mailadres. Avinka is de handelsnaam van een eenmanszaak. De versie
+   is diezelfde dag gebumpt naar 2026-08-05 in lib/juridisch.ts — voorwaarden
+   én privacy tegelijk, want ze delen deze gegevens.
 
    LET OP — een paar punten hieronder zijn niet alleen tekst maar ook proces,
    te bouwen bij Mollie (Fase 2):
@@ -31,8 +26,7 @@ import { VOORWAARDEN } from "@/lib/juridisch";
    bewust twee keer los (elk document is zelfstandig te lezen en aan te passen),
    dus wijzig je er één, wijzig dan allebei — en bump daarna één keer. */
 const BEDRIJF = "Avinka";
-/* Postcode en plaats ontbreken nog; blijft zichtbaar in de tekst staan. */
-const ADRES = "Evert van 't Landstraat 24, [postcode + plaats]";
+const ADRES = "Evert van 't Landstraat 24, 7334 DR Apeldoorn";
 const KVK = "42015989";
 const CONTACT_EMAIL = "info@avinka.nl";
 const BIJGEWERKT = VOORWAARDEN.weergave;
