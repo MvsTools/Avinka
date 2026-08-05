@@ -60,6 +60,10 @@ begin
   return lokaal || '@' || domein;
 end;
 $$;
+-- ⚠️ `grant execute` sluit `anon` NIET buiten: PostgreSQL geeft EXECUTE
+-- standaard aan PUBLIC. Zie het slotblok onderaan schema.sql.
+revoke execute on function public.wijs_email_norm(text) from public, anon;
+grant  execute on function public.wijs_email_norm(text) to authenticated;
 
 -- ── 2) Welke brievenbussen hebben al een gratis week gehad ────────────────
 create table if not exists public.proef_gebruikt (
