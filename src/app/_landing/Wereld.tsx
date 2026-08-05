@@ -668,24 +668,29 @@ export function WereldIntro() {
             className="text-[1.375rem] font-semibold leading-9 [text-wrap:balance] sm:text-2xl sm:leading-10"
             style={{ color: KOP }}
           >
-            {/* ⚠️ HIER STOND: "Avinka brengt de hulpmiddelen voor je schoolwerk
-               samen in één omgeving." Dat is de gereedschapskist in één zin —
-               een BAK waar spullen in zitten en waar jij naartoe komt. Het is
-               de zin die het oude frame het duidelijkst uitspreekt, en dus de
-               plek om het te veranderen.
-               🔑 Wat er stond blijft staan (alles op één plek); er komt alleen
-               bij dat het programma zelf meedenkt. Bewust in die volgorde:
-               eerst het concrete dat je meteen snapt, dan het nieuwe.
-               ⚠️ DEZE ZIN IS VAN DE EIGENAAR — hij heeft hem zo aangeleverd
-               ("Bij Avinka staat al je schoolwerk op één plek. Ook denkt het
-               programma actief mee in toekomstige weken."). Niet gladstrijken;
-               ik had er eerst "Avinka houdt bij wat eraan komt" van gemaakt en
-               dat was net iets anders dan wat hij bedoelde.
-               ⚠️ Het woord "assistent" staat er met opzet NIET. Dat zegt op dit
-               moment elk product; "denkt actief mee" is gedrag en dat kan
-               iemand die het niet gebouwd heeft niet nazeggen. */}
-            Bij Avinka staat al je schoolwerk op één plek. Ook denkt het
-            programma actief mee in toekomstige weken.
+            {/* ⚠️ HIER STONDEN ACHTEREENVOLGENS: "Avinka brengt de hulpmiddelen
+               voor je schoolwerk samen in één omgeving" (de gereedschapskist in
+               één zin) en daarna "Bij Avinka staat al je schoolwerk op één plek.
+               Ook denkt het programma actief mee in toekomstige weken."
+
+               Die tweede is eruit om een reden die je pas ziet als je de sectie
+               in één oogopslag bekijkt: de kop links zegt "de slimme WERKPLEK",
+               deze zin zei "op één PLEK", en de alinea eronder zegt "zorgt voor
+               OVERZICHT". Drie keer hetzelfde idee, naast elkaar. De zwakste
+               van de drie stond vooraan.
+
+               🔑 De vuistregel die daaruit volgt: kijk bij een sectie niet naar
+               zinnen maar naar IDEEËN. Twee zinnen kunnen prima verschillen en
+               toch hetzelfde zeggen, en dat merk je alleen als je ze naast
+               elkaar legt in plaats van na elkaar te lezen.
+
+               Wat er nu staat is de openingszin van de eigenaar. Hij begint bij
+               de LEERKRACHT en niet bij het product, en dat is precies waarom
+               hij werkt: iemand leest verder omdat het over hem gaat. Al mijn
+               eigen pogingen begonnen bij de ellende of bij de functie.
+               ⚠️ Niet gladstrijken en niet aanvullen. Deze regel moet kort
+               blijven; de uitleg staat eronder. */}
+            Voor de klas maak jij het verschil.
           </p>
           {/* ⚠️ HIER IS HET ÉÉN KEER GOED MISGEGAAN, en dat is het waard om vast
              te leggen. Ik heb bij het omzetten naar de nieuwe koers het woord
@@ -742,10 +747,10 @@ export function WereldIntro() {
              en "aandacht" stond er twee keer terwijl het het slotwoord moest
              zijn. Niet verder gladstrijken. */}
           <p data-reveal className="mt-4 text-lg leading-8 text-ink/75" style={{ transitionDelay: "90ms" }}>
-            Voor de klas maak jij het verschil. Toch vraagt het werk na
-            schooltijd net zoveel van je, en juist dat kost energie. Avinka
-            zorgt voor overzicht, denkt vooruit en laat AI het schrijfwerk doen,
-            zodat jij meer rust en aandacht overhoudt voor je leerlingen.
+            Toch vraagt het werk na schooltijd net zoveel van je, en juist dat
+            kost energie. Avinka zorgt voor overzicht, denkt vooruit en laat AI
+            het schrijfwerk doen, zodat jij meer rust en aandacht overhoudt voor
+            je leerlingen.
           </p>
         </div>
       </div>
