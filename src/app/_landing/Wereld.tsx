@@ -1073,19 +1073,29 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                    blok gaat over de maker. Niet terugdraaien naar de
                    product-formulering. */}
                 <h3 className="w-cv-sectiekop">Waarom ik Avinka heb gebouwd</h3>
+                {/* ⚠️ HET TWEEDE DEEL IS 5-8 VERVANGEN. Er stond "laten zien
+                   dat slimmer werken juist eenvoudig kan zijn"; eigenaar: "de
+                   eerste zin is goed, tweede beetje meh". Hij koos uit drie
+                   richtingen (van-mij-naar-iedereen, een standpunt over het
+                   vak, of wat het de lezer oplevert) voor het STANDPUNT.
+                   Dat is dus geen toevallige formulering maar een keuze: dit
+                   deel gaat bewust over het vak en niet over de winst voor de
+                   lezer — die staat al in de handgeschreven regel ernaast en
+                   in de belofte bovenaan de pagina. */}
                 <p>
                   Wat begon als een oplossing voor mijn eigen werk, werd een
-                  bredere missie:{" "}
+                  bredere missie: het werk na schooltijd hoort niet{" "}
                   {/* 🔑 DE MARKEERSTIFT KOMT VAN DEZE PAGINA ZELF. De sectie
                      "Herken je dit?" wordt tijdens het scrollen aangestreept
                      met een groene markeerstifthaal, en dat is het enige stuk
                      vormgeving waarvan de eigenaar ooit letterlijk zei "ik vind
-                     dit leuk". Hier staat hij stil en over één zinsdeel: de
-                     kern van de missie. Eén keer per document, anders is het
-                     geen nadruk meer maar een patroon. */}
-                  laten zien dat{" "}
-                  <mark className="w-cv-markeer">slimmer werken</mark> juist
-                  eenvoudig kan zijn.
+                     dit leuk". Hier staat hij stil en over de kern van de zin.
+                     Eén keer per kaart, anders is het geen nadruk meer maar een
+                     patroon. Kort houden: loopt de markering om naar een tweede
+                     regel, dan wordt het twee blokjes en leest het als een
+                     selectie in een tekstverwerker. */}
+                  <mark className="w-cv-markeer">het zwaarste deel</mark> van
+                  het vak te zijn.
                 </p>
                 {/* ⚠️ HIER STOND ALLEEN "Geen ingewikkelde techniek, wel
                    zorgvuldig met de gegevens van je leerlingen." De eigenaar
@@ -1348,12 +1358,18 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            selectie in een tekstverwerker.
            De haal loopt aan de randen uit naar niets, want een stift zet niet
            met volle kleur in. */
-        /* ⚠️ HOUD DE GEMARKEERDE TEKST KORT GENOEG VOOR ÉÉN REGEL. Eerst stond
-           er een half zinsdeel onder de stift; dat liep om naar een tweede
-           regel en werd toen twee losse blokjes — precies hoe een selectie in
-           een tekstverwerker eruitziet, en dus het tegenovergestelde van een
-           streek met een stift. Twee woorden is genoeg. */
+        /* ⚠️ DE MARKERING MAG NOOIT OVER TWEE REGELS LOPEN. Dan wordt het twee
+           losse blokjes — precies hoe een selectie in een tekstverwerker
+           eruitziet, en dus het tegenovergestelde van een streek met een stift.
+           🔑 nowrap is de grendel: de hele markering schuift dan als geheel
+           naar de volgende regel in plaats van te breken. Ik heb dit eerst
+           geprobeerd op te lossen door de tekst kort te houden, maar dat is
+           geen grendel — bij de eerstvolgende tekstwijziging valt de breuk weer
+           net verkeerd, en dat gebeurde ook meteen.
+           Houd de markering wél kort (twee, drie woorden): met nowrap duwt een
+           lange markering anders een half lege regel voor zich uit. */
         .w-cv-markeer {
+          white-space: nowrap;
           background: linear-gradient(
             104deg,
             rgba(47, 158, 110, 0) 0.6%,
