@@ -11,8 +11,8 @@ import { createClient } from "@/utils/supabase/server";
 //   taalniveau       : standaard | a2 | b1
 //   lengte           : kort | gemiddeld | uitgebreid
 //   aanspreekvorm    : je | u   (alleen Oudercontact gebruikt dit)
-//   communicatie_app : '' | parro | social_schools | isy | konnect (voor de "open in ..."-knop)
-//   communicatie_url : eigen Isy/Konnect-webadres (Parro/Social Schools hebben een vast adres)
+//   communicatie_app : '' | parro | social_schools | schoudercom | basisonline | isy
+//   communicatie_url : eigen SchouderCom/Isy-webadres (de rest heeft een vast adres)
 //   lvs_systeem      : '' | parnassys | esis (voor de "open in je LVS"-knop)
 //   lvs_url          : eigen Esis-webadres (ParnasSys heeft één vast adres)
 //   toets_systeem    : '' | iep | cito | beide (welk toetssysteem de school gebruikt)

@@ -1,4 +1,5 @@
-/* Avinka — "open in Parro/Social Schools/Isy/Konnect"-knop.
+/* Avinka — "open in je communicatie-app"-knop (Parro, Social Schools,
+   SchouderCom, BasisOnline, Isy).
 
    Kopieert een bericht naar het klembord en opent daarna de webversie van de
    ouder-app die de leerkracht in zijn instellingen heeft gekozen. Er gaat
@@ -6,7 +7,8 @@
    klembord van de leerkracht zelf en een nieuw tabblad. Staat er in de
    instellingen niets (bruikbaars) gekozen, dan blijft de knop verborgen.
 
-   Parro en Social Schools hebben één gedeeld inlogadres. Isy en Konnect
+   Parro, Social Schools en BasisOnline hebben één gedeeld inlogadres.
+   SchouderCom en Isy
    werken per school/organisatie met een eigen instantie, maar altijd op
    hetzelfde vaste domein-staartje (".isy-school.nl" resp. ".ouderportaal.nl")
    — de leerkracht vult dus alleen het voorste stukje in (communicatie_url,
@@ -29,7 +31,6 @@
     schoudercom: "SchouderCom",
     basisonline: "Ouderportaal (BasisOnline)",
     isy: "Isy",
-    konnect: "Konnect",
   };
   var VASTE_URL = {
     parro: "https://talk.parro.com",
@@ -42,7 +43,6 @@
   var STAARTJE = {
     schoudercom: ".schoudercom.nl",
     isy: ".isy-school.nl",
-    konnect: ".ouderportaal.nl",
   };
 
   // Bouwt de volledige URL uit het voorste stukje dat de leerkracht invulde.

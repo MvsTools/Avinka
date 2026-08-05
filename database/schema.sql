@@ -53,9 +53,10 @@ create table if not exists public.instellingen (
   -- Bèta die de eigenaar per account handmatig aanzet (zie wijs_admin_zet_beta_eigen_format).
   beta_eigen_format boolean not null default false,
   -- Welke ouder-app de leerkracht gebruikt: '' | 'parro' | 'social_schools' |
-  -- 'isy' | 'konnect'. Bepaalt of en welke "open in ..."-knop de tools tonen
-  -- bij een bericht. Parro/Social Schools hebben een vast inlogadres; Isy en
-  -- Konnect werken per school/organisatie, dus die vullen communicatie_url zelf in.
+  -- 'schoudercom' | 'basisonline' | 'isy'. Bepaalt of en welke "open in ..."-knop
+  -- de tools tonen bij een bericht. Parro, Social Schools en BasisOnline hebben
+  -- een vast inlogadres; SchouderCom en Isy werken per school, dus die vullen
+  -- communicatie_url zelf in.
   communicatie_app text not null default '',
   communicatie_url text not null default '',
   -- Welk leerlingvolgsysteem: '' | 'parnassys' | 'esis'. ParnasSys heeft één

@@ -27,8 +27,8 @@ export type Voorkeuren = {
   taalniveau: string; // standaard | a2 | b1
   lengte: string; // kort | gemiddeld | uitgebreid
   aanspreekvorm: string; // je | u  (alleen Oudercontact)
-  communicatie_app: string; // '' | parro | social_schools | isy | konnect — voor de "open in ..."-knop
-  communicatie_url: string; // eigen Isy/Konnect-webadres (Parro/Social Schools hebben een vast adres)
+  communicatie_app: string; // '' | parro | social_schools | schoudercom | basisonline | isy
+  communicatie_url: string; // eigen SchouderCom/Isy-webadres (de rest heeft een vast adres)
   lvs_systeem: string; // '' | parnassys | esis — voor de "open in je LVS"-knop
   lvs_url: string; // eigen Esis-webadres (ParnasSys heeft één vast adres)
   toets_systeem: string; // '' | iep | cito | beide — welk toetssysteem de school gebruikt

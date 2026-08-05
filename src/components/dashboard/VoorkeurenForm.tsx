@@ -28,10 +28,10 @@ const aanspreekvormen = [
   { waarde: "je", label: "Je / jullie" },
   { waarde: "u", label: "U" },
 ];
-// ⚠️ Konnect is er voor de KINDEROPVANG, niet voor het basisonderwijs; hij
-// blijft staan voor kindcentra die er allebei mee werken. BasisOnline en
-// SchouderCom horen wél bij het basisonderwijs en ontbraken (BasisOnline zit
-// op 900+ scholen, SchouderCom is inmiddels van Social Schools).
+// De oudercommunicatie-apps van het basisonderwijs. BasisOnline en SchouderCom
+// ontbraken hier (BasisOnline zit op 900+ scholen, SchouderCom is inmiddels van
+// Social Schools). Konnect stond er wél in, maar dat is kinderopvang-software
+// en hoort hier dus niet — eruit gehaald op 5-8, niemand had het gekozen.
 const communicatieApps = [
   { waarde: "", label: "Geen" },
   { waarde: "parro", label: "Parro" },
@@ -39,15 +39,13 @@ const communicatieApps = [
   { waarde: "schoudercom", label: "SchouderCom" },
   { waarde: "basisonline", label: "Ouderportaal (BasisOnline)" },
   { waarde: "isy", label: "Isy" },
-  { waarde: "konnect", label: "Konnect" },
 ];
-const commAppsMetEigenAdres = ["schoudercom", "isy", "konnect"];
+const commAppsMetEigenAdres = ["schoudercom", "isy"];
 // Vast domein-staartje per systeem — de leerkracht vult alleen het voorste
 // stukje in (zie ook avinka-communicatie-app.js / avinka-lvs-app.js).
 const commStaartje: Record<string, string> = {
   schoudercom: ".schoudercom.nl",
   isy: ".isy-school.nl",
-  konnect: ".ouderportaal.nl",
 };
 const lvsStaartje: Record<string, string> = {
   esis: ".rovictonline.nl",

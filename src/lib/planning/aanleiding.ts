@@ -86,9 +86,9 @@ const VOORBEREIDING: Partial<Record<Soort, { voor: number; knop: string; taak: s
  * Parro" in plaats van "maak een gespreksrooster".
  */
 export type Schoolsystemen = {
-  /** '' | parro | social_schools | isy | konnect */
+  /** '' | parro | social_schools | schoudercom | basisonline | isy */
   communicatieApp?: string;
-  /** Eigen Isy/Konnect-adres; Parro en Social Schools hebben een vast adres. */
+  /** Eigen SchouderCom/Isy-adres; de rest heeft een vast adres. */
   communicatieUrl?: string;
   /** '' | parnassys | esis */
   lvsSysteem?: string;
@@ -102,7 +102,6 @@ const APP_NAAM: Record<string, string> = {
   schoudercom: "SchouderCom",
   basisonline: "het Ouderportaal",
   isy: "Isy",
-  konnect: "Konnect",
 };
 
 /**
@@ -118,7 +117,6 @@ const APP_NAAM: Record<string, string> = {
  *   rekening met broertjes/zusjes), of een intekenlijst waarop ouders kiezen.
  *   Daarom staat er hier NIET dat ouders zelf intekenen.
  * - BasisOnline (Ouderportaal): gesprekkenplanner, ouders tekenen in.
- * - Konnect: kinderopvang, geen schoolgesprekken → algemene tekst.
  *
  * ⚠️ Staat een systeem hier niet in, dan blijft de tekst algemeen. Nooit gokken
  * hoe andermans software werkt.
@@ -139,7 +137,6 @@ const APP_URL: Record<string, string> = {
 };
 const APP_STAARTJE: Record<string, string> = {
   isy: ".isy-school.nl",
-  konnect: ".ouderportaal.nl",
 };
 
 /** Het volledige webadres van jullie communicatie-app, of "" als we het niet weten. */
@@ -164,8 +161,8 @@ const TOETS_NAAM: Record<string, string> = {
  *
  * ⚠️ We beweren alleen wat we zeker weten. Van Parro is bekend dat je de
  * gesprekken daar openzet en dat ouders zichzelf intekenen; of dat bij Isy of
- * Konnect net zo gaat weten we niet, dus daar blijft de tekst algemeen en
- * noemen we alleen de naam. Iets verkeerds beweren is erger dan iets algemeens
+ * andere systemen net zo gaat weten we niet, dus daar blijft de tekst algemeen
+ * en noemen we alleen de naam. Iets verkeerds beweren is erger dan iets algemeens
  * zeggen — dezelfde regel als bij "Onbeperkt gebruik" op de prijzenpagina.
  */
 function opMaat(
@@ -178,8 +175,8 @@ function opMaat(
     const link = appUrl(sys) || undefined;
     // Weten we waar het moet gebeuren, dan brengt de knop je er meteen heen —
     // dat scheelt de omweg via je takenlijst. Kennen we het adres niet (dat
-    // vult de school zelf in bij Isy, SchouderCom en Konnect), dan blijft het
-    // een taak voor op je lijst.
+    // vult de school zelf in bij SchouderCom en Isy), dan blijft het een taak
+    // voor op je lijst.
     return {
       knop: link ? `Openen in ${naam}` : `Inplannen in ${naam}`,
       taak: GESPREK_TIP[sys.communicatieApp] ?? `Gespreksrooster klaarzetten in ${naam}`,
