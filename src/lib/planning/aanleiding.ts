@@ -370,7 +370,9 @@ const STARTWEEK_TAKEN = [
   "Plattegrond maken",
   "Klas inrichten",
   "Boeken en schriften uitdelen",
-  "Klassenlijst controleren",
+  // Kan gewoon hier: Mijn schooljaar → Weekrooster. Daarom staat de plek erbij,
+  // zodat je niet gaat zoeken naar iets wat je al hebt.
+  "Weekplanning maken in Mijn schooljaar → Weekrooster",
   "Eerste schooldag voorbereiden",
 ];
 
