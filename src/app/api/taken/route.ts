@@ -14,9 +14,15 @@ export async function POST(req: Request) {
   }
 
   let tekst = "";
+  let deadline: string | null = null;
   try {
     const body = await req.json();
     tekst = typeof body?.tekst === "string" ? body.tekst.trim() : "";
+    // Alleen een kale datum ("2026-08-25"). Mijn schooljaar zet die erbij zodat
+    // een voorbereidingstaak op de goede dag in je dagbeeld opduikt.
+    if (typeof body?.deadline === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.deadline)) {
+      deadline = body.deadline;
+    }
   } catch {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
@@ -26,7 +32,7 @@ export async function POST(req: Request) {
 
   const { data, error } = await supabase
     .from("taken")
-    .insert({ user_id: user.id, tekst: tekst.slice(0, 500) })
+    .insert({ user_id: user.id, tekst: tekst.slice(0, 500), ...(deadline ? { deadline } : {}) })
     .select("id, tekst, gedaan, deadline, wekelijks, created_at, gedaan_op")
     .single();
   if (error || !data) {

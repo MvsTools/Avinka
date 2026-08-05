@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { aanleidingen } from "@/lib/planning";
 import type { PlanningBron } from "@/lib/planning";
+import TaakKnop from "./TaakKnop";
 
 // "Wat eraan komt" — het vooruitkijk-blok (fase 4 van Mijn schooljaar).
 //
@@ -44,7 +45,7 @@ export default function WatEraanKomt({
       <h2 className="text-xl font-bold text-ink">{titel}</h2>
       <div className="mt-4 overflow-hidden rounded-3xl border border-black/5 bg-white shadow-sm">
         {lijst.map((a, i) => {
-          const opSlot = vergrendeld.includes(a.tool.slug);
+          const opSlot = Boolean(a.tool && vergrendeld.includes(a.tool.slug));
           return (
             <div
               key={a.id}
@@ -59,13 +60,30 @@ export default function WatEraanKomt({
                     dit viel de regel op een breed scherm uit elkaar in "tekst
                     links, knop rechts", en zag je pas op de knop om welke tool
                     het ging. */}
+                {/* Werk dat geen tool voor je doet krijgt geen tool-kleur maar
+                    het vinkje: het gaat naar je eigen lijst. */}
                 <span
                   aria-hidden
                   className={
-                    "grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-xl " + a.tool.tint
+                    "grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-xl " +
+                    (a.tool ? a.tool.tint : "bg-ink/[0.06] text-ink/60")
                   }
                 >
-                  {a.tool.emoji}
+                  {a.tool ? (
+                    a.tool.emoji
+                  ) : (
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M5 12.5l4.5 4.5L19 7.5" />
+                    </svg>
+                  )}
                 </span>
                 <div className="min-w-0">
                   <p className="font-bold leading-tight text-ink">{a.kop}</p>
@@ -76,26 +94,34 @@ export default function WatEraanKomt({
                 </div>
               </div>
 
-              {/* Groen = hier kun je nu aan de slag. Zit de tool niet in je
-                  pakket, dan hoort de knop die belofte ook niet te doen: die
-                  wordt rustig en wit, zodat je in één blik ziet wat er wél kan. */}
-              <Link
-                href={opSlot ? "/dashboard/abonnement" : a.tool.pad!}
-                className={
-                  "shrink-0 self-start rounded-xl px-4 py-2 text-sm font-bold transition-transform duration-150 active:scale-[0.97] sm:self-auto " +
-                  (opSlot
-                    ? "border border-black/10 bg-white text-ink/60 hover:text-ink"
-                    : "bg-brand-dark text-white")
-                }
-              >
-                {/* Zit de tool niet in je pakket, dan zeggen we dat gewoon in
-                    plaats van je naar een slotje te laten lopen.
-                    Bewust GEEN tool-emoji op de knop: op het donkergroen vallen
-                    de gekleurde emoji's uit elkaar (het envelopje wordt een
-                    grijs blokje) en de knoptekst zegt het al. */}
-                {opSlot ? "🔒 Zit niet in je pakket" : a.actie}
-                <span aria-hidden> →</span>
-              </Link>
+              {/* Drie soorten knop, en de vorm vertelt welke:
+                  groen = Avinka neemt dit van je over,
+                  wit met een + = jouw eigen werk, gaat naar je takenlijst,
+                  wit met een slotje = zit niet in je pakket. */}
+              {a.aard === "voorbereiden" ? (
+                <TaakKnop
+                  tekst={a.taak!}
+                  deadline={a.item.datum}
+                  label={a.actie}
+                  alOpDeLijst={a.alOpDeLijst}
+                />
+              ) : (
+                <Link
+                  href={opSlot ? "/dashboard/abonnement" : a.tool!.pad!}
+                  className={
+                    "shrink-0 self-start rounded-xl px-4 py-2 text-sm font-bold transition-transform duration-150 active:scale-[0.97] sm:self-auto " +
+                    (opSlot
+                      ? "border border-black/10 bg-white text-ink/60 hover:text-ink"
+                      : "bg-brand-dark text-white")
+                  }
+                >
+                  {/* Bewust GEEN tool-emoji op de knop: op het donkergroen
+                      vallen de gekleurde emoji's uit elkaar (het envelopje
+                      wordt een grijs blokje) en de knoptekst zegt het al. */}
+                  {opSlot ? "🔒 Zit niet in je pakket" : a.actie}
+                  <span aria-hidden> →</span>
+                </Link>
+              )}
             </div>
           );
         })}

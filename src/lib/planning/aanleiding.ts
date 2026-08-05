@@ -50,13 +50,52 @@ const ACTIE: Partial<Record<Soort, string>> = {
   activiteit: "Draaiboek maken",
 };
 
+/**
+ * Het werk waar Avinka je NIET bij helpt, maar dat er wel bij hoort — en dat je
+ * juist daarom vergeet. Werk je met IEP, dan moet iemand de toetsen klaarzetten;
+ * dat doet geen enkele tool voor je.
+ *
+ * Deze signalen hebben dus geen tool maar een knop naar je eigen takenlijst:
+ * voorgesteld, niet opgelegd (§5 van het plan). Ze gelden tot de dag vóór de
+ * afspraak — daarna is klaarzetten te laat en neemt het andere signaal het over.
+ *
+ * ⚠️ Bewust GEEN systeemnamen (IEP, Cito, Parro): welk leerlingvolgsysteem een
+ * school gebruikt weten we niet, en ernaast zitten is erger dan het weglaten.
+ */
+const VOORBEREIDING: Partial<Record<Soort, { voor: number; knop: string; taak: string }>> = {
+  toets: {
+    voor: 10,
+    knop: "Toetsen klaarzetten",
+    taak: "Toetsen klaarzetten in het leerlingvolgsysteem",
+  },
+  rapport: {
+    voor: 28,
+    knop: "Gegevens bijwerken",
+    taak: "Toetsgegevens bijwerken, zodat de rapporten kloppen",
+  },
+  gesprek: {
+    voor: 21,
+    knop: "Rooster inplannen",
+    taak: "Gespreksrooster maken en de tijden naar ouders sturen",
+  },
+};
+
 export type Aanleiding = {
   /** Van het agenda-item, dus stabiel tussen twee keer laden. */
   id: string;
   item: PlanItem;
   soort: Soort;
-  /** De tool die erbij hoort. Staat altijd in `tools.ts` en heeft altijd een pad. */
-  tool: Tool;
+  /**
+   * "doen" = er is een tool die het werk uit handen neemt.
+   * "voorbereiden" = jij moet zelf iets klaarzetten; dan is de knop je takenlijst.
+   */
+  aard: "doen" | "voorbereiden";
+  /** Alleen bij "doen". Staat altijd in `tools.ts` en heeft altijd een pad. */
+  tool?: Tool;
+  /** Alleen bij "voorbereiden": de tekst zoals hij op je takenlijst komt. */
+  taak?: string;
+  /** Alleen bij "voorbereiden": staat hij er al op? Dan geen knop meer. */
+  alOpDeLijst?: boolean;
   /** Dagen tot de afspraak: 3 = over drie dagen, 0 = vandaag, -2 = eergisteren. */
   dagen: number;
   /** "Over 3 weken gaan de rapporten mee" */
@@ -88,7 +127,7 @@ export function wanneerTekst(dagen: number): string {
 }
 
 /** De zin die bovenaan het signaal staat. */
-function kopVoor(item: PlanItem, soort: Soort, dagen: number): string {
+function kopVoor(item: PlanItem, soort: Soort, dagen: number, aard: "doen" | "voorbereiden"): string {
   const wanneer = wanneerTekst(dagen);
   switch (soort) {
     case "rapport":
@@ -96,8 +135,9 @@ function kopVoor(item: PlanItem, soort: Soort, dagen: number): string {
     case "gesprek":
       return `${wanneer} zijn de oudergesprekken`;
     case "toets":
-      // Dit venster begint pas op de dag zelf: de toets moet gemaakt zijn
-      // voordat er iets te analyseren valt.
+      // Het toolvenster begint pas op de dag zelf: de toets moet gemaakt zijn
+      // voordat er iets te analyseren valt. Ervóór gaat het over klaarzetten.
+      if (aard === "voorbereiden") return `${wanneer} beginnen de toetsen`;
       return dagen === 0 ? "De toetsen zijn vandaag" : "De toetsen zijn net geweest";
     default:
       return `${wanneer}: ${item.titel}`;
@@ -105,8 +145,14 @@ function kopVoor(item: PlanItem, soort: Soort, dagen: number): string {
 }
 
 /**
- * Alles wat er de komende tijd aankomt en waar een tool bij hoort, het
- * dichtstbijzijnde eerst. Wat nu speelt of net geweest is staat bovenaan.
+ * Alles wat er de komende tijd aankomt, het dichtstbijzijnde eerst. Wat nu
+ * speelt of net geweest is staat bovenaan.
+ *
+ * Eén afspraak levert hooguit ÉÉN signaal, dat met de tijd van vorm verandert:
+ * eerst het klaarzetten dat je zelf moet doen, daarna het werk waar een tool
+ * bij helpt. De vensters sluiten daarom op elkaar aan in plaats van te
+ * overlappen — anders staat er twee keer "over 3 weken gaan de rapporten mee"
+ * onder elkaar, met twee verschillende knoppen.
  *
  * `eigenGroepen` komt uit je instellingen (zie `mijnGroepen`); zonder die
  * informatie filteren we niet, want dan weten we het gewoon niet.
@@ -117,16 +163,14 @@ export function aanleidingen(
   eigenGroepen: number[] = [],
 ): Aanleiding[] {
   const gevonden: Aanleiding[] = [];
+  const opDeLijst = new Set(bron.taken.filter((t) => !t.gedaan).map((t) => t.tekst));
 
   for (const item of bron.items) {
     if (item.dubbelVan) continue;
 
     const venster = VENSTER[item.soort];
-    if (!venster) continue;
-
-    const slug = SOORT_INFO[item.soort]?.tool;
-    const tool = slug ? toolBySlug(slug) : undefined;
-    if (!tool?.pad) continue;
+    const voorbereiding = VOORBEREIDING[item.soort];
+    if (!venster && !voorbereiding) continue;
 
     const oordeel = beoordeel(item, eigenGroepen);
     if (oordeel.andereGroep || oordeel.ouderoproep) continue;
@@ -135,22 +179,44 @@ export function aanleidingen(
     // dag voor "hoe lang nog", maar is pas voorbij na zijn laatste.
     const dagen = verschil(vandaag, item.datum);
     const nogTeGaan = verschil(vandaag, item.totDatum || item.datum);
-    if (dagen > venster.voor) continue;
-    if (nogTeGaan < -venster.na) continue;
+
+    const slug = SOORT_INFO[item.soort]?.tool;
+    const tool = slug ? toolBySlug(slug) : undefined;
+    // Geen knop naar een tool die niet op het dashboard staat.
+    const toolFase =
+      Boolean(venster && tool?.pad) && dagen <= venster!.voor && nogTeGaan >= -venster!.na;
+    // Ervóór: het klaarzetten dat geen tool voor je doet. Loopt tot de dag
+    // waarop het toolvenster begint, dus de twee bijten elkaar nooit.
+    const voorFase =
+      Boolean(voorbereiding) &&
+      !toolFase &&
+      dagen >= 1 &&
+      dagen <= voorbereiding!.voor &&
+      dagen > (venster?.voor ?? 0);
+
+    if (!toolFase && !voorFase) continue;
+
+    const aard = toolFase ? ("doen" as const) : ("voorbereiden" as const);
+    const wanneer =
+      item.totDatum && item.totDatum !== item.datum
+        ? bereikTekst(item.datum, item.totDatum)
+        : `${dagnaam(item.datum)} ${kort(item.datum)}`;
 
     gevonden.push({
       id: item.id,
       item,
       soort: item.soort,
-      tool,
+      aard,
+      tool: toolFase ? tool : undefined,
+      taak: voorFase ? voorbereiding!.taak : undefined,
+      alOpDeLijst: voorFase ? opDeLijst.has(voorbereiding!.taak) : undefined,
       dagen,
-      kop: kopVoor(item, item.soort, dagen),
-      wanneer:
-        item.totDatum && item.totDatum !== item.datum
-          ? bereikTekst(item.datum, item.totDatum)
-          : `${dagnaam(item.datum)} ${kort(item.datum)}`,
+      kop: kopVoor(item, item.soort, dagen, aard),
+      wanneer,
       detail: item.soort === "toets" ? item.titel : undefined,
-      actie: ACTIE[item.soort] ?? `Openen in ${tool.naam}`,
+      actie: toolFase
+        ? (ACTIE[item.soort] ?? `Openen in ${tool!.naam}`)
+        : voorbereiding!.knop,
     });
   }
 
@@ -160,12 +226,15 @@ export function aanleidingen(
     (a, b) => Math.max(a.dagen, 0) - Math.max(b.dagen, 0) || a.item.datum.localeCompare(b.item.datum),
   );
 
-  // Eén per soort: drie gespreksavonden achter elkaar zijn één aanleiding.
-  const gezien = new Set<Soort>();
+  // Eén per soort én fase: drie gespreksavonden achter elkaar zijn samen één
+  // aanleiding. Wel apart, want het is ander werk: een toets die net geweest is
+  // (analyseren) naast een toets die eraan komt (klaarzetten).
+  const gezien = new Set<string>();
   const uniek: Aanleiding[] = [];
   for (const a of gevonden) {
-    if (gezien.has(a.soort)) continue;
-    gezien.add(a.soort);
+    const sleutel = `${a.soort}/${a.aard}`;
+    if (gezien.has(sleutel)) continue;
+    gezien.add(sleutel);
     uniek.push(a);
   }
   return uniek;

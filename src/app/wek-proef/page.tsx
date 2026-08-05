@@ -37,6 +37,9 @@ const BRON: PlanningBron = {
       titel: "Cito middenmeting rekenen",
       soort: "toets",
     }),
+    // Een toets die eraan komt: die moet je zelf klaarzetten, daar helpt geen
+    // tool bij.
+    item({ id: "6", datum: "2026-08-12", titel: "Toetsweek begrijpend lezen", soort: "toets" }),
     item({ id: "4", datum: "2026-09-10", titel: "Schoolreis", soort: "activiteit" }),
     item({ id: "5", datum: "2026-08-20", titel: "Rapportgesprekken groep 8", soort: "gesprek" }),
   ],
@@ -91,8 +94,12 @@ export default function Proef() {
       </div>
 
       <div className="rounded-3xl border border-dashed border-ink/15 p-4 md:p-6">
-        <p className="mb-4 text-sm font-bold text-ink/50">
+        <p className="mb-1 text-sm font-bold text-ink/50">
           2. Zoals het in Mijn schooljaar staat (alles, geen maximum)
+        </p>
+        <p className="mb-4 text-sm text-ink/50">
+          Let op de tweede regel: dat is het werk waar Avinka je NIET bij helpt. Witte knop met een
+          +, en die zet het op je takenlijst in plaats van een tool te openen.
         </p>
         <WatEraanKomt bron={BRON} vandaag={VANDAAG} groepen={[5]} />
       </div>
