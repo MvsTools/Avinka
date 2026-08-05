@@ -109,7 +109,7 @@ export default function Proef() {
 
       <div className="rounded-3xl border border-dashed border-ink/15 p-4 md:p-6">
         <p className="mb-1 text-sm font-bold text-ink/50">
-          3. Hetzelfde, maar nu weet Avinka dat jullie Parro, ParnasSys en IEP gebruiken
+          3. Hetzelfde, maar nu met Parro + ParnasSys + IEP
         </p>
         <p className="mb-4 text-sm text-ink/50">
           Zelfde afspraken, andere teksten: de tip wordt concreet in plaats van algemeen. Dit komt
@@ -120,6 +120,22 @@ export default function Proef() {
           vandaag={VANDAAG}
           groepen={[5]}
           systemen={{ communicatieApp: "parro", lvsSysteem: "parnassys", toetsSysteem: "iep" }}
+        />
+      </div>
+
+      <div className="rounded-3xl border border-dashed border-ink/15 p-4 md:p-6">
+        <p className="mb-1 text-sm font-bold text-ink/50">
+          3b. En met SchouderCom + Esis + Cito
+        </p>
+        <p className="mb-4 text-sm text-ink/50">
+          Bij SchouderCom vult de school zelf het webadres in, dus zolang dat leeg is blijft het een
+          taak voor op je lijst in plaats van een link.
+        </p>
+        <WatEraanKomt
+          bron={BRON}
+          vandaag={VANDAAG}
+          groepen={[5]}
+          systemen={{ communicatieApp: "schoudercom", lvsSysteem: "esis", toetsSysteem: "cito" }}
         />
       </div>
 

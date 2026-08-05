@@ -26,17 +26,21 @@
   var NAMEN = {
     parro: "Parro",
     social_schools: "Social Schools",
+    schoudercom: "SchouderCom",
+    basisonline: "Ouderportaal (BasisOnline)",
     isy: "Isy",
     konnect: "Konnect",
   };
   var VASTE_URL = {
     parro: "https://talk.parro.com",
     social_schools: "https://app.socialschools.eu",
+    basisonline: "https://ouders.basisonline.nl",
   };
   // Systemen met een eigen instantie per school delen wel altijd hetzelfde
   // vaste domein-staartje. De leerkracht vult dus alleen het voorste stukje
   // in (bijv. "bottel"); wij plakken het vaste deel erachter.
   var STAARTJE = {
+    schoudercom: ".schoudercom.nl",
     isy: ".isy-school.nl",
     konnect: ".ouderportaal.nl",
   };

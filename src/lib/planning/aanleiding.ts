@@ -99,8 +99,37 @@ export type Schoolsystemen = {
 const APP_NAAM: Record<string, string> = {
   parro: "Parro",
   social_schools: "Social Schools",
+  schoudercom: "SchouderCom",
+  basisonline: "het Ouderportaal",
   isy: "Isy",
   konnect: "Konnect",
+};
+
+/**
+ * Hoe het plannen van oudergesprekken in elk systeem werkt. Uitgezocht in de
+ * openbare handleidingen van de leveranciers zelf (augustus 2026):
+ *
+ * - Parro: agenda → "Gesprekken plannen", groep en leerlingen kiezen; ouders
+ *   kiezen per kind een tijd en kunnen er een notitie bij zetten.
+ * - Social Schools: klasmenu → "oudergesprekken plannen"; ouders krijgen een
+ *   uitnodiging en kiezen een tijdslot. De leerkracht kan zelf tijden toewijzen.
+ * - Isy: de school zet dagen en tijden open, ouders kiezen er een.
+ * - SchouderCom: twee smaken — de planner maakt zelf een rooster (houdt
+ *   rekening met broertjes/zusjes), of een intekenlijst waarop ouders kiezen.
+ *   Daarom staat er hier NIET dat ouders zelf intekenen.
+ * - BasisOnline (Ouderportaal): gesprekkenplanner, ouders tekenen in.
+ * - Konnect: kinderopvang, geen schoolgesprekken → algemene tekst.
+ *
+ * ⚠️ Staat een systeem hier niet in, dan blijft de tekst algemeen. Nooit gokken
+ * hoe andermans software werkt.
+ */
+const GESPREK_TIP: Record<string, string> = {
+  parro: "Gesprekken openzetten in Parro (agenda → Gesprekken plannen), dan kiezen ouders zelf een tijd",
+  social_schools:
+    "Oudergesprekken plannen in Social Schools (via het klasmenu), dan kiezen ouders zelf een tijd",
+  schoudercom: "Gesprekken inplannen in SchouderCom, met de planner of een intekenlijst",
+  basisonline: "Gesprekken openzetten in het Ouderportaal, dan kiezen ouders zelf een tijd",
+  isy: "Gespreksdagen en tijden openzetten in Isy, dan kiezen ouders zelf een tijd",
 };
 // ⚠️ Dezelfde adressen staan in public/avinka-communicatie-app.js (die is voor
 // de tools, deze voor het dashboard). Samen bijwerken.
@@ -143,19 +172,14 @@ function opMaat(
     const naam = APP_NAAM[sys.communicatieApp] ?? "je communicatie-app";
     const link = appUrl(sys) || undefined;
     // Weten we waar het moet gebeuren, dan brengt de knop je er meteen heen —
-    // dat scheelt de omweg via je takenlijst. Kennen we het adres niet (Isy en
-    // Konnect hebben er per school een), dan blijft het een taak.
-    return sys.communicatieApp === "parro"
-      ? {
-          knop: link ? `Openen in ${naam}` : `Openzetten in ${naam}`,
-          taak: `Gesprekken openzetten in ${naam}, dan tekenen ouders zelf in`,
-          link,
-        }
-      : {
-          knop: link ? `Openen in ${naam}` : `Inplannen in ${naam}`,
-          taak: `Gespreksrooster klaarzetten in ${naam}`,
-          link,
-        };
+    // dat scheelt de omweg via je takenlijst. Kennen we het adres niet (dat
+    // vult de school zelf in bij Isy, SchouderCom en Konnect), dan blijft het
+    // een taak voor op je lijst.
+    return {
+      knop: link ? `Openen in ${naam}` : `Inplannen in ${naam}`,
+      taak: GESPREK_TIP[sys.communicatieApp] ?? `Gespreksrooster klaarzetten in ${naam}`,
+      link,
+    };
   }
   if (soort === "toets") {
     // Het toetssysteem is preciezer dan het LVS: je zet je toetsen klaar in IEP
