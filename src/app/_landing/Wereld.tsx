@@ -1013,32 +1013,48 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
               <div className="w-cv-strook">
                 {/* Alle gegevens hieronder komen van de eigenaar zelf. Niets
                    hiervan invullen, afronden of bijstellen zonder hem: het zijn
-                   feiten over een echt persoon, inclusief zijn school. */}
-                <dl className="w-cv-feiten">
-                  <div>
-                    <dt>leeftijd</dt>
-                    <dd>30</dd>
-                  </div>
-                  <div>
-                    <dt>lesgeeft aan</dt>
-                    <dd>groep 7</dd>
-                  </div>
-                  <div>
-                    <dt>voor de klas</dt>
-                    <dd>7 jaar</dd>
-                  </div>
-                  {/* School krijgt twee kolommen: het is de langste waarde en
-                     in een derde van de breedte liep hij om — dan staat er een
-                     alinea in een feitenrooster. */}
-                  <div className="w-cv-breed">
-                    <dt>school</dt>
-                    <dd>Regenboog Osseveld</dd>
-                  </div>
-                  <div>
-                    <dt>woont in</dt>
-                    <dd>Apeldoorn</dd>
-                  </div>
-                </dl>
+                   feiten over een echt persoon, inclusief zijn school.
+
+                   ⚠️ DE INDELING IS DOOR DE EIGENAAR BEPAALD (5-8): links wie
+                   hij is, midden waar hij werkt, rechts hoe lang al. Niet
+                   herschikken naar wat "beter uitkomt" in het rooster.
+                   🔑 Het zijn drie APARTE lijstjes en niet één rooster met
+                   losse cellen. Dat moet ook: in één rooster bepaalt de hoogste
+                   cel van een rij hoe hoog die rij is, en omdat "werk" twee
+                   waarden heeft zou "woont in" links een gat onder zich
+                   krijgen. Drie kolommen die elk hun eigen hoogte bepalen
+                   hebben dat probleem niet.
+                   (En een div met divs erin mag niet binnen een dl staan — de
+                   inhoud van een dl mag alleen dt, dd of een div met dt/dd
+                   zijn. Vandaar drie dl-s in plaats van groepen in één dl.) */}
+                <div className="w-cv-feiten">
+                  <dl className="w-cv-kolom">
+                    <div>
+                      <dt>leeftijd</dt>
+                      <dd>30</dd>
+                    </div>
+                    <div>
+                      <dt>woont in</dt>
+                      <dd>Apeldoorn</dd>
+                    </div>
+                  </dl>
+                  <dl className="w-cv-kolom">
+                    {/* Eén term met twee waarden: school en groep zijn samen
+                       "waar hij werkt". Dat mag zo in een dl — meerdere dd-s
+                       bij één dt is precies waar die vorm voor is. */}
+                    <div>
+                      <dt>werk</dt>
+                      <dd>Regenboog Osseveld</dd>
+                      <dd>groep 7</dd>
+                    </div>
+                  </dl>
+                  <dl className="w-cv-kolom">
+                    <div>
+                      <dt>voor de klas</dt>
+                      <dd>7 jaar</dd>
+                    </div>
+                  </dl>
+                </div>
               </div>
 
               <div className="w-cv-verhaal">
@@ -1254,16 +1270,24 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         }
         /* De feiten: label erboven, waarde eronder. Dat is de taal van een
            formulier, en dat is precies wat een CV is.
-           🔑 Drie kolommen in plaats van een lijst maakt van vijf feiten twee
-           regels; dat scheelt ruim 140px hoogte, en die hoogte is hier het hele
-           probleem (zie .w-mkr-rij). */
+           🔑 Drie kolommen naast elkaar in plaats van een lijst onder elkaar
+           scheelt ruim 140px hoogte, en die hoogte is hier het hele probleem
+           (zie .w-mkr-rij).
+           De middelste kolom krijgt iets meer breedte: daar staat de langste
+           waarde (de schoolnaam), en in een gelijke derde liep die om. */
         .w-cv-feiten {
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: clamp(10px, 1.4vw, 13px) clamp(10px, 1.6vw, 16px);
+          grid-template-columns: 0.85fr 1.3fr 0.85fr;
+          gap: clamp(10px, 1.6vw, 16px);
           margin: 0;
         }
-        .w-cv-breed { grid-column: span 2; }
+        /* Elke kolom is een eigen lijstje en bepaalt dus zijn eigen hoogte. */
+        .w-cv-kolom {
+          display: flex;
+          flex-direction: column;
+          gap: clamp(10px, 1.4vw, 13px);
+          margin: 0;
+        }
         .w-cv-feiten dt {
           font-size: 0.7rem;
           font-weight: 700;
@@ -1283,6 +1307,10 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           line-height: 1.35;
           color: ${DONKER};
         }
+        /* Een tweede waarde onder dezelfde term (school + groep) staat dichter
+           tegen de eerste aan dan tegen een volgend label: ze horen bij elkaar
+           en dat moet je aan de ruimte kunnen zien. */
+        .w-cv-feiten dd + dd { margin-top: 0.05rem; }
         /* Het verhaal over de volle breedte van het document: ~62 tekens per
            regel, en dat is de maat waarop lopende tekst het prettigst leest. */
         .w-cv-verhaal {
@@ -1348,7 +1376,7 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           .w-cv-pas { width: 72px; height: 82px; }
           /* Twee kolommen in plaats van drie: op 390px is een derde van de
              breedte ~100px en dan loopt zowel het label als de waarde eronder
-             om. School houdt zijn hele regel. */
+             om. De derde kolom ("voor de klas") zakt naar de tweede rij. */
           .w-cv-feiten { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
       `}</style>
