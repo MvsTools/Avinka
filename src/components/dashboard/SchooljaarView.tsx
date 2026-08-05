@@ -16,7 +16,14 @@ import {
   volledig,
   weekdag,
 } from "@/lib/planning";
-import type { AgendaBron, Periode, PlanItem, PlanningBron, Schoolsystemen } from "@/lib/planning";
+import type {
+  AgendaBron,
+  Context as AanleidingContext,
+  Periode,
+  PlanItem,
+  PlanningBron,
+  Schoolsystemen,
+} from "@/lib/planning";
 import SchooljaarMaand from "./SchooljaarMaand";
 import SchooljaarWeek from "./SchooljaarWeek";
 import AgendaKoppelen from "./AgendaKoppelen";
@@ -52,6 +59,7 @@ export default function SchooljaarView({
   agendas,
   mijnGroepen,
   systemen,
+  context,
 }: {
   bron: PlanningBron;
   jaren: JaarKeuze[];
@@ -59,6 +67,7 @@ export default function SchooljaarView({
   agendas: AgendaBron[];
   mijnGroepen: number[];
   systemen?: Schoolsystemen;
+  context?: AanleidingContext;
 }) {
   const [tab, setTab] = useState<"jaar" | "week" | "agendas">(
     agendas.length ? "jaar" : "agendas",
@@ -181,6 +190,7 @@ export default function SchooljaarView({
             vandaag={vandaag}
             groepen={mijnGroepen}
             systemen={systemen}
+            context={context}
           />
 
           {telDubbelingen(items) > 0 && (

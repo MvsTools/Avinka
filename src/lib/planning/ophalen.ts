@@ -9,7 +9,8 @@ import type { Soort } from "../agenda-herken";
 import { plus, vandaag } from "./datum";
 import { markeerDubbelingen } from "./dubbelingen";
 import { mijnGroepen } from "./relevantie";
-import type { Schoolsystemen } from "./aanleiding";
+import type { Context, Schoolsystemen } from "./aanleiding";
+import { haalActieveKlas } from "../actieve-klas";
 import {
   isBasisrooster,
   isRoosterWeekData,
@@ -121,6 +122,43 @@ export async function haalSchoolsystemen(supabase: SupabaseClient): Promise<Scho
     lvsSysteem: r.lvs_systeem ?? "",
     toetsSysteem: r.toets_systeem ?? "",
   };
+}
+
+/**
+ * Wat de signalen scherper maakt dan alleen "er komt iets aan": op welke dagen
+ * je werkt, en hoe ver je al bent met de rapporten van je huidige groep.
+ *
+ * ⚠️ We tellen alleen. Er gaan geen namen van kinderen mee naar het scherm —
+ * "nog 16 van de 28" zegt genoeg en blijft binnen de afspraken over wat we van
+ * een klas mogen tonen.
+ *
+ * Mislukt er iets, dan komt er een lege context terug en werkt alles gewoon
+ * zonder deze extra's. Dit is een verrijking, geen voorwaarde.
+ */
+export async function haalPlanningContext(supabase: SupabaseClient): Promise<Context> {
+  const [{ data: inst }, klas] = await Promise.all([
+    supabase.from("instellingen").select("werkdagen").maybeSingle(),
+    haalActieveKlas<{ leerlingen: string[] | null }>(supabase, "leerlingen").catch(() => null),
+  ]);
+
+  const context: Context = {
+    werkdagen: (inst as { werkdagen?: string } | null)?.werkdagen ?? "",
+  };
+
+  const namen = (klas?.leerlingen ?? []).filter((n) => String(n).trim());
+  if (namen.length) {
+    // Tellen op naam en niet op klas_id: rapporten van vóór de duo-functie
+    // hebben nog geen klas_id, en die horen gewoon mee te tellen.
+    const { data } = await supabase.from("rapporten").select("naam, verhaal");
+    const rijen = (data as { naam: string; verhaal: string }[] | null) ?? [];
+    const inDeKlas = new Set(namen.map((n) => n.trim().toLowerCase()));
+    const klaar = rijen.filter(
+      (r) => r.verhaal?.trim() && inDeKlas.has(String(r.naam).trim().toLowerCase()),
+    ).length;
+    context.rapporten = { klaar, totaal: namen.length };
+  }
+
+  return context;
 }
 
 /**

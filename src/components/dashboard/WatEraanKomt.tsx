@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { aanleidingen } from "@/lib/planning";
-import type { PlanningBron, Schoolsystemen } from "@/lib/planning";
+import type { Context, PlanningBron, Schoolsystemen } from "@/lib/planning";
 import TaakKnop from "./TaakKnop";
 
 // "Wat eraan komt" — het vooruitkijk-blok (fase 4 van Mijn schooljaar).
@@ -24,6 +24,7 @@ export default function WatEraanKomt({
   vandaag,
   groepen = [],
   systemen = {},
+  context = {},
   maximaal,
   vergrendeld = [],
   titel = "Wat eraan komt",
@@ -33,13 +34,15 @@ export default function WatEraanKomt({
   groepen?: number[];
   /** Met welke systemen werkt deze school? Maakt de voorbereidingstips concreet. */
   systemen?: Schoolsystemen;
+  /** Je werkdagen en je voortgang; maakt de signalen persoonlijk. */
+  context?: Context;
   /** Op Start hooguit twee, zodat de tools eronder de held blijven. */
   maximaal?: number;
   /** Slugs van tools die niet in het pakket zitten; die wijzen naar het abonnement. */
   vergrendeld?: string[];
   titel?: string;
 }) {
-  const alles = aanleidingen(bron, vandaag, groepen, systemen);
+  const alles = aanleidingen(bron, vandaag, groepen, systemen, context);
   if (!alles.length) return null;
   const lijst = maximaal ? alles.slice(0, maximaal) : alles;
 
@@ -117,7 +120,7 @@ export default function WatEraanKomt({
               ) : a.aard === "voorbereiden" ? (
                 <TaakKnop
                   tekst={a.taak!}
-                  deadline={a.item.datum}
+                  deadline={a.taakDatum ?? a.datum}
                   label={a.actie}
                   alOpDeLijst={a.alOpDeLijst}
                 />

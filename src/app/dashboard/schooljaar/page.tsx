@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import {
   haalBronnen,
-  haalMijnGroepen, haalSchoolsystemen,
+  haalMijnGroepen, haalPlanningContext, haalSchoolsystemen,
   haalPlanning,
   haalSchooljaren,
   vandaag,
@@ -25,11 +25,12 @@ export default async function SchooljaarPage({
   const jaren = await haalSchooljaren(supabase, nu);
   const jaarId = jaren.some((j) => j.id === gekozen) ? gekozen : jaren[0]?.id;
 
-  const [bron, agendas, groepen, systemen] = await Promise.all([
+  const [bron, agendas, groepen, systemen, planContext] = await Promise.all([
     haalPlanning(supabase, { schooljaarId: jaarId, nu }),
     haalBronnen(supabase),
     haalMijnGroepen(supabase),
     haalSchoolsystemen(supabase),
+    haalPlanningContext(supabase),
   ]);
 
   return (
@@ -40,6 +41,7 @@ export default async function SchooljaarPage({
       agendas={agendas}
       mijnGroepen={groepen}
       systemen={systemen}
+      context={planContext}
     />
   );
 }

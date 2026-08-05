@@ -23,8 +23,10 @@
 import { SOORT_INFO } from "../agenda-herken";
 import { toolBySlug, type Tool } from "../tools";
 import { bereikTekst, dagnaam, kort, verschil } from "./datum";
+import { groep8Momenten, heeftGroep8 } from "./groep8";
 import { beoordeel } from "./relevantie";
 import type { PlanItem, PlanningBron, Soort } from "./types";
+import { laatsteWerkdagVoor, leesWerkdagen } from "./werkdagen";
 
 /**
  * Hoeveel dagen vóór een afspraak het signaal verschijnt, en hoeveel dagen het
@@ -268,10 +270,20 @@ function opMaat(
 }
 
 export type Aanleiding = {
-  /** Van het agenda-item, dus stabiel tussen twee keer laden. */
+  /** Stabiel tussen twee keer laden. */
   id: string;
-  item: PlanItem;
-  soort: Soort;
+  /**
+   * Waar hoort dit signaal bij, en in welke fase? Hierop ontdubbelen we: drie
+   * gespreksavonden achter elkaar zijn samen één aanleiding, maar een toets die
+   * net geweest is (analyseren) staat wél los van een toets die eraan komt
+   * (klaarzetten).
+   */
+  sleutel: string;
+  /** De dag waar het om draait. */
+  datum: string;
+  /** Alleen bij een afspraak uit je agenda; kalendermomenten hebben er geen. */
+  item?: PlanItem;
+  soort?: Soort;
   /**
    * "doen" = er is een tool die het werk uit handen neemt.
    * "voorbereiden" = jij moet zelf iets klaarzetten; dan is de knop je takenlijst.
@@ -281,6 +293,12 @@ export type Aanleiding = {
   tool?: Tool;
   /** Alleen bij "voorbereiden": de tekst zoals hij op je takenlijst komt. */
   taak?: string;
+  /**
+   * De dag waarop de taak op je lijst komt. Werk je niet op de dag zelf, dan is
+   * dit je laatste werkdag ervóór — een herinnering op je vrije woensdag helpt
+   * je niet.
+   */
+  taakDatum?: string;
   /** Alleen bij "voorbereiden": staat hij er al op? Dan geen knop meer. */
   alOpDeLijst?: boolean;
   /**
@@ -337,6 +355,125 @@ function kopVoor(item: PlanItem, soort: Soort, dagen: number, aard: "doen" | "vo
   }
 }
 
+/** Wat het scherm nog meer van je weet dan alleen je agenda. */
+export type Context = {
+  /** Uit je instellingen: "0134" = maandag, dinsdag, donderdag, vrijdag. */
+  werkdagen?: string;
+  /** Hoe ver je bent met de rapporten van je huidige groep. */
+  rapporten?: { klaar: number; totaal: number };
+};
+
+/** "nog 16 van de 28" — of niets als er geen klas of geen leerlingen zijn. */
+function voortgangTekst(voortgang?: { klaar: number; totaal: number }): string | undefined {
+  if (!voortgang || voortgang.totaal <= 0) return undefined;
+  const over = Math.max(0, voortgang.totaal - voortgang.klaar);
+  if (over === 0) return `alle ${voortgang.totaal} rapporten staan er`;
+  return `nog ${over} van de ${voortgang.totaal} rapporten`;
+}
+
+/**
+ * Momenten die niet in je agenda staan maar wel elk jaar terugkomen, omdat ze
+ * uit het schooljaar zelf volgen.
+ *
+ * ⚠️ Alleen momenten waarvan we ZEKER weten dat ze voor iedereen gelden. De
+ * startweek en de laatste schoolweken zitten al in het schooljaarmodel; alles
+ * wat per school verschilt hoort in de agenda thuis, niet hier.
+ */
+function uitDeKalender(
+  bron: PlanningBron,
+  vandaag: string,
+  werkdagen: number[],
+  opLijst: (taak?: string) => boolean | undefined,
+): Aanleiding[] {
+  const { schooljaar } = bron;
+  const uit: Aanleiding[] = [];
+  if (schooljaar.afgesloten) return uit;
+
+  // 1. De week vóór de eerste schooldag: je lokaal en je lijsten klaarzetten.
+  //    Twee weken van tevoren beginnen, want in die week zelf is het al druk.
+  const naarStart = verschil(vandaag, schooljaar.startweek.van);
+  if (naarStart >= 0 && naarStart <= 14) {
+    const plattegrond = toolBySlug("plattegrond");
+    uit.push({
+      id: `kalender-startweek-${schooljaar.id}`,
+      sleutel: "kalender/startweek",
+      datum: schooljaar.startweek.van,
+      aard: plattegrond?.pad ? "doen" : "voorbereiden",
+      tool: plattegrond?.pad ? plattegrond : undefined,
+      taak: plattegrond?.pad ? undefined : "Klassenlijst en plattegrond klaarzetten",
+      taakDatum: laatsteWerkdagVoor(schooljaar.startweek.van, werkdagen),
+      alOpDeLijst: opLijst(plattegrond?.pad ? undefined : "Klassenlijst en plattegrond klaarzetten"),
+      dagen: naarStart,
+      kop: `${wanneerTekst(naarStart)} begint het schooljaar`,
+      wanneer: `eerste schooldag ${kort(schooljaar.start)}`,
+      detail: "klassenlijst en plattegrond klaarzetten",
+      actie: "Plattegrond maken",
+    });
+  }
+
+  // 2. De laatste weken: de overdracht naar de leerkracht van volgend jaar.
+  //    Drie weken, want dit is het klusje dat in de laatste week niet meer past.
+  const naarEind = verschil(vandaag, schooljaar.eind);
+  if (naarEind >= 0 && naarEind <= 21) {
+    const taak = "Overdracht schrijven voor de leerkracht van volgend jaar";
+    uit.push({
+      id: `kalender-overdracht-${schooljaar.id}`,
+      sleutel: "kalender/overdracht",
+      datum: schooljaar.eind,
+      aard: "voorbereiden",
+      taak,
+      taakDatum: laatsteWerkdagVoor(schooljaar.eind, werkdagen),
+      alOpDeLijst: opLijst(taak),
+      dagen: naarEind,
+      kop: `${wanneerTekst(naarEind)} is het schooljaar afgelopen`,
+      wanneer: `laatste schooldag ${kort(schooljaar.eind)}`,
+      detail: "overdracht naar volgend jaar",
+      actie: "Overdracht schrijven",
+    });
+  }
+
+  return uit;
+}
+
+/**
+ * Groep 8 heeft een eigen jaar met landelijk vastgelegde momenten. Die staan
+ * niet per se in de schoolagenda, terwijl er wel harde termijnen aan hangen.
+ * Zie `groep8.ts` — dat lijstje werken we jaarlijks bij.
+ */
+function uitGroep8(
+  bron: PlanningBron,
+  vandaag: string,
+  eigenGroepen: number[],
+  werkdagen: number[],
+  opLijst: (taak?: string) => boolean | undefined,
+): Aanleiding[] {
+  if (!heeftGroep8(eigenGroepen) || bron.schooljaar.afgesloten) return [];
+
+  return groep8Momenten(bron.schooljaar.id).flatMap((m) => {
+    const dagen = verschil(vandaag, m.datum);
+    const nogTeGaan = verschil(vandaag, m.totDatum);
+    // Vanaf zijn venster tot en met de laatste dag van het moment zelf.
+    if (dagen > m.voor || nogTeGaan < 0) return [];
+    return [
+      {
+        id: `groep8-${m.id}-${bron.schooljaar.id}`,
+        sleutel: `groep8/${m.id}`,
+        datum: m.datum,
+        aard: "voorbereiden" as const,
+        taak: m.taak,
+        taakDatum: laatsteWerkdagVoor(m.datum, werkdagen),
+        alOpDeLijst: opLijst(m.taak),
+        dagen,
+        kop: `${wanneerTekst(dagen)}: ${m.kop.toLowerCase()}`,
+        wanneer:
+          m.totDatum !== m.datum ? bereikTekst(m.datum, m.totDatum) : `${dagnaam(m.datum)} ${kort(m.datum)}`,
+        detail: "groep 8",
+        actie: m.knop,
+      },
+    ];
+  });
+}
+
 /**
  * Alles wat er de komende tijd aankomt, het dichtstbijzijnde eerst. Wat nu
  * speelt of net geweest is staat bovenaan.
@@ -355,9 +492,12 @@ export function aanleidingen(
   vandaag: string,
   eigenGroepen: number[] = [],
   systemen: Schoolsystemen = {},
+  extra: Context = {},
 ): Aanleiding[] {
   const gevonden: Aanleiding[] = [];
   const opDeLijst = new Set(bron.taken.filter((t) => !t.gedaan).map((t) => t.tekst));
+  const werkdagen = leesWerkdagen(extra.werkdagen);
+  const opLijst = (taak?: string) => (taak ? opDeLijst.has(taak) : undefined);
 
   for (const item of bron.items) {
     if (item.dubbelVan) continue;
@@ -406,36 +546,48 @@ export function aanleidingen(
 
     gevonden.push({
       id: item.id,
+      sleutel: `${item.soort}/${aard}`,
+      datum: item.datum,
       item,
       soort: item.soort,
       aard,
       tool: toolFase ? tool : undefined,
       taak: tip?.taak,
+      taakDatum: tip ? laatsteWerkdagVoor(item.datum, werkdagen) : undefined,
       link: tip?.link,
-      alOpDeLijst: tip ? opDeLijst.has(tip.taak) : undefined,
+      alOpDeLijst: opLijst(tip?.taak),
       dagen,
       kop: kopVoor(item, item.soort, dagen, aard),
       wanneer,
-      detail: item.soort === "toets" ? item.titel : undefined,
+      // Bij een toets zegt de titel wélke toets het was; bij de rapporten is
+      // het nuttigst hoe ver je al bent.
+      detail:
+        item.soort === "toets"
+          ? item.titel
+          : item.soort === "rapport" && toolFase
+            ? voortgangTekst(extra.rapporten)
+            : undefined,
       actie: toolFase ? (ACTIE[item.soort] ?? `Openen in ${tool!.naam}`) : tip!.knop,
     });
   }
 
+  gevonden.push(...uitDeKalender(bron, vandaag, werkdagen, opLijst));
+  gevonden.push(...uitGroep8(bron, vandaag, eigenGroepen, werkdagen, opLijst));
+
   // Wat loopt of net geweest is telt allemaal als "nu" (vandaar de klem op 0)
   // en staat vooraan; daarna gewoon op datum.
   gevonden.sort(
-    (a, b) => Math.max(a.dagen, 0) - Math.max(b.dagen, 0) || a.item.datum.localeCompare(b.item.datum),
+    (a, b) => Math.max(a.dagen, 0) - Math.max(b.dagen, 0) || a.datum.localeCompare(b.datum),
   );
 
-  // Eén per soort én fase: drie gespreksavonden achter elkaar zijn samen één
+  // Eén per sleutel: drie gespreksavonden achter elkaar zijn samen één
   // aanleiding. Wel apart, want het is ander werk: een toets die net geweest is
   // (analyseren) naast een toets die eraan komt (klaarzetten).
   const gezien = new Set<string>();
   const uniek: Aanleiding[] = [];
   for (const a of gevonden) {
-    const sleutel = `${a.soort}/${a.aard}`;
-    if (gezien.has(sleutel)) continue;
-    gezien.add(sleutel);
+    if (gezien.has(a.sleutel)) continue;
+    gezien.add(a.sleutel);
     uniek.push(a);
   }
   return uniek;

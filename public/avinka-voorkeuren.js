@@ -29,6 +29,7 @@
     lvs_systeem: "",
     lvs_url: "",
     toets_systeem: "",
+    werkdagen: "",
   };
   var data = Object.assign({}, STANDAARD);
 

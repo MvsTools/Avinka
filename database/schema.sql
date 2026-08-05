@@ -59,6 +59,16 @@ create table if not exists public.instellingen (
   -- communicatie_url zelf in.
   communicatie_app text not null default '',
   communicatie_url text not null default '',
+  -- Welk toetssysteem gebruikt de school: '' | 'iep' | 'cito' | 'dia' | 'boom'
+  -- | 'beide'. Toetsanalyse slaat zijn keuzescherm over als hier iep of cito
+  -- staat; bij dia/boom zegt de tool eerlijk dat hij die export nog niet leest.
+  -- Zie database/migratie-toetssysteem.sql.
+  toets_systeem text not null default '',
+  -- Op welke dagen deze leerkracht voor de klas staat: '' (niet gezegd, dan
+  -- rekenen we met de hele week) of dagcijfers, 0 = maandag t/m 4 = vrijdag
+  -- ('0134'). Een voorgestelde taak landt op de laatste werkdag vóór de datum.
+  -- Zie database/migratie-werkdagen.sql.
+  werkdagen text not null default '',
   -- Welk leerlingvolgsysteem: '' | 'parnassys' | 'esis'. ParnasSys heeft één
   -- vast inlogadres; Esis werkt per school, dus die vult lvs_url zelf in.
   lvs_systeem    text not null default '',

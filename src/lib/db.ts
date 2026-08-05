@@ -31,7 +31,8 @@ export type Voorkeuren = {
   communicatie_url: string; // eigen SchouderCom/Isy-webadres (de rest heeft een vast adres)
   lvs_systeem: string; // '' | parnassys | esis — voor de "open in je LVS"-knop
   lvs_url: string; // eigen Esis-webadres (ParnasSys heeft één vast adres)
-  toets_systeem: string; // '' | iep | cito | beide — welk toetssysteem de school gebruikt
+  toets_systeem: string; // '' | iep | cito | dia | boom | beide
+  werkdagen: string; // '' of dagcijfers, 0=maandag t/m 4=vrijdag ('0134')
 };
 export type Leerling = { naam: string; geslacht: "" | "j" | "m" };
 export type Klas = {
@@ -67,6 +68,7 @@ export async function getVoorkeuren(): Promise<Voorkeuren | null> {
     lvs_systeem: "",
     lvs_url: "",
     toets_systeem: "",
+    werkdagen: "",
   };
   // Best-effort: deze kolommen bestaan mogelijk nog niet (migratie niet
   // gedraaid). Een aparte select faalt dan stilletjes en we houden gewoon "".
@@ -80,13 +82,14 @@ export async function getVoorkeuren(): Promise<Voorkeuren | null> {
   }
   const { data: ld } = await sb
     .from("instellingen")
-    .select("lvs_systeem, lvs_url, communicatie_url, toets_systeem")
+    .select("lvs_systeem, lvs_url, communicatie_url, toets_systeem, werkdagen")
     .maybeSingle();
   if (ld) {
     v.lvs_systeem = (ld as { lvs_systeem?: string }).lvs_systeem ?? "";
     v.lvs_url = (ld as { lvs_url?: string }).lvs_url ?? "";
     v.communicatie_url = (ld as { communicatie_url?: string }).communicatie_url ?? "";
     v.toets_systeem = (ld as { toets_systeem?: string }).toets_systeem ?? "";
+    v.werkdagen = (ld as { werkdagen?: string }).werkdagen ?? "";
   }
   return v;
 }
@@ -111,6 +114,7 @@ export async function saveVoorkeuren(v: Voorkeuren): Promise<boolean> {
     lvs_url,
     communicatie_url,
     toets_systeem,
+    werkdagen,
     ...kern
   } = v;
   void school_brin;
@@ -119,6 +123,7 @@ export async function saveVoorkeuren(v: Voorkeuren): Promise<boolean> {
   void lvs_url;
   void communicatie_url;
   void toets_systeem;
+  void werkdagen;
   const { error: e2 } = await sb
     .from("instellingen")
     .upsert({ user_id: user.id, ...kern }, { onConflict: "user_id" });
