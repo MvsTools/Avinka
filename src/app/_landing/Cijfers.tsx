@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { Confetti, DONKER, Golf, KOP, MINT, MINT_LICHT, VLAK_MINT, KaartVlak, schaduw } from "./Wereld";
+import { Confetti, DONKER, Golf, KOP, KOP_SECTIE, MINT, MINT_LICHT, VLAK_MINT, KaartVlak, schaduw } from "./Wereld";
 import type { Cijfers } from "@/lib/cijfers";
 
 export type { Cijfers };
@@ -514,7 +514,7 @@ function Rapport({
         {/* ⚠️ "bijgewerkt" stond helemaal rechts naast de kop, ver van het
            enige dat bijgewerkt wordt. Het hoort bij het rapport, dus staat het
            nu er vlak boven: kop, dan de stand, dan de papieren. */}
-        <h2 data-reveal className="rp-sectiekop">Avinka in cijfers</h2>
+        <h2 data-reveal className={`${KOP_SECTIE} rp-sectiekop`}>Avinka in cijfers</h2>
         {/* 🔑 HET STIPJE HOORT HIER, BIJ HET WOORD "BIJGEWERKT".
            Het zat eerst in een pilletje "live" op het rapport zelf, en dat
            botste zodra de statuspil erbij kwam: twee keer het woord live vlak
@@ -628,14 +628,11 @@ function RapportStijl() {
         color: rgba(34, 28, 58, 0.62);
       }
 
-      .rp-sectiekop {
-        font-family: var(--font-display), Georgia, serif;
-        font-weight: 900;
-        letter-spacing: -0.03em;
-        line-height: 1.05;
-        font-size: clamp(1.875rem, 3.4vw, 2.75rem);
-        color: ${DONKER};
-      }
+      /* ⚠️ De maat staat NIET meer hier maar in KOP_SECTIE (Wereld.tsx): deze
+         kop stond op clamp(1,875rem, 3,4vw, 2,75rem) = 44px en was daarmee
+         12px kleiner dan de meeste andere sectiekoppen. Hier blijft alleen de
+         kleur; de klasse wordt naast KOP_SECTIE gezet. */
+      .rp-sectiekop { color: ${DONKER}; }
 
       .rp-cluster {
         display: flex;

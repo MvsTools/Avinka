@@ -6,7 +6,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { Confetti, DONKER, Golf, KOP, MINT, MINT_LICHT, MINT_DIEP, KaartVlak, VLAK_MINT } from "./Wereld";
+import { Confetti, DONKER, Golf, HAND_WENK, KOP, KOP_SECTIE, MINT, MINT_LICHT, MINT_DIEP, KaartVlak, VLAK_MINT } from "./Wereld";
 
 /* ── De polaroids: wat leerkrachten zeggen ─────────────────────────────────
    Ervaringen als instax-kaartjes aan één levende draad. Geen prikbord, geen
@@ -744,7 +744,7 @@ export function WereldPolaroids() {
              negen secties. */}
           <h2
             data-reveal
-            className="font-display text-[clamp(2.25rem,4.4vw,3.5rem)] font-black leading-[1.02] tracking-tight [text-wrap:balance]"
+            className={KOP_SECTIE}
             style={{ color: DONKER }}
           >
             Echte ervaringen{" "}
@@ -757,7 +757,7 @@ export function WereldPolaroids() {
         {/* het handgeschreven hintje met een boogpijltje naar de kaarten */}
         <p
           data-reveal
-          className="mt-8 hidden items-center gap-2 text-xl lg:flex"
+          className={`mt-8 hidden items-center gap-2 lg:flex ${HAND_WENK}`}
           style={{ fontFamily: "var(--font-hand)", color: KOP }}
         >
           klik op een foto om de ervaring te lezen

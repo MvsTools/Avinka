@@ -117,6 +117,70 @@ export function schaduw(y: number, blur: number, spread: number, alpha: number, 
    in plaats van uit een gedeelde tekenwaarde. Privacy.tsx heeft een eigen
    kopie van allebei en is daar niet van afhankelijk. */
 
+/* ── DE TYPEMAAT VAN DE LANDING ────────────────────────────────────────────
+   ⚠️ AANLEIDING (5-8): de eigenaar liep de pagina langs en zag het meteen —
+   "meerdere titelvelden, meerdere ondertitels, meerdere beschrijvingen, maar
+   de groottes verschillen, dat ziet er slordig uit". Nagemeten klopte dat: de
+   sectiekoppen stonden op 36, 40, 44, 54,4, 56 en 64px. ZEVEN losse
+   clamp()-definities voor wat in wezen twee rollen zijn.
+
+   🔑 En drie ervan waren BIJNA-MISSERS: 54,4 naast 56, min 1,9rem naast
+   1,875rem, min 2,4rem naast 2,5rem. Dat is het bewijs dat het niet om smaak
+   ging maar om verloop: niemand kiest bewust 54,4. Zo gaat het altijd als
+   dezelfde waarde op zeven plekken opnieuw wordt ingetypt.
+
+   Daarom staan ze nu hier, als één bron — net als KAART hieronder. Gebruik
+   deze constanten en typ nooit een eigen clamp voor een kop; dan kan het niet
+   opnieuw uit elkaar lopen.
+
+   DE LADDER (bij 1440px breed):
+     KOP_GROOT   64px  de twee grote momenten: de belofte bovenaan de pagina
+                       en de uitnodiging in het slotveld. Verder niets.
+     KOP_SECTIE  44px  élke sectiekop. Eén maat, zodat je aan het formaat ziet
+                       dat je een nieuwe sectie in gaat.
+     KOP_BLOK    24px  een kop BINNEN een sectie: de kaartjes van "Herken je
+                       dit?", de stappen van "Zo werkt het", de prijskaarten.
+   Alle drie in de display-letter, zwaar, met strakke regelafstand en negatieve
+   letterafstand — hoe groter de letter, hoe strakker.
+
+   ⚠️ WAAROM 44 EN NIET 56, want dat is geprobeerd. Op 56 (de maat die vier van
+   de tien secties al hadden) viel de intro-kop "De slimme werkplek voor
+   leerkrachten in het basisonderwijs" over VIJF regels in zijn kolom en ging
+   die sectie de hero beconcurreren. Op 44 is dat drie regels, past "Alle
+   tools, één werkplek" naast het handgeschreven duwtje op één regel, en
+   houden de korte koppen hun kracht — in de browser vergeleken, niet gegokt.
+   🔑 De maat van een gedeelde kop wordt bepaald door de LANGSTE kop die hem
+   gebruikt, niet door de mooiste. ──────────────────────────────────────────── */
+export const KOP_GROOT =
+  "font-display text-[clamp(2.5rem,5.5vw,4rem)] font-black leading-[1.02] tracking-[-0.025em] [text-wrap:balance]";
+export const KOP_SECTIE =
+  "font-display text-[clamp(2rem,4.4vw,2.75rem)] font-black leading-[1.05] tracking-[-0.025em] [text-wrap:balance]";
+export const KOP_BLOK =
+  "font-display text-[clamp(1.25rem,1.9vw,1.5rem)] font-black leading-[1.25] tracking-[-0.02em]";
+
+/* ── DE TEKST ONDER EEN KOP ────────────────────────────────────────────────
+   Stond op 16, 16,3, 16,8 en 18px. Die eerste drie zijn geen keuzes maar
+   afrondingen van drie verschillende clamps die allemaal ongeveer hetzelfde
+   probeerden te zijn. Eén maat: 18px met een ruime regelafstand, want dit is
+   lopende tekst en geen bijschrift. */
+export const TEKST_SECTIE = "text-[1.125rem] leading-[1.78]";
+
+/* ── HET HANDSCHRIFT ───────────────────────────────────────────────────────
+   Hier stonden drie maten (20, 22,4 en 24px) voor wat op het oog hetzelfde is.
+   Twee ervan zijn het WEL: er zijn twee rollen, en die verschillen ook echt.
+
+     HAND_REGEL  24px  een uitspraak onder een sectiekop. Hij hoort bij de kop
+                       en mag gelezen worden ("Het hoort bij het werk, maar het
+                       kan slimmer", "privacy voorop").
+     HAND_WENK   20px  een AANWIJZING bij iets dat je kunt doen ("sleep de rij
+                       opzij", "klik op een foto"). Die hoort kleiner: hij is
+                       een onderschrift en geen boodschap.
+
+   🔑 Twee maten dus, maar met een reden die je kunt uitleggen — dat is het
+   verschil met de drie die er stonden. De 22,4 was er niet één van. */
+export const HAND_REGEL = "text-2xl leading-[1.38]";
+export const HAND_WENK = "text-xl leading-[1.4]";
+
 /* Witte kaart met grote ronding: dé kaartvorm van deze wereld. */
 export const KAART =
   "rounded-[var(--w-kaart-radius,2.5rem)] bg-white shadow-[var(--w-kaart-schaduw,-14px_36px_80px_-48px_rgba(23,80,58,0.55))] ring-1 ring-ink/[0.04]";
@@ -581,7 +645,7 @@ export function WereldIntro() {
         <div>
           <h2
             data-reveal
-            className="font-display text-[clamp(1.875rem,3.1vw,2.5rem)] font-black leading-[1.06] tracking-tight [text-wrap:balance]"
+            className={KOP_SECTIE}
             style={{ color: KOP }}
           >
             De slimme werkplek voor leerkrachten in het basisonderwijs
@@ -676,7 +740,7 @@ export function WereldHerken() {
           <div>
             <h2
               data-reveal
-              className="font-display text-[clamp(2.25rem,4.4vw,3.5rem)] font-black leading-[0.98] tracking-tight lg:sticky lg:top-28"
+              className={`${KOP_SECTIE} lg:sticky lg:top-28`}
               style={{ color: DONKER }}
             >
               Herken
@@ -691,7 +755,7 @@ export function WereldHerken() {
                ongewijzigd, alleen de regelval. */}
             <p
               data-reveal
-              className="mt-6 text-2xl leading-snug lg:sticky lg:top-60"
+              className={`mt-6 lg:sticky lg:top-60 ${HAND_REGEL}`}
               style={{ fontFamily: "var(--font-hand)", color: KOP }}
             >
               Het hoort bij het werk,
@@ -905,7 +969,7 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
              bovendien met wat het NIET is, wat altijd zwakker leest dan wat
              het wél is. */}
           <div className="w-mkr-tekst">
-            <h2 className="w-mkr-kop">Even voorstellen</h2>
+            <h2 className={`${KOP_SECTIE} w-mkr-kop`}>Even voorstellen</h2>
             {/* De richting komt van de eigenaar: Avinka is er voor het werk na
                schooltijd. Zijn eigen formulering was "ondersteunen in taken";
                dat is één stap te ambtelijk voor een pagina die verder in
@@ -916,7 +980,7 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                heeft aangeleverd; niet gladstrijken. Er stond eerst "Ik ken dat
                werk, want ik doe het zelf" (van mij) — deze zegt meer, want hij
                nodigt uit in plaats van alleen te bevestigen. */}
-            <p className="w-mkr-inleiding">
+            <p className={`${TEKST_SECTIE} w-mkr-inleiding`}>
               Avinka is gebouwd om leerkrachten te helpen met het werk dat na
               schooltijd blijft liggen. Ik doe aanpassingen op basis van eigen
               ervaringen, maar sta graag open voor alle feedback.
@@ -933,7 +997,7 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                van dat je ook echt kúnt doen in plaats van alleen leest.
                Handschrift, want dit is het enige stuk van de sectie dat de
                maker rechtstreeks tegen je zegt. */}
-            <p className="w-mkr-belofte">
+            <p className={`${HAND_REGEL} w-mkr-belofte`}>
               Laat me vooral weten wat je ervan vindt!
             </p>
             {/* ── het adres, met een pijltje ernaartoe ──
@@ -979,7 +1043,7 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                    horizontaal binnen — dus de weerhaken wijzen naar links. */}
                 <path d="M23.5 23 L 30.5 27 L 23 29.8" />
               </svg>
-              <a className="w-mkr-mail" href="mailto:info@avinka.nl">
+              <a className={`${HAND_WENK} w-mkr-mail`} href="mailto:info@avinka.nl">
                 {/* Lijnicoon in dezelfde trant als de drie pictogrammen in de
                    privacysectie: dunne lijn, ronde hoeken, geen vulling. */}
                 <svg
@@ -1230,12 +1294,14 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            lopende tekst, maar in handschrift en niet in de display-letter:
            grote display-regels in deze kolom zijn eerder afgekeurd met "een
            tweede titel, lelijk". */
+        /* ⚠️ Stond op clamp(1,15rem, 1,9vw, 1,4rem) = 22,4px, en dat was de
+           enige handgeschreven regel op de pagina met een eigen maat: de andere
+           uitspraken staan op 24 en de aanwijzingen op 20. Maat komt nu van
+           HAND_REGEL; hier blijft wat eigen is aan deze plek. */
         .w-mkr-belofte {
           margin: clamp(20px, 2.6vw, 28px) 0 0;
           max-width: 30ch;
           font-family: var(--font-hand), "Segoe Script", cursive;
-          font-size: clamp(1.15rem, 1.9vw, 1.4rem);
-          line-height: 1.45;
           color: ${KOP};
         }
         /* ── het pijltje en het adres ──
@@ -1270,13 +1336,14 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         }
         /* Het adres in dezelfde hand als de uitnodiging — alsof iemand het voor
            je opschrijft — met het envelopje ervoor. */
+        /* Het adres is een aanwijzing en geen uitspraak, dus het staat op de
+           kleinere van de twee handschriftmaten (HAND_WENK) — net als "sleep de
+           rij opzij" en "klik op een foto". */
         .w-mkr-mail {
           display: inline-flex;
           align-items: center;
           gap: 0.45rem;
           font-family: var(--font-hand), "Segoe Script", cursive;
-          font-size: clamp(1.05rem, 1.7vw, 1.25rem);
-          line-height: 1.4;
           color: ${KOP};
           transition: color 0.2s ease;
         }
@@ -1299,22 +1366,22 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           outline-offset: 4px;
           border-radius: 0.5rem;
         }
+        /* ⚠️ De maat staat NIET meer hier maar in KOP_SECTIE bovenaan dit
+           bestand — deze kop stond op clamp(1.9rem, 3.6vw, 2.75rem) en dat was
+           net niet gelijk aan de andere sectiekoppen. Hier blijft alleen wat
+           eigen is aan déze plek: de kleur en de marge eronder. */
         .w-mkr-kop {
-          font-family: var(--font-display), Georgia, serif;
-          font-weight: 900;
-          letter-spacing: -0.03em;
-          line-height: 1.02;
-          font-size: clamp(1.9rem, 3.6vw, 2.75rem);
-          color: ${DONKER};
           margin-bottom: clamp(14px, 1.8vw, 20px);
-          text-wrap: balance;
+          color: ${DONKER};
         }
         /* De eerste alinea na de kop hoeft geen extra ruimte: de kop heeft
            zijn eigen marge al. */
+        /* ⚠️ Stond op 1,05rem/1,7 (16,8px) terwijl de beschrijving onder de
+           andere sectiekoppen 18px is. Dat verschil van ruim een punt zie je
+           niet als je één sectie bekijkt, maar wel als je de pagina afscrolt.
+           De maat komt nu van TEKST_SECTIE, hier blijft alleen de kleur. */
         .w-mkr-inleiding {
           margin: 0;
-          font-size: 1.05rem;
-          line-height: 1.7;
           color: rgba(34, 28, 58, 0.78);
         }
 
@@ -1589,7 +1656,7 @@ export function WereldSlot() {
         <Confetti punten={[{ x: "16%", y: "18%", r: 4, amber: true }, { x: "82%", y: "12%", r: 5 }, { x: "90%", y: "70%", r: 4, amber: true }]} />
         {/* Hier stond een wit vierkant met het merkvinkje boven de slotkop.
            Eruit op verzoek; de kop begint nu meteen. */}
-        <h2 data-reveal className="font-display text-[clamp(2.5rem,5.5vw,4rem)] font-black leading-[1.02] tracking-tight text-white [text-wrap:balance]">
+        <h2 data-reveal className={`${KOP_GROOT} text-white`}>
           Kom binnen. Je werkplek staat klaar.
         </h2>
         <p data-reveal className="mx-auto mt-5 max-w-xl text-lg leading-8 text-white/75">

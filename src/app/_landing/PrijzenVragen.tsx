@@ -10,6 +10,7 @@ import {
   Golf,
   KaartVlak,
   KOP,
+  KOP_SECTIE,
   MINT_LICHT,
   RUIS_OP_PAPIER,
   VLAK_MINT,
@@ -201,7 +202,7 @@ export function WereldPrijzen({
           <div className="max-w-2xl">
             <h2
               data-reveal
-              className="font-display text-[clamp(2.25rem,4.4vw,3.5rem)] font-black leading-[1.02] tracking-tight [text-wrap:balance]"
+              className={KOP_SECTIE}
               style={{ color: DONKER }}
             >
               {/* ⚠️ Hier stond "Onbeperkt gebruik." Dat is niet waar: er zit een
@@ -572,7 +573,7 @@ export function WereldVragen({ items, mintBoven = false }: { items: Vraag[]; min
              het herhaalde alleen de kop eronder. */}
           <h2
             data-reveal
-            className="font-display text-[clamp(2.25rem,4.4vw,3.5rem)] font-black leading-[1.02] tracking-tight"
+            className={KOP_SECTIE}
             style={{ color: DONKER }}
           >
             Veelgestelde vragen

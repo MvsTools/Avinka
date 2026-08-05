@@ -27,6 +27,9 @@ import {
   MINT_LICHT,
   RUIS_OP_PAPIER,
   KOP,
+  HAND_WENK,
+  KOP_GROOT,
+  KOP_SECTIE,
   Lichtbron,
   VLAK_MINT,
   VLAK_PAPIER,
@@ -797,9 +800,7 @@ export default function Landing({
           <div data-intro className="relative z-30 mx-auto mt-[1.5vh] w-[min(94vw,62rem)] text-center">
             <h1
               data-belofte
-              className={`font-display text-[clamp(2.4rem,5.5vw,4rem)] font-black leading-[1.04] tracking-tight [text-wrap:balance] ${
-                film ? "text-cream" : "text-ink"
-              }`}
+              className={`${KOP_GROOT} ${film ? "text-cream" : "text-ink"}`}
             >
               Win elke week{" "}
               <span data-uur className={film ? "text-[var(--w-film-hoogtepunt,#6fd7a3)]" : "text-brand"}>
@@ -1479,7 +1480,7 @@ function MarkeerInhoud({ donker = false }: { donker?: boolean }) {
       <div>
         <h2
           data-reveal={donker ? undefined : ""}
-          className={`font-display text-[clamp(1.875rem,3.1vw,2.375rem)] font-black leading-[1.08] tracking-tight [text-wrap:balance] ${
+          className={`${KOP_SECTIE} ${
             donker ? "text-white" : ""
           }`}
         >
@@ -1689,11 +1690,12 @@ function RailKop() {
          keer exact dezelfde zet zou een tic worden; gespiegeld is het een
          motief dat je herkent. */}
       <div data-reveal className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
-        <h2 className="max-w-2xl font-display text-4xl font-black tracking-tight [text-wrap:balance]">
-          Alle tools, één werkplek
-        </h2>
+        {/* ⚠️ Deze kop stond op text-4xl (36px) en was daarmee de kleinste
+           sectiekop van de pagina, terwijl hij precies hetzelfde doet als de
+           andere. Nu op de gedeelde maat. */}
+        <h2 className={`max-w-2xl ${KOP_SECTIE}`}>Alle tools, één werkplek</h2>
         <p
-          className="flex shrink-0 items-center gap-2 text-xl lg:pb-1"
+          className={`flex shrink-0 items-center gap-2 lg:pb-1 ${HAND_WENK}`}
           style={{ fontFamily: "var(--font-hand)", color: KOP }}
         >
           {/* Hetzelfde pijltje als bij de polaroids, horizontaal gespiegeld
