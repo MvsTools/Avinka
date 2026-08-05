@@ -921,20 +921,30 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
               schooltijd blijft liggen. Ik doe aanpassingen op basis van eigen
               ervaringen, maar sta graag open voor alle feedback.
             </p>
-            {/* ── de zin die je moet onthouden ──
-               ⚠️ DEZE STOND EERST ONDERAAN HET DOCUMENT. Verhuisd naar hier om
-               twee redenen. Het document werd er te hoog van om naast deze
-               tekst te passen (~80px), en de linkerkolom was juist te leeg —
-               één ingreep die allebei oplost.
-               🔑 En inhoudelijk hoort hij hier beter: dit is de kolom die de
-               LEZER aanspreekt, en dit is de enige zin van het hele blok die
-               niet over de maker gaat maar over de lezer zijn vak. In het
-               handschrift van de pagina, want het is een overtuiging en geen
-               gegeven. */}
+            {/* ── de uitnodiging ──
+               ⚠️ HIER STOND EEN QUOTE: "Goede leerkrachten horen hun tijd te
+               besteden aan leerlingen, niet aan administratie." Eruit op
+               verzoek ("dit vind ik een meh quote voor in het groen"), en
+               daarmee staat die zin nergens meer op de pagina.
+               🔑 Wat ervoor in de plaats komt is geen uitspraak maar een
+               UITNODIGING, en dat past beter bij waar hij staat. Deze kolom
+               spreekt de lezer aan, en de zin ernaast in de kaart zegt al
+               "ik sta graag open voor alle feedback" — dit maakt daar iets
+               van dat je ook echt kúnt doen in plaats van alleen leest.
+               Handschrift, want dit is het enige stuk van de sectie dat de
+               maker rechtstreeks tegen je zegt. */}
             <p className="w-mkr-belofte">
-              Goede leerkrachten horen hun tijd te besteden aan leerlingen, niet
-              aan administratie.
+              Laat me vooral weten wat je ervan vindt!
             </p>
+            {/* ⚠️ HET ADRES MOET MAIL KUNNEN ONTVANGEN — nog te bevestigen door
+               de eigenaar. Het platform VERSTUURT sinds 4-8 mail via Resend
+               vanaf avinka.nl, maar versturen is niet hetzelfde als ontvangen,
+               en /dashboard/hulp verwijst nog naar een Hotmail-adres. Een
+               contactadres op de voorpagina dat nergens uitkomt is erger dan
+               geen contactadres. */}
+            <a className="w-mkr-mail" href="mailto:info@avinka.nl">
+              info@avinka.nl
+            </a>
           </div>
 
         {/* ⚠️ DE SCHEEFSTAND STAAT MET OPZET OP `rotate:` EN NIET IN EEN
@@ -1160,17 +1170,41 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           .w-mkr-rij { grid-template-columns: minmax(0, 1fr) 32rem; }
         }
         .w-mkr-tekst { max-width: 42ch; }
-        /* De handgeschreven overtuiging onder de inleiding. Groter dan de
-           lopende tekst, want dit is de zin die je moet onthouden — maar in
-           handschrift en niet in de display-letter: grote display-regels in
-           deze kolom zijn eerder afgekeurd met "een tweede titel, lelijk". */
+        /* De handgeschreven uitnodiging onder de inleiding. Groter dan de
+           lopende tekst, maar in handschrift en niet in de display-letter:
+           grote display-regels in deze kolom zijn eerder afgekeurd met "een
+           tweede titel, lelijk". */
         .w-mkr-belofte {
           margin: clamp(20px, 2.6vw, 28px) 0 0;
-          max-width: 26ch;
+          max-width: 30ch;
           font-family: var(--font-hand), "Segoe Script", cursive;
           font-size: clamp(1.15rem, 1.9vw, 1.4rem);
           line-height: 1.45;
           color: ${KOP};
+        }
+        /* Het mailadres op zijn eigen regel, in dezelfde hand — alsof iemand
+           het voor je opschrijft. Wél met een onderstreping: handschrift alleen
+           is geen aanwijzing dat je ergens op kunt klikken, en dit is de enige
+           link in de hele sectie.
+           De onderstreping staat los van de letters (offset) zodat hij niet
+           door de staarten van de g en de j loopt. */
+        .w-mkr-mail {
+          display: inline-block;
+          margin-top: 0.3rem;
+          font-family: var(--font-hand), "Segoe Script", cursive;
+          font-size: clamp(1.05rem, 1.7vw, 1.25rem);
+          line-height: 1.4;
+          color: ${KOP};
+          text-decoration: underline;
+          text-decoration-thickness: 1.5px;
+          text-underline-offset: 5px;
+          transition: color 0.2s ease;
+        }
+        .w-mkr-mail:hover { color: ${DONKER}; }
+        .w-mkr-mail:focus-visible {
+          outline: 2px solid var(--color-brand, #2f9e6e);
+          outline-offset: 4px;
+          border-radius: 0.35rem;
         }
         .w-mkr-kop {
           font-family: var(--font-display), Georgia, serif;
