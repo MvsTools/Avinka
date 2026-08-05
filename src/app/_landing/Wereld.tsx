@@ -687,17 +687,35 @@ export function WereldIntro() {
             Bij Avinka staat al je schoolwerk op één plek. Ook denkt het
             programma actief mee in toekomstige weken.
           </p>
-          {/* ⚠️ DE TWEEDE ALINEA MOET DE EERSTE WAARMAKEN, anders is die eerste
-             zin een loze belofte. Daarom staat er nu ook HOE Avinka dat weet:
-             uit je eigen schooljaar. Zonder die bron leest "houdt bij wat eraan
-             komt" als magie, en het werkt pas als je je jaar hebt ingevuld —
-             precies het soort belofte waar deze pagina al eerder op is
-             gestruikeld. */}
+          {/* ⚠️ HIER IS HET ÉÉN KEER GOED MISGEGAAN, en dat is het waard om vast
+             te leggen. Ik heb bij het omzetten naar de nieuwe koers het woord
+             "hulpmiddelen" uit de eerste zin gehaald — en dat was het ENIGE
+             woord in deze sectie dat zei dát er tools zijn. Wat overbleef was
+             een opbergverhaal ("alles op één plek") plus een vooruitkijkverhaal
+             ("denkt mee"), en nergens meer wát het ding doet. De eigenaar:
+             "waar staat nu dat het met behulp van slimme AI-tools is? Dit is de
+             belangrijkste sectie van de landing."
+
+             🔑 DE LES: bij een koerswijziging poets je het FRAME op, maar de
+             SUBSTANTIE moet blijven staan. Een bezoeker die hier stopt met
+             lezen moet weten wat hij koopt, niet hoe wij erover denken. Zet het
+             concrete dus vooraan en het nieuwe erachter, niet andersom.
+
+             Deze alinea moet daarom in deze volgorde blijven:
+             1. wat de tools voor je doen, met de tools bij naam;
+             2. dat jij het laatste woord houdt;
+             3. pas dan het meedenken, mét de reden waarom Avinka dat kan
+                (je zet je schooljaar er één keer in). Zonder die reden leest
+                het als magie, en het werkt pas als je dat gedaan hebt.
+
+             ⚠️ Zeg hier niet dat de AI het rekenwerk doet — dat doet de tool
+             zelf. Die scheiding staat uitgelegd bij "Zo werkt het" en in de
+             vragen, en die moet overal hetzelfde blijven. */}
           <p data-reveal className="mt-4 text-lg leading-8 text-ink/75" style={{ transitionDelay: "90ms" }}>
-            Je vult je schooljaar één keer in, en Avinka ziet daarna zelf wat er
-            aankomt: rapporten, gesprekken, toetsen. Je geeft aan wat je nodig
-            hebt en Avinka helpt je met de uitwerking, zodat terugkerende taken
-            minder tijd kosten en je werk overzichtelijk blijft.
+            Slimme tools met AI schrijven je rapporten, analyseren je toetsen en
+            stellen je ouderberichten op. Jij leest na en past aan. En omdat je
+            je schooljaar er één keer in zet, ziet Avinka zelf wanneer dat werk
+            eraan komt.
           </p>
         </div>
       </div>
