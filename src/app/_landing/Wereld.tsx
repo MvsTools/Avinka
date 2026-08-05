@@ -952,13 +952,21 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                trekt vult dat gat met iets dat werk doet in plaats van met
                decoratie. */}
             <div className="w-mkr-contact">
-              {/* ⚠️ EERST WAS DIT PIJLTJE TE VLAK: het daalde 7px over 30px
-                 breedte en las daardoor als een streepje in plaats van als een
-                 boog. Een handgeschreven pijl moet echt DALEN om te wijzen —
-                 hier van y=3 naar y=24 in een vak van 32 hoog. */}
+              {/* ⚠️ TWEE KEER DE VERKEERDE KANT OP GEWEEST. Eerst liep hij bijna
+                 vlak naar rechts (daalde 7px over 30px breedte) en las als een
+                 streepje. Daarna liep hij van linksboven schuin naar
+                 rechtsonder — één diagonale haal.
+                 De eigenaar wil dat hij EERST NAAR BENEDEN gaat en DAN NAAR
+                 RECHTS. Dat is ook logischer: de uitnodiging staat erboven en
+                 het adres ernaast, dus de pijl moet die hoek echt om.
+                 🔑 De vorm zit in de controlepunten. Het eerste ligt recht onder
+                 het beginpunt (7,15 onder 7,2) — daardoor vertrekt de lijn
+                 verticaal. Het tweede ligt linksonder het eindpunt (9,25 bij
+                 30,27) — daardoor komt hij horizontaal aan. Zo maakt één curve
+                 een hele hoek, zonder knik. */}
               <svg
                 className="w-mkr-pijl"
-                viewBox="0 0 40 32"
+                viewBox="0 0 38 34"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
@@ -966,8 +974,10 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                 strokeLinejoin="round"
                 aria-hidden
               >
-                <path d="M3 3 C 11 1, 26 6, 31 24" />
-                <path d="M23 21 L 31.5 25.5 L 33.5 15.5" />
+                <path d="M7 2 C 7 15, 9 25, 30 27" />
+                {/* De punt staat haaks op het EIND van de curve, en die komt
+                   horizontaal binnen — dus de weerhaken wijzen naar links. */}
+                <path d="M23.5 23 L 30.5 27 L 23 29.8" />
               </svg>
               <a className="w-mkr-mail" href="mailto:info@avinka.nl">
                 {/* Lijnicoon in dezelfde trant als de drie pictogrammen in de
@@ -1240,11 +1250,13 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           margin-top: clamp(12px, 1.8vw, 20px);
           margin-left: clamp(20px, 5vw, 72px);
         }
+        /* De verhouding volgt de viewBox (38 bij 34): de pijl daalt eerst en
+           gaat dan pas opzij, dus hij is bijna net zo hoog als breed. */
         .w-mkr-pijl {
           flex: none;
-          width: 2.8rem;
-          height: 2.25rem;
-          margin-bottom: 0.15rem;
+          width: 2.45rem;
+          height: 2.2rem;
+          margin-bottom: 0.1rem;
           color: ${KOP};
         }
         /* Het adres in dezelfde hand als de uitnodiging — alsof iemand het voor
