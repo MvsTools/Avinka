@@ -985,14 +985,20 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
               schooltijd blijft liggen. Ik doe aanpassingen op basis van eigen
               ervaringen, maar sta graag open voor alle feedback.
             </p>
-            {/* ⚠️ HIER STOND "blader zelf door mijn schrift" met een
-               handgeschreven boogpijltje. Weg, en niet vervangen: er valt
-               niets meer te bladeren. Een uitnodiging tot een handeling die
-               niet bestaat is erger dan geen uitnodiging — dat stond al in de
-               mobiele regels van het schrift en geldt nu voor de hele pagina.
-               Het handgeschreven opstapje stond bovendien ooit in 6 van de 9
-               secties en is toen bewust teruggebracht; dit is er weer één
-               minder waar het niets doet. */}
+            {/* ── de zin die je moet onthouden ──
+               ⚠️ DEZE STOND EERST ONDERAAN HET DOCUMENT. Verhuisd naar hier om
+               twee redenen. Het document werd er te hoog van om naast deze
+               tekst te passen (~80px), en de linkerkolom was juist te leeg —
+               één ingreep die allebei oplost.
+               🔑 En inhoudelijk hoort hij hier beter: dit is de kolom die de
+               LEZER aanspreekt, en dit is de enige zin van het hele blok die
+               niet over de maker gaat maar over de lezer zijn vak. In het
+               handschrift van de pagina, want het is een overtuiging en geen
+               gegeven. */}
+            <p className="w-mkr-belofte">
+              Goede leerkrachten horen hun tijd te besteden aan leerlingen, niet
+              aan administratie.
+            </p>
           </div>
 
         {/* ⚠️ DE WRAPPER IS GEEN OPSMUK MAAR EEN REPARATIE, en die les geldt
@@ -1051,6 +1057,18 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                  blok: er staat een mens achter dit product, en die heeft een
                  gezicht en een naam. Donkergroen omdat dit de enige plek in de
                  sectie is die om aandacht mag vragen. */}
+              {/* ── de kopband ──
+                 🔑 DE GOLF IS WAT DIT DOCUMENT BIJ DE PAGINA LAAT HOREN. Elke
+                 kleurovergang op deze landing is een golf — papier naar mint,
+                 mint naar papier, zeven keer. Een kaart met een kaarsrechte
+                 kleurscheiding erin is daarom het enige element op de pagina
+                 dat zijn eigen taal niet spreekt, en dat is precies wat de
+                 eigenaar bedoelde met "simpel en saai".
+                 Vorm "zacht" is letterlijk hergebruikt, geen nieuwe golf: de
+                 regel is dat golven bestaande amp/golven-waarden delen. In een
+                 vak van 38px levert amp 26 zo'n 9px deining — genoeg om te zien
+                 dat het een golf is, te weinig om met de sectiegolven te gaan
+                 concurreren. */}
               <header className="w-cv-band">
                 <div>
                   <p className="w-cv-naam">Michael van Spanje</p>
@@ -1060,10 +1078,15 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                      een school wil weten. Niet terugveranderen. */}
                   <p className="w-cv-rol">leerkracht &amp; oprichter van Avinka</p>
                 </div>
-                {/* De pasfoto zoals op een echt CV: recht geplakt, met een wit
-                   randje eromheen. Het randje is niet alleen versiering — het
-                   houdt de achtergrond van de foto weg van het donkergroen,
-                   dat anders op elkaar botst. */}
+                {/* ── de foto breekt door de kleurgrens ──
+                   Ze staat in een organische vorm (dezelfde ongelijke radii als
+                   de kaarten van deze wereld) en zakt met haar onderkant tot IN
+                   de golf. Dat is geen versiering maar een van de vaste
+                   kenmerken van deze designtaal: beeld dat over een veldrand
+                   heen loopt in plaats van er netjes binnen te blijven.
+                   Het crème randje doet er nog iets bij: het houdt de
+                   achtergrond van de foto weg van het donkergroen, dat er
+                   anders tegenaan botst. */}
                 <div className="w-cv-pas">
                   {fotoBestand ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -1078,18 +1101,22 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                     </span>
                   )}
                 </div>
+                <Golf
+                  kleur="var(--w-kaart-warm, #fffdf9)"
+                  vorm="zacht"
+                  hoogte="h-[30px] sm:h-[38px]"
+                />
               </header>
 
-              {/* ── het lijf: personalia links, verhaal rechts ──
-                 De verhouding IS de boodschap. De eigenaar: "beetje
-                 persoonlijke info, daarna vooral over Avinka". De feiten staan
-                 dus in een smalle kolom en het verhaal krijgt bijna drie keer
-                 zoveel ruimte.
-                 Een haarlijn ertussen en verder niets: geen getint zijbalkje.
-                 Zo'n gekleurde kolom is precies het CV-sjabloon dat iedereen
-                 kent, en deze pagina werkt overal met haarlijnen (de vragen,
-                 "Zo werkt het"). */}
-              <div className="w-cv-body">
+              {/* ── de personalia als strook ──
+                 ⚠️ DIT STOND ALS SMALLE KOLOM NAAST HET VERHAAL en dat kan niet
+                 meer nu het document weer naast de tekst staat: op 32rem hield
+                 het verhaal dan 300px over en liep elke alinea over vier
+                 regels. Over de volle breedte is de leesregel ~62 tekens, de
+                 maat waarop lopende tekst het prettigst leest.
+                 Boven elkaar zet het bovendien de volgorde neer die de eigenaar
+                 vroeg: "beetje persoonlijke info, daarna vooral over Avinka". */}
+              <div className="w-cv-strook">
                 {/* Alle gegevens hieronder komen van de eigenaar zelf. Niets
                    hiervan invullen, afronden of bijstellen zonder hem: het zijn
                    feiten over een echt persoon, inclusief zijn school. */}
@@ -1106,10 +1133,10 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                     <dt>voor de klas</dt>
                     <dd>7 jaar</dd>
                   </div>
-                  {/* School en woonplaats op twee regels: samen op één regel
-                     liep de waarde in deze smalle kolom om, en dan is het geen
-                     feitenlijstje meer maar een alinea. */}
-                  <div>
+                  {/* School krijgt twee kolommen: het is de langste waarde en
+                     in een derde van de breedte liep hij om — dan staat er een
+                     alinea in een feitenrooster. */}
+                  <div className="w-cv-breed">
                     <dt>school</dt>
                     <dd>Regenboog Osseveld</dd>
                   </div>
@@ -1118,52 +1145,44 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                     <dd>Apeldoorn</dd>
                   </div>
                 </dl>
-
-                <div className="w-cv-verhaal">
-                  {/* Deze twee alinea-s stonden op de laatste bladzijden van
-                     het schrift en waren daarvóór al door de eigenaar
-                     goedgekeurd in het oude makersblok. Ze zijn niet opnieuw
-                     geschreven, alleen verplaatst naar de plek waar ze zonder
-                     klik te lezen zijn. */}
-                  <h3 className="w-cv-sectiekop">Waarom Avinka bestaat</h3>
-                  <p>
-                    Wat begon als een oplossing voor mijn eigen werk, werd een
-                    bredere missie: laten zien dat slimmer werken juist
-                    eenvoudig kan zijn.
-                  </p>
-                  <h3 className="w-cv-sectiekop">Waar ik voor sta</h3>
-                  <p>
-                    Geen ingewikkelde techniek, wel zorgvuldig met de gegevens
-                    van je leerlingen.
-                  </p>
-                  {/* ⚠️ NIEUWE TEKST (5-8), nog niet door de eigenaar gezien —
-                     alles hierboven is oude, goedgekeurde tekst. Hij staat er
-                     om twee redenen: de eigenaar vroeg om "vooral over Avinka",
-                     en zonder dit blok eindigde deze kolom 90px eerder dan de
-                     feiten ernaast, wat een gat onderin het document gaf.
-                     Inhoudelijk is het een herformulering van zijn eigen zin
-                     hiernaast ("ik doe aanpassingen op basis van eigen
-                     ervaringen, maar sta graag open voor alle feedback"), dus
-                     er wordt niets nieuws beloofd. Vervangen mag altijd — houd
-                     het dan wel op ongeveer deze lengte. */}
-                  <h3 className="w-cv-sectiekop">Waar het heen gaat</h3>
-                  <p>
-                    Avinka groeit mee met wat leerkrachten zelf vragen. Elke
-                    tool die erbij komt, begint bij werk dat echt blijft liggen.
-                  </p>
-                </div>
               </div>
 
-              {/* ── de zin die je moet onthouden ──
-                 Met de hand, onder een haarlijn, als enige stuk van dit
-                 document dat niet uit een printer komt. Op een CV zet je niet
-                 wat je gelooft — dat schrijf je eronder. Daardoor leest deze
-                 regel als de persoon en niet als de sollicitant, en daarom
-                 staat hij ook niet in de gedrukte kolom hierboven. */}
-              <p className="w-cv-hand">
-                Goede leerkrachten horen hun tijd te besteden aan leerlingen,
-                niet aan administratie.
-              </p>
+              <div className="w-cv-verhaal">
+                {/* Deze twee alinea-s stonden op de laatste bladzijden van het
+                   schrift en waren daarvóór al door de eigenaar goedgekeurd in
+                   het oude makersblok. Ze zijn niet opnieuw geschreven, alleen
+                   verplaatst naar de plek waar ze zonder klik te lezen zijn. */}
+                <h3 className="w-cv-sectiekop">Waarom Avinka bestaat</h3>
+                <p>
+                  Wat begon als een oplossing voor mijn eigen werk, werd een
+                  bredere missie:{" "}
+                  {/* 🔑 DE MARKEERSTIFT KOMT VAN DEZE PAGINA ZELF. De sectie
+                     "Herken je dit?" wordt tijdens het scrollen aangestreept
+                     met een groene markeerstifthaal, en dat is het enige stuk
+                     vormgeving waarvan de eigenaar ooit letterlijk zei "ik vind
+                     dit leuk". Hier staat hij stil en over één zinsdeel: de
+                     kern van de missie. Eén keer per document, anders is het
+                     geen nadruk meer maar een patroon. */}
+                  laten zien dat{" "}
+                  <mark className="w-cv-markeer">slimmer werken</mark> juist
+                  eenvoudig kan zijn.
+                </p>
+                <h3 className="w-cv-sectiekop">Waar ik voor sta</h3>
+                <p>
+                  Geen ingewikkelde techniek, wel zorgvuldig met de gegevens van
+                  je leerlingen.
+                </p>
+                {/* ⚠️ HIER STOND EEN DERDE BLOK ("Waar het heen gaat"), tekst
+                   van mij. Eruit toen het document weer naast de tekst moest
+                   passen: het kostte 110px hoogte en dat is precies wat er niet
+                   is. Het zei bovendien in andere woorden hetzelfde als de
+                   inleiding links ("ik doe aanpassingen op basis van eigen
+                   ervaringen, maar sta graag open voor alle feedback"), dus er
+                   ging geen informatie verloren.
+                   🔑 Als er ooit een derde blok bij moet: dan moet er ook een
+                   ander blok uit, of het document past niet meer. */}
+              </div>
+
             </article>
           </div>
         </div>
@@ -1174,25 +1193,40 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
          in een opmerking: dat sluit de tekst van het blok af en dan valt de
          hele pagina om. Dat is hier één keer gebeurd. */}
       <style>{`
-        /* ── de opbouw: kop bovenaan, document eronder ──
-           ⚠️ DIT STOND JARENLANG NAAST ELKAAR: tekst links, voorwerp rechts.
-           Dat werkte zolang het voorwerp ongeveer even hoog was als de tekst.
-           Het CV is dat niet — 180px tekst naast een document van 550px laat
-           de halve linkerkolom leeg hangen, en die leegte leest als een fout in
-           plaats van als ruimte.
-           🔑 De eigenaar vroeg om iets dat "meer lijkt op die grote kaart die
-           we eerst hadden". Een grote kaart is BREED. Zodra het document de
-           volle kolom pakt is er geen lege helft meer, kan de tekst erbinnen
-           over twee kolommen, en wordt het document lager in plaats van hoger.
-           Eén ingreep die drie problemen tegelijk oplost.
+        /* ── de rij: tekst links, document rechts ──
+           ⚠️ DIT IS ÉÉN KEER OVER DE VOLLE BREEDTE GEPROBEERD (document van
+           46rem onder de kop) en dat werd meteen afgekeurd: "ik vind hem nu
+           alsnog een hele grote kaart". Terug naast de tekst dus, zoals het
+           schrift stond.
+           🔑 De prijs daarvan is dat het document LAAG moet blijven, want
+           naast een tekstkolom van ~260px mag er geen voorwerp van 600px
+           staan. Dat is de reden dat de handgeschreven zin naar links is
+           verhuisd en dat de personalia een strook zijn in plaats van een
+           kolom — geen smaak, maar hoogte.
 
-           Het document ligt tegen de rechterkant. Zo loopt de blik diagonaal:
-           kop linksboven, document rechtsonder — en de kanteling kijkt vanaf
-           daar terug naar de kop. Gecentreerd zou het die richting weghalen. */
-        .w-mkr-rij { display: block; }
-        .w-mkr-tekst {
-          max-width: 42ch;
-          margin-bottom: clamp(28px, 4vw, 48px);
+           ⚠️ Boven uitlijnen en niet centreren. Met align-items:center zweefde
+           de kop halverwege het document, en dan lijkt het of de twee helften
+           niets met elkaar te maken hebben. */
+        .w-mkr-rij {
+          display: grid;
+          gap: clamp(28px, 4vw, 56px);
+          align-items: start;
+        }
+        @media (min-width: 900px) {
+          .w-mkr-rij { grid-template-columns: minmax(0, 1fr) 32rem; }
+        }
+        .w-mkr-tekst { max-width: 42ch; }
+        /* De handgeschreven overtuiging onder de inleiding. Groter dan de
+           lopende tekst, want dit is de zin die je moet onthouden — maar in
+           handschrift en niet in de display-letter: grote display-regels in
+           deze kolom zijn eerder afgekeurd met "een tweede titel, lelijk". */
+        .w-mkr-belofte {
+          margin: clamp(20px, 2.6vw, 28px) 0 0;
+          max-width: 26ch;
+          font-family: var(--font-hand), "Segoe Script", cursive;
+          font-size: clamp(1.15rem, 1.9vw, 1.4rem);
+          line-height: 1.45;
+          color: ${KOP};
         }
         .w-mkr-kop {
           font-family: var(--font-display), Georgia, serif;
@@ -1232,10 +1266,9 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         .w-cv {
           position: relative;
           width: 100%;
-          max-width: 46rem;
-          margin-left: auto;
-          perspective: 1400px;
-          perspective-origin: 62% 24%;
+          max-width: 32rem;
+          perspective: 1000px;
+          perspective-origin: 66% 26%;
         }
 
         /* ── DE STAND VAN HET VOORWERP ────────────────────────────────────
@@ -1357,9 +1390,15 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         }
 
         /* ── HET DOCUMENT ─────────────────────────────────────────────────
-           Kleine ronding en niet de grote organische radius van de kaarten op
-           deze pagina: papier heeft scherpe hoeken. Dat verschil is precies wat
-           dit een document maakt en geen UI-kaart.
+           ⚠️ DIT HAD EERST EEN RONDING VAN 5px, omdat papier scherpe hoeken
+           heeft. Klopt, maar het was ook precies waarom de eigenaar het "simpel
+           en saai" en niet passend bij de pagina vond: élke kaart in deze
+           wereld heeft een grote, per hoek ONGELIJKE ronding. Een rechthoek is
+           hier de vreemde eend.
+           🔑 De vier waarden verschillen bewust een paar honderdsten van
+           elkaar. Precies dezelfde ronding op vier hoeken leest als een
+           vormpje uit een tekenprogramma; ongelijk leest als iets dat gemaakt
+           is. Dat is dezelfde truc als bij het etiket van het oude schrift.
            Het verloop is de ene lichtbron van de pagina (rechtsboven), heel
            subtiel — papier is dof. */
         .w-cv-blad {
@@ -1367,17 +1406,23 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           display: flex;
           flex-direction: column;
           overflow: hidden;
-          border-radius: 5px;
+          border-radius: 1.7rem 2rem 1.75rem 1.9rem;
           background: linear-gradient(158deg, #fffefb, #faf5ea);
         }
 
-        /* ── de kopband ── */
+        /* ── de kopband ──
+           De ruimte onderin (padding-bottom) is voor de golf: die ligt daar
+           overheen, dus tekst die er te dicht bij komt verdwijnt eronder.
+           position/z-index zijn nodig omdat de foto uit deze band mag steken. */
         .w-cv-band {
+          position: relative;
+          z-index: 2;
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: clamp(12px, 2vw, 20px);
-          padding: clamp(16px, 2.4vw, 22px) clamp(18px, 2.6vw, 26px);
+          padding: clamp(16px, 2.4vw, 22px) clamp(20px, 2.8vw, 26px)
+                   clamp(34px, 4.4vw, 44px);
           background: ${DONKER};
         }
         .w-cv-naam {
@@ -1398,45 +1443,55 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
              Avinka staat. */
           color: rgba(255, 255, 255, 0.78);
         }
-        /* De pasfoto. Vaste maat, want een foto die met de kolom meerekt wordt
-           op smalle schermen een pasje van niks. */
+        /* ── de foto ──
+           In de organische vorm van deze wereld (dezelfde ongelijke radii als
+           de achtergrondvlakken), niet als rechthoekig pasje. Vaste maat, want
+           een foto die met de kolom meerekt wordt op smalle schermen een pasje
+           van niks.
+           🔑 translateY duwt hem tot IN de golf: de foto breekt door de
+           kleurgrens heen in plaats van er netjes boven te blijven. Dat is een
+           van de vaste kenmerken van deze designtaal. z-index moet hoger dan 5
+           want dat is de laag van de golf zelf.
+           ⚠️ Hij zakt tot in de golf maar NIET tot onder de band: dan zou hij
+           over de personalia-strook vallen en die staat op zijn eigen laag. */
         .w-cv-pas {
+          position: relative;
+          z-index: 6;
           flex: none;
           display: grid;
           place-items: center;
-          width: 80px;
-          height: 94px;
+          width: 88px;
+          height: 100px;
           overflow: hidden;
+          transform: translateY(32px) rotate(2.5deg);
           background: var(--color-cream, #fbf6ee);
-          border: 4px solid var(--color-cream, #fbf6ee);
-          border-radius: 3px;
-          box-shadow: 0 6px 14px -8px rgba(0, 0, 0, 0.55);
+          border: 5px solid var(--color-cream, #fbf6ee);
+          border-radius: ${VLAKVORMEN.kiezel};
+          box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.6);
         }
 
         /* ── het lijf ── */
-        /* ── het lijf ──
-           🔑 DE HOOGTE VAN DIT DOCUMENT IS EEN GEVOLG, GEEN KEUZE. Hij wordt
-           bepaald door de langste van de twee kolommen. In een document van
-           32rem hield het verhaal ~230px over, liep elke alinea over vier
-           regels en werd het geheel 580px hoog. Op 46rem is de verhaalkolom
-           ~470px (zo'n 68 tekens per regel, de prettigste leesmaat) en past
-           alles naast de vijf feiten in plaats van eronder.
-           Wil je het lager: verbreed de tekstkolom, verklein niet de
-           regelafstand. */
-        .w-cv-body {
-          display: grid;
-          grid-template-columns: 10.5rem minmax(0, 1fr);
-          gap: clamp(20px, 3vw, 34px);
-          padding: clamp(20px, 2.8vw, 30px) clamp(20px, 3vw, 34px);
+        /* ── de personalia-strook ──
+           Een eigen band met een haarlijn eronder, zoals de personalia bovenaan
+           een echt CV. Nauwelijks getint: net genoeg om als apart veld te lezen
+           zonder er een gekleurd blok van te maken. */
+        .w-cv-strook {
+          padding: clamp(14px, 2vw, 18px) clamp(20px, 2.8vw, 26px);
+          background: rgba(var(--w-schaduw-rgb, 23,80,58), 0.03);
+          border-bottom: 1px solid rgba(var(--w-schaduw-rgb, 23,80,58), 0.13);
         }
         /* De feiten: label erboven, waarde eronder. Dat is de taal van een
-           formulier, en dat is precies wat een CV is. */
+           formulier, en dat is precies wat een CV is.
+           🔑 Drie kolommen in plaats van een lijst maakt van vijf feiten twee
+           regels; dat scheelt ruim 140px hoogte, en die hoogte is hier het hele
+           probleem (zie .w-mkr-rij). */
         .w-cv-feiten {
-          display: flex;
-          flex-direction: column;
-          gap: clamp(11px, 1.5vw, 15px);
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: clamp(10px, 1.4vw, 13px) clamp(10px, 1.6vw, 16px);
           margin: 0;
         }
+        .w-cv-breed { grid-column: span 2; }
         .w-cv-feiten dt {
           font-size: 0.7rem;
           font-weight: 700;
@@ -1456,12 +1511,40 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           line-height: 1.35;
           color: ${DONKER};
         }
-        /* Een haarlijn tussen de twee kolommen en verder niets. Een getint
-           zijbalkje is precies het CV-sjabloon dat iedereen kent; haarlijnen
-           zijn de taal die deze pagina zelf al spreekt. */
+        /* Het verhaal over de volle breedte van het document: ~62 tekens per
+           regel, en dat is de maat waarop lopende tekst het prettigst leest. */
         .w-cv-verhaal {
-          border-left: 1px solid rgba(var(--w-schaduw-rgb, 23,80,58), 0.16);
-          padding-left: clamp(20px, 3vw, 34px);
+          padding: clamp(16px, 2.4vw, 22px) clamp(20px, 2.8vw, 26px)
+                   clamp(20px, 2.8vw, 26px);
+        }
+        /* ── de markeerstift ──
+           Hetzelfde gebaar als in "Herken je dit?", maar dan stil: een haal met
+           een groene stift over één zinsdeel. De hoek in het verloop (104 graden)
+           en de ongelijke rondingen maken er een STREEK van in plaats van een
+           rechthoek — een markering met vier rechte hoeken leest als een
+           selectie in een tekstverwerker.
+           De haal loopt aan de randen uit naar niets, want een stift zet niet
+           met volle kleur in. */
+        /* ⚠️ HOUD DE GEMARKEERDE TEKST KORT GENOEG VOOR ÉÉN REGEL. Eerst stond
+           er een half zinsdeel onder de stift; dat liep om naar een tweede
+           regel en werd toen twee losse blokjes — precies hoe een selectie in
+           een tekstverwerker eruitziet, en dus het tegenovergestelde van een
+           streek met een stift. Twee woorden is genoeg. */
+        .w-cv-markeer {
+          background: linear-gradient(
+            104deg,
+            rgba(47, 158, 110, 0) 0.6%,
+            rgba(47, 158, 110, 0.34) 3%,
+            rgba(47, 158, 110, 0.44) 30%,
+            rgba(47, 158, 110, 0.36) 82%,
+            rgba(47, 158, 110, 0) 99%
+          );
+          border-radius: 0.5em 0.75em 0.4em 0.65em;
+          padding: 0.1em 0.3em;
+          margin: 0 -0.18em;
+          box-decoration-break: clone;
+          -webkit-box-decoration-break: clone;
+          color: inherit;
         }
         .w-cv-sectiekop {
           margin: 0 0 0.35rem;
@@ -1480,23 +1563,6 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         }
         .w-cv-verhaal p:last-child { margin-bottom: 0; }
 
-        /* ── de handgeschreven regel ──
-           Onder een haarlijn over de volle breedte, zoals de regel onderaan een
-           formulier waar je zelf iets invult. Iets scheef, want handschrift
-           staat nooit recht — en de draaiing gaat om de LINKERkant, anders
-           loopt het einde van de zin tegen de rand van het papier aan. */
-        .w-cv-hand {
-          margin: 0 clamp(20px, 3vw, 34px) clamp(20px, 2.8vw, 30px);
-          padding-top: clamp(14px, 2vw, 18px);
-          border-top: 1px solid rgba(var(--w-schaduw-rgb, 23,80,58), 0.16);
-          font-family: var(--font-hand), "Segoe Script", cursive;
-          font-size: 1.08rem;
-          line-height: 1.45;
-          color: ${KOP};
-          rotate: -0.7deg;
-          transform-origin: 0 50%;
-        }
-
         /* ── mobiel: geen ruimte, wel hetzelfde document ───────────────────
            Op 390px is er geen kijkhoek die nog klopt: een gekanteld document
            van deze hoogte drukt de bovenste regels dicht en de twee kolommen
@@ -1513,15 +1579,10 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           }
           .w-cv-blok, .w-cv-vel { display: none; }
           .w-cv-blad { box-shadow: ${schaduw(20, 44, -22, 0.45)}; }
-          /* De twee kolommen gaan onder elkaar; de haarlijn verhuist mee van
-             links naar boven, want daar ligt de scheiding nu. */
-          .w-cv-body { grid-template-columns: 1fr; }
-          .w-cv-verhaal {
-            border-left: none;
-            border-top: 1px solid rgba(var(--w-schaduw-rgb, 23,80,58), 0.16);
-            padding-left: 0;
-            padding-top: clamp(16px, 4vw, 20px);
-          }
+          /* Twee kolommen in plaats van drie: op 390px is een derde van de
+             breedte ~100px en dan loopt zowel het label als de waarde eronder
+             om. School houdt zijn hele regel. */
+          .w-cv-feiten { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
       `}</style>
       {/* Het mintveld loopt hier NIET meer dood: het gaat gewoon door tot de
