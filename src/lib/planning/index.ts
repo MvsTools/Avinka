@@ -19,4 +19,5 @@ export * from "./dubbelingen";
 export * from "./relevantie";
 export * from "./rooster";
 export * from "./dagbeeld";
+export * from "./aanleiding";
 export * from "./ophalen";

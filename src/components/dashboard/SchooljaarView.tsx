@@ -23,6 +23,7 @@ import AgendaKoppelen from "./AgendaKoppelen";
 import { ETIKET } from "./schooljaar-stijl";
 import SchooljaarDagkaart from "./SchooljaarDagkaart";
 import FeitenRij from "./FeitenRij";
+import WatEraanKomt from "./WatEraanKomt";
 
 // Mijn schooljaar, laag 1: je jaar op een rij. De weekplanning en je lesdag
 // komen hier straks als eigen tabbladen bij; de gegevens eronder zijn al
@@ -168,6 +169,12 @@ export default function SchooljaarView({
           )}
 
           <Feiten bron={bron} vandaag={vandaag} />
+
+          {/* Wat eraan komt, met de tool die erbij hoort. Hier de volledige
+              lijst; op Start staan hooguit de eerste twee. Bewust op de
+              volledige bron: "Alleen mijn afspraken" gaat over de lijst
+              eronder, en deze signalen zijn al op relevantie geschift. */}
+          <WatEraanKomt bron={volledigeBron} vandaag={vandaag} groepen={mijnGroepen} />
 
           {telDubbelingen(items) > 0 && (
             <p className="text-sm text-ink/55">

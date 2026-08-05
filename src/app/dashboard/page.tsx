@@ -9,6 +9,7 @@ import WelkomModal from "@/components/dashboard/WelkomModal";
 import StreakBadge from "@/components/dashboard/StreakBadge";
 import TakenOverzicht from "@/components/dashboard/TakenOverzicht";
 import VandaagRij from "@/components/dashboard/VandaagRij";
+import WatEraanKomt from "@/components/dashboard/WatEraanKomt";
 import DuoOverdracht from "@/components/dashboard/DuoOverdracht";
 import CollegaUitnodigen from "@/components/dashboard/CollegaUitnodigen";
 import KaartMelding from "@/components/dashboard/KaartMelding";
@@ -77,6 +78,17 @@ export default async function DashboardStart() {
         vandaag={vandaag}
         groepen={groepen}
         extraTegel={<DuoOverdracht />}
+      />
+
+      {/* Wat er de komende weken aankomt en welke tool daarbij hoort. Staat
+          bewust tussen de dagrij en de tools: het is het bruggetje van "wat
+          speelt er" naar "waar begin ik". Is er niets, dan staat er niets. */}
+      <WatEraanKomt
+        bron={planning}
+        vandaag={vandaag}
+        groepen={groepen}
+        maximaal={2}
+        vergrendeld={tools.filter((t) => vergrendeld(t.slug)).map((t) => t.slug)}
       />
 
       <OnboardingCard />
