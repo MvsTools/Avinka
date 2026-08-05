@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "react";
+import { PROEF_DAGEN } from "@/lib/abonnement";
 
 /* ── De Wereld van /nieuw5 ──────────────────────────────────────────────────
    De body-taal, geleend van de referentie (bahamabucks) maar met óns merk:
@@ -1659,8 +1660,14 @@ export function WereldSlot() {
         <h2 data-reveal className={`${KOP_GROOT} text-white`}>
           Kom binnen. Je werkplek staat klaar.
         </h2>
+        {/* ⚠️ Hier stond de 7 met de hand ingetypt, terwijl de drie andere
+           plekken die de proefperiode noemen (de eindkaart van de tools-rij, de
+           prijzensectie en de vraag "Hoe werkt de gratis proefperiode?") hem uit
+           PROEF_DAGEN halen. Eén hardgecodeerd getal tussen drie afgeleide is
+           precies hoe een pagina zichzelf later tegenspreekt: verandert de
+           proefduur, dan blijft alleen deze zin op 7 staan. */}
         <p data-reveal className="mx-auto mt-5 max-w-xl text-lg leading-8 text-white/75">
-          7 dagen gratis proberen, zonder betaalgegevens vooraf.
+          {PROEF_DAGEN} dagen gratis proberen, zonder betaalgegevens vooraf.
         </p>
         <div data-reveal className="mt-9">
           <BlobKnop href="/sign-up" variant="wit">Probeer Avinka gratis</BlobKnop>
