@@ -78,6 +78,15 @@ const VOORBEREIDING: Partial<Record<Soort, { voor: number; knop: string; taak: s
     knop: "Rooster inplannen",
     taak: "Gespreksrooster maken en de tijden naar ouders sturen",
   },
+  // Bij een schoolreis, sportdag of excursie is dít het stuk dat je niet zelf
+  // in de hand hebt en dat daarom vroeg moet: je hebt begeleiders en vervoer
+  // nodig, en die moeten hun eigen dag vrij kunnen houden. Zes weken, want een
+  // ouder die moet ruilen op zijn werk heeft die tijd nodig.
+  activiteit: {
+    voor: 42,
+    knop: "Hulpouders vragen",
+    taak: "Hulpouders en vervoer regelen",
+  },
 };
 
 /**
@@ -190,6 +199,17 @@ function opMaat(
     const naam =
       TOETS_NAAM[sys.toetsSysteem ?? ""] ?? LVS_NAAM[sys.lvsSysteem ?? ""] ?? "";
     if (naam) return { knop: `Klaarzetten in ${naam}`, taak: `Toetsen klaarzetten in ${naam}` };
+  }
+  if (soort === "activiteit" && sys.communicatieApp) {
+    // Hulpouders vraag je waar de ouders zitten, dus dit signaal hoort naar de
+    // communicatie-app te wijzen en niet naar je takenlijst.
+    const naam = APP_NAAM[sys.communicatieApp] ?? "je communicatie-app";
+    const link = appUrl(sys) || undefined;
+    return {
+      knop: link ? `Oproep in ${naam}` : "Hulpouders vragen",
+      taak: `Oproep voor hulpouders en vervoer plaatsen in ${naam}`,
+      link,
+    };
   }
   if (soort === "rapport" && sys.lvsSysteem) {
     const naam = LVS_NAAM[sys.lvsSysteem] ?? "je leerlingvolgsysteem";
