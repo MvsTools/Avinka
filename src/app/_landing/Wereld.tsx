@@ -701,40 +701,39 @@ export function WereldIntro() {
              lezen moet weten wat hij koopt, niet hoe wij erover denken. Zet het
              concrete dus vooraan en het nieuwe erachter, niet andersom.
 
-             Deze alinea moet daarom in deze volgorde blijven:
-             1. wat de tools voor je doen, met het werk bij naam;
-             2. dat jij het laatste woord houdt;
-             3. pas dan het meedenken.
+             ⚠️ DIT IS DE VERKOOPZIN, GEEN SPECIFICATIEBLAD. Hier is het twee
+             keer misgegaan en allebei de keren in dezelfde richting: ik ging
+             opsommen wát er allemaal is (rapporten, toetsen, ouderberichten,
+             vakanties, de data van groep 8). De eigenaar: "te specifiek, je
+             gaat te veel in op wat er allemaal is. Leerkrachten moeten hieruit
+             opmaken: woah dat is handig, heb ik nodig."
 
-             ⚠️ HET MEEDENKEN HING EERST AAN "je zet je schooljaar er één keer
-             in", en dat is er 5-8 uit gehaald op verzoek. Twee redenen, en de
-             tweede is de belangrijkste:
-             - het is niet de enige route. Wie niets koppelt krijgt óók een
-               kloppend jaar;
-             - het maakte van een EIGENSCHAP VAN AVINKA een VOORWAARDE VOOR DE
-               GEBRUIKER. Dan lees je "eerst huiswerk doen" in plaats van "dit
-               kan het".
-             🔑 En het is waar: die kennis zit ingebakken, niet in jouw upload.
-             `lib/planning/vakanties.ts` heeft de landelijke schoolvakanties per
-             regio, letterlijk bedoeld als vangnet "voor wie nog geen agenda
-             heeft gekoppeld", en `lib/planning/groep8.ts` heeft de
-             doorstroomtoets, het voorlopig en definitief advies en de
-             aanmeldweek — landelijk vast, dus juist het soort data dat NIET in
-             de agenda van jouw school staat. Vandaar dat die twee bij naam
-             worden genoemd: het zijn de twee die zonder jouw toedoen kloppen.
+             🔑 EEN OPSOMMING OVERTUIGT NIET, HERKENNING WEL. Een leerkracht
+             wil hier geen lijst afvinken maar zichzelf tegenkomen. Daarom
+             begint de zin bij de AVOND die hij kwijt is, niet bij de functie
+             die dat oplost — en pas als hij zichzelf herkent, wil hij weten
+             hoe. De opbouw is dus:
+             1. de pijn die verdwijnt, in zijn woorden;
+             2. pas dan waardoor.
 
-             ⚠️ DIT IS EEN BEWERING DIE KAN VEROUDEREN. Allebei die bestanden
-             moeten jaarlijks worden bijgewerkt (dat staat er ook in). Wordt dat
-             vergeten, dan is deze zin niet meer waar.
+             De twee pijnen hier zijn niet vrij gekozen: het zijn er twee uit
+             "Herken je dit?" hierboven, zodat deze sectie letterlijk antwoord
+             geeft op wat daar staat. "Taken die je pas ziet als het te laat
+             is" is de derde pijn, en die had tot nu toe nergens antwoord.
+
+             ⚠️ Wat hier NIET meer in staat en waar het wél waar is: dat Avinka
+             de vakanties en de vaste data van groep 8 kent, ook zonder dat je
+             iets koppelt (`lib/planning/vakanties.ts` en `groep8.ts`). Dat is
+             sterk bewijs, maar het is BEWIJS en geen verkoopzin. Wil je het
+             tonen, doe dat dan ergens waar bewijs hoort.
 
              ⚠️ Zeg hier niet dat de AI het rekenwerk doet; dat doet de tool
              zelf. Die scheiding staat uitgelegd bij "Zo werkt het" en in de
              vragen, en moet overal hetzelfde blijven. */}
           <p data-reveal className="mt-4 text-lg leading-8 text-ink/75" style={{ transitionDelay: "90ms" }}>
-            Slimme tools met AI schrijven je rapporten, analyseren je toetsen en
-            stellen je ouderberichten op. Jij leest na en past aan. En omdat
-            Avinka het schooljaar kent, van de vakanties tot de vaste data van
-            groep 8, zie je op tijd wat eraan komt.
+            Geen avond meer kwijt aan rapporten, geen taken die je pas ziet als
+            het te laat is. Slimme AI-tools schrijven het werk voor je uit, en
+            Avinka houdt bij wat eraan komt.
           </p>
         </div>
       </div>
