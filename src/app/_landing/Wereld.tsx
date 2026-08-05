@@ -1082,20 +1082,22 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                    deel gaat bewust over het vak en niet over de winst voor de
                    lezer — die staat al in de handgeschreven regel ernaast en
                    in de belofte bovenaan de pagina. */}
+                {/* ⚠️ HIER STOND EEN MARKEERSTIFTHAAL over "het zwaarste
+                   deel". Weg op verzoek: "die markeerstift mag weg, heel raar".
+                   🔑 En de redenering waarmee ik hem erin zette, klopte niet —
+                   niet herhalen. Ik dacht: de markeerstift in "Herken je dit?"
+                   is het enige stuk vormgeving waarvan de eigenaar ooit zei "ik
+                   vind dit leuk", dus die hoort hier ook. Maar dáár streept een
+                   hele sectiekop zichzelf aan terwijl je scrollt — dat is een
+                   gebeurtenis. Een stilstaand groen blokje achter drie woorden
+                   in een alinea is iets heel anders: dat leest niet als een
+                   stift maar als een gemarkeerd stuk tekst in een document.
+                   Een motief overnemen is niet hetzelfde als hetzelfde effect
+                   krijgen; de schaal en de beweging horen erbij. */}
                 <p>
                   Wat begon als een oplossing voor mijn eigen werk, werd een
-                  bredere missie: het werk na schooltijd hoort niet{" "}
-                  {/* 🔑 DE MARKEERSTIFT KOMT VAN DEZE PAGINA ZELF. De sectie
-                     "Herken je dit?" wordt tijdens het scrollen aangestreept
-                     met een groene markeerstifthaal, en dat is het enige stuk
-                     vormgeving waarvan de eigenaar ooit letterlijk zei "ik vind
-                     dit leuk". Hier staat hij stil en over de kern van de zin.
-                     Eén keer per kaart, anders is het geen nadruk meer maar een
-                     patroon. Kort houden: loopt de markering om naar een tweede
-                     regel, dan wordt het twee blokjes en leest het als een
-                     selectie in een tekstverwerker. */}
-                  <mark className="w-cv-markeer">het zwaarste deel</mark> van
-                  het vak te zijn.
+                  bredere missie: het werk na schooltijd hoort niet het zwaarste
+                  deel van het vak te zijn.
                 </p>
                 {/* ⚠️ HIER STOND ALLEEN "Geen ingewikkelde techniek, wel
                    zorgvuldig met de gegevens van je leerlingen." De eigenaar
@@ -1350,41 +1352,11 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           padding: clamp(16px, 2.4vw, 22px) clamp(20px, 2.8vw, 26px)
                    clamp(20px, 2.8vw, 26px);
         }
-        /* ── de markeerstift ──
-           Hetzelfde gebaar als in "Herken je dit?", maar dan stil: een haal met
-           een groene stift over één zinsdeel. De hoek in het verloop (104 graden)
-           en de ongelijke rondingen maken er een STREEK van in plaats van een
-           rechthoek — een markering met vier rechte hoeken leest als een
-           selectie in een tekstverwerker.
-           De haal loopt aan de randen uit naar niets, want een stift zet niet
-           met volle kleur in. */
-        /* ⚠️ DE MARKERING MAG NOOIT OVER TWEE REGELS LOPEN. Dan wordt het twee
-           losse blokjes — precies hoe een selectie in een tekstverwerker
-           eruitziet, en dus het tegenovergestelde van een streek met een stift.
-           🔑 nowrap is de grendel: de hele markering schuift dan als geheel
-           naar de volgende regel in plaats van te breken. Ik heb dit eerst
-           geprobeerd op te lossen door de tekst kort te houden, maar dat is
-           geen grendel — bij de eerstvolgende tekstwijziging valt de breuk weer
-           net verkeerd, en dat gebeurde ook meteen.
-           Houd de markering wél kort (twee, drie woorden): met nowrap duwt een
-           lange markering anders een half lege regel voor zich uit. */
-        .w-cv-markeer {
-          white-space: nowrap;
-          background: linear-gradient(
-            104deg,
-            rgba(47, 158, 110, 0) 0.6%,
-            rgba(47, 158, 110, 0.34) 3%,
-            rgba(47, 158, 110, 0.44) 30%,
-            rgba(47, 158, 110, 0.36) 82%,
-            rgba(47, 158, 110, 0) 99%
-          );
-          border-radius: 0.5em 0.75em 0.4em 0.65em;
-          padding: 0.1em 0.3em;
-          margin: 0 -0.18em;
-          box-decoration-break: clone;
-          -webkit-box-decoration-break: clone;
-          color: inherit;
-        }
+        /* ⚠️ HIER STOND .w-cv-markeer: een groene markeerstifthaal over een
+           paar woorden in het verhaal. Weg op verzoek ("heel raar"), inclusief
+           de nowrap-grendel die ervoor zorgde dat hij niet over twee regels
+           brak. Zie de opmerking bij de alinea in de opmaak voor waarom de
+           redenering erachter niet klopte. */
         .w-cv-sectiekop {
           margin: 0 0 0.35rem;
           font-family: var(--font-display), Georgia, serif;
