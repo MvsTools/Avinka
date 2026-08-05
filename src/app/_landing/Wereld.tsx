@@ -1039,13 +1039,18 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                     </div>
                   </dl>
                   <dl className="w-cv-kolom">
-                    {/* Eén term met twee waarden: school en groep zijn samen
-                       "waar hij werkt". Dat mag zo in een dl — meerdere dd-s
-                       bij één dt is precies waar die vorm voor is. */}
+                    {/* ⚠️ De groep hing hier eerst als tweede waarde ONDER
+                       "werk", zonder eigen label. Op verzoek losgetrokken tot
+                       een eigen regel met een eigen kop, net als de twee
+                       links. Zo staat er nergens meer een waarde zonder dat
+                       erbij staat waar hij antwoord op geeft. */}
                     <div>
                       <dt>werk</dt>
                       <dd>Regenboog Osseveld</dd>
-                      <dd>groep 7</dd>
+                    </div>
+                    <div>
+                      <dt>groep</dt>
+                      <dd>7</dd>
                     </div>
                   </dl>
                   <dl className="w-cv-kolom">
@@ -1307,10 +1312,6 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           line-height: 1.35;
           color: ${DONKER};
         }
-        /* Een tweede waarde onder dezelfde term (school + groep) staat dichter
-           tegen de eerste aan dan tegen een volgend label: ze horen bij elkaar
-           en dat moet je aan de ruimte kunnen zien. */
-        .w-cv-feiten dd + dd { margin-top: 0.05rem; }
         /* Het verhaal over de volle breedte van het document: ~62 tekens per
            regel, en dat is de maat waarop lopende tekst het prettigst leest. */
         .w-cv-verhaal {
