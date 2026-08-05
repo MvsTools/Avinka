@@ -64,9 +64,14 @@ export const PLANNEN: Plan[] = [
     // AI-verbruiksplafond kwam (zie lib/ai-limiet.ts) — je kunt geen grens
     // hanteren en tegelijk onbeperkt beloven. De vervangende voordelen gaan
     // over de prijs, niet over de hoeveelheid, en zijn dus altijd waar.
+    /* ⚠️ "Je klas bewaard" stond hier, en dat is geen zin. Naast "Eén tool
+       naar keuze" en "Namen blijven op je eigen apparaat" — twee kenmerken die
+       gewoon uitspreekbaar zijn — viel dat op als een half afgemaakte notitie.
+       Het gaat erom dat je je klaslijst één keer invult en dat elke tool hem
+       daarna kent, dus dat staat er nu. */
     voordelen: [
       "Eén tool naar keuze",
-      "Je klas bewaard",
+      "Je klaslijst blijft bewaard",
       "Namen blijven op je eigen apparaat",
     ],
   },

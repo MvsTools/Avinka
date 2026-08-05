@@ -65,9 +65,15 @@ function zoekAfbeelding(basis: string) {
    helemaal weg. Een landingspagina die stukloopt op een teller is erger dan
    een landingspagina zonder teller.
 
-   Met ?cijfers=demo zie je het bord met testgetallen: dat is om het ontwerp te
-   kunnen beoordelen, niet iets wat een bezoeker tegenkomt. */
-const DEMO_CIJFERS = { minuten: 77_040, leerkrachten: 37, uitwerkingen: 9_412 };
+   ⚠️ HIER STOND ?cijfers=demo MET DEMO_CIJFERS (77.040 minuten, 37
+   leerkrachten, 9.412 uitwerkingen). Weg op 5-8, en niet terugzetten: het was
+   een publieke URL waarmee iederéén het cijferbord met VERZONNEN getallen te
+   zien kreeg. Op een pagina waar het hele punt van dat bord is dat de cijfers
+   echt zijn, is dat het gevaarlijkste soort schakelaar — een screenshot uit
+   die stand is niet van een echte te onderscheiden.
+   Wil je het ontwerp weer met grote getallen beoordelen, doe dat dan lokaal
+   met een tijdelijke waarde in deze functie, niet met een schakelaar die op
+   de echte site blijft staan. */
 
 /* De geldige waarden voor ?plan= (zie hieronder). Uit PLANNEN afgeleid en niet
    met de hand overgetikt, zodat een nieuw pakket vanzelf meedoet. */
@@ -80,7 +86,7 @@ const PLAN_IDS: PlanId[] = PLANNEN.map((p) => p.id);
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ startpagina?: string; cijfers?: string; plan?: string }>;
+  searchParams: Promise<{ startpagina?: string; plan?: string }>;
 }) {
   const supabase = await createClient();
   const {
@@ -124,8 +130,7 @@ export default async function Home({
         fotoBestand={zoekAfbeelding("michael")}
         ingelogd={Boolean(user)}
         huidigPlan={huidigPlan}
-        cijfers={params.cijfers === "demo" ? DEMO_CIJFERS : await haalCijfers()}
-        bijhouden={params.cijfers !== "demo"}
+        cijfers={await haalCijfers()}
       />
       <Footer maxWidth="max-w-5xl" />
     </div>

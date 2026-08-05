@@ -376,11 +376,22 @@ export function WereldPrijzen({
                         ? /* wijzig=1 klapt de pakketten daar meteen open (anders
                              sta je op een scherm waar je eerst "Wijzig" moet
                              zoeken) en vorm= neemt de maand/schooljaar-keuze
-                             van hierboven mee, zodat je 'm niet twee keer maakt. */
+                             van hierboven mee, zodat je 'm niet twee keer maakt.
+                             Deze twee LEEST /dashboard/abonnement ook echt. */
                           `/dashboard/abonnement?wijzig=1&vorm=${jaar ? "jaar" : "maand"}`
-                        : jaar
-                          ? "/sign-up?plan=jaar"
-                          : "/sign-up?plan=maand"
+                        : /* ⚠️ HIER STOND /sign-up?plan=jaar of ?plan=maand, en dat
+                             deed NIETS: sign-up/page.tsx leest alleen `volgende`.
+                             Een parameter die niemand uitleest wekt de indruk dat
+                             de keuze wordt meegenomen terwijl hij verdwijnt.
+                             🔑 En hij hoort hier ook niet thuis: deze knop zegt
+                             "Probeer gratis" en start zeven dagen proef zónder
+                             betaalgegevens. Op dat moment is maand-of-schooljaar
+                             nog niet aan de orde — die keuze maak je pas als de
+                             proef afloopt, in het dashboard. Wil je hem tóch
+                             meenemen, dan moet sign-up hem echt doorgeven aan
+                             /dashboard/abonnement; een losse parameter erbij
+                             plakken is dat niet. */
+                          "/sign-up"
                     }
                     variant={uitgelicht || enigeUpgrade ? "vol" : "licht"}
                     maat="klein"
