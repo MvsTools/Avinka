@@ -149,6 +149,49 @@ drop policy if exists "eigen teksten" on public.teksten;
 create policy "eigen teksten" on public.teksten
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+-- ── KLASLIMIET PER PAKKET ─────────────────────────────────────────────────
+-- Volledige uitleg: database/migratie-klaslimiet.sql.
+-- "Start = 1 groep, Compleet/Pro = 3" werd alleen in KlasManager.tsx bewaakt,
+-- dus buiten de app om kon je er tien maken. De regel volgt hier de DATA en
+-- niet een vlag: alleen wie een betaald pakket heeft kent een grens, dus in de
+-- proef en de testfase verandert er niets en is er bij de livegang geen tweede
+-- schakelaar om te vergeten.
+-- ⚠️ De aantallen staan ook in src/lib/abonnement.ts (KLAS_LIMIET) — samen bijwerken.
+create or replace function public.klassen_limiet_bewaakt()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+declare
+  st text; pl text; grens int; huidig int;
+begin
+  -- ⚠️ BEWUST GEEN `security definer`: moet zien WIE er schrijft.
+  if current_user not in ('authenticated', 'anon') then return new; end if;
+
+  select abon_status, abon_plan into st, pl
+  from public.instellingen where user_id = new.user_id;
+
+  if pl is null or st is null or st not in ('actief', 'opgezegd') then
+    return new;  -- geen betaald pakket = geen grens
+  end if;
+
+  grens := case pl when 'start' then 1 when 'compleet' then 3 when 'pro' then 3 else 3 end;
+  select count(*) into huidig from public.klassen where user_id = new.user_id;
+
+  if huidig >= grens then
+    raise exception 'Je pakket staat % groep(en) toe.', grens using errcode = '42501';
+  end if;
+  return new;
+end;
+$$;
+
+-- Alleen bij INSERT: een bestaande groep bijwerken mag altijd, ook als iemand
+-- overstapt naar een kleiner pakket en er dan te veel heeft.
+drop trigger if exists trg_klassen_limiet on public.klassen;
+create trigger trg_klassen_limiet
+  before insert on public.klassen
+  for each row execute function public.klassen_limiet_bewaakt();
+
 -- ── Tabel-rechten ───────────────────────────────────────────────────────
 -- Ingelogde gebruikers mogen de tabellen gebruiken; RLS hierboven bepaalt
 -- vervolgens dat ze alleen bij hun EIGEN rijen kunnen. (anon = niet ingelogd
@@ -1708,6 +1751,7 @@ revoke execute on function public.wijs_aantal_verwijzingen_proef(text) from publ
 revoke execute on function public.wijs_ref_code() from public, anon;
 revoke execute on function public.wijs_koppel_verwijzing(text) from public, anon;
 revoke execute on function public.instellingen_bewaakt() from public, anon;
+revoke execute on function public.klassen_limiet_bewaakt() from public, anon;
 revoke execute on function public.wijs_snapshot_abon() from public, anon;
 revoke execute on function public.wijs_community_stats() from public, anon;
 revoke execute on function public.registreer_herakkoord(text, text) from public, anon;
