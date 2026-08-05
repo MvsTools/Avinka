@@ -1378,23 +1378,30 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            Verder dan dit niet: onder ~700px gaat de bladzijde bol staan en
            lees je een fish-eye in plaats van een schrift.
 
-           perspective-origin ligt links-boven van het midden, niet in het
-           midden: de kijker staat schuin voor het schrift, aan de kant waar
-           ook de tekst staat. Dat is wat de rug in beeld brengt. */
+           perspective-origin ligt rechts-boven van het midden, niet in het
+           midden: de kijker staat schuin voor het schrift, aan de buitenkant
+           van de pagina. Samen met de Y-draaiing hieronder kijkt het schrift
+           daardoor de pagina IN. */
         .w-schrift {
           position: relative;
           width: 100%;
           max-width: 32rem;
           perspective: 900px;
-          perspective-origin: 32% 22%;
+          perspective-origin: 68% 22%;
         }
         /* ── DE STAND VAN HET VOORWERP ────────────────────────────────────
            Drie draaiingen, en ze doen alle drie iets anders:
            - X (+19deg) kantelt de bovenkant van je af: je kijkt er OP neer, en
              daardoor zie je de snede aan de onderkant. Dit is de draaiing die
              het van een plaatje een voorwerp maakt.
-           - Y (+9deg) draait de linkerkant naar je toe, zodat het schrift naar
-             de tekst ernaast kijkt in plaats van van de lezer weg.
+           - Y (-9deg) draait het schrift NAAR LINKS, de pagina in.
+             ⚠️ Dit stond eerst op +9 en dat was fout. Het schrift ligt al
+             helemaal rechts op de pagina, en draaide toen ook nog eens naar
+             rechts: het keek dus het beeld uit, weg van alles waar het bij
+             hoort. Eigenaar: "dan kijkt die een soort van naar buiten beeld".
+             🔑 De regel erachter: een gekanteld voorwerp KIJKT ergens heen, en
+             dat moet naar de inhoud zijn, niet naar de rand van het scherm.
+             Bij een voorwerp links op de pagina hoort dus het omgekeerde teken.
            - Z (-1,4deg) is de oude scheefstand: niets ligt kaarsrecht op tafel.
              Die stond eerst als de losse eigenschap rotate op .w-schrift; nu
              hoort hij gewoon bij de andere twee.
@@ -1413,7 +1420,7 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            kruisen. */
         .w-schrift-scene {
           --kantel-x: 19deg;
-          --kantel-y: 9deg;
+          --kantel-y: -9deg;
           /* De dikte van het schrift, in één getal (zie .w-schrift-blok). Op
              deze schaal (~500px voor een A5-breedte) is 26px ongeveer 7mm:
              een volgeschreven schrift, niet een pak papier. */
