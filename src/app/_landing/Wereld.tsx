@@ -1251,12 +1251,21 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           margin-left: clamp(20px, 5vw, 72px);
         }
         /* De verhouding volgt de viewBox (38 bij 34): de pijl daalt eerst en
-           gaat dan pas opzij, dus hij is bijna net zo hoog als breed. */
+           gaat dan pas opzij, dus hij is bijna net zo hoog als breed.
+           ⚠️ DE ONDERMARGE IS GEMETEN, NIET GEKOZEN. De punt van de pijl ligt
+           niet op de onderrand van het vakje maar op y=27 van de 34 — dus zo'n
+           7px daarboven. Lijn je het vakje onderaan uit met de link, dan komt de
+           punt onder de tekst uit; dat stond er 5px naast. Deze marge duwt hem
+           die 5px omhoog, zodat de punt precies op het midden van
+           info@avinka.nl wijst.
+           🔑 Verander je de maat van de pijl of de tekengrootte van het adres,
+           meet dit dan opnieuw: het is een verhouding tussen twee dingen, geen
+           vaste waarde. */
         .w-mkr-pijl {
           flex: none;
           width: 2.45rem;
           height: 2.2rem;
-          margin-bottom: 0.1rem;
+          margin-bottom: 0.42rem;
           color: ${KOP};
         }
         /* Het adres in dezelfde hand als de uitnodiging — alsof iemand het voor
