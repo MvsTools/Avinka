@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { VOORWAARDEN, PRIVACY } from "@/lib/juridisch";
 import { veiligIntern } from "@/lib/paden";
+import { isWegwerpAdres } from "@/lib/email-normaliseren";
 
 // Het resultaat dat de formulieren tonen (foutmelding of bevestiging).
 export type AuthState = { error?: string; message?: string };
@@ -77,6 +78,17 @@ export async function signup(
   }
   if (password.length < 6) {
     return { error: "Kies een wachtwoord van minstens 6 tekens." };
+  }
+  /* Wegwerpadressen (postvakken die na een uur weer weg zijn) weren we hier,
+     met een gewone zin in plaats van een verwijt. Dit is een drempeltje, geen
+     slot: de echte rem op herhaalde gratis weken is dat een proef weinig waard
+     is (CREDITS_PER_PLAN) en dat één brievenbus er maar één krijgt
+     (database/migratie-proef-per-brievenbus.sql). */
+  if (isWegwerpAdres(email)) {
+    return {
+      error:
+        "Dit lijkt een tijdelijk mailadres. Gebruik je schoolmail of je eigen adres — je hebt het nodig om je account te bevestigen.",
+    };
   }
   // Akkoord op voorwaarden + privacy is verplicht (ook server-side gecontroleerd,
   // zodat het niet te omzeilen is door de checkbox uit te schakelen).

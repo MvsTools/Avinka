@@ -42,6 +42,9 @@ create table if not exists public.instellingen (
   abon_vorm        text,                       -- 'maand' | 'jaar'
   abon_status      text default 'proef',       -- 'proef' | 'actief' | 'opgezegd' | 'verlopen'
   proef_eindigt    timestamptz default now() + interval '7 days',
+  -- true = dit postvak had al eens een gratis week (zie wijs_proef_claim).
+  -- Alleen om het bij de betaalmuur te kunnen uitleggen.
+  proef_overgeslagen boolean not null default false,
   periode_eindigt  timestamptz,               -- einde van de betaalde periode
   start_tool       text,                       -- gekozen tool bij het Start-pakket
   start_tool_sinds date,                       -- wanneer voor het laatst gewisseld (max 1×/maand)
@@ -461,6 +464,62 @@ grant execute on function public.wijs_aantal_verwijzingen_proef(text) to authent
 -- ⚠️ Bouw je een nieuw veld dat iets ontgrendelt of geld waard is: zet het in
 -- de lijst van instellingen_bewaakt(), anders staat het meteen weer open.
 
+-- ÉÉN GRATIS PROEF PER BRIEVENBUS — volledige uitleg + de noodknop staan in
+-- database/migratie-proef-per-brievenbus.sql.
+-- 🔑 Dit houdt alleen schrijfwijzen van hetzelfde postvak tegen (plus-labels en
+-- Gmail-puntjes), NIET iemand die een echt nieuw mailadres aanmaakt. Dat kan
+-- niet zonder betaalgegevens bij de proef, en die belofte houden we. De echte
+-- rem is dat een proef weinig waard is (40 credits, zie CREDITS_PER_PLAN).
+-- ⚠️ Dezelfde normaliseerregels staan in src/lib/email-normaliseren.ts.
+create or replace function public.wijs_email_norm(p_email text)
+returns text language plpgsql immutable set search_path = public as $$
+declare schoon text := lower(trim(coalesce(p_email, ''))); lokaal text; domein text;
+begin
+  if position('@' in schoon) < 2 then return schoon; end if;
+  lokaal := split_part(schoon, '@', 1);
+  domein := split_part(schoon, '@', 2);
+  if domein = 'googlemail.com' then domein := 'gmail.com'; end if;
+  if domein in ('gmail.com','outlook.com','outlook.nl','hotmail.com','hotmail.nl',
+                'live.com','live.nl','msn.com','icloud.com','me.com',
+                'fastmail.com','protonmail.com','proton.me') then
+    lokaal := split_part(lokaal, '+', 1);
+  end if;
+  -- Puntjes ALLEEN bij Gmail: elders is jan.jansen@ een ander adres.
+  if domein = 'gmail.com' then lokaal := replace(lokaal, '.', ''); end if;
+  return lokaal || '@' || domein;
+end;
+$$;
+
+create table if not exists public.proef_gebruikt (
+  email_norm   text primary key,
+  eerste_user  uuid references auth.users(id) on delete set null,
+  aangemaakt   timestamptz not null default now()
+);
+alter table public.proef_gebruikt enable row level security;
+-- Bewust GEEN policies en GEEN grants: alleen wijs_proef_claim (security
+-- definer) komt erbij. In deze lijst staat wie er een account heeft.
+
+-- Geeft true als deze brievenbus nog nooit een gratis week had (en legt hem dan
+-- vast), anders false. Faalt bewust naar true: nooit iemand zijn proef ontnemen
+-- door een fout van ons.
+create or replace function public.wijs_proef_claim(p_user uuid)
+returns boolean language plpgsql security definer set search_path = public as $$
+declare adres text; norm text; bestaand uuid;
+begin
+  select email into adres from auth.users where id = p_user;
+  if adres is null or adres = '' then return true; end if;
+  norm := public.wijs_email_norm(adres);
+  select eerste_user into bestaand from public.proef_gebruikt where email_norm = norm;
+  if bestaand is not null and bestaand <> p_user then return false; end if;
+  insert into public.proef_gebruikt (email_norm, eerste_user)
+  values (norm, p_user) on conflict (email_norm) do nothing;
+  return true;
+exception when others then
+  return true;
+end;
+$$;
+grant execute on function public.wijs_proef_claim(uuid) to authenticated;
+
 -- Een uitnodigingscode hoort bij precies één account.
 create unique index if not exists idx_instellingen_ref_code
   on public.instellingen(ref_code)
@@ -486,7 +545,6 @@ begin
     new.abon_plan          := null;
     new.abon_vorm          := null;
     new.abon_status        := 'proef';
-    new.proef_eindigt      := now() + interval '7 days';
     new.periode_eindigt    := null;
     new.start_tool         := null;
     new.start_tool_sinds   := null;
@@ -496,6 +554,16 @@ begin
     new.ref_code           := null;  -- die deelt de database uit (wijs_ref_code)
     new.verwezen_door      := null;  -- die legt wijs_koppel_verwijzing vast
     new.proef_herinnering_op := null;
+
+    -- Eén gratis week per brievenbus. Geen blokkade en geen melding: het
+    -- account komt er gewoon, alleen de gratis week is al voorbij.
+    if public.wijs_proef_claim(new.user_id) then
+      new.proef_eindigt      := now() + interval '7 days';
+      new.proef_overgeslagen := false;
+    else
+      new.proef_eindigt      := now();
+      new.proef_overgeslagen := true;
+    end if;
     return new;
   end if;
 
@@ -503,6 +571,7 @@ begin
   or new.abon_vorm          is distinct from old.abon_vorm
   or new.abon_status        is distinct from old.abon_status
   or new.proef_eindigt      is distinct from old.proef_eindigt
+  or new.proef_overgeslagen is distinct from old.proef_overgeslagen
   or new.periode_eindigt    is distinct from old.periode_eindigt
   or new.start_tool         is distinct from old.start_tool
   or new.start_tool_sinds   is distinct from old.start_tool_sinds
@@ -1806,6 +1875,8 @@ revoke execute on function public.wijs_koppel_verwijzing(text) from public, anon
 revoke execute on function public.instellingen_bewaakt() from public, anon;
 revoke execute on function public.klassen_limiet_bewaakt() from public, anon;
 revoke execute on function public.statistiek_bewaakt() from public, anon;
+revoke execute on function public.wijs_proef_claim(uuid) from public, anon;
+revoke execute on function public.wijs_email_norm(text) from public, anon;
 revoke execute on function public.wijs_snapshot_abon() from public, anon;
 revoke execute on function public.wijs_community_stats() from public, anon;
 revoke execute on function public.registreer_herakkoord(text, text) from public, anon;
