@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { serviceClient } from "@/lib/supabase-service";
 import { maakBetaling, maakKlant } from "@/lib/mollie";
 import { PLANNEN, type Vorm } from "@/lib/abonnement";
 
@@ -24,6 +25,17 @@ export async function POST(request: NextRequest) {
   if (!plan) return NextResponse.json({ error: "onbekend_plan" }, { status: 400 });
 
   const origin = request.nextUrl.origin;
+
+  // ⚠️ De Mollie-velden staan achter het fraude-slot op `instellingen` (zie
+  // database/migratie-fraude-slot.sql), dus die schrijven we met de
+  // servicesleutel. Dit MOET vóór het aanmaken van de betaling gebeuren:
+  // zonder sleutel kunnen we het betaal-id niet bewaren, en dan staat er straks
+  // wél een afschrijving tegenover een terugkeer die niets terugvindt.
+  const db = serviceClient();
+  if (!db) {
+    console.error("[mollie/checkout] SUPABASE_SERVICE_ROLE_KEY ontbreekt — geen betaling gestart");
+    return NextResponse.json({ error: "server_niet_klaar" }, { status: 503 });
+  }
 
   // Mandaat-flow (terugkerende incasso) alleen als die op het Mollie-account
   // is ingeschakeld. Tot dan: gewone eenmalige betaling, zodat de checkout werkt.
@@ -60,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     // Bewaar de (eventuele) klant + de lopende betaling, zodat de terugkeer
     // 'm kan verifiëren (zo werkt het lokaal, ook zonder webhook).
-    await supabase
+    const { error: bewaarFout } = await db
       .from("instellingen")
       .upsert(
         {
@@ -70,6 +82,12 @@ export async function POST(request: NextRequest) {
         },
         { onConflict: "user_id" },
       );
+    if (bewaarFout) {
+      // Het betaal-id niet kunnen bewaren betekent dat de terugkeer straks niets
+      // terugvindt. Dan liever hier stoppen dan de gebruiker laten afrekenen.
+      console.error("[mollie/checkout] betaal-id bewaren mislukt:", bewaarFout.message);
+      return NextResponse.json({ error: "bewaren_mislukt" }, { status: 500 });
+    }
 
     if (!payment.checkoutUrl)
       return NextResponse.json({ error: "geen_url" }, { status: 502 });

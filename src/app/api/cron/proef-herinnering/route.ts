@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/server";
+import { serviceClient } from "@/lib/supabase-service";
 import { verstuurMail } from "@/lib/mail";
 import { PROEF_ONDERWERP, proefHtml, proefTekst } from "@/lib/mail-proef";
 
@@ -52,20 +52,15 @@ export async function GET(request: NextRequest) {
     if (isAdmin !== true) return NextResponse.json({ error: "geen_admin" }, { status: 403 });
   }
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceSleutel = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceSleutel) {
+  // De servicesleutel omzeilt alle beveiliging en mag daarom alleen hier
+  // bestaan, in een serverbestand. Nooit met NEXT_PUBLIC_ ervoor.
+  const db = serviceClient();
+  if (!db) {
     return NextResponse.json(
       { error: "SUPABASE_SERVICE_ROLE_KEY ontbreekt, er is niets verstuurd." },
       { status: 500 },
     );
   }
-
-  // De servicesleutel omzeilt alle beveiliging en mag daarom alleen hier
-  // bestaan, in een serverbestand. Nooit met NEXT_PUBLIC_ ervoor.
-  const db = createServiceClient(url, serviceSleutel, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
 
   const { data: aanDeBeurt, error } = await db.rpc("wijs_proef_herinneringen", { p_dagen: 2 });
   if (error) {
