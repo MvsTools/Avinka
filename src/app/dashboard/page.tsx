@@ -14,46 +14,9 @@ import DuoOverdracht from "@/components/dashboard/DuoOverdracht";
 import CollegaUitnodigen from "@/components/dashboard/CollegaUitnodigen";
 import KaartMelding from "@/components/dashboard/KaartMelding";
 import { amsterdamDatum } from "@/lib/streak";
-import { haalMijnGroepen, haalPlanning, haalSchoolsystemen, plus } from "@/lib/planning";
-import type { PlanItem, PlanningBron } from "@/lib/planning";
+import { haalMijnGroepen, haalPlanning, haalSchoolsystemen } from "@/lib/planning";
 
-// ⚠️ TIJDELIJK — hoort bij `?voorbeeld` hieronder en gaat er samen mee weg.
-// Vier verzonnen afspraken rond vandaag, zodat elk soort signaal één keer
-// langskomt: eentje die net geweest is, eentje om klaar te zetten, en twee die
-// eraan komen.
-function metVoorbeeldAfspraken(bron: PlanningBron, vandaag: string): PlanningBron {
-  const dag = (n: number) => plus(vandaag, n);
-  const nep = (id: string, datum: string, titel: string, soort: PlanItem["soort"]): PlanItem => ({
-    id: `voorbeeld-${id}`,
-    bronId: "voorbeeld",
-    datum,
-    totDatum: datum,
-    heleDag: true,
-    tijdvakken: 1,
-    titel,
-    soort,
-  });
-  return {
-    ...bron,
-    items: [
-      ...bron.items,
-      nep("1", dag(6), "Toetsweek begrijpend lezen", "toets"),
-      nep("2", dag(13), "Startgesprekken", "gesprek"),
-      nep("3", dag(20), "Rapporten mee naar huis", "rapport"),
-    ],
-  };
-}
-
-export default async function DashboardStart({
-  searchParams,
-}: {
-  searchParams: Promise<{ [k: string]: string | string[] | undefined }>;
-}) {
-  // ⚠️ TIJDELIJK — weghalen zodra "Wat eraan komt" is goedgekeurd.
-  // `?voorbeeld` zet er een paar verzonnen afspraken bij, zodat het blok hier
-  // op de echte Start te beoordelen is. Zonder die schakelaar zie je niets: in
-  // een gekoppelde agenda hoeft de komende weken niets te staan.
-  const { voorbeeld } = await searchParams;
+export default async function DashboardStart() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -122,7 +85,7 @@ export default async function DashboardStart({
           bewust tussen de dagrij en de tools: het is het bruggetje van "wat
           speelt er" naar "waar begin ik". Is er niets, dan staat er niets. */}
       <WatEraanKomt
-        bron={voorbeeld ? metVoorbeeldAfspraken(planning, vandaag) : planning}
+        bron={planning}
         vandaag={vandaag}
         groepen={groepen}
         systemen={systemen}
