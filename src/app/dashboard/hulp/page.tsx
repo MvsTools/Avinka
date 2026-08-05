@@ -225,11 +225,18 @@ export default function HulpPage() {
         <h2 className="text-lg font-bold text-ink">Kom je er niet uit?</h2>
         <p className="mt-2 leading-7 text-ink/70">
           Loop je ergens vast of mis je iets? Mail gerust naar{" "}
+          {/* ⚠️ Dit was michaelvanspanje@hotmail.com. Omgezet 5-8 naar het
+             support-alias van de zakelijke Google Workspace. Een privé
+             Hotmail-adres op een betaald platform kost vertrouwen, en het
+             scheidt bovendien support van de rest van de post.
+             info@avinka.nl is het hoofdadres (privacy, voorwaarden, de
+             uitnodiging op de voorpagina); support@ is voor "ik kom er niet
+             uit". Zet hier dus niet zomaar het andere adres neer. */}
           <a
-            href="mailto:michaelvanspanje@hotmail.com"
+            href="mailto:support@avinka.nl"
             className="font-bold text-brand hover:underline"
           >
-            michaelvanspanje@hotmail.com
+            support@avinka.nl
           </a>{" "}
           en je krijgt antwoord van een echte leerkracht. Jouw tip maakt Avinka beter voor iedereen.
         </p>

@@ -936,15 +936,61 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
             <p className="w-mkr-belofte">
               Laat me vooral weten wat je ervan vindt!
             </p>
-            {/* ⚠️ HET ADRES MOET MAIL KUNNEN ONTVANGEN — nog te bevestigen door
-               de eigenaar. Het platform VERSTUURT sinds 4-8 mail via Resend
-               vanaf avinka.nl, maar versturen is niet hetzelfde als ontvangen,
-               en /dashboard/hulp verwijst nog naar een Hotmail-adres. Een
-               contactadres op de voorpagina dat nergens uitkomt is erger dan
-               geen contactadres. */}
-            <a className="w-mkr-mail" href="mailto:info@avinka.nl">
-              info@avinka.nl
-            </a>
+            {/* ── het adres, met een pijltje ernaartoe ──
+               ✅ info@avinka.nl is bevestigd door de eigenaar: het officiële
+               adres in de zakelijke Google Workspace, dus het ontvangt ook
+               echt. (support@avinka.nl is een alias en staat op /dashboard/hulp
+               voor "ik kom er niet uit" — niet door elkaar gebruiken.)
+
+               Het pijltje is DEZELFDE hand als bij de polaroids ("klik op een
+               foto om de ervaring te lezen"): zelfde dikte, zelfde ronde
+               uiteinden, alleen gespiegeld zodat de boog naar beneden loopt in
+               plaats van omhoog. Een tweede vormtaal verzinnen voor hetzelfde
+               gebaar maakt een pagina rommelig.
+               🔑 Het staat hier ook niet voor de sier: onder deze kolom viel
+               een groot leeg vlak, en een aanwijzing die daar de blik naartoe
+               trekt vult dat gat met iets dat werk doet in plaats van met
+               decoratie. */}
+            <div className="w-mkr-contact">
+              {/* ⚠️ EERST WAS DIT PIJLTJE TE VLAK: het daalde 7px over 30px
+                 breedte en las daardoor als een streepje in plaats van als een
+                 boog. Een handgeschreven pijl moet echt DALEN om te wijzen —
+                 hier van y=3 naar y=24 in een vak van 32 hoog. */}
+              <svg
+                className="w-mkr-pijl"
+                viewBox="0 0 40 32"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M3 3 C 11 1, 26 6, 31 24" />
+                <path d="M23 21 L 31.5 25.5 L 33.5 15.5" />
+              </svg>
+              <a className="w-mkr-mail" href="mailto:info@avinka.nl">
+                {/* Lijnicoon in dezelfde trant als de drie pictogrammen in de
+                   privacysectie: dunne lijn, ronde hoeken, geen vulling. */}
+                <svg
+                  className="w-mkr-envelop"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <rect x="2.5" y="5" width="19" height="14" rx="3" />
+                  <path d="M3.6 7.6 L12 13.6 L20.4 7.6" />
+                </svg>
+                {/* De onderstreping zit op de TEKST en niet op de link, anders
+                   loopt hij ook onder het envelopje door en wordt het één
+                   doorgestreept blokje. */}
+                <span>info@avinka.nl</span>
+              </a>
+            </div>
           </div>
 
         {/* ⚠️ DE SCHEEFSTAND STAAT MET OPZET OP `rotate:` EN NIET IN EEN
@@ -1182,29 +1228,55 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           line-height: 1.45;
           color: ${KOP};
         }
-        /* Het mailadres op zijn eigen regel, in dezelfde hand — alsof iemand
-           het voor je opschrijft. Wél met een onderstreping: handschrift alleen
-           is geen aanwijzing dat je ergens op kunt klikken, en dit is de enige
-           link in de hele sectie.
-           De onderstreping staat los van de letters (offset) zodat hij niet
-           door de staarten van de g en de j loopt. */
+        /* ── het pijltje en het adres ──
+           Ze staan ingesprongen en iets lager dan de uitnodiging, zodat ze in
+           de lege ruimte onder deze kolom vallen in plaats van er strak
+           tegenaan te plakken. De uitlijning is op de ONDERkant: het pijltje
+           eindigt rechtsonder, en daar begint het adres. */
+        .w-mkr-contact {
+          display: flex;
+          align-items: flex-end;
+          gap: 0.6rem;
+          margin-top: clamp(12px, 1.8vw, 20px);
+          margin-left: clamp(20px, 5vw, 72px);
+        }
+        .w-mkr-pijl {
+          flex: none;
+          width: 2.8rem;
+          height: 2.25rem;
+          margin-bottom: 0.15rem;
+          color: ${KOP};
+        }
+        /* Het adres in dezelfde hand als de uitnodiging — alsof iemand het voor
+           je opschrijft — met het envelopje ervoor. */
         .w-mkr-mail {
-          display: inline-block;
-          margin-top: 0.3rem;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.45rem;
           font-family: var(--font-hand), "Segoe Script", cursive;
           font-size: clamp(1.05rem, 1.7vw, 1.25rem);
           line-height: 1.4;
           color: ${KOP};
+          transition: color 0.2s ease;
+        }
+        .w-mkr-envelop {
+          flex: none;
+          width: 1.15rem;
+          height: 1.15rem;
+        }
+        /* De onderstreping los van de letters (offset), anders loopt hij door
+           de staarten van de g en de j. Handschrift alleen is geen aanwijzing
+           dat je ergens op kunt klikken, en dit is de enige link in de sectie. */
+        .w-mkr-mail span {
           text-decoration: underline;
           text-decoration-thickness: 1.5px;
           text-underline-offset: 5px;
-          transition: color 0.2s ease;
         }
         .w-mkr-mail:hover { color: ${DONKER}; }
         .w-mkr-mail:focus-visible {
           outline: 2px solid var(--color-brand, #2f9e6e);
           outline-offset: 4px;
-          border-radius: 0.35rem;
+          border-radius: 0.5rem;
         }
         .w-mkr-kop {
           font-family: var(--font-display), Georgia, serif;

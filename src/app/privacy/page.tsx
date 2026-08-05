@@ -9,6 +9,12 @@ import { PRIVACY } from "@/lib/juridisch";
 
    NOG IN TE VULLEN vóór livegang (nu nog placeholders tussen [haakjes]):
    - [bedrijfsnaam] · [adres] · [KvK] · [privacy-e-mailadres]
+     ⚠️ Voor het e-mailadres bestaat sinds 5-8 een echt adres: info@avinka.nl
+     (zakelijke Google Workspace; support@avinka.nl is een alias voor support).
+     BEWUST NOG NIET INGEVULD: elke inhoudelijke wijziging aan dit document
+     vraagt een versiebump in lib/juridisch.ts, en die zet bij iedereen een
+     her-akkoord-pop-up aan. Vul dit adres dus in dezelfde ronde in als de
+     bedrijfsnaam, het adres en het KvK-nummer — één bump in plaats van vier.
    - Controleer of de genoemde leveranciers (Supabase, Anthropic, Mollie) kloppen
      met wat er live draait, en houd de sub-verwerkerslijst actueel.
    - Laat de definitieve tekst vóór livegang nakijken door een privacyjurist.

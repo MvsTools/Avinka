@@ -7,6 +7,12 @@ import { VOORWAARDEN } from "@/lib/juridisch";
    ALGEMENE VOORWAARDEN — alle tekst staat in dit bestand.
    Dit is een eerste, leesbare versie. Laat 'm vóór livegang nakijken door een
    jurist en vul de placeholders tussen [haakjes] in.
+   ⚠️ Voor [contact-e-mailadres] bestaat sinds 5-8 een echt adres:
+   info@avinka.nl (zakelijke Google Workspace; support@avinka.nl is een alias
+   voor support). BEWUST NOG NIET INGEVULD: elke inhoudelijke wijziging hier
+   vraagt een versiebump in lib/juridisch.ts, en die zet bij iedereen een
+   her-akkoord-pop-up aan. Vul dit in dezelfde ronde in als de bedrijfsnaam,
+   het adres en het KvK-nummer — één bump in plaats van vier.
 
    LET OP — een paar punten hieronder zijn niet alleen tekst maar ook proces,
    te bouwen bij Mollie (Fase 2):
