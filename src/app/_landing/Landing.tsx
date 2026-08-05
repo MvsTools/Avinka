@@ -1003,25 +1003,18 @@ export default function Landing({
                         <p className="text-sm font-black tracking-tight text-ink">
                           Welkom terug! 👋
                         </p>
-                        {/* ⚠️ HIER STOND "Kies een tool om mee te beginnen." en
-                           dat was de zuiverste formulering van het oude frame:
+                        {/* ⚠️ HIER STOND "Kies een tool om mee te beginnen." —
                            een INSTRUCTIE aan de leerkracht om zelf iets te
-                           zoeken. De film ruimt de chaos op en zegt daarna:
-                           en nu mag jij weer.
-
-                           🔑 Nu zegt hij wat hij WEET in plaats van wat jij moet
-                           doen. Dat is de hele koerswijziging van het platform,
-                           en het kost één regel omdat de film het bewijs al
-                           bevat: het geeltje "rapporten af vóór vrijdag" is
-                           net naar binnen gevlogen en staat in de takenlijst
-                           ernaast. Er komt dus niets nieuws bij; wat er al lag
-                           wordt gelezen.
-                           ⚠️ Verzin hier geen nieuwe taak. Deze zin MOET slaan
-                           op een geeltje dat je even daarvoor hebt zien
-                           vliegen, anders is het een losse bewering. */}
-                        <p className="mt-0.5 text-[10px] text-ink/60">
-                          Vrijdag gaan de rapporten mee.
-                        </p>
+                           zoeken, en daarmee de zuiverste formulering van het
+                           oude frame. Vervangen door het blok "Wat eraan komt"
+                           hieronder, want dát is waar het dashboard dit echt
+                           zegt. Eerst had ik het als grijze regeltje hier
+                           gezet; de eigenaar: "amper zichtbaar, en niet de
+                           manier hoe die in het dashboard staat".
+                           🔑 Een miniatuur van het dashboard moet het echte
+                           dashboard NADOEN, niet samenvatten. Zodra je iets
+                           samenvat tot een regeltje, verdwijnt precies het
+                           onderdeel dat je wilde laten zien. */}
                       </div>
                       <div className="flex shrink-0 items-start gap-1.5">
                         {/* takenlijst-knop met uitklap-paneel (fase 2) */}
@@ -1089,8 +1082,52 @@ export default function Landing({
                       </div>
                     </div>
 
+                    {/* ── Wat eraan komt ────────────────────────────────────
+                       Dit blok is nagebouwd naar `WatEraanKomt.tsx` uit het
+                       dashboard, niet vrij verzonnen: één witte kaart met per
+                       signaal een getint vierkantje met de tool-emoji, een
+                       vette regel die zegt wat eraan komt, de datum eronder, en
+                       rechts een knop die zegt wat je gaat DOEN (niet
+                       "beginnen"). Verandert dat blok daar, laat het hier dan
+                       meelopen — een miniatuur die niet meer klopt is erger dan
+                       geen miniatuur.
+
+                       🔑 DE INHOUD MOET UIT DE FILM ZELF KOMEN. Het geeltje
+                       "rapporten af vóór vrijdag" is een paar tellen eerder
+                       naar binnen gevlogen en staat in de takenlijst hierboven.
+                       Dit signaal leest dus wat er al lag; het voegt geen
+                       nieuwe taak toe. Verzin hier nooit iets dat je niet even
+                       daarvoor hebt zien vliegen.
+
+                       De formulering volgt `kopVoor()` in aanleiding.ts
+                       ("Over 3 dagen gaan de rapporten mee") met de datumregel
+                       eronder — daar staat "vrijdag", en dat is de haak naar
+                       het geeltje. */}
+                    <p className="mt-3 text-[10px] font-bold text-ink">Wat eraan komt</p>
+                    <div className="mt-1.5 flex items-center justify-between gap-2 rounded-xl border border-black/5 bg-white px-2 py-1.5 shadow-sm">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span
+                          aria-hidden
+                          className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-violet-100 text-[11px]"
+                        >
+                          📝
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate text-[10px] font-bold leading-tight text-ink">
+                            Over 3 dagen gaan de rapporten mee
+                          </span>
+                          <span className="block truncate text-[9px] leading-tight text-ink/55">
+                            vrijdag 12 december
+                          </span>
+                        </span>
+                      </span>
+                      <span className="shrink-0 rounded-lg bg-brand px-2 py-1 text-[9px] font-bold text-white">
+                        Rapporten schrijven
+                      </span>
+                    </div>
+
                     {/* jouw tools */}
-                    <p className="mt-3 text-[10px] font-bold text-ink">Jouw tools</p>
+                    <p className="mt-2.5 text-[10px] font-bold text-ink">Jouw tools</p>
                     <div className="mt-1.5 grid grid-cols-3 gap-1.5">
                       <Tegel naam="toets" label="Toetsanalyse" emoji="📊" kleur="bg-sky-500" />
                       <Tegel naam="rapporten" label="Rapporten" emoji="📝" kleur="bg-violet-500" />

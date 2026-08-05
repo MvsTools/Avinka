@@ -674,13 +674,18 @@ export function WereldIntro() {
                de zin die het oude frame het duidelijkst uitspreekt, en dus de
                plek om het te veranderen.
                🔑 Wat er stond blijft staan (alles op één plek); er komt alleen
-               bij dat Avinka zelf meekijkt. Bewust in die volgorde: eerst het
-               concrete dat je meteen snapt, dan het nieuwe.
+               bij dat het programma zelf meedenkt. Bewust in die volgorde:
+               eerst het concrete dat je meteen snapt, dan het nieuwe.
+               ⚠️ DEZE ZIN IS VAN DE EIGENAAR — hij heeft hem zo aangeleverd
+               ("Bij Avinka staat al je schoolwerk op één plek. Ook denkt het
+               programma actief mee in toekomstige weken."). Niet gladstrijken;
+               ik had er eerst "Avinka houdt bij wat eraan komt" van gemaakt en
+               dat was net iets anders dan wat hij bedoelde.
                ⚠️ Het woord "assistent" staat er met opzet NIET. Dat zegt op dit
-               moment elk product; "houdt bij wat eraan komt" is gedrag en dat
-               kan iemand die het niet gebouwd heeft niet nazeggen. */}
-            Bij Avinka staat je schoolwerk op één plek, en Avinka houdt bij wat
-            eraan komt.
+               moment elk product; "denkt actief mee" is gedrag en dat kan
+               iemand die het niet gebouwd heeft niet nazeggen. */}
+            Bij Avinka staat al je schoolwerk op één plek. Ook denkt het
+            programma actief mee in toekomstige weken.
           </p>
           {/* ⚠️ DE TWEEDE ALINEA MOET DE EERSTE WAARMAKEN, anders is die eerste
              zin een loze belofte. Daarom staat er nu ook HOE Avinka dat weet:
