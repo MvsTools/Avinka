@@ -205,22 +205,22 @@ export const FAQ = [
   {
     vraag: "Gaan de gegevens van mijn leerlingen ergens heen?",
     antwoord:
-      "Nee. Namen, plaatsen en contactgegevens worden op je eigen apparaat onleesbaar gemaakt voordat er iets wordt verstuurd. Je account staat bovendien op beveiligde servers in Europa. Privacy is bij Avinka de ruggengraat, geen bijzaak.",
+      "Voordat er iets naar de AI gaat, vervangt je apparaat alle namen door een code. De AI weet dus nooit over welk kind het gaat. Denk daarnaast zelf goed na over wat je wel en niet deelt: het platform denkt daarin met je mee. Op de privacypagina lees je hoe dat precies werkt.",
   },
   {
-    vraag: "Waarom zou ik dit gebruiken en niet gewoon ChatGPT?",
+    vraag: "Waarom zou ik dit aanschaffen als ik zelf gratis AI kan gebruiken?",
     antwoord:
-      "Omdat je daar het werk eromheen zelf doet. Avinka weet al hoe een rapport, een toetsanalyse of een lesontwerp eruit hoort te zien: de opbouw en de didactiek zitten in de tool, niet in een prompt die je elke keer opnieuw moet bedenken. Het rekenwerk doet de tool zelf, dus daar kan niets in verzonnen worden. Namen van je leerlingen worden onleesbaar gemaakt voordat er iets wordt verstuurd. En je krijgt geen chatvenster terug maar een bestand dat je meteen kunt printen of bewaren.",
+      "Gratis AI is een leeg vel waarin jij zelf structuur moet brengen. Avinka is gebouwd door een leerkracht die al heeft uitgedacht hoe een rapport, toetsanalyse of lesontwerp eruit hoort te zien: die kennis zit in de tool, niet in een prompt die je zelf telkens bedenkt. En de bescherming van je leerlingen zit er automatisch bij, ook als je er zelf niet aan denkt.",
   },
   {
-    vraag: "Moet ik verstand van AI of computers hebben?",
+    vraag: "Moet ik handig zijn met AI of computers?",
     antwoord:
-      "Nee. Als je een e-mail kunt sturen, kun je met Avinka werken. Je typt of plakt wat je hebt en de tool doet de rest. Geen handleiding, geen technisch gedoe.",
+      "Nee. Als je een e-mail kunt sturen, kun je met Avinka werken. Je beantwoordt een aantal vragen en de tool doet de rest. Geen handleiding, geen technisch gedoe.",
   },
   {
-    vraag: "Verzint de AI zelf cijfers of feiten?",
+    vraag: "Verzinnen de tools zelf cijfers of feiten?",
     antwoord:
-      "Nee. Alle berekeningen doet de tool zelf, en die kloppen altijd. De AI schrijft alleen de tekst eromheen en verzint nooit getallen of feiten. Jij leest na en houdt altijd het laatste woord.",
+      "Nee. Alle berekeningen doen de tools zelf, en die kloppen altijd. De AI schrijft alleen de tekst eromheen en verzint nooit getallen of feiten. Je leest alles na en kunt het zelf aanpassen als er iets niet klopt.",
   },
   {
     vraag: "Hoe werkt de gratis proefperiode?",
@@ -234,12 +234,12 @@ export const FAQ = [
   {
     vraag: "Wat is het verschil tussen maandelijks en per schooljaar?",
     antwoord:
-      "Bij maandelijks betaal je per maand en zeg je op wanneer je wilt. Bij een schooljaar-abonnement betaal je ook gewoon per maand, maar zijn juli en augustus gratis. Je hoeft in de zomer niets stop te zetten en je houdt je klassen en bewaarde werk.",
+      "Bij maandelijks betaal je per maand, zonder verplichting. Bij een schooljaar-abonnement betaal je ook per maand, maar zijn juli en augustus gratis. Je hoeft in de zomer niets stop te zetten en je houdt je klassen en bewaarde werk.",
   },
   {
     vraag: "Kan ik later wisselen of opzeggen?",
     antwoord:
-      "Het maandabonnement kun je altijd opzeggen, zonder kleine lettertjes. Upgraden naar een groter pakket kan op elk moment. Het schooljaar-abonnement loopt een heel schooljaar; daar staat tegenover dat de zomermaanden gratis zijn.",
+      "Upgraden naar een groter pakket kan altijd, op elk moment. Het maandabonnement zeg je zelf op wanneer je wilt. Het schooljaar-abonnement loopt door tot het einde van het schooljaar en verlengt daarna automatisch, met een opzegtermijn van maximaal een maand.",
   },
   {
     vraag: "Werkt het op mijn laptop, Chromebook of tablet?",
@@ -249,7 +249,16 @@ export const FAQ = [
   {
     vraag: "Is het ook voor mijn hele school of team?",
     antwoord:
-      "Avinka is nu gemaakt voor jou als individuele leerkracht. Een variant voor teams en scholen komt later.",
+      "Avinka is nu gemaakt voor jou als individuele leerkracht. Een schoolvariant staat op de planning.",
+  },
+  {
+    vraag: "Kan ik samenwerken met een collega?",
+    antwoord:
+      "Ja. Je nodigt een collega uit voor dezelfde groep, bijvoorbeeld een duo-partner of onderwijsassistent. Samen deel je de klas, een takenlijst, een map en de overdracht. Je kiest zelf of iemand volledig meewerkt of alleen meekijkt, en de toegang gaat pas open als de ander de uitnodiging accepteert.",
+  },
+  {
+    vraag: "Wat als ik ergens niet uitkom?",
+    antwoord: "Dan mail je naar support@avinka.nl. Je krijgt gewoon antwoord van mij.",
   },
 ];
 
