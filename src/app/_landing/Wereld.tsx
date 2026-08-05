@@ -702,20 +702,39 @@ export function WereldIntro() {
              concrete dus vooraan en het nieuwe erachter, niet andersom.
 
              Deze alinea moet daarom in deze volgorde blijven:
-             1. wat de tools voor je doen, met de tools bij naam;
+             1. wat de tools voor je doen, met het werk bij naam;
              2. dat jij het laatste woord houdt;
-             3. pas dan het meedenken, mét de reden waarom Avinka dat kan
-                (je zet je schooljaar er één keer in). Zonder die reden leest
-                het als magie, en het werkt pas als je dat gedaan hebt.
+             3. pas dan het meedenken.
 
-             ⚠️ Zeg hier niet dat de AI het rekenwerk doet — dat doet de tool
+             ⚠️ HET MEEDENKEN HING EERST AAN "je zet je schooljaar er één keer
+             in", en dat is er 5-8 uit gehaald op verzoek. Twee redenen, en de
+             tweede is de belangrijkste:
+             - het is niet de enige route. Wie niets koppelt krijgt óók een
+               kloppend jaar;
+             - het maakte van een EIGENSCHAP VAN AVINKA een VOORWAARDE VOOR DE
+               GEBRUIKER. Dan lees je "eerst huiswerk doen" in plaats van "dit
+               kan het".
+             🔑 En het is waar: die kennis zit ingebakken, niet in jouw upload.
+             `lib/planning/vakanties.ts` heeft de landelijke schoolvakanties per
+             regio, letterlijk bedoeld als vangnet "voor wie nog geen agenda
+             heeft gekoppeld", en `lib/planning/groep8.ts` heeft de
+             doorstroomtoets, het voorlopig en definitief advies en de
+             aanmeldweek — landelijk vast, dus juist het soort data dat NIET in
+             de agenda van jouw school staat. Vandaar dat die twee bij naam
+             worden genoemd: het zijn de twee die zonder jouw toedoen kloppen.
+
+             ⚠️ DIT IS EEN BEWERING DIE KAN VEROUDEREN. Allebei die bestanden
+             moeten jaarlijks worden bijgewerkt (dat staat er ook in). Wordt dat
+             vergeten, dan is deze zin niet meer waar.
+
+             ⚠️ Zeg hier niet dat de AI het rekenwerk doet; dat doet de tool
              zelf. Die scheiding staat uitgelegd bij "Zo werkt het" en in de
-             vragen, en die moet overal hetzelfde blijven. */}
+             vragen, en moet overal hetzelfde blijven. */}
           <p data-reveal className="mt-4 text-lg leading-8 text-ink/75" style={{ transitionDelay: "90ms" }}>
             Slimme tools met AI schrijven je rapporten, analyseren je toetsen en
-            stellen je ouderberichten op. Jij leest na en past aan. En omdat je
-            je schooljaar er één keer in zet, ziet Avinka zelf wanneer dat werk
-            eraan komt.
+            stellen je ouderberichten op. Jij leest na en past aan. En omdat
+            Avinka het schooljaar kent, van de vakanties tot de vaste data van
+            groep 8, zie je op tijd wat eraan komt.
           </p>
         </div>
       </div>
