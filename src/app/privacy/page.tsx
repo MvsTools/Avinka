@@ -7,14 +7,20 @@ import { PRIVACY } from "@/lib/juridisch";
    PRIVACYVERKLARING — alle tekst staat in dit bestand.
    Wil je een zin aanpassen? Pas het hier aan.
 
-   NOG IN TE VULLEN vóór livegang (nu nog placeholders tussen [haakjes]):
-   - [bedrijfsnaam] · [adres] · [KvK] · [privacy-e-mailadres]
-     ⚠️ Voor het e-mailadres bestaat sinds 5-8 een echt adres: info@avinka.nl
-     (zakelijke Google Workspace; support@avinka.nl is een alias voor support).
-     BEWUST NOG NIET INGEVULD: elke inhoudelijke wijziging aan dit document
-     vraagt een versiebump in lib/juridisch.ts, en die zet bij iedereen een
-     her-akkoord-pop-up aan. Vul dit adres dus in dezelfde ronde in als de
-     bedrijfsnaam, het adres en het KvK-nummer — één bump in plaats van vier.
+   BEDRIJFSGEGEVENS INGEVULD 5-8 door de eigenaar: naam, KvK en e-mailadres.
+   ⚠️ NOG ÉÉN GAT: het vestigingsadres mist de POSTCODE en de PLAATS. Zie de
+   constante hieronder — dat staat als [postcode + plaats] ook zichtbaar in de
+   gerenderde tekst, met opzet: een half adres in een privacyverklaring hoort
+   op te vallen.
+
+   ⚠️ DE VERSIE IS BEWUST NOG NIET GEBUMPT in lib/juridisch.ts. Elke
+   inhoudelijke wijziging hier zet bij iedereen een verplichte her-akkoord-
+   pop-up aan, en dit document is pas áf zodra het adres compleet is. Bump in
+   één keer zodra de postcode er staat — niet twee keer.
+
+   NOG TE DOEN vóór livegang:
+   - postcode + plaats invullen, daarna de versie bumpen (privacy én
+     voorwaarden, want die delen deze gegevens)
    - Controleer of de genoemde leveranciers (Supabase, Anthropic, Mollie) kloppen
      met wat er live draait, en houd de sub-verwerkerslijst actueel.
    - Laat de definitieve tekst vóór livegang nakijken door een privacyjurist.
@@ -28,10 +34,15 @@ import { PRIVACY } from "@/lib/juridisch";
    - Toestemming vastleggen bij registratie (datum + versie), voor art. 7-verantwoording.
    ────────────────────────────────────────────────────────────────────────── */
 
-const BEDRIJF = "[bedrijfsnaam]";
-const ADRES = "[adres]";
-const KVK = "[KvK-nummer]";
-const CONTACT_EMAIL = "[privacy-e-mailadres]";
+const BEDRIJF = "Avinka";
+/* ⚠️ HET ADRES IS NOG NIET COMPLEET: postcode en plaats ontbreken. Het blijft
+   met opzet zichtbaar in de gerenderde tekst staan — een half vestigingsadres
+   in een privacyverklaring moet opvallen, niet stilletjes goed lijken. */
+const ADRES = "Evert van 't Landstraat 24, [postcode + plaats]";
+const KVK = "42015989";
+/* Het officiële adres van de zakelijke Google Workspace. support@avinka.nl is
+   een alias en staat op /dashboard/hulp; een privacyverzoek hoort hier. */
+const CONTACT_EMAIL = "info@avinka.nl";
 const BIJGEWERKT = PRIVACY.weergave;
 
 export const metadata: Metadata = {
@@ -66,9 +77,15 @@ export default function PrivacyPage() {
       </Sectie>
 
       <Sectie kop="2. Wie is verantwoordelijk?">
+        {/* ⚠️ DEZE ZIN IS HERSCHREVEN TOEN DE GEGEVENS ERIN GINGEN. Er stond
+           "Avinka is een dienst van {'{BEDRIJF}'}, ..." — met de bedrijfsnaam nog
+           als placeholder las dat prima, maar de bedrijfsnaam ís Avinka, dus
+           ingevuld werd het "Avinka is een dienst van Avinka". De naam staat er
+           nu één keer, als onderwerp. */}
         <p>
-          Avinka is een dienst van {BEDRIJF}, {ADRES} (KvK {KVK}). Voor vragen over je privacy
-          of dit document bereik je ons via <strong>{CONTACT_EMAIL}</strong>.
+          {BEDRIJF} is ingeschreven bij de Kamer van Koophandel onder nummer {KVK} en
+          gevestigd aan {ADRES}. Voor vragen over je privacy of dit document bereik je
+          ons via <strong>{CONTACT_EMAIL}</strong>.
         </p>
         <p>
           Het is goed om twee rollen uit elkaar te houden:

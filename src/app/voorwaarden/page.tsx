@@ -6,13 +6,17 @@ import { VOORWAARDEN } from "@/lib/juridisch";
 /* ──────────────────────────────────────────────────────────────────────────
    ALGEMENE VOORWAARDEN — alle tekst staat in dit bestand.
    Dit is een eerste, leesbare versie. Laat 'm vóór livegang nakijken door een
-   jurist en vul de placeholders tussen [haakjes] in.
-   ⚠️ Voor [contact-e-mailadres] bestaat sinds 5-8 een echt adres:
-   info@avinka.nl (zakelijke Google Workspace; support@avinka.nl is een alias
-   voor support). BEWUST NOG NIET INGEVULD: elke inhoudelijke wijziging hier
-   vraagt een versiebump in lib/juridisch.ts, en die zet bij iedereen een
-   her-akkoord-pop-up aan. Vul dit in dezelfde ronde in als de bedrijfsnaam,
-   het adres en het KvK-nummer — één bump in plaats van vier.
+   jurist.
+
+   BEDRIJFSGEGEVENS INGEVULD 5-8 door de eigenaar: naam, KvK en e-mailadres.
+   ⚠️ NOG ÉÉN GAT: het vestigingsadres mist de POSTCODE en de PLAATS. Dat staat
+   als [postcode + plaats] ook zichtbaar in de gerenderde tekst, met opzet.
+
+   ⚠️ DE VERSIE IS BEWUST NOG NIET GEBUMPT in lib/juridisch.ts. Elke
+   inhoudelijke wijziging hier zet bij iedereen een verplichte her-akkoord-
+   pop-up aan, en dit document is pas áf zodra het adres compleet is. Bump in
+   één keer zodra de postcode er staat — samen met de privacyverklaring, want
+   die deelt deze gegevens.
 
    LET OP — een paar punten hieronder zijn niet alleen tekst maar ook proces,
    te bouwen bij Mollie (Fase 2):
@@ -23,10 +27,14 @@ import { VOORWAARDEN } from "@/lib/juridisch";
      betalingsverplichting" / "Nu betalen").
    ────────────────────────────────────────────────────────────────────────── */
 
-const BEDRIJF = "[bedrijfsnaam]";
-const ADRES = "[adres]";
-const KVK = "[KvK-nummer]";
-const CONTACT_EMAIL = "[contact-e-mailadres]";
+/* ⚠️ Deze vier moeten gelijk blijven met src/app/privacy/page.tsx. Ze staan
+   bewust twee keer los (elk document is zelfstandig te lezen en aan te passen),
+   dus wijzig je er één, wijzig dan allebei — en bump daarna één keer. */
+const BEDRIJF = "Avinka";
+/* Postcode en plaats ontbreken nog; blijft zichtbaar in de tekst staan. */
+const ADRES = "Evert van 't Landstraat 24, [postcode + plaats]";
+const KVK = "42015989";
+const CONTACT_EMAIL = "info@avinka.nl";
 const BIJGEWERKT = VOORWAARDEN.weergave;
 
 export const metadata: Metadata = {
@@ -42,10 +50,13 @@ export default function VoorwaardenPage() {
       intro="Dit zijn de afspraken voor het gebruik van Avinka, zo helder mogelijk opgeschreven. Door een account aan te maken ga je hiermee akkoord. Voor hoe we met gegevens omgaan, zie de privacyverklaring."
     >
       <Sectie kop="1. Wie zijn wij?">
+        {/* ⚠️ HERSCHREVEN toen de gegevens erin gingen: er stond "aangeboden
+           door {'{BEDRIJF}'}", en de bedrijfsnaam ís Avinka. Ingevuld werd dat
+           "Avinka ... aangeboden door Avinka". De naam staat er nu één keer. */}
         <p>
-          Avinka is een online platform met slimme tools voor leerkrachten, aangeboden door{" "}
-          {BEDRIJF}, {ADRES} (KvK {KVK}). Heb je een vraag? Mail ons via{" "}
-          <strong>{CONTACT_EMAIL}</strong>.
+          {BEDRIJF} is een online platform met slimme tools voor leerkrachten,
+          ingeschreven bij de Kamer van Koophandel onder nummer {KVK} en gevestigd aan{" "}
+          {ADRES}. Heb je een vraag? Mail ons via <strong>{CONTACT_EMAIL}</strong>.
         </p>
       </Sectie>
 
