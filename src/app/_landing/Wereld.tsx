@@ -727,13 +727,25 @@ export function WereldIntro() {
              sterk bewijs, maar het is BEWIJS en geen verkoopzin. Wil je het
              tonen, doe dat dan ergens waar bewijs hoort.
 
-             ⚠️ Zeg hier niet dat de AI het rekenwerk doet; dat doet de tool
-             zelf. Die scheiding staat uitgelegd bij "Zo werkt het" en in de
-             vragen, en moet overal hetzelfde blijven. */}
+             ⚠️ DE AI ZIT MET OPZET AAN HET SCHRIJFWERK VAST EN NIET AAN DE
+             ANDERE TWEE. Het overzicht en het vooruitkijken doet de code; de AI
+             schrijft alleen de tekst. Zou hier staan dat AI-tools voor overzicht
+             zorgen, dan spreekt deze zin stap 02 van "Zo werkt het" en twee
+             vragen in de FAQ tegen. Die scheiding moet overal hetzelfde zijn.
+             🔑 AI wordt hier ook genoemd omdat het MOET: sinds 2-8-2026 geldt de
+             transparantieplicht uit de AI Act (zie [[ai-act-onderwijs]]). Haal
+             het woord hier dus niet weg om de zin mooier te maken.
+
+             Deze alinea is van de eigenaar zelf; ik heb er twee dingen aan
+             bijgesteld die hij heeft overgenomen: "terwijl" beloofde een
+             tegenstelling die niet kwam (aandacht en energie zeiden hetzelfde),
+             en "aandacht" stond er twee keer terwijl het het slotwoord moest
+             zijn. Niet verder gladstrijken. */}
           <p data-reveal className="mt-4 text-lg leading-8 text-ink/75" style={{ transitionDelay: "90ms" }}>
-            Geen avond meer kwijt aan rapporten, geen taken die je pas ziet als
-            het te laat is. Slimme AI-tools schrijven het werk voor je uit, en
-            Avinka houdt bij wat eraan komt.
+            Voor de klas maak jij het verschil. Toch vraagt het werk na
+            schooltijd net zoveel van je, en juist dat kost energie. Avinka
+            zorgt voor overzicht, denkt vooruit en laat AI het schrijfwerk doen,
+            zodat jij meer rust en aandacht overhoudt voor je leerlingen.
           </p>
         </div>
       </div>
