@@ -22,11 +22,11 @@
 
 import { SOORT_INFO } from "../agenda-herken";
 import { toolBySlug, type Tool } from "../tools";
-import { bereikTekst, dagnaam, kort, plus, verschil } from "./datum";
+import { bereikTekst, dagnaam, kort, plus, reeks, verschil, weekdag } from "./datum";
 import { groep8Momenten, heeftGroep8 } from "./groep8";
 import { beoordeel } from "./relevantie";
 import type { PlanItem, PlanningBron, Soort } from "./types";
-import { laatsteWerkdagVoor, leesWerkdagen } from "./werkdagen";
+import { DAGNAMEN_KORT as DAGEN_KORT, laatsteWerkdagVoor, leesWerkdagen } from "./werkdagen";
 
 /**
  * Hoeveel dagen vóór een afspraak het signaal verschijnt, en hoeveel dagen het
@@ -392,6 +392,38 @@ function voortgangTekst(voortgang?: { klaar: number; totaal: number }): string |
   return `nog ${over} van de ${voortgang.totaal} rapporten`;
 }
 
+/** "di", "di en wo", "ma, di en wo" — een opsomming zoals je hem uitspreekt. */
+function lijstTekst(delen: string[]): string {
+  if (delen.length <= 1) return delen[0] ?? "";
+  return `${delen.slice(0, -1).join(", ")} en ${delen.at(-1)}`;
+}
+
+/**
+ * De werkdagen in een bereik waarop al iets in je agenda staat — een startdag,
+ * een teamvergadering, een studiedag. Alleen wat écht van jou is (afspraken van
+ * andere groepen en oproepen aan ouders tellen niet mee).
+ */
+function bezetteDagenIn(
+  bron: PlanningBron,
+  van: string,
+  tot: string,
+  werkdagen: number[],
+  eigenGroepen: number[],
+): { datum: string; dagnaam: string; titel: string }[] {
+  const uit: { datum: string; dagnaam: string; titel: string }[] = [];
+  for (const dag of reeks(van, tot)) {
+    if (!werkdagen.includes(weekdag(dag))) continue;
+    const item = bron.items.find((i) => {
+      if (i.dubbelVan || i.soort === "vakantie") return false;
+      if (i.datum > dag || (i.totDatum || i.datum) < dag) return false;
+      const oordeel = beoordeel(i, eigenGroepen);
+      return !oordeel.andereGroep && !oordeel.ouderoproep;
+    });
+    if (item) uit.push({ datum: dag, dagnaam: DAGEN_KORT[weekdag(dag)] ?? dag, titel: item.titel });
+  }
+  return uit;
+}
+
 /**
  * Momenten die niet in je agenda staan maar wel elk jaar terugkomen, omdat ze
  * uit het schooljaar zelf volgen.
@@ -404,6 +436,7 @@ function uitDeKalender(
   bron: PlanningBron,
   vandaag: string,
   werkdagen: number[],
+  eigenGroepen: number[],
   opLijst: (taken?: string[]) => boolean | undefined,
 ): Aanleiding[] {
   const { schooljaar } = bron;
@@ -422,20 +455,32 @@ function uitDeKalender(
   if (vandaag >= startVan && vandaag <= startTot) {
     const taken = STARTWEEK_TAKEN;
     const dagen = verschil(vandaag, schooljaar.start);
+
+    // Veel scholen hebben in deze week zelf ook nog een startdag of een
+    // teamvergadering. Zo'n dag ben je bezet, dus die telt niet mee als tijd om
+    // je lokaal in te richten — en dan moeten de taken er ook niet op landen.
+    // We weten dit alleen als je agenda gekoppeld is; staat er niets, dan
+    // rekenen we gewoon met al je werkdagen.
+    const bezet = bezetteDagenIn(bron, startVan, schooljaar.startweek.tot, werkdagen, eigenGroepen);
+    const vrijeDagen = reeks(startVan, schooljaar.startweek.tot).filter(
+      (d) => werkdagen.includes(weekdag(d)) && !bezet.some((b) => b.datum === d),
+    );
+    const deadline = vrijeDagen.at(-1) ?? laatsteWerkdagVoor(startTot, werkdagen);
+
     uit.push({
       id: `kalender-startweek-${schooljaar.id}`,
       sleutel: "kalender/startweek",
       datum: schooljaar.start,
       aard: "voorbereiden",
       taken,
-      // De laatste werkdag vóór de eerste schooldag: alles moet klaar zijn
-      // wanneer de kinderen binnenkomen.
-      taakDatum: laatsteWerkdagVoor(startTot, werkdagen),
+      taakDatum: deadline,
       alOpDeLijst: opLijst(taken),
       dagen,
       kop: "Deze week zet je je klas klaar",
       wanneer: `eerste schooldag ${dagnaam(schooljaar.start)} ${kort(schooljaar.start)}`,
-      detail: `${taken.length} dingen om te doen`,
+      detail: bezet.length
+        ? `${taken.length} dingen, en op ${lijstTekst(bezet.map((b) => b.dagnaam))} staat er al iets`
+        : `${taken.length} dingen om te doen`,
       actie: `${taken.length} taken op mijn lijst`,
     });
   }
@@ -601,7 +646,7 @@ export function aanleidingen(
     });
   }
 
-  gevonden.push(...uitDeKalender(bron, vandaag, werkdagen, opLijst));
+  gevonden.push(...uitDeKalender(bron, vandaag, werkdagen, eigenGroepen, opLijst));
   gevonden.push(...uitGroep8(bron, vandaag, eigenGroepen, werkdagen, opLijst));
 
   // Wat loopt of net geweest is telt allemaal als "nu" (vandaar de klem op 0)
