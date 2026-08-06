@@ -20,9 +20,19 @@ export async function POST(request: Request) {
   }
   if (!id || typeof id !== "string") return Response.json({ fout: "Welk seintje?" }, { status: 400 });
 
+  // ⚠️ ignoreDuplicates, niet de standaard "merge": een gewone upsert genereert
+  // ON CONFLICT ... DO UPDATE, en dat vraagt UPDATE-recht op de tabel — ook al
+  // gebeurt er bij een botsing niets. `authenticated` heeft hier alleen
+  // select/insert/delete (met opzet, zie migratie), dus een gewone upsert
+  // strandde altijd op 403, nog vóór RLS er iets van vond. Updaten is hier
+  // ook nooit nodig: nog een keer wegklikken van hetzelfde seintje mag
+  // gewoon niets doen.
   const { error } = await supabase
     .from("aanleiding_genegeerd")
-    .upsert({ user_id: user.id, aanleiding_id: id }, { onConflict: "user_id,aanleiding_id" });
+    .upsert(
+      { user_id: user.id, aanleiding_id: id },
+      { onConflict: "user_id,aanleiding_id", ignoreDuplicates: true },
+    );
 
   if (error) return Response.json({ fout: "Wegklikken lukte niet." }, { status: 500 });
   return Response.json({ ok: true });
