@@ -149,6 +149,49 @@ drop policy if exists "eigen teksten" on public.teksten;
 create policy "eigen teksten" on public.teksten
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+-- ── KLASLIMIET PER PAKKET ─────────────────────────────────────────────────
+-- Volledige uitleg: database/migratie-klaslimiet.sql.
+-- "Start = 1 groep, Compleet/Pro = 3" werd alleen in KlasManager.tsx bewaakt,
+-- dus buiten de app om kon je er tien maken. De regel volgt hier de DATA en
+-- niet een vlag: alleen wie een betaald pakket heeft kent een grens, dus in de
+-- proef en de testfase verandert er niets en is er bij de livegang geen tweede
+-- schakelaar om te vergeten.
+-- ⚠️ De aantallen staan ook in src/lib/abonnement.ts (KLAS_LIMIET) — samen bijwerken.
+create or replace function public.klassen_limiet_bewaakt()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+declare
+  st text; pl text; grens int; huidig int;
+begin
+  -- ⚠️ BEWUST GEEN `security definer`: moet zien WIE er schrijft.
+  if current_user not in ('authenticated', 'anon') then return new; end if;
+
+  select abon_status, abon_plan into st, pl
+  from public.instellingen where user_id = new.user_id;
+
+  if pl is null or st is null or st not in ('actief', 'opgezegd') then
+    return new;  -- geen betaald pakket = geen grens
+  end if;
+
+  grens := case pl when 'start' then 1 when 'compleet' then 3 when 'pro' then 3 else 3 end;
+  select count(*) into huidig from public.klassen where user_id = new.user_id;
+
+  if huidig >= grens then
+    raise exception 'Je pakket staat % groep(en) toe.', grens using errcode = '42501';
+  end if;
+  return new;
+end;
+$$;
+
+-- Alleen bij INSERT: een bestaande groep bijwerken mag altijd, ook als iemand
+-- overstapt naar een kleiner pakket en er dan te veel heeft.
+drop trigger if exists trg_klassen_limiet on public.klassen;
+create trigger trg_klassen_limiet
+  before insert on public.klassen
+  for each row execute function public.klassen_limiet_bewaakt();
+
 -- ── Tabel-rechten ───────────────────────────────────────────────────────
 -- Ingelogde gebruikers mogen de tabellen gebruiken; RLS hierboven bepaalt
 -- vervolgens dat ze alleen bij hun EIGEN rijen kunnen. (anon = niet ingelogd
@@ -322,6 +365,8 @@ grant execute on function public.wijs_community_stats() to authenticated;
 -- daadwerkelijk een betaald abonnement heeft (abon_status 'actief' of 'opgezegd').
 -- Een gratis proef of nepaccount levert dus niets op — dat haalt de hele
 -- fraudeprikkel weg (elk betalend account = een echte iDEAL-betaling).
+-- ⚠️ De teller geeft alleen JOUW aantal terug (`code` moet je eigen ref_code
+-- zijn). Met een vreemde code kon je eerder de stand van een ander opvragen.
 create or replace function public.wijs_aantal_verwijzingen(code text)
 returns int
 language sql
@@ -331,6 +376,7 @@ as $$
   select count(*)::int
   from public.instellingen
   where verwezen_door = code and code is not null and code <> ''
+    and code = (select ref_code from public.instellingen where user_id = auth.uid())
     and abon_status in ('actief', 'opgezegd');
 $$;
 grant execute on function public.wijs_aantal_verwijzingen(text) to authenticated;
@@ -346,9 +392,166 @@ as $$
   select count(*)::int
   from public.instellingen
   where verwezen_door = code and code is not null and code <> ''
+    and code = (select ref_code from public.instellingen where user_id = auth.uid())
     and (abon_status = 'proef' or abon_status is null);
 $$;
 grant execute on function public.wijs_aantal_verwijzingen_proef(text) to authenticated;
+
+-- ── FRAUDE-SLOT (5-8-2026) ────────────────────────────────────────────────
+-- Volledige uitleg + de losse migratie: database/migratie-fraude-slot.sql.
+--
+-- 🔑 DE REGEL: alles wat geld waard is (abonnement, proefduur, uitnodigingen)
+-- schrijft de SERVER. De browser mag het lezen en verder niets. Zonder dit slot
+-- kon iedereen zijn eigen `abon_status` op 'actief' zetten — en dáár leunt de
+-- fraudebescherming van de uitnodigingen op ("telt pas als die collega betaalt").
+--
+-- ⚠️ Bouw je een nieuw veld dat iets ontgrendelt of geld waard is: zet het in
+-- de lijst van instellingen_bewaakt(), anders staat het meteen weer open.
+
+-- Een uitnodigingscode hoort bij precies één account.
+create unique index if not exists idx_instellingen_ref_code
+  on public.instellingen(ref_code)
+  where ref_code is not null;
+
+-- ⚠️ BEWUST GEEN `security definer`: de functie moet juist zien WIE er schrijft.
+-- PostgREST zet de rol op 'authenticated' (browser) of 'anon'; de servicesleutel
+-- draait als 'service_role' en een security-definer-functie als de eigenaar
+-- daarvan. Die twee horen er wél door.
+create or replace function public.instellingen_bewaakt()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if current_user not in ('authenticated', 'anon') then
+    return new;  -- server of security-definer-functie: mag alles
+  end if;
+
+  if tg_op = 'INSERT' then
+    -- Een nieuw account start ALTIJD als proef; we negeren wat de browser
+    -- meestuurt (een gewone opslagactie stuurt deze velden niet mee).
+    new.abon_plan          := null;
+    new.abon_vorm          := null;
+    new.abon_status        := 'proef';
+    new.proef_eindigt      := now() + interval '7 days';
+    new.periode_eindigt    := null;
+    new.start_tool         := null;
+    new.start_tool_sinds   := null;
+    new.mollie_customer_id := null;
+    new.mollie_payment_id  := null;
+    new.beta_eigen_format  := false;
+    new.ref_code           := null;  -- die deelt de database uit (wijs_ref_code)
+    new.verwezen_door      := null;  -- die legt wijs_koppel_verwijzing vast
+    new.proef_herinnering_op := null;
+    return new;
+  end if;
+
+  if new.abon_plan          is distinct from old.abon_plan
+  or new.abon_vorm          is distinct from old.abon_vorm
+  or new.abon_status        is distinct from old.abon_status
+  or new.proef_eindigt      is distinct from old.proef_eindigt
+  or new.periode_eindigt    is distinct from old.periode_eindigt
+  or new.start_tool         is distinct from old.start_tool
+  or new.start_tool_sinds   is distinct from old.start_tool_sinds
+  or new.mollie_customer_id is distinct from old.mollie_customer_id
+  or new.mollie_payment_id  is distinct from old.mollie_payment_id
+  or new.beta_eigen_format  is distinct from old.beta_eigen_format
+  or new.ref_code           is distinct from old.ref_code
+  or new.verwezen_door      is distinct from old.verwezen_door
+  or new.proef_herinnering_op is distinct from old.proef_herinnering_op
+  then
+    raise exception 'Deze velden worden door de server bepaald (abonnement en uitnodigingen).'
+      using errcode = '42501';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_instellingen_bewaakt on public.instellingen;
+create trigger trg_instellingen_bewaakt
+  before insert or update on public.instellingen
+  for each row execute function public.instellingen_bewaakt();
+
+-- De database deelt de uitnodigingscode uit: je kunt 'm niet zelf kiezen en die
+-- van een ander niet overnemen.
+create or replace function public.wijs_ref_code()
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  bestaand  text;
+  nieuw     text;
+  pogingen  int := 0;
+  alfabet   constant text := 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; -- zonder verwarrende tekens
+begin
+  if auth.uid() is null then return null; end if;
+
+  select ref_code into bestaand from public.instellingen where user_id = auth.uid();
+  if coalesce(bestaand, '') <> '' then return bestaand; end if;
+
+  loop
+    select string_agg(substr(alfabet, 1 + floor(random() * length(alfabet))::int, 1), '')
+      into nieuw
+      from generate_series(1, 7);
+    begin
+      insert into public.instellingen as doel (user_id, ref_code)
+      values (auth.uid(), nieuw)
+      on conflict (user_id) do update
+        -- Heeft een gelijktijdige aanroep er net één gezet, dan houden we die.
+        set ref_code = coalesce(doel.ref_code, excluded.ref_code)
+      returning doel.ref_code into bestaand;
+      return bestaand;
+    exception when unique_violation then
+      pogingen := pogingen + 1;
+      if pogingen >= 5 then raise; end if;  -- 31^7 mogelijkheden; dit gebeurt niet
+    end;
+  end loop;
+end;
+$$;
+grant execute on function public.wijs_ref_code() to authenticated;
+
+-- Wie jou heeft uitgenodigd. Vier sloten, allemaal hier en niet in het scherm:
+-- één keer, nooit je eigen code, de code moet bestaan, en alleen binnen 30 dagen
+-- na je aanmelding (een uitnodiging hoort bij het begin van een account).
+create or replace function public.wijs_koppel_verwijzing(p_code text)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  mijn_code    text;
+  al_gekoppeld text;
+  uitnodiger   uuid;
+  aangemaakt   timestamptz;
+begin
+  if auth.uid() is null or coalesce(p_code, '') = '' then return false; end if;
+
+  select ref_code, verwezen_door into mijn_code, al_gekoppeld
+  from public.instellingen where user_id = auth.uid();
+  if al_gekoppeld is not null then return false; end if;
+  if mijn_code = p_code then return false; end if;
+
+  select user_id into uitnodiger from public.instellingen where ref_code = p_code;
+  if uitnodiger is null or uitnodiger = auth.uid() then return false; end if;
+
+  select created_at into aangemaakt from auth.users where id = auth.uid();
+  if aangemaakt is null or aangemaakt < now() - interval '30 days' then
+    return false;
+  end if;
+
+  insert into public.instellingen as doel (user_id, verwezen_door)
+  values (auth.uid(), p_code)
+  on conflict (user_id) do update
+    set verwezen_door = excluded.verwezen_door
+    where doel.verwezen_door is null;
+  return true;
+end;
+$$;
+grant execute on function public.wijs_koppel_verwijzing(text) to authenticated;
 
 -- ── 7) REVIEWS — beoordelingen van leerkrachten (beloning + testimonials) ──
 --  Eén review per gebruiker. mag_tonen = toestemming om de review (met voornaam)
@@ -1545,6 +1748,10 @@ revoke execute on function public.wijs_admin_zet_beta_eigen_format(text, boolean
 revoke execute on function public.wijs_is_admin() from public, anon;
 revoke execute on function public.wijs_aantal_verwijzingen(text) from public, anon;
 revoke execute on function public.wijs_aantal_verwijzingen_proef(text) from public, anon;
+revoke execute on function public.wijs_ref_code() from public, anon;
+revoke execute on function public.wijs_koppel_verwijzing(text) from public, anon;
+revoke execute on function public.instellingen_bewaakt() from public, anon;
+revoke execute on function public.klassen_limiet_bewaakt() from public, anon;
 revoke execute on function public.wijs_snapshot_abon() from public, anon;
 revoke execute on function public.wijs_community_stats() from public, anon;
 revoke execute on function public.registreer_herakkoord(text, text) from public, anon;

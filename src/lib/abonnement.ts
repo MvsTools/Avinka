@@ -110,6 +110,10 @@ export function planById(id: string | null | undefined): Plan | undefined {
 }
 
 // Hoeveel klassen/groepen mag een plan beheren?
+// ⚠️ Deze aantallen staan OOK in de database (trigger `klassen_limiet_bewaakt`,
+// zie database/migratie-klaslimiet.sql). Het scherm alleen was niet genoeg: wie
+// buiten de app om met de database praat, maakte er gewoon tien. Wijzig je hier
+// iets, wijzig dan ook die trigger.
 export const KLAS_LIMIET: Record<PlanId, number> = {
   start: 1,
   compleet: 3,

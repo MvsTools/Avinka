@@ -542,38 +542,26 @@ function maakRefCode(): string {
   return c;
 }
 
-// Geeft je eigen uitnodigingscode terug; maakt 'm aan als die er nog niet is.
+// Geeft je eigen uitnodigingscode terug; de DATABASE maakt 'm aan als die er nog
+// niet is. ⚠️ Bewust niet meer hier verzonnen en weggeschreven: `ref_code` staat
+// achter het fraude-slot (database/migratie-fraude-slot.sql), zodat niemand zijn
+// code zelf kan kiezen of die van een ander kan overnemen.
 export async function getOfMaakRefCode(): Promise<string | null> {
   const sb = createClient();
-  const {
-    data: { user },
-  } = await sb.auth.getUser();
-  if (!user) return null;
-  const { data } = await sb.from("instellingen").select("ref_code").maybeSingle();
-  if (data?.ref_code) return data.ref_code as string;
-  const code = maakRefCode();
-  const { error } = await sb
-    .from("instellingen")
-    .upsert({ user_id: user.id, ref_code: code }, { onConflict: "user_id" });
-  return error ? null : code;
+  const { data, error } = await sb.rpc("wijs_ref_code");
+  if (error || typeof data !== "string") return null;
+  return data;
 }
 
-// Legt eenmalig vast door wie je bent uitgenodigd (niet jezelf, alleen als nog leeg).
-export async function koppelVerwijzing(code: string): Promise<void> {
+// Legt eenmalig vast door wie je bent uitgenodigd. Alle controles zitten in de
+// database (wijs_koppel_verwijzing): één keer, nooit je eigen code, de code moet
+// bestaan, en alleen binnen 30 dagen na je aanmelding. Geeft terug of het is
+// gelukt; false is een gewone uitkomst (link te laat gebruikt, al gekoppeld).
+export async function koppelVerwijzing(code: string): Promise<boolean> {
   const sb = createClient();
-  const {
-    data: { user },
-  } = await sb.auth.getUser();
-  if (!user || !code) return;
-  const { data } = await sb
-    .from("instellingen")
-    .select("ref_code, verwezen_door")
-    .maybeSingle();
-  if (data?.verwezen_door) return; // al gekoppeld
-  if (data?.ref_code === code) return; // niet jezelf
-  await sb
-    .from("instellingen")
-    .upsert({ user_id: user.id, verwezen_door: code }, { onConflict: "user_id" });
+  if (!code) return false;
+  const { data, error } = await sb.rpc("wijs_koppel_verwijzing", { p_code: code });
+  return !error && data === true;
 }
 
 // Telt hoeveel uitgenodigde collega's een BETALEND abonnement hebben (niet de

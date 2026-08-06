@@ -22,7 +22,7 @@ export default function AbonnementView() {
   const [ab, setAb] = useState<Abonnement | null>(null);
   const [vorm, setVorm] = useState<Vorm>("maand");
   const [bezig, setBezig] = useState<string | null>(null); // plan-id dat laadt
-  const [melding, setMelding] = useState<"ok" | "mislukt" | null>(null);
+  const [melding, setMelding] = useState<"ok" | "mislukt" | "fout" | null>(null);
   const [toonPakketten, setToonPakketten] = useState(false); // pas open na "Wijzig"
 
   useEffect(() => {
@@ -32,6 +32,7 @@ export default function AbonnementView() {
     const p = q.get("betaald");
     if (p === "1") setMelding("ok");
     else if (p === "0") setMelding("mislukt");
+    else if (p === "fout") setMelding("fout");
 
     /* Binnengekomen via "Upgrade naar …" op de voorpagina (?wijzig=1). Dan is
        de keuze al gemaakt en zou het raar zijn om hier eerst nog op "Wijzig"
@@ -79,6 +80,20 @@ export default function AbonnementView() {
       {melding === "mislukt" && (
         <p className="rounded-2xl bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700">
           De betaling is niet afgerond. Je kunt het hieronder opnieuw proberen.
+        </p>
+      )}
+
+      {/* De betaling is wél gelukt, maar wij konden je abonnement niet
+          vastleggen. Nooit tonen als "mislukt": dan probeert iemand het opnieuw
+          en betaalt hij twee keer. */}
+      {melding === "fout" && (
+        <p className="rounded-2xl bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-800">
+          Je betaling is gelukt, maar er ging iets mis bij het vastleggen van je abonnement.
+          Probeer het <strong>niet</strong> opnieuw — mail ons even op{" "}
+          <a className="underline" href="mailto:support@avinka.nl">
+            support@avinka.nl
+          </a>
+          , dan zetten we het meteen goed.
         </p>
       )}
 
