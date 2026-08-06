@@ -77,6 +77,58 @@ export default function DuoOverdracht() {
     })();
   }, []);
 
+  /* Berichten opnieuw ophalen zodra je terugkomt op het tabblad of de
+     overdracht opent. Zonder dit haalde het scherm zijn berichten één keer op
+     bij het laden van het dashboard en daarna nooit meer, dus moest je de
+     pagina verversen om te zien dat je collega iets had geschreven.
+     Bewust geen timer die elke zoveel seconden navraagt: dat loopt door
+     terwijl niemand kijkt. Dit gebeurt alleen op een moment dat je er ook
+     echt naar kijkt.
+     Bewust ALLEEN de berichten en de leesstand: de namen van je collega's
+     veranderen niet terwijl jij van tabblad wisselt, dus die hoeven niet mee. */
+  useEffect(() => {
+    if (groepen.length === 0) return;
+
+    let bezig = false;
+
+    /* ⚠️ `metLeesstand` staat UIT bij het openen van het paneel. Openen
+       markeert de berichten namelijk als gelezen: het zet de leesstand hier
+       alvast op "nu" en schrijft dat tegelijk naar de database. Zou ik op dat
+       moment de leesstand ophalen, dan is die schrijfactie waarschijnlijk nog
+       onderweg, krijg ik de oude waarde terug en springt de ongelezen-teller
+       terug alsof je niets gelezen had. Bij het terugkomen op een tabblad
+       speelt dat niet, en dáár is de leesstand juist nuttig: heb je het op je
+       telefoon gelezen, dan hoort de teller hier ook weg te zijn. */
+    async function haalOp(metLeesstand: boolean) {
+      if (bezig || document.visibilityState !== "visible") return;
+      bezig = true;
+      try {
+        const ids = groepen.map((g) => g.klasId);
+        const alle = await Promise.all(ids.map((id) => getDuoOverdrachten(id)));
+        const b: Record<string, Bericht[]> = {};
+        ids.forEach((id, i) => (b[id] = alle[i]));
+        setBerichten(b);
+
+        if (metLeesstand) {
+          const gelezen = await Promise.all(ids.map((id) => getOverdrachtGelezen(id)));
+          const gl: Record<string, string | null> = {};
+          ids.forEach((id, i) => (gl[id] = gelezen[i]));
+          setGelezenOp(gl);
+        }
+      } finally {
+        bezig = false;
+      }
+    }
+
+    function bijTerugkomst() {
+      haalOp(true);
+    }
+
+    if (open) haalOp(false);
+    document.addEventListener("visibilitychange", bijTerugkomst);
+    return () => document.removeEventListener("visibilitychange", bijTerugkomst);
+  }, [groepen, open]);
+
   // Bij openen (en na versturen) onderaan het gesprek beginnen, zoals een
   // berichtenapp doet: het nieuwste bericht is waar je naar kijkt.
   useEffect(() => {
@@ -300,43 +352,36 @@ export default function DuoOverdracht() {
 
             {/* Het voorstel staat náást je eigen tekst, niet eroverheen: je
                 vergelijkt en kiest zelf. */}
-            {(aiBezig || voorstel) && (
+            {/* Alleen een blok als er ook echt iets te lezen valt. Tijdens het
+                wachten schoof hier een leeg kader in beeld met het woord
+                "Voorstel" erboven, en dat is veel gedoe voor een klein scherm
+                dat daarna toch weer van hoogte verspringt. Het wachten staat nu
+                gewoon op de knop zelf. */}
+            {voorstel && !aiBezig && (
               <div
                 aria-live="polite"
                 className="mt-2 rounded-2xl border border-brand/25 bg-brand-soft/60 px-4 py-3"
               >
-                <p className="text-xs font-bold uppercase tracking-wider text-brand-dark">
-                  Voorstel
-                </p>
-                {aiBezig ? (
-                  <p className="mt-1 text-sm text-ink/60">Even schrijven…</p>
-                ) : (
-                  <>
-                    <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-ink/80">
-                      {voorstel}
-                    </p>
-                    <div className="mt-2.5 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={neemVoorstelOver}
-                        // Bewust niet gevuld groen: Versturen staat er vlak
-                        // onder en dat is de knop die het bericht wegstuurt.
-                        // Twee volle groene knoppen boven elkaar leest als twee
-                        // keer dezelfde eindstap.
-                        className="rounded-xl border border-brand bg-white px-4 py-1.5 text-sm font-bold text-brand-dark transition hover:bg-brand-soft"
-                      >
-                        Gebruiken
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setVoorstel(null)}
-                        className="rounded-xl border border-black/10 px-4 py-1.5 text-sm font-semibold text-ink/60 transition hover:border-black/20"
-                      >
-                        Toch niet
-                      </button>
-                    </div>
-                  </>
-                )}
+                <p className="whitespace-pre-wrap text-sm leading-6 text-ink/80">{voorstel}</p>
+                <div className="mt-2.5 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={neemVoorstelOver}
+                    // Bewust niet gevuld groen: Versturen staat er vlak onder en
+                    // dat is de knop die het bericht wegstuurt. Twee volle groene
+                    // knoppen boven elkaar leest als twee keer dezelfde eindstap.
+                    className="rounded-xl border border-brand bg-white px-4 py-1.5 text-sm font-bold text-brand-dark transition hover:bg-brand-soft"
+                  >
+                    Gebruiken
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVoorstel(null)}
+                    className="rounded-xl border border-black/10 px-4 py-1.5 text-sm font-semibold text-ink/60 transition hover:border-black/20"
+                  >
+                    Toch niet
+                  </button>
+                </div>
               </div>
             )}
 
@@ -381,7 +426,7 @@ export default function DuoOverdracht() {
                   <path d="M13 2.5l1.9 5.6 5.6 1.9-5.6 1.9L13 17.5l-1.9-5.6L5.5 10l5.6-1.9L13 2.5z" />
                   <path d="M5.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z" />
                 </svg>
-                Netter maken
+                {aiBezig ? "Even schrijven…" : "Netter maken"}
               </button>
               <button
                 type="button"

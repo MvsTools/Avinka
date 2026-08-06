@@ -5,6 +5,7 @@ import VoorkeurenForm from "@/components/dashboard/VoorkeurenForm";
 import AccountBeheer from "@/components/dashboard/AccountBeheer";
 import AiCredits from "@/components/dashboard/AiCredits";
 import DuoCollega from "@/components/dashboard/DuoCollega";
+import EmailWijzigen from "@/components/dashboard/EmailWijzigen";
 
 export default async function InstellingenPage() {
   const supabase = await createClient();
@@ -34,11 +35,8 @@ export default async function InstellingenPage() {
       <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-sm sm:p-7">
         <h2 className="text-lg font-bold text-ink">Mijn account</h2>
 
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-b border-black/5 pb-4">
-          <div>
-            <p className="text-sm font-semibold text-ink/55">E-mailadres</p>
-            <p className="text-ink">{email || "—"}</p>
-          </div>
+        <div className="mt-4">
+          <EmailWijzigen huidig={email} />
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/5 py-4">

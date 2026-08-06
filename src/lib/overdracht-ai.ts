@@ -24,17 +24,26 @@ import { haalMaskering } from "@/lib/ai-maskering";
 // model van het pakket (zie lib/abonnement.ts).
 const MODEL = "claude-sonnet-4-6";
 
+// ⚠️ Deze instructie spreekt de leerkracht met JE aan, niet als "de leerkracht".
+// Reden: als het model iets terug moest zeggen in plaats van een bericht te
+// schrijven, praatte het óver de gebruiker ("Vraag de leerkracht om de
+// steekwoorden in te typen") — en dat werd vervolgens als voorstel aangeboden,
+// dus je kon die zin zo in je eigen overdracht plakken. Te weinig invoer
+// beantwoordt het model nu met één afgesproken woord, dat wij hieronder in
+// onze eigen woorden omzetten.
+const GEEN_INHOUD = "GEEN_INHOUD";
+
 const SYSTEEM = `Je helpt een leerkracht in het Nederlandse basisonderwijs met de overdracht aan de
 collega's waarmee hij of zij deze groep deelt. Het bericht komt in een berichtenscherm
 op het startscherm van die collega's.
 
-De leerkracht heeft losse steekwoorden getypt. Maak daar één helder bericht van.
+Je krijgt losse steekwoorden. Maak daar één helder bericht van.
 
 Regels:
-- Gebruik alleen wat de leerkracht heeft opgeschreven. Verzin er niets bij: geen namen,
+- Gebruik alleen wat er is opgeschreven. Verzin er niets bij: geen namen,
   geen tijden, geen gebeurtenissen, geen afloop.
 - Snap je een steekwoord niet, neem het dan over zoals het er staat in plaats van te gokken.
-- Heeft de leerkracht zelf een indeling gebruikt (kopjes, streepjes, regels onder
+- Is er zelf een indeling gebruikt (kopjes, streepjes, regels onder
   elkaar), houd die dan aan. Zo niet, schrijf dan lopende tekst en verzin er geen
   opsomming bij.
 - Schrijf in het Nederlands, in hele zinnen, hooguit vier zinnen per onderdeel.
@@ -43,12 +52,30 @@ Regels:
 - Neem geen medische gegevens, diagnoses of gezinssituaties op. Staat zoiets in de
   invoer, beschrijf dan alleen het gedrag dat je ziet, zonder etiket.
 - Antwoord met alleen het bericht zelf: geen inleiding, geen aanhalingstekens,
-  geen uitleg over wat je hebt gedaan.`;
+  geen uitleg over wat je hebt gedaan.
+- Dit is een berichtenscherm tussen collega's, geen formulier. Een kort antwoord
+  ("oke thanks", "gezien, dank je") is ook een geldig bericht: maak dat gewoon
+  netjes. Niet elk bericht hoeft over de groep te gaan.
+- Alleen als er echt geen taal in staat om iets van te maken (losse tekens,
+  toetsenbordgeklets), antwoord dan met exact dit ene woord en verder niets:
+  ${GEEN_INHOUD}
+- Schrijf nooit óver de leerkracht in de derde persoon en geef nooit een
+  instructie terug in plaats van een bericht.`;
+
+// Wat we tonen als er te weinig staat. Onze woorden, niet die van het model,
+// zodat de toon klopt met de rest van het platform.
+const TE_WEINIG = "Hier kan ik geen bericht van maken.";
 
 export type AiAntwoord = { ok: true; tekst: string } | { ok: false; melding: string };
 
 /** Van steekwoorden naar een leesbaar bericht. */
 export async function maakNetter(getypt: string): Promise<AiAntwoord> {
+  // Staat er echt niets, dan hoeft de AI er niet aan te pas te komen. Scheelt
+  // een aanroep, en het antwoord is toch altijd hetzelfde.
+  if (getypt.replace(/[^\p{L}\p{N}]/gu, "").length < 3) {
+    return { ok: false, melding: TE_WEINIG };
+  }
+
   const mask = await haalMaskering();
   if (!mask) {
     return {
@@ -117,6 +144,11 @@ export async function maakNetter(getypt: string): Promise<AiAntwoord> {
   }
   if (!tekst) {
     return { ok: false, melding: "Er kwam geen tekst terug. Probeer het zo nog eens." };
+  }
+  // Het model vond er te weinig in staan. Als melding tonen en niet als
+  // voorstel, want anders plak je die zin zo in je eigen overdracht.
+  if (tekst.replace(/[^A-Z_]/g, "") === GEEN_INHOUD) {
+    return { ok: false, melding: TE_WEINIG };
   }
 
   return { ok: true, tekst: mask.restore(tekst) };

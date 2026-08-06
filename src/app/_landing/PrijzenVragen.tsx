@@ -22,10 +22,11 @@ import {
    witte doosjes met randjes, precies het generieke SaaS-recept. Ze zijn hier
    opnieuw opgebouwd uit de bouwstenen van de wereld.
 
-   Belangrijk: de gedeelde `components/Prijzen.tsx` blijft ongemoeid, want die
-   hangt óók onder de echte landing (src/app/page.tsx). Wat je hier ziet is een
-   eigen versie voor /nieuw5; de inhoud (pakketten, prijzen, voordelen) komt
-   nog steeds uit dezelfde ene bron, lib/abonnement.
+   Belangrijk: dit is sinds 4-8 de ENIGE prijzensectie. De oude gedeelde
+   `components/Prijzen.tsx` hing onder de vorige voorpagina en is met die
+   pagina wees geworden; hij is verwijderd, juist omdat twee prijzenschermen
+   naast elkaar de kop hieronder een valse belofte lieten houden. De inhoud
+   (pakketten, prijzen, voordelen) komt nog steeds uit één bron, lib/abonnement.
 
    Waarom deze twee samen in één bestand: ze vormen samen het ritme van de
    staart van de pagina. Vóór deze verbouwing lagen maker, ervaringen, prijzen
