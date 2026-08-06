@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/proef-herinnering",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/mollie-verlengen",
+      "schedule": "0 6 * * *"
     }
   ]
 }

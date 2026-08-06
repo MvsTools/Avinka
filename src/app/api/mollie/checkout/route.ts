@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       customerId: customerId ?? undefined,
       sequenceType: recurringAan ? "first" : undefined,
+      webhookUrl: `${origin}/api/mollie/webhook`,
     });
 
     // Bewaar de (eventuele) klant + de lopende betaling, zodat de terugkeer

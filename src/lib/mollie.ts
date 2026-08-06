@@ -18,6 +18,7 @@ function sleutel(): string {
 type RuweBetaling = {
   id: string;
   status: string;
+  sequenceType?: string;
   _links?: { checkout?: { href?: string } };
   metadata?: { userId?: string; plan?: string; vorm?: string } | null;
 };
@@ -43,6 +44,7 @@ async function mollieFetch<T = RuweBetaling>(pad: string, init?: RequestInit): P
 export type MolliePayment = {
   id: string;
   status: string;
+  sequenceType: string;
   checkoutUrl: string | null;
   metadata: { userId?: string; plan?: string; vorm?: string } | null;
 };
@@ -51,6 +53,7 @@ function vertaal(d: RuweBetaling): MolliePayment {
   return {
     id: d.id,
     status: d.status,
+    sequenceType: d.sequenceType ?? "oneoff",
     checkoutUrl: d._links?.checkout?.href ?? null,
     metadata: d.metadata ?? null,
   };
@@ -83,6 +86,7 @@ export async function maakBetaling(opts: {
   userId: string;
   customerId?: string;
   sequenceType?: "first" | "oneoff" | "recurring";
+  webhookUrl?: string;
 }): Promise<MolliePayment> {
   const naam = planById(opts.planId)?.naam ?? opts.planId;
   const body: Record<string, unknown> = {
@@ -93,6 +97,11 @@ export async function maakBetaling(opts: {
   };
   if (opts.customerId) body.customerId = opts.customerId;
   if (opts.sequenceType) body.sequenceType = opts.sequenceType;
+  // Mollie roept dit adres zelf aan zodra de status verandert — nodig omdat er
+  // bij een VERLENGING niemand in de browser zit om op terug te sturen. Lokaal
+  // (localhost) kan Mollie dit adres niet bereiken; dat is een bekende grens
+  // van testen zonder publieke tunnel, geen fout in de code.
+  if (opts.webhookUrl) body.webhookUrl = opts.webhookUrl;
   const d = await mollieFetch<RuweBetaling>("/payments", {
     method: "POST",
     body: JSON.stringify(body),
