@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { forwardRef, useImperativeHandle, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SOORT_INFO, type Soort } from "@/lib/agenda-herken";
 import { dagnaam, kort } from "@/lib/planning";
@@ -50,7 +50,7 @@ const SOORT_VOLGORDE: Soort[] = [
 const VELD =
   "w-full rounded-xl border border-black/10 bg-cream/50 px-4 py-2.5 text-sm text-ink outline-none transition-shadow placeholder:text-ink/35 focus:border-brand focus:shadow-[0_0_0_3px_rgba(47,158,110,0.18)]";
 
-type Vorm = {
+export type Vorm = {
   id?: string;
   titel: string;
   datum: string;
@@ -60,6 +60,10 @@ type Vorm = {
   eind: string;
   soort: Soort;
 };
+
+/** Om het formulier van buitenaf te openen — bijv. met een "+" op een dag in
+ *  de kalender, mét die datum al ingevuld. */
+export type EigenAfsprakenHandle = { open: (start?: Partial<Vorm>) => void };
 
 const LEEG: Vorm = {
   titel: "",
@@ -71,14 +75,11 @@ const LEEG: Vorm = {
   soort: "overig",
 };
 
-export default function EigenAfspraken({
-  eigen,
-  vandaag,
-}: {
+const EigenAfspraken = forwardRef<EigenAfsprakenHandle, {
   /** De afspraken die deze leerkracht zelf heeft ingevoerd. */
   eigen: PlanItem[];
   vandaag: string;
-}) {
+}>(function EigenAfspraken({ eigen, vandaag }, ref) {
   const [vorm, setVorm] = useState<Vorm | null>(null);
   const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState<string | null>(null);
@@ -90,6 +91,8 @@ export default function EigenAfspraken({
     setGelukt(null);
     setVorm({ ...LEEG, datum: vandaag, ...start });
   };
+
+  useImperativeHandle(ref, () => ({ open }));
 
   /** Titel getypt? Dan alvast een soort voorstellen — je kunt hem zelf omzetten. */
   const raadSoort = async (titel: string) => {
@@ -155,22 +158,13 @@ export default function EigenAfspraken({
 
   return (
     <section className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h3 className="font-bold text-ink">Zelf een afspraak toevoegen</h3>
-          <p className="mt-1 text-sm text-ink/60">
-            Voor wat niet in de agenda van school staat: jouw gespreksavond, een studiedag, de
-            schoolreis. Avinka rekent er net zo mee als met een gekoppelde agenda.
-          </p>
-        </div>
-        {!vorm && (
-          <button
-            onClick={() => open()}
-            className="shrink-0 rounded-xl bg-brand-dark px-4 py-2 text-sm font-bold text-white transition-transform duration-150 active:scale-[0.97]"
-          >
-            + Afspraak
-          </button>
-        )}
+      <div>
+        <h3 className="font-bold text-ink">Zelf een afspraak toevoegen</h3>
+        <p className="mt-1 text-sm text-ink/60">
+          Voor wat niet in de agenda van school staat: jouw gespreksavond, een studiedag, de
+          schoolreis. Avinka rekent er net zo mee als met een gekoppelde agenda. Open het
+          formulier met &ldquo;+ Afspraak&rdquo; hierboven, of met de + op een dag in de kalender.
+        </p>
       </div>
 
       {gelukt && !vorm && (
@@ -362,4 +356,6 @@ export default function EigenAfspraken({
       )}
     </section>
   );
-}
+});
+
+export default EigenAfspraken;

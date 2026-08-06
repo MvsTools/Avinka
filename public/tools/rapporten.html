@@ -501,6 +501,14 @@
 
   <!-- ════════ SCHERM 1: INSTELLINGEN ════════ -->
   <div class="scherm actief" id="scherm-start">
+  <script>
+    /* Verbergt dit scherm op hetzelfde moment dat het bestaat, niet pas nadat
+       de browser het al één frame heeft laten zien (de meekijker-flits).
+       Zie avinka-schermwacht.js. */
+    window.__startWacht = window.avinkaSchermwacht
+      ? avinkaSchermwacht.houdVast(document.getElementById('scherm-start'), 700)
+      : null;
+  </script>
     <div class="apikey-card">
       <div class="apikey-label">API Sleutel</div>
       <div class="apikey-input-wrap">
@@ -2082,9 +2090,9 @@ async function vulMijnKlas(toevoegFn){
   if(typeof genereerVerhaal==='function'){ var _g=genereerVerhaal; genereerVerhaal=function(){ var p=_g.apply(this,arguments); Promise.resolve(p).then(function(){ try{ var l=huidige(); if(l&&l.verhaal) slaOp(l.naam,l.verhaal); }catch(e){} }); return p; }; }
   var box=document.getElementById('verhaal-tekst');
   if(box) box.addEventListener('blur', function(){ try{ var l=huidige(); if(l){ l.verhaal=box.value; slaOp(l.naam, box.value); } }catch(e){} });
-  var startWacht = window.avinkaSchermwacht
-    ? avinkaSchermwacht.houdVast(document.getElementById('scherm-start'), 700)
-    : null;
+  // Scherm wordt al vastgehouden vanaf het moment dat het bestaat (zie het
+  // inline scriptje vlak na <div id="scherm-start"> bovenaan de pagina).
+  var startWacht = window.__startWacht || null;
   prefillStart().then(meekijkerNaarOverzicht, function(){
     // Ging het ophalen mis, dan hoor je gewoon het normale scherm te zien.
     if(startWacht) startWacht.toon();

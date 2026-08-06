@@ -16,10 +16,13 @@ import { ETIKET } from "./schooljaar-stijl";
 export function Kaartvenster({
   titel,
   sluit,
+  extra,
   children,
 }: {
   titel: string;
   sluit: () => void;
+  /** Extra knop vóór het kruisje, bijv. de + om een afspraak op deze dag te zetten. */
+  extra?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const kaart = useRef<HTMLDivElement>(null);
@@ -63,15 +66,18 @@ export function Kaartvenster({
       >
         <div className="flex items-start justify-between gap-4">
           <p className="font-serif text-2xl font-semibold text-ink">{titel}</p>
-          <button
-            onClick={sluit}
-            aria-label="Sluiten"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-black/10 text-ink/50 transition-transform duration-150 hover:text-ink active:scale-[0.96]"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-              <path d="M6 6l12 12M18 6L6 18" />
-            </svg>
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            {extra}
+            <button
+              onClick={sluit}
+              aria-label="Sluiten"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-black/10 text-ink/50 transition-transform duration-150 hover:text-ink active:scale-[0.96]"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+          </div>
         </div>
         {children}
       </div>
@@ -144,15 +150,36 @@ export default function SchooljaarDagkaart({
   beeld,
   sluit,
   groepen = [],
+  onNieuweAfspraak,
 }: {
   beeld: Dagbeeld;
   sluit: () => void;
   groepen?: number[];
+  /** De datum staat al vast, dus de + hier scheelt een stap tegenover
+   *  "+ Afspraak" boven de kalender. */
+  onNieuweAfspraak?: (datum: string) => void;
 }) {
   const afspraken = beeld.items.filter((i) => i.soort !== "vakantie");
 
   return (
-    <Kaartvenster titel={volledig(beeld.datum)} sluit={sluit}>
+    <Kaartvenster
+      titel={volledig(beeld.datum)}
+      sluit={sluit}
+      extra={
+        onNieuweAfspraak && (
+          <button
+            onClick={() => onNieuweAfspraak(beeld.datum)}
+            aria-label="Afspraak toevoegen op deze dag"
+            title="Afspraak toevoegen op deze dag"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-black/10 text-ink/50 transition-transform duration-150 hover:border-brand hover:text-brand-dark active:scale-[0.96]"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
+        )
+      }
+    >
       <Dagstatus beeld={beeld} />
 
       {afspraken.length > 0 && (

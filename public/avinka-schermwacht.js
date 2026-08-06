@@ -30,7 +30,6 @@
   function houdVast(el, ms) {
     if (!el) return { toon: function () {}, laatStaan: function () {} };
 
-    var eerder = el.style.display;
     var losgelaten = false;
     el.style.display = "none";
 
@@ -40,7 +39,11 @@
       if (losgelaten) return;
       losgelaten = true;
       clearTimeout(timer);
-      el.style.display = eerder || "";
+      // Altijd terug naar "geen eigen stijl": het element wordt zelf al vanaf
+      // het moment van bestaan verborgen (niet pas hierna), dus wat we hier
+      // ooit "eerder" noemden was altijd al "none" — dat teruggeven hield het
+      // scherm juist voorgoed verborgen.
+      el.style.display = "";
     }
 
     /** We hebben besloten iets anders te tonen; dit scherm hoeft niet meer. */

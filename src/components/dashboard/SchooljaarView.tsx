@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import type { EigenAfsprakenHandle } from "./EigenAfspraken";
 import {
   bereikTekst,
   filterVoorMij,
@@ -88,6 +89,7 @@ export default function SchooljaarView({
   };
   const [weergave, setWeergave] = useState<"lijst" | "maand">("lijst");
   const [alleenMijne, setAlleenMijne] = useState(false);
+  const eigenAfsprakenRef = useRef<EigenAfsprakenHandle>(null);
 
   // Welke periode-blokken openstaan. Standaard alleen het blok waar je nu in
   // zit; al het andere klapt dicht voor een rustig overzicht. Zit je in een
@@ -162,10 +164,7 @@ export default function SchooljaarView({
       </div>
 
       {tab === "agendas" ? (
-        <div className="flex flex-col gap-5">
-          <AgendaKoppelen agendas={agendas} />
-          <EigenAfspraken eigen={eigenAfspraken} vandaag={vandaag} />
-        </div>
+        <AgendaKoppelen agendas={agendas} />
       ) : tab === "week" ? (
         <SchooljaarWeek bron={bron} vandaag={vandaag} verlaatGuard={verlaatGuard} />
       ) : (
@@ -225,6 +224,12 @@ export default function SchooljaarView({
                   )}
             </div>
             <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => eigenAfsprakenRef.current?.open()}
+                className="rounded-2xl bg-brand-dark px-4 py-2 text-sm font-bold text-white shadow-sm transition-transform duration-150 active:scale-[0.97]"
+              >
+                + Afspraak
+              </button>
               {opzij > 0 && (
                 <button
                   onClick={() => setAlleenMijne(!alleenMijne)}
@@ -244,6 +249,8 @@ export default function SchooljaarView({
             </div>
           </div>
 
+          <EigenAfspraken ref={eigenAfsprakenRef} eigen={eigenAfspraken} vandaag={vandaag} />
+
           {weergave === "maand" ? (
             <SchooljaarMaand
               bron={bron}
@@ -251,6 +258,7 @@ export default function SchooljaarView({
               groepen={mijnGroepen}
               maand={maand}
               zetMaand={setMaand}
+              onNieuweAfspraak={(datum) => eigenAfsprakenRef.current?.open({ datum })}
             />
           ) : (
             <Jaarlijst

@@ -493,9 +493,17 @@
   <script src="/avinka-masking.js"></script>
   <script src="/avinka-dropdown.js"></script>
   <script src="/avinka-verlaten.js"></script>
+  <script src="/avinka-schermwacht.js"></script>
 </head><body>
 
 <div class="container landing-container iepui" id="landing">
+<script>
+  /* Verbergt dit scherm op hetzelfde moment dat het bestaat, niet pas nadat
+     de browser het al één frame heeft laten zien. Zie avinka-schermwacht.js. */
+  window.__landingWacht = window.avinkaSchermwacht
+    ? avinkaSchermwacht.houdVast(document.getElementById('landing'), 700)
+    : null;
+</script>
   <div class="terug-balk">
     <a href="/dashboard" class="terug-menu">← Terug naar dashboard</a>
     <a href="/dashboard" aria-label="Avinka" style="display:inline-flex;flex-shrink:0;"><img src="/Avinka_wordmerk.png" alt="Avinka" style="height:18px;width:auto;display:block;opacity:.82;"></a>
@@ -1121,7 +1129,6 @@
 
 <!-- Centrale instellingen: hier alleen voor "welk toetssysteem gebruik je". -->
 <script src="/avinka-voorkeuren.js"></script>
-<script src="/avinka-schermwacht.js"></script>
 <script>
 // ════════════════════════════════════════════════════════════
 // STATE
@@ -1435,9 +1442,10 @@ var NIET_INGELEZEN = { dia: 'Dia', boom: 'Boom' };
 // ── Geen flits van het keuzescherm ────────────────────────────────────────
 // Het antwoord op "welk toetssysteem gebruik jij" komt van de server, en zolang
 // dat onderweg is stond het keuzescherm er gewoon — dus zag je hem een seconde
-// staan voordat we doorsprongen. `avinka-schermwacht.js` houdt hem even vast en
-// toont hem alsnog als er iets te kiezen valt (of als de server zwijgt).
-var landingWacht = null;
+// staan voordat we doorsprongen. Het scherm wordt al vastgehouden vanaf het
+// moment dat de div bestaat (zie het inline scriptje vlak na <div id="landing">
+// hierboven); hier hergebruiken we die wacht, niet een nieuwe pas hier.
+var landingWacht = window.__landingWacht || null;
 
 function pasToetssysteemToe(v) {
   var sys = (v && v.toets_systeem) || '';
@@ -1464,11 +1472,12 @@ function pasToetssysteemToe(v) {
   return 'doorgesprongen';
 }
 
-if (window.avinkaVoorkeuren && window.avinkaSchermwacht) {
-  landingWacht = avinkaSchermwacht.houdVast(document.getElementById('landing'), 700);
+if (window.avinkaVoorkeuren && landingWacht) {
   window.avinkaVoorkeuren.ready.then(pasToetssysteemToe, function () {
     if (landingWacht) landingWacht.toon();
   });
+} else if (landingWacht) {
+  landingWacht.toon();
 }
 function handleApiKey(input) {
   apiKey = input.value.trim();
