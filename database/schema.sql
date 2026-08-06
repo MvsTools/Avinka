@@ -1166,6 +1166,7 @@ drop policy if exists "eigen genegeerde seintjes" on public.aanleiding_genegeerd
 create policy "eigen genegeerde seintjes" on public.aanleiding_genegeerd
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 grant select, insert, delete on public.aanleiding_genegeerd to authenticated;
+grant select on public.aanleiding_genegeerd to service_role;
 create index if not exists idx_aanleiding_genegeerd_user on public.aanleiding_genegeerd(user_id);
 
 -- ── 14) BOUW-TAKEN — admin-backlog ("nog te bouwen voor de website") ──────

@@ -31,6 +31,10 @@ drop policy if exists "eigen genegeerde seintjes" on public.aanleiding_genegeerd
 create policy "eigen genegeerde seintjes" on public.aanleiding_genegeerd
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 grant select, insert, delete on public.aanleiding_genegeerd to authenticated;
+-- ⚠️ Zonder dit kan scripts/backup-database.mjs (draait met de servicesleutel)
+-- deze tabel niet uitlezen, en stopt de backup met een 403 — precies zoals
+-- `taken` en de andere persoonlijke tabellen het al hadden.
+grant select on public.aanleiding_genegeerd to service_role;
 create index if not exists idx_aanleiding_genegeerd_user on public.aanleiding_genegeerd(user_id);
 
 -- ── Controle achteraf ─────────────────────────────────────────────────────
