@@ -184,7 +184,7 @@ export async function DELETE(request: Request) {
 
   if (error || !data?.length) {
     return Response.json(
-      { fout: "Die afspraak is niet weggehaald. Komt hij uit een gekoppelde agenda?" },
+      { fout: "Die afspraak is niet verwijderd. Komt hij uit een gekoppelde agenda?" },
       { status: 400 },
     );
   }
