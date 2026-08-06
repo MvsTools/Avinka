@@ -592,6 +592,13 @@ function Jaarlijst({
   const { schooljaar, periodes } = bron;
   const [dag, setDag] = useState<string | null>(null);
 
+  // Vóór de startweek valt geen enkel blok of vakantie hieronder — plan je
+  // toch al iets in die tijd (deze zomer, bijvoorbeeld), dan moet het hier
+  // ook gewoon te zien zijn, niet alleen in de maandweergave.
+  const vroegeItems = bron.items.filter(
+    (i) => !i.dubbelVan && i.soort !== "vakantie" && i.datum < schooljaar.startweek.van,
+  );
+
   return (
     <div className="flex flex-col gap-4">
       {dag && (
@@ -601,6 +608,19 @@ function Jaarlijst({
           sluit={() => setDag(null)}
           eigenBronId={eigenBronId}
         />
+      )}
+
+      {vroegeItems.length > 0 && (
+        <div className="rounded-3xl border border-black/5 bg-white px-5 pt-3 pb-1 shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-wider text-ink/35">
+            Al gepland, nog vóór de startweek
+          </p>
+          <ul>
+            {vroegeItems.map((item) => (
+              <Regel key={item.id} item={item} vandaag={vandaag} toonDag={setDag} groepen={groepen} />
+            ))}
+          </ul>
+        </div>
       )}
 
       {/* De startweek staat vóór het eerste blok: je bent er al, de kinderen
@@ -660,6 +680,14 @@ function Blok({
   const voorbij = periode.tot < vandaag;
   const bezig = periode.van <= vandaag && vandaag <= periode.tot;
   const vakantie = periode.eindigtMet;
+  // Een vakantieweek zit tussen twee blokken en heeft zelf geen blok — plan je
+  // er toch iets in (een gesprek, een cursus), dan moet dat hier ook staan.
+  const vakantieItems = vakantie
+    ? bron.items.filter(
+        (i) =>
+          !i.dubbelVan && i.soort !== "vakantie" && i.datum >= vakantie.van && i.datum <= vakantie.tot,
+      )
+    : [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -729,14 +757,23 @@ function Blok({
       </div>
 
       {vakantie && (
-        <div className="flex flex-wrap items-baseline gap-x-3 rounded-2xl border-l-[3px] border-brand/30 bg-sand px-5 py-3.5">
-          <span className="font-bold text-ink/80">{vakantie.naam}</span>
-          <span className="text-sm text-ink/55">
-            {kort(vakantie.van)} tot en met {kort(vakantie.tot)}
-          </span>
-          <span className="ml-auto text-sm font-semibold text-ink/45">
-            {verschil(vakantie.van, vakantie.tot) + 1} dagen vrij
-          </span>
+        <div className="overflow-hidden rounded-2xl border-l-[3px] border-brand/30 bg-sand">
+          <div className="flex flex-wrap items-baseline gap-x-3 px-5 py-3.5">
+            <span className="font-bold text-ink/80">{vakantie.naam}</span>
+            <span className="text-sm text-ink/55">
+              {kort(vakantie.van)} tot en met {kort(vakantie.tot)}
+            </span>
+            <span className="ml-auto text-sm font-semibold text-ink/45">
+              {verschil(vakantie.van, vakantie.tot) + 1} dagen vrij
+            </span>
+          </div>
+          {vakantieItems.length > 0 && (
+            <ul className="px-5 pb-2">
+              {vakantieItems.map((item) => (
+                <Regel key={item.id} item={item} vandaag={vandaag} toonDag={toonDag} groepen={groepen} />
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </div>
