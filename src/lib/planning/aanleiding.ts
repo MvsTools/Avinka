@@ -41,9 +41,9 @@ const VENSTER: Partial<Record<Soort, { voor: number; na: number }>> = {
   rapport: { voor: 21, na: 0 },
   gesprek: { voor: 14, na: 0 },
   toets: { voor: 0, na: 10 },
-  // "activiteit" staat hier bewust niet in: dat venster verschilt per
-  // onderwerp (een schoolreis is wat anders dan schoen zetten) — zie
-  // ACTIVITEIT_ONDERWERP en activiteitInstellingen() hieronder.
+  // Bewust GEEN "activiteit" hier: van Sinterklaas tot een schoolreis is
+  // te breed om één betrouwbare voorbereidingstip aan te hangen — zie de
+  // uitleg bij VOORBEREIDING hieronder.
 };
 
 /** Wat je gaat doen — dit komt op de knop. */
@@ -51,7 +51,6 @@ const ACTIE: Partial<Record<Soort, string>> = {
   rapport: "Rapporten schrijven",
   gesprek: "Gesprekken voorbereiden",
   toets: "Toetsen analyseren",
-  activiteit: "Draaiboek maken",
 };
 
 /**
@@ -82,65 +81,16 @@ const VOORBEREIDING: Partial<Record<Soort, { voor: number; knop: string; taak: s
     knop: "Rooster inplannen",
     taak: "Gespreksrooster maken en de tijden naar ouders sturen",
   },
-  // "activiteit" staat hier ook niet in — zie activiteitInstellingen().
+  // Bewust GEEN "activiteit" hier. Eerder stond hier een gok per onderwerp
+  // ("Hulpouders en vervoer regelen" bij een schoolreis, "vrijwilligers
+  // vragen voor het parcours" bij een verkeersexamen) — maar een
+  // verkeersexamen is niet altijd een praktijkroute (een theorie-examen op
+  // school heeft geen parcours), en of een schoolreis hulpouders nodig heeft
+  // en hoe je die vraagt, verschilt per school. Dat soort concrete
+  // logistiek verzinnen we niet. "Activiteit" krijgt daarom geen taak en
+  // geen seintje: hij staat gewoon — correct gelabeld — in de kalender en
+  // het jaaroverzicht, precies zoals Sinterklaas en Pasen dat al deden.
 };
-
-/**
- * "Activiteit" is de opvangbak van Sinterklaas tot een schoolreis, maar lang
- * niet alles daaruit vraagt om dezelfde voorbereiding. Deze tabel splitst 'm
- * verder uit, per stuk werk dat je er ECHT voor moet doen — op volgorde, de
- * eerste match wint:
- *
- * - een uitje met vervoer (schoolreis, kamp, excursie, museum, survival) kost
- *   het meest voorbereidingstijd: hulpouders ÉN vervoer regelen, dus zes
- *   weken — dezelfde termijn als de oorspronkelijke, bredere regel had.
- * - een sportevenement of loop op het schoolterrein (sportdag, koningsspelen,
- *   avondvierdaagse, sponsorloop, wandelen voor water) heeft ook hulpouders
- *   nodig maar geen vervoer te regelen, dus vier weken.
- * - het verkeersexamen heeft vrijwilligers langs het parcours nodig — een
- *   kleinere klus dan een hele schoolreis, dus drie weken.
- * - AL HET ANDERE (Sinterklaas, Pasen, Sint Maarten, een schoolfoto, een
- *   workshop, boekenweek, …) speelt zich in de klas af. Daar is niets voor te
- *   regelen, dus geen seintje: die dag staat gewoon — correct gelabeld als
- *   activiteit — in de kalender en het jaaroverzicht, zonder ruis vooraf.
- */
-const ACTIVITEIT_ONDERWERP: { woorden: RegExp; weken: number; knop: string; taak: string }[] = [
-  {
-    woorden: /schoolreis|schoolkamp|kampweek|\bkamp\b|excursie|museum|survival/i,
-    weken: 6,
-    knop: "Hulpouders vragen",
-    taak: "Hulpouders en vervoer regelen",
-  },
-  {
-    woorden:
-      /sportdag|speldag|sporttoernooi|sportinstuif|koningsspelen|avondvierdaagse|wandelvierdaagse|4-?daagse|sponsorloop|wandelen voor water/i,
-    weken: 4,
-    knop: "Hulpouders vragen",
-    taak: "Hulpouders en begeleiding regelen",
-  },
-  {
-    // Dezelfde herkenning als bij "activiteit" in agenda-herken.ts — scholen
-    // noemen dit niet allemaal hetzelfde (verkeerstoets, fietsexamen, …).
-    woorden: /verkeers(examen|toets|proef)|fietsexamen|(theoretisch|praktisch|theorie|praktijk) ?-? ?examen verkeer/i,
-    weken: 3,
-    knop: "Vrijwilligers vragen",
-    taak: "Ouders informeren en vrijwilligers vragen voor het parcours",
-  },
-];
-
-/** Alleen voor "activiteit": welk venster en welke voorbereiding erbij horen
- *  — of niets, als dit onderwerp geen bekende voorbereiding vraagt. */
-export function activiteitInstellingen(
-  titel: string,
-): { venster: { voor: number; na: number }; voorbereiding: { voor: number; knop: string; taak: string } } | null {
-  const onderwerp = ACTIVITEIT_ONDERWERP.find((o) => o.woorden.test(titel));
-  if (!onderwerp) return null;
-  const voor = onderwerp.weken * 7;
-  return {
-    venster: { voor, na: 0 },
-    voorbereiding: { voor, knop: onderwerp.knop, taak: onderwerp.taak },
-  };
-}
 
 /**
  * Zo werkt jouw school — uit je instellingen. Weten we welk systeem je
@@ -192,29 +142,6 @@ const GESPREK_TIP: Record<string, string> = {
   isy: "Gespreksdagen en tijden openzetten in Isy, dan kiezen ouders zelf een tijd",
 };
 
-/**
- * Hulpouders en vervoer vragen — óók per systeem uitgezocht, want het zit er
- * NIET overal in (augustus 2026):
- *
- * - Parro: vrijwilligers en materialen regel je bij een agenda-item; ouders
- *   schrijven zich in.
- * - Social Schools: agenda-item → "Meer opties" → materialen/vrijwilligers
- *   vragen, met aantallen. Ouders melden zich met een plusje.
- * - SchouderCom: een "oproepje" onder een bericht — een formuliertje waarin een
- *   ouder ook kan invullen hoeveel kinderen er in zijn auto passen.
- * - BasisOnline: intekenlijsten bij een activiteit.
- * - ⚠️ Isy: heeft hier GEEN aparte module voor (wel Formulieren, Toestemmingen
- *   en Nieuws). Dus geen belofte over "de inschrijflijst" — daar staat alleen
- *   dat je het via Isy vraagt.
- */
-const HULPOUDER_TIP: Record<string, string> = {
-  parro: "Hulpouders en vervoer vragen in Parro, via een inschrijving bij de activiteit",
-  social_schools:
-    "Hulpouders en vervoer vragen in Social Schools, via materialen/vrijwilligers bij het agenda-item",
-  schoudercom: "Hulpouders en vervoer vragen in SchouderCom, met een oproepje onder je bericht",
-  basisonline: "Hulpouders en vervoer vragen in het Ouderportaal, met een intekenlijst",
-  isy: "Hulpouders en vervoer vragen via Isy",
-};
 // ⚠️ Dezelfde adressen staan in public/avinka-communicatie-app.js (die is voor
 // de tools, deze voor het dashboard). Samen bijwerken.
 const APP_URL: Record<string, string> = {
@@ -298,17 +225,6 @@ function opMaat(
         link: TOETS_URL[sleutel],
       };
     }
-  }
-  if (soort === "activiteit" && sys.communicatieApp) {
-    // Hulpouders vraag je waar de ouders zitten, dus dit signaal hoort naar de
-    // communicatie-app te wijzen en niet naar je takenlijst.
-    const naam = APP_NAAM[sys.communicatieApp] ?? "je communicatie-app";
-    const link = appUrl(sys) || undefined;
-    return {
-      knop: link ? `Oproep in ${naam}` : "Hulpouders vragen",
-      taak: HULPOUDER_TIP[sys.communicatieApp] ?? `Hulpouders en vervoer vragen via ${naam}`,
-      link,
-    };
   }
   if (soort === "rapport" && sys.lvsSysteem) {
     const naam = LVS_NAAM[sys.lvsSysteem] ?? "je leerlingvolgsysteem";
@@ -628,14 +544,8 @@ export function aanleidingen(
   for (const item of bron.items) {
     if (item.dubbelVan) continue;
 
-    // Een activiteit heeft geen vast venster: welk signaal en na hoeveel
-    // weken hangt af van WELKE activiteit het is — zie activiteitInstellingen.
-    // Een andere soort is niet aan de titel gebonden, dus die loopt gewoon
-    // via de vaste VENSTER/VOORBEREIDING-tabellen.
-    const activiteit = item.soort === "activiteit" ? activiteitInstellingen(item.titel) : null;
-    const venster = item.soort === "activiteit" ? activiteit?.venster : VENSTER[item.soort];
-    const voorbereiding =
-      item.soort === "activiteit" ? activiteit?.voorbereiding : VOORBEREIDING[item.soort];
+    const venster = VENSTER[item.soort];
+    const voorbereiding = VOORBEREIDING[item.soort];
     if (!venster && !voorbereiding) continue;
 
     const oordeel = beoordeel(item, eigenGroepen);

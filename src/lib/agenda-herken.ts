@@ -41,15 +41,15 @@ const REGELS: { soort: Soort; woorden: RegExp }[] = [
   },
   {
     // Staat vóór "toets": "Verkeerstoets" bevat het woord "toets", maar is
-    // qua voorbereiding (vrijwilligers langs het parcours) een activiteit,
-    // geen toets die je moet analyseren. Zie ook de opmerking bij "activiteit".
+    // een activiteit, geen toets die je moet analyseren.
     soort: "activiteit",
     // Bewust breed: dit is de opvangbak voor alles wat er in een basisschooljaar
     // gebeurt en geen les, toets, gesprek of vrije dag is — van Sinterklaas tot
     // het verkeersexamen. Mist er iets, dan valt het gewoon terug op "Afspraak".
-    // Welke van deze onderwerpen ook een seintje/taak krijgen, staat NIET hier
-    // maar in aanleiding.ts (ACTIVITEIT_ONDERWERP) — dit bestand herkent alleen
-    // wát iets is, niet wat we ermee doen.
+    // "Activiteit" krijgt in aanleiding.ts bewust geen seintje/taak: wát iets
+    // is herkennen we hier, maar wat er precies bij moet gebeuren (heeft een
+    // verkeersexamen een parcours? heeft een schoolreis hulpouders nodig?)
+    // verschilt te veel per school om te verzinnen.
     //
     // Bewust met meerdere namen voor hetzelfde: scholen noemen niet allemaal
     // hetzelfde ding hetzelfde. Het verkeersexamen heet ook verkeerstoets,
