@@ -278,7 +278,13 @@ function Maandweek({
               onClick={() => setGekozen(gekozen === datum ? null : datum)}
               aria-label={`${volledig(datum)}${beeld.items.length ? `, ${beeld.items.length} afspraken` : ""}`}
               className={
-                "min-h-[58px] border-b border-r border-black/5 p-1 text-left sm:min-h-[92px] sm:p-1.5 " +
+                // Een <button> centreert zijn inhoud van zichzelf verticaal
+                // zodra hij hoger is dan zijn inhoud (browsers doen dat ook
+                // als je zelf "block" opgeeft) — daardoor stond het dagnummer
+                // op elke dag ergens anders, en klopte de balk hierboven
+                // (die op een vaste hoogte staat) nergens meer. flex-col met
+                // items-start dwingt "gewoon van boven af opstapelen" af.
+                "flex min-h-[58px] flex-col items-stretch justify-start border-b border-r border-black/5 p-1 text-left sm:min-h-[92px] sm:p-1.5 " +
                 (i % 7 === 6 ? "border-r-0 " : "") +
                 (!dezeMaand ? "opacity-35 " : "") +
                 (gekozen === datum ? "ring-2 ring-inset ring-brand " : "") +
@@ -379,7 +385,7 @@ function Maandweek({
                 (zijkantLabel(b.item, groepen) ? ` (${zijkantLabel(b.item, groepen)})` : "")
               }
               className={
-                "pointer-events-auto flex items-center truncate px-1.5 text-left text-[11px] font-bold leading-none sm:text-xs " +
+                "pointer-events-auto flex min-w-0 items-center overflow-hidden px-1.5 text-left text-[11px] font-bold leading-none sm:text-xs " +
                 ETIKET[b.item.soort].stijl +
                 (b.magStart ? " rounded-l-md" : "") +
                 (b.magEind ? " rounded-r-md" : "") +
@@ -391,7 +397,7 @@ function Maandweek({
                 gridRowStart: b.lane + 1,
               }}
             >
-              <span className="hidden truncate sm:inline">{b.item.titel}</span>
+              <span className="hidden min-w-0 truncate sm:inline">{b.item.titel}</span>
             </button>
           ))}
         </div>
