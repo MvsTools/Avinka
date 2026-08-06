@@ -172,7 +172,7 @@ export default function SchooljaarDagkaart({
         !formulier.vorm && (
           <button
             onClick={() => formulier.open({ datum: beeld.datum })}
-            className="flex shrink-0 items-center gap-1.5 rounded-xl border border-black/10 px-3 py-2 text-sm font-bold text-ink/60 transition-colors hover:border-brand hover:text-brand-dark"
+            className="flex shrink-0 items-center gap-1.5 rounded-xl bg-brand-dark px-3 py-2 text-sm font-bold text-white transition-transform duration-150 active:scale-[0.97]"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
               <path d="M12 5v14M5 12h14" />
