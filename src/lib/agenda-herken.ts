@@ -23,23 +23,30 @@ const REGELS: { soort: Soort; woorden: RegExp }[] = [
   {
     soort: "vrij",
     woorden:
-      /studiedag|marge ?dag|margedag|studiemiddag|lesvrij|leerlingen ?vrij|kinderen ?vrij|vrije dag|alle groepen vrij|roostervrij/i,
+      /studiedag|marge ?dag|margedag|studiemiddag|lesvrij|leerlingen ?vrij|kinderen ?vrij|vrije dag|alle groepen vrij|roostervrij|hemelvaart|pinksteren|goede vrijdag/i,
   },
   { soort: "rapport", woorden: /rapport|portfolio ?mee|rapportfolio/i },
   {
     soort: "gesprek",
     woorden:
-      /gesprek|10 ?minuten|tien ?minuten|contactavond|spreekavond|ouderavond|kennismakingsavond|startgesprek|voortgangsgesprek|adviesgesprek/i,
+      /gesprek|10 ?minuten|tien ?minuten|contactavond|spreekavond|ouderavond|kennismakingsavond|startgesprek|voortgangsgesprek|adviesgesprek|driehoeksgesprek|kindgesprek/i,
   },
   {
     soort: "vergadering",
-    woorden: /vergader|overleg|bouwbijeenkomst|teambijeenkomst|studiebijeenkomst|mt-|bordsessie/i,
+    woorden:
+      /vergader|overleg|bouwbijeenkomst|teambijeenkomst|studiebijeenkomst|mt-|bordsessie|\bmr\b|medezeggenschapsraad|\bgmr\b|ouderraad/i,
   },
-  { soort: "toets", woorden: /toets|cito|iep|entree|eindtoets|doorstroomtoets|dictee/i },
+  {
+    soort: "toets",
+    woorden: /toets|cito|iep|entree|eindtoets|doorstroomtoets|dictee|avi|dmt|nio|drempelonderzoek/i,
+  },
   {
     soort: "activiteit",
+    // Bewust breed: dit is de opvangbak voor alles wat er in een basisschooljaar
+    // gebeurt en geen les, toets, gesprek of vrije dag is — van Sinterklaas tot
+    // het verkeersexamen. Mist er iets, dan valt het gewoon terug op "Afspraak".
     woorden:
-      /schoolreis|schoolkamp|kamp|excursie|musical|viering|feest|sportdag|koningsspelen|open ?dag|open ?huis|juffendag|meesterdag|voorleesontbijt|kerst|sint|paas|carnaval|avondvierdaagse|schoolfotograaf|luizen|boekenweek|bezoek|museum|voorstelling|theater|workshop|project ?(week|afsluiting)|presentatie|informatieavond|inloop(ochtend|middag)?/i,
+      /schoolreis|schoolkamp|kamp|excursie|musical|viering|feest|sportdag|koningsspelen|open ?dag|open ?huis|juffendag|meesterdag|voorleesontbijt|kerst|sinterklaas|sint\b|pakjesavond|schoen ?zetten|intocht|paas|pasen|sint ?maarten|lampion|carnaval|avondvierdaagse|schoolfoto|luizen|boekenweek|bezoek|museum|voorstelling|theater|workshop|project ?(week|afsluiting)|presentatie|informatieavond|inloop(ochtend|middag)?|verkeersexamen|zwem(les|men)|schaatsen|survival|lentekriebels|dodenherdenking|bevrijdingsdag|diploma|afscheid|suikerfeest|offerfeest/i,
   },
 ];
 

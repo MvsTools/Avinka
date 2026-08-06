@@ -27,8 +27,6 @@ const WAT_LEVERT_HET_OP: Partial<Record<Soort, string>> = {
   activiteit: "Je krijgt 6 weken vooraf een seintje over hulpouders en vervoer.",
   vrij: "Deze dag telt als een dag zonder les.",
   vakantie: "Deze dagen tellen als vakantie.",
-  vergadering: "Staat in je dag, verder geen seintje.",
-  overig: "Staat in je dag, verder geen seintje.",
 };
 
 /**
@@ -309,7 +307,9 @@ const EigenAfspraken = forwardRef<EigenAfsprakenHandle, {
                 </span>
               </button>
             )}
-            <p className="mt-2 text-xs text-ink/55">{WAT_LEVERT_HET_OP[vorm.soort]}</p>
+            {WAT_LEVERT_HET_OP[vorm.soort] && (
+              <p className="mt-2 text-xs text-ink/55">{WAT_LEVERT_HET_OP[vorm.soort]}</p>
+            )}
           </div>
 
           {fout && (
