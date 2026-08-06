@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { addTaak } from "@/lib/db";
 import { aanleidingen } from "@/lib/planning";
 import type { Context, PlanningBron, Schoolsystemen } from "@/lib/planning";
 import TaakKnop from "./TaakKnop";
@@ -27,6 +28,11 @@ import TaakKnop from "./TaakKnop";
 //    dat uit de titel. Klopt die gok een keer niet, dan klik je het seintje
 //    hier weg in plaats van dat we je vooraf met een vraag belasten die 99%
 //    van de tijd voor niets is.
+// 5. **Bij een activiteit gokken we niet wat je moet doen.** Een schoolreis en
+//    een verkeersexamen vragen elk iets anders, en dat verschilt ook per
+//    school — dus geen kant-en-klare taak. Wel een knop om er zelf taken
+//    onder te hangen (KopjeToevoegen hieronder); die krijgen in de takenlijst
+//    het "kopje" van de activiteit, zodat ze bij elkaar staan.
 
 export default function WatEraanKomt({
   bron,
@@ -145,11 +151,14 @@ export default function WatEraanKomt({
                 </div>
               </div>
 
-              {/* Drie soorten knop, en de vorm vertelt welke:
+              {/* Vier soorten knop, en de vorm vertelt welke:
                   groen = Avinka neemt dit van je over,
                   wit met een + = jouw eigen werk, gaat naar je takenlijst,
-                  wit met een slotje = zit niet in je pakket. */}
-              {a.aard === "voorbereiden" && a.link ? (
+                  wit met een slotje = zit niet in je pakket,
+                  wit → invoerveld = geen gegokte taak, jij typt zelf. */}
+              {a.kopje ? (
+                <KopjeToevoegen kopje={a.kopje} deadline={a.taakDatum ?? a.datum} />
+              ) : a.aard === "voorbereiden" && a.link ? (
                 // Weten we wáár het moet gebeuren, dan brengt de knop je er
                 // meteen heen. Wit en niet groen: dit is een ander programma,
                 // geen onderdeel van Avinka.
@@ -203,5 +212,73 @@ export default function WatEraanKomt({
         })}
       </div>
     </section>
+  );
+}
+
+/**
+ * Geen kant-en-klare taak (die zou gokken wat je moet doen), wel een plek om
+ * er zelf een of meer taken onder te hangen. Staat pas open na een klik, en
+ * blijft daarna open zodat je meteen een tweede taak kunt typen — de meeste
+ * activiteiten vragen meer dan één dingetje.
+ */
+function KopjeToevoegen({ kopje, deadline }: { kopje: string; deadline?: string }) {
+  const [open, setOpen] = useState(false);
+  const [tekst, setTekst] = useState("");
+  const [bezig, setBezig] = useState(false);
+  const [toegevoegd, setToegevoegd] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const voegToe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const t = tekst.trim();
+    if (!t || bezig) return;
+    setBezig(true);
+    const nieuw = await addTaak(t, kopje, deadline);
+    setBezig(false);
+    if (nieuw) {
+      setTekst("");
+      setToegevoegd((n) => n + 1);
+      inputRef.current?.focus();
+    }
+  };
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="shrink-0 self-start rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-bold text-ink/75 transition-transform duration-150 hover:text-ink active:scale-[0.97] sm:self-auto"
+      >
+        Taken toevoegen
+      </button>
+    );
+  }
+
+  return (
+    <form onSubmit={voegToe} className="flex w-full flex-col gap-1.5 sm:w-64">
+      <div className="flex gap-1.5">
+        <input
+          ref={inputRef}
+          autoFocus
+          value={tekst}
+          onChange={(e) => setTekst(e.target.value)}
+          placeholder={`Taak bij "${kopje}"`}
+          className="min-w-0 flex-1 rounded-xl border border-black/10 bg-cream/50 px-3 py-2 text-sm text-ink outline-none transition-shadow focus:border-brand focus:shadow-[0_0_0_3px_rgba(47,158,110,0.18)]"
+        />
+        <button
+          type="submit"
+          disabled={!tekst.trim() || bezig}
+          aria-label="Taak toevoegen"
+          className="shrink-0 rounded-xl bg-brand-dark px-3.5 py-2 text-sm font-bold text-white transition-transform duration-150 active:scale-[0.97] disabled:opacity-50"
+        >
+          +
+        </button>
+      </div>
+      {toegevoegd > 0 && (
+        <p role="status" className="text-xs font-semibold text-brand-dark">
+          {toegevoegd === 1 ? "Toegevoegd." : `${toegevoegd} toegevoegd.`} Nog een?
+        </p>
+      )}
+    </form>
   );
 }

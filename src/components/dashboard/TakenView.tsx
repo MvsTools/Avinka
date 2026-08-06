@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import {
   getTaken,
   addTaak,
@@ -142,6 +142,23 @@ export default function TakenView() {
   // Voortgang telt alleen actieve + afgevinkte taken; geplande herhalingen niet.
   const total = open.length + af.length;
 
+  // Taken met hetzelfde kopje (bijv. "Verkeersexamen", gezet vanuit "Wat
+  // eraan komt") krijgen een kleine kop erboven zodra ze na elkaar staan.
+  // Geen aparte sectie: gewoon dezelfde lijst, op dezelfde sortering — het
+  // kopje is een label, geen eigen bakje.
+  function metKopjes(lijst: Taak[]) {
+    return lijst.map((t, i) => (
+      <Fragment key={t.id}>
+        {t.kopje && t.kopje !== lijst[i - 1]?.kopje && (
+          <li className="border-b border-black/5 bg-cream/40 px-5 py-1.5 text-xs font-bold uppercase tracking-wider text-ink/40 sm:px-6">
+            {t.kopje}
+          </li>
+        )}
+        {regel(t)}
+      </Fragment>
+    ));
+  }
+
   // Eén taakregel; hergebruikt voor de actieve lijst én de Gepland-sectie.
   function regel(t: Taak) {
     const tl = toolLink(t.tekst);
@@ -254,7 +271,7 @@ export default function TakenView() {
             {total === 0 ? "Typ hierboven je eerste taak en druk op Enter." : "Niets meer te doen. Lekker bezig!"}
           </p>
         ) : (
-          <ul>{open.map(regel)}</ul>
+          <ul>{metKopjes(open)}</ul>
         )}
 
         {/* Gepland: wekelijkse taken die later terugkomen (2 dagen van tevoren) */}

@@ -1269,9 +1269,13 @@ export type Taak = {
   wekelijks: boolean;
   created_at: string;
   gedaan_op: string | null;
+  /** De naam van de activiteit waar deze taak bij hoort ("Verkeersexamen"),
+   *  als je 'm zo hebt toegevoegd vanuit "Wat eraan komt". Taken met hetzelfde
+   *  kopje staan in TakenView bij elkaar. Losse taken hebben dit niet. */
+  kopje: string | null;
 };
 
-const TAAK_COLS = "id, tekst, gedaan, deadline, wekelijks, created_at, gedaan_op";
+const TAAK_COLS = "id, tekst, gedaan, deadline, wekelijks, created_at, gedaan_op, kopje";
 
 export async function getTaken(): Promise<Taak[]> {
   const sb = createClient();
@@ -1283,7 +1287,11 @@ export async function getTaken(): Promise<Taak[]> {
   return data as Taak[];
 }
 
-export async function addTaak(tekst: string): Promise<Taak | null> {
+export async function addTaak(
+  tekst: string,
+  kopje?: string | null,
+  deadline?: string | null,
+): Promise<Taak | null> {
   const sb = createClient();
   const {
     data: { user },
@@ -1293,7 +1301,12 @@ export async function addTaak(tekst: string): Promise<Taak | null> {
   if (!t) return null;
   const { data, error } = await sb
     .from("taken")
-    .insert({ user_id: user.id, tekst: t.slice(0, 500) })
+    .insert({
+      user_id: user.id,
+      tekst: t.slice(0, 500),
+      kopje: kopje?.trim() || null,
+      ...(deadline ? { deadline } : {}),
+    })
     .select(TAAK_COLS)
     .single();
   if (error || !data) return null;

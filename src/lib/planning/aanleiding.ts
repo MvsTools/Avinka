@@ -86,11 +86,21 @@ const VOORBEREIDING: Partial<Record<Soort, { voor: number; knop: string; taak: s
   // vragen voor het parcours" bij een verkeersexamen) — maar een
   // verkeersexamen is niet altijd een praktijkroute (een theorie-examen op
   // school heeft geen parcours), en of een schoolreis hulpouders nodig heeft
-  // en hoe je die vraagt, verschilt per school. Dat soort concrete
-  // logistiek verzinnen we niet. "Activiteit" krijgt daarom geen taak en
-  // geen seintje: hij staat gewoon — correct gelabeld — in de kalender en
-  // het jaaroverzicht, precies zoals Sinterklaas en Pasen dat al deden.
+  // en hoe je die vraagt, verschilt per school. Die concrete logistiek
+  // verzinnen we niet meer (zie ACTIVITEIT_VENSTER hieronder voor wat er
+  // WEL nog gebeurt: een kaal seintje, geen gegokte taak).
 };
+
+/**
+ * "Activiteit" krijgt geen gegokte taak (zie hierboven), maar wél een kale
+ * kop-op-komst — één vast venster voor alle activiteiten, van Sinterklaas
+ * tot een schoolreis. Het verschil met VOORBEREIDING: hier wordt niets
+ * over WAT er moet gebeuren beweerd. De knop in "Wat eraan komt" laat je
+ * zelf taken onder een "kopje" met de naam van de activiteit hangen — die
+ * horen dan in je takenlijst bij elkaar, zonder dat wij verzinnen wat erin
+ * moet staan.
+ */
+const ACTIVITEIT_VENSTER = { voor: 42, na: 0 };
 
 /**
  * Zo werkt jouw school — uit je instellingen. Weten we welk systeem je
@@ -277,6 +287,12 @@ export type Aanleiding = {
    * in plaats van een taak.
    */
   link?: string;
+  /**
+   * Alleen bij een activiteit: geen gegokte taak, wel een naam om je eigen
+   * taken onder te hangen ("Verkeersexamen"). WatEraanKomt toont dan een
+   * invoerveld in plaats van een kant-en-klare knop.
+   */
+  kopje?: string;
   /** Dagen tot de afspraak: 3 = over drie dagen, 0 = vandaag, -2 = eergisteren. */
   dagen: number;
   /** "Over 3 weken gaan de rapporten mee" */
@@ -544,8 +560,11 @@ export function aanleidingen(
   for (const item of bron.items) {
     if (item.dubbelVan) continue;
 
-    const venster = VENSTER[item.soort];
-    const voorbereiding = VOORBEREIDING[item.soort];
+    // Een activiteit heeft geen vaste taak (zie ACTIVITEIT_VENSTER hierboven),
+    // maar wel altijd hetzelfde venster — dus die twee komen hier apart vandaan.
+    const isActiviteit = item.soort === "activiteit";
+    const venster = isActiviteit ? ACTIVITEIT_VENSTER : VENSTER[item.soort];
+    const voorbereiding = isActiviteit ? undefined : VOORBEREIDING[item.soort];
     if (!venster && !voorbereiding) continue;
 
     const oordeel = beoordeel(item, eigenGroepen);
@@ -576,8 +595,10 @@ export function aanleidingen(
       dagen >= 1 &&
       dagen <= voorbereiding!.voor &&
       (!toolMogelijk || dagen > venster!.voor);
+    // Geen taak, geen tool — alleen "dit komt eraan, hang er zelf iets onder".
+    const kopjeFase = isActiviteit && !toolFase && dagen >= 1 && dagen <= venster!.voor;
 
-    if (!toolFase && !voorFase) continue;
+    if (!toolFase && !voorFase && !kopjeFase) continue;
 
     const aard = toolFase ? ("doen" as const) : ("voorbereiden" as const);
     const tip = voorFase ? opMaat(item.soort, voorbereiding!, systemen) : null;
@@ -588,16 +609,21 @@ export function aanleidingen(
 
     gevonden.push({
       id: item.id,
-      sleutel: `${item.soort}/${aard}`,
+      // Activiteiten NIET samen ontdubbelen op soort+aard: een schoolreis en
+      // een verkeersexamen zijn niet "dezelfde soort werk" zoals drie
+      // gespreksavonden dat wel zijn — dat zou anders het kopje-seintje van
+      // alles behalve de eerstvolgende activiteit wegdrukken.
+      sleutel: isActiviteit ? `activiteit/${item.id}` : `${item.soort}/${aard}`,
       datum: item.datum,
       item,
       soort: item.soort,
       aard,
       tool: toolFase ? tool : undefined,
       taken: tip ? [tip.taak] : undefined,
-      taakDatum: tip ? laatsteWerkdagVoor(item.datum, werkdagen) : undefined,
+      taakDatum: tip || kopjeFase ? laatsteWerkdagVoor(item.datum, werkdagen) : undefined,
       link: tip?.link,
       alOpDeLijst: opLijst(tip ? [tip.taak] : undefined),
+      kopje: kopjeFase ? item.titel : undefined,
       dagen,
       kop: kopVoor(item, item.soort, dagen, aard),
       wanneer,
@@ -609,7 +635,11 @@ export function aanleidingen(
           : item.soort === "rapport" && toolFase
             ? voortgangTekst(extra.rapporten)
             : undefined,
-      actie: toolFase ? (ACTIE[item.soort] ?? `Openen in ${tool!.naam}`) : tip!.knop,
+      actie: toolFase
+        ? ACTIE[item.soort] ?? `Openen in ${tool!.naam}`
+        : kopjeFase
+          ? "Taken toevoegen"
+          : tip!.knop,
     });
   }
 
