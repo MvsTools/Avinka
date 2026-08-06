@@ -3,7 +3,9 @@
 import { useEffect, useRef } from "react";
 import { kort, volledig, zijkantLabel } from "@/lib/planning";
 import type { Dagbeeld, PlanItem } from "@/lib/planning";
+import AfspraakFormulier from "./AfspraakFormulier";
 import { ETIKET } from "./schooljaar-stijl";
+import { useEigenAfspraakVorm } from "./useEigenAfspraakVorm";
 
 // Het kaartje van één dag. Klik een dag aan (in de kalender of in de lijst) en
 // je ziet precies wat er staat en hoe laat. Straks komt hier je lesrooster van
@@ -150,50 +152,75 @@ export default function SchooljaarDagkaart({
   beeld,
   sluit,
   groepen = [],
-  onNieuweAfspraak,
 }: {
   beeld: Dagbeeld;
   sluit: () => void;
   groepen?: number[];
-  /** De datum staat al vast, dus de + hier scheelt een stap tegenover
-   *  "+ Afspraak" boven de kalender. */
-  onNieuweAfspraak?: (datum: string) => void;
 }) {
   const afspraken = beeld.items.filter((i) => i.soort !== "vakantie");
+  // De datum staat al vast, dus "+ Afspraak" hier scheelt een stap tegenover
+  // dezelfde knop boven de kalender in Jaaroverzicht. En het formulier
+  // verschijnt IN dit kaartje — niet ergens anders op de pagina, waar je het
+  // eerst moest gaan zoeken.
+  const formulier = useEigenAfspraakVorm(beeld.datum);
 
   return (
     <Kaartvenster
       titel={volledig(beeld.datum)}
       sluit={sluit}
       extra={
-        onNieuweAfspraak && (
+        !formulier.vorm && (
           <button
-            onClick={() => onNieuweAfspraak(beeld.datum)}
-            aria-label="Afspraak toevoegen op deze dag"
-            title="Afspraak toevoegen op deze dag"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-black/10 text-ink/50 transition-transform duration-150 hover:border-brand hover:text-brand-dark active:scale-[0.96]"
+            onClick={() => formulier.open({ datum: beeld.datum })}
+            className="flex shrink-0 items-center gap-1.5 rounded-xl border border-black/10 px-3 py-2 text-sm font-bold text-ink/60 transition-colors hover:border-brand hover:text-brand-dark"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
               <path d="M12 5v14M5 12h14" />
             </svg>
+            Afspraak
           </button>
         )
       }
     >
-      <Dagstatus beeld={beeld} />
+      {formulier.vorm ? (
+        <div className="mt-4">
+          <AfspraakFormulier
+            vorm={formulier.vorm}
+            soortOpen={formulier.soortOpen}
+            setSoortOpen={formulier.setSoortOpen}
+            fout={formulier.fout}
+            bezig={formulier.bezig}
+            wijzigTitel={formulier.wijzigTitel}
+            wijzigVeld={formulier.wijzigVeld}
+            kiesSoort={formulier.kiesSoort}
+            bewaar={formulier.bewaar}
+            annuleren={formulier.annuleren}
+          />
+        </div>
+      ) : (
+        <>
+          <Dagstatus beeld={beeld} />
 
-      {afspraken.length > 0 && (
-        <ul className="mt-4 flex flex-col gap-2">
-          {afspraken.map((item) => (
-            <Afspraakregel key={item.id} item={item} groepen={groepen} />
-          ))}
-        </ul>
-      )}
+          {formulier.gelukt && (
+            <p role="status" className="mt-4 text-sm font-semibold text-brand-dark">
+              {formulier.gelukt}
+            </p>
+          )}
 
-      {!afspraken.length && !beeld.vakantie && !beeld.startweek && (
-        <p className="mt-4 text-ink/60">
-          {beeld.weekend ? "Niets gepland." : "Niets bijzonders deze dag."}
-        </p>
+          {afspraken.length > 0 && (
+            <ul className="mt-4 flex flex-col gap-2">
+              {afspraken.map((item) => (
+                <Afspraakregel key={item.id} item={item} groepen={groepen} />
+              ))}
+            </ul>
+          )}
+
+          {!afspraken.length && !beeld.vakantie && !beeld.startweek && (
+            <p className="mt-4 text-ink/60">
+              {beeld.weekend ? "Niets gepland." : "Niets bijzonders deze dag."}
+            </p>
+          )}
+        </>
       )}
     </Kaartvenster>
   );

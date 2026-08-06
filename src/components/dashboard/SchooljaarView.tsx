@@ -258,7 +258,6 @@ export default function SchooljaarView({
               groepen={mijnGroepen}
               maand={maand}
               zetMaand={setMaand}
-              onNieuweAfspraak={(datum) => eigenAfsprakenRef.current?.open({ datum })}
             />
           ) : (
             <Jaarlijst
