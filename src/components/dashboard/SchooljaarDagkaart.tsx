@@ -88,16 +88,22 @@ export function Kaartvenster({
 }
 
 /** Eén afspraak met zijn tijd. Zelfde vorm in het dag- en het weekkaartje. */
-export function Afspraakregel({ item, groepen }: { item: PlanItem; groepen: number[] }) {
+export function Afspraakregel({
+  item,
+  groepen,
+  onWijzig,
+}: {
+  item: PlanItem;
+  groepen: number[];
+  /** Alleen voor je eigen afspraken: maakt de regel klikbaar om te wijzigen,
+   *  al ingevuld. Afspraken uit een gekoppelde agenda krijgen dit niet. */
+  onWijzig?: () => void;
+}) {
   const et = ETIKET[item.soort];
   const meerdaags = item.totDatum > item.datum;
   const zijkant = zijkantLabel(item, groepen);
-  return (
-    <li
-      className={
-        "rounded-2xl border border-black/5 bg-cream/40 px-4 py-3 " + (zijkant ? "opacity-70" : "")
-      }
-    >
+  const inhoud = (
+    <>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <span className="font-semibold text-ink">{item.titel}</span>
         <span className={"rounded-lg px-2 py-0.5 text-xs font-bold " + et.stijl}>{et.woord}</span>
@@ -106,6 +112,7 @@ export function Afspraakregel({ item, groepen }: { item: PlanItem; groepen: numb
             {zijkant}
           </span>
         )}
+        {onWijzig && <span className="ml-auto text-xs font-bold text-ink/35">Wijzigen</span>}
       </div>
       <p className="mt-1 text-sm text-ink/60">
         {item.heleDag
@@ -115,6 +122,29 @@ export function Afspraakregel({ item, groepen }: { item: PlanItem; groepen: numb
           : `${item.begin}${item.eind ? ` tot ${item.eind}` : ""}`}
         {item.tijdvakken > 1 ? `, ${item.tijdvakken} tijdvakken achter elkaar` : ""}
       </p>
+    </>
+  );
+
+  if (onWijzig) {
+    return (
+      <li>
+        <button
+          onClick={onWijzig}
+          className="w-full rounded-2xl border border-black/5 bg-cream/40 px-4 py-3 text-left transition-colors hover:border-brand/30 hover:bg-cream/70"
+        >
+          {inhoud}
+        </button>
+      </li>
+    );
+  }
+
+  return (
+    <li
+      className={
+        "rounded-2xl border border-black/5 bg-cream/40 px-4 py-3 " + (zijkant ? "opacity-70" : "")
+      }
+    >
+      {inhoud}
     </li>
   );
 }
@@ -152,10 +182,14 @@ export default function SchooljaarDagkaart({
   beeld,
   sluit,
   groepen = [],
+  eigenBronId,
 }: {
   beeld: Dagbeeld;
   sluit: () => void;
   groepen?: number[];
+  /** De bron-id van je eigen, zelf ingevoerde afspraken — die mag je hier
+   *  meteen wijzigen; alles uit een gekoppelde agenda blijft alleen-lezen. */
+  eigenBronId?: string | null;
 }) {
   const afspraken = beeld.items.filter((i) => i.soort !== "vakantie");
   // De datum staat al vast, dus "+ Afspraak" hier scheelt een stap tegenover
@@ -192,6 +226,7 @@ export default function SchooljaarDagkaart({
             wijzigVeld={formulier.wijzigVeld}
             bewaar={formulier.bewaar}
             annuleren={formulier.annuleren}
+            weghalen={formulier.weghalen}
           />
         </div>
       ) : (
@@ -207,7 +242,26 @@ export default function SchooljaarDagkaart({
           {afspraken.length > 0 && (
             <ul className="mt-4 flex flex-col gap-2">
               {afspraken.map((item) => (
-                <Afspraakregel key={item.id} item={item} groepen={groepen} />
+                <Afspraakregel
+                  key={item.id}
+                  item={item}
+                  groepen={groepen}
+                  onWijzig={
+                    eigenBronId && item.bronId === eigenBronId
+                      ? () =>
+                          formulier.open({
+                            id: item.id,
+                            titel: item.titel,
+                            datum: item.datum,
+                            totDatum: item.totDatum,
+                            heleDag: item.heleDag,
+                            begin: item.begin ?? "",
+                            eind: item.eind ?? "",
+                            soort: item.soort,
+                          })
+                      : undefined
+                  }
+                />
               ))}
             </ul>
           )}

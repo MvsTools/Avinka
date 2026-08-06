@@ -30,6 +30,7 @@ export default function SchooljaarMaand({
   groepen,
   maand: eerste,
   zetMaand: setEerste,
+  eigenBronId,
 }: {
   bron: PlanningBron;
   vandaag: string;
@@ -38,6 +39,8 @@ export default function SchooljaarMaand({
    *  knoppenregel hem ook aanstuurt. */
   maand: string;
   zetMaand: (maand: string) => void;
+  /** Zie SchooljaarDagkaart: bepaalt welke afspraken je hier mag wijzigen. */
+  eigenBronId?: string | null;
 }) {
   const binnenJaar = vandaag >= bron.schooljaar.start && vandaag <= bron.schooljaar.eind;
   const begin = binnenJaar ? vandaag : bron.schooljaar.start;
@@ -228,7 +231,12 @@ export default function SchooljaarMaand({
       {/* Tik een dag aan en het kaartje van die dag komt naar voren: wat er
           staat en hoe laat. */}
       {gekozen && (
-        <SchooljaarDagkaart beeld={beeldVan(gekozen)} groepen={groepen} sluit={() => setGekozen(null)} />
+        <SchooljaarDagkaart
+          beeld={beeldVan(gekozen)}
+          groepen={groepen}
+          sluit={() => setGekozen(null)}
+          eigenBronId={eigenBronId}
+        />
       )}
       {week && (
         <SchooljaarWeekkaart

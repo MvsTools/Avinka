@@ -26,6 +26,7 @@ export default function AfspraakFormulier({
   wijzigVeld,
   bewaar,
   annuleren,
+  weghalen,
 }: {
   vorm: Vorm;
   fout: EigenAfspraakVorm["fout"];
@@ -34,6 +35,8 @@ export default function AfspraakFormulier({
   wijzigVeld: EigenAfspraakVorm["wijzigVeld"];
   bewaar: EigenAfspraakVorm["bewaar"];
   annuleren: EigenAfspraakVorm["annuleren"];
+  /** Alleen zinvol bij het wijzigen van een bestaande afspraak (vorm.id). */
+  weghalen?: EigenAfspraakVorm["weghalen"];
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -132,6 +135,15 @@ export default function AfspraakFormulier({
         >
           Annuleren
         </button>
+        {vorm.id && weghalen && (
+          <button
+            onClick={() => weghalen(vorm.id!)}
+            disabled={bezig}
+            className="ml-auto rounded-xl px-4 py-2 text-sm font-bold text-ink/40 transition-colors hover:text-rose-700 disabled:opacity-50"
+          >
+            Weghalen
+          </button>
+        )}
       </div>
     </div>
   );

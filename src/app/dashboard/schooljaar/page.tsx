@@ -37,15 +37,12 @@ export default async function SchooljaarPage({
     haalGenegeerdeAanleidingen(supabase),
   ]);
 
-  // Welke afspraken heeft de leerkracht zelf ingevoerd? Die mag hij wijzigen en
-  // weghalen; wat uit een gekoppelde agenda komt niet.
+  // De bron-id van je eigen, zelf ingevoerde afspraken. Die mag je wijzigen en
+  // weghalen op de dag zelf; wat uit een gekoppelde agenda komt niet.
   const eigenBron = gebruiker.user
     ? await haalOfMaakEigenBron(supabase, gebruiker.user.id)
     : { fout: "geen sessie" };
   const eigenBronId = "id" in eigenBron ? eigenBron.id : null;
-  const eigenAfspraken = eigenBronId
-    ? bron.items.filter((i) => i.bronId === eigenBronId).sort((a, b) => a.datum.localeCompare(b.datum))
-    : [];
 
   return (
     <SchooljaarView
@@ -56,7 +53,7 @@ export default async function SchooljaarPage({
       mijnGroepen={groepen}
       systemen={systemen}
       context={planContext}
-      eigenAfspraken={eigenAfspraken}
+      eigenBronId={eigenBronId}
       genegeerd={genegeerd}
     />
   );

@@ -127,6 +127,7 @@ export function useEigenAfspraakVorm(vandaag: string) {
         return;
       }
       setGelukt("Afspraak weggehaald.");
+      setVorm(null);
       router.refresh();
     } catch {
       setFout("Weghalen lukte niet. Ben je nog online?");

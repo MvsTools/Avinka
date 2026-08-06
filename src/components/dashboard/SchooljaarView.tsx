@@ -62,7 +62,7 @@ export default function SchooljaarView({
   mijnGroepen,
   systemen,
   context,
-  eigenAfspraken = [],
+  eigenBronId = null,
   genegeerd = [],
 }: {
   bron: PlanningBron;
@@ -72,8 +72,8 @@ export default function SchooljaarView({
   mijnGroepen: number[];
   systemen?: Schoolsystemen;
   context?: AanleidingContext;
-  /** Afspraken die de leerkracht zelf heeft ingevoerd (te wijzigen en weg te halen). */
-  eigenAfspraken?: PlanItem[];
+  /** De bron-id van je eigen, zelf ingevoerde afspraken — zie SchooljaarDagkaart. */
+  eigenBronId?: string | null;
   /** Seintje-id's die deze leerkracht al heeft weggeklikt (zie WatEraanKomt). */
   genegeerd?: string[];
 }) {
@@ -253,7 +253,7 @@ export default function SchooljaarView({
             </div>
           </div>
 
-          <EigenAfspraken ref={eigenAfsprakenRef} eigen={eigenAfspraken} vandaag={vandaag} />
+          <EigenAfspraken ref={eigenAfsprakenRef} vandaag={vandaag} />
 
           {weergave === "maand" ? (
             <SchooljaarMaand
@@ -262,6 +262,7 @@ export default function SchooljaarView({
               groepen={mijnGroepen}
               maand={maand}
               zetMaand={setMaand}
+              eigenBronId={eigenBronId}
             />
           ) : (
             <Jaarlijst
@@ -270,6 +271,7 @@ export default function SchooljaarView({
               groepen={mijnGroepen}
               open={openBlokken}
               vouwBlok={vouwBlok}
+              eigenBronId={eigenBronId}
             />
           )}
         </>
@@ -577,12 +579,15 @@ function Jaarlijst({
   groepen,
   open,
   vouwBlok,
+  eigenBronId,
 }: {
   bron: PlanningBron;
   vandaag: string;
   groepen: number[];
   open: number[];
   vouwBlok: (nr: number) => void;
+  /** Zie SchooljaarDagkaart: bepaalt welke afspraken je hier mag wijzigen. */
+  eigenBronId?: string | null;
 }) {
   const { schooljaar, periodes } = bron;
   const [dag, setDag] = useState<string | null>(null);
@@ -590,7 +595,12 @@ function Jaarlijst({
   return (
     <div className="flex flex-col gap-4">
       {dag && (
-        <SchooljaarDagkaart beeld={dagbeeld(bron, dag)} groepen={groepen} sluit={() => setDag(null)} />
+        <SchooljaarDagkaart
+          beeld={dagbeeld(bron, dag)}
+          groepen={groepen}
+          sluit={() => setDag(null)}
+          eigenBronId={eigenBronId}
+        />
       )}
 
       {/* De startweek staat vóór het eerste blok: je bent er al, de kinderen
