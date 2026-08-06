@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import {
   haalBronnen,
+  haalGenegeerdeAanleidingen,
   haalMijnGroepen, haalPlanningContext, haalSchoolsystemen,
   haalPlanning,
   haalSchooljaren,
@@ -27,12 +28,13 @@ export default async function SchooljaarPage({
   const jaarId = jaren.some((j) => j.id === gekozen) ? gekozen : jaren[0]?.id;
 
   const { data: gebruiker } = await supabase.auth.getUser();
-  const [bron, agendas, groepen, systemen, planContext] = await Promise.all([
+  const [bron, agendas, groepen, systemen, planContext, genegeerd] = await Promise.all([
     haalPlanning(supabase, { schooljaarId: jaarId, nu }),
     haalBronnen(supabase),
     haalMijnGroepen(supabase),
     haalSchoolsystemen(supabase),
     haalPlanningContext(supabase),
+    haalGenegeerdeAanleidingen(supabase),
   ]);
 
   // Welke afspraken heeft de leerkracht zelf ingevoerd? Die mag hij wijzigen en
@@ -55,6 +57,7 @@ export default async function SchooljaarPage({
       systemen={systemen}
       context={planContext}
       eigenAfspraken={eigenAfspraken}
+      genegeerd={genegeerd}
     />
   );
 }

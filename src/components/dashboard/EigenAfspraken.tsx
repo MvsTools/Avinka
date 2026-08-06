@@ -46,13 +46,10 @@ const EigenAfspraken = forwardRef<EigenAfsprakenHandle, {
       {f.vorm && (
         <AfspraakFormulier
           vorm={f.vorm}
-          soortOpen={f.soortOpen}
-          setSoortOpen={f.setSoortOpen}
           fout={f.fout}
           bezig={f.bezig}
           wijzigTitel={f.wijzigTitel}
           wijzigVeld={f.wijzigVeld}
-          kiesSoort={f.kiesSoort}
           bewaar={f.bewaar}
           annuleren={f.annuleren}
         />

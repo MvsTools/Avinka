@@ -1148,6 +1148,26 @@ create policy "eigen taken" on public.taken
 grant select, insert, update, delete on public.taken to authenticated;
 create index if not exists idx_taken_user on public.taken(user_id);
 
+-- ── 13b) AANLEIDING_GENEGEERD — seintjes in "Wat eraan komt" wegklikken ───
+-- "Wat eraan komt" herkent zelf uit de titel wat een afspraak is en bepaalt
+-- daarmee of en wanneer je een seintje krijgt — er is geen scherm meer waar
+-- je dat met de hand instelt. Klopt een gok niet, dan klik je het seintje
+-- weg; deze tabel onthoudt alleen welke Aanleiding.id een leerkracht al heeft
+-- weggeklikt. Zie database/migratie-aanleiding-genegeerd.sql.
+create table if not exists public.aanleiding_genegeerd (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  aanleiding_id text not null,
+  aangemaakt    timestamptz not null default now(),
+  unique (user_id, aanleiding_id)
+);
+alter table public.aanleiding_genegeerd enable row level security;
+drop policy if exists "eigen genegeerde seintjes" on public.aanleiding_genegeerd;
+create policy "eigen genegeerde seintjes" on public.aanleiding_genegeerd
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, delete on public.aanleiding_genegeerd to authenticated;
+create index if not exists idx_aanleiding_genegeerd_user on public.aanleiding_genegeerd(user_id);
+
 -- ── 14) BOUW-TAKEN — admin-backlog ("nog te bouwen voor de website") ──────
 -- Aparte to-do-lijst in de admin-module, los van de persoonlijke takenlijst.
 -- Alleen admins (RLS via wijs_is_admin); gaat nooit naar AI.

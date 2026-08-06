@@ -63,6 +63,7 @@ export default function SchooljaarView({
   systemen,
   context,
   eigenAfspraken = [],
+  genegeerd = [],
 }: {
   bron: PlanningBron;
   jaren: JaarKeuze[];
@@ -73,6 +74,8 @@ export default function SchooljaarView({
   context?: AanleidingContext;
   /** Afspraken die de leerkracht zelf heeft ingevoerd (te wijzigen en weg te halen). */
   eigenAfspraken?: PlanItem[];
+  /** Seintje-id's die deze leerkracht al heeft weggeklikt (zie WatEraanKomt). */
+  genegeerd?: string[];
 }) {
   const [tab, setTab] = useState<"jaar" | "week" | "agendas">(
     agendas.length ? "jaar" : "agendas",
@@ -197,6 +200,7 @@ export default function SchooljaarView({
             groepen={mijnGroepen}
             systemen={systemen}
             context={context}
+            genegeerd={genegeerd}
           />
 
           {telDubbelingen(items) > 0 && (

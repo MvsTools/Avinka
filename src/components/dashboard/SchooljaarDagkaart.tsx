@@ -186,13 +186,10 @@ export default function SchooljaarDagkaart({
         <div className="mt-4">
           <AfspraakFormulier
             vorm={formulier.vorm}
-            soortOpen={formulier.soortOpen}
-            setSoortOpen={formulier.setSoortOpen}
             fout={formulier.fout}
             bezig={formulier.bezig}
             wijzigTitel={formulier.wijzigTitel}
             wijzigVeld={formulier.wijzigVeld}
-            kiesSoort={formulier.kiesSoort}
             bewaar={formulier.bewaar}
             annuleren={formulier.annuleren}
           />

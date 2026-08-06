@@ -15,6 +15,7 @@ import CollegaUitnodigen from "@/components/dashboard/CollegaUitnodigen";
 import KaartMelding from "@/components/dashboard/KaartMelding";
 import { amsterdamDatum } from "@/lib/streak";
 import {
+  haalGenegeerdeAanleidingen,
   haalMijnGroepen,
   haalPlanning,
   haalPlanningContext,
@@ -37,13 +38,14 @@ export default async function DashboardStart() {
 
   // Welke tools zitten in het pakket van deze leerkracht? Zolang betalingen
   // niet live zijn, is alles open (de vlag regelt dat in magToolGebruiken).
-  const [ab, planning, groepen, rapportGrens, systemen, planContext] = await Promise.all([
+  const [ab, planning, groepen, rapportGrens, systemen, planContext, genegeerd] = await Promise.all([
     BETALINGEN_LIVE ? getAbonnementServer() : Promise.resolve(null),
     haalPlanning(supabase, { nu: vandaag }),
     haalMijnGroepen(supabase),
     haalRapportGrens(supabase),
     haalSchoolsystemen(supabase),
     haalPlanningContext(supabase),
+    haalGenegeerdeAanleidingen(supabase),
   ]);
   const vergrendeld = (slug: string) => (ab ? !magToolGebruiken(ab, slug) : false);
 
@@ -98,6 +100,7 @@ export default async function DashboardStart() {
         context={planContext}
         maximaal={2}
         vergrendeld={tools.filter((t) => vergrendeld(t.slug)).map((t) => t.slug)}
+        genegeerd={genegeerd}
       />
 
       <OnboardingCard />

@@ -20,7 +20,7 @@
 // 3. Nooit twee signalen van dezelfde soort. Een gespreksavond staat vaak als
 //    drie losse avonden in de agenda; dat is één aanleiding, niet drie.
 
-import { heeftHulpoudersNodig, SOORT_INFO } from "../agenda-herken";
+import { SOORT_INFO } from "../agenda-herken";
 import { toolBySlug, type Tool } from "../tools";
 import { bereikTekst, dagnaam, kort, plus, reeks, verschil, weekdag } from "./datum";
 import { groep8Momenten, heeftGroep8 } from "./groep8";
@@ -40,8 +40,10 @@ import { DAGNAMEN_KORT as DAGEN_KORT, laatsteWerkdagVoor, leesWerkdagen } from "
 const VENSTER: Partial<Record<Soort, { voor: number; na: number }>> = {
   rapport: { voor: 21, na: 0 },
   gesprek: { voor: 14, na: 0 },
-  activiteit: { voor: 42, na: 0 },
   toets: { voor: 0, na: 10 },
+  // "activiteit" staat hier bewust niet in: dat venster verschilt per
+  // onderwerp (een schoolreis is wat anders dan schoen zetten) — zie
+  // ACTIVITEIT_ONDERWERP en activiteitInstellingen() hieronder.
 };
 
 /** Wat je gaat doen — dit komt op de knop. */
@@ -80,16 +82,62 @@ const VOORBEREIDING: Partial<Record<Soort, { voor: number; knop: string; taak: s
     knop: "Rooster inplannen",
     taak: "Gespreksrooster maken en de tijden naar ouders sturen",
   },
-  // Bij een schoolreis, sportdag of excursie is dít het stuk dat je niet zelf
-  // in de hand hebt en dat daarom vroeg moet: je hebt begeleiders en vervoer
-  // nodig, en die moeten hun eigen dag vrij kunnen houden. Zes weken, want een
-  // ouder die moet ruilen op zijn werk heeft die tijd nodig.
-  activiteit: {
-    voor: 42,
+  // "activiteit" staat hier ook niet in — zie activiteitInstellingen().
+};
+
+/**
+ * "Activiteit" is de opvangbak van Sinterklaas tot een schoolreis, maar lang
+ * niet alles daaruit vraagt om dezelfde voorbereiding. Deze tabel splitst 'm
+ * verder uit, per stuk werk dat je er ECHT voor moet doen — op volgorde, de
+ * eerste match wint:
+ *
+ * - een uitje met vervoer (schoolreis, kamp, excursie, museum, survival) kost
+ *   het meest voorbereidingstijd: hulpouders ÉN vervoer regelen, dus zes
+ *   weken — dezelfde termijn als de oorspronkelijke, bredere regel had.
+ * - een sportevenement of loop op het schoolterrein (sportdag, koningsspelen,
+ *   avondvierdaagse, sponsorloop, wandelen voor water) heeft ook hulpouders
+ *   nodig maar geen vervoer te regelen, dus vier weken.
+ * - het verkeersexamen heeft vrijwilligers langs het parcours nodig — een
+ *   kleinere klus dan een hele schoolreis, dus drie weken.
+ * - AL HET ANDERE (Sinterklaas, Pasen, Sint Maarten, een schoolfoto, een
+ *   workshop, boekenweek, …) speelt zich in de klas af. Daar is niets voor te
+ *   regelen, dus geen seintje: die dag staat gewoon — correct gelabeld als
+ *   activiteit — in de kalender en het jaaroverzicht, zonder ruis vooraf.
+ */
+const ACTIVITEIT_ONDERWERP: { woorden: RegExp; weken: number; knop: string; taak: string }[] = [
+  {
+    woorden: /schoolreis|schoolkamp|\bkamp\b|excursie|museum|survival/i,
+    weken: 6,
     knop: "Hulpouders vragen",
     taak: "Hulpouders en vervoer regelen",
   },
-};
+  {
+    woorden: /sportdag|koningsspelen|avondvierdaagse|sponsorloop|wandelen voor water/i,
+    weken: 4,
+    knop: "Hulpouders vragen",
+    taak: "Hulpouders en begeleiding regelen",
+  },
+  {
+    woorden: /verkeersexamen/i,
+    weken: 3,
+    knop: "Vrijwilligers vragen",
+    taak: "Ouders informeren en vrijwilligers vragen voor het parcours",
+  },
+];
+
+/** Alleen voor "activiteit": welk venster en welke voorbereiding erbij horen
+ *  — of niets, als dit onderwerp geen bekende voorbereiding vraagt. */
+export function activiteitInstellingen(
+  titel: string,
+): { venster: { voor: number; na: number }; voorbereiding: { voor: number; knop: string; taak: string } } | null {
+  const onderwerp = ACTIVITEIT_ONDERWERP.find((o) => o.woorden.test(titel));
+  if (!onderwerp) return null;
+  const voor = onderwerp.weken * 7;
+  return {
+    venster: { voor, na: 0 },
+    voorbereiding: { voor, knop: onderwerp.knop, taak: onderwerp.taak },
+  };
+}
 
 /**
  * Zo werkt jouw school — uit je instellingen. Weten we welk systeem je
@@ -577,13 +625,14 @@ export function aanleidingen(
   for (const item of bron.items) {
     if (item.dubbelVan) continue;
 
-    // Een activiteit krijgt zijn signaal (draaiboek maken, hulpouders vragen)
-    // alleen als hij er ook echt om vraagt — zie heeftHulpoudersNodig. Een
-    // andere soort is hier niet aan de titel gebonden, dus die loopt gewoon door.
-    const magActiviteitSignaal =
-      item.soort !== "activiteit" || heeftHulpoudersNodig(item.titel);
-    const venster = magActiviteitSignaal ? VENSTER[item.soort] : undefined;
-    const voorbereiding = magActiviteitSignaal ? VOORBEREIDING[item.soort] : undefined;
+    // Een activiteit heeft geen vast venster: welk signaal en na hoeveel
+    // weken hangt af van WELKE activiteit het is — zie activiteitInstellingen.
+    // Een andere soort is niet aan de titel gebonden, dus die loopt gewoon
+    // via de vaste VENSTER/VOORBEREIDING-tabellen.
+    const activiteit = item.soort === "activiteit" ? activiteitInstellingen(item.titel) : null;
+    const venster = item.soort === "activiteit" ? activiteit?.venster : VENSTER[item.soort];
+    const voorbereiding =
+      item.soort === "activiteit" ? activiteit?.voorbereiding : VOORBEREIDING[item.soort];
     if (!venster && !voorbereiding) continue;
 
     const oordeel = beoordeel(item, eigenGroepen);

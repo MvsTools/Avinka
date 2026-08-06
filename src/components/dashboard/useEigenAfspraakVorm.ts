@@ -9,6 +9,11 @@ import type { Soort } from "@/lib/agenda-herken";
 // (EigenAfspraken.tsx) en het dagkaartje in de kalender (SchooljaarDagkaart),
 // zodat je een afspraak kunt maken op de plek waar je al bent, in plaats van
 // ergens anders op de pagina te belanden.
+//
+// Er is BEWUST geen manier om het soort met de hand te kiezen. Avinka raadt
+// het uit de titel (raadSoort) en blijft dat de hele tijd doen, ook nadat er
+// al een keer gegokt is — er is niets meer dat die gok "vastzet". Zie
+// AfspraakFormulier.tsx voor de reden.
 
 export type Vorm = {
   id?: string;
@@ -36,23 +41,13 @@ export function useEigenAfspraakVorm(vandaag: string) {
   const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState<string | null>(null);
   const [gelukt, setGelukt] = useState<string | null>(null);
-  // Het soort staat standaard dicht: de gok (of de vorige waarde bij
-  // wijzigen) is meestal goed genoeg, en dan hoef je niet ook nog door acht
-  // knoppen heen. Pas open klikken als je twijfelt.
-  const [soortOpen, setSoortOpen] = useState(false);
   const router = useRouter();
   const soortTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Een ref, niet een state: raadSoort loopt async, en moet op het moment dat
-  // de fetch terugkomt weten of je ONDERTUSSEN zelf hebt gekozen — niet nog
-  // de oude waarde uit de closure van toen het verzoek begon.
-  const soortDoorJou = useRef(false);
 
   const open = (start?: Partial<Vorm>) => {
     if (soortTimer.current) clearTimeout(soortTimer.current);
-    soortDoorJou.current = false;
     setFout(null);
     setGelukt(null);
-    setSoortOpen(false);
     setVorm({ ...LEEG, datum: vandaag, ...start });
   };
 
@@ -62,16 +57,15 @@ export function useEigenAfspraakVorm(vandaag: string) {
     setFout(null);
   };
 
-  /** Wat dénken we dat dit voor afspraak is? Alleen een suggestie; je kunt
-   *  hem zelf altijd omzetten — en zolang je dat niet gedaan hebt, mag een
-   *  latere gok een eerdere gok gewoon weer bijstellen. */
+  /** Wat dénken we dat dit voor afspraak is? Bepaalt op de achtergrond of en
+   *  wanneer je er een seintje van krijgt — er is geen scherm dat dit vraagt. */
   const raadSoort = async (titel: string) => {
     if (!titel.trim() || !vorm || vorm.id) return;
     try {
       const res = await fetch(`/api/agenda/afspraak?titel=${encodeURIComponent(titel)}`);
       if (!res.ok) return;
       const { raad } = await res.json();
-      setVorm((v) => (v && !soortDoorJou.current && raad ? { ...v, soort: raad } : v));
+      setVorm((v) => (v && raad ? { ...v, soort: raad } : v));
     } catch {
       /* een suggestie die niet komt is geen probleem */
     }
@@ -88,12 +82,6 @@ export function useEigenAfspraakVorm(vandaag: string) {
 
   const wijzigVeld = (patch: Partial<Vorm>) => {
     setVorm((v) => (v ? { ...v, ...patch } : v));
-  };
-
-  const kiesSoort = (s: Soort) => {
-    soortDoorJou.current = true;
-    setVorm((v) => (v ? { ...v, soort: s } : v));
-    setSoortOpen(false);
   };
 
   const bewaar = async () => {
@@ -152,13 +140,10 @@ export function useEigenAfspraakVorm(vandaag: string) {
     bezig,
     fout,
     gelukt,
-    soortOpen,
-    setSoortOpen,
     open,
     annuleren,
     wijzigTitel,
     wijzigVeld,
-    kiesSoort,
     bewaar,
     weghalen,
   };

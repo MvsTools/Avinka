@@ -1,6 +1,5 @@
 "use client";
 
-import { SOORT_INFO, type Soort } from "@/lib/agenda-herken";
 import TijdVeld from "./TijdVeld";
 import type { EigenAfspraakVorm, Vorm } from "./useEigenAfspraakVorm";
 
@@ -9,61 +8,30 @@ import type { EigenAfspraakVorm, Vorm } from "./useEigenAfspraakVorm";
 // al bent (een dag in de kalender), in plaats van je naar Jaaroverzicht te
 // sturen.
 //
-// 🔑 HET SOORT IS HET BELANGRIJKSTE VELD, en daarom staat het niet onderaan
-// als bijzaak. Het bepaalt wat Avinka met de afspraak dóét: zet je er
-// "oudergesprekken" bij, dan krijg je drie weken van tevoren te horen dat je
-// het rooster moet openzetten.
-
-/** Wat een soort je oplevert. Kort, want dit staat onder een keuzerij. */
-const WAT_LEVERT_HET_OP: Partial<Record<Soort, string>> = {
-  rapport: "Je krijgt 4 weken vooraf een seintje, en een knop naar Rapporten.",
-  gesprek: "Je krijgt 3 weken vooraf een seintje om het rooster open te zetten.",
-  toets: "Je krijgt vooraf een seintje om de toetsen klaar te zetten, en erna om ze te analyseren.",
-  activiteit: "Bij een schoolreis, sportdag of excursie krijg je 6 weken vooraf een seintje over hulpouders en vervoer.",
-  vrij: "Deze dag telt als een dag zonder les.",
-  vakantie: "Deze dagen tellen als vakantie.",
-};
-
-/**
- * De soorten op volgorde van hoe vaak je ze nodig hebt — niet op de technische
- * volgorde uit SOORT_INFO. "Vakantie" staat bewust achteraan: dat is de
- * zwaarste keuze (die maakt een hele dag leeg in je jaaroverzicht) en hoort
- * niet als eerste onder je duim te staan.
- */
-const SOORT_VOLGORDE: Soort[] = [
-  "overig",
-  "gesprek",
-  "toets",
-  "rapport",
-  "activiteit",
-  "vergadering",
-  "vrij",
-  "vakantie",
-];
+// Bewust GEEN "wat voor soort?"-vraag. Avinka herkent dat zelf uit de titel
+// (zie useEigenAfspraakVorm → agenda-herken.ts) en gebruikt die herkenning op
+// de achtergrond om te bepalen of en wanneer je er een seintje van krijgt.
+// Mist de herkenning iets, dan gebeurt er gewoon niets — geen seintje is een
+// veilige misser, in tegenstelling tot een verkeerd seintje. En komt er tóch
+// een seintje dat niet klopt, dan klik je dat in "Wat eraan komt" gewoon weg.
 
 const VELD =
   "w-full rounded-xl border border-black/10 bg-cream/50 px-4 py-2.5 text-sm text-ink outline-none transition-shadow placeholder:text-ink/35 focus:border-brand focus:shadow-[0_0_0_3px_rgba(47,158,110,0.18)]";
 
 export default function AfspraakFormulier({
   vorm,
-  soortOpen,
-  setSoortOpen,
   fout,
   bezig,
   wijzigTitel,
   wijzigVeld,
-  kiesSoort,
   bewaar,
   annuleren,
 }: {
   vorm: Vorm;
-  soortOpen: EigenAfspraakVorm["soortOpen"];
-  setSoortOpen: EigenAfspraakVorm["setSoortOpen"];
   fout: EigenAfspraakVorm["fout"];
   bezig: EigenAfspraakVorm["bezig"];
   wijzigTitel: EigenAfspraakVorm["wijzigTitel"];
   wijzigVeld: EigenAfspraakVorm["wijzigVeld"];
-  kiesSoort: EigenAfspraakVorm["kiesSoort"];
   bewaar: EigenAfspraakVorm["bewaar"];
   annuleren: EigenAfspraakVorm["annuleren"];
 }) {
@@ -141,48 +109,6 @@ export default function AfspraakFormulier({
               />
             </label>
           </>
-        )}
-      </div>
-
-      <div>
-        {soortOpen ? (
-          <>
-            <span className="text-sm font-bold text-ink">
-              Wat voor soort?
-              <span className="font-normal text-ink/50"> (bepaalt of je er een seintje van krijgt)</span>
-            </span>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {SOORT_VOLGORDE.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => kiesSoort(s)}
-                  className={
-                    "rounded-xl border px-3.5 py-2 text-sm font-semibold transition " +
-                    (vorm.soort === s
-                      ? "border-brand bg-brand-soft text-brand"
-                      : "border-black/10 text-ink/70 hover:border-black/20")
-                  }
-                >
-                  {SOORT_INFO[s].woord}
-                </button>
-              ))}
-            </div>
-          </>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setSoortOpen(true)}
-            className="flex flex-wrap items-baseline gap-x-2 text-left"
-          >
-            <span className="text-sm font-bold text-ink">Soort: {SOORT_INFO[vorm.soort].woord}</span>
-            <span className="text-sm text-ink/45 underline-offset-2 hover:underline">
-              klopt dat niet? wijzigen
-            </span>
-          </button>
-        )}
-        {WAT_LEVERT_HET_OP[vorm.soort] && (
-          <p className="mt-2 text-xs text-ink/55">{WAT_LEVERT_HET_OP[vorm.soort]}</p>
         )}
       </div>
 

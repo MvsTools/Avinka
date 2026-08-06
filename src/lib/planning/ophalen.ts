@@ -107,6 +107,16 @@ export async function haalMijnGroepen(supabase: SupabaseClient): Promise<number[
 }
 
 /**
+ * De seintjes in "Wat eraan komt" die deze leerkracht zelf heeft weggeklikt
+ * (zie /api/aanleiding/negeer). Geen scherm laat je meer vooraf het soort
+ * instellen — dit is de correctie áchteraf, per Aanleiding.id.
+ */
+export async function haalGenegeerdeAanleidingen(supabase: SupabaseClient): Promise<string[]> {
+  const { data } = await supabase.from("aanleiding_genegeerd").select("aanleiding_id");
+  return ((data as { aanleiding_id: string }[] | null) ?? []).map((r) => r.aanleiding_id);
+}
+
+/**
  * Met welke systemen werkt deze school (Instellingen → Voorkeuren)? Daarmee
  * wordt "maak een gespreksrooster" een concrete "zet de gesprekken open in
  * Parro". Niets ingevuld = lege waarden, en dan blijft alles algemeen.

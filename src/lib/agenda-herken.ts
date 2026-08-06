@@ -29,7 +29,7 @@ const REGELS: { soort: Soort; woorden: RegExp }[] = [
   {
     soort: "gesprek",
     woorden:
-      /gesprek|10 ?minuten|tien ?minuten|contactavond|spreekavond|ouderavond|kennismakingsavond|startgesprek|voortgangsgesprek|adviesgesprek|driehoeksgesprek|kindgesprek/i,
+      /gesprek|10 ?minuten|tien ?minuten|contactavond|spreekavond|ouderavond|kennismakingsavond|startgesprek|voortgangsgesprek|adviesgesprek|driehoeksgesprek|kindgesprek|eindgesprek/i,
   },
   {
     soort: "vergadering",
@@ -38,37 +38,25 @@ const REGELS: { soort: Soort; woorden: RegExp }[] = [
   },
   {
     soort: "toets",
-    woorden: /toets|cito|iep|entree|eindtoets|doorstroomtoets|dictee|avi|dmt|nio|drempelonderzoek/i,
+    woorden:
+      /toets|cito|iep|entree|eindtoets|doorstroomtoets|dictee|avi|dmt|nio|drempelonderzoek|screening/i,
   },
   {
     soort: "activiteit",
     // Bewust breed: dit is de opvangbak voor alles wat er in een basisschooljaar
     // gebeurt en geen les, toets, gesprek of vrije dag is — van Sinterklaas tot
     // het verkeersexamen. Mist er iets, dan valt het gewoon terug op "Afspraak".
+    // Welke van deze onderwerpen ook een seintje/taak krijgen, staat NIET hier
+    // maar in aanleiding.ts (ACTIVITEIT_ONDERWERP) — dit bestand herkent alleen
+    // wát iets is, niet wat we ermee doen.
     woorden:
-      /schoolreis|schoolkamp|kamp|excursie|musical|viering|feest|sportdag|koningsspelen|open ?dag|open ?huis|juffendag|meesterdag|voorleesontbijt|kerst|sinterklaas|sint\b|pakjesavond|schoen ?zetten|intocht|paas|pasen|sint ?maarten|lampion|carnaval|avondvierdaagse|schoolfoto|luizen|boekenweek|bezoek|museum|voorstelling|theater|workshop|project ?(week|afsluiting)|presentatie|informatieavond|inloop(ochtend|middag)?|verkeersexamen|zwem(les|men)|schaatsen|survival|lentekriebels|dodenherdenking|bevrijdingsdag|diploma|afscheid|suikerfeest|offerfeest/i,
+      /schoolreis|schoolkamp|kamp|excursie|musical|viering|feest|sportdag|koningsspelen|open ?dag|open ?huis|juffendag|meesterdag|voorleesontbijt|kerst|sinterklaas|sint\b|pakjesavond|schoen ?zetten|intocht|paas|pasen|sint ?maarten|lampion|carnaval|avondvierdaagse|schoolfoto|luizen|boekenweek|bezoek|museum|voorstelling|theater|workshop|project ?(week|afsluiting)|presentatie|informatieavond|inloop(ochtend|middag)?|verkeersexamen|zwem(les|men)|schaatsen|survival|lentekriebels|dodenherdenking|bevrijdingsdag|diploma|afscheid|suikerfeest|offerfeest|halloween|sponsorloop|schoolontbijt|wandelen voor water|buitenlesdag|disco|wendag|wenmiddag|wenmoment|kinderpostzegels/i,
   },
 ];
 
 export function herken(titel: string): Soort {
   for (const r of REGELS) if (r.woorden.test(titel)) return r.soort;
   return "overig";
-}
-
-/**
- * "Activiteit" is de opvangbak voor alles van Sinterklaas tot een schoolreis,
- * maar lang niet alles daaruit vraagt om hulpouders en vervoer — schoen
- * zetten of een paasontbijt spelen zich gewoon in de klas af. Dit is de
- * SMALLERE lijst: alleen wat er echt buiten de deur gebeurt of een team aan
- * begeleiders nodig heeft. Alleen deze groep krijgt in aanleiding.ts het
- * "Hulpouders vragen"-signaal; de rest blijft gewoon een activiteit, maar
- * zonder die vraag zes weken van tevoren.
- */
-const HULPOUDERS_NODIG =
-  /schoolreis|schoolkamp|\bkamp\b|excursie|sportdag|koningsspelen|avondvierdaagse|survival|museum/i;
-
-export function heeftHulpoudersNodig(titel: string): boolean {
-  return HULPOUDERS_NODIG.test(titel);
 }
 
 export const SOORT_INFO: Record<
