@@ -41,6 +41,12 @@ export function useEigenAfspraakVorm(vandaag: string) {
   const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState<string | null>(null);
   const [gelukt, setGelukt] = useState<string | null>(null);
+  // Verwijderen voelde traag, want het kaartje wachtte tot router.refresh()
+  // helemaal klaar was (de hele pagina opnieuw ophalen) voordat de afspraak
+  // uit de lijst verdween. Nu verdwijnt hij METEEN hier lokaal, en loopt de
+  // echte verwijdering en de server-verversing op de achtergrond door — mislukt
+  // die onverwacht, dan komt de afspraak gewoon terug (zie de catch hieronder).
+  const [netVerwijderd, setNetVerwijderd] = useState<Set<string>>(new Set());
   const router = useRouter();
   const soortTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -113,26 +119,26 @@ export function useEigenAfspraakVorm(vandaag: string) {
   };
 
   const weghalen = async (id: string) => {
-    setBezig(true);
-    setFout(null);
+    setNetVerwijderd((v) => new Set(v).add(id));
+    setVorm(null);
     try {
       const res = await fetch("/api/agenda/afspraak", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setFout(data.fout || "Weghalen lukte niet.");
-        return;
-      }
-      setGelukt("Afspraak weggehaald.");
-      setVorm(null);
+      if (!res.ok) throw new Error();
+      setGelukt("Afspraak verwijderd.");
       router.refresh();
     } catch {
-      setFout("Weghalen lukte niet. Ben je nog online?");
-    } finally {
-      setBezig(false);
+      // Mislukt? Dan gewoon weer laten zien — het formulier is al dicht,
+      // dus een foutmelding heeft hier niets om op te verschijnen. Terug
+      // laten komen in de lijst is zelf al het signaal dat het niet lukte.
+      setNetVerwijderd((v) => {
+        const n = new Set(v);
+        n.delete(id);
+        return n;
+      });
     }
   };
 
@@ -141,6 +147,7 @@ export function useEigenAfspraakVorm(vandaag: string) {
     bezig,
     fout,
     gelukt,
+    netVerwijderd,
     open,
     annuleren,
     wijzigTitel,

@@ -191,12 +191,16 @@ export default function SchooljaarDagkaart({
    *  meteen wijzigen; alles uit een gekoppelde agenda blijft alleen-lezen. */
   eigenBronId?: string | null;
 }) {
-  const afspraken = beeld.items.filter((i) => i.soort !== "vakantie");
   // De datum staat al vast, dus "+ Afspraak" hier scheelt een stap tegenover
   // dezelfde knop boven de kalender in Jaaroverzicht. En het formulier
   // verschijnt IN dit kaartje — niet ergens anders op de pagina, waar je het
   // eerst moest gaan zoeken.
   const formulier = useEigenAfspraakVorm(beeld.datum);
+  // Net verwijderd? Dan METEEN uit de lijst, niet pas als router.refresh()
+  // klaar is — anders lijkt verwijderen traag terwijl het al gelukt is.
+  const afspraken = beeld.items.filter(
+    (i) => i.soort !== "vakantie" && !formulier.netVerwijderd.has(i.id),
+  );
 
   return (
     <Kaartvenster

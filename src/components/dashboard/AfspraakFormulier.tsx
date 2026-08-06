@@ -141,7 +141,7 @@ export default function AfspraakFormulier({
             disabled={bezig}
             className="ml-auto rounded-xl px-4 py-2 text-sm font-bold text-ink/40 transition-colors hover:text-rose-700 disabled:opacity-50"
           >
-            Weghalen
+            Verwijderen
           </button>
         )}
       </div>
