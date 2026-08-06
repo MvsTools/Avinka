@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { SOORT_INFO, type Soort } from "@/lib/agenda-herken";
 import { dagnaam, kort } from "@/lib/planning";
 import type { PlanItem } from "@/lib/planning";
+import TijdVeld from "./TijdVeld";
 
 // Zelf een afspraak in je agenda zetten.
 //
@@ -69,7 +70,7 @@ const LEEG: Vorm = {
   titel: "",
   datum: "",
   totDatum: "",
-  heleDag: true,
+  heleDag: false,
   begin: "",
   eind: "",
   soort: "overig",
@@ -223,22 +224,22 @@ const EigenAfspraken = forwardRef<EigenAfsprakenHandle, {
             </label>
             {!vorm.heleDag && (
               <>
-                <label className="w-28">
+                <label>
                   <span className="text-sm font-bold text-ink">Van</span>
-                  <input
-                    type="time"
+                  <TijdVeld
+                    key={(vorm.id ?? "nieuw") + "-begin"}
                     value={vorm.begin}
-                    onChange={(e) => setVorm({ ...vorm, begin: e.target.value })}
-                    className={VELD + " mt-1.5"}
+                    onChange={(v) => setVorm({ ...vorm, begin: v })}
+                    className="mt-1.5"
                   />
                 </label>
-                <label className="w-28">
+                <label>
                   <span className="text-sm font-bold text-ink">Tot</span>
-                  <input
-                    type="time"
+                  <TijdVeld
+                    key={(vorm.id ?? "nieuw") + "-eind"}
                     value={vorm.eind}
-                    onChange={(e) => setVorm({ ...vorm, eind: e.target.value })}
-                    className={VELD + " mt-1.5"}
+                    onChange={(v) => setVorm({ ...vorm, eind: v })}
+                    className="mt-1.5"
                   />
                 </label>
               </>
