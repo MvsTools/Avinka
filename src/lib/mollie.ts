@@ -98,10 +98,12 @@ export async function maakBetaling(opts: {
   if (opts.customerId) body.customerId = opts.customerId;
   if (opts.sequenceType) body.sequenceType = opts.sequenceType;
   // Mollie roept dit adres zelf aan zodra de status verandert — nodig omdat er
-  // bij een VERLENGING niemand in de browser zit om op terug te sturen. Lokaal
-  // (localhost) kan Mollie dit adres niet bereiken; dat is een bekende grens
-  // van testen zonder publieke tunnel, geen fout in de code.
-  if (opts.webhookUrl) body.webhookUrl = opts.webhookUrl;
+  // bij een VERLENGING niemand in de browser zit om op terug te sturen.
+  // ⚠️ Mollie weigert de HELE betaling (422) als dit adres niet bereikbaar is —
+  // dus alleen meesturen bij een echt https-adres. Lokaal (localhost) laten we
+  // 'm gewoon weg; dat is een bekende grens van testen zonder publieke tunnel,
+  // geen fout. Op Vercel is de origin altijd https, dus daar gaat hij wél mee.
+  if (opts.webhookUrl?.startsWith("https://")) body.webhookUrl = opts.webhookUrl;
   const d = await mollieFetch<RuweBetaling>("/payments", {
     method: "POST",
     body: JSON.stringify(body),
