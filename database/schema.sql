@@ -1138,9 +1138,14 @@ create table if not exists public.taken (
   created_at timestamptz not null default now(),
   gedaan_op  timestamptz
 );
--- Als de tabel al bestond zonder deadline/wekelijks-kolom:
+-- Als de tabel al bestond zonder deadline/wekelijks/kopje-kolom:
 alter table public.taken add column if not exists deadline date;
 alter table public.taken add column if not exists wekelijks boolean not null default false;
+-- Kopje: de naam van de activiteit waar deze taak bij hoort (bijv.
+-- "Verkeersexamen"), zodat losse taken die je er zelf bij zet in de
+-- takenlijst bij elkaar staan. Geen foreign key: blijft ook bestaan als de
+-- afspraak zelf verdwijnt. Zie database/migratie-taken-kopje.sql.
+alter table public.taken add column if not exists kopje text;
 alter table public.taken enable row level security;
 drop policy if exists "eigen taken" on public.taken;
 create policy "eigen taken" on public.taken
