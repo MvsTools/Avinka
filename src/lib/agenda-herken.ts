@@ -25,23 +25,24 @@ const REGELS: { soort: Soort; woorden: RegExp }[] = [
     woorden:
       /studiedag|marge ?dag|margedag|studiemiddag|lesvrij|leerlingen ?vrij|kinderen ?vrij|vrije dag|alle groepen vrij|roostervrij|hemelvaart|pinksteren|goede vrijdag/i,
   },
-  { soort: "rapport", woorden: /rapport|portfolio ?mee|rapportfolio/i },
   {
+    // Staat vóór "rapport": "Rapportgesprek" en "Rapportavond" gaan over de
+    // GESPREKKEN plannen, niet over het rapport schrijven — allebei bevatten
+    // "rapport", maar de bedoeling (en dus het seintje) is een andere.
     soort: "gesprek",
     woorden:
-      /gesprek|10 ?minuten|tien ?minuten|contactavond|spreekavond|ouderavond|kennismakingsavond|startgesprek|voortgangsgesprek|adviesgesprek|driehoeksgesprek|kindgesprek|eindgesprek/i,
+      /gesprek|10 ?minuten|tien ?minuten|contactavond|spreekavond|ouderavond|kennismakingsavond|startgesprek|voortgangsgesprek|adviesgesprek|driehoeksgesprek|kindgesprek|eindgesprek|rapportavond|voortgangsavond|informatiegesprek/i,
   },
+  { soort: "rapport", woorden: /rapport|portfolio ?mee|rapportfolio|cijferlijst/i },
   {
     soort: "vergadering",
     woorden:
       /vergader|overleg|bouwbijeenkomst|teambijeenkomst|studiebijeenkomst|mt-|bordsessie|\bmr\b|medezeggenschapsraad|\bgmr\b|ouderraad/i,
   },
   {
-    soort: "toets",
-    woorden:
-      /toets|cito|iep|entree|eindtoets|doorstroomtoets|dictee|avi|dmt|nio|drempelonderzoek|screening/i,
-  },
-  {
+    // Staat vóór "toets": "Verkeerstoets" bevat het woord "toets", maar is
+    // qua voorbereiding (vrijwilligers langs het parcours) een activiteit,
+    // geen toets die je moet analyseren. Zie ook de opmerking bij "activiteit".
     soort: "activiteit",
     // Bewust breed: dit is de opvangbak voor alles wat er in een basisschooljaar
     // gebeurt en geen les, toets, gesprek of vrije dag is — van Sinterklaas tot
@@ -49,8 +50,19 @@ const REGELS: { soort: Soort; woorden: RegExp }[] = [
     // Welke van deze onderwerpen ook een seintje/taak krijgen, staat NIET hier
     // maar in aanleiding.ts (ACTIVITEIT_ONDERWERP) — dit bestand herkent alleen
     // wát iets is, niet wat we ermee doen.
+    //
+    // Bewust met meerdere namen voor hetzelfde: scholen noemen niet allemaal
+    // hetzelfde ding hetzelfde. Het verkeersexamen heet ook verkeerstoets,
+    // fietsexamen, of theoretisch/praktisch examen verkeer; een schoolkamp
+    // ook een kampweek; de avondvierdaagse ook wandelvierdaagse; een sportdag
+    // ook een sport- en speldag.
     woorden:
-      /schoolreis|schoolkamp|kamp|excursie|musical|viering|feest|sportdag|koningsspelen|open ?dag|open ?huis|juffendag|meesterdag|voorleesontbijt|kerst|sinterklaas|sint\b|pakjesavond|schoen ?zetten|intocht|paas|pasen|sint ?maarten|lampion|carnaval|avondvierdaagse|schoolfoto|luizen|boekenweek|bezoek|museum|voorstelling|theater|workshop|project ?(week|afsluiting)|presentatie|informatieavond|inloop(ochtend|middag)?|verkeersexamen|zwem(les|men)|schaatsen|survival|lentekriebels|dodenherdenking|bevrijdingsdag|diploma|afscheid|suikerfeest|offerfeest|halloween|sponsorloop|schoolontbijt|wandelen voor water|buitenlesdag|disco|wendag|wenmiddag|wenmoment|kinderpostzegels/i,
+      /schoolreis|schoolkamp|kampweek|\bkamp\b|excursie|musical|viering|feest|sportdag|speldag|koningsspelen|koningsontbijt|open ?dag|open ?huis|juffendag|meesterdag|voorleesontbijt|kerst|sinterklaas|sint\b|pakjesavond|schoen ?zetten|intocht|paas|pasen|sint ?maarten|lampion|carnaval|avondvierdaagse|wandelvierdaagse|schoolfoto|luizen|boekenweek|bezoek|museum|voorstelling|theater|workshop|project ?(week|afsluiting)|presentatie|informatieavond|inloop(ochtend|middag)?|verkeers(examen|toets|proef)|fietsexamen|(theoretisch|praktisch|theorie|praktijk) ?-? ?examen verkeer|zwem(les|men)|schaatsen|survival|lentekriebels|dodenherdenking|bevrijdingsdag|diploma|afscheid|suikerfeest|offerfeest|halloween|sponsorloop|schoolontbijt|wandelen voor water|buitenlesdag|disco|wendag|wenmiddag|wenmoment|kinderpostzegels/i,
+  },
+  {
+    soort: "toets",
+    woorden:
+      /toets|cito|iep|entree|eindtoets|doorstroomtoets|dictee|avi|dmt|nio|drempelonderzoek|screening/i,
   },
 ];
 

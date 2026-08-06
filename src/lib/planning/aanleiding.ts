@@ -106,19 +106,21 @@ const VOORBEREIDING: Partial<Record<Soort, { voor: number; knop: string; taak: s
  */
 const ACTIVITEIT_ONDERWERP: { woorden: RegExp; weken: number; knop: string; taak: string }[] = [
   {
-    woorden: /schoolreis|schoolkamp|\bkamp\b|excursie|museum|survival/i,
+    woorden: /schoolreis|schoolkamp|kampweek|\bkamp\b|excursie|museum|survival/i,
     weken: 6,
     knop: "Hulpouders vragen",
     taak: "Hulpouders en vervoer regelen",
   },
   {
-    woorden: /sportdag|koningsspelen|avondvierdaagse|sponsorloop|wandelen voor water/i,
+    woorden: /sportdag|speldag|koningsspelen|avondvierdaagse|wandelvierdaagse|sponsorloop|wandelen voor water/i,
     weken: 4,
     knop: "Hulpouders vragen",
     taak: "Hulpouders en begeleiding regelen",
   },
   {
-    woorden: /verkeersexamen/i,
+    // Dezelfde herkenning als bij "activiteit" in agenda-herken.ts — scholen
+    // noemen dit niet allemaal hetzelfde (verkeerstoets, fietsexamen, …).
+    woorden: /verkeers(examen|toets|proef)|fietsexamen|(theoretisch|praktisch|theorie|praktijk) ?-? ?examen verkeer/i,
     weken: 3,
     knop: "Vrijwilligers vragen",
     taak: "Ouders informeren en vrijwilligers vragen voor het parcours",
