@@ -85,11 +85,16 @@ const EigenAfspraken = forwardRef<EigenAfsprakenHandle, {
   const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState<string | null>(null);
   const [gelukt, setGelukt] = useState<string | null>(null);
+  // Het soort staat standaard dicht: de gok (of de vorige waarde bij
+  // wijzigen) is meestal goed genoeg, en dan hoef je niet ook nog door acht
+  // knoppen heen. Pas open klikken als je twijfelt.
+  const [soortOpen, setSoortOpen] = useState(false);
   const router = useRouter();
 
   const open = (start?: Partial<Vorm>) => {
     setFout(null);
     setGelukt(null);
+    setSoortOpen(false);
     setVorm({ ...LEEG, datum: vandaag, ...start });
   };
 
@@ -247,27 +252,45 @@ const EigenAfspraken = forwardRef<EigenAfsprakenHandle, {
           </div>
 
           <div>
-            <span className="text-sm font-bold text-ink">
-              Wat voor soort?
-              <span className="font-normal text-ink/50"> (bepaalt of je er een seintje van krijgt)</span>
-            </span>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {SOORT_VOLGORDE.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setVorm({ ...vorm, soort: s })}
-                  className={
-                    "rounded-xl border px-3.5 py-2 text-sm font-semibold transition " +
-                    (vorm.soort === s
-                      ? "border-brand bg-brand-soft text-brand"
-                      : "border-black/10 text-ink/70 hover:border-black/20")
-                  }
-                >
-                  {SOORT_INFO[s].woord}
-                </button>
-              ))}
-            </div>
+            {soortOpen ? (
+              <>
+                <span className="text-sm font-bold text-ink">
+                  Wat voor soort?
+                  <span className="font-normal text-ink/50"> (bepaalt of je er een seintje van krijgt)</span>
+                </span>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {SOORT_VOLGORDE.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => {
+                        setVorm({ ...vorm, soort: s });
+                        setSoortOpen(false);
+                      }}
+                      className={
+                        "rounded-xl border px-3.5 py-2 text-sm font-semibold transition " +
+                        (vorm.soort === s
+                          ? "border-brand bg-brand-soft text-brand"
+                          : "border-black/10 text-ink/70 hover:border-black/20")
+                      }
+                    >
+                      {SOORT_INFO[s].woord}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setSoortOpen(true)}
+                className="flex flex-wrap items-baseline gap-x-2 text-left"
+              >
+                <span className="text-sm font-bold text-ink">Soort: {SOORT_INFO[vorm.soort].woord}</span>
+                <span className="text-sm text-ink/45 underline-offset-2 hover:underline">
+                  klopt dat niet? wijzigen
+                </span>
+              </button>
+            )}
             <p className="mt-2 text-xs text-ink/55">{WAT_LEVERT_HET_OP[vorm.soort]}</p>
           </div>
 
