@@ -55,6 +55,22 @@ export function herken(titel: string): Soort {
   return "overig";
 }
 
+/**
+ * "Activiteit" is de opvangbak voor alles van Sinterklaas tot een schoolreis,
+ * maar lang niet alles daaruit vraagt om hulpouders en vervoer — schoen
+ * zetten of een paasontbijt spelen zich gewoon in de klas af. Dit is de
+ * SMALLERE lijst: alleen wat er echt buiten de deur gebeurt of een team aan
+ * begeleiders nodig heeft. Alleen deze groep krijgt in aanleiding.ts het
+ * "Hulpouders vragen"-signaal; de rest blijft gewoon een activiteit, maar
+ * zonder die vraag zes weken van tevoren.
+ */
+const HULPOUDERS_NODIG =
+  /schoolreis|schoolkamp|\bkamp\b|excursie|sportdag|koningsspelen|avondvierdaagse|survival|museum/i;
+
+export function heeftHulpoudersNodig(titel: string): boolean {
+  return HULPOUDERS_NODIG.test(titel);
+}
+
 export const SOORT_INFO: Record<
   Soort,
   { woord: string; meervoud: string; vrij: boolean; tool?: string }

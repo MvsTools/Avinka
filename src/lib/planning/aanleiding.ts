@@ -20,7 +20,7 @@
 // 3. Nooit twee signalen van dezelfde soort. Een gespreksavond staat vaak als
 //    drie losse avonden in de agenda; dat is één aanleiding, niet drie.
 
-import { SOORT_INFO } from "../agenda-herken";
+import { heeftHulpoudersNodig, SOORT_INFO } from "../agenda-herken";
 import { toolBySlug, type Tool } from "../tools";
 import { bereikTekst, dagnaam, kort, plus, reeks, verschil, weekdag } from "./datum";
 import { groep8Momenten, heeftGroep8 } from "./groep8";
@@ -577,8 +577,13 @@ export function aanleidingen(
   for (const item of bron.items) {
     if (item.dubbelVan) continue;
 
-    const venster = VENSTER[item.soort];
-    const voorbereiding = VOORBEREIDING[item.soort];
+    // Een activiteit krijgt zijn signaal (draaiboek maken, hulpouders vragen)
+    // alleen als hij er ook echt om vraagt — zie heeftHulpoudersNodig. Een
+    // andere soort is hier niet aan de titel gebonden, dus die loopt gewoon door.
+    const magActiviteitSignaal =
+      item.soort !== "activiteit" || heeftHulpoudersNodig(item.titel);
+    const venster = magActiviteitSignaal ? VENSTER[item.soort] : undefined;
+    const voorbereiding = magActiviteitSignaal ? VOORBEREIDING[item.soort] : undefined;
     if (!venster && !voorbereiding) continue;
 
     const oordeel = beoordeel(item, eigenGroepen);
