@@ -91,9 +91,14 @@ const EigenAfspraken = forwardRef<EigenAfsprakenHandle, {
   const [soortOpen, setSoortOpen] = useState(false);
   const router = useRouter();
   const soortTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Een ref, niet een state: raadSoort loopt async, en moet op het moment dat
+  // de fetch terugkomt weten of je ONDERTUSSEN zelf hebt gekozen — niet nog
+  // de oude waarde uit de closure van toen het verzoek begon.
+  const soortDoorJou = useRef(false);
 
   const open = (start?: Partial<Vorm>) => {
     if (soortTimer.current) clearTimeout(soortTimer.current);
+    soortDoorJou.current = false;
     setFout(null);
     setGelukt(null);
     setSoortOpen(false);
@@ -103,15 +108,15 @@ const EigenAfspraken = forwardRef<EigenAfsprakenHandle, {
   useImperativeHandle(ref, () => ({ open }));
 
   /** Wat dénken we dat dit voor afspraak is? Alleen een suggestie; je kunt
-   *  hem zelf altijd omzetten. */
+   *  hem zelf altijd omzetten — en zolang je dat niet gedaan hebt, mag een
+   *  latere gok een eerdere gok gewoon weer bijstellen. */
   const raadSoort = async (titel: string) => {
     if (!titel.trim() || !vorm || vorm.id) return;
     try {
       const res = await fetch(`/api/agenda/afspraak?titel=${encodeURIComponent(titel)}`);
       if (!res.ok) return;
       const { raad } = await res.json();
-      // Alleen invullen zolang je zelf nog niets gekozen hebt.
-      setVorm((v) => (v && v.soort === "overig" && raad ? { ...v, soort: raad } : v));
+      setVorm((v) => (v && !soortDoorJou.current && raad ? { ...v, soort: raad } : v));
     } catch {
       /* een suggestie die niet komt is geen probleem */
     }
@@ -276,6 +281,7 @@ const EigenAfspraken = forwardRef<EigenAfsprakenHandle, {
                       key={s}
                       type="button"
                       onClick={() => {
+                        soortDoorJou.current = true;
                         setVorm({ ...vorm, soort: s });
                         setSoortOpen(false);
                       }}
