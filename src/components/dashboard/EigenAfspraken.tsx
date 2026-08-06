@@ -156,25 +156,18 @@ const EigenAfspraken = forwardRef<EigenAfsprakenHandle, {
     }
   };
 
+  if (!vorm && !gelukt && eigen.length === 0) return null;
+
   return (
     <section className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6">
-      <div>
-        <h3 className="font-bold text-ink">Zelf een afspraak toevoegen</h3>
-        <p className="mt-1 text-sm text-ink/60">
-          Voor wat niet in de agenda van school staat: jouw gespreksavond, een studiedag, de
-          schoolreis. Avinka rekent er net zo mee als met een gekoppelde agenda. Open het
-          formulier met &ldquo;+ Afspraak&rdquo; hierboven, of met de + op een dag in de kalender.
-        </p>
-      </div>
-
       {gelukt && !vorm && (
-        <p role="status" className="mt-3 text-sm font-semibold text-brand-dark">
+        <p role="status" className="text-sm font-semibold text-brand-dark">
           {gelukt}
         </p>
       )}
 
       {vorm && (
-        <div className="mt-5 flex flex-col gap-4 border-t border-black/5 pt-5">
+        <div className="flex flex-col gap-4">
           <label className="block">
             <span className="text-sm font-bold text-ink">Wat is het?</span>
             <input
@@ -305,7 +298,7 @@ const EigenAfspraken = forwardRef<EigenAfsprakenHandle, {
       )}
 
       {eigen.length > 0 && (
-        <div className="mt-5 border-t border-black/5 pt-4">
+        <div className={vorm || gelukt ? "mt-5 border-t border-black/5 pt-4" : ""}>
           <p className="text-xs font-bold uppercase tracking-wider text-ink/40">
             Jouw eigen afspraken ({eigen.length})
           </p>
