@@ -252,13 +252,16 @@ export default function AbonnementView() {
             </h2>
             <p className="mx-auto mt-3 max-w-sm leading-7 text-ink/70">
               Je abonnement is actief. Bedankt voor je vertrouwen, fijn dat je erbij
-              bent. Je hebt nu volledige toegang tot alle tools van Avinka.
+              bent.
+              {planById(ab?.plan)?.toegang === "alle"
+                ? " Je hebt nu volledige toegang tot alle tools van Avinka."
+                : " Kies hierna welke tool je wilt gebruiken."}
             </p>
             <Link
-              href="/dashboard"
+              href={planById(ab?.plan)?.toegang === "keuze" ? "/dashboard/kies-tool" : "/dashboard"}
               className="mt-7 inline-block w-full rounded-2xl bg-brand px-8 py-3.5 text-base font-bold text-white shadow-lg shadow-brand/25 transition hover:bg-brand-dark"
             >
-              Aan de slag
+              {planById(ab?.plan)?.toegang === "keuze" ? "Kies je tool" : "Aan de slag"}
             </Link>
           </div>
         </div>
