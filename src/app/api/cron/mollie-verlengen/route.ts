@@ -147,9 +147,16 @@ export async function GET(request: NextRequest) {
         .update({ mollie_verleng_payment_id: payment.id })
         .eq("user_id", r.user_id);
       if (fout) {
+        // ⚠️ Er loopt nu een ECHTE incasso bij Mollie (payment.id hierboven) die
+        // nergens is vastgelegd — zonder dit zou de klant morgen nog eens
+        // geïncasseerd kunnen worden. Hardop loggen, net als checkout/return.
+        console.error(
+          `[cron/mollie-verlengen] betaling ${payment.id} gestart bij Mollie voor ${r.user_id} maar niet vastgelegd:`,
+          fout.message,
+        );
         mislukt.push({
           user_id: r.user_id,
-          reden: `betaling gestart bij Mollie maar niet vastgelegd: ${fout.message}`,
+          reden: `betaling ${payment.id} gestart bij Mollie maar niet vastgelegd: ${fout.message}`,
         });
       } else {
         incassoGestart++;

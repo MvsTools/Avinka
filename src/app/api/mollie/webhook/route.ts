@@ -93,25 +93,43 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // Eerste betaling: zelfde activatie als /api/mollie/return, als vangnet.
+  // Eerste betaling: zelfde activatie als /api/mollie/return, als vangnet voor
+  // wie zijn tabblad sluit vóór hij terugkeert. Alleen toepassen als DEZE
+  // betaling nog steeds de "lopende" is (mollie_payment_id matcht nog) — komt
+  // Mollie een tweede keer (of laat, na een storing) langs terwijl de
+  // gebruiker intussen alweer een NIEUWERE betaling is gestart, dan zou dit
+  // anders een oudere staat over een nieuwere heen zetten.
   if (payment.status === "paid" && payment.metadata?.userId) {
-    const eind = new Date();
-    eind.setMonth(eind.getMonth() + 1);
-    const { error } = await db.from("instellingen").upsert(
-      {
-        user_id: payment.metadata.userId,
-        abon_plan: payment.metadata.plan ?? null,
-        abon_vorm: payment.metadata.vorm ?? "maand",
-        abon_status: "actief",
-        periode_eindigt: eind.toISOString(),
-        mollie_payment_id: null,
-      },
-      { onConflict: "user_id" },
-    );
-    if (error) {
-      console.error("[mollie/webhook] eerste betaling vastleggen mislukt:", error.message);
+    const { data: rij, error: zoekFout } = await db
+      .from("instellingen")
+      .select("user_id")
+      .eq("user_id", payment.metadata.userId)
+      .eq("mollie_payment_id", payment.id)
+      .maybeSingle();
+    if (zoekFout) {
+      console.error("[mollie/webhook] opzoeken eerste betaling mislukt:", zoekFout.message);
       return NextResponse.json({ error: "db_error" }, { status: 500 });
     }
+    if (rij) {
+      const eind = new Date();
+      eind.setMonth(eind.getMonth() + 1);
+      const { error } = await db
+        .from("instellingen")
+        .update({
+          abon_plan: payment.metadata.plan ?? null,
+          abon_vorm: payment.metadata.vorm ?? "maand",
+          abon_status: "actief",
+          periode_eindigt: eind.toISOString(),
+          mollie_payment_id: null,
+        })
+        .eq("user_id", payment.metadata.userId);
+      if (error) {
+        console.error("[mollie/webhook] eerste betaling vastleggen mislukt:", error.message);
+        return NextResponse.json({ error: "db_error" }, { status: 500 });
+      }
+    }
+    // Geen rij gevonden: al afgehandeld door /api/mollie/return, of ingehaald
+    // door een nieuwere betaling. Geen fout, gewoon niets meer te doen.
   }
 
   return NextResponse.json({ ok: true });
