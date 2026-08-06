@@ -65,10 +65,9 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 /* ── Inhoud ────────────────────────────────────────────────────────────── */
 
 const STRIP = [
-  /* Was "Namen blijven thuis". De eigenaar wilde die term kwijt; deze zegt
-     hetzelfde in gewone woorden en sluit aan op de privacysectie verderop,
-     waar de belofte "namen gaan nooit mee" wordt uitgelegd. */
-  "🔒 Leerlingnamen gaan nooit mee",
+  /* Echoot de handgeschreven regel "privacy voorop" in de privacysectie
+     verderop (Privacy.tsx), i.p.v. zelf een aparte belofte te doen. */
+  "🔒 Privacy voorop",
   "🇳🇱 Volledig Nederlands",
   "💚 Door een leerkracht gemaakt",
   "✓ Maandelijks opzegbaar",
@@ -484,6 +483,7 @@ export default function Landing({
   bijhouden?: boolean;
 }) {
   const root = useRef<HTMLDivElement>(null);
+  const finaleRef = useRef<HTMLDivElement>(null);
   // null op de server (eerste paint), daarna de echte systeemvoorkeur.
   const reduced = useSyncExternalStore<boolean | null>(
     abonneerReduced,
@@ -649,6 +649,32 @@ export default function Landing({
     },
     { scope: root, dependencies: [film], revertOnUpdate: true },
   );
+
+  /* ── De finale past zichzelf op een lage vensterhoogte ──
+     De film-sectie zit vast op h-screen met overflow-hidden, dus het paneel
+     + de vier chips moeten er sowieso in passen. Marges alleen krimpen bleek
+     niet genoeg (en botst met de header-marge erboven), dus dit blok als
+     geheel krimpt mee vanaf de bovenkant — de schaduw van het paneel en de
+     chips schalen daardoor gewoon mee i.p.v. hard afgesneden te worden.
+     Los van de tijdlijn hierboven: die animeert alleen data-paneel zelf
+     (y/scale/autoAlpha), dit zit op de wrapper eromheen. */
+  useEffect(() => {
+    if (!film) return;
+    const wrap = finaleRef.current;
+    const vast = wrap?.parentElement;
+    if (!wrap || !vast) return;
+    const pas = () => {
+      const beschikbaar = vast.getBoundingClientRect().bottom - wrap.getBoundingClientRect().top - 20;
+      const nodig = wrap.scrollHeight;
+      const schaal = Math.min(1, beschikbaar / nodig);
+      wrap.style.transformOrigin = "top center";
+      wrap.style.transform = schaal < 0.999 ? `scale(${schaal})` : "";
+    };
+    pas();
+    const waarnemer = new ResizeObserver(pas);
+    waarnemer.observe(vast);
+    return () => waarnemer.disconnect();
+  }, [film]);
 
   /* ── De body: reveals + de optelsom-teller ── */
   useEffect(() => {
@@ -980,8 +1006,11 @@ export default function Landing({
             </div>
           )}
 
-          {/* ── De werkplek waar alles landt: een tablet met het Avinka-dashboard ── */}
-          <div data-paneel className="relative z-10 mt-3 w-[min(94vw,39rem)] sm:mt-4">
+          {/* ── De werkplek waar alles landt: een tablet met het Avinka-dashboard ──
+             finaleRef is de krimp-wrapper hierboven; data-paneel blijft het
+             element dat de GSAP-tijdlijn zelf animeert (y/scale/autoAlpha). */}
+          <div ref={finaleRef}>
+            <div data-paneel className="relative z-10 mx-auto mt-[clamp(0.375rem,1vh,1rem)] w-[min(94vw,39rem)]">
             {/* tablet-behuizing: alles wordt in dit apparaat opgeruimd */}
             <div className="rounded-[1.4rem] bg-ink/90 p-1 shadow-[0_34px_80px_-24px_rgba(8,5,20,0.75)] ring-1 ring-white/10">
               <div className="relative overflow-hidden rounded-[1.05rem] bg-cream">
@@ -1126,7 +1155,7 @@ export default function Landing({
                             Over 3 dagen gaan de rapporten mee
                           </span>
                           <span className="block truncate text-[9px] leading-tight text-ink/55">
-                            vrijdag 12 december
+                            vrijdag 13 februari
                           </span>
                         </span>
                       </span>
@@ -1163,18 +1192,31 @@ export default function Landing({
               </div>
             </div>
 
-            {/* Finale: de vier zekerheden poppen binnen en dragen je de pagina in */}
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-2 sm:mt-6">
-              {STRIP.map((s) => (
-                <span
-                  key={s}
-                  data-stripchip
-                  className="rounded-full bg-white px-3.5 py-1.5 text-xs font-bold text-ink/75 shadow-sm ring-1 ring-black/5 sm:text-sm"
-                >
-                  {s}
-                </span>
+            {/* Finale: de vier zekerheden poppen binnen en dragen je de pagina in.
+               De marge hierboven is vh-clamped (krimpt mee op een lage
+               vensterhoogte); de krimp-wrapper (finaleRef, hierboven om
+               data-paneel heen) vangt de rest op als dat nog niet genoeg is. */}
+            <div className="mt-[clamp(0.5rem,1.2vh,1.5rem)] flex flex-col items-center gap-2">
+              {/* Twee vaste rijen van twee i.p.v. één grid: bij een grid over
+                 alle vier bepaalt het breedste chipje in een kolom de hele
+                 kolombreedte, en dan staat een kort chipje ernaast (bv.
+                 "Privacy voorop") met een scheve, te grote tussenruimte. Zo
+                 blijft de afstand tussen twee chips altijd gewoon de gap. */}
+              {[STRIP.slice(0, 2), STRIP.slice(2, 4)].map((rij, i) => (
+                <div key={i} className="flex flex-wrap items-center justify-center gap-2">
+                  {rij.map((s) => (
+                    <span
+                      key={s}
+                      data-stripchip
+                      className="rounded-full bg-white px-3.5 py-1.5 text-center text-xs font-bold text-ink/75 shadow-sm ring-1 ring-black/5 sm:text-sm"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
               ))}
             </div>
+          </div>
           </div>
 
           {/* Scrollhint */}
