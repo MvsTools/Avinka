@@ -51,6 +51,7 @@ export default function KlasManager() {
      kind toevoegen, "Bewaard" te zien krijgen, en na herladen was het weg. */
   const [magBewerken, setMagBewerken] = useState(true);
   const [bewaarFout, setBewaarFout] = useState(false);
+  const [klasFout, setKlasFout] = useState(false);
   const [profielIdx, setProfielIdx] = useState<number | null>(null);
   const [klasWeg, setKlasWeg] = useState<Klas | null>(null);
   const [ab, setAb] = useState<Abonnement | null>(null);
@@ -173,8 +174,17 @@ export default function KlasManager() {
 
   async function nieuweKlas() {
     if (!magNogKlas) return; // limiet van het pakket bereikt
+    setKlasFout(false);
     const k = await addKlas("");
-    if (!k) return;
+    /* Mislukt dit, dan MOET je het zien. De database bewaakt het pakketlimiet
+       sinds 5-8 zelf (trigger `klassen_limiet_bewaakt`), dus hier kan nu ook
+       een weigering vandaan komen die het scherm nog niet aan zag komen. Een
+       knop die niets doet is precies de fout die we al drie keer hebben
+       gemaakt. */
+    if (!k) {
+      setKlasFout(true);
+      return;
+    }
     setKlassen((ks) => [...ks, k]);
     setSelId(k.id);
   }
@@ -303,6 +313,16 @@ export default function KlasManager() {
           </Link>
         )}
       </div>
+
+      {klasFout && (
+        <p
+          role="alert"
+          className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700"
+        >
+          Er is geen klas toegevoegd. Hoort dit wel bij je abonnement, herlaad de pagina
+          dan even en probeer het opnieuw.
+        </p>
+      )}
 
       {sel && (
         <div className="flex flex-col gap-6">

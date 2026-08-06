@@ -4,6 +4,8 @@ import {
   ABON_COLS,
   type AbonnementRow,
   BETALINGEN_LIVE,
+  heeftToegang,
+  magToolGebruiken,
   mapAbonnementRow,
   modelVoor,
 } from "@/lib/abonnement";
@@ -97,6 +99,63 @@ export async function POST(request: NextRequest) {
     }
   } catch {
     /* telling mislukt → doorlaten, nooit een gebruiker blokkeren op een fout */
+  }
+
+  // 1c) TOEGANG PER PAKKET — de motor, niet de deur.
+  //     De proxy houdt de PAGINA's al tegen (src/utils/supabase/middleware.ts),
+  //     maar dit is waar het werk gebeurt. Zonder deze controle kon een
+  //     Start-klant de tools van een duurder pakket buiten het scherm om alsnog
+  //     laten draaien, en bleef een verlopen proef gewoon antwoord krijgen: in
+  //     de browser word je weggestuurd, de API deed het nog.
+  //
+  //     Alleen actief als betalingen live zijn — in de testfase mag iedereen
+  //     alles, net als overal elders.
+  //
+  //     ⚠️ Lukt het lezen van de abonnementsstand niet, dan laten we DOOR.
+  //     Dezelfde keuze als bij het kostenplafond hierboven: een betalende
+  //     leerkracht mag nooit stilvallen door een hapering bij ons.
+  if (BETALINGEN_LIVE) {
+    try {
+      const { data: abonRij } = await supabase
+        .from("instellingen")
+        .select(ABON_COLS)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (abonRij) {
+        const ab = mapAbonnementRow(abonRij as AbonnementRow | null);
+        // 402 en niet 429: de tools tonen de tekst bij 402 letterlijk, terwijl
+        // 429 bij hen "het is even druk" betekent. Dat zou hier onwaar zijn.
+        if (!heeftToegang(ab)) {
+          return NextResponse.json(
+            {
+              error: {
+                type: "geen_toegang",
+                message:
+                  "Je gratis proefperiode is voorbij. Kies een abonnement om verder te werken.",
+              },
+            },
+            { status: 402 },
+          );
+        }
+        // Bij een onbekende tool laten we door: we weten dan niet wat we zouden
+        // weigeren. Het kostenplafond blijft de rem die daar overheen ligt.
+        const tool = toolVan(request);
+        if (tool && !magToolGebruiken(ab, tool)) {
+          return NextResponse.json(
+            {
+              error: {
+                type: "tool_niet_in_pakket",
+                message:
+                  "Deze tool hoort niet bij jouw abonnement. Bekijk je abonnement om alle tools te gebruiken.",
+              },
+            },
+            { status: 402 },
+          );
+        }
+      }
+    } catch {
+      /* stand onbekend → doorlaten, nooit blokkeren op onze eigen fout */
+    }
   }
 
   // 2) Het verzoek inlezen.
