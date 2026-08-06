@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import {
   dagbeeld,
   maandagVan,
@@ -10,7 +10,7 @@ import {
   weeknummer,
   zijkantLabel,
 } from "@/lib/planning";
-import type { PlanningBron } from "@/lib/planning";
+import type { Dagbeeld, PlanItem, PlanningBron } from "@/lib/planning";
 import { ETIKET, STIP } from "./schooljaar-stijl";
 import SchooljaarDagkaart from "./SchooljaarDagkaart";
 import SchooljaarWeekkaart from "./SchooljaarWeekkaart";
@@ -23,6 +23,59 @@ const MAANDVOL = [
   "januari", "februari", "maart", "april", "mei", "juni",
   "juli", "augustus", "september", "oktober", "november", "december",
 ];
+
+/** Een balkje van een meerdaagse afspraak, binnen één weekrij. */
+type Balk = {
+  item: PlanItem;
+  /** Kolom binnen de week, 0 = maandag. */
+  startCol: number;
+  /** Hoeveel kolommen breed, geknipt aan de randen van de week. */
+  span: number;
+  /** Begint de afspraak écht hier, of loopt ze door vanuit de vorige week? */
+  magStart: boolean;
+  /** Eindigt de afspraak écht hier, of loopt ze door naar de volgende week? */
+  magEind: boolean;
+  /** Rijtje binnen de week: twee tegelijk lopende afspraken krijgen elk hun eigen laan. */
+  lane: number;
+};
+
+const BALK_HOOGTE = 18;
+const BALK_GAP = 4;
+
+/**
+ * Welke meerdaagse afspraken lopen door deze week, en op welke laan: zo vallen
+ * twee tegelijk lopende afspraken niet over elkaar, en blijft elke afspraak
+ * over de dagen heen op precies dezelfde hoogte staan.
+ */
+function balkenVoorWeek(bron: PlanningBron, weekStart: string, weekEind: string): Balk[] {
+  const items = bron.items
+    .filter(
+      (i) =>
+        !i.dubbelVan &&
+        i.soort !== "vakantie" &&
+        i.totDatum > i.datum &&
+        i.datum <= weekEind &&
+        i.totDatum >= weekStart,
+    )
+    .sort((a, b) => a.datum.localeCompare(b.datum) || b.totDatum.localeCompare(a.totDatum));
+
+  const laneTot: string[] = [];
+  return items.map((item) => {
+    let lane = laneTot.findIndex((tot) => tot < item.datum);
+    if (lane === -1) lane = laneTot.length;
+    laneTot[lane] = item.totDatum;
+    const startCol = Math.max(0, verschil(weekStart, item.datum));
+    const eindCol = Math.min(6, verschil(weekStart, item.totDatum));
+    return {
+      item,
+      startCol,
+      span: eindCol - startCol + 1,
+      magStart: item.datum >= weekStart,
+      magEind: item.totDatum <= weekEind,
+      lane,
+    };
+  });
+}
 
 export default function SchooljaarMaand({
   bron,
@@ -57,6 +110,7 @@ export default function SchooljaarMaand({
   const rasterStart = maandagVan(eerste);
   const rijen = Math.ceil((verschil(rasterStart, laatste) + 1) / 7);
   const cellen = Array.from({ length: rijen * 7 }, (_, i) => plus(rasterStart, i));
+  const weekRijen = Array.from({ length: rijen }, (_, i) => cellen.slice(i * 7, i * 7 + 7));
 
   const verschuif = (n: number) => {
     setEerste(new Date(Date.UTC(jaar, maand + n, 1)).toISOString().slice(0, 10));
@@ -126,106 +180,20 @@ export default function SchooljaarMaand({
           ))}
         </div>
 
-        <div className="grid grid-cols-[2rem_repeat(7,minmax(0,1fr))] sm:grid-cols-[2.6rem_repeat(7,minmax(0,1fr))]">
-          {cellen.map((datum, i) => {
-            const beeld = beeldVan(datum);
-            const dezeMaand = datum.slice(0, 7) === eerste.slice(0, 7);
-            const isVandaag = datum === vandaag;
-            const vakantie = beeld.vakantie;
-            const eersteVakantiedag = vakantie && (vakantie.van === datum || beeld.weekdag === 0);
-
-            return (
-              <Fragment key={datum}>
-                {i % 7 === 0 && (
-                  <button
-                    onClick={() => setWeek(datum)}
-                    aria-label={`Week ${weeknummer(datum)} bekijken`}
-                    className="flex min-h-[58px] items-start justify-center border-b border-r border-black/5 bg-cream/50 pt-2 text-xs font-bold tabular-nums text-ink/35 transition-colors hover:bg-cream hover:text-ink/70 sm:min-h-[92px]"
-                  >
-                    {weeknummer(datum)}
-                  </button>
-                )}
-                <button
-                  onClick={() => setGekozen(gekozen === datum ? null : datum)}
-                  aria-label={`${volledig(datum)}${beeld.items.length ? `, ${beeld.items.length} afspraken` : ""}`}
-                  className={
-                    "min-h-[58px] border-b border-r border-black/5 p-1 text-left sm:min-h-[92px] sm:p-1.5 " +
-                    (i % 7 === 6 ? "border-r-0 " : "") +
-                    (!dezeMaand ? "opacity-35 " : "") +
-                    (gekozen === datum ? "ring-2 ring-inset ring-brand " : "") +
-                    // De startweek is geen vrije dag maar een werkweek: eigen
-                    // warme tint, niet het groen van "geen les". Daarna: groen
-                    // is vrij, en in een vakantie is het weekend dat ook.
-                    (beeld.startweek
-                      ? "bg-accent-soft "
-                      : beeld.vakantie || (beeld.vrij && !beeld.weekend)
-                        ? "bg-brand-soft "
-                        : beeld.weekend
-                          ? "bg-cream/70 "
-                          : "bg-white ")
-                  }
-                >
-                  <span
-                    className={
-                      "flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold tabular-nums " +
-                      (isVandaag
-                        ? "bg-brand-dark text-white"
-                        : beeld.weekend
-                          ? "text-ink/35"
-                          : "text-ink/70")
-                    }
-                  >
-                    {Number(datum.slice(8, 10))}
-                  </span>
-
-                  {beeld.startweek && datum === bron.schooljaar.startweek.van && dezeMaand && (
-                    <p className="mt-0.5 hidden truncate text-xs font-bold leading-tight text-amber-800 sm:block">
-                      Startweek
-                    </p>
-                  )}
-                  {eersteVakantiedag && dezeMaand && (
-                    <p className="mt-0.5 hidden truncate text-xs font-bold leading-tight text-brand-dark sm:block">
-                      {vakantie.naam}
-                    </p>
-                  )}
-
-                  {/* Op een laptop de namen, op een telefoon stipjes: zeven
-                      kolommen met tekst passen daar niet. */}
-                  <span className="mt-1 hidden flex-col gap-1 sm:flex">
-                    {beeld.items.slice(0, 3).map((it) => (
-                      <span
-                        key={it.id}
-                        title={
-                          it.titel +
-                          (it.begin ? `, ${it.begin}` : "") +
-                          (zijkantLabel(it, groepen) ? ` (${zijkantLabel(it, groepen)})` : "")
-                        }
-                        className={
-                          "truncate rounded-md px-1.5 py-0.5 text-xs font-bold leading-snug " +
-                          ETIKET[it.soort].stijl +
-                          // Waarschijnlijk niet van jou: blijft staan, maar rustiger.
-                          (zijkantLabel(it, groepen) ? " opacity-50" : "")
-                        }
-                      >
-                        {it.titel}
-                      </span>
-                    ))}
-                    {beeld.items.length > 3 && (
-                      <span className="px-1.5 text-xs font-bold text-ink/45">
-                        en nog {beeld.items.length - 3}
-                      </span>
-                    )}
-                  </span>
-                  <span className="mt-1 flex flex-wrap gap-1 sm:hidden">
-                    {beeld.items.slice(0, 4).map((it) => (
-                      <span key={it.id} className={"h-1.5 w-1.5 rounded-full " + STIP[it.soort]} />
-                    ))}
-                  </span>
-                </button>
-              </Fragment>
-            );
-          })}
-        </div>
+        {weekRijen.map((dagen) => (
+          <Maandweek
+            key={dagen[0]}
+            dagen={dagen}
+            eerste={eerste}
+            vandaag={vandaag}
+            gekozen={gekozen}
+            setGekozen={setGekozen}
+            setWeek={setWeek}
+            groepen={groepen}
+            bron={bron}
+            beeldVan={beeldVan}
+          />
+        ))}
       </div>
 
       {/* Tik een dag aan en het kaartje van die dag komt naar voren: wat er
@@ -245,6 +213,188 @@ export default function SchooljaarMaand({
           groepen={groepen}
           sluit={() => setWeek(null)}
         />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Eén weekrij: de zeven dagcellen, plus een balkje per meerdaagse afspraak die
+ * over die dagen loopt. Het balkje ligt als eigen raster óver de dagcellen
+ * heen, met precies dezelfde kolommen — zo blijft hij op elke dag exact even
+ * hoog staan en zie je in één oogopslag dat het om dezelfde afspraak gaat.
+ */
+function Maandweek({
+  dagen,
+  eerste,
+  vandaag,
+  gekozen,
+  setGekozen,
+  setWeek,
+  groepen,
+  bron,
+  beeldVan,
+}: {
+  dagen: string[];
+  eerste: string;
+  vandaag: string;
+  gekozen: string | null;
+  setGekozen: (d: string | null) => void;
+  setWeek: (d: string) => void;
+  groepen: number[];
+  bron: PlanningBron;
+  beeldVan: (datum: string) => Dagbeeld;
+}) {
+  const weekStart = dagen[0];
+  const weekEind = dagen[6];
+  const balken = balkenVoorWeek(bron, weekStart, weekEind);
+  const lanes = balken.reduce((m, b) => Math.max(m, b.lane + 1), 0);
+  const reserve = lanes * (BALK_HOOGTE + BALK_GAP);
+
+  return (
+    <div className="relative">
+      <div className="grid grid-cols-[2rem_repeat(7,minmax(0,1fr))] sm:grid-cols-[2.6rem_repeat(7,minmax(0,1fr))]">
+        <button
+          onClick={() => setWeek(weekStart)}
+          aria-label={`Week ${weeknummer(weekStart)} bekijken`}
+          className="flex min-h-[58px] items-start justify-center border-b border-r border-black/5 bg-cream/50 pt-2 text-xs font-bold tabular-nums text-ink/35 transition-colors hover:bg-cream hover:text-ink/70 sm:min-h-[92px]"
+        >
+          {weeknummer(weekStart)}
+        </button>
+
+        {dagen.map((datum, i) => {
+          const beeld = beeldVan(datum);
+          const dezeMaand = datum.slice(0, 7) === eerste.slice(0, 7);
+          const isVandaag = datum === vandaag;
+          const vakantie = beeld.vakantie;
+          const eersteVakantiedag = vakantie && (vakantie.van === datum || beeld.weekdag === 0);
+          // De balkjes hierboven tonen de meerdaagse afspraken al; hier dus
+          // alleen de eendaagse, anders staat elke afspraak twee keer.
+          const eendaags = beeld.items.filter((it) => it.totDatum <= it.datum);
+
+          return (
+            <button
+              key={datum}
+              onClick={() => setGekozen(gekozen === datum ? null : datum)}
+              aria-label={`${volledig(datum)}${beeld.items.length ? `, ${beeld.items.length} afspraken` : ""}`}
+              className={
+                "min-h-[58px] border-b border-r border-black/5 p-1 text-left sm:min-h-[92px] sm:p-1.5 " +
+                (i % 7 === 6 ? "border-r-0 " : "") +
+                (!dezeMaand ? "opacity-35 " : "") +
+                (gekozen === datum ? "ring-2 ring-inset ring-brand " : "") +
+                // De startweek is geen vrije dag maar een werkweek: eigen
+                // warme tint, niet het groen van "geen les". Daarna: groen
+                // is vrij, en in een vakantie is het weekend dat ook.
+                (beeld.startweek
+                  ? "bg-accent-soft "
+                  : beeld.vakantie || (beeld.vrij && !beeld.weekend)
+                    ? "bg-brand-soft "
+                    : beeld.weekend
+                      ? "bg-cream/70 "
+                      : "bg-white ")
+              }
+            >
+              <span
+                className={
+                  "flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold tabular-nums " +
+                  (isVandaag
+                    ? "bg-brand-dark text-white"
+                    : beeld.weekend
+                      ? "text-ink/35"
+                      : "text-ink/70")
+                }
+              >
+                {Number(datum.slice(8, 10))}
+              </span>
+
+              {/* Ruimte voor de balkjes hierboven, zodat ze nooit over de
+                  dagnummers of de labels hieronder heen vallen. */}
+              {reserve > 0 && <div style={{ height: reserve }} />}
+
+              {beeld.eersteSchooldag && dezeMaand && (
+                <p className="mt-0.5 hidden truncate text-xs font-bold leading-tight text-amber-800 sm:block">
+                  Eerste schooldag
+                </p>
+              )}
+              {beeld.startweek && datum === bron.schooljaar.startweek.van && dezeMaand && (
+                <p className="mt-0.5 hidden truncate text-xs font-bold leading-tight text-amber-800 sm:block">
+                  Startweek
+                </p>
+              )}
+              {eersteVakantiedag && dezeMaand && (
+                <p className="mt-0.5 hidden truncate text-xs font-bold leading-tight text-brand-dark sm:block">
+                  {vakantie.naam}
+                </p>
+              )}
+
+              {/* Op een laptop de namen, op een telefoon stipjes: zeven
+                  kolommen met tekst passen daar niet. */}
+              <span className="mt-1 hidden flex-col gap-1 sm:flex">
+                {eendaags.slice(0, 3).map((it) => (
+                  <span
+                    key={it.id}
+                    title={
+                      it.titel +
+                      (it.begin ? `, ${it.begin}` : "") +
+                      (zijkantLabel(it, groepen) ? ` (${zijkantLabel(it, groepen)})` : "")
+                    }
+                    className={
+                      "truncate rounded-md px-1.5 py-0.5 text-xs font-bold leading-snug " +
+                      ETIKET[it.soort].stijl +
+                      // Waarschijnlijk niet van jou: blijft staan, maar rustiger.
+                      (zijkantLabel(it, groepen) ? " opacity-50" : "")
+                    }
+                  >
+                    {it.titel}
+                  </span>
+                ))}
+                {eendaags.length > 3 && (
+                  <span className="px-1.5 text-xs font-bold text-ink/45">
+                    en nog {eendaags.length - 3}
+                  </span>
+                )}
+              </span>
+              <span className="mt-1 flex flex-wrap gap-1 sm:hidden">
+                {eendaags.slice(0, 4).map((it) => (
+                  <span key={it.id} className={"h-1.5 w-1.5 rounded-full " + STIP[it.soort]} />
+                ))}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {lanes > 0 && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-8 grid grid-cols-[2rem_repeat(7,minmax(0,1fr))] gap-y-1 sm:top-9 sm:grid-cols-[2.6rem_repeat(7,minmax(0,1fr))]"
+          style={{ gridTemplateRows: `repeat(${lanes}, ${BALK_HOOGTE}px)` }}
+        >
+          {balken.map((b) => (
+            <button
+              key={b.item.id}
+              onClick={() => setGekozen(plus(weekStart, b.startCol))}
+              title={
+                b.item.titel +
+                (zijkantLabel(b.item, groepen) ? ` (${zijkantLabel(b.item, groepen)})` : "")
+              }
+              className={
+                "pointer-events-auto flex items-center truncate px-1.5 text-left text-[11px] font-bold leading-none sm:text-xs " +
+                ETIKET[b.item.soort].stijl +
+                (b.magStart ? " rounded-l-md" : "") +
+                (b.magEind ? " rounded-r-md" : "") +
+                (zijkantLabel(b.item, groepen) ? " opacity-50" : "")
+              }
+              style={{
+                gridColumnStart: b.startCol + 2,
+                gridColumnEnd: `span ${b.span}`,
+                gridRowStart: b.lane + 1,
+              }}
+            >
+              <span className="hidden truncate sm:inline">{b.item.titel}</span>
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );

@@ -151,6 +151,13 @@ export function Afspraakregel({
 
 /** Wat voor dag het is, in één regel: startweek, vakantie, vrije dag, weekend. */
 export function Dagstatus({ beeld }: { beeld: Dagbeeld }) {
+  if (beeld.eersteSchooldag) {
+    return (
+      <p className="mt-4 rounded-2xl bg-accent-soft px-4 py-3 font-semibold text-amber-800">
+        Eerste schooldag
+      </p>
+    );
+  }
   if (beeld.startweek) {
     return (
       <p className="mt-4 rounded-2xl bg-accent-soft px-4 py-3 font-semibold text-amber-800">

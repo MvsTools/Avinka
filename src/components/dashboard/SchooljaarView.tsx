@@ -90,7 +90,7 @@ export default function SchooljaarView({
     if (verlaatGuard.current) verlaatGuard.current(actie);
     else actie();
   };
-  const [weergave, setWeergave] = useState<"lijst" | "maand">("lijst");
+  const [weergave, setWeergave] = useState<"lijst" | "maand">("maand");
   const [alleenMijne, setAlleenMijne] = useState(false);
   const eigenAfsprakenRef = useRef<EigenAfsprakenHandle>(null);
 
@@ -435,12 +435,12 @@ function WeergaveKnop({
       <span
         aria-hidden
         className="absolute top-1 bottom-1 w-10 rounded-xl bg-brand-dark transition-transform duration-200 ease-out"
-        style={{ transform: weergave === "maand" ? "translateX(100%)" : "translateX(0)" }}
+        style={{ transform: weergave === "lijst" ? "translateX(100%)" : "translateX(0)" }}
       />
       {(
         [
-          ["lijst", "Lijst"],
           ["maand", "Maand"],
+          ["lijst", "Lijst"],
         ] as const
       ).map(([id, label]) => (
         <button
