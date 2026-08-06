@@ -112,7 +112,8 @@ const ACTIVITEIT_ONDERWERP: { woorden: RegExp; weken: number; knop: string; taak
     taak: "Hulpouders en vervoer regelen",
   },
   {
-    woorden: /sportdag|speldag|koningsspelen|avondvierdaagse|wandelvierdaagse|sponsorloop|wandelen voor water/i,
+    woorden:
+      /sportdag|speldag|sporttoernooi|sportinstuif|koningsspelen|avondvierdaagse|wandelvierdaagse|4-?daagse|sponsorloop|wandelen voor water/i,
     weken: 4,
     knop: "Hulpouders vragen",
     taak: "Hulpouders en begeleiding regelen",

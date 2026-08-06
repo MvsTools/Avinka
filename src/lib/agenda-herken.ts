@@ -54,10 +54,12 @@ const REGELS: { soort: Soort; woorden: RegExp }[] = [
     // Bewust met meerdere namen voor hetzelfde: scholen noemen niet allemaal
     // hetzelfde ding hetzelfde. Het verkeersexamen heet ook verkeerstoets,
     // fietsexamen, of theoretisch/praktisch examen verkeer; een schoolkamp
-    // ook een kampweek; de avondvierdaagse ook wandelvierdaagse; een sportdag
-    // ook een sport- en speldag.
+    // ook een kampweek; de avondvierdaagse ook wandelvierdaagse of 4-daagse;
+    // een sportdag ook een sport- en speldag, sporttoernooi of sportinstuif;
+    // een schoolreis ook een uitstapje; Sinterklaas voor de bovenbouw draait
+    // om de surprise; luizencontrole heet ook (hoofd)luis, niet alleen luizen.
     woorden:
-      /schoolreis|schoolkamp|kampweek|\bkamp\b|excursie|musical|viering|feest|sportdag|speldag|koningsspelen|koningsontbijt|open ?dag|open ?huis|juffendag|meesterdag|voorleesontbijt|kerst|sinterklaas|sint\b|pakjesavond|schoen ?zetten|intocht|paas|pasen|sint ?maarten|lampion|carnaval|avondvierdaagse|wandelvierdaagse|schoolfoto|luizen|boekenweek|bezoek|museum|voorstelling|theater|workshop|project ?(week|afsluiting)|presentatie|informatieavond|inloop(ochtend|middag)?|verkeers(examen|toets|proef)|fietsexamen|(theoretisch|praktisch|theorie|praktijk) ?-? ?examen verkeer|zwem(les|men)|schaatsen|survival|lentekriebels|dodenherdenking|bevrijdingsdag|diploma|afscheid|suikerfeest|offerfeest|halloween|sponsorloop|schoolontbijt|wandelen voor water|buitenlesdag|disco|wendag|wenmiddag|wenmoment|kinderpostzegels/i,
+      /schoolreis|schoolkamp|kampweek|\bkamp\b|excursie|uitstapje|musical|viering|feest|sportdag|speldag|sporttoernooi|sportinstuif|koningsspelen|koningsontbijt|open ?dag|open ?huis|juffendag|meesterdag|voorleesontbijt|kerst|sinterklaas|sint\b|pakjesavond|schoen ?zetten|intocht|surprise|paas|pasen|sint ?maarten|lampion|carnaval|avondvierdaagse|wandelvierdaagse|4-?daagse|schoolfoto|fotograaf|luizen|hoofdluis|boekenweek|voorleeswedstrijd|bezoek|museum|voorstelling|theater|workshop|project ?(week|afsluiting)|presentatie|informatieavond|inloop(ochtend|middag)?|verkeers(examen|toets|proef)|fietsexamen|(theoretisch|praktisch|theorie|praktijk) ?-? ?examen verkeer|zwem(les|men)|schaatsen|survival|lentekriebels|dodenherdenking|bevrijdingsdag|diploma|afscheid|suikerfeest|offerfeest|halloween|sponsorloop|schoolontbijt|wandelen voor water|buitenlesdag|disco|wendag|wenmiddag|wenmoment|kinderpostzegels/i,
   },
   {
     soort: "toets",
