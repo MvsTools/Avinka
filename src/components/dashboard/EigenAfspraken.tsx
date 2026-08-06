@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useImperativeHandle, useState } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SOORT_INFO, type Soort } from "@/lib/agenda-herken";
 import { dagnaam, kort } from "@/lib/planning";
@@ -90,8 +90,10 @@ const EigenAfspraken = forwardRef<EigenAfsprakenHandle, {
   // knoppen heen. Pas open klikken als je twijfelt.
   const [soortOpen, setSoortOpen] = useState(false);
   const router = useRouter();
+  const soortTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const open = (start?: Partial<Vorm>) => {
+    if (soortTimer.current) clearTimeout(soortTimer.current);
     setFout(null);
     setGelukt(null);
     setSoortOpen(false);
@@ -100,7 +102,8 @@ const EigenAfspraken = forwardRef<EigenAfsprakenHandle, {
 
   useImperativeHandle(ref, () => ({ open }));
 
-  /** Titel getypt? Dan alvast een soort voorstellen — je kunt hem zelf omzetten. */
+  /** Wat dénken we dat dit voor afspraak is? Alleen een suggestie; je kunt
+   *  hem zelf altijd omzetten. */
   const raadSoort = async (titel: string) => {
     if (!titel.trim() || !vorm || vorm.id) return;
     try {
@@ -112,6 +115,15 @@ const EigenAfspraken = forwardRef<EigenAfsprakenHandle, {
     } catch {
       /* een suggestie die niet komt is geen probleem */
     }
+  };
+
+  /** Elke toets een verzoek sturen is zonde; wachten tot je even stopt met
+   *  typen (geen aparte AI-aanroep, dus dit kost niets — zie route.ts). */
+  const wijzigTitel = (titel: string) => {
+    if (!vorm) return;
+    setVorm({ ...vorm, titel });
+    if (soortTimer.current) clearTimeout(soortTimer.current);
+    soortTimer.current = setTimeout(() => raadSoort(titel), 350);
   };
 
   const bewaar = async () => {
@@ -129,6 +141,7 @@ const EigenAfspraken = forwardRef<EigenAfsprakenHandle, {
         setFout(data.fout || "Opslaan lukte niet.");
         return;
       }
+      if (soortTimer.current) clearTimeout(soortTimer.current);
       setGelukt(vorm.id ? "Afspraak bijgewerkt." : "Afspraak toegevoegd.");
       setVorm(null);
       router.refresh();
@@ -179,8 +192,7 @@ const EigenAfspraken = forwardRef<EigenAfsprakenHandle, {
             <input
               autoFocus
               value={vorm.titel}
-              onChange={(e) => setVorm({ ...vorm, titel: e.target.value })}
-              onBlur={(e) => raadSoort(e.target.value)}
+              onChange={(e) => wijzigTitel(e.target.value)}
               placeholder="Bijv. Oudergesprekken groep 5"
               className={VELD + " mt-1.5"}
             />
@@ -310,6 +322,7 @@ const EigenAfspraken = forwardRef<EigenAfsprakenHandle, {
             </button>
             <button
               onClick={() => {
+                if (soortTimer.current) clearTimeout(soortTimer.current);
                 setVorm(null);
                 setFout(null);
               }}
