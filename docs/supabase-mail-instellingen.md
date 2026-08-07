@@ -25,6 +25,22 @@ Authentication, afhankelijk van de schermversie). Zet "Enable Custom SMTP" aan.
 ⚠️ De gebruikersnaam is letterlijk het woord `resend`, niet je mailadres. Dat
 is de meest gemaakte fout bij het instellen.
 
+🔴 **EN HIJ MOET IN KLEINE LETTERS — dit heeft 7-8 een avond gekost.** Er stond
+`Resend` met een hoofdletter (waarschijnlijk automatisch zo ingevuld door de
+browser). De mailserver ziet dat als een compleet andere gebruikersnaam en
+antwoordt `535 Invalid username`. Supabase vertaalt dat naar de nietszeggende
+melding **"Error sending confirmation email"**, en de gebruiker ziet alleen
+"Er ging iets mis".
+
+🔑 **Hoe we het vonden, gebruik dit weer bij mailproblemen:** niet gokken maar
+de SMTP-verbinding zelf nabootsen met een klein Node-script (inloggen, afzender
+opgeven, ontvanger opgeven, stoppen vóór de inhoud — dus zonder mail te
+sturen). Dat scheidde in één keer "ligt het aan Resend" van "ligt het aan
+Supabase". ⭐ **De snelste losse check:** kijk in het Resend-dashboard onder
+**Emails** of er überhaupt een regel bij komt. Blijft dat leeg, dan is Supabase
+niet eens tot versturen gekomen en hoef je in het sjabloon of de poort niet
+verder te zoeken.
+
 ⚠️ Werkt poort 465 niet, probeer dan 587. Sommige netwerken blokkeren er een.
 
 ### Daarna: de limiet ophogen
@@ -41,6 +57,11 @@ meldt.
 ---
 
 ## 2. De sjablonen
+
+⚠️ **VEROUDERD — de HTML hieronder is de kale eerste versie.** De echte,
+huisstijl-versie om te plakken staat in `docs/mailsjablonen.md`. Dit blok
+laten staan als geschiedenis van waar de sjablonen vandaan kwamen, niet als
+bron om te kopiëren.
 
 **Authentication → Emails → Templates.** Drie stuks. Per sjabloon vul je een
 onderwerp en een berichttekst in.
@@ -137,8 +158,12 @@ Avinka</p>
 
 ## 4. Wat hierna nog open staat
 
-- **DMARC strenger zetten.** Nu `p=none` met rapportage. Na een paar weken
-  meekijken kan dat naar `p=quarantine`. Vóór livegang.
+- **DMARC strenger zetten.** ⚠️ **Correctie 7-8: er is GEEN rapportage.** Het
+  record is letterlijk `v=DMARC1; p=none;` — zonder `rua=`, dus er komen geen
+  rapporten binnen en er valt op dit moment niets "mee te kijken". Wil je vóór
+  livegang naar `p=quarantine`, zet er dan éérst een paar weken van tevoren een
+  `rua=mailto:...` bij, anders scherp je blind aan en kun je je eigen post
+  blokkeren. Nu niet nodig; het is een taak voor tegen de lancering.
 - **De drie eigen mails** uit `docs/plan-mail.md` (duo-uitnodiging, proef loopt
   af, abonnement bevestigd). Die gaan niet via Supabase maar via
   `src/lib/mail.ts`.
