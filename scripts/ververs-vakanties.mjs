@@ -8,16 +8,29 @@
  * officiële open-data-feed op (dezelfde data, machineleesbaar) en herschrijft
  * het gegenereerde blok in dat bestand vanzelf.
  *
+ * WAAROM JE DIT NOOIT ZELF HOEFT TE DRAAIEN
+ * `npm run dev` draait dit automatisch (via "predev" in package.json), maar
+ * ALLEEN als het nodig is: staat er al ruim twee schooljaren vooruit in
+ * vakanties.ts, dan slaat het commando de internetaanroep gewoon over. Zo
+ * ververst het bestand vanzelf, ergens in het schooljaar dat de teller onder
+ * de twee jaar vooruit zakt, zonder dat je eraan hoeft te denken — en zonder
+ * dat elke `npm run dev` een trage netwerkaanroep doet.
+ *
+ * Gaat er iets mis (geen internet, Rijksoverheid ligt eruit), dan slikt dit
+ * script de fout in en laat het bestaande bestand gewoon staan: `npm run dev`
+ * mag hier nooit door blokkeren.
+ *
  * WAT HET WEL EN NIET DOET
  * - Overschrijft ALLEEN de tekst tussen "// GEGENEREERD:START" en
  *   "// GEGENEREERD:EIND" in vakanties.ts. De rest van het bestand (uitleg,
  *   regio's, functies) blijft precies zoals die is.
  * - Draait GEEN live aanroep in het platform zelf: de site blijft werken
- *   zonder internetverbinding naar Rijksoverheid. Dit is een los commando
- *   dat je af en toe draait (bijv. als er een nieuw schooljaar bij moet).
+ *   zonder internetverbinding naar Rijksoverheid. Dit is een los commando,
+ *   geen onderdeel van wat een bezoeker ooit te zien krijgt.
  *
  * GEBRUIK
- *   node scripts/ververs-vakanties.mjs
+ *   node scripts/ververs-vakanties.mjs            (ververst alleen als nodig)
+ *   node scripts/ververs-vakanties.mjs --forceer   (ververst altijd)
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
@@ -26,6 +39,10 @@ import { join, resolve } from "node:path";
 const PROJECT = resolve(import.meta.dirname, "..");
 const BESTAND = join(PROJECT, "src/lib/planning/vakanties.ts");
 const FEED_URL = "https://opendata.rijksoverheid.nl/v1/infotypes/schoolholidays?output=json";
+
+// Hoeveel schooljaren er minstens NA het huidige bekend moeten zijn voordat
+// we het de moeite waard vinden om Rijksoverheid lastig te vallen.
+const MINIMALE_VOORSPRONG = 2;
 
 const VOLGORDE = ["Herfstvakantie", "Kerstvakantie", "Voorjaarsvakantie", "Meivakantie", "Zomervakantie"];
 const KORT = {
@@ -99,8 +116,25 @@ function formatteerSchooljaren(schooljaren) {
   return `export const SCHOOLJAREN: Record<string, RuweVakantie[]> = {\n${blokken.join(",\n")},\n};`;
 }
 
-async function main() {
-  console.log("Data ophalen bij Rijksoverheid open data...");
+/** Het schooljaar waar "nu" in valt, geschat op kalenderjaar (zonder de precieze
+ *  eerste-schooldag-regels van schooljaar.ts nodig te hebben): augustus e.v. →
+ *  dit kalenderjaar begint het schooljaar, ervoor → vorig kalenderjaar. */
+function huidigSchooljaarStartjaar(nu = new Date()) {
+  return nu.getMonth() + 1 >= 8 ? nu.getFullYear() : nu.getFullYear() - 1;
+}
+
+/** Hoeveel schooljaren staan er al bekend, geteld vanaf (en met) het huidige? */
+function voorsprong(huidig) {
+  const tekst = readFileSync(BESTAND, "utf8");
+  const start = tekst.indexOf("// GEGENEREERD:START");
+  const eind = tekst.indexOf("// GEGENEREERD:EIND");
+  const blok = start !== -1 && eind !== -1 ? tekst.slice(start, eind) : tekst;
+  const jaren = [...blok.matchAll(/"(\d{4})-\d{4}"\s*:/g)].map((m) => Number(m[1]));
+  const verste = jaren.length ? Math.max(...jaren) : huidig - 1;
+  return verste - huidig;
+}
+
+async function ververs() {
   const feed = await haalFeed();
 
   const schooljaren = {};
@@ -130,10 +164,22 @@ async function main() {
   const bijgewerkt = huidig.slice(0, start) + nieuwBlok + huidig.slice(eind + "// GEGENEREERD:EIND".length);
 
   writeFileSync(BESTAND, bijgewerkt, "utf8");
-  console.log(`Klaar. Schooljaren in vakanties.ts: ${jarenGevonden.join(", ")}`);
+  console.log(`[vakanties] ververst — schooljaren ${jarenGevonden.join(", ")} staan nu in vakanties.ts.`);
+}
+
+async function main() {
+  const forceer = process.argv.includes("--forceer");
+  const huidigJaar = huidigSchooljaarStartjaar();
+
+  if (!forceer && voorsprong(huidigJaar) >= MINIMALE_VOORSPRONG) {
+    // Ruim genoeg vooruit bekend: niets te doen, en geen internet nodig.
+    return;
+  }
+
+  await ververs();
 }
 
 main().catch((err) => {
-  console.error("Verversen mislukt:", err.message);
-  process.exit(1);
+  // Nooit `npm run dev` laten stoppen omdat Rijksoverheid niet bereikbaar is.
+  console.warn(`[vakanties] verversen overgeslagen (${err.message}). Bestaande data blijft staan.`);
 });
