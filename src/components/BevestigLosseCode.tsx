@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { bevestigMetCode, type AuthState } from "@/app/auth/actions";
+import { alleenCijfers, CODE_MIN, CODE_PLAATSHOUDER } from "@/lib/auth-code";
 
 /**
  * De pagina `/bevestigen`: mailadres + code, voor wie het tabblad kwijt is
@@ -53,12 +54,12 @@ export default function BevestigLosseCode() {
             autoComplete="one-time-code"
             inputMode="numeric"
             required
-            placeholder="000000"
+            placeholder={CODE_PLAATSHOUDER}
             value={code}
             onChange={(e) =>
-              setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+              setCode(alleenCijfers(e.target.value))
             }
-            className="mt-1.5 w-full rounded-xl border border-black/10 bg-cream px-4 py-3 text-center text-xl font-bold tracking-[0.4em] text-ink outline-none transition placeholder:font-normal placeholder:tracking-[0.3em] placeholder:text-ink/25 focus:border-brand focus:ring-2 focus:ring-brand/20"
+            className="mt-1.5 w-full rounded-xl border border-black/10 bg-cream px-4 py-3 text-center text-xl font-bold tracking-[0.3em] text-ink outline-none transition placeholder:font-normal placeholder:tracking-[0.25em] placeholder:text-ink/25 focus:border-brand focus:ring-2 focus:ring-brand/20"
           />
         </div>
 
@@ -72,7 +73,7 @@ export default function BevestigLosseCode() {
 
         <button
           type="submit"
-          disabled={bezig || code.length < 6}
+          disabled={bezig || code.length < CODE_MIN}
           className="w-full rounded-2xl bg-brand px-6 py-3.5 text-base font-bold text-white shadow-lg shadow-brand/25 transition hover:bg-brand-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-60"
         >
           {bezig ? "Bezig…" : "Bevestigen"}

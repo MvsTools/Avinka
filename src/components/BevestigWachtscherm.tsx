@@ -6,6 +6,11 @@ import {
   bevestigingOpnieuw,
   type AuthState,
 } from "@/app/auth/actions";
+import {
+  alleenCijfers,
+  CODE_MIN,
+  CODE_PLAATSHOUDER,
+} from "@/lib/auth-code";
 
 /**
  * Het scherm ná een geslaagde registratie: hier vul je de code uit de mail in.
@@ -97,17 +102,16 @@ export default function BevestigWachtscherm({
           inputMode="numeric"
           autoFocus
           required
-          placeholder="000000"
+          placeholder={CODE_PLAATSHOUDER}
           value={code}
-          /* Alles wat geen cijfer is eruit: mensen plakken de code geregeld
-             mét de ruimte die ze in de mail zien. Eén breed veld in plaats van
-             zes hokjes, juist omdat plakken in hokjes zo vaak misgaat. */
-          onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-          className="min-w-[9rem] flex-1 rounded-xl border border-black/10 bg-cream px-4 py-3 text-center text-xl font-bold tracking-[0.4em] text-ink outline-none transition placeholder:font-normal placeholder:tracking-[0.3em] placeholder:text-ink/25 focus:border-brand focus:ring-2 focus:ring-brand/20"
+          /* Eén breed veld in plaats van losse hokjes, juist omdat plakken in
+             hokjes zo vaak misgaat. Lengte en opschoning staan in lib/auth-code. */
+          onChange={(e) => setCode(alleenCijfers(e.target.value))}
+          className="min-w-[9rem] flex-1 rounded-xl border border-black/10 bg-cream px-4 py-3 text-center text-xl font-bold tracking-[0.3em] text-ink outline-none transition placeholder:font-normal placeholder:tracking-[0.25em] placeholder:text-ink/25 focus:border-brand focus:ring-2 focus:ring-brand/20"
         />
         <button
           type="submit"
-          disabled={codeBezig || code.length < 6}
+          disabled={codeBezig || code.length < CODE_MIN}
           /* Op een smal scherm valt de knop onder het veld; dan hoort hij ook
              de volle breedte te nemen in plaats van links te blijven hangen. */
           className="w-full rounded-2xl bg-brand px-6 py-3 font-bold text-white shadow-lg shadow-brand/25 transition hover:bg-brand-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
