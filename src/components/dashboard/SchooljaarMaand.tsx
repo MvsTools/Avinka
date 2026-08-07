@@ -11,7 +11,7 @@ import {
   zijkantLabel,
 } from "@/lib/planning";
 import type { Dagbeeld, PlanItem, PlanningBron } from "@/lib/planning";
-import { ETIKET, STIP } from "./schooljaar-stijl";
+import { BALK, ETIKET, STIP } from "./schooljaar-stijl";
 import SchooljaarDagkaart from "./SchooljaarDagkaart";
 import SchooljaarWeekkaart from "./SchooljaarWeekkaart";
 
@@ -386,7 +386,7 @@ function Maandweek({
               }
               className={
                 "pointer-events-auto flex min-w-0 items-center overflow-hidden px-1.5 text-left text-[11px] font-bold leading-none sm:text-xs " +
-                ETIKET[b.item.soort].stijl +
+                BALK[b.item.soort] +
                 (b.magStart ? " rounded-l-md" : "") +
                 (b.magEind ? " rounded-r-md" : "") +
                 (zijkantLabel(b.item, groepen) ? " opacity-50" : "")

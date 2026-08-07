@@ -157,23 +157,43 @@ export async function markWelkomGezien(): Promise<void> {
 }
 
 // ── HER-AKKOORD (voorwaarden/privacy bijgewerkt) ──────────────────────────
-// De laatst vastgelegde akkoord-versies van deze leerkracht (of null als er nog
-// niets is vastgelegd). Wordt vergeleken met de huidige versies in juridisch.ts om
-// te bepalen of de her-akkoord-pop-up moet verschijnen.
-export async function getLaatsteToestemming(): Promise<
-  { voorwaarden_versie: string; privacy_versie: string } | null
-> {
+/**
+ * Heeft deze leerkracht de huidige versies van de voorwaarden en de
+ * privacyverklaring OOIT geaccepteerd? Zo ja, dan hoeft de pop-up niet.
+ *
+ * 🔑 Bewust "ooit", niet "als laatste". Dit keek eerst alleen naar de nieuwste
+ * rij in de bewijstabel, en dat brak zodra er ná een goed akkoord nog een rij
+ * met oudere versienummers binnenkwam: dan stond de pop-up er weer, ook al was
+ * er allang getekend. Dat gebeurde echt — twee dev-servers naast elkaar op
+ * verschillende branches (poort 3000 en 3001) hadden verschillende versies in
+ * juridisch.ts staan, dus ze stuurden elkaar om beurten terug naar de pop-up.
+ *
+ * En het is ook gewoon juister: dat je op 5 augustus akkoord ging met versie X
+ * is een feit dat niet vervalt doordat je daarna nog ergens anders klikt. De
+ * tabel is append-only en bewaart elk akkoord, dus we kunnen dat feit gewoon
+ * opzoeken in plaats van alleen naar de laatste regel te kijken.
+ */
+export async function heeftToestemmingVoor(
+  voorwaardenVersie: string,
+  privacyVersie: string,
+): Promise<{ actueel: boolean; eersteKeer: boolean }> {
   const sb = createClient();
   const { data, error } = await sb
     .from("toestemmingen")
-    .select("voorwaarden_versie, privacy_versie")
-    .order("geaccepteerd_op", { ascending: false })
-    .limit(1);
-  if (error || !data || data.length === 0) return null;
-  const d = data[0] as { voorwaarden_versie?: string; privacy_versie?: string };
+    .select("voorwaarden_versie, privacy_versie");
+  // Bij een fout níét doen alsof er niets is vastgelegd: dan zou een haperend
+  // netwerk iedereen een verplichte pop-up geven. Even niets tonen is beter;
+  // de volgende keer inloggen vraagt het alsnog.
+  if (error) {
+    console.error("toestemmingen lezen mislukt:", error.message);
+    return { actueel: true, eersteKeer: false };
+  }
+  const rijen = (data ?? []) as { voorwaarden_versie?: string; privacy_versie?: string }[];
   return {
-    voorwaarden_versie: d.voorwaarden_versie ?? "",
-    privacy_versie: d.privacy_versie ?? "",
+    actueel:
+      rijen.some((r) => r.voorwaarden_versie === voorwaardenVersie) &&
+      rijen.some((r) => r.privacy_versie === privacyVersie),
+    eersteKeer: rijen.length === 0,
   };
 }
 
