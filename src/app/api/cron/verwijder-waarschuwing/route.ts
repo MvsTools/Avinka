@@ -70,14 +70,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: `Ophalen mislukt: ${error.message}` }, { status: 500 });
   }
 
-  type Rij = { user_id: string; email: string; voornaam: string; wist_op: string };
+  type Rij = { user_id: string; email: string; voornaam: string; wist_op: string; abo_tot: string };
   const rijen = (aanDeBeurt ?? []) as Rij[];
 
   if (droog) {
     return NextResponse.json({
       droogloop: true,
       aantal: rijen.length,
-      wie: rijen.map((r) => ({ email: r.email, wist_op: r.wist_op })),
+      wie: rijen.map((r) => ({ email: r.email, abo_tot: r.abo_tot, wist_op: r.wist_op })),
     });
   }
 
@@ -90,7 +90,13 @@ export async function GET(request: NextRequest) {
   const mislukt: { email: string; reden: string }[] = [];
 
   for (const r of rijen) {
-    const gegevens = { voornaam: r.voornaam, wistOp: r.wist_op, link, downloadLink };
+    const gegevens = {
+      voornaam: r.voornaam,
+      wistOp: r.wist_op,
+      abonnementTot: r.abo_tot,
+      link,
+      downloadLink,
+    };
     const antwoord = await verstuurMail({
       naar: r.email,
       onderwerp: OPZEGGING_ONDERWERP,

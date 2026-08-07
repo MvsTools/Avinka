@@ -49,6 +49,12 @@ export function nlDatum(datum: string): string {
 
 export type Opzegging = {
   voornaam: string;
+  /* Sinds wanneer deze leerkracht geen abonnement meer heeft, als jjjj-mm-dd.
+     ⚠️ NODIG OM NIET TE LIEGEN: deze mail gaat op dag 83, niet op dag 90. Een
+     zin als "je gebruikt Avinka al 90 dagen niet meer" is op het moment van
+     versturen dus onwaar. Met deze datum noemt de mail de REGEL (90 dagen) en
+     de twee datums eromheen, en klopt elke zin. */
+  abonnementTot: string;
   /* De datum waarop er echt gewist wordt, als jjjj-mm-dd. Komt uit
      wijs_verwijder_waarschuwing() en houdt al rekening met de respijttermijn,
      dus deze datum is waar. */
@@ -68,10 +74,11 @@ export const OPZEGGING_ONDERWERP = "We ruimen je leerlinggegevens op, je eigen w
 
 export function opzeggingTekst(h: Opzegging): string {
   const datum = nlDatum(h.wistOp);
+  const tot = nlDatum(h.abonnementTot);
   return [
-    `Je gebruikt Avinka al drie maanden niet meer. Daarom ruimen we op ${datum} de gegevens over je leerlingen op: je klassenlijsten, je rapporten, je plattegronden, je taken en de overdracht naar een collega.`,
+    `Sinds ${tot} heb je geen abonnement meer op Avinka. Gegevens over kinderen bewaren wij maximaal 90 dagen, dus op ${datum} ruimen we ze op.`,
     "",
-    "Dat doen we omdat gegevens over kinderen niet langer bewaard horen te worden dan nodig is.",
+    "Het gaat om je klassenlijsten, je rapporten, je plattegronden, je agenda-afspraken, je taken en de overdracht naar een collega.",
     "",
     "Je eigen werk blijft wel gewoon staan: je lesontwerpen, je werkbladen en je draaiboeken. Daar staat geen kind in, dus die bewaren we voor je. Kom je volgend schooljaar terug, dan liggen ze er nog. Je account blijft ook bestaan, met hetzelfde e-mailadres.",
     "",
@@ -92,6 +99,7 @@ export function opzeggingHtml(h: Opzegging): string {
   const link = veilig(h.link);
   const download = veilig(h.downloadLink);
   const datum = veilig(nlDatum(h.wistOp));
+  const tot = veilig(nlDatum(h.abonnementTot));
   return `<style>
   @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Plus+Jakarta+Sans:wght@400;700&display=swap');
 </style>
@@ -100,7 +108,7 @@ export function opzeggingHtml(h: Opzegging): string {
     <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:20px;font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
       <tr><td style="padding:34px 36px 0;">
         <h1 style="margin:0;font-family:'Bricolage Grotesque',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:800;font-size:26px;line-height:1.25;color:#221c3a;">We ruimen je leerlinggegevens op</h1>
-        <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Je gebruikt Avinka al drie maanden niet meer. Daarom ruimen we op ${datum} de gegevens over je leerlingen op: je klassenlijsten, je rapporten, je plattegronden, je taken en de overdracht naar een collega. Dat doen we omdat gegevens over kinderen niet langer bewaard horen te worden dan nodig is.</p>
+        <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Sinds ${tot} heb je geen abonnement meer op Avinka. Gegevens over kinderen bewaren wij maximaal 90 dagen, dus op <strong style="color:#221c3a;">${datum}</strong> ruimen we ze op: je klassenlijsten, je rapporten, je plattegronden, je agenda-afspraken, je taken en de overdracht naar een collega.</p>
       </td></tr>
       <tr><td style="padding:20px 36px 0;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f1f8f4;border-radius:14px;">

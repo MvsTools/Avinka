@@ -1279,9 +1279,21 @@ create trigger on_auth_user_created_toestemming
 -- is een sleutel tot die agenda, dus hij staat VERSLEUTELD opgeslagen: de code
 -- versleutelt hem met AVINKA_GEHEIM_SLEUTEL, de database ziet alleen ruis.
 --
--- AVG: namen van kinderen worden uit de titel gehaald vóór het opslaan
--- (maskeerNamen in src/lib/agenda-ophalen.ts). Wat overblijft is het soort
--- afspraak en het tijdstip, en dat mag gewoon.
+-- AVG: bij een GEKOPPELDE agenda worden namen van kinderen uit de titel
+-- gehaald vóór het opslaan (maskeerNamen, aangeroepen in
+-- src/lib/agenda-opslaan.ts). Wat overblijft is het soort afspraak en het
+-- tijdstip, en dat mag gewoon.
+--
+-- ⚠️ Dat geldt NIET voor een afspraak die je zélf toevoegt via
+-- /api/agenda/afspraak: die titel wordt letterlijk opgeslagen. Dat is een
+-- bewuste keuze (eigenaar 8-8-2026) en geen omissie: een geïmporteerde agenda
+-- levert namen aan die de leerkracht nooit zelf koos, soms van kinderen uit
+-- andere groepen, terwijl een zelf getikte naam werkdata is van een kind dat
+-- toch al in de klassenlijst staat.
+-- 🔑 Gevolg: agenda_items KAN voornamen bevatten, en daarom hoort de tabel bij
+-- wat na 90 dagen zonder abonnement wordt opgeruimd. Zie
+-- database/migratie-verwijder-klasdata.sql — haal hem daar niet weg, anders is
+-- de belofte "gegevens over kinderen bewaren wij maximaal 90 dagen" onwaar.
 
 create table if not exists public.agenda_bronnen (
   id            uuid primary key default gen_random_uuid(),

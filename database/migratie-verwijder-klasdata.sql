@@ -1,8 +1,18 @@
 -- ============================================================================
 -- Opzeggen ruimt de leerlinggegevens op (AVG)
 -- ----------------------------------------------------------------------------
--- Wie 3 MAANDEN geen abonnement meer heeft, raakt zijn gegevens OVER KINDEREN
--- kwijt: klassen, rapporten, plattegronden, taken en de duo-overdracht.
+-- ⭐ DE REGEL, in één zin: GEGEVENS OVER KINDEREN BEWAREN WIJ MAXIMAAL 90 DAGEN.
+--
+-- Wie 90 dagen geen abonnement meer heeft, raakt zijn gegevens OVER KINDEREN
+-- kwijt: klassen, rapporten, plattegronden, agenda-afspraken, taken en de
+-- duo-overdracht.
+--
+-- ⚠️ Zeg overal "90 dagen", niet "3 maanden" (besluit eigenaar 8-8-2026).
+-- Het is tastbaarder, het is exact wat de code doet, en het is hetzelfde getal
+-- als wis-oude-rapporten in retention.sql. Daarmee heeft het hele platform één
+-- bewaartermijn voor alles wat over kinderen gaat, en dat is een regel die je
+-- aan een directeur of een jurist kunt uitleggen. "3 maanden" is vaag: dat kan
+-- 89 of 92 dagen zijn.
 --
 -- ⭐ WAT BLIJFT: het eigen vakwerk van de leerkracht (lesontwerpen, werkbladen,
 -- draaiboeken). Daar staat geen kind in, er is dus geen reden om het te wissen,
@@ -14,13 +24,12 @@
 -- betaalhistorie, de verwijzingscode): boekhoudplicht, terugkomen zonder gedoe,
 -- en een gewist account breekt de verwijzingsketen.
 --
--- 🔑 WAAROM 3 MAANDEN EN NIET 30 DAGEN (besluit eigenaar 8-8-2026, na een
+-- 🔑 WAAROM 90 DAGEN EN NIET 30 (besluit eigenaar 8-8-2026, na een
 -- ronde twijfel). Met 30 dagen viel het wissen precies in de zomervakantie:
 -- opzeggen op 15 juli betekende verwijderen op 14 augustus, twee weken vóór de
 -- schoolstart, met een waarschuwingsmail in een schoolmailbox waar niemand
 -- kijkt. Dat raakt uitsluitend de leerkracht die van plan was terug te komen.
--- 3 maanden overleeft elke zomervakantie, sluit aan op de 90 dagen van
--- wis-oude-rapporten in retention.sql, en is voor voornamen van kinderen een
+-- 90 dagen overleeft elke zomervakantie en is voor voornamen van kinderen een
 -- beter verhaal dan een half jaar.
 --
 -- ⚠️ Dit is nadrukkelijk GEEN drukmiddel om mensen te laten doorbetalen. Een
@@ -92,14 +101,22 @@ grant  execute on function public.wijs_toegang_tot(text, timestamptz, timestampt
 -- een berg oude proefaccounts klaar, dan gaat die er in porties uit in plaats
 -- van als één blast vanaf een jong afzenderdomein. Wie vandaag niet aan de
 -- beurt is, is morgen aan de beurt.
-create or replace function public.wijs_verwijder_waarschuwing(
+-- ⚠️ Eerst weg, dan opnieuw: de teruggegeven kolommen zijn gewijzigd (abo_tot
+-- erbij) en dan weigert "create or replace". Raakt alleen de functie.
+drop function if exists public.wijs_verwijder_waarschuwing(int, int);
+
+create function public.wijs_verwijder_waarschuwing(
   p_dag int default 83,
   p_max int default 50
 ) returns table (
   user_id   uuid,
   email     text,
   voornaam  text,
-  wist_op   date
+  wist_op   date,
+  -- Sinds wanneer geen abonnement meer. De mail gaat op dag 83, dus een zin
+  -- als "je gebruikt Avinka al 90 dagen niet meer" zou op dat moment ONWAAR
+  -- zijn. Met deze datum kan de mail de REGEL noemen in plaats van de duur.
+  abo_tot   date
 )
 language sql security definer set search_path = public as $$
   select i.user_id,
@@ -113,7 +130,8 @@ language sql security definer set search_path = public as $$
          greatest(
            public.wijs_toegang_tot(i.abon_status, i.proef_eindigt, i.periode_eindigt) + interval '90 days',
            now() + interval '7 days'
-         )::date
+         )::date,
+         public.wijs_toegang_tot(i.abon_status, i.proef_eindigt, i.periode_eindigt)::date
   from public.instellingen i
   join auth.users u on u.id = i.user_id
   where i.verwijder_waarschuwing_op is null
@@ -163,6 +181,7 @@ create function public.wijs_verwijder_klasdata(
   aantal_rapporten  int,
   aantal_bestanden  int,
   aantal_taken      int,
+  aantal_agenda     int,
   aantal_bewaard    int
 )
 language plpgsql security definer set search_path = public as $$
@@ -172,6 +191,7 @@ declare
   n_rapporten int;
   n_bestanden int;
   n_taken     int;
+  n_agenda    int;
   n_bewaard   int;
   -- ⭐ HET EIGEN VAKWERK VAN DE LEERKRACHT. Dit blijft staan, ook jaren later.
   -- ⚠️ Een WITTE lijst, geen zwarte: alles wat hier niet in staat gaat weg,
@@ -220,6 +240,7 @@ begin
        where t.user_id = r.uid and (t.tool is null or t.tool <> all(k_bewaren));
       select count(*) into n_bewaard   from public.bestanden t
        where t.user_id = r.uid and t.tool = any(k_bewaren);
+      select count(*) into n_agenda    from public.agenda_items t where t.user_id = r.uid;
     else
       -- Rapporten EERST, en expliciet op user_id. rapporten.klas_id staat op
       -- "on delete set null", dus wie alleen de klas wist, laat de rapporten
@@ -257,6 +278,22 @@ begin
       with weg as (delete from public.taken t where t.user_id = r.uid returning 1)
         select count(*) into n_taken from weg;
 
+      -- ⚠️ De agenda moet mee, anders is de belofte "gegevens over kinderen
+      -- bewaren wij maximaal 90 dagen" niet waar. Een titel die iemand ZELF
+      -- intikt ("Oudergesprek Sanne") wordt namelijk niet gemaskeerd; alleen
+      -- het importpad van een gekoppelde agenda haalt namen eruit
+      -- (maskeerNamen in src/lib/agenda-opslaan.ts). Besluit eigenaar 8-8:
+      -- dat verschil blijft zoals het is, want een zelf getikte naam is
+      -- werkdata van een kind dat toch al in je klassenlijst staat. Maar dan
+      -- moet die data hier dus wél opgeruimd worden.
+      --
+      -- ⚠️ agenda_BRONNEN blijft staan, met opzet: daarin zit de (versleutelde)
+      -- koppeling naar de agenda van de leerkracht. Komt iemand terug, dan
+      -- vullen de geïmporteerde afspraken zichzelf weer. Alleen de zelf
+      -- toegevoegde afspraken zijn echt weg, en dat is de bedoeling.
+      with weg as (delete from public.agenda_items t where t.user_id = r.uid returning 1)
+        select count(*) into n_agenda from weg;
+
       -- De klassen als laatste. Hieraan hangen met cascade: duo_koppels,
       -- duo_taken, duo_overdracht en duo_overdracht_gelezen. Die gaan dus
       -- vanzelf mee. instellingen.actieve_duo_klas_id staat op "set null" en
@@ -270,6 +307,7 @@ begin
     aantal_rapporten := n_rapporten;
     aantal_bestanden := n_bestanden;
     aantal_taken     := n_taken;
+    aantal_agenda    := n_agenda;
     aantal_bewaard   := n_bewaard;
     return next;
   end loop;
