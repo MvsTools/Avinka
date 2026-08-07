@@ -54,10 +54,36 @@ scherm staan waar je een wachtwoord kiest.
 vijf blijven zakelijk ("gewoon hoe het zit") — dit is de allereerste
 aanraking, dus die mag als een persoonlijk berichtje voelen. `{{ .Data.first_name }}`
 leest de voornaam uit de metadata die `auth/actions.ts` al meegeeft bij
-`supabase.auth.signUp()`. ⚠️ **Nog niet getest of Supabase's sjabloontaal
-`.Data.<veld>` daadwerkelijk zo doorgeeft** — bij het plakken in Supabase
-eerst een proefaanmelding doen en controleren of de naam er echt in staat
-(en niet een lege regel of de letterlijke tekst `{{ .Data.first_name }}`).
+`supabase.auth.signUp()`. ✅ Getest 7-8: de voornaam komt er echt in te staan.
+
+🔴 **HERBOUWD 8-8: EEN CODE, GEEN LINK.** Deze mail bevat bewust géén
+bevestigingslink meer.
+
+🔑 **Waarom:** schoolbesturen draaien Microsoft Defender met **Safe Links**.
+Elke link in elke binnenkomende mail wordt herschreven naar een adres van
+Microsoft, en Microsoft haalt hem eerst zélf op om te controleren of hij veilig
+is. Bij een eenmalige bevestigingslink is het token daarmee al verbruikt vóórdat
+de leerkracht klikt — die krijgt dan "deze link is verlopen of al gebruikt".
+Bewezen op de echte site (het adres in de mail begon letterlijk met
+`eur01.safelinks.protection.outlook.com`). Het verklaarde ook de vertraging van
+minuten: dat controleren kost tijd. En omdat schoolmail de hoofdroute is
+([[leerkracht-gebruikt-schoolmail]]) raakt dit vrijwel elke gebruiker.
+
+Aan een code valt niets te klikken en dus niets op te gebruiken. Tweede winst:
+je blijft in het tabblad waar je je aanmeldde, in plaats van in een nieuw venster
+(op mobiel vaak zelfs binnen de mail-app).
+
+⚠️ **`{{ .Token }}`, niet `{{ .TokenHash }}`.** De eerste is de code van zes
+cijfers, de tweede is de vorm voor in een link. En let op: **het zijn twee
+gedaantes van hetzelfde eenmalige token.** Je kunt dus niet allebei in één mail
+zetten als reservemiddel — wordt de link opgebruikt, dan is de code ook dood.
+
+⚠️ **De code staat ZONDER spaties tussen de cijfers**, met alleen ruimte via
+`letter-spacing`. Zo pakt één dubbelklik precies de zes cijfers. Zet je er echte
+spaties in, dan selecteert de gebruiker steeds maar één cijfer.
+
+De verwijzing naar `avinka.nl/bevestigen` is een gewone link zonder token, voor
+wie zijn tabblad heeft gesloten. Die mag Safe Links zo vaak ophalen als hij wil.
 
 ```html
 <style>
@@ -69,27 +95,24 @@ eerst een proefaanmelding doen en controleren of de naam er echt in staat
       <tr><td style="padding:34px 36px 0;">
         <h1 style="margin:0;font-family:'Bricolage Grotesque',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:800;font-size:26px;line-height:1.25;color:#221c3a;">Welkom bij Avinka</h1>
         <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Hallo {{ .Data.first_name }},</p>
-        <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Nog één klik en je account staat klaar.</p>
+        <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Gebruik deze code om je e-mailadres te bevestigen:</p>
       </td></tr>
-      <tr><td align="center" style="padding:26px 36px 0;">
+      <tr><td align="center" style="padding:22px 36px 0;">
         <table cellpadding="0" cellspacing="0" border="0"><tr>
-          <td align="center" bgcolor="#25855a" style="border-radius:12px;">
-            <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email"
-               style="display:inline-block;padding:14px 30px;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;">Bevestig mijn adres</a>
+          <td align="center" bgcolor="#f2f8f4" style="border-radius:14px;padding:18px 30px;">
+            <span style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:32px;font-weight:bold;letter-spacing:10px;color:#221c3a;">{{ .Token }}</span>
           </td>
         </tr></table>
       </td></tr>
       <tr><td style="padding:24px 36px 0;">
         <p style="margin:0;font-size:15px;line-height:1.65;color:#4a4458;">Je proefperiode van 7 dagen begint zodra je bevestigt. Je hoeft geen betaalgegevens op te geven.</p>
+        <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#6b6880;">Scherm gesloten? Ga naar <a href="{{ .SiteURL }}/bevestigen" style="color:#25855a;font-weight:bold;">avinka.nl/bevestigen</a> en vul je e-mailadres en de code in.</p>
         <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#6b6880;">Heb je je niet aangemeld? Dan hoef je niets te doen.</p>
         <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#6b6880;">Kom je ergens niet uit? Mail gerust naar <a href="mailto:support@avinka.nl" style="color:#25855a;font-weight:bold;">support@avinka.nl</a>. Ik lees alles zelf.</p>
       </td></tr>
       <tr><td style="padding:24px 36px 30px;">
         <div style="border-top:1px solid #ece7e0;padding-top:16px;">
-          <p style="margin:0;font-size:13px;line-height:1.6;color:#8a8798;">Werkt de knop niet? Kopieer dan deze link:<br>
-            <span style="color:#25855a;word-break:break-all;">{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email</span>
-          </p>
-          <p style="margin:14px 0 0;font-size:13px;line-height:1.6;color:#8a8798;">Avinka &middot; van to-do naar gedaan<br>Michael van Spanje</p>
+          <p style="margin:0;font-size:13px;line-height:1.6;color:#8a8798;">Avinka &middot; van to-do naar gedaan<br>Michael van Spanje</p>
         </div>
       </td></tr>
     </table>

@@ -47,6 +47,8 @@ function nlFout(bericht: string): string {
     return "Kies een nieuw wachtwoord dat anders is dan je huidige.";
   if (b.includes("for security purposes") || b.includes("rate limit"))
     return "Even geduld — je hebt dit net al geprobeerd. Wacht een minuutje en probeer opnieuw.";
+  if (b.includes("token has expired") || b.includes("invalid token") || b.includes("otp"))
+    return "Deze code klopt niet of is verlopen. Vraag hieronder een nieuwe aan.";
   // Onbekende Supabase-melding: de gebruiker krijgt een nette generieke tekst,
   // maar de echte reden mag niet verloren gaan — anders is dit soort fout
   // straks niet meer te herleiden (zie mail-verzendstraat: altijd de reden loggen).
@@ -171,6 +173,51 @@ export async function signup(
   // heeft het nodig. De teller start hier al — er is zojuist een mail de deur
   // uit gegaan, dus die minuut loopt vanaf nu.
   return { message: "verstuurd", email, opnieuwNa: Date.now() + MAIL_INTERVAL_MS };
+}
+
+// AANMELDING BEVESTIGEN MET EEN CODE UIT DE MAIL.
+//
+// 🔑 WAAROM EEN CODE EN GEEN LINK (besloten 8-8-2026, na meten op de echte site)
+// Schoolbesturen draaien Microsoft Defender met "Safe Links": élke link in élke
+// binnenkomende mail wordt herschreven naar een adres van Microsoft, en Microsoft
+// haalt hem eerst zélf op om te controleren of hij veilig is. Bij een eenmalige
+// bevestigingslink is het kaartje daarmee al gebruikt vóórdat de leerkracht
+// klikt. Dat verklaarde óók de vertraging van minuten: dat controleren kost tijd.
+// Een code is niets om op te klikken en dus niets om op te gebruiken.
+// Tweede winst: je blijft in het tabblad waar je je aanmeldde, in plaats van in
+// een nieuw venster te belanden (op mobiel vaak zelfs binnen de mail-app).
+// Zie [[mail-verzendstraat]]. ⚠️ De herstelmail houdt bewust wél een link: daar
+// verwacht iedereen er een, en dat probleem pakken we apart aan.
+export async function bevestigMetCode(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const email = String(formData.get("email") ?? "").trim();
+  // Spaties eruit: mensen plakken de code geregeld mét de ruimte die ze in de
+  // mail zien, of typen er zelf een.
+  const code = String(formData.get("code") ?? "").replace(/\s/g, "");
+  const volgende = veiligeVolgende(formData.get("volgende"));
+
+  if (!email || !code) {
+    return { error: "Vul je e-mailadres en de code uit de mail in.", email };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token: code,
+    type: "signup",
+  });
+
+  if (error) {
+    // De reden altijd loggen, anders is een mislukte bevestiging later niet te
+    // herleiden (zelfde les als bij de 535-storing).
+    console.error("Bevestigen met code mislukte:", error.message);
+    return { error: nlFout(error.message), email };
+  }
+
+  revalidatePath("/", "layout");
+  redirect(volgende);
 }
 
 // BEVESTIGINGSMAIL OPNIEUW STUREN — vanaf het wachtscherm, voor wie niets
