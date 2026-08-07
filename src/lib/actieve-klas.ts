@@ -77,3 +77,40 @@ export async function haalRapportGrens(
   });
   return { klasNaam: (klas.naam ?? "").trim(), magRapportenBewerken: volledig === true };
 }
+
+/**
+ * De groepen die je met een collega deelt, opgehaald op de SERVER.
+ *
+ * Dit staat hier omdat de overdracht-tegel op Start anders altijd te laat
+ * verscheen: de tegel wist pas of hij bestond nadat de browser deze vraag had
+ * gesteld, terwijl de drie tegels ernaast al met de pagina meekwamen. Je zag
+ * dus drie tegels staan en er sprong er een tel later een vierde bij.
+ *
+ * Dezelfde uitkomst als `getGedeeldeKlassen` in db.ts (die blijft bestaan voor
+ * schermen die geen server-kant hebben); RLS laat aan beide kanten alleen de
+ * koppels zien waar je zelf in zit.
+ */
+export async function haalGedeeldeKlassen(
+  supabase: SupabaseClient,
+): Promise<{ klasId: string; klasNaam: string }[]> {
+  // Net als hierboven: dit voedt één tegel. Gaat het mis, dan valt de tegel
+  // weg en vult de browser hem alsnog — de pagina eromheen blijft staan.
+  try {
+    const { data, error } = await supabase
+      .from("duo_koppels")
+      .select("klas_id, status, klassen(naam)")
+      .eq("status", "actief");
+    if (error || !data) return [];
+    const uniek = new Map<string, string>();
+    for (const r of data as unknown as {
+      klas_id: string;
+      klassen: { naam: string } | { naam: string }[] | null;
+    }[]) {
+      const klas = Array.isArray(r.klassen) ? r.klassen[0] : r.klassen;
+      uniek.set(r.klas_id, klas?.naam ?? "");
+    }
+    return [...uniek].map(([klasId, klasNaam]) => ({ klasId, klasNaam }));
+  } catch {
+    return [];
+  }
+}

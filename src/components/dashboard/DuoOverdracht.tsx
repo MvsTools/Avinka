@@ -30,8 +30,16 @@ type Groep = { klasId: string; klasNaam: string };
 // Op Start is dit een TEGEL naast Vandaag/Vakantie/Deze dag, met het aantal
 // nieuwe berichten erop. Klikken opent hetzelfde soort venster als die tegels
 // (Kaartvenster): één soort tegel, één soort venster.
-export default function DuoOverdracht() {
-  const [groepen, setGroepen] = useState<Groep[]>([]);
+export default function DuoOverdracht({ initieleGroepen = [] }: { initieleGroepen?: Groep[] }) {
+  // ⚠️ De gedeelde groepen komen met de pagina mee, van de server. Stonden ze
+  // hier op een lege lijst, dan gaf `return null` hieronder eerst NIETS terug
+  // en verscheen de tegel pas als de browser zijn eigen vraag had beantwoord —
+  // een tel ná de drie tegels ernaast, die wél server-side klaarstaan. Dat zag
+  // je: drie tegels, en dan sprong er een vierde bij.
+  //
+  // De berichten zelf mogen wél nakomen; die staan achter een klik. Alleen de
+  // vraag "bestaat deze tegel überhaupt" moest naar voren.
+  const [groepen, setGroepen] = useState<Groep[]>(initieleGroepen);
   const [berichten, setBerichten] = useState<Record<string, Bericht[]>>({});
   const [gelezenOp, setGelezenOp] = useState<Record<string, string | null>>({});
   const [namen, setNamen] = useState<Record<string, string>>({});
@@ -40,7 +48,7 @@ export default function DuoOverdracht() {
   const [versturen, setVersturen] = useState(false);
   const [fout, setFout] = useState(false);
   const [open, setOpen] = useState(false);
-  const [actieveGroep, setActieveGroep] = useState<string>("");
+  const [actieveGroep, setActieveGroep] = useState<string>(initieleGroepen[0]?.klasId ?? "");
   // Het AI-knopje: het voorstel staat apart tot je het overneemt, zodat je
   // eigen tekst nooit onder je handen vandaan wordt geschreven.
   const [aiBezig, setAiBezig] = useState(false);
