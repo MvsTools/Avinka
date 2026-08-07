@@ -35,8 +35,11 @@ function nlFout(bericht: string): string {
   const b = bericht.toLowerCase();
   if (b.includes("invalid login credentials"))
     return "E-mailadres of wachtwoord klopt niet.";
+  // ⚠️ Er zit sinds 8-8 geen link meer in de aanmeldmail maar een code. Deze
+  // tekst is een vangnet: normaal stuurt login() zo iemand meteen door naar
+  // /bevestigen in plaats van deze melding te tonen.
   if (b.includes("email not confirmed"))
-    return "Bevestig eerst je e-mailadres via de link in je mail.";
+    return "Je e-mailadres is nog niet bevestigd. Vul de code uit je mail in.";
   if (b.includes("user already registered") || b.includes("already been registered"))
     return "Er bestaat al een account met dit e-mailadres. Log in.";
   if (b.includes("password should be at least"))
@@ -87,6 +90,15 @@ export async function login(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
+    // Nog niet bevestigd? Dan is een foutmelding een doodlopende weg: opnieuw
+    // aanmelden kan niet (het account bestaat al) en het wachtscherm met het
+    // codeveld is weg. Stuur deze persoon meteen naar de plek waar hij het
+    // alsnog kan afmaken, mét de mogelijkheid een nieuwe code aan te vragen.
+    // ⚠️ Dit verraadt niets nieuws: de oude foutmelding zei ook al dat het
+    // adres bekend maar onbevestigd was.
+    if (error.message.toLowerCase().includes("email not confirmed")) {
+      redirect(`/bevestigen?email=${encodeURIComponent(email)}&reden=onbevestigd`);
+    }
     return { error: nlFout(error.message) };
   }
 

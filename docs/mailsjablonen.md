@@ -82,8 +82,12 @@ zetten als reservemiddel — wordt de link opgebruikt, dan is de code ook dood.
 `letter-spacing`. Zo pakt één dubbelklik precies de zes cijfers. Zet je er echte
 spaties in, dan selecteert de gebruiker steeds maar één cijfer.
 
-De verwijzing naar `avinka.nl/bevestigen` is een gewone link zonder token, voor
-wie zijn tabblad heeft gesloten. Die mag Safe Links zo vaak ophalen als hij wil.
+⚠️ **Bewust GEEN verwijzing naar `avinka.nl/bevestigen` in deze mail** (stond er
+kort wel in, er 8-8 weer uit). Sinds hier een code in staat komt de mail binnen
+enkele seconden aan in plaats van na minuten — er valt voor Safe Links niets meer
+te controleren — en sluit vrijwel niemand dat tabblad. Een instructie vooraf is
+dan ruis. Wie tóch vastloopt, wordt door `login()` vanzelf naar `/bevestigen`
+gestuurd zodra hij probeert in te loggen op een onbevestigd account.
 
 ```html
 <style>
@@ -106,7 +110,6 @@ wie zijn tabblad heeft gesloten. Die mag Safe Links zo vaak ophalen als hij wil.
       </td></tr>
       <tr><td style="padding:24px 36px 0;">
         <p style="margin:0;font-size:15px;line-height:1.65;color:#4a4458;">Je proefperiode van 7 dagen begint zodra je bevestigt. Je hoeft geen betaalgegevens op te geven.</p>
-        <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#6b6880;">Scherm gesloten? Ga naar <a href="{{ .SiteURL }}/bevestigen" style="color:#25855a;font-weight:bold;">avinka.nl/bevestigen</a> en vul je e-mailadres en de code in.</p>
         <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#6b6880;">Heb je je niet aangemeld? Dan hoef je niets te doen.</p>
         <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#6b6880;">Kom je ergens niet uit? Mail gerust naar <a href="mailto:support@avinka.nl" style="color:#25855a;font-weight:bold;">support@avinka.nl</a>. Ik lees alles zelf.</p>
       </td></tr>
