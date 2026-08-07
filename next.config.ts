@@ -1,24 +1,18 @@
 import type { NextConfig } from "next";
 
+/* ⚠️ NIET OPNIEUW PROBEREN: www.avinka.nl → avinka.nl is niet op 308 te krijgen.
+   Vercel stuurt www zelf door met een 307 ("tijdelijk"). Dat is niet te wijzigen:
+   in het dashboard ziet hij www als onderdeel van avinka.nl en weigert een losse
+   doorverwijsregel ("a domain cannot redirect to itself"). Een `redirects()`-regel
+   hier werkt óók niet — gemeten 7-8-2026, ruim zes minuten na een geslaagde
+   deploy nog steeds 307. Reden: Vercel handelt het af op zijn edge, dus het
+   verzoek bereikt deze app nooit.
+   Praktisch maakt het niets uit (bezoekers komen goed uit, en het verschil telt
+   alleen voor zoekmachines). Wil je het tóch permanent, dan is de enige route
+   Vercel-support vragen. Zie [[golive-checklist]]. */
+
 const nextConfig: NextConfig = {
-  /* www.avinka.nl → avinka.nl, permanent (308).
-     Vercel stuurt www zelf al door, maar met een 307 ("tijdelijk"), en die code
-     is in het dashboard niet te veranderen: hij ziet www als onderdeel van
-     avinka.nl en weigert een losse doorverwijsregel ("a domain cannot redirect
-     to itself"). Tijdelijk is hier onwaar — www is definitief geen eigen adres —
-     en een zoekmachine hoort te weten dat avinka.nl het echte is.
-     ⚠️ Of deze regel wint van Vercels eigen afhandeling moet gemeten worden;
-     die zit vóór de app. Doet hij niets, dan blijft de werkende 307 staan. */
-  async redirects() {
-    return [
-      {
-        source: "/:pad*",
-        has: [{ type: "host", value: "www.avinka.nl" }],
-        destination: "https://avinka.nl/:pad*",
-        permanent: true,
-      },
-    ];
-  },
+  /* config options here */
 };
 
 export default nextConfig;
