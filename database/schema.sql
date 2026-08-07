@@ -74,6 +74,11 @@ create table if not exists public.instellingen (
   -- vast inlogadres; Esis werkt per school, dus die vult lvs_url zelf in.
   lvs_systeem    text not null default '',
   lvs_url        text not null default '',
+  -- Wanneer de "je klasgegevens worden verwijderd"-mail is verstuurd. Leeg =
+  -- nog niet gemaild, en dan wist wijs_verwijder_klasdata() bij deze gebruiker
+  -- niets. Dit veld is dus het SLOT op de verwijdering, geen administratie.
+  -- Zie database/migratie-verwijder-klasdata.sql.
+  verwijder_waarschuwing_op timestamptz,
   created_at     timestamptz default now(),
   updated_at     timestamptz default now()
 );
@@ -98,6 +103,7 @@ create table if not exists public.instellingen (
 --   alter table public.instellingen add column if not exists lvs_systeem text not null default '';
 --   alter table public.instellingen add column if not exists lvs_url text not null default '';
 --   alter table public.instellingen add column if not exists communicatie_url text not null default '';
+--   alter table public.instellingen add column if not exists verwijder_waarschuwing_op timestamptz;
 create index if not exists idx_instellingen_verwezen on public.instellingen(verwezen_door);
 
 -- ── 2) KLASSEN — je klassenlijst (meerdere klassen per leerkracht mogelijk) ───
@@ -1925,6 +1931,17 @@ revoke execute on function public.registreer_toestemming() from public, anon;
 revoke execute on function public.set_updated_at() from public, anon;
 revoke execute on function public.duo_koppel_voorbeeld(text) from public, anon;
 revoke execute on function public.duo_koppel_accepteren(text) from public, anon;
+
+-- Opzeggen verwijdert de klasgegevens (database/migratie-verwijder-klasdata.sql).
+-- Deze drie gaan verder dan anon buitensluiten: ook 'authenticated' mag er niet
+-- bij. De eerste twee geven gegevens van ANDERE gebruikers terug of wissen ze;
+-- de derde is een kale rekenfunctie maar hoort in hetzelfde slot.
+revoke execute on function public.wijs_toegang_tot(text, timestamptz, timestamptz) from public, anon, authenticated;
+revoke execute on function public.wijs_verwijder_waarschuwing(int, int) from public, anon, authenticated;
+revoke execute on function public.wijs_verwijder_klasdata(int, int, int, boolean) from public, anon, authenticated;
+grant  execute on function public.wijs_toegang_tot(text, timestamptz, timestamptz) to service_role;
+grant  execute on function public.wijs_verwijder_waarschuwing(int, int) to service_role;
+grant  execute on function public.wijs_verwijder_klasdata(int, int, int, boolean) to service_role;
 
 -- Blijft open voor anon (deellink zonder account), maar met een EIGEN recht in
 -- plaats van via de brede PUBLIC-regel.
