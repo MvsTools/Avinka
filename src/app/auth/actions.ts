@@ -174,6 +174,24 @@ export async function signup(
     return { error: nlFout(error.message) };
   }
 
+  // 🔴 BESTAAT DIT ADRES AL? Dan doet Supabase met opzet alsof het gelukt is:
+  // hij maakt niets aan en verstuurt niets, maar geeft wél succes terug. Dat is
+  // een beveiliging — zou hij "dit adres bestaat al" zeggen, dan kan een vreemde
+  // uitvinden of iemand een Avinka-account heeft.
+  //
+  // ⚠️ Zonder het onderstaande is dat een DOODLOPENDE WEG: je belandt op het
+  // wachtscherm en wacht op een code die nooit komt. Dat overkwam de eigenaar
+  // 8-8 zelf, en die weet hoe het werkt; een leerkracht haakt hier af.
+  //
+  // Herkennen kan aan een lege `identities`-lijst: dat is Supabase' manier om
+  // het tóch door te geven aan de app zonder het aan de bezoeker te vertellen.
+  // Wij kiezen ervoor het wél te zeggen. Dat verraadt dat een adres bekend is,
+  // maar het alternatief kost je een gebruiker die niets fout deed — en de app
+  // zegt het elders al ("Er bestaat al een account met dit e-mailadres").
+  if (data.user && (data.user.identities?.length ?? 0) === 0) {
+    redirect("/sign-in?fout=bestaat-al");
+  }
+
   // Staat e-mailbevestiging UIT, dan is de gebruiker meteen ingelogd → dashboard.
   if (data.session) {
     revalidatePath("/", "layout");

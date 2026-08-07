@@ -52,6 +52,22 @@ export default async function SignInPage({
         </p>
       )}
 
+      {/* Iemand probeerde zich aan te melden met een adres dat al een account
+          heeft. Supabase houdt dat stil (zie signup() in auth/actions.ts), dus
+          zonder deze melding stond die persoon op het wachtscherm te wachten op
+          een code die nooit komt. De verwijzing naar wachtwoord vergeten staat
+          erbij omdat dat meestal de échte vraag is: mensen die vergeten zijn dat
+          ze een account hebben, weten hun wachtwoord ook niet meer. */}
+      {fout === "bestaat-al" && (
+        <p className="mb-5 w-full max-w-md rounded-2xl bg-amber-50 px-4 py-3 text-center text-sm font-semibold text-amber-800">
+          Er bestaat al een account met dit e-mailadres. Log hieronder in, of{" "}
+          <Link href="/wachtwoord-vergeten" className="underline">
+            vraag een nieuw wachtwoord aan
+          </Link>{" "}
+          als je het niet meer weet.
+        </p>
+      )}
+
       <AuthCard mode="signin" volgende={volgende} />
     </div>
     <Footer />
