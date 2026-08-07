@@ -5,7 +5,9 @@ import { verstuurMail, SUPPORT } from "@/lib/mail";
 import { BETALINGEN_LIVE } from "@/lib/abonnement";
 import { OPZEGGING_ONDERWERP, opzeggingHtml, opzeggingTekst } from "@/lib/mail-opzeggen";
 
-// De waarschuwing dat de klasgegevens over ~7 dagen verwijderd worden.
+// De waarschuwing dat de leerlinggegevens over ~7 dagen opgeruimd worden
+// (3 maanden na het aflopen van het abonnement). Het eigen vakwerk van de
+// leerkracht blijft staan; zie k_bewaren in de databasefunctie.
 //
 // ⚠️ DIT IS HET SLOT OP DE VERWIJDERING, niet alleen een beleefde mail. De
 // databasefunctie wijs_verwijder_klasdata() wist uitsluitend bij wie hier
@@ -58,8 +60,10 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Dag 83 van de 90: zeven dagen respijt, en dat is precies wat
+  // wijs_verwijder_klasdata() als slot afdwingt.
   const { data: aanDeBeurt, error } = await db.rpc("wijs_verwijder_waarschuwing", {
-    p_dag: 23,
+    p_dag: 83,
     p_max: 50,
   });
   if (error) {

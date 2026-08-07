@@ -1,11 +1,32 @@
 -- ============================================================================
--- Opzeggen verwijdert de klasgegevens (AVG)
+-- Opzeggen ruimt de leerlinggegevens op (AVG)
 -- ----------------------------------------------------------------------------
--- Wie 30 dagen geen abonnement meer heeft, raakt zijn KLASGEBONDEN gegevens
--- kwijt: klassen, rapporten, bestanden, taken en de duo-overdracht. Het account
--- zelf blijft bestaan (inloggegevens, de instellingen-rij, de betaalhistorie,
--- de verwijzingscode) — zie het ontwerp in het geheugen: boekhoudplicht,
--- terugkomen zonder gedoe, en een gewist account breekt de verwijzingsketen.
+-- Wie 3 MAANDEN geen abonnement meer heeft, raakt zijn gegevens OVER KINDEREN
+-- kwijt: klassen, rapporten, plattegronden, taken en de duo-overdracht.
+--
+-- ⭐ WAT BLIJFT: het eigen vakwerk van de leerkracht (lesontwerpen, werkbladen,
+-- draaiboeken). Daar staat geen kind in, er is dus geen reden om het te wissen,
+-- en het is precies het "oh ja, die staan op Avinka" waardoor iemand terugkomt.
+-- De grens loopt tussen GEGEVENS OVER KINDEREN en EIGEN WERK, niet tussen
+-- belangrijk en onbelangrijk. Zie k_bewaren in stap 4.
+--
+-- Het account zelf blijft ook bestaan (inloggegevens, de instellingen-rij, de
+-- betaalhistorie, de verwijzingscode): boekhoudplicht, terugkomen zonder gedoe,
+-- en een gewist account breekt de verwijzingsketen.
+--
+-- 🔑 WAAROM 3 MAANDEN EN NIET 30 DAGEN (besluit eigenaar 8-8-2026, na een
+-- ronde twijfel). Met 30 dagen viel het wissen precies in de zomervakantie:
+-- opzeggen op 15 juli betekende verwijderen op 14 augustus, twee weken vóór de
+-- schoolstart, met een waarschuwingsmail in een schoolmailbox waar niemand
+-- kijkt. Dat raakt uitsluitend de leerkracht die van plan was terug te komen.
+-- 3 maanden overleeft elke zomervakantie, sluit aan op de 90 dagen van
+-- wis-oude-rapporten in retention.sql, en is voor voornamen van kinderen een
+-- beter verhaal dan een half jaar.
+--
+-- ⚠️ Dit is nadrukkelijk GEEN drukmiddel om mensen te laten doorbetalen. Een
+-- verwijderregel als retentietruc raakt alleen je terugkerende klanten en kost
+-- je meer dan hij oplevert; het jaarabonnement staat op eigen benen (juli en
+-- augustus gratis). Verwijderen is hier een opruimregel, niet een verkoopmiddel.
 --
 -- ⚠️ DRIE SLOTEN, en ze zitten aan elkaar vast. Lees dit voor je iets wijzigt.
 --
@@ -65,14 +86,14 @@ revoke execute on function public.wijs_toegang_tot(text, timestamptz, timestampt
 grant  execute on function public.wijs_toegang_tot(text, timestamptz, timestamptz) to service_role;
 
 -- ── 3. Wie moet de waarschuwingsmail krijgen? ──────────────────────────────
--- Standaard op dag 23, zodat er ~7 dagen respijt is vóór dag 30.
+-- Standaard op dag 83, zodat er ~7 dagen respijt is vóór dag 90.
 --
 -- p_max is er voor de verzendreputatie, niet voor de techniek: staat er ooit
 -- een berg oude proefaccounts klaar, dan gaat die er in porties uit in plaats
 -- van als één blast vanaf een jong afzenderdomein. Wie vandaag niet aan de
 -- beurt is, is morgen aan de beurt.
 create or replace function public.wijs_verwijder_waarschuwing(
-  p_dag int default 23,
+  p_dag int default 83,
   p_max int default 50
 ) returns table (
   user_id   uuid,
@@ -85,12 +106,12 @@ language sql security definer set search_path = public as $$
          u.email::text,
          coalesce(u.raw_user_meta_data ->> 'first_name', ''),
          -- De datum die in de mail komt te staan, en die moet WAAR zijn. Bij
-         -- een gewone gebruiker is dat dag 30; loopt de mail achter (backlog,
+         -- een gewone gebruiker is dat dag 90; loopt de mail achter (backlog,
          -- storing), dan is het de respijttermijn van 7 dagen die telt, want
          -- dát is wat stap 4 hieronder afdwingt. Nooit een datum beloven die
          -- al voorbij is.
          greatest(
-           public.wijs_toegang_tot(i.abon_status, i.proef_eindigt, i.periode_eindigt) + interval '30 days',
+           public.wijs_toegang_tot(i.abon_status, i.proef_eindigt, i.periode_eindigt) + interval '90 days',
            now() + interval '7 days'
          )::date
   from public.instellingen i
@@ -126,8 +147,13 @@ grant  execute on function public.wijs_verwijder_waarschuwing(int, int) to servi
 -- de kolomverwijzing eronder ("column reference is ambiguous"). Dat is precies
 -- het soort fout dat pas afgaat op het moment dat de taak voor het eerst iets
 -- echt moet wissen.
-create or replace function public.wijs_verwijder_klasdata(
-  p_dagen   int default 30,
+-- ⚠️ Eerst weg, dan opnieuw: PostgreSQL weigert een "create or replace" zodra
+-- de teruggegeven kolommen veranderen ("cannot change return type"). Dit raakt
+-- alleen de functie zelf, nooit gegevens.
+drop function if exists public.wijs_verwijder_klasdata(int, int, int, boolean);
+
+create function public.wijs_verwijder_klasdata(
+  p_dagen   int default 90,
   p_respijt int default 7,
   p_max     int default 200,
   p_droog   boolean default false
@@ -136,7 +162,8 @@ create or replace function public.wijs_verwijder_klasdata(
   aantal_klassen    int,
   aantal_rapporten  int,
   aantal_bestanden  int,
-  aantal_taken      int
+  aantal_taken      int,
+  aantal_bewaard    int
 )
 language plpgsql security definer set search_path = public as $$
 declare
@@ -145,6 +172,15 @@ declare
   n_rapporten int;
   n_bestanden int;
   n_taken     int;
+  n_bewaard   int;
+  -- ⭐ HET EIGEN VAKWERK VAN DE LEERKRACHT. Dit blijft staan, ook jaren later.
+  -- ⚠️ Een WITTE lijst, geen zwarte: alles wat hier niet in staat gaat weg,
+  -- inclusief losse bestanden zonder herkomst. Zo valt een zelf getypt bestand
+  -- met voornamen erin automatisch aan de veilige kant.
+  -- ⚠️ 'plattegrond' hoort er met opzet NIET bij: dat is wel een tool-bestand,
+  -- maar er staan voornamen van kinderen in. Tool-bestand betekent hier dus
+  -- niet vanzelf "eigen werk".
+  k_bewaren constant text[] := array['lesontwerp', 'werkbladen', 'draaiboek'];
 begin
   for r in
     select i.user_id as uid
@@ -178,9 +214,12 @@ begin
       -- Alleen tellen. Zelfde filters als hieronder, zodat de droogloop echt
       -- laat zien wat de echte ronde zou doen.
       select count(*) into n_rapporten from public.rapporten t where t.user_id = r.uid;
-      select count(*) into n_bestanden from public.bestanden t where t.user_id = r.uid;
       select count(*) into n_taken     from public.taken     t where t.user_id = r.uid;
       select count(*) into n_klassen   from public.klassen   t where t.user_id = r.uid;
+      select count(*) into n_bestanden from public.bestanden t
+       where t.user_id = r.uid and (t.tool is null or t.tool <> all(k_bewaren));
+      select count(*) into n_bewaard   from public.bestanden t
+       where t.user_id = r.uid and t.tool = any(k_bewaren);
     else
       -- Rapporten EERST, en expliciet op user_id. rapporten.klas_id staat op
       -- "on delete set null", dus wie alleen de klas wist, laat de rapporten
@@ -189,14 +228,32 @@ begin
       with weg as (delete from public.rapporten t where t.user_id = r.uid returning 1)
         select count(*) into n_rapporten from weg;
 
-      -- Bestanden en taken hangen aan het ACCOUNT, niet aan de klas: er is
-      -- geen klasfilter om op te selecteren. Besluit van de eigenaar (8-8):
-      -- allebei helemaal weg, want van buitenaf is niet te zien welk bestand
-      -- voornamen bevat, en de waarschuwingsmail geeft 7 dagen om te
-      -- downloaden.
-      with weg as (delete from public.bestanden t where t.user_id = r.uid returning 1)
-        select count(*) into n_bestanden from weg;
+      -- ⚠️ EERST het eigen vakwerk UIT DE MAPPEN halen, en dan pas wissen.
+      -- bestanden.parent_id staat op "on delete cascade", dus een map die weg
+      -- gaat sleept alles mee wat erin zit. Zonder deze stap gooi je precies
+      -- het lesontwerp weg dat je wilde bewaren, omdat het toevallig in een map
+      -- "Groep 8" stond. Ze staan daarna los in Bestanden; de mapindeling gaat
+      -- verloren, en dat is de prijs voor het behouden van de inhoud.
+      update public.bestanden t
+         set parent_id = null
+       where t.user_id = r.uid
+         and t.tool = any(k_bewaren)
+         and t.parent_id is not null;
 
+      select count(*) into n_bewaard from public.bestanden t
+       where t.user_id = r.uid and t.tool = any(k_bewaren);
+
+      -- Nu de rest: plattegronden (voornamen), mappen, en alles zonder
+      -- herkomst. De witte lijst hierboven bepaalt wat blijft.
+      with weg as (
+        delete from public.bestanden t
+         where t.user_id = r.uid
+           and (t.tool is null or t.tool <> all(k_bewaren))
+        returning 1
+      ) select count(*) into n_bestanden from weg;
+
+      -- Taken hangen aan het account, niet aan de klas, maar ze gaan wel over
+      -- de klas ("gesprek met de ouders van Sanne"). Besluit eigenaar 8-8: weg.
       with weg as (delete from public.taken t where t.user_id = r.uid returning 1)
         select count(*) into n_taken from weg;
 
@@ -213,6 +270,7 @@ begin
     aantal_rapporten := n_rapporten;
     aantal_bestanden := n_bestanden;
     aantal_taken     := n_taken;
+    aantal_bewaard   := n_bewaard;
     return next;
   end loop;
 end;
@@ -252,14 +310,14 @@ select cron.schedule(
 --   select * from public.wijs_verwijder_waarschuwing();
 --
 -- Wat zou de nachtelijke taak wissen, zonder iets te wissen? (droogloop)
---   select * from public.wijs_verwijder_klasdata(30, 7, 200, true);
+--   select * from public.wijs_verwijder_klasdata(90, 7, 200, true);
 --
 -- Wie is er in beeld, en wanneer? (zonder iets te wissen)
 --   select user_id,
 --          coalesce(abon_status,'proef')                          as status,
 --          public.wijs_toegang_tot(abon_status, proef_eindigt, periode_eindigt)::date as toegang_tot,
 --          verwijder_waarschuwing_op::date                        as gewaarschuwd,
---          (public.wijs_toegang_tot(abon_status, proef_eindigt, periode_eindigt) + interval '30 days')::date as dag_30
+--          (public.wijs_toegang_tot(abon_status, proef_eindigt, periode_eindigt) + interval '90 days')::date as dag_90
 --     from public.instellingen
 --    order by 3 nulls last;
 --

@@ -74,10 +74,11 @@ create table if not exists public.instellingen (
   -- vast inlogadres; Esis werkt per school, dus die vult lvs_url zelf in.
   lvs_systeem    text not null default '',
   lvs_url        text not null default '',
-  -- Wanneer de "je klasgegevens worden verwijderd"-mail is verstuurd. Leeg =
+  -- Wanneer de "we ruimen je leerlinggegevens op"-mail is verstuurd. Leeg =
   -- nog niet gemaild, en dan wist wijs_verwijder_klasdata() bij deze gebruiker
   -- niets. Dit veld is dus het SLOT op de verwijdering, geen administratie.
-  -- Zie database/migratie-verwijder-klasdata.sql.
+  -- Zie database/migratie-verwijder-klasdata.sql (3 maanden; het eigen vakwerk
+  -- van de leerkracht blijft bewaard).
   verwijder_waarschuwing_op timestamptz,
   created_at     timestamptz default now(),
   updated_at     timestamptz default now()

@@ -1,4 +1,12 @@
-/* De mail dat de klasgegevens binnenkort verwijderd worden.
+/* De mail dat de leerlinggegevens binnenkort opgeruimd worden.
+ *
+ * ⭐ TOON: dit is NADRUKKELIJK GEEN dreigmail. De boodschap is "we bewaren
+ * gegevens over kinderen niet langer dan nodig, en je eigen vakwerk blijft
+ * gewoon staan". Dat is eerlijker, het wint vertrouwen op precies het punt
+ * waar deze markt gevoelig ligt, en het herinnert iemand er en passant aan dat
+ * zijn lesontwerpen er nog liggen. Een mail die dreigt met dataverlies om
+ * mensen terug te lokken, werkt bij leerkrachten averechts (besluit eigenaar
+ * 8-8-2026). Schrijf hem dus nooit om naar "je raakt alles kwijt".
  *
  * Alleen tekst en opmaak; het versturen doet src/lib/mail.ts. Zelfde vorm als
  * mail-proef-verlopen.ts, zie docs/mailsjablonen.md voor waarom die er zo
@@ -56,21 +64,21 @@ export type Opzegging = {
   downloadLink: string;
 };
 
-export const OPZEGGING_ONDERWERP = "Je klasgegevens worden binnenkort verwijderd";
+export const OPZEGGING_ONDERWERP = "We ruimen je leerlinggegevens op, je eigen werk blijft";
 
 export function opzeggingTekst(h: Opzegging): string {
   const datum = nlDatum(h.wistOp);
   return [
-    `Je hebt al een maand geen abonnement meer op Avinka. Daarom verwijderen we op ${datum} de gegevens die bij je klas horen.`,
+    `Je gebruikt Avinka al drie maanden niet meer. Daarom ruimen we op ${datum} de gegevens over je leerlingen op: je klassenlijsten, je rapporten, je plattegronden, je taken en de overdracht naar een collega.`,
     "",
-    "Dat gaat om je klassenlijsten, je rapporten, je bestanden, je taken en de overdracht naar een collega.",
+    "Dat doen we omdat gegevens over kinderen niet langer bewaard horen te worden dan nodig is.",
     "",
-    "Je account blijft gewoon bestaan. Kom je later terug, dan log je in met hetzelfde e-mailadres en begin je met een lege klas.",
+    "Je eigen werk blijft wel gewoon staan: je lesontwerpen, je werkbladen en je draaiboeken. Daar staat geen kind in, dus die bewaren we voor je. Kom je volgend schooljaar terug, dan liggen ze er nog. Je account blijft ook bestaan, met hetzelfde e-mailadres.",
     "",
-    "Wil je dit niet? Dan heb je twee mogelijkheden:",
+    "Wil je de leerlinggegevens tóch houden? Dan zijn er twee manieren:",
     "",
     `1. Pak je abonnement weer op, dan blijft alles staan: ${h.link}`,
-    `2. Download je gegevens, dan heb je alles op je eigen computer: ${h.downloadLink}`,
+    `2. Download je gegevens, dan heb je ze op je eigen computer: ${h.downloadLink}`,
     "",
     "Heb je hier vragen over, mail dan gerust naar support@avinka.nl. Ik lees alles zelf.",
     "",
@@ -91,9 +99,15 @@ export function opzeggingHtml(h: Opzegging): string {
   <tr><td align="center">
     <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:20px;font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
       <tr><td style="padding:34px 36px 0;">
-        <h1 style="margin:0;font-family:'Bricolage Grotesque',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:800;font-size:26px;line-height:1.25;color:#221c3a;">Je klasgegevens worden verwijderd op ${datum}</h1>
-        <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Je hebt al een maand geen abonnement meer op Avinka. Daarom verwijderen we op ${datum} de gegevens die bij je klas horen: je klassenlijsten, je rapporten, je bestanden, je taken en de overdracht naar een collega.</p>
-        <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Je account blijft gewoon bestaan. Kom je later terug, dan log je in met hetzelfde e-mailadres en begin je met een lege klas.</p>
+        <h1 style="margin:0;font-family:'Bricolage Grotesque',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:800;font-size:26px;line-height:1.25;color:#221c3a;">We ruimen je leerlinggegevens op</h1>
+        <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Je gebruikt Avinka al drie maanden niet meer. Daarom ruimen we op ${datum} de gegevens over je leerlingen op: je klassenlijsten, je rapporten, je plattegronden, je taken en de overdracht naar een collega. Dat doen we omdat gegevens over kinderen niet langer bewaard horen te worden dan nodig is.</p>
+      </td></tr>
+      <tr><td style="padding:20px 36px 0;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f1f8f4;border-radius:14px;">
+          <tr><td style="padding:18px 20px;">
+            <p style="margin:0;font-size:16px;line-height:1.65;color:#265c42;"><strong>Je eigen werk blijft staan.</strong> Je lesontwerpen, je werkbladen en je draaiboeken bewaren we voor je, want daar staat geen kind in. Kom je volgend schooljaar terug, dan liggen ze er nog. Je account blijft ook bestaan, met hetzelfde e-mailadres.</p>
+          </td></tr>
+        </table>
       </td></tr>
       <tr><td align="center" style="padding:26px 36px 0;">
         <table cellpadding="0" cellspacing="0" border="0"><tr>
@@ -101,7 +115,7 @@ export function opzeggingHtml(h: Opzegging): string {
             <a href="${link}" style="display:inline-block;padding:14px 30px;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;">Pak je abonnement weer op</a>
           </td>
         </tr></table>
-        <p style="margin:16px 0 0;font-size:15px;line-height:1.65;color:#6b6880;">Liever niet? <a href="${download}" style="color:#25855a;font-weight:bold;">Download dan eerst je gegevens.</a></p>
+        <p style="margin:16px 0 0;font-size:15px;line-height:1.65;color:#6b6880;">Wil je de leerlinggegevens tóch houden? <a href="${download}" style="color:#25855a;font-weight:bold;">Download ze dan eerst.</a></p>
       </td></tr>
       <tr><td style="padding:24px 36px 0;">
         <p style="margin:0;font-size:15px;line-height:1.65;color:#6b6880;">Heb je hier vragen over, mail dan gerust naar <a href="mailto:support@avinka.nl" style="color:#25855a;font-weight:bold;">support@avinka.nl</a>. Ik lees alles zelf.</p>
