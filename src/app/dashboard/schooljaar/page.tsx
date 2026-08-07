@@ -8,6 +8,7 @@ import {
   vandaag,
 } from "@/lib/planning";
 import SchooljaarView from "@/components/dashboard/SchooljaarView";
+import { VerwijderdeAfspraken } from "@/components/dashboard/VerwijderdeAfspraken";
 import { haalOfMaakEigenBron } from "@/lib/agenda-eigen";
 
 // Mijn schooljaar: het jaar van deze leerkracht, opgebouwd uit zijn eigen
@@ -44,17 +45,22 @@ export default async function SchooljaarPage({
     : { fout: "geen sessie" };
   const eigenBronId = "id" in eigenBron ? eigenBron.id : null;
 
+  // Eromheen, niet erin: het scherm dat de afspraak weghaalt (het dagkaartje)
+  // zit ergens diep in deze boom, en de kalender die hem moet laten verdwijnen
+  // een stuk hoger. Ze delen dus één lijstje, boven allebei.
   return (
-    <SchooljaarView
-      bron={bron}
-      jaren={jaren.map((j) => ({ id: j.id, label: j.label, afgesloten: j.afgesloten }))}
-      vandaag={nu}
-      agendas={agendas}
-      mijnGroepen={groepen}
-      systemen={systemen}
-      context={planContext}
-      eigenBronId={eigenBronId}
-      genegeerd={genegeerd}
-    />
+    <VerwijderdeAfspraken>
+      <SchooljaarView
+        bron={bron}
+        jaren={jaren.map((j) => ({ id: j.id, label: j.label, afgesloten: j.afgesloten }))}
+        vandaag={nu}
+        agendas={agendas}
+        mijnGroepen={groepen}
+        systemen={systemen}
+        context={planContext}
+        eigenBronId={eigenBronId}
+        genegeerd={genegeerd}
+      />
+    </VerwijderdeAfspraken>
   );
 }
