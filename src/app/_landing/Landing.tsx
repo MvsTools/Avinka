@@ -46,6 +46,14 @@ import { WereldPrijzen, WereldVragen } from "./PrijzenVragen";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
+/* 🔴 De ervaringen-sectie (polaroids) staat UIT sinds 7-8-2026. De vijf namen
+   en quotes erin zijn verzonnen voorbeelden, en die horen niet op een publiek
+   bereikbare site onder de kop "Echte ervaringen uit de praktijk". Zet dit op
+   `true` zodra er echte reacties uit de proefgroep binnen zijn — verder hoeft
+   er niets te gebeuren, alle code en foto's blijven staan.
+   Zie [[landing-niet-generiek]] en de go-live-checklist. */
+const TOON_ERVARINGEN = false;
+
 /* ──────────────────────────────────────────────────────────────────────────
    /nieuw4 — "Alles op z'n plek"
 
@@ -1397,8 +1405,16 @@ export default function Landing({
         {/* ── 6. De maker ── */}
         <WereldMaker fotoBestand={fotoBestand} />
 
-        {/* ── 7. Ervaringen: polaroids aan de levende draad. ── */}
-        <WereldPolaroids />
+        {/* ── 7. Ervaringen: polaroids aan de levende draad. ──
+           🔴 UIT gezet 7-8-2026, vóór de eerste publieke deploy. De vijf namen
+           en quotes zijn VERZONNEN voorbeelden, en dat mag niet onder een kop
+           die "Echte ervaringen uit de praktijk" belooft zodra de site echt
+           bereikbaar is. Alleen deze regel omzetten naar `true` zodra er echte
+           reacties zijn; alle code, foto's en de draad-animatie blijven staan.
+           ⚠️ Deze sectie draagt óók de golf van het mintveld van WereldMaker
+           terug naar het papier — nagemeten na het uitzetten, zie de
+           schermafdruk in de commit. */}
+        {TOON_ERVARINGEN && <WereldPolaroids />}
 
         {/* ── 7b. Samen teruggewonnen: het klapbord met de echte cijfers.
            Staat hier omdat de polaroids het zachte bewijs zijn (wat mensen
