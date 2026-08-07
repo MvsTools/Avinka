@@ -18,11 +18,21 @@ function veilig(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/* "1 dag" / "2 dagen" — een dagental voelt tastbaarder dan een datum (de
+   eigenaar, 7-8), en de cron draait toch al met een venster van maar 1-2
+   dagen (zie proef-herinnering/route.ts), dus het is altijd een klein getal. */
+function dagenTekst(n: number): string {
+  return n <= 1 ? "1 dag" : `${n} dagen`;
+}
+
 export type ProefHerinnering = {
-  /* Voornaam; leeg mag, dan begint de mail gewoon met "Hallo". */
+  /* Wordt niet meer gebruikt in de mail zelf (bewust zakelijk, geen
+     "Hallo naam" — zie de eigenaar 7-8), maar blijft in dit type staan omdat
+     de aanroeper 'm toch al heeft. */
   voornaam: string;
-  /* Wanneer de proef afloopt, al als leesbare datum ("donderdag 7 augustus"). */
-  eindDatum: string;
+  /* Hoeveel hele dagen de proef nog loopt. Al berekend door de aanroeper
+     (zelfde rekenwijze als proefDagenResterend() in lib/abonnement.ts). */
+  dagenResterend: number;
   /* Link naar de abonnementspagina. */
   link: string;
 };
@@ -30,16 +40,13 @@ export type ProefHerinnering = {
 export const PROEF_ONDERWERP = "Je proefperiode loopt bijna af";
 
 export function proefTekst(h: ProefHerinnering): string {
-  const aanhef = h.voornaam.trim() ? `Hallo ${h.voornaam.trim()},` : "Hallo,";
   return [
-    aanhef,
-    "",
-    `Je proefperiode van Avinka loopt af op ${h.eindDatum}.`,
+    `Je proefperiode van Avinka loopt af over ${dagenTekst(h.dagenResterend)}.`,
     "",
     "Wil je verder? Kijk dan even welk pakket bij je past:",
     h.link,
     "",
-    "Nog vragen, of iets wat je mist? Mail gerust naar support@avinka.nl.",
+    "Andere leerkrachten gingen je al voor. Twijfel je nog ergens over? Laat het gerust weten via support@avinka.nl.",
     "Ik lees alles zelf.",
     "",
     "Met vriendelijke groet,",
@@ -49,16 +56,17 @@ export function proefTekst(h: ProefHerinnering): string {
 }
 
 export function proefHtml(h: ProefHerinnering): string {
-  const naam = veilig(h.voornaam.trim());
-  const aanhef = naam ? `Hallo ${naam},` : "Hallo,";
-  const datum = veilig(h.eindDatum);
+  const dagen = veilig(dagenTekst(h.dagenResterend));
   const link = veilig(h.link);
-  return `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fbf6ee;padding:32px 12px;">
+  return `<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Plus+Jakarta+Sans:wght@400;700&display=swap');
+</style>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fbf6ee;padding:32px 12px;">
   <tr><td align="center">
     <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:20px;font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
       <tr><td style="padding:34px 36px 0;">
-        <h1 style="margin:0;font-family:Fraunces,Georgia,'Times New Roman',serif;font-size:26px;line-height:1.25;color:#221c3a;">Je proefperiode loopt bijna af</h1>
-        <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">${aanhef} je proefperiode van Avinka loopt af op <strong style="color:#221c3a;">${datum}</strong>.</p>
+        <h1 style="margin:0;font-family:'Bricolage Grotesque',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:800;font-size:26px;line-height:1.25;color:#221c3a;">Je proefperiode loopt bijna af</h1>
+        <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Je proefperiode van Avinka loopt af over <strong style="color:#221c3a;">${dagen}</strong>.</p>
       </td></tr>
       <tr><td align="center" style="padding:26px 36px 0;">
         <table cellpadding="0" cellspacing="0" border="0"><tr>
@@ -68,7 +76,7 @@ export function proefHtml(h: ProefHerinnering): string {
         </tr></table>
       </td></tr>
       <tr><td style="padding:24px 36px 0;">
-        <p style="margin:0;font-size:15px;line-height:1.65;color:#6b6880;">Nog vragen, of iets wat je mist? Mail gerust naar <a href="mailto:support@avinka.nl" style="color:#25855a;font-weight:bold;">support@avinka.nl</a>. Ik lees alles zelf.</p>
+        <p style="margin:0;font-size:15px;line-height:1.65;color:#6b6880;">Andere leerkrachten gingen je al voor. Twijfel je nog ergens over? Laat het gerust weten via <a href="mailto:support@avinka.nl" style="color:#25855a;font-weight:bold;">support@avinka.nl</a>. Ik lees alles zelf.</p>
       </td></tr>
       <tr><td style="padding:24px 36px 30px;">
         <div style="border-top:1px solid #ece7e0;padding-top:16px;">

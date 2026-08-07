@@ -36,6 +36,14 @@ function datumInWoorden(iso: string): string {
   });
 }
 
+// Voor de mail zelf (dagental voelt tastbaarder dan een datum, zie
+// mail-proef.ts); datumInWoorden() hierboven blijft staan voor de droogloop,
+// want daar wil je als beheerder wél de echte datum zien.
+function dagenTot(iso: string): number {
+  const ms = new Date(iso).getTime() - Date.now();
+  return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
+}
+
 export async function GET(request: NextRequest) {
   const geheim = process.env.CRON_SECRET;
   const meegestuurd = request.headers.get("authorization");
@@ -88,7 +96,7 @@ export async function GET(request: NextRequest) {
   for (const r of rijen) {
     const gegevens = {
       voornaam: r.voornaam,
-      eindDatum: datumInWoorden(r.proef_eindigt),
+      dagenResterend: dagenTot(r.proef_eindigt),
       link,
     };
     const antwoord = await verstuurMail({
