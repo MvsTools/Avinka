@@ -59,15 +59,13 @@ export type Opzegging = {
      wijs_verwijder_waarschuwing() en houdt al rekening met de respijttermijn,
      dus deze datum is waar. */
   wistOp: string;
-  /* Link naar de abonnementspagina: één klik en er gebeurt niets meer. */
+  /* Link naar de abonnementspagina: één klik en er gebeurt niets meer.
+     ⚠️ Dit is de ENIGE dashboardpagina waar deze lezer nog binnenkomt. Zodra
+     BETALINGEN_LIVE aan staat stuurt de middleware iemand zonder toegang van
+     élke /dashboard-pagina door naar /dashboard/abonnement (zie
+     src/utils/supabase/middleware.ts). Zet hier dus nooit een link naar
+     Instellingen of Bestanden in: die lopen dood op de betaalpagina. */
   link: string;
-  /* Link naar Instellingen, waar de knop "download je gegevens" staat (die
-     leest /api/account/export uit, de AVG-inzage die er al was).
-     ⚠️ Bewust NIET rechtstreeks naar /api/account/export: die route geeft een
-     kale 401 in JSON aan wie niet ingelogd is, en vanuit een mail is de kans
-     juist groot dat iemand uitgelogd klikt. Via de dashboardpagina land je
-     netjes op het inlogscherm. */
-  downloadLink: string;
 };
 
 export const OPZEGGING_ONDERWERP = "We ruimen je leerlinggegevens op, je eigen werk blijft";
@@ -78,16 +76,11 @@ export function opzeggingTekst(h: Opzegging): string {
   return [
     `Sinds ${tot} heb je geen abonnement meer op Avinka. Gegevens over kinderen bewaren wij maximaal 90 dagen, dus op ${datum} ruimen we ze op.`,
     "",
-    "Het gaat om je klassenlijsten, je rapporten, je plattegronden, je agenda-afspraken, je taken en de overdracht naar een collega.",
+    "Je eigen werk bewaren we wel: lesontwerpen, werkbladen en draaiboeken, mocht je ze ooit nog nodig hebben.",
     "",
-    "Je eigen werk blijft wel gewoon staan: je lesontwerpen, je werkbladen en je draaiboeken. Daar staat geen kind in, dus die bewaren we voor je. Kom je volgend schooljaar terug, dan liggen ze er nog. Je account blijft ook bestaan, met hetzelfde e-mailadres.",
+    `Wil je je klas houden? Pak dan je abonnement weer op: ${h.link}`,
     "",
-    "Wil je de leerlinggegevens tóch houden? Dan zijn er twee manieren:",
-    "",
-    `1. Pak je abonnement weer op, dan blijft alles staan: ${h.link}`,
-    `2. Download je gegevens, dan heb je ze op je eigen computer: ${h.downloadLink}`,
-    "",
-    "Heb je hier vragen over, mail dan gerust naar support@avinka.nl. Ik lees alles zelf.",
+    "Klopt er iets niet? Mail gerust naar support@avinka.nl. Ik lees alles zelf.",
     "",
     "Met vriendelijke groet,",
     "Michael van Spanje",
@@ -97,7 +90,6 @@ export function opzeggingTekst(h: Opzegging): string {
 
 export function opzeggingHtml(h: Opzegging): string {
   const link = veilig(h.link);
-  const download = veilig(h.downloadLink);
   const datum = veilig(nlDatum(h.wistOp));
   const tot = veilig(nlDatum(h.abonnementTot));
   return `<style>
@@ -108,12 +100,12 @@ export function opzeggingHtml(h: Opzegging): string {
     <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:20px;font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
       <tr><td style="padding:34px 36px 0;">
         <h1 style="margin:0;font-family:'Bricolage Grotesque',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:800;font-size:26px;line-height:1.25;color:#221c3a;">We ruimen je leerlinggegevens op</h1>
-        <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Sinds ${tot} heb je geen abonnement meer op Avinka. Gegevens over kinderen bewaren wij maximaal 90 dagen, dus op <strong style="color:#221c3a;">${datum}</strong> ruimen we ze op: je klassenlijsten, je rapporten, je plattegronden, je agenda-afspraken, je taken en de overdracht naar een collega.</p>
+        <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Sinds ${tot} heb je geen abonnement meer op Avinka. Gegevens over kinderen bewaren wij maximaal 90 dagen, dus op <strong style="color:#221c3a;">${datum}</strong> ruimen we ze op.</p>
       </td></tr>
       <tr><td style="padding:20px 36px 0;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f1f8f4;border-radius:14px;">
           <tr><td style="padding:18px 20px;">
-            <p style="margin:0;font-size:16px;line-height:1.65;color:#265c42;"><strong>Je eigen werk blijft staan.</strong> Je lesontwerpen, je werkbladen en je draaiboeken bewaren we voor je, want daar staat geen kind in. Kom je volgend schooljaar terug, dan liggen ze er nog. Je account blijft ook bestaan, met hetzelfde e-mailadres.</p>
+            <p style="margin:0;font-size:16px;line-height:1.65;color:#265c42;"><strong>Je eigen werk blijft staan.</strong> Lesontwerpen, werkbladen en draaiboeken bewaren we voor je, mocht je ze ooit nog nodig hebben.</p>
           </td></tr>
         </table>
       </td></tr>
@@ -123,10 +115,9 @@ export function opzeggingHtml(h: Opzegging): string {
             <a href="${link}" style="display:inline-block;padding:14px 30px;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;">Pak je abonnement weer op</a>
           </td>
         </tr></table>
-        <p style="margin:16px 0 0;font-size:15px;line-height:1.65;color:#6b6880;">Wil je de leerlinggegevens tóch houden? <a href="${download}" style="color:#25855a;font-weight:bold;">Download ze dan eerst.</a></p>
       </td></tr>
-      <tr><td style="padding:24px 36px 0;">
-        <p style="margin:0;font-size:15px;line-height:1.65;color:#6b6880;">Heb je hier vragen over, mail dan gerust naar <a href="mailto:support@avinka.nl" style="color:#25855a;font-weight:bold;">support@avinka.nl</a>. Ik lees alles zelf.</p>
+      <tr><td style="padding:22px 36px 0;">
+        <p style="margin:0;font-size:15px;line-height:1.65;color:#6b6880;">Klopt er iets niet? Mail gerust naar <a href="mailto:support@avinka.nl" style="color:#25855a;font-weight:bold;">support@avinka.nl</a>. Ik lees alles zelf.</p>
       </td></tr>
       <tr><td style="padding:24px 36px 30px;">
         <div style="border-top:1px solid #ece7e0;padding-top:16px;">

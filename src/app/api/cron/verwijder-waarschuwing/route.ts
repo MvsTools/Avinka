@@ -82,9 +82,11 @@ export async function GET(request: NextRequest) {
   }
 
   const oorsprong = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
+  // ⚠️ Alleen de abonnementspagina. Zodra BETALINGEN_LIVE aan staat stuurt de
+  // middleware iemand zonder toegang van élke andere /dashboard-pagina hierheen
+  // door, dus een link naar Instellingen (waar de downloadknop staat) loopt
+  // voor déze lezer gegarandeerd dood op precies deze pagina.
   const link = `${oorsprong}/dashboard/abonnement`;
-  // Instellingen, want daar staat de knop "download je gegevens" (AccountBeheer).
-  const downloadLink = `${oorsprong}/dashboard/instellingen`;
 
   let verstuurd = 0;
   const mislukt: { email: string; reden: string }[] = [];
@@ -95,7 +97,6 @@ export async function GET(request: NextRequest) {
       wistOp: r.wist_op,
       abonnementTot: r.abo_tot,
       link,
-      downloadLink,
     };
     const antwoord = await verstuurMail({
       naar: r.email,
