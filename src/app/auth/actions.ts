@@ -27,6 +27,10 @@ function nlFout(bericht: string): string {
     return "Kies een nieuw wachtwoord dat anders is dan je huidige.";
   if (b.includes("for security purposes") || b.includes("rate limit"))
     return "Even geduld — je hebt dit net al geprobeerd. Wacht een minuutje en probeer opnieuw.";
+  // Onbekende Supabase-melding: de gebruiker krijgt een nette generieke tekst,
+  // maar de echte reden mag niet verloren gaan — anders is dit soort fout
+  // straks niet meer te herleiden (zie mail-verzendstraat: altijd de reden loggen).
+  console.error("Onvertaalde auth-fout van Supabase:", bericht);
   return "Er ging iets mis. Probeer het zo nog eens.";
 }
 
@@ -35,6 +39,13 @@ function nlFout(bericht: string): string {
 // tegen dat dit veld naar een vreemde site kan wijzen.
 function veiligeVolgende(waarde: FormDataEntryValue | null): string {
   return veiligIntern(waarde == null ? null : String(waarde));
+}
+
+// "marieke" / "MARIEKE" -> "Marieke", "anne-marie" -> "Anne-Marie". Dit is de
+// enige plek waar first_name wordt vastgelegd; alle andere plekken (dashboard-
+// begroeting, duo-uitnodiging, Mollie-checkout, de aanmeldmail) lezen 'm alleen.
+function metHoofdletter(naam: string): string {
+  return naam.toLowerCase().replace(/(^|[\s-])\p{L}/gu, (m) => m.toUpperCase());
 }
 
 // INLOGGEN — bij succes door naar het dashboard (of naar `volgende`).
@@ -66,7 +77,7 @@ export async function signup(
   _prev: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
-  const voornaam = String(formData.get("voornaam") ?? "").trim();
+  const voornaam = metHoofdletter(String(formData.get("voornaam") ?? "").trim());
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const akkoord = formData.get("akkoord");
