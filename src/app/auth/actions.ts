@@ -9,7 +9,18 @@ import { veiligIntern } from "@/lib/paden";
 import { isWegwerpAdres } from "@/lib/email-normaliseren";
 
 // Het resultaat dat de formulieren tonen (foutmelding of bevestiging).
-export type AuthState = { error?: string; message?: string };
+// `email` staat er alleen bij na een geslaagde registratie: het wachtscherm
+// toont het adres én heeft het nodig om de mail opnieuw te kunnen sturen.
+// `opnieuwNa` is het tijdstip (epoch ms) waarop de knop "stuur opnieuw" weer
+// vrijkomt. Bewust een tijdstip en geen aantal seconden: het scherm kan er dan
+// zelf uit afleiden hoeveel er nog over is, zonder een teller bij te houden die
+// uit de pas kan lopen met de werkelijkheid.
+export type AuthState = {
+  error?: string;
+  message?: string;
+  email?: string;
+  opnieuwNa?: number;
+};
 
 // Vertaalt de Engelse Supabase-meldingen naar begrijpelijk Nederlands.
 function nlFout(bericht: string): string {
@@ -148,10 +159,54 @@ export async function signup(
   }
 
   // Staat bevestiging AAN, dan moet de gebruiker eerst de mail bevestigen.
-  return {
-    message:
-      "Bijna klaar! We hebben je een mail gestuurd. Klik op de link daarin om je account te bevestigen.",
-  };
+  // Het adres gaat mee: het wachtscherm toont het, en de knop "stuur opnieuw"
+  // heeft het nodig.
+  return { message: "verstuurd", email };
+}
+
+// BEVESTIGINGSMAIL OPNIEUW STUREN — vanaf het wachtscherm, voor wie niets
+// binnenkreeg. Belangrijk genoeg om apart te bestaan: op een schoolmailadres
+// sneuvelt deze mail geregeld in een filter waar de gebruiker zelf niet bij kan
+// (zie docs/supabase-mail-instellingen.md), en zonder deze knop is de enige
+// uitweg opnieuw registreren — wat niet kan, want het account bestaat al.
+export async function bevestigingOpnieuw(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const email = String(formData.get("email") ?? "").trim();
+  const volgende = veiligeVolgende(formData.get("volgende"));
+
+  if (!email) {
+    return { error: "We weten niet naar welk adres we moeten sturen. Meld je opnieuw aan." };
+  }
+
+  const h = await headers();
+  const origin = h.get("origin") ?? `https://${h.get("host") ?? ""}`;
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email,
+    options: {
+      // Zelfde bestemming als bij het aanmelden, anders raakt een uitnodiging
+      // alsnog kwijt bij wie de tweede mail gebruikt.
+      emailRedirectTo:
+        volgende === "/dashboard"
+          ? `${origin}/auth/confirm`
+          : `${origin}/auth/confirm?next=${encodeURIComponent(volgende)}`,
+    },
+  });
+
+  if (error) {
+    // De reden altijd loggen — anders is een mislukte verzending later niet te
+    // herleiden (zelfde les als bij de 535-storing, zie mail-verzendstraat).
+    console.error("Bevestigingsmail opnieuw sturen mislukte:", error.message);
+    return { error: nlFout(error.message) };
+  }
+
+  // Een minuut op slot. Supabase heeft zelf ook een snelheidsgrens; deze
+  // wachttijd houdt de gebruiker daar weg, want díé foutmelding helpt niemand.
+  return { message: "opnieuw", opnieuwNa: Date.now() + 60_000 };
 }
 
 // WACHTWOORD VERGETEN — stuurt een herstelmail (als het account bestaat).

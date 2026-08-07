@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { login, signup, type AuthState } from "@/app/auth/actions";
 import { PROEF_DAGEN } from "@/lib/abonnement";
+import BevestigWachtscherm from "@/components/BevestigWachtscherm";
 
 // "marieke" / "MARIEKE" -> "Marieke", "anne-marie" -> "Anne-Marie". Zelfde
 // regel als metHoofdletter() in auth/actions.ts (die kan hier niet
@@ -88,23 +89,10 @@ export default function AuthCard({
     else localStorage.removeItem("avinka_onthoud_email");
   }
 
-  // Na een geslaagde registratie tonen we alleen de "check je mail"-boodschap.
+  // Na een geslaagde registratie neemt het wachtscherm het over: dat kan de
+  // mail opnieuw sturen en legt uit wat er mis kan zijn.
   if (state.message) {
-    return (
-      <div className="w-full max-w-md rounded-3xl border border-black/5 bg-white p-8 text-center shadow-xl sm:p-10">
-        <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-soft text-3xl">
-          📬
-        </span>
-        <h1 className="mt-5 text-2xl font-bold text-ink">Check je mail</h1>
-        <p className="mt-3 leading-7 text-ink/70">{state.message}</p>
-        <Link
-          href="/sign-in"
-          className="mt-7 inline-block rounded-2xl border-2 border-ink/10 px-6 py-3 font-bold text-ink transition hover:border-ink/20"
-        >
-          Naar inloggen
-        </Link>
-      </div>
-    );
+    return <BevestigWachtscherm email={state.email} volgende={volgende} />;
   }
 
   return (
