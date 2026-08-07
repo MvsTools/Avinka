@@ -13,6 +13,7 @@
 export * from "./types";
 export * from "./datum";
 export * from "./vakanties";
+export * from "./feestdagen";
 export * from "./schooljaar";
 export * from "./eigen-vakanties";
 export * from "./dubbelingen";

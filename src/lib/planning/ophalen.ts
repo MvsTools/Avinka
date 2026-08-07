@@ -19,6 +19,7 @@ import {
   type RoosterSetup,
 } from "./rooster";
 import { metEigenVakanties } from "./eigen-vakanties";
+import { feestdagenAlsItems } from "./feestdagen";
 import { beschikbareSchooljaren, maakSchooljaar, periodesVan, schooljaarVoor } from "./schooljaar";
 import type { PlanItem, PlanningBron, Roosterblok, Taak } from "./types";
 import { isRegio, STANDAARD_REGIO, type Regio, type Vakantie } from "./vakanties";
@@ -315,8 +316,14 @@ export async function haalPlanning(
   // nodig, dus die vraag doen we pas hierna.
   const weekOverrides = await haalRoosterWeken(supabase, van, tot, rooster?.setup ?? {});
 
+  // De landelijke feestdagen (Koningsdag, Hemelvaartsdag …) horen er ook bij,
+  // ook als er geen agenda gekoppeld is. Noemt de gekoppelde agenda dezelfde
+  // dag óók (bijv. "Koningsdag - alle groepen vrij"), dan wint die hieronder
+  // gewoon via de dubbelingen-check, net als bij de landelijke vakantiedata.
+  const metFeestdagen = [...ruwe, ...feestdagenAlsItems(schooljaar)];
+
   // Staat dezelfde afspraak in twee agenda's, dan tonen we hem één keer.
-  const items = markeerDubbelingen(ruwe, volgorde);
+  const items = markeerDubbelingen(metFeestdagen, volgorde);
 
   // De vakanties van je eigen school gaan boven de landelijke lijst.
   const eigen = metEigenVakanties(schooljaar, items);
