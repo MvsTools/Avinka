@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
-import { getLaatsteToestemming, registreerHerAkkoord } from "@/lib/db";
+import { heeftToestemmingVoor, registreerHerAkkoord } from "@/lib/db";
 import { VOORWAARDEN, PRIVACY, WIJZIGING_SAMENVATTING } from "@/lib/juridisch";
 
 // Verplichte her-akkoord-pop-up. Verschijnt zodra de versie van de voorwaarden of
@@ -23,18 +23,16 @@ export default function HerAkkoordModal() {
         setStatus("verborgen");
         return;
       }
-      getLaatsteToestemming().then((laatste) => {
-        const actueel =
-          laatste !== null &&
-          laatste.voorwaarden_versie === VOORWAARDEN.versie &&
-          laatste.privacy_versie === PRIVACY.versie;
-        if (actueel) {
-          setStatus("verborgen");
-          return;
-        }
-        setEersteKeer(laatste === null);
-        setStatus("open");
-      });
+      heeftToestemmingVoor(VOORWAARDEN.versie, PRIVACY.versie).then(
+        ({ actueel, eersteKeer }) => {
+          if (actueel) {
+            setStatus("verborgen");
+            return;
+          }
+          setEersteKeer(eersteKeer);
+          setStatus("open");
+        },
+      );
     });
   }, []);
 

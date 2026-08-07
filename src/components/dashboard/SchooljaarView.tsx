@@ -33,6 +33,7 @@ import { ETIKET } from "./schooljaar-stijl";
 import SchooljaarDagkaart from "./SchooljaarDagkaart";
 import FeitenRij from "./FeitenRij";
 import WatEraanKomt from "./WatEraanKomt";
+import { useVerwijderlijst, zonderVerwijderd } from "./VerwijderdeAfspraken";
 
 // Mijn schooljaar, laag 1: je jaar op een rij. De weekplanning en je lesdag
 // komen hier straks als eigen tabbladen bij; de gegevens eronder zijn al
@@ -55,7 +56,7 @@ function maandenVan(start: string, eind: string): string[] {
 }
 
 export default function SchooljaarView({
-  bron: volledigeBron,
+  bron: bronVanServer,
   jaren,
   vandaag,
   agendas,
@@ -80,6 +81,13 @@ export default function SchooljaarView({
   const [tab, setTab] = useState<"jaar" | "week" | "agendas">(
     agendas.length ? "jaar" : "agendas",
   );
+
+  // Wat je net hebt weggehaald, gaat er hier al af — dus in één keer voor de
+  // kalender, de lijst, de feiten én "Wat eraan komt". De server haalt hem daar
+  // vlak daarna zelf ook uit; dit is alleen het wachten weg. Zie
+  // VerwijderdeAfspraken.tsx.
+  const netWeg = useVerwijderlijst();
+  const volledigeBron = zonderVerwijderd(bronVanServer, netWeg?.ids);
 
   // De bewerkstand van het weekrooster (in SchooljaarWeek) registreert hier dat
   // er onopgeslagen wijzigingen zijn. De tabbladen zijn gewone knoppen (geen

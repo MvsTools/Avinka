@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Soort } from "@/lib/agenda-herken";
+import { useVerwijderlijst } from "./VerwijderdeAfspraken";
 
 // De logica achter "zelf een afspraak toevoegen", los van waar het formulier
 // op het scherm staat. Twee plekken gebruiken hem: de kaart in Jaaroverzicht
@@ -43,10 +44,29 @@ export function useEigenAfspraakVorm(vandaag: string) {
   const [gelukt, setGelukt] = useState<string | null>(null);
   // Verwijderen voelde traag, want het kaartje wachtte tot router.refresh()
   // helemaal klaar was (de hele pagina opnieuw ophalen) voordat de afspraak
-  // uit de lijst verdween. Nu verdwijnt hij METEEN hier lokaal, en loopt de
-  // echte verwijdering en de server-verversing op de achtergrond door — mislukt
-  // die onverwacht, dan komt de afspraak gewoon terug (zie de catch hieronder).
-  const [netVerwijderd, setNetVerwijderd] = useState<Set<string>>(new Set());
+  // uit de lijst verdween. Nu verdwijnt hij METEEN, en loopt de echte
+  // verwijdering en de server-verversing op de achtergrond door — mislukt die
+  // onverwacht, dan komt de afspraak gewoon terug (zie de catch hieronder).
+  //
+  // Staat er een gedeelde lijst om ons heen (VerwijderdeAfspraken), dan houden
+  // we hem dáár bij: anders verdwijnt de afspraak wel uit dit kaartje maar
+  // blijft hij in de kalender eronder nog even staan. Zonder provider — een
+  // formulier dat los in een pagina hangt — volstaat het eigen lijstje.
+  const gedeeld = useVerwijderlijst();
+  const [eigenVerwijderd, setEigenVerwijderd] = useState<Set<string>>(() => new Set());
+  const netVerwijderd = gedeeld ? gedeeld.ids : eigenVerwijderd;
+  const meldVerwijderd = (id: string, weg: boolean) => {
+    if (gedeeld) {
+      gedeeld.meld(id, weg);
+      return;
+    }
+    setEigenVerwijderd((v) => {
+      const n = new Set(v);
+      if (weg) n.add(id);
+      else n.delete(id);
+      return n;
+    });
+  };
   const router = useRouter();
   const soortTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -119,7 +139,7 @@ export function useEigenAfspraakVorm(vandaag: string) {
   };
 
   const weghalen = async (id: string) => {
-    setNetVerwijderd((v) => new Set(v).add(id));
+    meldVerwijderd(id, true);
     setVorm(null);
     try {
       const res = await fetch("/api/agenda/afspraak", {
@@ -134,11 +154,7 @@ export function useEigenAfspraakVorm(vandaag: string) {
       // Mislukt? Dan gewoon weer laten zien — het formulier is al dicht,
       // dus een foutmelding heeft hier niets om op te verschijnen. Terug
       // laten komen in de lijst is zelf al het signaal dat het niet lukte.
-      setNetVerwijderd((v) => {
-        const n = new Set(v);
-        n.delete(id);
-        return n;
-      });
+      meldVerwijderd(id, false);
     }
   };
 

@@ -3,7 +3,7 @@ import { createClient } from "@/utils/supabase/server";
 import { tools } from "@/lib/tools";
 import { BETALINGEN_LIVE, magToolGebruiken } from "@/lib/abonnement";
 import { getAbonnementServer } from "@/lib/abonnement-server";
-import { haalRapportGrens } from "@/lib/actieve-klas";
+import { haalGedeeldeKlassen, haalRapportGrens } from "@/lib/actieve-klas";
 import OnboardingCard from "@/components/dashboard/OnboardingCard";
 import WelkomModal from "@/components/dashboard/WelkomModal";
 import StreakBadge from "@/components/dashboard/StreakBadge";
@@ -38,15 +38,17 @@ export default async function DashboardStart() {
 
   // Welke tools zitten in het pakket van deze leerkracht? Zolang betalingen
   // niet live zijn, is alles open (de vlag regelt dat in magToolGebruiken).
-  const [ab, planning, groepen, rapportGrens, systemen, planContext, genegeerd] = await Promise.all([
-    BETALINGEN_LIVE ? getAbonnementServer() : Promise.resolve(null),
-    haalPlanning(supabase, { nu: vandaag }),
-    haalMijnGroepen(supabase),
-    haalRapportGrens(supabase),
-    haalSchoolsystemen(supabase),
-    haalPlanningContext(supabase),
-    haalGenegeerdeAanleidingen(supabase),
-  ]);
+  const [ab, planning, groepen, rapportGrens, systemen, planContext, genegeerd, gedeeldeKlassen] =
+    await Promise.all([
+      BETALINGEN_LIVE ? getAbonnementServer() : Promise.resolve(null),
+      haalPlanning(supabase, { nu: vandaag }),
+      haalMijnGroepen(supabase),
+      haalRapportGrens(supabase),
+      haalSchoolsystemen(supabase),
+      haalPlanningContext(supabase),
+      haalGenegeerdeAanleidingen(supabase),
+      haalGedeeldeKlassen(supabase),
+    ]);
   const vergrendeld = (slug: string) => (ab ? !magToolGebruiken(ab, slug) : false);
 
   // Kijk je bij de actieve groep alleen mee, dan kun je de rapporten wél lezen
@@ -86,7 +88,7 @@ export default async function DashboardStart() {
         bron={planning}
         vandaag={vandaag}
         groepen={groepen}
-        extraTegel={<DuoOverdracht />}
+        extraTegel={<DuoOverdracht initieleGroepen={gedeeldeKlassen} />}
       />
 
       {/* Wat er de komende weken aankomt en welke tool daarbij hoort. Staat
