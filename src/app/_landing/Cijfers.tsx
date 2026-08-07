@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { Confetti, DONKER, Golf, KOP, MINT, MINT_LICHT, VLAK_MINT, KaartVlak, schaduw } from "./Wereld";
+import { Confetti, DONKER, Golf, KOP, KOP_SECTIE, MINT, MINT_LICHT, VLAK_MINT, KaartVlak, schaduw } from "./Wereld";
 import type { Cijfers } from "@/lib/cijfers";
 
 export type { Cijfers };
@@ -53,10 +53,16 @@ export type { Cijfers };
    oppoetsen. Het uur heeft geen omrekening en is de eenheid waarin de belofte
    op deze pagina al staat.
 
-   EERLIJKHEID
-   Elke regel heeft een eigen drempel (DREMPELS) en verschijnt pas als die
-   gehaald is; haalt de bovenste het niet, dan blijft de hele sectie weg. Er
-   staat dus nooit een nul of een pijnlijk laag getal op de voorpagina.
+   EERLIJKHEID: DE STATUS DOET DIT WERK, NIET EEN DREMPEL
+   Hier stonden DREMPELS: elke regel verscheen pas boven een ondergrens (100
+   uur / 15 leerkrachten / 250 uitwerkingen) en haalde de bovenste het niet,
+   dan bleef de hele sectie weg. Dat was de enige manier om te voorkomen dat er
+   "3 leerkrachten" op de voorpagina stond.
+   De sectie staat nu ALTIJD, en de eerlijkheid komt uit de STATUS erboven: hoe
+   lang we live zijn. Een klein getal is geen zwakte meer maar een leeftijd —
+   "40 leerkrachten, 6 dagen live" is sterker dan hetzelfde getal zonder
+   context. ⚠️ Dat werkt alleen zolang die status er ECHT staat en klopt; laat
+   het cijferblok dus nooit zonder status achter.
 
    ⏳ BEKEND PLAFOND, BEWUST NIET NU OPGELOST
    Dit telt ALLES bij elkaar en stopt nooit. Met 2 uur per week per leerkracht:
@@ -68,22 +74,42 @@ export type { Cijfers };
    bewust gekozen dit later te doen.
    ────────────────────────────────────────────────────────────────────────── */
 
-/* Per regel de ondergrens waaronder we hem niet tonen. Bewust voorzichtig:
-   liever een rapport met één regel dan een regel waar "3 leerkrachten" op
-   staat. Honderd uur is een eerste mijlpaal die het vertellen waard is. */
-const DREMPELS = { uren: 100, leerkrachten: 15, uitwerkingen: 250 };
+/* ── 🔴 DE DAG DAT AVINKA LIVE GING ────────────────────────────────────────
+   Zet hier de datum van de livegang, als "JJJJ-MM-DD". Zolang dit `null` is
+   (of de datum nog in de toekomst ligt) staat er "Nog niet live".
 
-/* ── DE SCHAKELAAR VOOR DE DREMPELS ────────────────────────────────────────
-   Tijdelijk uit (7-8) zodat de eigenaar de hele landingspagina met de ECHTE
-   cijfers kan bekijken en verder kan afwerken, ook al zijn die cijfers nu nog
-   klein (op dit moment 2 leerkrachten, 90 uur, 225 keer afgevinkt — geen van
-   drie haalt zijn drempel). De drempels zelf zijn niet weggehaald, alleen
-   overgeslagen: op `true` gelden ze weer precies zoals hierboven beschreven.
-   ⚠️ ZET DIT TERUG OP `true` VÓÓR ER ECHT BEZOEKERS KOMEN. Zo niet, dan is dit
-   precies het "3 leerkrachten"-scenario dat de eerlijkheidsregel hierboven
-   juist moest voorkomen. Zie ook RUIS_OP_PAPIER in Wereld.tsx voor hetzelfde
-   soort schakelaar. */
-const DREMPELS_AAN = false;
+   ⚠️ DIT IS EEN GO-LIVE-HANDELING. Vergeet je hem, dan zegt de voorpagina op
+   de dag van de lancering nog steeds dat we niet live zijn. Hij staat daarom
+   ook in de go-live-checklist. Eén regel, geen deploy-truc: de datum verandert
+   nooit meer nadat hij één keer klopt. */
+const LIVE_VANAF: string | null = null;
+
+/* ── Hoeveel dagen zijn we live? ────────────────────────────────────────────
+   🔑 DIT MOET OP DE SERVER EN IN DE BROWSER HETZELFDE UITREKENEN, anders
+   klaagt React bij het aankoppelen dat de tekst niet klopt. Daarom niet
+   rekenen met de klok van de bezoeker (die zit in Tokio of op een verkeerd
+   gezette laptop) maar met de kalender van Amsterdam: beide kanten vragen
+   dezelfde tijdzone om de datum van vandaag en vergelijken twee kale
+   datumstrings. Die geven allebei hetzelfde antwoord, waar de bezoeker ook zit.
+
+   Rekenen in hele dagen op de UTC-middernacht van beide datums, zodat de
+   zomertijd er niet tussendoor fietst (23- en 25-uursdagen). */
+function dagenLive(vanaf: string | null, nu: Date = new Date()): number | null {
+  if (!vanaf) return null;
+  const vandaag = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Amsterdam" }).format(nu);
+  const dagnummer = (datum: string) => Math.floor(Date.parse(`${datum}T00:00:00Z`) / 86_400_000);
+  const verschil = dagnummer(vandaag) - dagnummer(vanaf);
+  return Number.isNaN(verschil) ? null : verschil;
+}
+
+/* De status in woorden. Bewust kort en zonder uitroepteken: het is een
+   statusregel op een rapport, geen aankondiging. */
+function statusTekst(dagen: number | null) {
+  if (dagen === null || dagen < 0) return "Nog niet live";
+  if (dagen === 0) return "Vandaag live gegaan";
+  if (dagen === 1) return "1 dag live";
+  return `${dagen.toLocaleString("nl-NL")} dagen live`;
+}
 
 /* Hoe vaak de browser kijkt of er iets veranderd is. Het rapport verspringt
    pas als er een heel uur bij komt, dus vaker heeft geen zin. De databasekant
@@ -305,11 +331,6 @@ function Stempel() {
 
 /* ── De sectie ───────────────────────────────────────────────────────────── */
 
-/* Of deze sectie iets te vertellen heeft. */
-export function toontCijfers(cijfers: Cijfers | null) {
-  return Boolean(cijfers) && (!DREMPELS_AAN || urenUit(cijfers!.minuten) >= DREMPELS.uren);
-}
-
 export function WereldCijfers({
   cijfers,
   bijhouden = true,
@@ -318,12 +339,12 @@ export function WereldCijfers({
   /* false voor een voorbeeldrapport: dan blijven de meegegeven cijfers staan. */
   bijhouden?: boolean;
 }) {
-  /* De beslissing of er iets te tonen valt staat bewust BUITEN het rapport, en
-     het bijhouden zit erin. Zolang er te weinig data is bestaat het rapport dus
-     niet, en wordt er ook niets opgehaald: geen enkel verzoek voor een sectie
-     die toch verborgen is. */
+  /* De enige reden om de sectie helemaal weg te laten: er is geen data. Dat is
+     een storing (de database antwoordde niet), geen ontwerpkeuze — een
+     landingspagina die stukloopt op een teller is erger dan een zonder teller.
+     Kleine getallen zijn géén reden meer om weg te blijven; die krijgen hun
+     context van de status. */
   if (!cijfers) return null;
-  if (DREMPELS_AAN && urenUit(cijfers.minuten) < DREMPELS.uren) return null;
   return <Rapport begin={cijfers} bijhouden={bijhouden} />;
 }
 
@@ -354,10 +375,8 @@ function Rapport({
   const { cijfers, anker, seconden } = useBijgehoudenCijfers(begin, bijhouden);
 
   const uren = urenUit(cijfers.minuten);
-  if (DREMPELS_AAN && uren < DREMPELS.uren) return null;
-
-  const toonLeerkrachten = !DREMPELS_AAN || cijfers.leerkrachten >= DREMPELS.leerkrachten;
-  const toonUitwerkingen = !DREMPELS_AAN || cijfers.uitwerkingen >= DREMPELS.uitwerkingen;
+  const dagen = dagenLive(LIVE_VANAF);
+  const isLive = dagen !== null && dagen >= 0;
 
   return (
     <section ref={anker} className="relative overflow-x-clip">
@@ -453,10 +472,39 @@ function Rapport({
       </div>
 
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-28 pt-10 lg:pb-32 lg:pt-12">
+        {/* ⚠️ HET AMBERSTIPJE OP 2%/22% LAG BOVENOP HET LEVENDE STIPJE, EN DAT
+           WAS GEEN TOEVAL. Het .rp-stip-hartslagje stond ooit los in een
+           pilletje op het rapport en is pas later naar de "bijgewerkt"-regel
+           verhuisd (zie de aantekening bij die regel hieronder) — regelrecht
+           naar de plek waar dit decoratieve punt al stond. Twee ronde puntjes
+           vlak op elkaar, allebei linksboven, lazen als één vieze vlek.
+           Het punt staat nu in de LINKSONDERHOEK, in de vaste padding-bottom
+           van dit blok (pb-28/pb-32, dus altijd 112/128px lege ruimte ná het
+           rapport-cluster, op elke breedte). Dat is geen schatting op basis
+           van hoe hoog het cluster wordt — het is een garantie: die padding
+           blijft leeg, ook als het cluster meegroeit met grotere cijfers.
+           Meteen ook de hoek die tot nu toe leeg bleef terwijl rechtsonder al
+           een punt stond (95%/72%, verderop). */}
         <Confetti
           punten={[
-            { x: "2%", y: "22%", r: 4, amber: true },
-            { x: "63%", y: "8%", r: 4 },
+            { x: "2%", y: "95%", r: 4, amber: true },
+            /* Dit punt stond op y=8%, vlak naast de kop op x=63%. De kop is
+               groot (tot 2,75rem) en "Avinka in cijfers" kan op een smal
+               scherm als 390px al een flink deel van de kolombreedte vullen,
+               dus was niet met zekerheid te zeggen dat de tekst daar nooit tot
+               x=63% reikt. Zelfde garantie als hierboven: in de padding VÓÓR
+               de kop (dezelfde 40/48px) staat op geen enkele breedte tekst,
+               dus dat scheelt het giswerk. */
+            { x: "63%", y: "2%", r: 4 },
+            /* Dit punt lag al vrij en blijft staan. Op de volle 1104px
+               kolombreedte eindigt het rapport-cluster rond 1092px (zie de
+               nagerekende breedtes verderop in dit bestand), dus 95%
+               (≈1094px) valt net ná de kaartjes. Op mobiel staan de kaartjes
+               nooit breder dan de smalste kaart plus wat lucht, dus ook daar
+               blijft rechts ruimte over. Groeien de kaartjes verder mee met
+               grotere cijfers, dan wipt het cluster naar een nieuwe rij
+               (bestaande regel, zie de breedte-aantekening bij .rp-bron) in
+               plaats van dit stipje te bereiken. */
             { x: "95%", y: "72%", r: 5, amber: true },
           ]}
         />
@@ -466,8 +514,21 @@ function Rapport({
         {/* ⚠️ "bijgewerkt" stond helemaal rechts naast de kop, ver van het
            enige dat bijgewerkt wordt. Het hoort bij het rapport, dus staat het
            nu er vlak boven: kop, dan de stand, dan de papieren. */}
-        <h2 data-reveal className="rp-sectiekop">Avinka in cijfers</h2>
+        <h2 data-reveal className={`${KOP_SECTIE} rp-sectiekop`}>Avinka in cijfers</h2>
+        {/* 🔑 HET STIPJE HOORT HIER, BIJ HET WOORD "BIJGEWERKT".
+           Het zat eerst in een pilletje "live" op het rapport zelf, en dat
+           botste zodra de statuspil erbij kwam: twee keer het woord live vlak
+           naast elkaar, met twee verschillende betekenissen (de CIJFERS lopen
+           bij ↔ het PRODUCT is live). Het stipje gaat over het bijhouden, dus
+           het staat nu op de regel die daarover gaat, en het woord "live" is
+           vrijgemaakt voor de status. Twee lagen blijven: een rustige hartslag
+           ("dit staat aan") en een felle tik op het moment van een controle. */}
         <p data-reveal className="rp-bijgewerkt">
+          <span
+            aria-hidden
+            key={seconden === 0 ? "puls" : "stil"}
+            className={`rp-stip rp-klopt ${seconden === 0 ? "rp-puls" : ""}`}
+          />
           bijgewerkt <span className="rp-tel">{seconden < 3 ? "zojuist" : `${seconden} s geleden`}</span>
         </p>
 
@@ -481,18 +542,16 @@ function Rapport({
                  document, niet van de sectie. */}
               <div className="rp-kop">
                 <p className="rp-titel">Rapport van Avinka</p>
-                {/* Het live-teken hoort op het hoofddocument, want daar kijk
-                   je. Het stipje klopt doorlopend; op het moment van een
-                   controle springt het even hard aan (de sleutel herstart die
-                   animatie). Twee lagen dus: een rustige hartslag die zegt
-                   "dit staat aan", en een tik die zegt "net gekeken". */}
-                <span className="rp-live">
-                  <span
-                    aria-hidden
-                    key={seconden === 0 ? "puls" : "stil"}
-                    className={`rp-stip rp-klopt ${seconden === 0 ? "rp-puls" : ""}`}
-                  />
-                  live
+                {/* ── DE STATUS ──────────────────────────────────────────────
+                   Hoe lang Avinka bestaat, op het document waar de cijfers op
+                   staan. Dat is de plek waar hij zijn werk doet: hij zegt niet
+                   "kijk eens hoeveel", maar "kijk eens hoeveel, in zó korte
+                   tijd". Op een rapport is een periode bovendien een normaal
+                   veld — het staat er niet bij als mededeling maar als kopje.
+                   Vóór de lancering is het een eerlijke waarschuwing dat deze
+                   getallen van de bouwers zelf komen. */}
+                <span className={`rp-status ${isLive ? "rp-status-live" : "rp-status-nog"}`}>
+                  {statusTekst(dagen)}
                 </span>
               </div>
               <div aria-hidden className="rp-lijn" />
@@ -514,12 +573,10 @@ function Rapport({
             <Stempel />
           </article>
 
-          {(toonLeerkrachten || toonUitwerkingen) && (
-            <div className="rp-briefjes">
-              {toonLeerkrachten && <Briefje getal={cijfers.leerkrachten} label="leerkrachten" />}
-              {toonUitwerkingen && <Briefje getal={cijfers.uitwerkingen} label="keer afgevinkt" />}
-            </div>
-          )}
+          <div className="rp-briefjes">
+            <Briefje getal={cijfers.leerkrachten} label="leerkrachten" />
+            <Briefje getal={cijfers.uitwerkingen} label="keer afgevinkt" />
+          </div>
 
           {/* De verantwoording, óók op papier. Als losse regel tekst naast
              drie kaartjes hoorde hij er niet bij; nu is het het vierde stuk
@@ -561,6 +618,9 @@ function RapportStijl() {
          🔑 Meet bij een wijziging hier het AANTAL RIJEN, niet alleen de
          breedtes — die tellen op zonder dat je het ziet. */
       .rp-bijgewerkt {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
         margin-top: 0.45rem;
         margin-bottom: clamp(18px, 2.2vw, 28px);
         font-size: clamp(0.9rem, 1.15vw, 1rem);
@@ -568,14 +628,11 @@ function RapportStijl() {
         color: rgba(34, 28, 58, 0.62);
       }
 
-      .rp-sectiekop {
-        font-family: var(--font-display), Georgia, serif;
-        font-weight: 900;
-        letter-spacing: -0.03em;
-        line-height: 1.05;
-        font-size: clamp(1.875rem, 3.4vw, 2.75rem);
-        color: ${DONKER};
-      }
+      /* ⚠️ De maat staat NIET meer hier maar in KOP_SECTIE (Wereld.tsx): deze
+         kop stond op clamp(1,875rem, 3,4vw, 2,75rem) = 44px en was daarmee
+         12px kleiner dan de meeste andere sectiekoppen. Hier blijft alleen de
+         kleur; de klasse wordt naast KOP_SECTIE gezet. */
+      .rp-sectiekop { color: ${DONKER}; }
 
       .rp-cluster {
         display: flex;
@@ -641,24 +698,49 @@ function RapportStijl() {
         padding: clamp(24px, 2.6vw, 34px) clamp(24px, 2.8vw, 36px)
                  clamp(28px, 3vw, 38px);
       }
+      /* Wrap staat aan omdat de status een langere tekst kan krijgen dan het
+         oude pilletje "live": op het smalste kaartje (272px) zou de titel
+         anders over twee regels worden geknepen om de status naast zich te
+         houden. Nu zakt de status er netjes onder. */
       .rp-kop {
         display: flex;
+        flex-wrap: wrap;
         align-items: baseline;
         justify-content: space-between;
-        gap: 10px;
+        gap: 6px 10px;
       }
-      .rp-live {
+      /* ── de status ──
+         Het kopje van het rapport: hoe lang dit product bestaat. Twee standen,
+         want ze zeggen iets anders. LIVE is een mededeling in de huiskleur;
+         NOG NIET LIVE is een voorbehoud, en die krijgt amber — op deze pagina
+         is amber al de kleur van "let op / dit nog niet" (zie de iconen bij
+         "Veilig omgaan met AI"). Zo hoeft er geen woord bij om te zeggen dat
+         het een andere soort mededeling is.
+         Contrast nagerekend op het witte kaartje: het amberwasje wordt #fdf0d8
+         en met deze inkt is dat 5,4:1, ruim boven de 4,5 die deze maat vraagt. */
+      .rp-status {
         display: inline-flex;
         align-items: center;
         gap: 0.35rem;
         flex: none;
-        padding: 0.2rem 0.55rem 0.24rem;
+        padding: 0.2rem 0.6rem 0.24rem;
         border-radius: 9999px;
-        background: rgba(47, 158, 110, 0.12);
         font-size: 0.8rem;
         font-weight: 800;
         letter-spacing: 0.02em;
+        font-variant-numeric: tabular-nums;
+      }
+      /* 0,16 en niet de 0,12 van het oude pilletje: naast het amberwasje van de
+         andere stand las het groen als een half zichtbaar label, en dan zou de
+         status zwaarder wegen naarmate het slechtere nieuws is. Beide standen
+         even aanwezig. Nagerekend op wit: 5,6:1. */
+      .rp-status-live {
+        background: rgba(47, 158, 110, 0.16);
         color: ${KOP};
+      }
+      .rp-status-nog {
+        background: rgba(245, 158, 11, 0.16);
+        color: #8a5206;
       }
       .rp-titel {
         font-family: var(--font-display), Georgia, serif;

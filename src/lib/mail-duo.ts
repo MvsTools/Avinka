@@ -41,7 +41,7 @@ export function uitnodigingTekst(u: Uitnodiging): string {
     "",
     u.link,
     "",
-    "Heb je nog geen Avinka-account? Maak er dan een aan met dit e-mailadres.",
+    "Heb je nog geen Avinka-account? Maak er dan één aan met dit e-mailadres.",
     "De uitnodiging is aan dit adres gekoppeld en werkt niet op een ander.",
     "",
     "Met vriendelijke groet,",
@@ -53,11 +53,14 @@ export function uitnodigingHtml(u: Uitnodiging): string {
   const wie = veilig(u.vanWie.trim() || "Een collega");
   const klas = veilig(u.klasNaam);
   const link = veilig(u.link);
-  return `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fbf6ee;padding:32px 12px;">
+  return `<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Plus+Jakarta+Sans:wght@400;700&display=swap');
+</style>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fbf6ee;padding:32px 12px;">
   <tr><td align="center">
     <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:20px;font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
       <tr><td style="padding:34px 36px 0;">
-        <h1 style="margin:0;font-family:Fraunces,Georgia,'Times New Roman',serif;font-size:26px;line-height:1.25;color:#221c3a;">${wie} nodigt je uit</h1>
+        <h1 style="margin:0;font-family:'Bricolage Grotesque',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:800;font-size:26px;line-height:1.25;color:#221c3a;">${wie} nodigt je uit</h1>
         <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Om <strong style="color:#221c3a;">${klas}</strong> samen te draaien in Avinka.</p>
       </td></tr>
       <tr><td align="center" style="padding:26px 36px 0;">
@@ -68,7 +71,7 @@ export function uitnodigingHtml(u: Uitnodiging): string {
         </tr></table>
       </td></tr>
       <tr><td style="padding:24px 36px 0;">
-        <p style="margin:0;font-size:15px;line-height:1.65;color:#4a4458;">Heb je nog geen Avinka-account? Maak er dan een aan met <strong style="color:#221c3a;">dit e-mailadres</strong>. De uitnodiging is eraan gekoppeld en werkt niet op een ander adres.</p>
+        <p style="margin:0;font-size:15px;line-height:1.65;color:#4a4458;">Heb je nog geen Avinka-account? Maak er dan één aan met <strong style="color:#221c3a;">dit e-mailadres</strong>. De uitnodiging is eraan gekoppeld en werkt niet op een ander adres.</p>
       </td></tr>
       <tr><td style="padding:24px 36px 30px;">
         <div style="border-top:1px solid #ece7e0;padding-top:16px;">

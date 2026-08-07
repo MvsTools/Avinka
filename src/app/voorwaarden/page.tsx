@@ -6,7 +6,12 @@ import { VOORWAARDEN } from "@/lib/juridisch";
 /* ──────────────────────────────────────────────────────────────────────────
    ALGEMENE VOORWAARDEN — alle tekst staat in dit bestand.
    Dit is een eerste, leesbare versie. Laat 'm vóór livegang nakijken door een
-   jurist en vul de placeholders tussen [haakjes] in.
+   jurist.
+
+   ✅ BEDRIJFSGEGEVENS COMPLEET (5-8, aangeleverd door de eigenaar): naam, adres,
+   KvK en e-mailadres. Avinka is de handelsnaam van een eenmanszaak. De versie
+   is diezelfde dag gebumpt naar 2026-08-05 in lib/juridisch.ts — voorwaarden
+   én privacy tegelijk, want ze delen deze gegevens.
 
    LET OP — een paar punten hieronder zijn niet alleen tekst maar ook proces,
    te bouwen bij Mollie (Fase 2):
@@ -17,10 +22,13 @@ import { VOORWAARDEN } from "@/lib/juridisch";
      betalingsverplichting" / "Nu betalen").
    ────────────────────────────────────────────────────────────────────────── */
 
-const BEDRIJF = "[bedrijfsnaam]";
-const ADRES = "[adres]";
-const KVK = "[KvK-nummer]";
-const CONTACT_EMAIL = "[contact-e-mailadres]";
+/* ⚠️ Deze vier moeten gelijk blijven met src/app/privacy/page.tsx. Ze staan
+   bewust twee keer los (elk document is zelfstandig te lezen en aan te passen),
+   dus wijzig je er één, wijzig dan allebei — en bump daarna één keer. */
+const BEDRIJF = "Avinka";
+const ADRES = "Evert van 't Landstraat 24, 7334 DR Apeldoorn";
+const KVK = "42015989";
+const CONTACT_EMAIL = "info@avinka.nl";
 const BIJGEWERKT = VOORWAARDEN.weergave;
 
 export const metadata: Metadata = {
@@ -36,10 +44,13 @@ export default function VoorwaardenPage() {
       intro="Dit zijn de afspraken voor het gebruik van Avinka, zo helder mogelijk opgeschreven. Door een account aan te maken ga je hiermee akkoord. Voor hoe we met gegevens omgaan, zie de privacyverklaring."
     >
       <Sectie kop="1. Wie zijn wij?">
+        {/* ⚠️ HERSCHREVEN toen de gegevens erin gingen: er stond "aangeboden
+           door {'{BEDRIJF}'}", en de bedrijfsnaam ís Avinka. Ingevuld werd dat
+           "Avinka ... aangeboden door Avinka". De naam staat er nu één keer. */}
         <p>
-          Avinka is een online platform met slimme tools voor leerkrachten, aangeboden door{" "}
-          {BEDRIJF}, {ADRES} (KvK {KVK}). Heb je een vraag? Mail ons via{" "}
-          <strong>{CONTACT_EMAIL}</strong>.
+          {BEDRIJF} is een online platform met slimme tools voor leerkrachten,
+          ingeschreven bij de Kamer van Koophandel onder nummer {KVK} en gevestigd aan{" "}
+          {ADRES}. Heb je een vraag? Mail ons via <strong>{CONTACT_EMAIL}</strong>.
         </p>
       </Sectie>
 

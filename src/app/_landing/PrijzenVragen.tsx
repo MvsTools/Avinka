@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { PLANNEN, PROEF_DAGEN, planById, prijsTekst, type PlanId } from "@/lib/abonnement";
 import {
@@ -10,6 +10,7 @@ import {
   Golf,
   KaartVlak,
   KOP,
+  KOP_SECTIE,
   MINT_LICHT,
   RUIS_OP_PAPIER,
   VLAK_MINT,
@@ -202,7 +203,7 @@ export function WereldPrijzen({
           <div className="max-w-2xl">
             <h2
               data-reveal
-              className="font-display text-[clamp(2.25rem,4.4vw,3.5rem)] font-black leading-[1.02] tracking-tight [text-wrap:balance]"
+              className={KOP_SECTIE}
               style={{ color: DONKER }}
             >
               {/* ⚠️ Hier stond "Onbeperkt gebruik." Dat is niet waar: er zit een
@@ -376,11 +377,22 @@ export function WereldPrijzen({
                         ? /* wijzig=1 klapt de pakketten daar meteen open (anders
                              sta je op een scherm waar je eerst "Wijzig" moet
                              zoeken) en vorm= neemt de maand/schooljaar-keuze
-                             van hierboven mee, zodat je 'm niet twee keer maakt. */
+                             van hierboven mee, zodat je 'm niet twee keer maakt.
+                             Deze twee LEEST /dashboard/abonnement ook echt. */
                           `/dashboard/abonnement?wijzig=1&vorm=${jaar ? "jaar" : "maand"}`
-                        : jaar
-                          ? "/sign-up?plan=jaar"
-                          : "/sign-up?plan=maand"
+                        : /* ⚠️ HIER STOND /sign-up?plan=jaar of ?plan=maand, en dat
+                             deed NIETS: sign-up/page.tsx leest alleen `volgende`.
+                             Een parameter die niemand uitleest wekt de indruk dat
+                             de keuze wordt meegenomen terwijl hij verdwijnt.
+                             🔑 En hij hoort hier ook niet thuis: deze knop zegt
+                             "Probeer gratis" en start zeven dagen proef zónder
+                             betaalgegevens. Op dat moment is maand-of-schooljaar
+                             nog niet aan de orde — die keuze maak je pas als de
+                             proef afloopt, in het dashboard. Wil je hem tóch
+                             meenemen, dan moet sign-up hem echt doorgeven aan
+                             /dashboard/abonnement; een losse parameter erbij
+                             plakken is dat niet. */
+                          "/sign-up"
                     }
                     variant={uitgelicht || enigeUpgrade ? "vol" : "licht"}
                     maat="klein"
@@ -451,12 +463,38 @@ function Schakelaar({ jaar, setJaar }: { jaar: boolean; setJaar: (v: boolean) =>
 type Vraag = { vraag: string; antwoord: string };
 
 export function WereldVragen({ items, mintBoven = false }: { items: Vraag[]; mintBoven?: boolean }) {
-  // Meerdere tegelijk open mag: dit is een naslaglijst, geen quiz.
-  const [open, setOpen] = useState<string[]>([]);
+  /* Meerdere tegelijk open mag: dit is een naslaglijst, geen quiz.
+     🔎 Gemelde bug ("open werkt, dicht niet meer na een paar keer klikken")
+     nagelopen: de vorige `string[]` met `.includes`/`.filter` bleek bij
+     natrekken (met de hand uitgerekend én los uitgevoerd) zelf al zuiver —
+     hij muteerde nooit, elke toggle gaf een nieuwe array terug. Toch is een
+     `string[]` als lidmaatschapscheck de FRAGIELSTE vorm die er is: de
+     kortste weg naar precies dit soort bugs is straks een `.push()` of een
+     `.add()` op de bestaande verzameling in plaats van een kopie — dan
+     verandert de referentie niet, React ziet geen wijziging, en de laatste
+     klik lijkt genegeerd. Een Set met expliciete lidmaatschap (`.has`) en een
+     `wissel` die altijd een NIEUWE Set bouwt (`new Set(oud)`, nooit `oud`
+     zelf) sluit die hele bugklasse voortaan uit, in plaats van hem alleen nu
+     te hebben uitgesloten. Blijft het probleem zich toch voordoen ná deze
+     wijziging, dan zit de oorzaak niet meer hier, maar in de 0fr→1fr
+     grid-animatie hieronder (een bekende browserkwestie, geen state-bug) —
+     dat vraagt om een andere aanpak dan deze sectie herbouwen. */
+  const [open, setOpen] = useState<Set<string>>(() => new Set());
   const [meer, setMeer] = useState(false);
 
-  const wissel = (vraag: string) =>
-    setOpen((oud) => (oud.includes(vraag) ? oud.filter((v) => v !== vraag) : [...oud, vraag]));
+  const wissel = useCallback((vraag: string) => {
+    setOpen((oud) => {
+      const nieuw = new Set(oud);
+      // toggle: stond hij erin, dan eruit; anders erbij. Nooit `oud` zelf
+      // aanpassen — dat is precies de mutatie die de sluit-klik zou breken.
+      if (nieuw.has(vraag)) {
+        nieuw.delete(vraag);
+      } else {
+        nieuw.add(vraag);
+      }
+      return nieuw;
+    });
+  }, []);
 
   /* Vijf staan er open in plaats van vier: de ChatGPT-vraag is erbij gekomen
      en die hoort zichtbaar te zijn zonder eerst te moeten uitklappen — het is
@@ -547,7 +585,7 @@ export function WereldVragen({ items, mintBoven = false }: { items: Vraag[]; min
              het herhaalde alleen de kop eronder. */}
           <h2
             data-reveal
-            className="font-display text-[clamp(2.25rem,4.4vw,3.5rem)] font-black leading-[1.02] tracking-tight"
+            className={KOP_SECTIE}
             style={{ color: DONKER }}
           >
             Veelgestelde vragen
@@ -558,7 +596,7 @@ export function WereldVragen({ items, mintBoven = false }: { items: Vraag[]; min
               <Rij
                 key={item.vraag}
                 item={item}
-                open={open.includes(item.vraag)}
+                open={open.has(item.vraag)}
                 opWissel={() => wissel(item.vraag)}
               />
             ))}
@@ -568,7 +606,7 @@ export function WereldVragen({ items, mintBoven = false }: { items: Vraag[]; min
                 <Rij
                   key={item.vraag}
                   item={item}
-                  open={open.includes(item.vraag)}
+                  open={open.has(item.vraag)}
                   opWissel={() => wissel(item.vraag)}
                 />
               ))}
@@ -590,12 +628,19 @@ export function WereldVragen({ items, mintBoven = false }: { items: Vraag[]; min
 }
 
 function Rij({ item, open, opWissel }: { item: Vraag; open: boolean; opWissel: () => void }) {
+  /* Toegankelijkheid: de knop en zijn antwoordpaneel wijzen nu naar elkaar
+     (aria-controls/id), zoals het WAI-ARIA accordion-patroon voorschrijft —
+     zonder useId() deelden alle rijen impliciet niets, maar er was ook geen
+     koppeling. useId() geeft elke Rij een eigen, stabiele, SSR-veilige id. */
+  const paneelId = useId();
+
   return (
     <div className="border-b border-ink/10">
       <button
         type="button"
         onClick={opWissel}
         aria-expanded={open}
+        aria-controls={paneelId}
         className="group flex w-full items-center justify-between gap-6 py-6 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
       >
         <span className="font-display text-lg font-black tracking-tight text-ink sm:text-xl">
@@ -619,8 +664,15 @@ function Rij({ item, open, opWissel }: { item: Vraag; open: boolean; opWissel: (
       </button>
 
       {/* 0fr → 1fr laat de hoogte zichzelf uitrekenen, dus het antwoord mag
-         elke lengte hebben zonder dat we hier een hoogte hoeven te weten. */}
+         elke lengte hebben zonder dat we hier een hoogte hoeven te weten.
+         ⚠️ aria-hidden hier is geen cosmetica: zonder deze regel bleef de
+         dichtgeklapte tekst — hoewel 0px hoog en overflow-hidden, dus
+         onzichtbaar voor het oog — gewoon opvraagbaar voor een
+         schermlezer die met de virtuele cursor door de pagina leest. Dicht
+         moet ook dicht ZIJN voor wie niet kijkt. */}
       <div
+        id={paneelId}
+        aria-hidden={!open}
         className="grid transition-[grid-template-rows] duration-400 ease-out motion-reduce:transition-none"
         style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
       >

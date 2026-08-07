@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "react";
+import { PROEF_DAGEN } from "@/lib/abonnement";
 
 /* ── De Wereld van /nieuw5 ──────────────────────────────────────────────────
    De body-taal, geleend van de referentie (bahamabucks) maar met óns merk:
@@ -110,10 +111,76 @@ export function schaduw(y: number, blur: number, spread: number, alpha: number, 
   return `${-Math.round(y * SCHADUW_HELLING)}px ${y}px ${blur}px ${spread}px rgba(${kleur},${alpha})`;
 }
 
-/* Rand en schaduw van de organische kaarten (regie-kaartjes én de makers-
-   kaart), zodat die twee gegarandeerd hetzelfde aanvoelen. */
-const KAART_RAND = "var(--w-kaart-rand, #d4e5dc)";
-const KAART_SCHADUW = schaduw(34, 66, -34, 0.6);
+/* ⚠️ Hier stonden KAART_RAND en KAART_SCHADUW — schaduw(34, 66, -34, 0.6) —
+   zodat de regie-kaartjes en de makerskaart gegarandeerd hetzelfde
+   aanvoelden. Allebei weg: de makerssectie draagt sinds 5-8 een CV dat zijn
+   eigen randen en schaduwen uit de RUIMTE haalt (echte vlakken, echte diepte)
+   in plaats van uit een gedeelde tekenwaarde. Privacy.tsx heeft een eigen
+   kopie van allebei en is daar niet van afhankelijk. */
+
+/* ── DE TYPEMAAT VAN DE LANDING ────────────────────────────────────────────
+   ⚠️ AANLEIDING (5-8): de eigenaar liep de pagina langs en zag het meteen —
+   "meerdere titelvelden, meerdere ondertitels, meerdere beschrijvingen, maar
+   de groottes verschillen, dat ziet er slordig uit". Nagemeten klopte dat: de
+   sectiekoppen stonden op 36, 40, 44, 54,4, 56 en 64px. ZEVEN losse
+   clamp()-definities voor wat in wezen twee rollen zijn.
+
+   🔑 En drie ervan waren BIJNA-MISSERS: 54,4 naast 56, min 1,9rem naast
+   1,875rem, min 2,4rem naast 2,5rem. Dat is het bewijs dat het niet om smaak
+   ging maar om verloop: niemand kiest bewust 54,4. Zo gaat het altijd als
+   dezelfde waarde op zeven plekken opnieuw wordt ingetypt.
+
+   Daarom staan ze nu hier, als één bron — net als KAART hieronder. Gebruik
+   deze constanten en typ nooit een eigen clamp voor een kop; dan kan het niet
+   opnieuw uit elkaar lopen.
+
+   DE LADDER (bij 1440px breed):
+     KOP_GROOT   64px  de twee grote momenten: de belofte bovenaan de pagina
+                       en de uitnodiging in het slotveld. Verder niets.
+     KOP_SECTIE  44px  élke sectiekop. Eén maat, zodat je aan het formaat ziet
+                       dat je een nieuwe sectie in gaat.
+     KOP_BLOK    24px  een kop BINNEN een sectie: de kaartjes van "Herken je
+                       dit?", de stappen van "Zo werkt het", de prijskaarten.
+   Alle drie in de display-letter, zwaar, met strakke regelafstand en negatieve
+   letterafstand — hoe groter de letter, hoe strakker.
+
+   ⚠️ WAAROM 44 EN NIET 56, want dat is geprobeerd. Op 56 (de maat die vier van
+   de tien secties al hadden) viel de intro-kop "De slimme werkplek voor
+   leerkrachten in het basisonderwijs" over VIJF regels in zijn kolom en ging
+   die sectie de hero beconcurreren. Op 44 is dat drie regels, past "Alle
+   tools, één werkplek" naast het handgeschreven duwtje op één regel, en
+   houden de korte koppen hun kracht — in de browser vergeleken, niet gegokt.
+   🔑 De maat van een gedeelde kop wordt bepaald door de LANGSTE kop die hem
+   gebruikt, niet door de mooiste. ──────────────────────────────────────────── */
+export const KOP_GROOT =
+  "font-display text-[clamp(2.5rem,5.5vw,4rem)] font-black leading-[1.02] tracking-[-0.025em] [text-wrap:balance]";
+export const KOP_SECTIE =
+  "font-display text-[clamp(2rem,4.4vw,2.75rem)] font-black leading-[1.05] tracking-[-0.025em] [text-wrap:balance]";
+export const KOP_BLOK =
+  "font-display text-[clamp(1.25rem,1.9vw,1.5rem)] font-black leading-[1.25] tracking-[-0.02em]";
+
+/* ── DE TEKST ONDER EEN KOP ────────────────────────────────────────────────
+   Stond op 16, 16,3, 16,8 en 18px. Die eerste drie zijn geen keuzes maar
+   afrondingen van drie verschillende clamps die allemaal ongeveer hetzelfde
+   probeerden te zijn. Eén maat: 18px met een ruime regelafstand, want dit is
+   lopende tekst en geen bijschrift. */
+export const TEKST_SECTIE = "text-[1.125rem] leading-[1.78]";
+
+/* ── HET HANDSCHRIFT ───────────────────────────────────────────────────────
+   Hier stonden drie maten (20, 22,4 en 24px) voor wat op het oog hetzelfde is.
+   Twee ervan zijn het WEL: er zijn twee rollen, en die verschillen ook echt.
+
+     HAND_REGEL  24px  een uitspraak onder een sectiekop. Hij hoort bij de kop
+                       en mag gelezen worden ("Het hoort bij het werk, maar het
+                       kan slimmer", "privacy voorop").
+     HAND_WENK   20px  een AANWIJZING bij iets dat je kunt doen ("sleep de rij
+                       opzij", "klik op een foto"). Die hoort kleiner: hij is
+                       een onderschrift en geen boodschap.
+
+   🔑 Twee maten dus, maar met een reden die je kunt uitleggen — dat is het
+   verschil met de drie die er stonden. De 22,4 was er niet één van. */
+export const HAND_REGEL = "text-2xl leading-[1.38]";
+export const HAND_WENK = "text-xl leading-[1.4]";
 
 /* Witte kaart met grote ronding: dé kaartvorm van deze wereld. */
 export const KAART =
@@ -253,18 +320,12 @@ function SilhouetVliegtuig({ kleur, style, tel }: { kleur: string; style: CSSPro
   );
 }
 
-function SilhouetLiniaal({ kleur, veld, style, tel }: { kleur: string; veld: string; style: CSSProperties; tel?: number }) {
-  return (
-    <SilhouetWrap par={0.04} style={style} tel={tel}>
-      <svg viewBox="0 0 200 46" className="block w-full">
-        <rect width="200" height="46" rx="9" fill={kleur} />
-        {[20, 44, 68, 92, 116, 140, 164, 188].map((x, i) => (
-          <rect key={x} x={x} y="0" width="3.5" height={i % 2 ? 12 : 18} rx="1.5" fill={veld} />
-        ))}
-      </svg>
-    </SilhouetWrap>
-  );
-}
+/* ⚠️ De liniaal is weg. Hij lag als enige nog in de makers-sectie en die is
+   er 4-8 uit gehaald: daar ligt inmiddels een schrift met lijnen, een foto en
+   vier bladzijden tekst, en dan is nog een stuk schoolgerei geen sfeer meer
+   maar een derde ding dat om aandacht vraagt. De tekening zelf staat in de
+   geschiedenis als hij ooit terug moet (het was een rechthoek met streepjes,
+   twintig regels). */
 
 /* Losse drijvende spikkels: een paar stipjes die heel traag omhoog zweven
    binnen een kleurveld, als stof in het licht. */
@@ -585,7 +646,7 @@ export function WereldIntro() {
         <div>
           <h2
             data-reveal
-            className="font-display text-[clamp(1.875rem,3.1vw,2.5rem)] font-black leading-[1.06] tracking-tight [text-wrap:balance]"
+            className={KOP_SECTIE}
             style={{ color: KOP }}
           >
             De slimme werkplek voor leerkrachten in het basisonderwijs
@@ -607,13 +668,89 @@ export function WereldIntro() {
             className="text-[1.375rem] font-semibold leading-9 [text-wrap:balance] sm:text-2xl sm:leading-10"
             style={{ color: KOP }}
           >
-            Avinka brengt de hulpmiddelen voor je schoolwerk samen in één
-            omgeving.
+            {/* ⚠️ HIER STONDEN ACHTEREENVOLGENS: "Avinka brengt de hulpmiddelen
+               voor je schoolwerk samen in één omgeving" (de gereedschapskist in
+               één zin) en daarna "Bij Avinka staat al je schoolwerk op één plek.
+               Ook denkt het programma actief mee in toekomstige weken."
+
+               Die tweede is eruit om een reden die je pas ziet als je de sectie
+               in één oogopslag bekijkt: de kop links zegt "de slimme WERKPLEK",
+               deze zin zei "op één PLEK", en de alinea eronder zegt "zorgt voor
+               OVERZICHT". Drie keer hetzelfde idee, naast elkaar. De zwakste
+               van de drie stond vooraan.
+
+               🔑 De vuistregel die daaruit volgt: kijk bij een sectie niet naar
+               zinnen maar naar IDEEËN. Twee zinnen kunnen prima verschillen en
+               toch hetzelfde zeggen, en dat merk je alleen als je ze naast
+               elkaar legt in plaats van na elkaar te lezen.
+
+               Wat er nu staat is de openingszin van de eigenaar. Hij begint bij
+               de LEERKRACHT en niet bij het product, en dat is precies waarom
+               hij werkt: iemand leest verder omdat het over hem gaat. Al mijn
+               eigen pogingen begonnen bij de ellende of bij de functie.
+               ⚠️ Niet gladstrijken en niet aanvullen. Deze regel moet kort
+               blijven; de uitleg staat eronder. */}
+            Voor de klas maak jij het verschil.
           </p>
+          {/* ⚠️ HIER IS HET ÉÉN KEER GOED MISGEGAAN, en dat is het waard om vast
+             te leggen. Ik heb bij het omzetten naar de nieuwe koers het woord
+             "hulpmiddelen" uit de eerste zin gehaald — en dat was het ENIGE
+             woord in deze sectie dat zei dát er tools zijn. Wat overbleef was
+             een opbergverhaal ("alles op één plek") plus een vooruitkijkverhaal
+             ("denkt mee"), en nergens meer wát het ding doet. De eigenaar:
+             "waar staat nu dat het met behulp van slimme AI-tools is? Dit is de
+             belangrijkste sectie van de landing."
+
+             🔑 DE LES: bij een koerswijziging poets je het FRAME op, maar de
+             SUBSTANTIE moet blijven staan. Een bezoeker die hier stopt met
+             lezen moet weten wat hij koopt, niet hoe wij erover denken. Zet het
+             concrete dus vooraan en het nieuwe erachter, niet andersom.
+
+             ⚠️ DIT IS DE VERKOOPZIN, GEEN SPECIFICATIEBLAD. Hier is het twee
+             keer misgegaan en allebei de keren in dezelfde richting: ik ging
+             opsommen wát er allemaal is (rapporten, toetsen, ouderberichten,
+             vakanties, de data van groep 8). De eigenaar: "te specifiek, je
+             gaat te veel in op wat er allemaal is. Leerkrachten moeten hieruit
+             opmaken: woah dat is handig, heb ik nodig."
+
+             🔑 EEN OPSOMMING OVERTUIGT NIET, HERKENNING WEL. Een leerkracht
+             wil hier geen lijst afvinken maar zichzelf tegenkomen. Daarom
+             begint de zin bij de AVOND die hij kwijt is, niet bij de functie
+             die dat oplost — en pas als hij zichzelf herkent, wil hij weten
+             hoe. De opbouw is dus:
+             1. de pijn die verdwijnt, in zijn woorden;
+             2. pas dan waardoor.
+
+             De twee pijnen hier zijn niet vrij gekozen: het zijn er twee uit
+             "Herken je dit?" hierboven, zodat deze sectie letterlijk antwoord
+             geeft op wat daar staat. "Taken die je pas ziet als het te laat
+             is" is de derde pijn, en die had tot nu toe nergens antwoord.
+
+             ⚠️ Wat hier NIET meer in staat en waar het wél waar is: dat Avinka
+             de vakanties en de vaste data van groep 8 kent, ook zonder dat je
+             iets koppelt (`lib/planning/vakanties.ts` en `groep8.ts`). Dat is
+             sterk bewijs, maar het is BEWIJS en geen verkoopzin. Wil je het
+             tonen, doe dat dan ergens waar bewijs hoort.
+
+             ⚠️ DE AI ZIT MET OPZET AAN HET SCHRIJFWERK VAST EN NIET AAN DE
+             ANDERE TWEE. Het overzicht en het vooruitkijken doet de code; de AI
+             schrijft alleen de tekst. Zou hier staan dat AI-tools voor overzicht
+             zorgen, dan spreekt deze zin stap 02 van "Zo werkt het" en twee
+             vragen in de FAQ tegen. Die scheiding moet overal hetzelfde zijn.
+             🔑 AI wordt hier ook genoemd omdat het MOET: sinds 2-8-2026 geldt de
+             transparantieplicht uit de AI Act (zie [[ai-act-onderwijs]]). Haal
+             het woord hier dus niet weg om de zin mooier te maken.
+
+             Deze alinea is van de eigenaar zelf; ik heb er twee dingen aan
+             bijgesteld die hij heeft overgenomen: "terwijl" beloofde een
+             tegenstelling die niet kwam (aandacht en energie zeiden hetzelfde),
+             en "aandacht" stond er twee keer terwijl het het slotwoord moest
+             zijn. Niet verder gladstrijken. */}
           <p data-reveal className="mt-4 text-lg leading-8 text-ink/75" style={{ transitionDelay: "90ms" }}>
-            Je geeft aan wat je nodig hebt en Avinka helpt je met de uitwerking,
-            zodat terugkerende taken minder tijd kosten en je werk
-            overzichtelijk blijft.
+            Toch vraagt het werk na schooltijd net zoveel van je, en juist dat
+            kost energie. Avinka zorgt voor overzicht, denkt vooruit en laat AI
+            het schrijfwerk doen, zodat jij meer rust en aandacht overhoudt voor
+            je leerlingen.
           </p>
         </div>
       </div>
@@ -680,7 +817,7 @@ export function WereldHerken() {
           <div>
             <h2
               data-reveal
-              className="font-display text-[clamp(2.25rem,4.4vw,3.5rem)] font-black leading-[0.98] tracking-tight lg:sticky lg:top-28"
+              className={`${KOP_SECTIE} lg:sticky lg:top-28`}
               style={{ color: DONKER }}
             >
               Herken
@@ -695,7 +832,7 @@ export function WereldHerken() {
                ongewijzigd, alleen de regelval. */}
             <p
               data-reveal
-              className="mt-6 text-2xl leading-snug lg:sticky lg:top-60"
+              className={`mt-6 lg:sticky lg:top-60 ${HAND_REGEL}`}
               style={{ fontFamily: "var(--font-hand)", color: KOP }}
             >
               Het hoort bij het werk,
@@ -743,8 +880,64 @@ export function WereldHerken() {
 }
 
 
-/* 6. De maker: mint-veld met liniaal-silhouet, één witte kaart. */
+/* 6. De maker: een COLOFON, geen sectie over één persoon.
+   ── Waarom dit stuk is gehalveerd ──────────────────────────────────────
+   Wat hier stond was een kaart van bijna een heel scherm hoog: een portret
+   van 208px, een display-kop van 36px ("Ik ben Michael. Net als jij sta ik
+   voor de klas."), twee alinea's van vier regels en daaronder nóg een
+   mintblok met de slotzin. Alles klopte los van elkaar, maar samen kreeg
+   één persoon evenveel ruimte als het hele productverhaal erboven. Voor een
+   serieus product is dat de verkeerde verhouding: het kaartje moet
+   vertrouwen wekken, niet de pagina overnemen.
+
+   Het is nu een colofon-kaartje: een klein, liggend object dat links in het
+   veld ligt met open mint ernaast, ongeveer 40rem breed in plaats van
+   paginabreed. Wat eruit ging en waarom:
+   - de display-kop. Die deed inhoudelijk hetzelfde als de handgeschreven
+     regel eronder ("van een leerkracht, voor leerkrachten") en was hier de
+     tweede titel binnen één blok.
+   - het aparte mintblok met de slotzin. Die zin is het punt van het
+     verhaal, dus die is gebléven — maar nu als gewone tweede regel in
+     kopkleur, waar hij precies dezelfde nadruk krijgt voor een fractie van
+     de hoogte.
+   - de alinea over "een bredere missie". Dat is een zin over de maker, niet
+     over de lezer.
+   Wat bleef: de foto in de organische vorm met het mintvlak dat er schuin
+   onderuit steekt (het enige echt eigen detail van dit kaartje), de naam en
+   de rol, en de tagline in handschrift.
+
+   ⚠️ De VELDOPBOUW is met opzet niet aangeraakt: de mint begint nog steeds
+   op de halve hoogte van de sectie, de padding boven en onder is nog steeds
+   gelijk (dus de kleurnaad valt nog steeds halverwege de kaart) en de
+/* ── HET MAKERSBLOK IS EEN CV ──────────────────────────────────────────────
+   ⚠️ TWEE DINGEN ZIJN HIER ACHTER ELKAAR AFGEVALLEN. Lees dit vóór je iets
+   terugzet, want allebei zijn ze uitgeprobeerd en allebei zijn ze afgekeurd.
+
+   1. HET SCHRIFT (4-8 tot 5-8). Een schrift waar je zelf doorheen bladerde:
+      kaft met etiket, vriendenboekje, drie spreads. Eigenaar: "het gedraaide
+      3D-effect vind ik heel vet, maar het schriftje is gewoon niet helemaal
+      mijn ding."
+   2. DE 3D-RUIMTE (5-8). Daarna lag hier een CV dat gekanteld in de ruimte
+      lag, met echte randen, een stapel losse vellen eronder en een kanteling
+      die met je muis meedraaide. Eigenaar: "haal dat 3D-gedeelte hier maar
+      weg, ziet er niet uit."
+
+   🔑 WAT ER OVERBLIJFT IS DE BEDOELING, NIET DE MECHANIEK. Wat elke ronde
+   overleefde was de INHOUD en de VOLGORDE: wie hij is, en daarna waar Avinka
+   voor staat. Wat er telkens uit ging was het apparaat eromheen. Bouw hier dus
+   geen nieuw mechaniek in; dit is een kaart en die hoort bij de andere kaarten
+   van deze wereld te horen.
+
+   Wat een CV hier goed doet:
+   - Alles staat er tegelijk op, dus de missie zit niet achter een klik. Dat is
+     een harde les van deze pagina: de tijdwinst per tool zat ook ooit achter
+     een interactie en dat was fout. Wat je moet lezen, laat je zien.
+   - Een CV heeft van nature de volgorde die de eigenaar vroeg: eerst wie je
+     bent, dan waar je voor staat.
+   - Het is een vorm die iedereen kent, dus er valt niets uit te leggen. */
+
 export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
+
   return (
     <section className="relative overflow-hidden">
       {/* Het mintveld begon eerst bovenaan deze sectie, en dan zat de golf
@@ -758,6 +951,11 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
       <div className="pointer-events-none absolute inset-x-0 bottom-0 top-1/2" aria-hidden>
         <div className="absolute inset-0" style={{ background: MINT_LICHT }} />
 
+        {/* ⚠️ Hier lag ruitjespapier over het mintveld. Eruit op verzoek: het
+           schrift zelf heeft al lijnen, en dan is een tweede lijnenspel in de
+           achtergrond eronder ruis in plaats van sfeer. Het veld is weer
+           gewoon veld. */}
+
         {/* Rechts van de makerskaart begint het mintveld dat doorloopt tot in
            de ervaringen-sectie, en die hele rechterbovenhoek was leeg: de
            liniaal ligt linksonder en verder lag hier niets tot ver in de
@@ -768,12 +966,17 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            het vlak boven de golf uit het papier in steken — precies de fout
            die eerder bij het polaroid-vlak is hersteld. */}
         <div className="absolute inset-0 overflow-hidden">
+          {/* ⚠️ Hier lag een liniaal-silhouet linksonder. Eruit op verzoek.
+             Terecht ook: er ligt in deze sectie al een schrift met lijnen, een
+             foto en vier bladzijden tekst. Nog een stuk schoolgerei in de
+             achtergrond is dan geen sfeer meer maar een derde ding dat om
+             aandacht vraagt. Het mintvlak rechts blijft; dat draagt de golf. */}
           <KaartVlak
             kleur={VLAK_MINT}
             vorm="ei"
-            breedte={660}
-            hoogte={400}
-            style={{ right: "-8%", top: -80, transform: "rotate(7deg)" }}
+            breedte={480}
+            hoogte={260}
+            style={{ right: "-6%", top: -50, transform: "rotate(7deg)" }}
             className="hidden lg:block"
             tel={5}
           />
@@ -781,8 +984,6 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
 
         <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="kam" />
       </div>
-      {/* De liniaal hoort in het mintveld te liggen, dus onderin de sectie. */}
-      <SilhouetLiniaal kleur={MINT_DIEP} veld={MINT_LICHT} style={{ width: 460, left: -120, bottom: 150, transform: "rotate(-14deg)" }} />
       {/* De bovenhelft van deze sectie (nog papier) had niets. Samen met de
          onderkant van de privacysectie was dat het grootste gat in het
          achtergrondweefsel van de pagina. Rechts, tegenover de liniaal die
@@ -793,117 +994,686 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
         <KaartVlak
           kleur={VLAK_PAPIER}
           vorm="wig"
-          breedte={600}
-          hoogte={320}
-          style={{ right: "-12%", top: 70, transform: "rotate(-8deg)" }}
+          breedte={460}
+          hoogte={240}
+          style={{ right: "-12%", top: 40, transform: "rotate(-8deg)" }}
           className="hidden lg:block"
           tel={6}
         />
       )}
 
-      <div className="relative z-10 mx-auto w-full max-w-4xl px-6 pb-32 pt-32 lg:pb-36 lg:pt-36">
-        {/* De kaart hoort nu bij de familie: organische radii, tonale rand en
-           het vinkje-badge op de bovenrand, net als de regie-kaartjes. Hij was
-           daarvoor een strak afgerond blok met drie lange alinea's, waardoor
-           hij als een lap tekst las in plaats van als een kennismaking. */}
-        <div
-          data-reveal
-          className="relative border-[2.5px] px-8 py-12 sm:px-14 sm:py-14"
-          style={{
-            /* niet puur wit: een warme papiertoon houdt de kaart in dezelfde
-               wereld als het gespikkelde papier van de pagina */
-            background: "var(--w-kaart-warm, #fffdf9)",
-            borderRadius: "3.2rem 2.4rem 3.4rem 2.6rem / 2.6rem 3.4rem 2.4rem 3.2rem",
-            borderColor: KAART_RAND,
-            boxShadow: KAART_SCHADUW,
-            rotate: "-0.6deg",
-          }}
-        >
-          {/* Het stipje op 8% ligt in de papieren bovenhelft en gaat mee in de
-             opruiming; dat op 86% ligt in het mintveld en blijft dus staan. */}
-          <Confetti
-            punten={[
-              ...(RUIS_OP_PAPIER ? [{ x: "94%", y: "8%", r: 5, amber: true }] : []),
-              { x: "2%", y: "86%", r: 4 },
-            ]}
-          />
-          {/* Hier hing een groen vinkje-badge over de bovenrand. Eruit op
-             verzoek: het vinkje van het merk zit al in het mintblok onderaan
-             deze kaart, en op een kennismaking met de maker voegt een
-             afvink-teken niets toe. */}
+      {/* 🔑 HET CONCEPT: EEN CV DIE SCHUIN OP HET VELD LIGT.
+         De compositie is dezelfde als altijd — links de kop en één zin voor de
+         lezer, rechts het voorwerp — maar het voorwerp is nu een document in
+         plaats van een schrift.
 
-          <div className="relative flex flex-col gap-10 sm:flex-row sm:items-stretch sm:gap-12">
-            {/* Portretkolom: de foto in een organische vorm in plaats van een
-               cirkel, met een zacht mintvlak dat er schuin onderuit steekt.
-               Naam en rol staan hier, niet onderaan de tekst: dan leest het
-               als een kennismaking en niet als een ondertekende brief. Het
-               naamblok wordt naar beneden geduwd (mt-auto), want anders bleef
-               er een groot leeg wit gat onder in de linkerhelft van de kaart. */}
-            <div className="flex shrink-0 flex-col sm:w-52">
-              <div className="relative h-32 w-32 sm:h-52 sm:w-52">
-                {/* het vlak steekt naar één kant uit, niet rondom: anders
-                   valt het samen met de foto en wordt het een ring */}
-                <span
-                  className="absolute -bottom-5 -left-6 -right-1 -top-1"
-                  style={{ background: MINT, borderRadius: VLAKVORMEN.kiezel, rotate: "-9deg" }}
-                  aria-hidden
-                />
-                <span
-                  className="relative flex h-full w-full items-center justify-center overflow-hidden"
-                  style={{ background: MINT_DIEP, borderRadius: VLAKVORMEN.ei, rotate: "3deg" }}
-                >
-                  {fotoBestand ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={`/${fotoBestand}`} alt="Michael van Spanje" className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="font-display text-4xl font-black" style={{ color: DONKER }}>MvS</span>
-                  )}
-                </span>
-              </div>
-              <div className="mt-8 sm:mt-auto sm:pt-10">
-                <p className="text-3xl leading-none text-ink/85" style={{ fontFamily: "var(--font-hand)" }}>Michael</p>
-                <p className="mt-1.5 text-sm text-ink/60">Leerkracht &amp; maker van Avinka</p>
-              </div>
-            </div>
+         DE OPBOUW VAN HET DOCUMENT, en die is niet willekeurig:
+         1. een donkergroene kopband met de naam, de rol en de foto. Dat is de
+            eerste seconde: er staat een mens achter dit product.
+         2. links een smalle kolom met de harde feiten (groep, jaren, school,
+            woonplaats). Kort, want dit is de aanleiding en niet het verhaal.
+         3. rechts de brede kolom: waarom Avinka bestaat en waar het heen gaat.
+            Dít is waar de sectie voor bedoeld is en het krijgt dus de meeste
+            ruimte — de eigenaar: "beetje persoonlijke info, daarna vooral over
+            Avinka".
+         4. onderaan, met de hand geschreven, de zin die je moet onthouden.
 
-            <div>
-              <p className="text-2xl leading-none" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
-                van een leerkracht, voor leerkrachten
-              </p>
-              <h2 className="mt-3 font-display text-3xl font-black leading-[1.06] tracking-tight [text-wrap:balance] sm:text-4xl" style={{ color: DONKER }}>
-                Ik ben Michael. Net als jij sta ik voor de klas.
-              </h2>
-              <p className="mt-6 text-lg leading-8 text-ink/75">
-                Ik weet hoeveel tijd er gaat naar rapporten, analyses en
-                verslagen. Daarom bouw ik hulpmiddelen die dat werk sneller en
-                eenvoudiger maken. Geen ingewikkelde techniek, wel zorgvuldig
-                met de gegevens van je leerlingen.
-              </p>
-              <p className="mt-4 text-lg leading-8 text-ink/75">
-                Wat begon als een oplossing voor mijn eigen werk, werd een
-                bredere missie: laten zien dat slimmer werken juist eenvoudig
-                kan zijn.
-              </p>
-              {/* De slotregel was vet gedrukte tekst op wit en verdween
-                 daardoor in de rest van de kaart, terwijl het juist de zin is
-                 die je moet onthouden. Nu is het een eigen mintblok in de vorm
-                 van de kaarten zelf: het geeft de kaart kleur én zet de zin
-                 apart als het punt van het verhaal.
-                 Er hing ook een vinkje-badge over de bovenrand van dit blok;
-                 die is er samen met die van de kaart zelf uit. */}
-              <div
-                className="relative mt-8 px-7 py-6"
-                style={{ background: MINT, borderRadius: "2.4rem 1.6rem 2.2rem 1.5rem" }}
+         ⚠️ Waarom de handgeschreven zin daar staat en niet in de gedrukte
+         kolom: op een CV zet je zelf niet wat je gelooft — dat schrijf je
+         eronder. Het is het enige stuk van dit document dat niet uit een
+         printer komt, en daarom leest het als de persoon in plaats van als de
+         sollicitant. */}
+      {/* De padding boven en onder blijft aan elkaar gelijk. Dat is geen
+         netheid: de mint begint op de halve hoogte van deze sectie, dus zodra
+         die twee uit de pas lopen valt de kleurnaad niet meer halverwege het
+         document. Verander je er één, verander dan allebei.
+         (Hij stond op pt-28/pt-36 omdat een omslaand blad van het schrift ver
+         boven de sectie uit zwaaide en door overflow:hidden werd afgeknipt. Er
+         slaat nu niets meer om, dus het mag weer krapper — maar het document
+         is wél hoger dan het schrift was, dus niet terug naar pt-20.) */}
+      <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pb-24 pt-24 lg:pb-28 lg:pt-28">
+        <Confetti punten={[{ x: "3%", y: "88%", r: 4 }]} />
+
+        <div className="w-mkr-rij">
+          {/* ── links: de kop en de uitleg ──
+             🔑 DE TAAKVERDELING TUSSEN LINKS EN HET DOCUMENT, en dat is waar
+             deze alinea drie keer op stukliep:
+             het CV vertelt wie hij is en waar Avinka voor staat;
+             LINKS moet vertellen wat dat voor de LEZER betekent.
+             Zolang hier stond "ik bouw het zelf, geen bedrijf, geen
+             supportafdeling" zei het in andere woorden hetzelfde als het
+             document ernaast, alleen zakelijker. En het definieerde Avinka
+             bovendien met wat het NIET is, wat altijd zwakker leest dan wat
+             het wél is. */}
+          <div className="w-mkr-tekst">
+            <h2 className={`${KOP_SECTIE} w-mkr-kop`}>Even voorstellen</h2>
+            {/* De richting komt van de eigenaar: Avinka is er voor het werk na
+               schooltijd. Zijn eigen formulering was "ondersteunen in taken";
+               dat is één stap te ambtelijk voor een pagina die verder in
+               gewone taal staat, dus het is "helpen met het werk dat na
+               schooltijd blijft liggen" geworden.
+               De tweede zin doet het werk van de KOP: bij "Even voorstellen"
+               hoort een mens. Hij staat er letterlijk zoals de eigenaar hem
+               heeft aangeleverd; niet gladstrijken. Er stond eerst "Ik ken dat
+               werk, want ik doe het zelf" (van mij) — deze zegt meer, want hij
+               nodigt uit in plaats van alleen te bevestigen. */}
+            <p className={`${TEKST_SECTIE} w-mkr-inleiding`}>
+              Avinka is gebouwd om leerkrachten te helpen met het werk dat na
+              schooltijd blijft liggen. Ik doe aanpassingen op basis van eigen
+              ervaringen, maar sta graag open voor alle feedback.
+            </p>
+            {/* ── de uitnodiging ──
+               ⚠️ HIER STOND EEN QUOTE: "Goede leerkrachten horen hun tijd te
+               besteden aan leerlingen, niet aan administratie." Eruit op
+               verzoek ("dit vind ik een meh quote voor in het groen"), en
+               daarmee staat die zin nergens meer op de pagina.
+               🔑 Wat ervoor in de plaats komt is geen uitspraak maar een
+               UITNODIGING, en dat past beter bij waar hij staat. Deze kolom
+               spreekt de lezer aan, en de zin ernaast in de kaart zegt al
+               "ik sta graag open voor alle feedback" — dit maakt daar iets
+               van dat je ook echt kúnt doen in plaats van alleen leest.
+               Handschrift, want dit is het enige stuk van de sectie dat de
+               maker rechtstreeks tegen je zegt. */}
+            <p className={`${HAND_REGEL} w-mkr-belofte`}>
+              Laat me vooral weten wat je ervan vindt!
+            </p>
+            {/* ── het adres, met een pijltje ernaartoe ──
+               ✅ info@avinka.nl is bevestigd door de eigenaar: het officiële
+               adres in de zakelijke Google Workspace, dus het ontvangt ook
+               echt. (support@avinka.nl is een alias en staat op /dashboard/hulp
+               voor "ik kom er niet uit" — niet door elkaar gebruiken.)
+
+               Het pijltje is DEZELFDE hand als bij de polaroids ("klik op een
+               foto om de ervaring te lezen"): zelfde dikte, zelfde ronde
+               uiteinden, alleen gespiegeld zodat de boog naar beneden loopt in
+               plaats van omhoog. Een tweede vormtaal verzinnen voor hetzelfde
+               gebaar maakt een pagina rommelig.
+               🔑 Het staat hier ook niet voor de sier: onder deze kolom viel
+               een groot leeg vlak, en een aanwijzing die daar de blik naartoe
+               trekt vult dat gat met iets dat werk doet in plaats van met
+               decoratie. */}
+            <div className="w-mkr-contact">
+              {/* ⚠️ TWEE KEER DE VERKEERDE KANT OP GEWEEST. Eerst liep hij bijna
+                 vlak naar rechts (daalde 7px over 30px breedte) en las als een
+                 streepje. Daarna liep hij van linksboven schuin naar
+                 rechtsonder — één diagonale haal.
+                 De eigenaar wil dat hij EERST NAAR BENEDEN gaat en DAN NAAR
+                 RECHTS. Dat is ook logischer: de uitnodiging staat erboven en
+                 het adres ernaast, dus de pijl moet die hoek echt om.
+                 🔑 De vorm zit in de controlepunten. Het eerste ligt recht onder
+                 het beginpunt (7,15 onder 7,2) — daardoor vertrekt de lijn
+                 verticaal. Het tweede ligt linksonder het eindpunt (9,25 bij
+                 30,27) — daardoor komt hij horizontaal aan. Zo maakt één curve
+                 een hele hoek, zonder knik. */}
+              <svg
+                className="w-mkr-pijl"
+                viewBox="0 0 38 34"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
               >
-                <p className="text-lg font-bold leading-8" style={{ color: DONKER }}>
-                  Goede leerkrachten horen hun tijd te besteden aan leerlingen,
-                  niet aan papierwerk.
-                </p>
-              </div>
+                <path d="M7 2 C 7 15, 9 25, 30 27" />
+                {/* De punt staat haaks op het EIND van de curve, en die komt
+                   horizontaal binnen — dus de weerhaken wijzen naar links. */}
+                <path d="M23.5 23 L 30.5 27 L 23 29.8" />
+              </svg>
+              <a className={`${HAND_WENK} w-mkr-mail`} href="mailto:info@avinka.nl">
+                {/* Lijnicoon in dezelfde trant als de drie pictogrammen in de
+                   privacysectie: dunne lijn, ronde hoeken, geen vulling. */}
+                <svg
+                  className="w-mkr-envelop"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <rect x="2.5" y="5" width="19" height="14" rx="3" />
+                  <path d="M3.6 7.6 L12 13.6 L20.4 7.6" />
+                </svg>
+                {/* De onderstreping zit op de TEKST en niet op de link, anders
+                   loopt hij ook onder het envelopje door en wordt het één
+                   doorgestreept blokje. */}
+                <span>info@avinka.nl</span>
+              </a>
             </div>
           </div>
+
+        {/* ⚠️ DE SCHEEFSTAND STAAT MET OPZET OP `rotate:` EN NIET IN EEN
+           TRANSFORM. Dit element draagt data-reveal, en de reveal-regel
+           .anim [data-reveal].is-in { transform: none } in Landing.tsx wist
+           elke transform op datzelfde element weg. Sinds CSS Transforms 2 is
+           rotate een eigen eigenschap en valt hij daar niet onder, dus die
+           overleeft het wél. Dat kostte bij de 3D-poging een hele ronde: die
+           kanteling verdween en het zag eruit als een bouwfout. */}
+        <div data-reveal className="w-cv">
+            <article className="w-cv-blad">
+              {/* ── de kopband ──
+                 Naam links, foto rechts. Dit is de eerste seconde van het hele
+                 blok: er staat een mens achter dit product, en die heeft een
+                 gezicht en een naam. Donkergroen omdat dit de enige plek in de
+                 sectie is die om aandacht mag vragen. */}
+              {/* ── de kopband ──
+                 🔑 DE GOLF IS WAT DIT DOCUMENT BIJ DE PAGINA LAAT HOREN. Elke
+                 kleurovergang op deze landing is een golf — papier naar mint,
+                 mint naar papier, zeven keer. Een kaart met een kaarsrechte
+                 kleurscheiding erin is daarom het enige element op de pagina
+                 dat zijn eigen taal niet spreekt, en dat is precies wat de
+                 eigenaar bedoelde met "simpel en saai".
+                 Vorm "zacht" is letterlijk hergebruikt, geen nieuwe golf: de
+                 regel is dat golven bestaande amp/golven-waarden delen. In een
+                 vak van 38px levert amp 26 zo'n 9px deining — genoeg om te zien
+                 dat het een golf is, te weinig om met de sectiegolven te gaan
+                 concurreren. */}
+              <header className="w-cv-band">
+                <div>
+                  <p className="w-cv-naam">Michael van Spanje</p>
+                  {/* ⚠️ "oprichter" is het woord van de eigenaar zelf en het
+                     zegt iets wat "maker" niet zegt: dit is geen hobbyproject
+                     maar een bedrijf met iemand die ervoor staat. Precies wat
+                     een school wil weten. Niet terugveranderen. */}
+                  <p className="w-cv-rol">leerkracht &amp; oprichter van Avinka</p>
+                </div>
+                {/* ── de foto breekt door de kleurgrens ──
+                   Ze staat in een organische vorm (dezelfde ongelijke radii als
+                   de kaarten van deze wereld) en zakt met haar onderkant tot IN
+                   de golf. Dat is geen versiering maar een van de vaste
+                   kenmerken van deze designtaal: beeld dat over een veldrand
+                   heen loopt in plaats van er netjes binnen te blijven.
+                   Het crème randje doet er nog iets bij: het houdt de
+                   achtergrond van de foto weg van het donkergroen, dat er
+                   anders tegenaan botst. */}
+                <div className="w-cv-pas">
+                  {fotoBestand ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`/${fotoBestand}`}
+                      alt="Michael van Spanje"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="font-display text-xl font-black" style={{ color: DONKER }}>
+                      MvS
+                    </span>
+                  )}
+                </div>
+                <Golf
+                  kleur="var(--w-kaart-warm, #fffdf9)"
+                  vorm="zacht"
+                  hoogte="h-[30px] sm:h-[38px]"
+                />
+              </header>
+
+              {/* ── de personalia als strook ──
+                 ⚠️ DIT STOND ALS SMALLE KOLOM NAAST HET VERHAAL en dat kan niet
+                 meer nu het document weer naast de tekst staat: op 32rem hield
+                 het verhaal dan 300px over en liep elke alinea over vier
+                 regels. Over de volle breedte is de leesregel ~62 tekens, de
+                 maat waarop lopende tekst het prettigst leest.
+                 Boven elkaar zet het bovendien de volgorde neer die de eigenaar
+                 vroeg: "beetje persoonlijke info, daarna vooral over Avinka". */}
+              <div className="w-cv-strook">
+                {/* Alle gegevens hieronder komen van de eigenaar zelf. Niets
+                   hiervan invullen, afronden of bijstellen zonder hem: het zijn
+                   feiten over een echt persoon, inclusief zijn school.
+
+                   ⚠️ DE INDELING IS DOOR DE EIGENAAR BEPAALD (5-8): links wie
+                   hij is, midden waar hij werkt, rechts hoe lang al. Niet
+                   herschikken naar wat "beter uitkomt" in het rooster.
+                   🔑 Het zijn drie APARTE lijstjes en niet één rooster met
+                   losse cellen. Dat moet ook: in één rooster bepaalt de hoogste
+                   cel van een rij hoe hoog die rij is, en omdat "werk" twee
+                   waarden heeft zou "woont in" links een gat onder zich
+                   krijgen. Drie kolommen die elk hun eigen hoogte bepalen
+                   hebben dat probleem niet.
+                   (En een div met divs erin mag niet binnen een dl staan — de
+                   inhoud van een dl mag alleen dt, dd of een div met dt/dd
+                   zijn. Vandaar drie dl-s in plaats van groepen in één dl.) */}
+                <div className="w-cv-feiten">
+                  <dl className="w-cv-kolom">
+                    <div>
+                      <dt>leeftijd</dt>
+                      <dd>30</dd>
+                    </div>
+                    <div>
+                      <dt>woont in</dt>
+                      <dd>Apeldoorn</dd>
+                    </div>
+                  </dl>
+                  <dl className="w-cv-kolom">
+                    {/* ⚠️ De groep hing hier eerst als tweede waarde ONDER
+                       "werk", zonder eigen label. Op verzoek losgetrokken tot
+                       een eigen regel met een eigen kop, net als de twee
+                       links. Zo staat er nergens meer een waarde zonder dat
+                       erbij staat waar hij antwoord op geeft. */}
+                    <div>
+                      <dt>werk</dt>
+                      <dd>Regenboog Osseveld</dd>
+                    </div>
+                    <div>
+                      <dt>groep</dt>
+                      <dd>7</dd>
+                    </div>
+                  </dl>
+                  <dl className="w-cv-kolom">
+                    <div>
+                      <dt>voor de klas</dt>
+                      <dd>7 jaar</dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+
+              <div className="w-cv-verhaal">
+                {/* De eerste alinea hieronder stond op de laatste bladzijde van
+                   het schrift en was daarvóór al goedgekeurd in het oude
+                   makersblok; die is niet herschreven, alleen verplaatst naar
+                   de plek waar hij zonder klik te lezen is. De koppen en de
+                   tweede alinea zijn 5-8 door de eigenaar bijgestuurd. */}
+                {/* De kop is die van de eigenaar zelf (5-8). Hij stond er als
+                   "Waarom Avinka bestaat" — dat gaat over het product, en dit
+                   blok gaat over de maker. Niet terugdraaien naar de
+                   product-formulering. */}
+                <h3 className="w-cv-sectiekop">Waarom ik Avinka heb gebouwd</h3>
+                {/* ⚠️ HET TWEEDE DEEL IS 5-8 VERVANGEN. Er stond "laten zien
+                   dat slimmer werken juist eenvoudig kan zijn"; eigenaar: "de
+                   eerste zin is goed, tweede beetje meh". Hij koos uit drie
+                   richtingen (van-mij-naar-iedereen, een standpunt over het
+                   vak, of wat het de lezer oplevert) voor het STANDPUNT.
+                   Dat is dus geen toevallige formulering maar een keuze: dit
+                   deel gaat bewust over het vak en niet over de winst voor de
+                   lezer — die staat al in de handgeschreven regel ernaast en
+                   in de belofte bovenaan de pagina. */}
+                {/* ⚠️ HIER STOND EEN MARKEERSTIFTHAAL over "het zwaarste
+                   deel". Weg op verzoek: "die markeerstift mag weg, heel raar".
+                   🔑 En de redenering waarmee ik hem erin zette, klopte niet —
+                   niet herhalen. Ik dacht: de markeerstift in "Herken je dit?"
+                   is het enige stuk vormgeving waarvan de eigenaar ooit zei "ik
+                   vind dit leuk", dus die hoort hier ook. Maar dáár streept een
+                   hele sectiekop zichzelf aan terwijl je scrollt — dat is een
+                   gebeurtenis. Een stilstaand groen blokje achter drie woorden
+                   in een alinea is iets heel anders: dat leest niet als een
+                   stift maar als een gemarkeerd stuk tekst in een document.
+                   Een motief overnemen is niet hetzelfde als hetzelfde effect
+                   krijgen; de schaal en de beweging horen erbij. */}
+                <p>
+                  Wat begon als een oplossing voor mijn eigen werk, werd een
+                  bredere missie: het werk na schooltijd hoort niet het zwaarste
+                  deel van het vak te zijn.
+                </p>
+                {/* ⚠️ HIER STOND ALLEEN "Geen ingewikkelde techniek, wel
+                   zorgvuldig met de gegevens van je leerlingen." De eigenaar
+                   wil dit blok meer de kant op van "leerkrachten helpen om werk
+                   na schooltijd efficiënter te doen" (5-8). Die richting staat
+                   nu vooraan; de oude zin is er niet uit gegooid maar erachter
+                   gezet, want daar zit de enige privacy-belofte van dit blok in.
+                   🔑 In de IK-vorm, en dat is geen stijlkeuze. De inleiding
+                   links zegt bijna hetzelfde ("Avinka is gebouwd om leerkrachten
+                   te helpen met het werk dat na schooltijd blijft liggen"), maar
+                   die gaat over het PRODUCT. Onder de kop "Waar ik voor sta"
+                   hoort een persoon te staan, anders staat dezelfde zin twee
+                   keer op dezelfde pagina in ander lettertype. */}
+                <h3 className="w-cv-sectiekop">Waar ik voor sta</h3>
+                <p>
+                  Ik wil leerkrachten helpen om het werk na schooltijd
+                  efficiënter te doen. Zonder ingewikkelde techniek, en
+                  zorgvuldig met de gegevens van je leerlingen.
+                </p>
+                {/* ⚠️ HIER STOND EEN DERDE BLOK ("Waar het heen gaat"), tekst
+                   van mij. Eruit toen het document weer naast de tekst moest
+                   passen: het kostte 110px hoogte en dat is precies wat er niet
+                   is. Het zei bovendien in andere woorden hetzelfde als de
+                   inleiding links ("ik doe aanpassingen op basis van eigen
+                   ervaringen, maar sta graag open voor alle feedback"), dus er
+                   ging geen informatie verloren.
+                   🔑 Als er ooit een derde blok bij moet: dan moet er ook een
+                   ander blok uit, of het document past niet meer. */}
+              </div>
+
+            </article>
+        </div>
         </div>
       </div>
+
+      {/* ⚠️ In dit stijlblok mag geen accent-aanhalingsteken staan, ook niet
+         in een opmerking: dat sluit de tekst van het blok af en dan valt de
+         hele pagina om. Dat is hier één keer gebeurd. */}
+      <style>{`
+        /* ── de rij: tekst links, document rechts ──
+           ⚠️ DIT IS ÉÉN KEER OVER DE VOLLE BREEDTE GEPROBEERD (document van
+           46rem onder de kop) en dat werd meteen afgekeurd: "ik vind hem nu
+           alsnog een hele grote kaart". Terug naast de tekst dus, zoals het
+           schrift stond.
+           🔑 De prijs daarvan is dat het document LAAG moet blijven, want
+           naast een tekstkolom van ~260px mag er geen voorwerp van 600px
+           staan. Dat is de reden dat de handgeschreven zin naar links is
+           verhuisd en dat de personalia een strook zijn in plaats van een
+           kolom — geen smaak, maar hoogte.
+
+           ⚠️ Ooit boven uitgelijnd i.p.v. gecentreerd, omdat het document toen
+           het kleine schriftje was: met align-items:center zweefde de kop
+           halverwege een véél te laag object en leek het of de twee helften
+           niets met elkaar te maken hadden. Nu het document de volle CV-kaart
+           is (vergelijkbare hoogte als de tekstkolom), speelt dat niet meer —
+           eigenaar bevestigde 6-8 dat het de kleinere schriftje-hoogte was,
+           niet een principiële afkeuring van centreren zelf. */
+        .w-mkr-rij {
+          display: grid;
+          gap: clamp(28px, 4vw, 56px);
+          align-items: center;
+        }
+        @media (min-width: 900px) {
+          .w-mkr-rij { grid-template-columns: minmax(0, 1fr) 32rem; }
+        }
+        .w-mkr-tekst { max-width: 42ch; }
+        /* De handgeschreven uitnodiging onder de inleiding. Groter dan de
+           lopende tekst, maar in handschrift en niet in de display-letter:
+           grote display-regels in deze kolom zijn eerder afgekeurd met "een
+           tweede titel, lelijk". */
+        /* ⚠️ Stond op clamp(1,15rem, 1,9vw, 1,4rem) = 22,4px, en dat was de
+           enige handgeschreven regel op de pagina met een eigen maat: de andere
+           uitspraken staan op 24 en de aanwijzingen op 20. Maat komt nu van
+           HAND_REGEL; hier blijft wat eigen is aan deze plek. */
+        .w-mkr-belofte {
+          margin: clamp(20px, 2.6vw, 28px) 0 0;
+          max-width: 30ch;
+          font-family: var(--font-hand), "Segoe Script", cursive;
+          color: ${KOP};
+        }
+        /* ── het pijltje en het adres ──
+           Ze staan ingesprongen en iets lager dan de uitnodiging, zodat ze in
+           de lege ruimte onder deze kolom vallen in plaats van er strak
+           tegenaan te plakken. De uitlijning is op de ONDERkant: het pijltje
+           eindigt rechtsonder, en daar begint het adres. */
+        .w-mkr-contact {
+          display: flex;
+          align-items: flex-end;
+          gap: 0.6rem;
+          margin-top: clamp(12px, 1.8vw, 20px);
+          margin-left: clamp(20px, 5vw, 72px);
+        }
+        /* De verhouding volgt de viewBox (38 bij 34): de pijl daalt eerst en
+           gaat dan pas opzij, dus hij is bijna net zo hoog als breed.
+           ⚠️ DE ONDERMARGE IS GEMETEN, NIET GEKOZEN. De punt van de pijl ligt
+           niet op de onderrand van het vakje maar op y=27 van de 34 — dus zo'n
+           7px daarboven. Lijn je het vakje onderaan uit met de link, dan komt de
+           punt onder de tekst uit; dat stond er 5px naast. Deze marge duwt hem
+           die 5px omhoog, zodat de punt precies op het midden van
+           info@avinka.nl wijst.
+           🔑 Verander je de maat van de pijl of de tekengrootte van het adres,
+           meet dit dan opnieuw: het is een verhouding tussen twee dingen, geen
+           vaste waarde. */
+        .w-mkr-pijl {
+          flex: none;
+          width: 2.45rem;
+          height: 2.2rem;
+          margin-bottom: 0.42rem;
+          color: ${KOP};
+        }
+        /* Het adres in dezelfde hand als de uitnodiging — alsof iemand het voor
+           je opschrijft — met het envelopje ervoor. */
+        /* Het adres is een aanwijzing en geen uitspraak, dus het staat op de
+           kleinere van de twee handschriftmaten (HAND_WENK) — net als "sleep de
+           rij opzij" en "klik op een foto". */
+        .w-mkr-mail {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.45rem;
+          font-family: var(--font-hand), "Segoe Script", cursive;
+          color: ${KOP};
+          transition: color 0.2s ease;
+        }
+        .w-mkr-envelop {
+          flex: none;
+          width: 1.15rem;
+          height: 1.15rem;
+        }
+        /* De onderstreping los van de letters (offset), anders loopt hij door
+           de staarten van de g en de j. Handschrift alleen is geen aanwijzing
+           dat je ergens op kunt klikken, en dit is de enige link in de sectie. */
+        .w-mkr-mail span {
+          text-decoration: underline;
+          text-decoration-thickness: 1.5px;
+          text-underline-offset: 5px;
+        }
+        .w-mkr-mail:hover { color: ${DONKER}; }
+        .w-mkr-mail:focus-visible {
+          outline: 2px solid var(--color-brand, #2f9e6e);
+          outline-offset: 4px;
+          border-radius: 0.5rem;
+        }
+        /* ⚠️ De maat staat NIET meer hier maar in KOP_SECTIE bovenaan dit
+           bestand — deze kop stond op clamp(1.9rem, 3.6vw, 2.75rem) en dat was
+           net niet gelijk aan de andere sectiekoppen. Hier blijft alleen wat
+           eigen is aan déze plek: de kleur en de marge eronder. */
+        .w-mkr-kop {
+          margin-bottom: clamp(14px, 1.8vw, 20px);
+          color: ${DONKER};
+        }
+        /* De eerste alinea na de kop hoeft geen extra ruimte: de kop heeft
+           zijn eigen marge al. */
+        /* ⚠️ Stond op 1,05rem/1,7 (16,8px) terwijl de beschrijving onder de
+           andere sectiekoppen 18px is. Dat verschil van ruim een punt zie je
+           niet als je één sectie bekijkt, maar wel als je de pagina afscrolt.
+           De maat komt nu van TEKST_SECTIE, hier blijft alleen de kleur. */
+        .w-mkr-inleiding {
+          margin: 0;
+          color: rgba(34, 28, 58, 0.78);
+        }
+
+        /* ── DE KAART ─────────────────────────────────────────────────────
+           ⚠️ HIER STOND EEN HELE 3D-RUIMTE: perspectief, een gekantelde scene,
+           echte randvlakken voor de dikte, twee losse vellen eronder en een
+           kanteling die met de muis meedraaide. Alles eruit op verzoek
+           ("haal dat 3D-gedeelte hier maar weg, ziet er niet uit").
+           🔑 De les die dit blok drie rondes lang heeft geleerd: het probleem
+           was nooit dat het effect niet WERKTE. Het werkte alle drie de keren.
+           Het hoorde alleen niet bij een pagina die verder helemaal plat is —
+           één element met een eigen ruimte staat los van de rest, hoe goed het
+           op zichzelf ook is. Zet hier dus geen nieuw mechaniek in; laat de
+           kaart een kaart zijn en haal het karakter uit de VORMTAAL.
+
+           Wat er nu voor zorgt dat hij bij de rest hoort:
+           - dezelfde ronding als elke andere kaart van deze wereld
+             (--w-kaart-radius), dus hij verandert vanzelf mee in de themas
+           - dezelfde slagschaduw (--w-kaart-schaduw) en dus dezelfde lichtval
+           - de golf tussen de kopband en het papier
+           - de foto in een organische vorm die door die golf heen breekt
+           - een haal met de markeerstift, zoals in "Herken je dit?"
+           De scheefstand van een halve graad staat op de losse eigenschap
+           rotate en niet in een transform — zie de opmerking bij de opmaak. */
+        .w-cv {
+          position: relative;
+          width: 100%;
+          max-width: 32rem;
+        }
+        .w-cv-blad {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          border-radius: var(--w-kaart-radius, 2.5rem);
+          background: #ffffff;
+          box-shadow:
+            var(--w-kaart-schaduw, -14px 36px 80px -48px rgba(23, 80, 58, 0.55)),
+            0 0 0 1px rgba(34, 28, 58, 0.04);
+          /* Niets op deze pagina ligt kaarsrecht; de kaarten in "Herken je dit?"
+             staan om en om op 0,8 graden. Op de losse eigenschap rotate en niet
+             in een transform, anders wist de reveal hem weg.
+             ⚠️ Stond op -0.7deg, maar de kaart staat al rechts in de rij en
+             kantelde daardoor visueel nog verder naar rechts (eigenaar 6-8:
+             "kantelt naar rechts terwijl die al rechts staat"). Omgedraaid
+             naar de andere kant, zodat de kanteling de positie tegenwerkt
+             i.p.v. verdubbelt. */
+          rotate: 0.7deg;
+        }
+
+        /* ── de kopband ──
+           De ruimte onderin (padding-bottom) is voor de golf: die ligt daar
+           overheen, dus tekst die er te dicht bij komt verdwijnt eronder.
+           position/z-index zijn nodig omdat de foto uit deze band mag steken. */
+        .w-cv-band {
+          position: relative;
+          z-index: 2;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: clamp(12px, 2vw, 20px);
+          padding: clamp(16px, 2.4vw, 22px) clamp(20px, 2.8vw, 26px)
+                   clamp(34px, 4.4vw, 44px);
+          /* Terug naar KOP, op verzoek 6-8 na de mint-poging ("niet mooi").
+             De letterlijke huiskleur (#2f9e6e) kan hier niet: die ligt qua
+             helderheid tussen wit en donkere tekst in, dus geen van beide
+             haalt op de rol-regel de 4,5:1-norm (wit: 3,36:1, donker: 2,78:1).
+             KOP is wél uit dezelfde groenfamilie én leesbaar (wit erop ±6,4:1). */
+          background: ${KOP};
+        }
+        .w-cv-naam {
+          margin: 0;
+          font-family: var(--font-display), Georgia, serif;
+          font-weight: 900;
+          letter-spacing: -0.025em;
+          line-height: 1.08;
+          font-size: clamp(1.3rem, 2.6vw, 1.65rem);
+          color: #ffffff;
+        }
+        .w-cv-rol {
+          margin: 0.3rem 0 0;
+          font-size: 0.92rem;
+          line-height: 1.35;
+          /* Wit op 85% haalt op dit KOP-groen ruim boven 4,5:1 (±5,2:1). */
+          color: rgba(255, 255, 255, 0.85);
+        }
+        /* ── de foto ──
+           In de organische vorm van deze wereld (dezelfde ongelijke radii als
+           de achtergrondvlakken), niet als rechthoekig pasje. Vaste maat, want
+           een foto die met de kolom meerekt wordt op smalle schermen een pasje
+           van niks.
+           ⚠️ HIER STOND translateY(32px), waarmee de foto tot in de golf zakte
+           en door de kleurgrens heen brak. Eruit op verzoek: "mijn foto moet
+           ter hoogte van mijn naam, iets hoger dus". Hij staat nu gewoon
+           gecentreerd naast de naam.
+           🔑 De hoogte van de band verandert daar NIET van: een transform
+           verschuift alleen wat je ziet, niet wat het element in de opmaak
+           inneemt. De band was en blijft even hoog als de foto plus de ruimte
+           voor de golf.
+           z-index moet hoger dan 5 blijven: dat is de laag van de golf, en
+           anders verdwijnt de onderkant van de foto eronder. */
+        .w-cv-pas {
+          position: relative;
+          z-index: 6;
+          flex: none;
+          display: grid;
+          place-items: center;
+          width: 88px;
+          height: 100px;
+          overflow: hidden;
+          rotate: 2.5deg;
+          background: var(--color-cream, #fbf6ee);
+          border: 5px solid var(--color-cream, #fbf6ee);
+          border-radius: ${VLAKVORMEN.kiezel};
+          box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.6);
+        }
+
+        /* ── het lijf ── */
+        /* ── de personalia-strook ──
+           Een eigen band met een haarlijn eronder, zoals de personalia bovenaan
+           een echt CV. Nauwelijks getint: net genoeg om als apart veld te lezen
+           zonder er een gekleurd blok van te maken. */
+        .w-cv-strook {
+          padding: clamp(14px, 2vw, 18px) clamp(20px, 2.8vw, 26px);
+          background: rgba(var(--w-schaduw-rgb, 23,80,58), 0.03);
+          border-bottom: 1px solid rgba(var(--w-schaduw-rgb, 23,80,58), 0.13);
+        }
+        /* De feiten: label erboven, waarde eronder. Dat is de taal van een
+           formulier, en dat is precies wat een CV is.
+           🔑 Drie kolommen naast elkaar in plaats van een lijst onder elkaar
+           scheelt ruim 140px hoogte, en die hoogte is hier het hele probleem
+           (zie .w-mkr-rij).
+           De middelste kolom krijgt iets meer breedte: daar staat de langste
+           waarde (de schoolnaam), en in een gelijke derde liep die om. */
+        .w-cv-feiten {
+          display: grid;
+          grid-template-columns: 0.85fr 1.3fr 0.85fr;
+          gap: clamp(10px, 1.6vw, 16px);
+          margin: 0;
+        }
+        /* Elke kolom is een eigen lijstje en bepaalt dus zijn eigen hoogte. */
+        .w-cv-kolom {
+          display: flex;
+          flex-direction: column;
+          gap: clamp(10px, 1.4vw, 13px);
+          margin: 0;
+        }
+        .w-cv-feiten dt {
+          font-size: 0.7rem;
+          font-weight: 700;
+          letter-spacing: 0.09em;
+          text-transform: uppercase;
+          /* ⚠️ GEMETEN, NIET GESCHAT. Op 0,58 dekking haalde dit label 3,99:1
+             op het papier en dat is onder AA — ik had er 4,6 bij geschreven
+             zonder het na te rekenen. Op 0,70 en 11,2px is het 5,8:1.
+             Dit is de kleinste tekst van het hele document; ga hier niet
+             lichter zitten, en meet opnieuw als de papierkleur verandert. */
+          color: rgba(34, 28, 58, 0.7);
+        }
+        .w-cv-feiten dd {
+          margin: 0.18rem 0 0;
+          font-size: 0.94rem;
+          font-weight: 600;
+          line-height: 1.35;
+          color: ${DONKER};
+        }
+        /* Het verhaal over de volle breedte van het document: ~62 tekens per
+           regel, en dat is de maat waarop lopende tekst het prettigst leest. */
+        .w-cv-verhaal {
+          padding: clamp(16px, 2.4vw, 22px) clamp(20px, 2.8vw, 26px)
+                   clamp(20px, 2.8vw, 26px);
+        }
+        /* ⚠️ HIER STOND .w-cv-markeer: een groene markeerstifthaal over een
+           paar woorden in het verhaal. Weg op verzoek ("heel raar"), inclusief
+           de nowrap-grendel die ervoor zorgde dat hij niet over twee regels
+           brak. Zie de opmerking bij de alinea in de opmaak voor waarom de
+           redenering erachter niet klopte. */
+        .w-cv-sectiekop {
+          margin: 0 0 0.35rem;
+          font-family: var(--font-display), Georgia, serif;
+          font-weight: 900;
+          letter-spacing: -0.015em;
+          line-height: 1.2;
+          font-size: 1.02rem;
+          color: ${DONKER};
+        }
+        .w-cv-verhaal p {
+          margin: 0 0 1.15rem;
+          font-size: 0.95rem;
+          line-height: 1.62;
+          color: rgba(34, 28, 58, 0.8);
+        }
+        .w-cv-verhaal p:last-child { margin-bottom: 0; }
+
+        /* ── mobiel ───────────────────────────────────────────────────────
+           De kaart pakt de volle breedte en gaat recht staan. Die scheefstand
+           van 0,7 graden werkt op een breed veld, maar tussen twee schermranden
+           op 24px afstand leest hij als een fout in plaats van als losheid. */
+        @media (max-width: 639px) {
+          .w-cv { max-width: none; }
+          .w-cv-blad { rotate: none; }
+          /* De foto een maatje kleiner, anders houdt de naam er te weinig
+             breedte naast over en breekt "Michael van Spanje" over twee
+             regels — een naam hoort op één regel te staan. */
+          .w-cv-pas { width: 72px; height: 82px; }
+          /* Twee kolommen in plaats van drie: op 390px is een derde van de
+             breedte ~100px en dan loopt zowel het label als de waarde eronder
+             om. De derde kolom ("voor de klas") zakt naar de tweede rij. */
+          .w-cv-feiten { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+      `}</style>
       {/* Het mintveld loopt hier NIET meer dood: het gaat gewoon door tot de
          onderrand van de sectie en zet zich in de ervaringen-sectie eronder
          voort (zelfde MINT-tint, dus geen naad op de overgang). Daar krijgt
@@ -975,11 +1745,17 @@ export function WereldSlot() {
         <Confetti punten={[{ x: "16%", y: "18%", r: 4, amber: true }, { x: "82%", y: "12%", r: 5 }, { x: "90%", y: "70%", r: 4, amber: true }]} />
         {/* Hier stond een wit vierkant met het merkvinkje boven de slotkop.
            Eruit op verzoek; de kop begint nu meteen. */}
-        <h2 data-reveal className="font-display text-[clamp(2.5rem,5.5vw,4rem)] font-black leading-[1.02] tracking-tight text-white [text-wrap:balance]">
+        <h2 data-reveal className={`${KOP_GROOT} text-white`}>
           Kom binnen. Je werkplek staat klaar.
         </h2>
+        {/* ⚠️ Hier stond de 7 met de hand ingetypt, terwijl de drie andere
+           plekken die de proefperiode noemen (de eindkaart van de tools-rij, de
+           prijzensectie en de vraag "Hoe werkt de gratis proefperiode?") hem uit
+           PROEF_DAGEN halen. Eén hardgecodeerd getal tussen drie afgeleide is
+           precies hoe een pagina zichzelf later tegenspreekt: verandert de
+           proefduur, dan blijft alleen deze zin op 7 staan. */}
         <p data-reveal className="mx-auto mt-5 max-w-xl text-lg leading-8 text-white/75">
-          7 dagen gratis proberen, zonder betaalgegevens vooraf.
+          {PROEF_DAGEN} dagen gratis proberen, zonder betaalgegevens vooraf.
         </p>
         <div data-reveal className="mt-9">
           <BlobKnop href="/sign-up" variant="wit">Probeer Avinka gratis</BlobKnop>

@@ -50,6 +50,7 @@ create table if not exists public.instellingen (
   start_tool_sinds date,                       -- wanneer voor het laatst gewisseld (max 1×/maand)
   mollie_customer_id text,                     -- Mollie-klant (voor terugkerende incasso)
   mollie_payment_id  text,                     -- lopende betaling (om terugkomst te verifiëren)
+  mollie_verleng_payment_id text,              -- lopende VERLENGING (voorkomt dubbel incasseren)
   -- Bèta die de eigenaar per account handmatig aanzet (zie wijs_admin_zet_beta_eigen_format).
   beta_eigen_format boolean not null default false,
   -- Welke ouder-app de leerkracht gebruikt: '' | 'parro' | 'social_schools' |
@@ -91,6 +92,7 @@ create table if not exists public.instellingen (
 --   alter table public.instellingen add column if not exists start_tool_sinds date;
 --   alter table public.instellingen add column if not exists mollie_customer_id text;
 --   alter table public.instellingen add column if not exists mollie_payment_id text;
+--   alter table public.instellingen add column if not exists mollie_verleng_payment_id text;
 --   alter table public.instellingen add column if not exists beta_eigen_format boolean not null default false;
 --   alter table public.instellingen add column if not exists communicatie_app text not null default '';
 --   alter table public.instellingen add column if not exists lvs_systeem text not null default '';
@@ -561,6 +563,7 @@ begin
     new.start_tool_sinds   := null;
     new.mollie_customer_id := null;
     new.mollie_payment_id  := null;
+    new.mollie_verleng_payment_id := null;
     new.beta_eigen_format  := false;
     new.ref_code           := null;  -- die deelt de database uit (wijs_ref_code)
     new.verwezen_door      := null;  -- die legt wijs_koppel_verwijzing vast
@@ -588,6 +591,7 @@ begin
   or new.start_tool_sinds   is distinct from old.start_tool_sinds
   or new.mollie_customer_id is distinct from old.mollie_customer_id
   or new.mollie_payment_id  is distinct from old.mollie_payment_id
+  or new.mollie_verleng_payment_id is distinct from old.mollie_verleng_payment_id
   or new.beta_eigen_format  is distinct from old.beta_eigen_format
   or new.ref_code           is distinct from old.ref_code
   or new.verwezen_door      is distinct from old.verwezen_door

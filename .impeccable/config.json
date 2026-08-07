@@ -38,6 +38,17 @@
         ],
         "createdAt": "2026-07-21T17:04:24.569Z",
         "reason": "Fraunces + Plus Jakarta Sans zijn de vastgelegde merkfonts (DESIGN.md typografie); identity-preservation"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "Bricolage Grotesque",
+        "files": [
+          "src/lib/mail-duo.ts",
+          "src/lib/mail-proef.ts",
+          "src/lib/mail-proef-verlopen.ts"
+        ],
+        "createdAt": "2026-08-07T00:00:00.000Z",
+        "reason": "Eigenaar heeft Bricolage Grotesque als nieuwe koplettertype gekozen (al live op de landing via src/app/page.tsx) en 7-8 gevraagd dit ook in de mails door te voeren. DESIGN.md documenteert nog het platform-brede Fraunces; dat blijft correct totdat de rest van het platform ook overgaat (eigenaar: \"later ook op het platform\")."
       }
     ]
   }

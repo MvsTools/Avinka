@@ -6,7 +6,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { Confetti, DONKER, Golf, KOP, MINT, MINT_LICHT, MINT_DIEP, KaartVlak, VLAK_MINT } from "./Wereld";
+import { Confetti, DONKER, Golf, HAND_WENK, KOP, KOP_SECTIE, MINT, MINT_LICHT, MINT_DIEP, KaartVlak, VLAK_MINT } from "./Wereld";
 
 /* ── De polaroids: wat leerkrachten zeggen ─────────────────────────────────
    Ervaringen als instax-kaartjes aan één levende draad. Geen prikbord, geen
@@ -56,62 +56,66 @@ type Kaart = {
   rot: number;
 };
 
+/* x/draad/rot horen bij de POSITIE op de draad (van links naar rechts, met
+   afwisselende hoogte/hoek voor het ritme), niet bij een kaart zelf — bij een
+   herschikking blijven deze vijf waarden dus gewoon op hun plek staan en
+   verhuist alleen de inhoud (foto/naam/quote) ernaartoe. */
 const KAARTEN: Kaart[] = [
   {
-    foto: "/nieuw5/foto/p36650154.jpg",
-    alt: "Leeg klaslokaal met houten tafeltjes en een groen schoolbord",
-    naam: "Marieke",
-    rol: "Groep 6",
-    quote: "Sinds ik Avinka gebruik ben ik een uur eerder klaar. Dat geeft me zoveel rust in mijn avond.",
-    accent: "rust",
-    doodle: "hart",
-    x: 8,
-    draad: 66,
-    rot: -4,
-  },
-  {
-    foto: "/nieuw5/foto/p30703810.jpg",
-    alt: "Kop koffie op een bureau met notitieboeken",
-    naam: "Joris",
-    rol: "IB'er",
-    quote: "De analyses geven me in één overzicht wat ik nodig heb om mijn groep goed te begeleiden.",
-    accent: "één overzicht",
-    doodle: "smiley",
-    x: 28.5,
-    draad: 128,
-    rot: 2.5,
-  },
-  {
-    foto: "/nieuw5/foto/p5905445.jpg",
-    alt: "Klaslokaal met whiteboard en een tafel vol schriften",
+    foto: "/nieuw5/foto/polaroid-3.png",
+    alt: "Kapstok met rugtassen en jassen, met kindertekeningen erboven",
     naam: "Sanne",
     rol: "Groep 4",
     quote: "Rapporten maken ging altijd ten koste van mijn avond. Nu heb ik die tijd terug voor mijn gezin.",
     accent: "die tijd terug",
     doodle: "ster",
-    x: 49,
-    draad: 84,
-    rot: -1.5,
+    x: 8,
+    draad: 66,
+    rot: -4,
   },
   {
-    foto: "/nieuw5/foto/p7054755.jpg",
-    alt: "Stapel kleurige schriften met een potlood",
+    foto: "/nieuw5/foto/polaroid-6.png",
+    alt: "Vol bureau met stapels nakijkwerk, een laptop en een map 'Groep 6'",
+    naam: "Marieke",
+    rol: "Groep 6",
+    quote: "Sinds ik Avinka gebruik ben ik een uur eerder klaar. Dat geeft me zoveel rust in mijn avond.",
+    accent: "rust",
+    doodle: "hart",
+    x: 28.5,
+    draad: 128,
+    rot: 2.5,
+  },
+  {
+    foto: "/nieuw5/foto/polaroid-4.png",
+    alt: "Digibord met een ochtendkeuzemenu, in een gezellig ingericht lokaal",
     naam: "Kim",
     rol: "Groep 8",
     quote: "Alles staat op één plek. Geen losse documenten meer, maar overzicht en structuur.",
     accent: "op één plek",
     doodle: "hart",
+    x: 49,
+    draad: 84,
+    rot: -1.5,
+  },
+  {
+    foto: "/nieuw5/foto/polaroid-5.png",
+    alt: "Bureau met een kop koffie, nakijkwerk en een laptop, in zonlicht",
+    naam: "Eva",
+    rol: "Groep 5",
+    quote: "Ouderberichten schrijven gaat zoveel sneller en persoonlijker. Ouders reageren ook positiever!",
+    accent: "persoonlijker",
+    doodle: "smiley",
     x: 69.5,
     draad: 148,
     rot: 3,
   },
   {
-    foto: "/nieuw5/foto/p5905441.jpg",
-    alt: "Whiteboard met stiften boven een tafel met nakijkwerk",
-    naam: "Eva",
-    rol: "Groep 5",
-    quote: "Ouderberichten schrijven gaat zoveel sneller en persoonlijker. Ouders reageren ook positiever!",
-    accent: "persoonlijker",
+    foto: "/nieuw5/foto/polaroid-7.png",
+    alt: "Laptop met een cijferoverzicht open, op een bureau met een schrift en stiften",
+    naam: "Joris",
+    rol: "IB'er",
+    quote: "De analyses geven me in één overzicht wat ik nodig heb om mijn groep goed te begeleiden.",
+    accent: "één overzicht",
     doodle: "smiley",
     x: 90,
     draad: 92,
@@ -727,7 +731,7 @@ export function WereldPolaroids() {
         <Golf kleur="var(--w-papier, #fcfbf7)" vorm="speels" hoogte="h-[90px] sm:h-[130px] lg:h-[170px]" />
       </div>
       {/* ⚠️ Hier lag een vlak rechtsonder (koepel, 640x360). Het liep dwars
-         door de polaroids van Kim en Eva heen en is verhuisd naar de
+         door de twee rechter polaroids heen en is verhuisd naar de
          cijfersectie hieronder, waar de golf hem netjes op de mintrand
          afsnijdt. Zelfde ingreep als bij "Veilig omgaan met AI": een vorm
          hoort onder een kleurveld vandaan te komen, niet over inhoud heen te
@@ -744,7 +748,7 @@ export function WereldPolaroids() {
              negen secties. */}
           <h2
             data-reveal
-            className="font-display text-[clamp(2.25rem,4.4vw,3.5rem)] font-black leading-[1.02] tracking-tight [text-wrap:balance]"
+            className={KOP_SECTIE}
             style={{ color: DONKER }}
           >
             Echte ervaringen{" "}
@@ -757,7 +761,7 @@ export function WereldPolaroids() {
         {/* het handgeschreven hintje met een boogpijltje naar de kaarten */}
         <p
           data-reveal
-          className="mt-8 hidden items-center gap-2 text-xl lg:flex"
+          className={`mt-8 hidden items-center gap-2 lg:flex ${HAND_WENK}`}
           style={{ fontFamily: "var(--font-hand)", color: KOP }}
         >
           klik op een foto om de ervaring te lezen

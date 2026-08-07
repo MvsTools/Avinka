@@ -5,6 +5,14 @@ import Link from "next/link";
 import { login, signup, type AuthState } from "@/app/auth/actions";
 import { PROEF_DAGEN } from "@/lib/abonnement";
 
+// "marieke" / "MARIEKE" -> "Marieke", "anne-marie" -> "Anne-Marie". Zelfde
+// regel als metHoofdletter() in auth/actions.ts (die kan hier niet
+// geïmporteerd worden, "use server"), maar dan live terwijl je typt — de
+// server-kant blijft de echte afdwinging, dit is puur voor wat je zíet.
+function metHoofdletter(naam: string): string {
+  return naam.toLowerCase().replace(/(^|[\s-])\p{L}/gu, (m) => m.toUpperCase());
+}
+
 // Eén formulier voor zowel inloggen als registreren — scheelt dubbele code.
 // mode bepaalt de teksten, de velden en welke actie er draait.
 //
@@ -134,7 +142,7 @@ export default function AuthCard({
               required
               placeholder="Bijv. Sanne"
               value={voornaam}
-              onChange={(e) => setVoornaam(e.target.value)}
+              onChange={(e) => setVoornaam(metHoofdletter(e.target.value))}
               className="mt-1.5 w-full rounded-xl border border-black/10 bg-cream px-4 py-3 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
             />
           </div>

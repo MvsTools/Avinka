@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { DONKER, Golf, KOP, MINT_LICHT, KaartVlak, VLAK_MINT, schaduw } from "./Wereld";
+import { DONKER, Golf, HAND_REGEL, KOP, KOP_BLOK, KOP_SECTIE, MINT_LICHT, KaartVlak, VLAK_MINT, schaduw } from "./Wereld";
 
 /* ── De privacysectie ──────────────────────────────────────────────────────
    Gebouwd naar de referentie die de eigenaar aanwees: het middenstuk van
@@ -56,9 +56,24 @@ import { DONKER, Golf, KOP, MINT_LICHT, KaartVlak, VLAK_MINT, schaduw } from "./
    kaart noemt daarom alleen nog wat er nooit met je gegevens gebeurt; dat
    blijft waar, met of zonder overeenkomst. Zie ook [[schoolroute-org-laag]].
 
-   ⚠️ "AI ermee trainen" leunt op de DPA + zero-data-retention-afspraak bij
-   Anthropic ([[ai-aanbieder-keuze]]). Die moet getekend zijn voordat dit
-   publiek gaat.
+   ⚠️ HIER STOND: "leunt op de DPA + zero-data-retention-afspraak bij
+   Anthropic; die moet getekend zijn voordat dit publiek gaat." Dat is
+   ACHTERHAALD en 5-8 rechtgezet door de eigenaar (uitgezocht met Scherm 2, en
+   het stond al sinds 2-8 goed in [[ai-aanbieder-keuze]]).
+
+   🔑 TWEE DINGEN DIE JE NIET DOOR ELKAAR MOET HALEN — dat is precies waar deze
+   opmerking op stukliep:
+   1. **Niet trainen op wat je verstuurt** = de standaard. Het staat in de
+      Commercial Terms of Service, sectie "Customer Content", en die accepteer
+      je bij het aanmaken van het API-account. Er valt niets te tekenen, en de
+      belofte hierboven staat dus gewoon.
+   2. **Niet BEWAREN** (zero-data-retention) is wél een aparte aanvraag per
+      organisatie. Die belofte doen we hier nergens, en dat moet zo blijven
+      zolang die route niet loopt.
+
+   ⚠️ De belofte hangt aan de ORGANISATIE, niet aan de sleutel: controleer bij
+   de omschakeling naar de zakelijke sleutel dat die organisatie onder de
+   commerciële voorwaarden valt (zie [[api-key-omschakeling]]).
 
    Zie [[referentie-eerst-regel]]: eerst het beeld, dan pas bouwen. ────── */
 
@@ -255,12 +270,12 @@ export function WereldPrivacy() {
         <div className="max-w-2xl">
           <h2
             data-reveal
-            className="font-display text-[clamp(2.1rem,4.4vw,3.4rem)] font-black leading-[1.03] tracking-tight [text-wrap:balance]"
+            className={KOP_SECTIE}
             style={{ color: DONKER }}
           >
             Veilig omgaan met AI
           </h2>
-          <p data-reveal className="mt-2 text-2xl" style={{ fontFamily: "var(--font-hand)", color: KOP }}>
+          <p data-reveal className={`mt-2 ${HAND_REGEL}`} style={{ fontFamily: "var(--font-hand)", color: KOP }}>
             privacy voorop
           </p>
         </div>
@@ -278,8 +293,13 @@ export function WereldPrivacy() {
               rotate: "-1.8deg",
             }}
           >
+            {/* ⚠️ Stond op clamp(1,4rem, 2,2vw, 1,75rem) = 28px, terwijl elke
+               andere kop bínnen een sectie (de kaartjes van "Herken je dit?",
+               de stappen van "Zo werkt het", de prijskaarten) op 24 staat.
+               Dat deze kaart groter is dan de blokjes ernaast maakt hem niet
+               een andere soort kop. */}
             <h3
-              className="font-display text-[clamp(1.4rem,2.2vw,1.75rem)] font-black leading-tight tracking-tight"
+              className={KOP_BLOK}
               style={{ color: DONKER }}
             >
               Namen gaan nooit mee

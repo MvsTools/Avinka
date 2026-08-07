@@ -7,11 +7,17 @@ import { PRIVACY } from "@/lib/juridisch";
    PRIVACYVERKLARING — alle tekst staat in dit bestand.
    Wil je een zin aanpassen? Pas het hier aan.
 
-   NOG IN TE VULLEN vóór livegang (nu nog placeholders tussen [haakjes]):
-   - [bedrijfsnaam] · [adres] · [KvK] · [privacy-e-mailadres]
+   ✅ BEDRIJFSGEGEVENS COMPLEET (5-8, aangeleverd door de eigenaar): naam, adres,
+   KvK en e-mailadres. De versie is diezelfde dag gebumpt naar 2026-08-05 in
+   lib/juridisch.ts — privacy én voorwaarden tegelijk, want ze delen deze
+   gegevens. Wijzig je hier iets inhoudelijks, doe dan hetzelfde.
+
+   NOG TE DOEN vóór livegang:
    - Controleer of de genoemde leveranciers (Supabase, Anthropic, Mollie) kloppen
      met wat er live draait, en houd de sub-verwerkerslijst actueel.
    - Laat de definitieve tekst vóór livegang nakijken door een privacyjurist.
+     Vraag voor die jurist: moet bij een eenmanszaak ook de naam van de
+     ondernemer erbij, of volstaat handelsnaam + KvK?
 
    GEBOUWD (2-7): zelf-service account verwijderen + data-export in Instellingen
    (art. 15/17/20). Account verwijderen leunt op de SQL-functie
@@ -22,10 +28,19 @@ import { PRIVACY } from "@/lib/juridisch";
    - Toestemming vastleggen bij registratie (datum + versie), voor art. 7-verantwoording.
    ────────────────────────────────────────────────────────────────────────── */
 
-const BEDRIJF = "[bedrijfsnaam]";
-const ADRES = "[adres]";
-const KVK = "[KvK-nummer]";
-const CONTACT_EMAIL = "[privacy-e-mailadres]";
+/* Avinka is de handelsnaam van een EENMANSZAAK. Voor de AVG is dat genoeg om
+   de verwerkingsverantwoordelijke te identificeren: handelsnaam + KvK-nummer +
+   vestigingsadres leiden naar één inschrijving. Sommige juristen willen er bij
+   een eenmanszaak ook de naam van de ondernemer bij ("handelsnaam van ...").
+   Dat is bewust NIET gedaan — het is een keuze van de eigenaar of hij zijn
+   eigen naam op een openbare pagina wil, en het staat op de vragenlijst voor
+   de jurist. */
+const BEDRIJF = "Avinka";
+const ADRES = "Evert van 't Landstraat 24, 7334 DR Apeldoorn";
+const KVK = "42015989";
+/* Het officiële adres van de zakelijke Google Workspace. support@avinka.nl is
+   een alias en staat op /dashboard/hulp; een privacyverzoek hoort hier. */
+const CONTACT_EMAIL = "info@avinka.nl";
 const BIJGEWERKT = PRIVACY.weergave;
 
 export const metadata: Metadata = {
@@ -60,9 +75,15 @@ export default function PrivacyPage() {
       </Sectie>
 
       <Sectie kop="2. Wie is verantwoordelijk?">
+        {/* ⚠️ DEZE ZIN IS HERSCHREVEN TOEN DE GEGEVENS ERIN GINGEN. Er stond
+           "Avinka is een dienst van {'{BEDRIJF}'}, ..." — met de bedrijfsnaam nog
+           als placeholder las dat prima, maar de bedrijfsnaam ís Avinka, dus
+           ingevuld werd het "Avinka is een dienst van Avinka". De naam staat er
+           nu één keer, als onderwerp. */}
         <p>
-          Avinka is een dienst van {BEDRIJF}, {ADRES} (KvK {KVK}). Voor vragen over je privacy
-          of dit document bereik je ons via <strong>{CONTACT_EMAIL}</strong>.
+          {BEDRIJF} is ingeschreven bij de Kamer van Koophandel onder nummer {KVK} en
+          gevestigd aan {ADRES}. Voor vragen over je privacy of dit document bereik je
+          ons via <strong>{CONTACT_EMAIL}</strong>.
         </p>
         <p>
           Het is goed om twee rollen uit elkaar te houden:

@@ -17,10 +17,16 @@ Mail is geen web. Wat hier gebruikt wordt en wat bewust NIET:
   wat er wél in een `<style>` staat is het ophalen van de lettertypes, want dat
   kan nergens anders.
 - **De eigen lettertypes worden meegestuurd, maar komen niet overal aan.**
-  Fraunces en Plus Jakarta staan vooraan in de reeks, met Georgia en de
-  systeemletter erachter. In Apple Mail en op de iPhone zie je de echte letter;
-  ⚠️ **Gmail en Outlook laden geen lettertypes en tonen altijd de terugval.**
-  Dat is een harde grens van e-mail, geen instelling die we vergeten zijn.
+  Bricolage Grotesque (koppen) en Plus Jakarta (lopende tekst) staan vooraan
+  in de reeks, met een systeem-sans erachter — geen serif-terugval meer zoals
+  bij Fraunces, want Bricolage Grotesque is zelf al een sans. In Apple Mail en
+  op de iPhone zie je de echte letter; ⚠️ **Gmail en Outlook laden geen
+  lettertypes en tonen altijd de terugval.** Dat is een harde grens van
+  e-mail, geen instelling die we vergeten zijn.
+  🔑 **Bricolage Grotesque is 7-8 overgenomen van de landing** (`src/app/
+  page.tsx`, waar het alleen de koppen vervangt — de lopende tekst blijft
+  overal Plus Jakarta, ook op de landing zelf). Nog niet doorgevoerd op de
+  rest van het platform (dashboard, tools); dat is een bewust latere stap.
 - **Geen logo bovenaan.** Een beeldlogo moet van een openbaar webadres komen en
   de site staat nog niet online; bovendien blokkeren Outlook en Gmail
   afbeeldingen standaard, dus dan ziet de helft van je lezers een leeg kadertje.
@@ -44,15 +50,25 @@ scherm staan waar je een wachtwoord kiest.
 
 **Subject:** `Bevestig je aanmelding`
 
+⭐ **Enige mail met een persoonlijke begroeting (besloten 7-8).** De andere
+vijf blijven zakelijk ("gewoon hoe het zit") — dit is de allereerste
+aanraking, dus die mag als een persoonlijk berichtje voelen. `{{ .Data.first_name }}`
+leest de voornaam uit de metadata die `auth/actions.ts` al meegeeft bij
+`supabase.auth.signUp()`. ⚠️ **Nog niet getest of Supabase's sjabloontaal
+`.Data.<veld>` daadwerkelijk zo doorgeeft** — bij het plakken in Supabase
+eerst een proefaanmelding doen en controleren of de naam er echt in staat
+(en niet een lege regel of de letterlijke tekst `{{ .Data.first_name }}`).
+
 ```html
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Plus+Jakarta+Sans:wght@400;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Plus+Jakarta+Sans:wght@400;700&display=swap');
 </style>
 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fbf6ee;padding:32px 12px;">
   <tr><td align="center">
     <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:20px;font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
       <tr><td style="padding:34px 36px 0;">
-        <h1 style="margin:0;font-family:Fraunces,Georgia,'Times New Roman',serif;font-size:26px;line-height:1.25;color:#221c3a;">Welkom bij Avinka</h1>
+        <h1 style="margin:0;font-family:'Bricolage Grotesque',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:800;font-size:26px;line-height:1.25;color:#221c3a;">Welkom bij Avinka</h1>
+        <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Hallo {{ .Data.first_name }},</p>
         <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Nog één klik en je account staat klaar.</p>
       </td></tr>
       <tr><td align="center" style="padding:26px 36px 0;">
@@ -65,7 +81,8 @@ scherm staan waar je een wachtwoord kiest.
       </td></tr>
       <tr><td style="padding:24px 36px 0;">
         <p style="margin:0;font-size:15px;line-height:1.65;color:#4a4458;">Je proefperiode van 7 dagen begint zodra je bevestigt. Je hoeft geen betaalgegevens op te geven.</p>
-        <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#6b6880;">Heb je je niet aangemeld? Dan hoef je niets te doen. Zonder bevestiging gebeurt er niets met dit adres.</p>
+        <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#6b6880;">Heb je je niet aangemeld? Dan hoef je niets te doen.</p>
+        <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#6b6880;">Kom je ergens niet uit? Mail gerust naar <a href="mailto:support@avinka.nl" style="color:#25855a;font-weight:bold;">support@avinka.nl</a>. Ik lees alles zelf.</p>
       </td></tr>
       <tr><td style="padding:24px 36px 30px;">
         <div style="border-top:1px solid #ece7e0;padding-top:16px;">
@@ -91,13 +108,13 @@ in de link verschillen.
 
 ```html
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Plus+Jakarta+Sans:wght@400;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Plus+Jakarta+Sans:wght@400;700&display=swap');
 </style>
 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fbf6ee;padding:32px 12px;">
   <tr><td align="center">
     <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:20px;font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
       <tr><td style="padding:34px 36px 0;">
-        <h1 style="margin:0;font-family:Fraunces,Georgia,'Times New Roman',serif;font-size:26px;line-height:1.25;color:#221c3a;">Een nieuw wachtwoord</h1>
+        <h1 style="margin:0;font-family:'Bricolage Grotesque',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:800;font-size:26px;line-height:1.25;color:#221c3a;">Een nieuw wachtwoord</h1>
         <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Je vroeg een nieuw wachtwoord aan voor je Avinka-account.</p>
       </td></tr>
       <tr><td align="center" style="padding:26px 36px 0;">
@@ -133,13 +150,13 @@ in de link verschillen.
 
 ```html
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Plus+Jakarta+Sans:wght@400;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Plus+Jakarta+Sans:wght@400;700&display=swap');
 </style>
 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fbf6ee;padding:32px 12px;">
   <tr><td align="center">
     <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:20px;font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
       <tr><td style="padding:34px 36px 0;">
-        <h1 style="margin:0;font-family:Fraunces,Georgia,'Times New Roman',serif;font-size:26px;line-height:1.25;color:#221c3a;">Bevestig dit adres</h1>
+        <h1 style="margin:0;font-family:'Bricolage Grotesque',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:800;font-size:26px;line-height:1.25;color:#221c3a;">Bevestig dit adres</h1>
         <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Je wilt het e-mailadres van je Avinka-account wijzigen naar dit adres.</p>
       </td></tr>
       <tr><td align="center" style="padding:26px 36px 0;">

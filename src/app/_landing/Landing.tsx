@@ -27,6 +27,9 @@ import {
   MINT_LICHT,
   RUIS_OP_PAPIER,
   KOP,
+  HAND_WENK,
+  KOP_GROOT,
+  KOP_SECTIE,
   Lichtbron,
   VLAK_MINT,
   VLAK_PAPIER,
@@ -62,10 +65,9 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 /* ── Inhoud ────────────────────────────────────────────────────────────── */
 
 const STRIP = [
-  /* Was "Namen blijven thuis". De eigenaar wilde die term kwijt; deze zegt
-     hetzelfde in gewone woorden en sluit aan op de privacysectie verderop,
-     waar de belofte "namen gaan nooit mee" wordt uitgelegd. */
-  "🔒 Leerlingnamen gaan nooit mee",
+  /* Echoot de handgeschreven regel "privacy voorop" in de privacysectie
+     verderop (Privacy.tsx), i.p.v. zelf een aparte belofte te doen. */
+  "🔒 Privacy voorop",
   "🇳🇱 Volledig Nederlands",
   "💚 Door een leerkracht gemaakt",
   "✓ Maandelijks opzegbaar",
@@ -202,22 +204,22 @@ export const FAQ = [
   {
     vraag: "Gaan de gegevens van mijn leerlingen ergens heen?",
     antwoord:
-      "Nee. Namen, plaatsen en contactgegevens worden op je eigen apparaat onleesbaar gemaakt voordat er iets wordt verstuurd. Je account staat bovendien op beveiligde servers in Europa. Privacy is bij Avinka de ruggengraat, geen bijzaak.",
+      "Voordat er iets naar de AI gaat, vervangt je apparaat alle namen door een code. De AI weet dus nooit over welk kind het gaat. Denk daarnaast zelf goed na over wat je wel en niet deelt: het platform denkt daarin met je mee. Op de privacypagina lees je hoe dat precies werkt.",
   },
   {
-    vraag: "Waarom zou ik dit gebruiken en niet gewoon ChatGPT?",
+    vraag: "Waarom zou ik dit aanschaffen als ik zelf gratis AI kan gebruiken?",
     antwoord:
-      "Omdat je daar het werk eromheen zelf doet. Avinka weet al hoe een rapport, een toetsanalyse of een lesontwerp eruit hoort te zien: de opbouw en de didactiek zitten in de tool, niet in een prompt die je elke keer opnieuw moet bedenken. Het rekenwerk doet de tool zelf, dus daar kan niets in verzonnen worden. Namen van je leerlingen worden onleesbaar gemaakt voordat er iets wordt verstuurd. En je krijgt geen chatvenster terug maar een bestand dat je meteen kunt printen of bewaren.",
+      "Gratis AI is een leeg vel waarin jij zelf structuur moet brengen. Avinka is gebouwd door een leerkracht die al heeft uitgedacht hoe een rapport, toetsanalyse of lesontwerp eruit hoort te zien: die kennis zit in de tool, niet in een prompt die je zelf telkens bedenkt. En de bescherming van je leerlingen zit er automatisch bij, ook als je er zelf niet aan denkt.",
   },
   {
-    vraag: "Moet ik verstand van AI of computers hebben?",
+    vraag: "Moet ik handig zijn met AI of computers?",
     antwoord:
-      "Nee. Als je een e-mail kunt sturen, kun je met Avinka werken. Je typt of plakt wat je hebt en de tool doet de rest. Geen handleiding, geen technisch gedoe.",
+      "Nee. Als je een e-mail kunt sturen, kun je met Avinka werken. Je beantwoordt een aantal vragen en de tool doet de rest. Geen handleiding, geen technisch gedoe.",
   },
   {
-    vraag: "Verzint de AI zelf cijfers of feiten?",
+    vraag: "Verzinnen de tools zelf cijfers of feiten?",
     antwoord:
-      "Nee. Alle berekeningen doet de tool zelf, en die kloppen altijd. De AI schrijft alleen de tekst eromheen en verzint nooit getallen of feiten. Jij leest na en houdt altijd het laatste woord.",
+      "Nee. Alle berekeningen doen de tools zelf, en die kloppen altijd. De AI schrijft alleen de tekst eromheen en verzint nooit getallen of feiten. Je leest alles na en kunt het zelf aanpassen als er iets niet klopt.",
   },
   {
     vraag: "Hoe werkt de gratis proefperiode?",
@@ -231,12 +233,12 @@ export const FAQ = [
   {
     vraag: "Wat is het verschil tussen maandelijks en per schooljaar?",
     antwoord:
-      "Bij maandelijks betaal je per maand en zeg je op wanneer je wilt. Bij een schooljaar-abonnement betaal je ook gewoon per maand, maar zijn juli en augustus gratis. Je hoeft in de zomer niets stop te zetten en je houdt je klassen en bewaarde werk.",
+      "Bij maandelijks betaal je per maand, zonder verplichting. Bij een schooljaar-abonnement betaal je ook per maand, maar zijn juli en augustus gratis. Je hoeft in de zomer niets stop te zetten en je houdt je klassen en bewaarde werk.",
   },
   {
     vraag: "Kan ik later wisselen of opzeggen?",
     antwoord:
-      "Het maandabonnement kun je altijd opzeggen, zonder kleine lettertjes. Upgraden naar een groter pakket kan op elk moment. Het schooljaar-abonnement loopt een heel schooljaar; daar staat tegenover dat de zomermaanden gratis zijn.",
+      "Upgraden naar een groter pakket kan altijd, op elk moment. Het maandabonnement zeg je zelf op wanneer je wilt. Het schooljaar-abonnement loopt door tot het einde van het schooljaar en verlengt daarna automatisch, met een opzegtermijn van maximaal een maand.",
   },
   {
     vraag: "Werkt het op mijn laptop, Chromebook of tablet?",
@@ -246,7 +248,16 @@ export const FAQ = [
   {
     vraag: "Is het ook voor mijn hele school of team?",
     antwoord:
-      "Avinka is nu gemaakt voor jou als individuele leerkracht. Een variant voor teams en scholen komt later.",
+      "Avinka is nu gemaakt voor jou als individuele leerkracht. Een schoolvariant staat op de planning.",
+  },
+  {
+    vraag: "Kan ik samenwerken met een collega?",
+    antwoord:
+      "Ja. Je nodigt een collega uit voor dezelfde groep, bijvoorbeeld een duo-partner of onderwijsassistent. Samen deel je de klas, een takenlijst, een map en de overdracht. Je kiest zelf of iemand volledig meewerkt of alleen meekijkt, en de toegang gaat pas open als de ander de uitnodiging accepteert.",
+  },
+  {
+    vraag: "Wat als ik ergens niet uitkom?",
+    antwoord: "Dan mail je naar support@avinka.nl. Je krijgt gewoon antwoord van mij.",
   },
 ];
 
@@ -472,6 +483,7 @@ export default function Landing({
   bijhouden?: boolean;
 }) {
   const root = useRef<HTMLDivElement>(null);
+  const finaleRef = useRef<HTMLDivElement>(null);
   // null op de server (eerste paint), daarna de echte systeemvoorkeur.
   const reduced = useSyncExternalStore<boolean | null>(
     abonneerReduced,
@@ -638,6 +650,32 @@ export default function Landing({
     { scope: root, dependencies: [film], revertOnUpdate: true },
   );
 
+  /* ── De finale past zichzelf op een lage vensterhoogte ──
+     De film-sectie zit vast op h-screen met overflow-hidden, dus het paneel
+     + de vier chips moeten er sowieso in passen. Marges alleen krimpen bleek
+     niet genoeg (en botst met de header-marge erboven), dus dit blok als
+     geheel krimpt mee vanaf de bovenkant — de schaduw van het paneel en de
+     chips schalen daardoor gewoon mee i.p.v. hard afgesneden te worden.
+     Los van de tijdlijn hierboven: die animeert alleen data-paneel zelf
+     (y/scale/autoAlpha), dit zit op de wrapper eromheen. */
+  useEffect(() => {
+    if (!film) return;
+    const wrap = finaleRef.current;
+    const vast = wrap?.parentElement;
+    if (!wrap || !vast) return;
+    const pas = () => {
+      const beschikbaar = vast.getBoundingClientRect().bottom - wrap.getBoundingClientRect().top - 20;
+      const nodig = wrap.scrollHeight;
+      const schaal = Math.min(1, beschikbaar / nodig);
+      wrap.style.transformOrigin = "top center";
+      wrap.style.transform = schaal < 0.999 ? `scale(${schaal})` : "";
+    };
+    pas();
+    const waarnemer = new ResizeObserver(pas);
+    waarnemer.observe(vast);
+    return () => waarnemer.disconnect();
+  }, [film]);
+
   /* ── De body: reveals + de optelsom-teller ── */
   useEffect(() => {
     if (reduced === null) return;
@@ -700,6 +738,33 @@ export default function Landing({
              tweede-keus-actie hetzelfde crème plaatje krijgt als het logo:
              die leest op allebei de ondergronden. */}
           <nav className="flex items-center gap-2 sm:gap-3">
+            {/* ── Prijzen ──────────────────────────────────────────────────
+               De enige link in de balk die niet naar een andere pagina gaat
+               maar naar beneden: wie de prijs wil weten, wil niet eerst een
+               halve landingspagina doorscrollen. Springt naar de sectie
+               `#prijzen` (die id staat al in PrijzenVragen.tsx).
+
+               Een gewone <a> en geen <Link>: dit is een sprong bínnen de
+               pagina, daar heeft de router niets te doen.
+
+               ⚠️ Hetzelfde crème plaatje als Inloggen, en dat is geen
+               kopieerwerk maar noodzaak: de balk is tijdens de film
+               doorzichtig en die film begint op de donkergroene avondlaag.
+               Kale tekst is daar onleesbaar. De rangorde komt niet uit de
+               kleur van dit knopje maar uit de groene knop ernaast. */}
+            {/* ⚠️ NIET op de telefoon, en dat is gemeten, geen voorkeur. Op
+               390px blijft er na het logo 264px over voor de balk; drie
+               knoppen vragen er 287. Met dit knopje erbij brak "Probeer
+               gratis" over twee regels (64px hoog in plaats van 44) en werd
+               de hele balk krap. De hoofdactie mag daar niet voor wijken:
+               op een telefoon scrol je de pagina toch, en de prijzen komen
+               vanzelf. */}
+            <a
+              href="#prijzen"
+              className="hidden rounded-xl bg-cream/95 px-3.5 py-3 text-sm font-semibold text-ink/80 shadow-sm ring-1 ring-black/5 transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:inline-block sm:py-2 sm:text-base"
+            >
+              Prijzen
+            </a>
             {ingelogd ? (
               <>
                 <Link
@@ -770,9 +835,7 @@ export default function Landing({
           <div data-intro className="relative z-30 mx-auto mt-[1.5vh] w-[min(94vw,62rem)] text-center">
             <h1
               data-belofte
-              className={`font-display text-[clamp(2.4rem,5.5vw,4rem)] font-black leading-[1.04] tracking-tight [text-wrap:balance] ${
-                film ? "text-cream" : "text-ink"
-              }`}
+              className={`${KOP_GROOT} ${film ? "text-cream" : "text-ink"}`}
             >
               Win elke week{" "}
               <span data-uur className={film ? "text-[var(--w-film-hoogtepunt,#6fd7a3)]" : "text-brand"}>
@@ -943,8 +1006,11 @@ export default function Landing({
             </div>
           )}
 
-          {/* ── De werkplek waar alles landt: een tablet met het Avinka-dashboard ── */}
-          <div data-paneel className="relative z-10 mt-3 w-[min(94vw,39rem)] sm:mt-4">
+          {/* ── De werkplek waar alles landt: een tablet met het Avinka-dashboard ──
+             finaleRef is de krimp-wrapper hierboven; data-paneel blijft het
+             element dat de GSAP-tijdlijn zelf animeert (y/scale/autoAlpha). */}
+          <div ref={finaleRef}>
+            <div data-paneel className="relative z-10 mx-auto mt-[clamp(0.375rem,1vh,1rem)] w-[min(94vw,39rem)]">
             {/* tablet-behuizing: alles wordt in dit apparaat opgeruimd */}
             <div className="rounded-[1.4rem] bg-ink/90 p-1 shadow-[0_34px_80px_-24px_rgba(8,5,20,0.75)] ring-1 ring-white/10">
               <div className="relative overflow-hidden rounded-[1.05rem] bg-cream">
@@ -975,9 +1041,18 @@ export default function Landing({
                         <p className="text-sm font-black tracking-tight text-ink">
                           Welkom terug! 👋
                         </p>
-                        <p className="mt-0.5 text-[10px] text-ink/60">
-                          Kies een tool om mee te beginnen.
-                        </p>
+                        {/* ⚠️ HIER STOND "Kies een tool om mee te beginnen." —
+                           een INSTRUCTIE aan de leerkracht om zelf iets te
+                           zoeken, en daarmee de zuiverste formulering van het
+                           oude frame. Vervangen door het blok "Wat eraan komt"
+                           hieronder, want dát is waar het dashboard dit echt
+                           zegt. Eerst had ik het als grijze regeltje hier
+                           gezet; de eigenaar: "amper zichtbaar, en niet de
+                           manier hoe die in het dashboard staat".
+                           🔑 Een miniatuur van het dashboard moet het echte
+                           dashboard NADOEN, niet samenvatten. Zodra je iets
+                           samenvat tot een regeltje, verdwijnt precies het
+                           onderdeel dat je wilde laten zien. */}
                       </div>
                       <div className="flex shrink-0 items-start gap-1.5">
                         {/* takenlijst-knop met uitklap-paneel (fase 2) */}
@@ -1045,8 +1120,52 @@ export default function Landing({
                       </div>
                     </div>
 
+                    {/* ── Wat eraan komt ────────────────────────────────────
+                       Dit blok is nagebouwd naar `WatEraanKomt.tsx` uit het
+                       dashboard, niet vrij verzonnen: één witte kaart met per
+                       signaal een getint vierkantje met de tool-emoji, een
+                       vette regel die zegt wat eraan komt, de datum eronder, en
+                       rechts een knop die zegt wat je gaat DOEN (niet
+                       "beginnen"). Verandert dat blok daar, laat het hier dan
+                       meelopen — een miniatuur die niet meer klopt is erger dan
+                       geen miniatuur.
+
+                       🔑 DE INHOUD MOET UIT DE FILM ZELF KOMEN. Het geeltje
+                       "rapporten af vóór vrijdag" is een paar tellen eerder
+                       naar binnen gevlogen en staat in de takenlijst hierboven.
+                       Dit signaal leest dus wat er al lag; het voegt geen
+                       nieuwe taak toe. Verzin hier nooit iets dat je niet even
+                       daarvoor hebt zien vliegen.
+
+                       De formulering volgt `kopVoor()` in aanleiding.ts
+                       ("Over 3 dagen gaan de rapporten mee") met de datumregel
+                       eronder — daar staat "vrijdag", en dat is de haak naar
+                       het geeltje. */}
+                    <p className="mt-3 text-[10px] font-bold text-ink">Wat eraan komt</p>
+                    <div className="mt-1.5 flex items-center justify-between gap-2 rounded-xl border border-black/5 bg-white px-2 py-1.5 shadow-sm">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span
+                          aria-hidden
+                          className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-violet-100 text-[11px]"
+                        >
+                          📝
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate text-[10px] font-bold leading-tight text-ink">
+                            Over 3 dagen gaan de rapporten mee
+                          </span>
+                          <span className="block truncate text-[9px] leading-tight text-ink/55">
+                            vrijdag 13 februari
+                          </span>
+                        </span>
+                      </span>
+                      <span className="shrink-0 rounded-lg bg-brand px-2 py-1 text-[9px] font-bold text-white">
+                        Rapporten schrijven
+                      </span>
+                    </div>
+
                     {/* jouw tools */}
-                    <p className="mt-3 text-[10px] font-bold text-ink">Jouw tools</p>
+                    <p className="mt-2.5 text-[10px] font-bold text-ink">Jouw tools</p>
                     <div className="mt-1.5 grid grid-cols-3 gap-1.5">
                       <Tegel naam="toets" label="Toetsanalyse" emoji="📊" kleur="bg-sky-500" />
                       <Tegel naam="rapporten" label="Rapporten" emoji="📝" kleur="bg-violet-500" />
@@ -1073,18 +1192,31 @@ export default function Landing({
               </div>
             </div>
 
-            {/* Finale: de vier zekerheden poppen binnen en dragen je de pagina in */}
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-2 sm:mt-6">
-              {STRIP.map((s) => (
-                <span
-                  key={s}
-                  data-stripchip
-                  className="rounded-full bg-white px-3.5 py-1.5 text-xs font-bold text-ink/75 shadow-sm ring-1 ring-black/5 sm:text-sm"
-                >
-                  {s}
-                </span>
+            {/* Finale: de vier zekerheden poppen binnen en dragen je de pagina in.
+               De marge hierboven is vh-clamped (krimpt mee op een lage
+               vensterhoogte); de krimp-wrapper (finaleRef, hierboven om
+               data-paneel heen) vangt de rest op als dat nog niet genoeg is. */}
+            <div className="mt-[clamp(0.5rem,1.2vh,1.5rem)] flex flex-col items-center gap-2">
+              {/* Twee vaste rijen van twee i.p.v. één grid: bij een grid over
+                 alle vier bepaalt het breedste chipje in een kolom de hele
+                 kolombreedte, en dan staat een kort chipje ernaast (bv.
+                 "Privacy voorop") met een scheve, te grote tussenruimte. Zo
+                 blijft de afstand tussen twee chips altijd gewoon de gap. */}
+              {[STRIP.slice(0, 2), STRIP.slice(2, 4)].map((rij, i) => (
+                <div key={i} className="flex flex-wrap items-center justify-center gap-2">
+                  {rij.map((s) => (
+                    <span
+                      key={s}
+                      data-stripchip
+                      className="rounded-full bg-white px-3.5 py-1.5 text-center text-xs font-bold text-ink/75 shadow-sm ring-1 ring-black/5 sm:text-sm"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
               ))}
             </div>
+          </div>
           </div>
 
           {/* Scrollhint */}
@@ -1452,7 +1584,7 @@ function MarkeerInhoud({ donker = false }: { donker?: boolean }) {
       <div>
         <h2
           data-reveal={donker ? undefined : ""}
-          className={`font-display text-[clamp(1.875rem,3.1vw,2.375rem)] font-black leading-[1.08] tracking-tight [text-wrap:balance] ${
+          className={`${KOP_SECTIE} ${
             donker ? "text-white" : ""
           }`}
         >
@@ -1662,11 +1794,12 @@ function RailKop() {
          keer exact dezelfde zet zou een tic worden; gespiegeld is het een
          motief dat je herkent. */}
       <div data-reveal className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
-        <h2 className="max-w-2xl font-display text-4xl font-black tracking-tight [text-wrap:balance]">
-          Alle tools, één werkplek
-        </h2>
+        {/* ⚠️ Deze kop stond op text-4xl (36px) en was daarmee de kleinste
+           sectiekop van de pagina, terwijl hij precies hetzelfde doet als de
+           andere. Nu op de gedeelde maat. */}
+        <h2 className={`max-w-2xl ${KOP_SECTIE}`}>Alle tools, één werkplek</h2>
         <p
-          className="flex shrink-0 items-center gap-2 text-xl lg:pb-1"
+          className={`flex shrink-0 items-center gap-2 lg:pb-1 ${HAND_WENK}`}
           style={{ fontFamily: "var(--font-hand)", color: KOP }}
         >
           {/* Hetzelfde pijltje als bij de polaroids, horizontaal gespiegeld

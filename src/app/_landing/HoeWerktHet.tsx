@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { Confetti, DONKER, KOP, KaartVlak, RUIS_OP_PAPIER, VLAK_PAPIER } from "./Wereld";
+import { Confetti, DONKER, KOP, KOP_SECTIE, KaartVlak, RUIS_OP_PAPIER, VLAK_PAPIER } from "./Wereld";
 
 /* ── Zo werkt het ───────────────────────────────────────────────────────────
    Dit blok ontbrak. De pagina liet wél zien wát je krijgt (acht toolkaarten),
@@ -76,7 +76,7 @@ export function WereldHoeWerktHet() {
         )}
         <h2
           data-reveal
-          className="font-display text-[clamp(1.875rem,3.4vw,2.75rem)] font-black tracking-tight"
+          className={KOP_SECTIE}
           style={{ color: DONKER }}
         >
           Zo werkt het
