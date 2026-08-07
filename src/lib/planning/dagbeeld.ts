@@ -67,6 +67,7 @@ export function dagbeeld(bron: PlanningBron, datum: string): Dagbeeld {
     periode: periodeOp(periodes, datum),
     buitenSchooljaar,
     startweek,
+    eersteSchooldag: datum === schooljaar.start,
   };
 }
 

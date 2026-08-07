@@ -46,11 +46,23 @@ export type Plan = {
 // overheen gaat, deelt zijn account of laat iets automatisch draaien.
 // Elke grens blijft onder de opbrengst van het pakket, zodat misbruik nooit
 // geld kost (Start €5,99 / Compleet €9,99 / Pro €16,99).
+//
+// ⚠️ DE PROEF HEEFT BEWUST EEN VEEL KLEINERE GRENS (5-8-2026). Hij stond op
+// 100, gelijk aan Start — een proefweek van 7 dagen kreeg dus een ruimer budget
+// dan wat een echte leerkracht in een zware MAAND opmaakt (~60 credits). Dat
+// maakte een nepaccount €5 waard.
+// Een eerlijke proefweek meet ruwweg 15 credits, dus 40 is nog altijd ruim het
+// dubbele en geen enkele echte gebruiker merkt het. De rekensom voor iemand die
+// met een nieuw mailadres opnieuw begint gaat zo van €5 naar €2.
+// 🔑 Dit is de ENIGE maatregel die daar echt tegen helpt: een nieuw mailadres
+// aanmaken kun je niet tegenhouden zonder betaalgegevens te vragen bij de proef,
+// en die belofte ("geen betaalgegevens") staat op de voorpagina. Dus niet
+// tegenhouden maar waardeloos maken. Zie [[verwijzing-fraude]].
 export const CREDITS_PER_PLAN: Record<PlanId | "proef", number> = {
   start: 100,
   compleet: 180,
   pro: 300,
-  proef: 100,
+  proef: 40,
 };
 
 export const PLANNEN: Plan[] = [
@@ -143,18 +155,23 @@ export type Abonnement = {
   proefEindigt: string | null; // ISO-datum
   periodeEindigt: string | null; // einde betaalde periode (ISO)
   startTool: string | null; // gekozen tool bij Start
+  /* Dit postvak had al eens een gratis week (bv. een plus-variant van hetzelfde
+     adres), dus die is meteen voorbij. Alleen om het te kunnen UITLEGGEN — het
+     account werkt verder gewoon. Zie database/migratie-proef-per-brievenbus.sql. */
+  proefOvergeslagen: boolean;
 };
 
 // De databasekolommen + de vertaling van een ruwe rij naar een Abonnement.
 // Eén plek, zodat de browser (db.ts) en de server (/api/claude) hetzelfde doen.
 export const ABON_COLS =
-  "abon_plan, abon_vorm, abon_status, proef_eindigt, periode_eindigt, start_tool, created_at";
+  "abon_plan, abon_vorm, abon_status, proef_eindigt, proef_overgeslagen, periode_eindigt, start_tool, created_at";
 
 export type AbonnementRow = {
   abon_plan: string | null;
   abon_vorm: string | null;
   abon_status: string | null;
   proef_eindigt: string | null;
+  proef_overgeslagen?: boolean | null;
   periode_eindigt: string | null;
   start_tool: string | null;
   created_at: string | null;
@@ -176,6 +193,7 @@ export function mapAbonnementRow(d: AbonnementRow | null): Abonnement {
     proefEindigt: proefEindigt ?? nieuwAbonnement().proefEindigt,
     periodeEindigt: d.periode_eindigt ?? null,
     startTool: d.start_tool ?? null,
+    proefOvergeslagen: d.proef_overgeslagen === true,
   };
 }
 
@@ -190,6 +208,7 @@ export function nieuwAbonnement(nu: Date = new Date()): Abonnement {
     proefEindigt: eind.toISOString(),
     periodeEindigt: null,
     startTool: null,
+    proefOvergeslagen: false,
   };
 }
 

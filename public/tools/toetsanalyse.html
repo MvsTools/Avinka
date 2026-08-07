@@ -493,9 +493,17 @@
   <script src="/avinka-masking.js"></script>
   <script src="/avinka-dropdown.js"></script>
   <script src="/avinka-verlaten.js"></script>
+  <script src="/avinka-schermwacht.js"></script>
 </head><body>
 
 <div class="container landing-container iepui" id="landing">
+<script>
+  /* Verbergt dit scherm op hetzelfde moment dat het bestaat, niet pas nadat
+     de browser het al één frame heeft laten zien. Zie avinka-schermwacht.js. */
+  window.__landingWacht = window.avinkaSchermwacht
+    ? avinkaSchermwacht.houdVast(document.getElementById('landing'), 700)
+    : null;
+</script>
   <div class="terug-balk">
     <a href="/dashboard" class="terug-menu">← Terug naar dashboard</a>
     <a href="/dashboard" aria-label="Avinka" style="display:inline-flex;flex-shrink:0;"><img src="/Avinka_wordmerk.png" alt="Avinka" style="height:18px;width:auto;display:block;opacity:.82;"></a>
@@ -518,6 +526,14 @@
       </div>
       <span class="fbadge">⏱️ <b>Gemiddeld 2 uur</b> sneller per toetsronde</span>
     </div>
+  </div>
+
+  <!-- Verschijnt alleen als je in je instellingen een systeem hebt gekozen dat
+       we (nog) niet inlezen — Dia of Boom. Eerlijk zeggen is beter dan iemand
+       laten zoeken naar een tegel die er niet is. -->
+  <div class="land-note" id="toets-melding" style="display:none;">
+    <span class="land-note-ic">💬</span>
+    <span id="toets-melding-tekst"></span>
   </div>
 
   <div class="kies-grid">
@@ -1111,6 +1127,8 @@
   </div>
 </div>
 
+<!-- Centrale instellingen: hier alleen voor "welk toetssysteem gebruik je". -->
+<script src="/avinka-voorkeuren.js"></script>
 <script>
 // ════════════════════════════════════════════════════════════
 // STATE
@@ -1406,7 +1424,60 @@ function terugNaarKeuze() {
   document.getElementById('cito-app').style.display = 'none';
   document.getElementById('mode-bar').style.display = 'none';
   document.getElementById('landing').style.display = '';
+  zelfGekozen = true;   // vanaf nu niet meer automatisch doorspringen
   window.scrollTo(0, 0);
+}
+
+// Werkt jouw school met één toetssysteem, dan hoef je die keuze niet elke keer
+// opnieuw te maken: Instellingen → Toetssysteem. Staat daar "Allebei" of niets,
+// dan verandert er niets en krijg je gewoon de twee tegels.
+//
+// Kwam je hier via "← Terug naar beginpagina", dan springen we NIET opnieuw
+// door — dan wil je juist het andere systeem.
+var zelfGekozen = false;
+// Systemen die we (nog) niet inlezen. Dan zeggen we dat gewoon, in plaats van
+// je een keuzescherm voor te schotelen waar jouw systeem niet bij staat.
+var NIET_INGELEZEN = { dia: 'Dia', boom: 'Boom' };
+
+// ── Geen flits van het keuzescherm ────────────────────────────────────────
+// Het antwoord op "welk toetssysteem gebruik jij" komt van de server, en zolang
+// dat onderweg is stond het keuzescherm er gewoon — dus zag je hem een seconde
+// staan voordat we doorsprongen. Het scherm wordt al vastgehouden vanaf het
+// moment dat de div bestaat (zie het inline scriptje vlak na <div id="landing">
+// hierboven); hier hergebruiken we die wacht, niet een nieuwe pas hier.
+var landingWacht = window.__landingWacht || null;
+
+function pasToetssysteemToe(v) {
+  var sys = (v && v.toets_systeem) || '';
+  var landing = document.getElementById('landing');
+  if (!landing || zelfGekozen) return 'niets';
+
+  if (NIET_INGELEZEN[sys]) {
+    document.getElementById('toets-melding-tekst').innerHTML =
+      '<strong>Jullie werken met ' + NIET_INGELEZEN[sys] + '.</strong> Die export kan ' +
+      'Toetsanalyse nog niet inlezen — we weten nu wel dat je erop zit. Gebruik je daarnaast ' +
+      'IEP of Cito, kies dat hieronder.';
+    document.getElementById('toets-melding').style.display = '';
+    if (landingWacht) landingWacht.toon();
+    return 'melding';
+  }
+
+  if (sys !== 'iep' && sys !== 'cito') {
+    if (landingWacht) landingWacht.toon();
+    return 'niets';
+  }
+  // Doorspringen: het keuzescherm hoeft niet meer tevoorschijn te komen.
+  if (landingWacht) landingWacht.laatStaan();
+  kiesToetssysteem(sys);
+  return 'doorgesprongen';
+}
+
+if (window.avinkaVoorkeuren && landingWacht) {
+  window.avinkaVoorkeuren.ready.then(pasToetssysteemToe, function () {
+    if (landingWacht) landingWacht.toon();
+  });
+} else if (landingWacht) {
+  landingWacht.toon();
 }
 function handleApiKey(input) {
   apiKey = input.value.trim();

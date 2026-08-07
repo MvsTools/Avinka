@@ -27,10 +27,12 @@ export type Voorkeuren = {
   taalniveau: string; // standaard | a2 | b1
   lengte: string; // kort | gemiddeld | uitgebreid
   aanspreekvorm: string; // je | u  (alleen Oudercontact)
-  communicatie_app: string; // '' | parro | social_schools | isy | konnect — voor de "open in ..."-knop
-  communicatie_url: string; // eigen Isy/Konnect-webadres (Parro/Social Schools hebben een vast adres)
+  communicatie_app: string; // '' | parro | social_schools | schoudercom | basisonline | isy
+  communicatie_url: string; // eigen SchouderCom/Isy-webadres (de rest heeft een vast adres)
   lvs_systeem: string; // '' | parnassys | esis — voor de "open in je LVS"-knop
   lvs_url: string; // eigen Esis-webadres (ParnasSys heeft één vast adres)
+  toets_systeem: string; // '' | iep | cito | dia | boom | beide
+  werkdagen: string; // '' of dagcijfers, 0=maandag t/m 4=vrijdag ('0134')
 };
 export type Leerling = { naam: string; geslacht: "" | "j" | "m" };
 export type Klas = {
@@ -65,6 +67,8 @@ export async function getVoorkeuren(): Promise<Voorkeuren | null> {
     communicatie_url: "",
     lvs_systeem: "",
     lvs_url: "",
+    toets_systeem: "",
+    werkdagen: "",
   };
   // Best-effort: deze kolommen bestaan mogelijk nog niet (migratie niet
   // gedraaid). Een aparte select faalt dan stilletjes en we houden gewoon "".
@@ -78,12 +82,14 @@ export async function getVoorkeuren(): Promise<Voorkeuren | null> {
   }
   const { data: ld } = await sb
     .from("instellingen")
-    .select("lvs_systeem, lvs_url, communicatie_url")
+    .select("lvs_systeem, lvs_url, communicatie_url, toets_systeem, werkdagen")
     .maybeSingle();
   if (ld) {
     v.lvs_systeem = (ld as { lvs_systeem?: string }).lvs_systeem ?? "";
     v.lvs_url = (ld as { lvs_url?: string }).lvs_url ?? "";
     v.communicatie_url = (ld as { communicatie_url?: string }).communicatie_url ?? "";
+    v.toets_systeem = (ld as { toets_systeem?: string }).toets_systeem ?? "";
+    v.werkdagen = (ld as { werkdagen?: string }).werkdagen ?? "";
   }
   return v;
 }
@@ -101,12 +107,23 @@ export async function saveVoorkeuren(v: Voorkeuren): Promise<boolean> {
   // Mogelijk bestaan de BRIN- of LVS-kolommen nog niet (migratie niet
   // gedraaid) → opnieuw zonder die velden, zodat het opslaan van de overige
   // voorkeuren nooit stilletjes mislukt.
-  const { school_brin, school_vestiging, lvs_systeem, lvs_url, communicatie_url, ...kern } = v;
+  const {
+    school_brin,
+    school_vestiging,
+    lvs_systeem,
+    lvs_url,
+    communicatie_url,
+    toets_systeem,
+    werkdagen,
+    ...kern
+  } = v;
   void school_brin;
   void school_vestiging;
   void lvs_systeem;
   void lvs_url;
   void communicatie_url;
+  void toets_systeem;
+  void werkdagen;
   const { error: e2 } = await sb
     .from("instellingen")
     .upsert({ user_id: user.id, ...kern }, { onConflict: "user_id" });
@@ -1252,9 +1269,13 @@ export type Taak = {
   wekelijks: boolean;
   created_at: string;
   gedaan_op: string | null;
+  /** De naam van de activiteit waar deze taak bij hoort ("Verkeersexamen"),
+   *  als je 'm zo hebt toegevoegd vanuit "Wat eraan komt". Taken met hetzelfde
+   *  kopje staan in TakenView bij elkaar. Losse taken hebben dit niet. */
+  kopje: string | null;
 };
 
-const TAAK_COLS = "id, tekst, gedaan, deadline, wekelijks, created_at, gedaan_op";
+const TAAK_COLS = "id, tekst, gedaan, deadline, wekelijks, created_at, gedaan_op, kopje";
 
 export async function getTaken(): Promise<Taak[]> {
   const sb = createClient();
@@ -1266,7 +1287,11 @@ export async function getTaken(): Promise<Taak[]> {
   return data as Taak[];
 }
 
-export async function addTaak(tekst: string): Promise<Taak | null> {
+export async function addTaak(
+  tekst: string,
+  kopje?: string | null,
+  deadline?: string | null,
+): Promise<Taak | null> {
   const sb = createClient();
   const {
     data: { user },
@@ -1276,7 +1301,12 @@ export async function addTaak(tekst: string): Promise<Taak | null> {
   if (!t) return null;
   const { data, error } = await sb
     .from("taken")
-    .insert({ user_id: user.id, tekst: t.slice(0, 500) })
+    .insert({
+      user_id: user.id,
+      tekst: t.slice(0, 500),
+      kopje: kopje?.trim() || null,
+      ...(deadline ? { deadline } : {}),
+    })
     .select(TAAK_COLS)
     .single();
   if (error || !data) return null;

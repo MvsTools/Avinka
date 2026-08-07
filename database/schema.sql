@@ -42,6 +42,9 @@ create table if not exists public.instellingen (
   abon_vorm        text,                       -- 'maand' | 'jaar'
   abon_status      text default 'proef',       -- 'proef' | 'actief' | 'opgezegd' | 'verlopen'
   proef_eindigt    timestamptz default now() + interval '7 days',
+  -- true = dit postvak had al eens een gratis week (zie wijs_proef_claim).
+  -- Alleen om het bij de betaalmuur te kunnen uitleggen.
+  proef_overgeslagen boolean not null default false,
   periode_eindigt  timestamptz,               -- einde van de betaalde periode
   start_tool       text,                       -- gekozen tool bij het Start-pakket
   start_tool_sinds date,                       -- wanneer voor het laatst gewisseld (max 1×/maand)
@@ -50,11 +53,22 @@ create table if not exists public.instellingen (
   -- Bèta die de eigenaar per account handmatig aanzet (zie wijs_admin_zet_beta_eigen_format).
   beta_eigen_format boolean not null default false,
   -- Welke ouder-app de leerkracht gebruikt: '' | 'parro' | 'social_schools' |
-  -- 'isy' | 'konnect'. Bepaalt of en welke "open in ..."-knop de tools tonen
-  -- bij een bericht. Parro/Social Schools hebben een vast inlogadres; Isy en
-  -- Konnect werken per school/organisatie, dus die vullen communicatie_url zelf in.
+  -- 'schoudercom' | 'basisonline' | 'isy'. Bepaalt of en welke "open in ..."-knop
+  -- de tools tonen bij een bericht. Parro, Social Schools en BasisOnline hebben
+  -- een vast inlogadres; SchouderCom en Isy werken per school, dus die vullen
+  -- communicatie_url zelf in.
   communicatie_app text not null default '',
   communicatie_url text not null default '',
+  -- Welk toetssysteem gebruikt de school: '' | 'iep' | 'cito' | 'dia' | 'boom'
+  -- | 'beide'. Toetsanalyse slaat zijn keuzescherm over als hier iep of cito
+  -- staat; bij dia/boom zegt de tool eerlijk dat hij die export nog niet leest.
+  -- Zie database/migratie-toetssysteem.sql.
+  toets_systeem text not null default '',
+  -- Op welke dagen deze leerkracht voor de klas staat: '' (niet gezegd, dan
+  -- rekenen we met de hele week) of dagcijfers, 0 = maandag t/m 4 = vrijdag
+  -- ('0134'). Een voorgestelde taak landt op de laatste werkdag vóór de datum.
+  -- Zie database/migratie-werkdagen.sql.
+  werkdagen text not null default '',
   -- Welk leerlingvolgsysteem: '' | 'parnassys' | 'esis'. ParnasSys heeft één
   -- vast inlogadres; Esis werkt per school, dus die vult lvs_url zelf in.
   lvs_systeem    text not null default '',
@@ -200,6 +214,14 @@ grant select, insert, update, delete on public.instellingen to authenticated;
 grant select, insert, update, delete on public.klassen      to authenticated;
 grant select, insert, update, delete on public.teksten      to authenticated;
 
+-- ⚠️ DE SERVERROL HEEFT EIGEN RECHTEN NODIG. `service_role` (de rol achter
+-- SUPABASE_SERVICE_ROLE_KEY) erft NIETS van `authenticated`. Hij had hier lang
+-- helemaal geen rechten, waardoor élke serverkant-schrijfactie stukliep op
+-- "42501 permission denied" — zie database/migratie-service-role-rechten.sql.
+-- Bewust alleen de tabellen waar de server echt in schrijft, niet alles.
+-- 🔑 Bouw je een nieuwe serverkant-schrijfactie? Zet die tabel hier ook neer.
+grant select, insert, update on public.instellingen to service_role;
+
 -- ── 4) RAPPORTEN — opgeslagen rapportteksten per kind (Rapporten) ──────
 -- Concept/afgeronde rapportteksten zodat een leerkracht over meerdere sessies
 -- kan werken. Bewaartermijn-gedachte: tijdelijk, met "wissen"-knop in de tool.
@@ -313,6 +335,51 @@ drop policy if exists "eigen statistiek" on public.statistiek;
 create policy "eigen statistiek" on public.statistiek
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 grant select, insert, update, delete on public.statistiek to authenticated;
+-- De server telt op met de servicesleutel (zie hierboven bij instellingen).
+grant select, insert, update on public.statistiek to service_role;
+
+-- ── SLOT OP DE TELLERS ────────────────────────────────────────────────────
+-- Volledige uitleg: database/migratie-statistiek-slot.sql.
+-- Deze tellers worden op de VOORPAGINA bij elkaar opgeteld
+-- (`avinka_landing_cijfers`) en in `wijs_community_stats`. Kon iedereen zijn
+-- eigen rij schrijven, dan kon één account "1.284 uur bespaard" op de homepage
+-- zetten. Alleen /api/statistiek telt nog op, met de servicesleutel en met een
+-- dagplafond tegen een lusje.
+create or replace function public.statistiek_bewaakt()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  -- ⚠️ BEWUST GEEN `security definer`: moet zien WIE er schrijft.
+  if current_user not in ('authenticated', 'anon') then return new; end if;
+
+  if tg_op = 'INSERT' then
+    new.tellers := '{}'::jsonb; new.minuten := '{}'::jsonb; new.per_dag := '{}'::jsonb;
+    new.streak := 0; new.streak_max := 0; new.streak_freezes := 0;
+    new.laatste_actief := null;
+    return new;
+  end if;
+
+  if new.tellers        is distinct from old.tellers
+  or new.minuten        is distinct from old.minuten
+  or new.per_dag        is distinct from old.per_dag
+  or new.streak         is distinct from old.streak
+  or new.streak_max     is distinct from old.streak_max
+  or new.streak_freezes is distinct from old.streak_freezes
+  or new.laatste_actief is distinct from old.laatste_actief
+  then
+    raise exception 'Je statistieken worden door de server bijgehouden.'
+      using errcode = '42501';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_statistiek_bewaakt on public.statistiek;
+create trigger trg_statistiek_bewaakt
+  before insert or update on public.statistiek
+  for each row execute function public.statistiek_bewaakt();
 
 -- Community-aggregaat voor "Mijn statistieken" (vergelijking met andere gebruikers).
 -- SECURITY DEFINER: leest álle tellers maar geeft ALLEEN totalen/aantallen terug —
@@ -408,6 +475,62 @@ grant execute on function public.wijs_aantal_verwijzingen_proef(text) to authent
 -- ⚠️ Bouw je een nieuw veld dat iets ontgrendelt of geld waard is: zet het in
 -- de lijst van instellingen_bewaakt(), anders staat het meteen weer open.
 
+-- ÉÉN GRATIS PROEF PER BRIEVENBUS — volledige uitleg + de noodknop staan in
+-- database/migratie-proef-per-brievenbus.sql.
+-- 🔑 Dit houdt alleen schrijfwijzen van hetzelfde postvak tegen (plus-labels en
+-- Gmail-puntjes), NIET iemand die een echt nieuw mailadres aanmaakt. Dat kan
+-- niet zonder betaalgegevens bij de proef, en die belofte houden we. De echte
+-- rem is dat een proef weinig waard is (40 credits, zie CREDITS_PER_PLAN).
+-- ⚠️ Dezelfde normaliseerregels staan in src/lib/email-normaliseren.ts.
+create or replace function public.wijs_email_norm(p_email text)
+returns text language plpgsql immutable set search_path = public as $$
+declare schoon text := lower(trim(coalesce(p_email, ''))); lokaal text; domein text;
+begin
+  if position('@' in schoon) < 2 then return schoon; end if;
+  lokaal := split_part(schoon, '@', 1);
+  domein := split_part(schoon, '@', 2);
+  if domein = 'googlemail.com' then domein := 'gmail.com'; end if;
+  if domein in ('gmail.com','outlook.com','outlook.nl','hotmail.com','hotmail.nl',
+                'live.com','live.nl','msn.com','icloud.com','me.com',
+                'fastmail.com','protonmail.com','proton.me') then
+    lokaal := split_part(lokaal, '+', 1);
+  end if;
+  -- Puntjes ALLEEN bij Gmail: elders is jan.jansen@ een ander adres.
+  if domein = 'gmail.com' then lokaal := replace(lokaal, '.', ''); end if;
+  return lokaal || '@' || domein;
+end;
+$$;
+
+create table if not exists public.proef_gebruikt (
+  email_norm   text primary key,
+  eerste_user  uuid references auth.users(id) on delete set null,
+  aangemaakt   timestamptz not null default now()
+);
+alter table public.proef_gebruikt enable row level security;
+-- Bewust GEEN policies en GEEN grants: alleen wijs_proef_claim (security
+-- definer) komt erbij. In deze lijst staat wie er een account heeft.
+
+-- Geeft true als deze brievenbus nog nooit een gratis week had (en legt hem dan
+-- vast), anders false. Faalt bewust naar true: nooit iemand zijn proef ontnemen
+-- door een fout van ons.
+create or replace function public.wijs_proef_claim(p_user uuid)
+returns boolean language plpgsql security definer set search_path = public as $$
+declare adres text; norm text; bestaand uuid;
+begin
+  select email into adres from auth.users where id = p_user;
+  if adres is null or adres = '' then return true; end if;
+  norm := public.wijs_email_norm(adres);
+  select eerste_user into bestaand from public.proef_gebruikt where email_norm = norm;
+  if bestaand is not null and bestaand <> p_user then return false; end if;
+  insert into public.proef_gebruikt (email_norm, eerste_user)
+  values (norm, p_user) on conflict (email_norm) do nothing;
+  return true;
+exception when others then
+  return true;
+end;
+$$;
+grant execute on function public.wijs_proef_claim(uuid) to authenticated;
+
 -- Een uitnodigingscode hoort bij precies één account.
 create unique index if not exists idx_instellingen_ref_code
   on public.instellingen(ref_code)
@@ -433,7 +556,6 @@ begin
     new.abon_plan          := null;
     new.abon_vorm          := null;
     new.abon_status        := 'proef';
-    new.proef_eindigt      := now() + interval '7 days';
     new.periode_eindigt    := null;
     new.start_tool         := null;
     new.start_tool_sinds   := null;
@@ -443,6 +565,16 @@ begin
     new.ref_code           := null;  -- die deelt de database uit (wijs_ref_code)
     new.verwezen_door      := null;  -- die legt wijs_koppel_verwijzing vast
     new.proef_herinnering_op := null;
+
+    -- Eén gratis week per brievenbus. Geen blokkade en geen melding: het
+    -- account komt er gewoon, alleen de gratis week is al voorbij.
+    if public.wijs_proef_claim(new.user_id) then
+      new.proef_eindigt      := now() + interval '7 days';
+      new.proef_overgeslagen := false;
+    else
+      new.proef_eindigt      := now();
+      new.proef_overgeslagen := true;
+    end if;
     return new;
   end if;
 
@@ -450,6 +582,7 @@ begin
   or new.abon_vorm          is distinct from old.abon_vorm
   or new.abon_status        is distinct from old.abon_status
   or new.proef_eindigt      is distinct from old.proef_eindigt
+  or new.proef_overgeslagen is distinct from old.proef_overgeslagen
   or new.periode_eindigt    is distinct from old.periode_eindigt
   or new.start_tool         is distinct from old.start_tool
   or new.start_tool_sinds   is distinct from old.start_tool_sinds
@@ -1005,15 +1138,41 @@ create table if not exists public.taken (
   created_at timestamptz not null default now(),
   gedaan_op  timestamptz
 );
--- Als de tabel al bestond zonder deadline/wekelijks-kolom:
+-- Als de tabel al bestond zonder deadline/wekelijks/kopje-kolom:
 alter table public.taken add column if not exists deadline date;
 alter table public.taken add column if not exists wekelijks boolean not null default false;
+-- Kopje: de naam van de activiteit waar deze taak bij hoort (bijv.
+-- "Verkeersexamen"), zodat losse taken die je er zelf bij zet in de
+-- takenlijst bij elkaar staan. Geen foreign key: blijft ook bestaan als de
+-- afspraak zelf verdwijnt. Zie database/migratie-taken-kopje.sql.
+alter table public.taken add column if not exists kopje text;
 alter table public.taken enable row level security;
 drop policy if exists "eigen taken" on public.taken;
 create policy "eigen taken" on public.taken
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 grant select, insert, update, delete on public.taken to authenticated;
 create index if not exists idx_taken_user on public.taken(user_id);
+
+-- ── 13b) AANLEIDING_GENEGEERD — seintjes in "Wat eraan komt" wegklikken ───
+-- "Wat eraan komt" herkent zelf uit de titel wat een afspraak is en bepaalt
+-- daarmee of en wanneer je een seintje krijgt — er is geen scherm meer waar
+-- je dat met de hand instelt. Klopt een gok niet, dan klik je het seintje
+-- weg; deze tabel onthoudt alleen welke Aanleiding.id een leerkracht al heeft
+-- weggeklikt. Zie database/migratie-aanleiding-genegeerd.sql.
+create table if not exists public.aanleiding_genegeerd (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  aanleiding_id text not null,
+  aangemaakt    timestamptz not null default now(),
+  unique (user_id, aanleiding_id)
+);
+alter table public.aanleiding_genegeerd enable row level security;
+drop policy if exists "eigen genegeerde seintjes" on public.aanleiding_genegeerd;
+create policy "eigen genegeerde seintjes" on public.aanleiding_genegeerd
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, delete on public.aanleiding_genegeerd to authenticated;
+grant select on public.aanleiding_genegeerd to service_role;
+create index if not exists idx_aanleiding_genegeerd_user on public.aanleiding_genegeerd(user_id);
 
 -- ── 14) BOUW-TAKEN — admin-backlog ("nog te bouwen voor de website") ──────
 -- Aparte to-do-lijst in de admin-module, los van de persoonlijke takenlijst.
@@ -1752,6 +1911,9 @@ revoke execute on function public.wijs_ref_code() from public, anon;
 revoke execute on function public.wijs_koppel_verwijzing(text) from public, anon;
 revoke execute on function public.instellingen_bewaakt() from public, anon;
 revoke execute on function public.klassen_limiet_bewaakt() from public, anon;
+revoke execute on function public.statistiek_bewaakt() from public, anon;
+revoke execute on function public.wijs_proef_claim(uuid) from public, anon;
+revoke execute on function public.wijs_email_norm(text) from public, anon;
 revoke execute on function public.wijs_snapshot_abon() from public, anon;
 revoke execute on function public.wijs_community_stats() from public, anon;
 revoke execute on function public.registreer_herakkoord(text, text) from public, anon;

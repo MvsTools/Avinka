@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { haalAgenda, maskeerNamen } from "./agenda-ophalen";
 import { herkenAlles, vouwSamen } from "./agenda-herken";
 import { ontsleutel } from "./geheim";
+import { isEigenBron } from "./agenda-eigen";
 
 // Een gekoppelde agenda ophalen en de afspraken bijwerken. Gebruikt bij het
 // koppelen zelf en straks bij het nachtelijke verversen.
@@ -25,8 +26,18 @@ async function eigenVoornamen(supabase: SupabaseClient): Promise<string[]> {
 
 export async function ververBron(
   supabase: SupabaseClient,
-  bron: { id: string; link_geheim: string; modus: string },
+  bron: { id: string; link_geheim: string; modus: string; systeem?: string | null },
 ): Promise<VersUitslag> {
+  // ⚠️ HET SLOT OP JE EIGEN AFSPRAKEN.
+  // Verversen betekent hieronder: alles van deze bron weggooien en opnieuw
+  // ophalen. Je eigen agenda heeft geen link om op te halen, dus dat zou
+  // neerkomen op "alles weggooien" — in één klap weg wat je zelf hebt
+  // ingevoerd. Dit staat bewust hier, bij de delete, en niet bij de aanroeper:
+  // wie later een nieuwe verversknop bouwt kan het zo niet omzeilen.
+  if (isEigenBron(bron) || !bron.link_geheim) {
+    return { fout: "Je eigen afspraken worden niet opgehaald; die beheer je zelf." };
+  }
+
   let link: string;
   try {
     link = ontsleutel(bron.link_geheim);

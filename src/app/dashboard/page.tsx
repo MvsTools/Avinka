@@ -9,11 +9,18 @@ import WelkomModal from "@/components/dashboard/WelkomModal";
 import StreakBadge from "@/components/dashboard/StreakBadge";
 import TakenOverzicht from "@/components/dashboard/TakenOverzicht";
 import VandaagRij from "@/components/dashboard/VandaagRij";
+import WatEraanKomt from "@/components/dashboard/WatEraanKomt";
 import DuoOverdracht from "@/components/dashboard/DuoOverdracht";
 import CollegaUitnodigen from "@/components/dashboard/CollegaUitnodigen";
 import KaartMelding from "@/components/dashboard/KaartMelding";
 import { amsterdamDatum } from "@/lib/streak";
-import { haalMijnGroepen, haalPlanning } from "@/lib/planning";
+import {
+  haalGenegeerdeAanleidingen,
+  haalMijnGroepen,
+  haalPlanning,
+  haalPlanningContext,
+  haalSchoolsystemen,
+} from "@/lib/planning";
 
 export default async function DashboardStart() {
   const supabase = await createClient();
@@ -31,11 +38,14 @@ export default async function DashboardStart() {
 
   // Welke tools zitten in het pakket van deze leerkracht? Zolang betalingen
   // niet live zijn, is alles open (de vlag regelt dat in magToolGebruiken).
-  const [ab, planning, groepen, rapportGrens] = await Promise.all([
+  const [ab, planning, groepen, rapportGrens, systemen, planContext, genegeerd] = await Promise.all([
     BETALINGEN_LIVE ? getAbonnementServer() : Promise.resolve(null),
     haalPlanning(supabase, { nu: vandaag }),
     haalMijnGroepen(supabase),
     haalRapportGrens(supabase),
+    haalSchoolsystemen(supabase),
+    haalPlanningContext(supabase),
+    haalGenegeerdeAanleidingen(supabase),
   ]);
   const vergrendeld = (slug: string) => (ab ? !magToolGebruiken(ab, slug) : false);
 
@@ -77,6 +87,20 @@ export default async function DashboardStart() {
         vandaag={vandaag}
         groepen={groepen}
         extraTegel={<DuoOverdracht />}
+      />
+
+      {/* Wat er de komende weken aankomt en welke tool daarbij hoort. Staat
+          bewust tussen de dagrij en de tools: het is het bruggetje van "wat
+          speelt er" naar "waar begin ik". Is er niets, dan staat er niets. */}
+      <WatEraanKomt
+        bron={planning}
+        vandaag={vandaag}
+        groepen={groepen}
+        systemen={systemen}
+        context={planContext}
+        maximaal={2}
+        vergrendeld={tools.filter((t) => vergrendeld(t.slug)).map((t) => t.slug)}
+        genegeerd={genegeerd}
       />
 
       <OnboardingCard />

@@ -349,13 +349,31 @@ function HuidigeStand({ ab }: { ab: Abonnement | null }) {
           ⏳ Proefperiode voorbij
         </span>
         <h2 className="mt-3 font-serif text-3xl font-semibold text-ink">
-          Je gratis proefperiode is voorbij
+          {ab.proefOvergeslagen
+            ? "Je gratis week is al gebruikt"
+            : "Je gratis proefperiode is voorbij"}
         </h2>
-        <p className="mt-2 max-w-xl text-ink/70">
-          We hopen dat je hebt ervaren hoeveel tijd Avinka je kan besparen. Kies
-          hieronder een abonnement om verder te werken met je klassen, je bewaarde
-          werk en alle tools. Je houdt alles wat je hebt opgebouwd.
-        </p>
+        {/* Zonder deze zin staat iemand met een tweede account op hetzelfde
+            mailadres voor een dichte deur zonder te snappen waarom. De regel
+            zelf blijft onzichtbaar; alleen wie hem tegenkomt krijgt uitleg. */}
+        {ab.proefOvergeslagen ? (
+          <p className="mt-2 max-w-xl text-ink/70">
+            De gratis week hoort bij je mailadres, en dit adres heeft er al een
+            gehad — ook als je toen een iets andere schrijfwijze gebruikte. Kies
+            hieronder een abonnement om verder te werken. Klopt dit niet? Mail ons
+            even op{" "}
+            <a className="underline" href="mailto:support@avinka.nl">
+              support@avinka.nl
+            </a>
+            , dan zetten we het recht.
+          </p>
+        ) : (
+          <p className="mt-2 max-w-xl text-ink/70">
+            We hopen dat je hebt ervaren hoeveel tijd Avinka je kan besparen. Kies
+            hieronder een abonnement om verder te werken met je klassen, je bewaarde
+            werk en alle tools. Je houdt alles wat je hebt opgebouwd.
+          </p>
+        )}
       </div>
     );
   }

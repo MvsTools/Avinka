@@ -104,6 +104,9 @@ export type Dagbeeld = {
   vakantie?: Vakantie;
   /** De startweek vóór de eerste schooldag: geen les, maar wel een werkweek. */
   startweek: boolean;
+  /** Is dit de eerste schooldag zelf? Staat vast aan het schooljaar, dus dit
+   *  hoef je nooit zelf in te plannen. */
+  eersteSchooldag: boolean;
   /** De afspraken van vandaag, op tijd gesorteerd. */
   items: PlanItem[];
   /** Je rooster van vandaag, op tijd gesorteerd. Leeg als de dag vrij is. */

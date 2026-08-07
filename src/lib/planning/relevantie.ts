@@ -49,7 +49,10 @@ export function groepenUitTitel(titel: string): number[] | null {
 export function isOuderoproep(titel: string): boolean {
   const t = titel.toLowerCase();
   return (
-    /hulp\b|hulpouder|wie helpt|gezocht|chauffeur|meefiets|meerijden|\brijden\b|\bmee naar\b|brengen\s*\/?\s*halen|begeleider/.test(
+    // "mee naar HUIS" is geen oproep aan ouders maar precies het tegendeel: dat
+    // is het rapport dat vrijdag meegaat, en dus jouw werk. Zonder deze
+    // uitzondering verdween "Rapporten mee naar huis" uit je eigen agenda.
+    /hulp\b|hulpouder|wie helpt|gezocht|chauffeur|meefiets|meerijden|\brijden\b|\bmee naar (?!huis\b)|brengen\s*\/?\s*halen|begeleider/.test(
       t,
     ) && !/hulpmiddel/.test(t)
   );

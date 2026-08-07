@@ -9,6 +9,8 @@ import type { Soort } from "../agenda-herken";
 import { plus, vandaag } from "./datum";
 import { markeerDubbelingen } from "./dubbelingen";
 import { mijnGroepen } from "./relevantie";
+import type { Context, Schoolsystemen } from "./aanleiding";
+import { haalActieveKlas } from "../actieve-klas";
 import {
   isBasisrooster,
   isRoosterWeekData,
@@ -17,6 +19,7 @@ import {
   type RoosterSetup,
 } from "./rooster";
 import { metEigenVakanties } from "./eigen-vakanties";
+import { feestdagenAlsItems } from "./feestdagen";
 import { beschikbareSchooljaren, maakSchooljaar, periodesVan, schooljaarVoor } from "./schooljaar";
 import type { PlanItem, PlanningBron, Roosterblok, Taak } from "./types";
 import { isRegio, STANDAARD_REGIO, type Regio, type Vakantie } from "./vakanties";
@@ -105,6 +108,71 @@ export async function haalMijnGroepen(supabase: SupabaseClient): Promise<number[
 }
 
 /**
+ * De seintjes in "Wat eraan komt" die deze leerkracht zelf heeft weggeklikt
+ * (zie /api/aanleiding/negeer). Geen scherm laat je meer vooraf het soort
+ * instellen — dit is de correctie áchteraf, per Aanleiding.id.
+ */
+export async function haalGenegeerdeAanleidingen(supabase: SupabaseClient): Promise<string[]> {
+  const { data } = await supabase.from("aanleiding_genegeerd").select("aanleiding_id");
+  return ((data as { aanleiding_id: string }[] | null) ?? []).map((r) => r.aanleiding_id);
+}
+
+/**
+ * Met welke systemen werkt deze school (Instellingen → Voorkeuren)? Daarmee
+ * wordt "maak een gespreksrooster" een concrete "zet de gesprekken open in
+ * Parro". Niets ingevuld = lege waarden, en dan blijft alles algemeen.
+ */
+export async function haalSchoolsystemen(supabase: SupabaseClient): Promise<Schoolsystemen> {
+  const { data } = await supabase
+    .from("instellingen")
+    .select("communicatie_app, lvs_systeem, toets_systeem")
+    .maybeSingle();
+  const r = (data ?? {}) as { communicatie_app?: string; lvs_systeem?: string; toets_systeem?: string };
+  return {
+    communicatieApp: r.communicatie_app ?? "",
+    lvsSysteem: r.lvs_systeem ?? "",
+    toetsSysteem: r.toets_systeem ?? "",
+  };
+}
+
+/**
+ * Wat de signalen scherper maakt dan alleen "er komt iets aan": op welke dagen
+ * je werkt, en hoe ver je al bent met de rapporten van je huidige groep.
+ *
+ * ⚠️ We tellen alleen. Er gaan geen namen van kinderen mee naar het scherm —
+ * "nog 16 van de 28" zegt genoeg en blijft binnen de afspraken over wat we van
+ * een klas mogen tonen.
+ *
+ * Mislukt er iets, dan komt er een lege context terug en werkt alles gewoon
+ * zonder deze extra's. Dit is een verrijking, geen voorwaarde.
+ */
+export async function haalPlanningContext(supabase: SupabaseClient): Promise<Context> {
+  const [{ data: inst }, klas] = await Promise.all([
+    supabase.from("instellingen").select("werkdagen").maybeSingle(),
+    haalActieveKlas<{ leerlingen: string[] | null }>(supabase, "leerlingen").catch(() => null),
+  ]);
+
+  const context: Context = {
+    werkdagen: (inst as { werkdagen?: string } | null)?.werkdagen ?? "",
+  };
+
+  const namen = (klas?.leerlingen ?? []).filter((n) => String(n).trim());
+  if (namen.length) {
+    // Tellen op naam en niet op klas_id: rapporten van vóór de duo-functie
+    // hebben nog geen klas_id, en die horen gewoon mee te tellen.
+    const { data } = await supabase.from("rapporten").select("naam, verhaal");
+    const rijen = (data as { naam: string; verhaal: string }[] | null) ?? [];
+    const inDeKlas = new Set(namen.map((n) => n.trim().toLowerCase()));
+    const klaar = rijen.filter(
+      (r) => r.verhaal?.trim() && inDeKlas.has(String(r.naam).trim().toLowerCase()),
+    ).length;
+    context.rapporten = { klaar, totaal: namen.length };
+  }
+
+  return context;
+}
+
+/**
  * Het basisrooster van dit schooljaar. Nog niet gemaakt? Dan null, en de
  * schermen rekenen met een lege week.
  */
@@ -164,17 +232,44 @@ export type AgendaBron = {
  * hoofdagenda: staat dezelfde afspraak in twee agenda's, dan is die van de
  * hoofdagenda het origineel.
  */
+/**
+ * De GEKOPPELDE agenda's — dus zonder je eigen afspraken.
+ *
+ * ⚠️ Je eigen agenda is technisch ook een bron, maar hoort hier niet bij: hij
+ * zou anders in het koppelscherm verschijnen met een verversknop ernaast, en
+ * verversen betekent "alles van deze bron weggooien en opnieuw ophalen". Bij
+ * een agenda zonder link is dat gewoon weggooien. Ook telt hij zo niet mee in
+ * "Agenda's (1)" terwijl je er geen gekoppeld hebt.
+ */
 export async function haalBronnen(supabase: SupabaseClient): Promise<AgendaBron[]> {
   const { data } = await supabase
     .from("agenda_bronnen")
     .select("id, naam, systeem, modus, aantal_items, laatst_gelukt, laatste_fout")
     .eq("actief", true)
+    .neq("systeem", "eigen")
     .order("created_at");
   return (data as AgendaBron[] | null) ?? [];
 }
 
+/**
+ * De volgorde waarin agenda's elkaar overstemmen bij dubbele afspraken: wie
+ * vooraan staat wint.
+ *
+ * Je eigen afspraken staan bewust VOORAAN. Die heb je zelf ingetypt, dus als
+ * er iets lijkt op een afspraak uit de schoolagenda hoort de jouwe te blijven
+ * staan — anders typ je iets in en is het meteen "verdwenen".
+ */
 export async function haalBronvolgorde(supabase: SupabaseClient): Promise<string[]> {
-  return (await haalBronnen(supabase)).map((b) => b.id);
+  const { data } = await supabase
+    .from("agenda_bronnen")
+    .select("id, systeem, created_at")
+    .eq("actief", true)
+    .order("created_at");
+  const alle = (data as { id: string; systeem: string }[] | null) ?? [];
+  return [
+    ...alle.filter((b) => b.systeem === "eigen").map((b) => b.id),
+    ...alle.filter((b) => b.systeem !== "eigen").map((b) => b.id),
+  ];
 }
 
 export async function haalTaken(
@@ -221,8 +316,14 @@ export async function haalPlanning(
   // nodig, dus die vraag doen we pas hierna.
   const weekOverrides = await haalRoosterWeken(supabase, van, tot, rooster?.setup ?? {});
 
+  // De landelijke feestdagen (Koningsdag, Hemelvaartsdag …) horen er ook bij,
+  // ook als er geen agenda gekoppeld is. Noemt de gekoppelde agenda dezelfde
+  // dag óók (bijv. "Koningsdag - alle groepen vrij"), dan wint die hieronder
+  // gewoon via de dubbelingen-check, net als bij de landelijke vakantiedata.
+  const metFeestdagen = [...ruwe, ...feestdagenAlsItems(schooljaar)];
+
   // Staat dezelfde afspraak in twee agenda's, dan tonen we hem één keer.
-  const items = markeerDubbelingen(ruwe, volgorde);
+  const items = markeerDubbelingen(metFeestdagen, volgorde);
 
   // De vakanties van je eigen school gaan boven de landelijke lijst.
   const eigen = metEigenVakanties(schooljaar, items);

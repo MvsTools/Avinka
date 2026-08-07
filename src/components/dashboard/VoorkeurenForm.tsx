@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { getVoorkeuren, saveVoorkeuren, type Voorkeuren } from "@/lib/db";
 import { VOORKEUREN_VERVERSEN } from "@/lib/voorkeuren-verversen";
+import { leesWerkdagen, wisselWerkdag } from "@/lib/planning/werkdagen";
 
 // Voorkeuren staan in je eigen account (Supabase, per user-id afgeschermd).
 // BEWUST geen localStorage-import meer: die data is apparaat-gebonden en lekte
@@ -28,19 +29,24 @@ const aanspreekvormen = [
   { waarde: "je", label: "Je / jullie" },
   { waarde: "u", label: "U" },
 ];
+// De oudercommunicatie-apps van het basisonderwijs. BasisOnline en SchouderCom
+// ontbraken hier (BasisOnline zit op 900+ scholen, SchouderCom is inmiddels van
+// Social Schools). Konnect stond er wél in, maar dat is kinderopvang-software
+// en hoort hier dus niet — eruit gehaald op 5-8, niemand had het gekozen.
 const communicatieApps = [
   { waarde: "", label: "Geen" },
   { waarde: "parro", label: "Parro" },
   { waarde: "social_schools", label: "Social Schools" },
+  { waarde: "schoudercom", label: "SchouderCom" },
+  { waarde: "basisonline", label: "Ouderportaal (BasisOnline)" },
   { waarde: "isy", label: "Isy" },
-  { waarde: "konnect", label: "Konnect" },
 ];
-const commAppsMetEigenAdres = ["isy", "konnect"];
+const commAppsMetEigenAdres = ["schoudercom", "isy"];
 // Vast domein-staartje per systeem — de leerkracht vult alleen het voorste
 // stukje in (zie ook avinka-communicatie-app.js / avinka-lvs-app.js).
 const commStaartje: Record<string, string> = {
+  schoudercom: ".schoudercom.nl",
   isy: ".isy-school.nl",
-  konnect: ".ouderportaal.nl",
 };
 const lvsStaartje: Record<string, string> = {
   esis: ".rovictonline.nl",
@@ -50,6 +56,88 @@ const lvsSystemen = [
   { waarde: "parnassys", label: "ParnasSys" },
   { waarde: "esis", label: "Esis" },
 ];
+// Bijna elke school werkt met IEP óf met Cito. Weten we welke, dan hoeft
+// Toetsanalyse niet elke keer te vragen en kunnen we in Mijn schooljaar zeggen
+// wáár je je toetsen klaarzet. "Allebei" bestaat echt (het ene vak IEP, het
+// andere Cito), en dan blijft de keuze gewoon staan.
+// De vier grote leerlingvolgsystemen in het basisonderwijs. Toetsanalyse leest
+// voorlopig alleen IEP en Cito in; kies je Dia of Boom, dan zegt de tool dat
+// eerlijk in plaats van te doen alsof.
+const DAGEN_VOLUIT = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag"];
+
+const toetsSystemen = [
+  { waarde: "", label: "Vraag het me" },
+  { waarde: "iep", label: "IEP" },
+  { waarde: "cito", label: "Cito" },
+  { waarde: "dia", label: "Dia" },
+  { waarde: "boom", label: "Boom" },
+  { waarde: "beide", label: "Allebei" },
+];
+
+/**
+ * Op welke dagen sta je voor de klas? Meerdere tegelijk, ma t/m vr.
+ *
+ * Exact dezelfde vorm als KeuzeRij hierboven — alleen kun je er meer dan één
+ * aanklikken. Een eigen stijl zou deze ene vraag zwaarder laten wegen dan de
+ * rest, en daar is geen reden voor.
+ */
+function WerkdagenRij({
+  waarde,
+  wissel,
+  extra,
+}: {
+  waarde: string;
+  /**
+   * Geeft de aangeklikte DAG door, niet de nieuwe waarde. Anders rekent elke
+   * klik met de stand van vóór de vorige: klik je drie dagen snel achter
+   * elkaar aan, dan blijft er één over. (Zelf gezien tijdens het testen.)
+   */
+  wissel: (dag: number) => void;
+  extra?: ReactNode;
+}) {
+  // leesWerkdagen geeft bij lege invoer ALLE dagen terug (dat is de juiste
+  // aanname bij het rekenen), maar in dit scherm betekent leeg juist "nog niets
+  // gekozen" — anders lijken er vijf dagen aan te staan die je nooit hebt
+  // aangeklikt.
+  const gekozen = waarde ? leesWerkdagen(waarde) : [];
+  return (
+    <div className="mt-5">
+      <div className="flex min-h-5 items-center gap-2">
+        <span className="text-sm font-bold text-ink">
+          Jouw werkdagen
+          <span className="font-normal text-ink/50"> (dan komt er niets op je vrije dag terecht)</span>
+        </span>
+        {extra}
+      </div>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {DAGEN_VOLUIT.map((naam, dag) => {
+          const aan = gekozen.includes(dag);
+          return (
+            <button
+              key={dag}
+              type="button"
+              onClick={() => wissel(dag)}
+              aria-pressed={aan}
+              className={
+                "rounded-xl border px-4 py-2.5 text-sm font-semibold transition " +
+                (aan
+                  ? "border-brand bg-brand-soft text-brand"
+                  : "border-black/10 text-ink/70 hover:border-black/20")
+              }
+            >
+              {naam}
+            </button>
+          );
+        })}
+      </div>
+      {/* Niets aangeklikt = niets gezegd. Dan rekenen we met de hele week, want
+          een aanname die dagen wegneemt maakt het scherm stiller dan het hoort. */}
+      {gekozen.length === 0 && (
+        <p className="mt-2 text-xs text-ink/45">Niets gekozen: we gaan uit van de hele week.</p>
+      )}
+    </div>
+  );
+}
 
 // Eén keuzerij met knoppen, zoals de toon-knoppen. waarde/zet werken op het
 // veld in de Voorkeuren-state.
@@ -207,6 +295,8 @@ export default function VoorkeurenForm() {
     communicatie_url: "",
     lvs_systeem: "",
     lvs_url: "",
+    toets_systeem: "",
+    werkdagen: "",
   });
   const [geladen, setGeladen] = useState(false);
   const [status, setStatus] = useState<"" | "bezig" | "klaar" | "fout">("");
@@ -394,6 +484,25 @@ export default function VoorkeurenForm() {
           raak("aanspreekvorm");
         }}
         extra={badge("aanspreekvorm")}
+      />
+      <WerkdagenRij
+        waarde={v.werkdagen}
+        wissel={(dag) => {
+          setV((huidig) => ({ ...huidig, werkdagen: wisselWerkdag(huidig.werkdagen, dag) }));
+          raak("werkdagen");
+        }}
+        extra={badge("werkdagen")}
+      />
+      <KeuzeRij
+        titel="Toetssysteem"
+        hint="(dan slaat Toetsanalyse het keuzescherm over)"
+        opties={toetsSystemen}
+        waarde={v.toets_systeem}
+        zet={(w) => {
+          setV({ ...v, toets_systeem: w });
+          raak("toets_systeem");
+        }}
+        extra={badge("toets_systeem")}
       />
       <KeuzeRij
         titel="Communicatie-app"

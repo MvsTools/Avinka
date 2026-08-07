@@ -39,7 +39,8 @@ import { CREDITS_PER_PLAN, proefLoopt } from "@/lib/abonnement";
 // Naar buiten toe praten we over "credits", niet over euro's. Twee redenen:
 // een leerkracht hoeft onze inkoopprijs niet te kennen, en zo kunnen we de
 // euro-waarde bijstellen zonder dat het getal op het scherm verspringt.
-// 20 credits = €1, dus: Start en proef 100 credits, Compleet en Pro 160.
+// 20 credits = €1. Zie CREDITS_PER_PLAN in abonnement.ts voor de aantallen;
+// de proef staat daar bewust veel lager dan de pakketten (7 dagen, geen maand).
 export const CREDITS_PER_EURO = 20;
 
 export function naarCredits(euro: number): number {

@@ -11,10 +11,12 @@ import { createClient } from "@/utils/supabase/server";
 //   taalniveau       : standaard | a2 | b1
 //   lengte           : kort | gemiddeld | uitgebreid
 //   aanspreekvorm    : je | u   (alleen Oudercontact gebruikt dit)
-//   communicatie_app : '' | parro | social_schools | isy | konnect (voor de "open in ..."-knop)
-//   communicatie_url : eigen Isy/Konnect-webadres (Parro/Social Schools hebben een vast adres)
+//   communicatie_app : '' | parro | social_schools | schoudercom | basisonline | isy
+//   communicatie_url : eigen SchouderCom/Isy-webadres (de rest heeft een vast adres)
 //   lvs_systeem      : '' | parnassys | esis (voor de "open in je LVS"-knop)
 //   lvs_url          : eigen Esis-webadres (ParnasSys heeft één vast adres)
+//   toets_systeem    : '' | iep | cito | dia | boom | beide
+//   werkdagen        : '' of dagcijfers, 0=maandag t/m 4=vrijdag (bijv. '0134')
 //
 // RLS zorgt dat je alleen je eigen instellingen krijgt. Geen sessie/fout → de
 // standaarden, zodat de tool altijd gewoon doorwerkt.
@@ -28,6 +30,8 @@ const STANDAARD = {
   communicatie_url: "",
   lvs_systeem: "",
   lvs_url: "",
+  toets_systeem: "",
+  werkdagen: "",
 };
 
 export async function GET() {
@@ -42,7 +46,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from("instellingen")
     .select(
-      "toon, taalniveau, lengte, aanspreekvorm, standaardgroep, communicatie_app, communicatie_url, lvs_systeem, lvs_url"
+      "toon, taalniveau, lengte, aanspreekvorm, standaardgroep, communicatie_app, communicatie_url, lvs_systeem, lvs_url, toets_systeem, werkdagen"
     )
     .maybeSingle();
   if (error || !data) {
@@ -59,5 +63,7 @@ export async function GET() {
     communicatie_url: data.communicatie_url ?? STANDAARD.communicatie_url,
     lvs_systeem: data.lvs_systeem ?? STANDAARD.lvs_systeem,
     lvs_url: data.lvs_url ?? STANDAARD.lvs_url,
+    toets_systeem: data.toets_systeem ?? STANDAARD.toets_systeem,
+    werkdagen: data.werkdagen ?? STANDAARD.werkdagen,
   });
 }
