@@ -22,9 +22,12 @@ import { bevestigingOpnieuw, type AuthState } from "@/app/auth/actions";
 export default function BevestigWachtscherm({
   email,
   volgende,
+  opnieuwNa,
 }: {
   email?: string;
   volgende?: string;
+  /** Wanneer de knop vrijkomt, gerekend vanaf de mail van het AANMELDEN. */
+  opnieuwNa?: number;
 }) {
   const [state, formAction, pending] = useActionState<AuthState, FormData>(
     bevestigingOpnieuw,
@@ -32,20 +35,23 @@ export default function BevestigWachtscherm({
   );
   const [nu, setNu] = useState(() => Date.now());
 
+  // Supabase' grens geldt per adres, dus de mail van het aanmelden telt mee.
+  // Zolang er nog niet opnieuw verstuurd is, geldt het tijdstip dat bij de
+  // registratie is meegegeven; daarna dat van de laatste verzending.
+  const vrijOp = state.opnieuwNa ?? opnieuwNa;
+
   // De klok loopt alleen als er iets af te tellen valt. De setState zit in de
   // callback van het interval, niet in het effect zelf — dat scheelt een reeks
   // cascaderende renders (en de lint-regel die daarop let).
   useEffect(() => {
-    if (!state.opnieuwNa) return;
+    if (!vrijOp) return;
     const t = setInterval(() => setNu(Date.now()), 500);
     return () => clearInterval(t);
-  }, [state.opnieuwNa]);
+  }, [vrijOp]);
 
   // Afgeleid, niet bijgehouden: het tijdstip komt van de server en hier rekenen
   // we alleen uit hoeveel er nog over is.
-  const rest = state.opnieuwNa
-    ? Math.max(0, Math.ceil((state.opnieuwNa - nu) / 1000))
-    : 0;
+  const rest = vrijOp ? Math.max(0, Math.ceil((vrijOp - nu) / 1000)) : 0;
   const opSlot = pending || rest > 0;
 
   return (
@@ -78,7 +84,10 @@ export default function BevestigWachtscherm({
         <button
           type="submit"
           disabled={opSlot}
-          className="w-full rounded-2xl border-2 border-brand/25 px-6 py-3 font-bold text-brand-dark transition hover:border-brand/50 hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:border-brand/25 disabled:hover:bg-transparent"
+          // Op slot NIET wegvagen met opacity: in die knop staat de teller, en
+          // die moet leesbaar blijven. Vandaar een grijze staat (4,35:1) in
+          // plaats van vervaagd groen (2,15:1).
+          className="w-full rounded-2xl border-2 border-brand/25 px-6 py-3 font-bold text-brand-dark transition hover:border-brand/50 hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:border-ink/10 disabled:text-ink/60 disabled:hover:border-ink/10 disabled:hover:bg-transparent"
         >
           {pending
             ? "Bezig…"

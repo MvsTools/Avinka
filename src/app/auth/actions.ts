@@ -22,6 +22,14 @@ export type AuthState = {
   opnieuwNa?: number;
 };
 
+// Supabase stuurt hoogstens één auth-mail per minuut naar hetzelfde adres
+// (SMTP max frequency, standaard 60s). Die grens geldt per ADRES, niet per
+// knop: de mail van het aanmelden telt dus mee. Daarom rekent zowel signup()
+// als bevestigingOpnieuw() met deze waarde, anders klikt iemand vlak na zijn
+// registratie op "opnieuw sturen" en krijgt hij een weigering te zien.
+// ⚠️ Staat de grens in het Supabase-dashboard anders, pas hem hier ook aan.
+const MAIL_INTERVAL_MS = 60_000;
+
 // Vertaalt de Engelse Supabase-meldingen naar begrijpelijk Nederlands.
 function nlFout(bericht: string): string {
   const b = bericht.toLowerCase();
@@ -160,8 +168,9 @@ export async function signup(
 
   // Staat bevestiging AAN, dan moet de gebruiker eerst de mail bevestigen.
   // Het adres gaat mee: het wachtscherm toont het, en de knop "stuur opnieuw"
-  // heeft het nodig.
-  return { message: "verstuurd", email };
+  // heeft het nodig. De teller start hier al — er is zojuist een mail de deur
+  // uit gegaan, dus die minuut loopt vanaf nu.
+  return { message: "verstuurd", email, opnieuwNa: Date.now() + MAIL_INTERVAL_MS };
 }
 
 // BEVESTIGINGSMAIL OPNIEUW STUREN — vanaf het wachtscherm, voor wie niets
@@ -204,9 +213,7 @@ export async function bevestigingOpnieuw(
     return { error: nlFout(error.message) };
   }
 
-  // Een minuut op slot. Supabase heeft zelf ook een snelheidsgrens; deze
-  // wachttijd houdt de gebruiker daar weg, want díé foutmelding helpt niemand.
-  return { message: "opnieuw", opnieuwNa: Date.now() + 60_000 };
+  return { message: "opnieuw", opnieuwNa: Date.now() + MAIL_INTERVAL_MS };
 }
 
 // WACHTWOORD VERGETEN — stuurt een herstelmail (als het account bestaat).

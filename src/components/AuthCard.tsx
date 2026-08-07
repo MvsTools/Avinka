@@ -92,7 +92,13 @@ export default function AuthCard({
   // Na een geslaagde registratie neemt het wachtscherm het over: dat kan de
   // mail opnieuw sturen en legt uit wat er mis kan zijn.
   if (state.message) {
-    return <BevestigWachtscherm email={state.email} volgende={volgende} />;
+    return (
+      <BevestigWachtscherm
+        email={state.email}
+        volgende={volgende}
+        opnieuwNa={state.opnieuwNa}
+      />
+    );
   }
 
   return (
