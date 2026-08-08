@@ -209,6 +209,20 @@ const EIGEN_WERK = ["klassen", "rapporten", "taken", "agenda_items", "bestanden"
  * bij ons bewaard blijven in plaats van dat je ze meeneemt. Plattegronden zitten
  * er óók in en die verdwijnen wél — daar hoort een tekening bij, en die kunnen
  * we nog niet maken. Zolang dat zo is: geen half werkende knop. */
+/* Hoe je de dingen in een categorie noemt. "2 rapportteksten" leest als iets;
+ * "2 regels" leest als een database. Alleen waar het uitmaakt; de rest valt
+ * terug op regel/regels. */
+const EENHEID: Record<string, [string, string]> = {
+  klassen: ["klas", "klassen"],
+  rapporten: ["rapporttekst", "rapportteksten"],
+  taken: ["taak", "taken"],
+  agenda_items: ["afspraak", "afspraken"],
+  bestanden: ["bestand", "bestanden"],
+  agenda_bronnen: ["agenda", "agenda's"],
+  rooster_week: ["week", "weken"],
+  feedback: ["bericht", "berichten"],
+};
+
 export function bestandsnaamVoor(tabel: string): string {
   return MEENEMEN[tabel]?.bestand ?? `avinka-${tabel.replace(/_/g, "-")}.csv`;
 }
@@ -687,48 +701,50 @@ export function exportPaginaHtml(
   account: { email?: string | null; voornaam?: string | null },
   gegevens: Record<string, Record<string, unknown>[]>,
 ): string {
-  // Eén regel per categorie: titel, aantal en de downloadknop naast elkaar.
-  // Een eerdere versie zette de knop ONDER de dichtgeklapte titel; dan staat er
-  // een gat tussen de twee en valt de kaart uit elkaar in twee losse dingen.
-  // ⚠️ De knop zit binnen <summary>, dus een klik erop zou ook de sectie
-  // open- en dichtklappen. Vandaar de stopPropagation.
-  // ⚠️ HET VINKHOKJE STAAT BUITEN <summary>, EN DAT IS GEEN SMAAKKWESTIE. Een
-  // hokje binnen een summary klapt de sectie open zodra je hem aanvinkt: het
-  // hele blok is dan de knop. Dat is alleen te onderdrukken met JavaScript, en
-  // dan werkt aanvinken niet meer als dat script niet laadt. Nu staat het hokje
-  // ernaast, in hetzelfde raster, en is het een gewoon formulierveld.
-  const sectie = (tabel: string, inMeenemen = false) => {
+  /* ⚠️ HET VINKHOKJE STAAT BUITEN <summary>, EN DAT IS GEEN SMAAKKWESTIE. Een
+   * hokje binnen een summary klapt de sectie open zodra je hem aanvinkt: het
+   * hele blok is dan de knop. Dat is alleen te onderdrukken met JavaScript, en
+   * dan werkt aanvinken niet meer als dat script niet laadt. Daarom is de kaart
+   * opgedeeld: hokje en titel bovenin, en "Bekijken" als los klapkopje eronder.
+   *
+   * ⚠️ `bestanden` heeft bewust geen hokje (zie bestandsnaamVoor) maar krijgt
+   * wel de lege kolom, anders staat zijn titel uit de rooilijn met de rest en
+   * lijkt dat een fout. */
+  const sectie = (tabel: string, toonSoort = true) => {
     const cfg = SECTIES[tabel];
     const rijen = gegevens[tabel] ?? [];
     if (rijen.length === 0) return "";
     const mee = MEENEMEN[tabel];
     const body = rijen.map(rijHtml).filter(Boolean).join('<hr class="sep">');
-    // Een categorie in dit blok zonder hokje (bestanden, want plattegronden
-    // tekenen kan nog niet) krijgt tóch de lege kolom, anders staat zijn titel
-    // uit de rooilijn met de rest en lijkt dat een fout.
-    // Bestanden is de enige categorie zonder hokje; zie de opmerking bij
-    // algemeneBestandsnaam(). Die krijgt wel de lege kolom, anders staat zijn
-    // titel uit de rooilijn.
     const teKiezen = tabel !== "bestanden";
     const hokje = teKiezen
       ? `<label class="vink" title="Aanvinken om te downloaden">
            <input type="checkbox" name="deel" value="${tabel}">
            <span class="hoklabel">${escapeHtml(cfg.titel)} downloaden</span>
          </label>`
-      : inMeenemen
-        ? `<span class="vink" aria-hidden="true"></span>`
+      : `<span class="vink" aria-hidden="true"></span>`;
+    const soort = mee
+      ? mee.formaat === "doc"
+        ? "Word"
+        : mee.formaat === "csv"
+          ? "Excel"
+          : "Agenda"
+      : teKiezen
+        ? "Excel"
         : "";
-    const soort = mee ? (mee.formaat === "doc" ? "Word" : mee.formaat === "csv" ? "Excel" : "Agenda") : "Excel";
-    return `<section class="${teKiezen || inMeenemen ? "mee" : ""}">
+    const n = rijen.length;
+    const [enkel, meer] = EENHEID[tabel] ?? ["regel", "regels"];
+    const telling = `${n} ${n === 1 ? enkel : meer}`;
+    return `<section class="kaart">
       ${hokje}
-      <details>
-        <summary>
-          <span class="tit">${escapeHtml(cfg.titel)}</span>
-          <span class="telling">${rijen.length}</span>
-          ${teKiezen ? `<span class="rek"></span><span class="soort">${soort}</span>` : ""}
-        </summary>
-        <div class="inhoud">${body}</div>
-      </details>
+      <div class="kaartbody">
+        <h3 class="tit">${escapeHtml(cfg.titel)}</h3>
+        <p class="onder">${escapeHtml(telling)}${soort && toonSoort ? ` &middot; <span class="soort">${soort}</span>` : ""}</p>
+        <details>
+          <summary><span class="dicht">Bekijken</span><span class="open">Verbergen</span></summary>
+          <div class="inhoud">${body}</div>
+        </details>
+      </div>
     </section>`;
   };
 
@@ -754,31 +770,57 @@ export function exportPaginaHtml(
   };
 
   const overig = TABELLEN.filter((t) => !EIGEN_WERK.includes(t));
-  const secties =
-    `<h2 class="groep">Meenemen</h2>` +
-    `<p class="groepuitleg">Vink aan wat je wilt bewaren. Deze gegevens gaan over je klas, en die
-       ruimen we 90 dagen na je laatste abonnement op.</p>` +
+
+  /* De uitnodiging om te blijven hoort bij het groene blok — dat gaat over "je
+   * werk staat er nog als je terugkomt" — en niet bovenaan de pagina. Iemand
+   * die hier zijn gegevens ophaalt oefent een recht uit; daar hoort geen
+   * verkooppraatje overheen.
+   * ⚠️ Alleen tonen aan wie geen lopend abonnement heeft. Een betalende klant
+   * "neem een abonnement" voorhouden is de snelste manier om ongeloofwaardig
+   * te worden. */
+  const status = String(gegevens.instellingen?.[0]?.abon_status ?? "");
+  const terugKnop =
+    status === "actief"
+      ? ""
+      : `<a class="cta" href="/dashboard/abonnement">Weer een abonnement nemen</a>`;
+
+  // toonSoort=false in het onderste blok: daar is élk bestand een Excel-tabel,
+  // dus dat woord op elke kaart herhalen is ruis. De uitleg boven het blok zegt
+  // het één keer.
+  const blok = (titel: string, uitleg: string, tabellen: readonly string[], toonSoort = true) =>
+    `<h2 class="groep">${escapeHtml(titel)}</h2>` +
+    `<p class="groepuitleg">${uitleg}</p>` +
     // Een gewoon formulier: elk aangevinkt hokje wordt een ?deel= in de link.
-    // Werkt dus ook zonder JavaScript; het script eronder maakt er alleen een
+    // Werkt dus ook zonder JavaScript; het script onderaan maakt er alleen een
     // meelopende telling bij.
+    // ⚠️ Met de losse functienaam geeft map() de INDEX mee als tweede argument.
+    // Dat heeft hier eerder een verborgen vlag omgezet; daarom de pijlfunctie.
     `<form method="get" action="/api/account/export">` +
-    EIGEN_WERK.map((t) => sectie(t, true)).join("") +
+    `<div class="raster">${tabellen.map((t) => sectie(t, toonSoort)).join("")}</div>` +
     knopBalk("Nog niets aangevinkt") +
     `</form>` +
-    leegRegel(EIGEN_WERK) +
-    `<p class="blijft"><strong>Je eigen vakwerk bewaren we gewoon voor je.</strong>
-       Lesontwerpen, werkbladen, draaiboeken en je weekrooster blijven staan, ook als je stopt.
-       Ze staan er nog als je terugkomt.</p>` +
-    `<h2 class="groep">En dit weten we verder van je</h2>` +
-    `<p class="groepuitleg">Hier kun je ook los iets van ophalen. Deze komen als Excel-tabel.</p>` +
-    `<form method="get" action="/api/account/export">` +
-    // ⚠️ Met de losse functienaam geeft map() de INDEX mee als tweede argument,
-    // en dat is hier de vlag "zit in het meeneem-blok". Alles behalve de eerste
-    // sectie kreeg daardoor een lege vinkkolom en stond ingesprongen.
-    overig.map((t) => sectie(t, true)).join("") +
-    knopBalk("Nog niets aangevinkt") +
-    `</form>` +
-    leegRegel(overig);
+    leegRegel(tabellen);
+
+  const secties =
+    blok(
+      "Meenemen",
+      "Vink aan wat je wilt bewaren. Deze gegevens gaan over je klas, en die ruimen we 90 dagen na je laatste abonnement op.",
+      EIGEN_WERK,
+    ) +
+    `<div class="blijft">
+       <div>
+         <strong>Je eigen vakwerk bewaren we gewoon voor je.</strong>
+         Lesontwerpen, werkbladen, draaiboeken en je weekrooster blijven staan, ook als je stopt.
+         Ze staan er nog als je terugkomt.
+       </div>
+       ${terugKnop}
+     </div>` +
+    blok(
+      "En dit weten we verder van je",
+      "Hier kun je ook los iets van ophalen. Deze komen als Excel-tabel.",
+      overig,
+      false,
+    );
 
   const html = `<!doctype html>
 <html lang="nl"><head><meta charset="utf-8">
@@ -792,86 +834,126 @@ export function exportPaginaHtml(
   *{ box-sizing:border-box; }
   body{ margin:0; background:var(--cream); color:var(--ink);
     font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; line-height:1.6; }
-  .wrap{ max-width:760px; margin:0 auto; padding:40px 20px 80px; }
-  .merk{ display:block; height:28px; width:auto; margin:0 0 24px; }
-  h1{ font-size:28px; font-weight:800; margin:0 0 6px; }
-  .meta{ color:var(--muted); font-size:14px; margin:0 0 28px; }
-  section{ background:#fff; border:1px solid var(--line); border-radius:20px; padding:0; margin-bottom:10px; overflow:hidden; }
-  h2{ font-size:18px; font-weight:800; margin:0 0 14px; }
-  .groep{ font-size:14px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted);
-    margin:32px 0 6px; }
-  .groep:first-of-type{ margin-top:8px; }
-  .groepuitleg{ color:var(--muted); font-size:14px; margin:0 0 14px; max-width:52ch; }
-  .blijft{ background:#f1f8f4; border-radius:16px; padding:16px 20px; color:#265c42;
-    font-size:15px; margin:16px 0 0; }
-  .blijft strong{ color:#1c4a34; }
-  summary{ list-style:none; cursor:pointer; display:flex; align-items:center; gap:12px;
-    padding:16px 22px; font-weight:700; }
-  summary::-webkit-details-marker{ display:none; }
-  summary::before{ content:"›"; color:var(--muted); font-size:20px; line-height:1;
-    transition:transform .15s; }
-  details[open] summary::before{ transform:rotate(90deg); }
-  summary:hover{ background:#fafbfa; }
-  summary:focus-visible{ outline:3px solid var(--brand); outline-offset:-3px; }
-  /* Het aantal staat direct achter de titel, niet ergens rechts. Stond het aan
-     de rechterkant, dan verschoof het per regel mee met de breedte van de knop
-     ernaast en sprongen de getallen alle kanten op. */
-  .tit{ flex:0 1 auto; min-width:0; }
-  .rek{ flex:1; }
-  .telling{ color:var(--muted); font-weight:600; font-size:14px; background:var(--cream);
-    border-radius:999px; padding:2px 10px; }
-  .inhoud{ padding:4px 22px 20px; border-top:1px solid var(--line); }
-  .soort{ color:var(--muted); font-size:13px; font-weight:600; }
-  /* Sectie met een vinkhokje: hokje links, de rest ernaast. Het hokje staat
-     bewust buiten <details>, zie de opmerking bij sectie(). */
-  section.mee{ display:grid; grid-template-columns:auto 1fr; align-items:start; }
-  .vink{ display:flex; align-items:center; padding:18px 0 18px 20px; cursor:pointer;
-    min-width:40px; }
+  .wrap{ max-width:900px; margin:0 auto; padding:32px 20px 80px; }
+
+  /* KOP — een eigen band, zodat de pagina begint als een scherm en niet als een
+     document dat toevallig een logo heeft. */
+  .kop{ display:flex; align-items:center; justify-content:space-between; gap:20px;
+    flex-wrap:wrap; background:#fff; border:1px solid var(--line); border-radius:22px;
+    padding:22px 26px; margin-bottom:28px; }
+  .merk{ display:block; height:26px; width:auto; margin:0 0 12px; }
+  h1{ font-size:26px; font-weight:800; margin:0; letter-spacing:-.01em; }
+  .wie{ color:var(--muted); font-size:14px; margin:4px 0 0; }
+  .terug{ font-size:14px; font-weight:700; color:var(--brand-dark); text-decoration:none;
+    border:1px solid var(--line); border-radius:12px; padding:9px 15px; white-space:nowrap; }
+  .terug:hover{ background:var(--cream); }
+
+  .groep{ font-size:13px; text-transform:uppercase; letter-spacing:.09em; color:var(--muted);
+    margin:34px 0 6px; font-weight:800; }
+  .groepuitleg{ color:var(--muted); font-size:14px; margin:0 0 16px; max-width:60ch; }
+
+  /* KAARTEN NAAST ELKAAR. align-items:start is hier de sleutel: zonder dat rekt
+     een uitgeklapte kaart zijn buurman mee omhoog, en dan staat die vol lucht. */
+  .raster{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px;
+    align-items:start; }
+  .kaart{ display:grid; grid-template-columns:auto 1fr; gap:2px 12px;
+    background:#fff; border:1px solid var(--line); border-radius:18px; padding:16px 18px; }
+  .kaartbody{ min-width:0; }
+  .tit{ font-size:16px; font-weight:800; margin:0; line-height:1.35; }
+  .onder{ color:var(--muted); font-size:13px; margin:2px 0 0; }
+  .soort{ font-weight:700; }
+
+  /* align-self:start, anders centreert het hokje over de hele kaarthoogte en
+     staat het naast de ondertitel in plaats van naast de titel. */
+  .vink{ display:flex; align-self:start; padding:3px 0 0; cursor:pointer; }
   .vink input{ width:20px; height:20px; accent-color:var(--brand-dark); cursor:pointer; margin:0; }
   .vink input:focus-visible{ outline:3px solid var(--ink); outline-offset:2px; }
   /* Voor wie het scherm voorleest: het hokje heeft een eigen naam nodig, maar
      op het scherm zou die de titel ernaast herhalen. */
   .hoklabel{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);
     white-space:nowrap; }
-  .balk{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin:18px 0 0; }
+
+  summary{ list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:5px;
+    margin-top:10px; font-size:13px; font-weight:700; color:var(--brand-dark); }
+  summary::-webkit-details-marker{ display:none; }
+  summary::before{ content:"›"; font-size:17px; line-height:1; transition:transform .15s; }
+  details[open] summary::before{ transform:rotate(90deg); }
+  /* Twee echte woorden, geen ::after-truc: dan leest een schermlezer ook
+     "Verbergen" voor in plaats van "Bekijken" met onzichtbare aanvulling. */
+  details:not([open]) .open{ display:none; }
+  details[open] .dicht{ display:none; }
+  summary:hover{ text-decoration:underline; }
+  summary:focus-visible{ outline:3px solid var(--brand); outline-offset:3px; border-radius:4px; }
+  .inhoud{ margin-top:12px; padding-top:14px; border-top:1px solid var(--line); }
+
+  .balk{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin:16px 0 0; }
   .dlknop{ font:inherit; font-size:15px; font-weight:700; cursor:pointer; border:0;
     color:#fff; background:var(--brand-dark); border-radius:14px; padding:12px 22px; }
   .dlknop:hover{ background:#1f6f4b; }
   .dlknop:focus-visible{ outline:3px solid var(--ink); outline-offset:2px; }
   .dlknop[disabled]{ background:#c9d3cd; cursor:not-allowed; }
   .hint{ color:var(--muted); font-size:14px; }
-  .niets{ color:var(--muted); font-size:14px; margin:10px 4px 0; }
-  /* Op een smal scherm past titel + aantal + knop niet naast elkaar; dan zakt
-     de knop naar een eigen regel in plaats van de titel af te knijpen. */
-  @media(max-width:560px){
-    summary{ padding:14px 16px; }
-    .vink{ padding:16px 0 16px 14px; }
-    .dlknop{ width:100%; }
-  }
-  .rij{ display:grid; grid-template-columns:220px 1fr; gap:6px 18px; }
-  @media(max-width:560px){ .rij{ grid-template-columns:1fr; gap:2px; } .k{ margin-top:8px; } }
-  .k{ color:var(--muted); font-weight:600; font-size:14px; }
+  .niets{ color:var(--muted); font-size:14px; margin:12px 2px 0; }
+
+  .blijft{ display:flex; align-items:center; justify-content:space-between; gap:20px;
+    flex-wrap:wrap; background:#f1f8f4; border-radius:18px; padding:20px 24px;
+    color:#265c42; font-size:15px; margin:22px 0 0; line-height:1.6; }
+  .blijft strong{ color:#1c4a34; }
+  .blijft > div{ flex:1 1 340px; }
+  .cta{ font-size:15px; font-weight:700; text-decoration:none; color:#fff;
+    background:var(--brand-dark); border-radius:14px; padding:12px 22px; white-space:nowrap; }
+  .cta:hover{ background:#1f6f4b; }
+  .cta:focus-visible{ outline:3px solid var(--ink); outline-offset:2px; }
+
+  .rij{ display:grid; grid-template-columns:150px 1fr; gap:6px 16px; font-size:14px; }
+  .k{ color:var(--muted); font-weight:600; }
   .v{ color:var(--ink); word-break:break-word; white-space:pre-wrap; }
-  .sep{ border:0; border-top:1px solid var(--line); margin:16px 0; }
+  .sep{ border:0; border-top:1px solid var(--line); margin:14px 0; }
   .leeg{ color:var(--muted); margin:0; }
-  .print{ margin:24px 0 0; }
+  .print{ display:flex; gap:10px; flex-wrap:wrap; margin:36px 0 0; }
   .print button, .print a{ font:inherit; font-weight:700; font-size:14px; cursor:pointer;
     border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:12px;
     padding:9px 16px; text-decoration:none; display:inline-block; }
-  .foot{ color:var(--muted); font-size:13px; margin-top:28px; }
+  .print button:hover, .print a:hover{ background:var(--cream); }
+  .foot{ color:var(--muted); font-size:13px; margin-top:22px; }
+  .foot a{ color:var(--brand-dark); }
+
+  @media(max-width:720px){
+    .raster{ grid-template-columns:1fr; }
+    .rij{ grid-template-columns:1fr; gap:2px; }
+    .k{ margin-top:8px; }
+    .dlknop, .cta{ width:100%; text-align:center; }
+  }
+
+  /* Afdrukken of als pdf bewaren: dan is een vinkhokje of een knop zinloos, en
+     wil je juist alles openstaan in plaats van dichtgeklapt. */
+  @media print{
+    body{ background:#fff; }
+    .vink, .balk, .print, .cta, .terug, summary{ display:none !important; }
+    .kaart, .kop{ border-color:#ddd; break-inside:avoid; }
+    .raster{ grid-template-columns:1fr; }
+    details > .inhoud{ display:block !important; margin-top:8px; }
+  }
 </style></head>
 <body><div class="wrap">
-  <img class="merk" src="/Avinka_wordmerk.png" alt="Avinka">
-  <h1>Wat Avinka van jou bewaart</h1>
-  <p class="meta">Account: ${escapeHtml(account.email ?? "")}${
-    account.voornaam ? " · " + escapeHtml(account.voornaam) : ""
-  }</p>
+  <div class="kop">
+    <div>
+      <img class="merk" src="/Avinka_wordmerk.png" alt="Avinka">
+      <h1>Wat we van jou bewaren</h1>
+      <p class="wie">${escapeHtml(account.voornaam ?? "")}${
+        account.voornaam && account.email ? " &middot; " : ""
+      }${escapeHtml(account.email ?? "")}</p>
+    </div>
+    <a class="terug" href="/dashboard">Terug naar Avinka</a>
+  </div>
   ${secties}
   <div class="print">
     <button onclick="window.print()">Afdrukken of opslaan als pdf</button>
-    <a href="/api/account/export?format=json">Ook als bestand (JSON)</a>
+    <a href="/api/account/export?format=json">Alles als één bestand (JSON)</a>
   </div>
-  <p class="foot">Je account verwijderen doe je in Avinka onder Instellingen.</p>
+  <p class="foot">Waarom we dit bewaren, hoe lang, en met wie we het delen staat in de
+     <a href="/privacy">privacyverklaring</a>. Je account verwijderen doe je in Avinka
+     onder Instellingen.</p>
 </div>
 <script>
   /* Alleen een meelopende telling op de knop. Zet dit script uit en het
