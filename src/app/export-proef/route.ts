@@ -1,5 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { bestandsnaamVoor, deelBestand, exportPaginaHtml, zipBestand } from "@/app/api/account/export/route";
+import {
+  bestandsnaamVoor,
+  deelBestand,
+  exportPaginaHtml,
+  zipBestand,
+  zonderGeheimen,
+} from "@/app/api/account/export/route";
 
 /* ⚠️ TIJDELIJK — WEG ZODRA DE EIGENAAR HET EXPORTSCHERM HEEFT GOEDGEKEURD.
  * Zelfde soort proefpagina als destijds /wek-proef en /cijfers-proef.
@@ -35,7 +41,7 @@ function afspraken(n: number) {
 }
 
 export async function GET(request: NextRequest) {
-  const gegevens: Record<string, Record<string, unknown>[]> = {
+  const ruw: Record<string, Record<string, unknown>[]> = {
     instellingen: [
       {
         schoolnaam: "De Vlinderboom",
@@ -98,7 +104,50 @@ export async function GET(request: NextRequest) {
     ai_verbruik: [
       { tool: "rapporten", model: "claude-sonnet", input_tokens: 1840, output_tokens: 520, created_at: "2026-02-10T10:00:00Z" },
     ],
+    duo_overdracht: [
+      {
+        klas_id: "nep-klas",
+        auteur: "nep-user",
+        tekst:
+          "Sanne heeft deze week extra geoefend met breuken, het gaat beter. Joris is dinsdag naar de logopedist, dan mist hij de spellingles. De ouders van Fatima komen volgende week langs.",
+        bijgewerkt: "2026-02-09T16:20:00Z",
+      },
+    ],
+    duo_taken: [
+      { tekst: "Toetsen klaarzetten in IEP", gedaan: false, deadline: "2026-09-15", klas_id: "nep-klas" },
+      { tekst: "Ouderavond voorbereiden", gedaan: true, klas_id: "nep-klas" },
+    ],
+    duo_koppels: [
+      {
+        gebruiker_a: "nep-user",
+        gebruiker_b: "nep-collega",
+        klas_id: "nep-klas",
+        status: "actief",
+        rol: "duo",
+        uitgenodigd_email: "collega@devlinderboom.nl",
+        created_at: "2025-09-01T08:00:00Z",
+      },
+    ],
+    duo_overdracht_gelezen: [
+      { klas_id: "nep-klas", user_id: "nep-user", gelezen_op: "2026-02-09T17:00:00Z" },
+    ],
+    bestand_deling: [
+      {
+        bestand_id: "nep-bestand",
+        eigenaar: "nep-user",
+        gedeeld_email: "collega@devlinderboom.nl",
+        rol: "lezer",
+        token: "DIT-TOKEN-MAG-NIET-IN-DE-EXPORT",
+        created_at: "2026-01-20T11:00:00Z",
+      },
+    ],
   };
+
+  // Dezelfde behandeling als de echte route, anders test je iets anders dan wat
+  // een leerkracht krijgt.
+  const gegevens = Object.fromEntries(
+    Object.entries(ruw).map(([tabel, rijen]) => [tabel, zonderGeheimen(rijen)]),
+  );
 
   // Zo kun je ook de downloadbestanden zelf bekijken, in de browser in plaats
   // van als download: /export-proef?deel=agenda_items

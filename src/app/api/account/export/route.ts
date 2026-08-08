@@ -33,6 +33,15 @@ const TABELLEN = [
   "feedback",
   "proef_feedback",
   "ai_verbruik",
+  // ⚠️ Deze vijf hebben géén user_id maar wel een SELECT-beleid dat op de
+  // ingelogde gebruiker slaat (gebruiker_a/b, auteur, eigenaar, klas_toegang).
+  // Ze komen er dus net zo goed alleen voor jou uit — de afscherming zit in de
+  // database, niet in een filter hier.
+  "duo_koppels",
+  "duo_overdracht",
+  "duo_taken",
+  "duo_overdracht_gelezen",
+  "bestand_deling",
 ] as const;
 
 // ⚠️ GEHEIMEN GAAN NOOIT MEE. `agenda_bronnen.link_geheim` is de privélink naar
@@ -40,7 +49,18 @@ const TABELLEN = [
 // bestand dat per mail rondgaat of in een downloadmap blijft slingeren.
 // Dit filter grijpt vóór ALLEBEI de uitvoerpaden, ook de JSON — de VERBERG-lijst
 // verderop werkt alleen op de leesbare pagina en zou hier dus te laat komen.
-const GEHEIM = new Set(["link_geheim"]);
+// `bestand_deling.token` hoort er om dezelfde reden bij: met dat token opent
+// iemand een gedeeld draaiboek zónder in te loggen.
+const GEHEIM = new Set(["link_geheim", "token"]);
+
+/** Geheimen eruit, vóór álles. Als losse functie zodat de proefpagina precies
+ *  hetzelfde doet als de echte route — een testopstelling die het filter
+ *  overslaat, laat je juist geloven dat het werkt. */
+export function zonderGeheimen(rijen: Record<string, unknown>[]): Record<string, unknown>[] {
+  return rijen.map((rij) =>
+    Object.fromEntries(Object.entries(rij).filter(([k]) => !GEHEIM.has(k))),
+  );
+}
 
 // Vriendelijke titel per categorie.
 const SECTIES: Record<string, { titel: string; leeg: string }> = {
@@ -70,6 +90,26 @@ const SECTIES: Record<string, { titel: string; leeg: string }> = {
   ai_verbruik: {
     titel: "Je AI-gebruik",
     leeg: "Nog geen AI-gebruik.",
+  },
+  duo_overdracht: {
+    titel: "Overdracht met je duo-collega",
+    leeg: "Geen overdracht geschreven.",
+  },
+  duo_taken: {
+    titel: "Taken die je met je duo deelt",
+    leeg: "Geen gedeelde taken.",
+  },
+  duo_koppels: {
+    titel: "Je samenwerking met een duo-collega",
+    leeg: "Je deelt geen klas met een collega.",
+  },
+  duo_overdracht_gelezen: {
+    titel: "Wanneer je de overdracht las",
+    leeg: "Nog niets gelezen.",
+  },
+  bestand_deling: {
+    titel: "Bestanden die je deelde",
+    leeg: "Je hebt niets gedeeld.",
   },
 };
 
@@ -143,6 +183,12 @@ const LABELS: Record<string, string> = {
   output_tokens: "Omvang van het antwoord",
   cache_creation_tokens: "Opgeslagen voor hergebruik",
   cache_read_tokens: "Hergebruikt uit eerdere vragen",
+  // Duo en delen
+  code: "Uitnodigingscode",
+  rol: "Rol",
+  uitgenodigd_email: "Uitgenodigd e-mailadres",
+  gedeeld_email: "Gedeeld met",
+  gelezen_op: "Gelezen op",
   // Feedback
   bericht: "Je bericht",
   pagina: "Vanaf welke pagina",
@@ -158,7 +204,26 @@ const LABELS: Record<string, string> = {
 // lijst (oud) en `leerlingen_data` met jongen/meisje erbij (nieuw). Allebei
 // tonen leverde dezelfde klas twee keer onder elkaar op. We tonen de rijke
 // versie; valt die weg, dan springt de kale lijst in (zie rijHtml).
-const VERBERG = new Set(["id", "user_id", "parent_id", "per_dag", "leerlingen"]);
+// De verwijzingen naar andere rijen staan er ook in: een rauwe uuid als
+// "a9318e98-5137-…" zegt een mens niets en is zonder onze database nergens toe
+// te herleiden. ⚠️ Alleen op de LEESBARE pagina en in de Excel-tabellen; het
+// JSON-bestand houdt ze wel, want dat is de volledige kopie.
+const VERBERG = new Set([
+  "id",
+  "user_id",
+  "parent_id",
+  "per_dag",
+  "leerlingen",
+  "klas_id",
+  "bron_id",
+  "bestand_id",
+  "eigenaar",
+  "auteur",
+  "toegewezen_aan",
+  "aangemaakt_door",
+  "gebruiker_a",
+  "gebruiker_b",
+]);
 
 function escapeHtml(s: string): string {
   return s
@@ -193,11 +258,25 @@ export const MEENEMEN: Record<string, { formaat: "csv" | "ics" | "doc"; bestand:
   rapporten: { formaat: "doc", bestand: "avinka-rapportteksten.doc", knop: "Rapportteksten (Word)" },
   taken: { formaat: "csv", bestand: "avinka-takenlijst.csv", knop: "Takenlijst (Excel)" },
   agenda_items: { formaat: "ics", bestand: "avinka-agenda.ics", knop: "Agenda (Outlook, Google)" },
+  // ⚠️ Deze twee horen hier omdat ze aan de KLAS hangen met een cascade
+  // (duo_overdracht.klas_id en duo_taken.klas_id, beide "on delete cascade").
+  // Wist de opruiming je klas, dan gaan ze mee — inclusief de overdracht, en dat
+  // is vaak het waardevolste dat er over een groep is opgeschreven.
+  duo_overdracht: { formaat: "doc", bestand: "avinka-overdracht.doc", knop: "Overdracht (Word)" },
+  duo_taken: { formaat: "csv", bestand: "avinka-duo-taken.csv", knop: "Gedeelde taken (Excel)" },
 };
 
 // Bovenaan de pagina staat wat je mee kunt nemen, daaronder de rest. Dat is de
 // volgorde waarin een leerkracht kijkt; de onderkant is er voor de wet.
-const EIGEN_WERK = ["klassen", "rapporten", "taken", "agenda_items", "bestanden"];
+const EIGEN_WERK = [
+  "klassen",
+  "rapporten",
+  "taken",
+  "duo_overdracht",
+  "duo_taken",
+  "agenda_items",
+  "bestanden",
+];
 
 /* Alles in de onderste helft is ook per stuk te downloaden, maar dan als gewone
  * Excel-tabel. Daar zitten te veel verschillende soorten tussen om er per
@@ -221,6 +300,10 @@ const EENHEID: Record<string, [string, string]> = {
   agenda_bronnen: ["agenda", "agenda's"],
   rooster_week: ["week", "weken"],
   feedback: ["bericht", "berichten"],
+  duo_overdracht: ["notitie", "notities"],
+  duo_taken: ["taak", "taken"],
+  duo_koppels: ["samenwerking", "samenwerkingen"],
+  bestand_deling: ["gedeeld bestand", "gedeelde bestanden"],
 };
 
 export function bestandsnaamVoor(tabel: string): string {
@@ -253,6 +336,16 @@ function icsTekst(s: string): string {
     .replace(/;/g, "\\;")
     .replace(/,/g, "\\,")
     .replace(/\r?\n/g, "\\n");
+}
+
+/* Een datum in gewone taal. Bewust een eigen regeltje en niet nlDatum() uit
+ * mail-opzeggen.ts: dat bestand hangt aan de mailstraat, en die hoort niet mee
+ * te komen met een pagina die alleen gegevens laat zien. */
+const MAANDEN = "januari februari maart april mei juni juli augustus september oktober november december".split(" ");
+function korteDatum(waarde: string): string {
+  const d = new Date(waarde);
+  if (Number.isNaN(d.getTime())) return waarde;
+  return `${d.getDate()} ${MAANDEN[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 function icsDatum(d: string): string {
@@ -538,9 +631,7 @@ export async function GET(request: NextRequest) {
   const gegevens: Record<string, Record<string, unknown>[]> = {};
   for (const tabel of TABELLEN) {
     const { data } = await supabase.from(tabel).select("*");
-    gegevens[tabel] = ((data as Record<string, unknown>[]) ?? []).map((rij) =>
-      Object.fromEntries(Object.entries(rij).filter(([k]) => !GEHEIM.has(k))),
-    );
+    gegevens[tabel] = zonderGeheimen((data as Record<string, unknown>[]) ?? []);
   }
 
   const account = {
@@ -683,6 +774,23 @@ export function deelBestand(
         rijen.map((r) => ({ kop: String(r.naam ?? ""), tekst: String(r.verhaal ?? "") })),
       );
       type = "application/msword; charset=utf-8";
+    } else if (deel === "duo_overdracht") {
+      // Eén notitie per klas. De klasnaam hebben we hier niet (alleen klas_id),
+      // dus de datum is de kop; dat is ook waar je op zoekt als je terugleest.
+      inhoud = docBestand(
+        "Overdracht met mijn duo-collega",
+        rijen.map((r) => ({
+          kop: r.bijgewerkt ? `Bijgewerkt op ${korteDatum(String(r.bijgewerkt))}` : "Overdracht",
+          tekst: String(r.tekst ?? ""),
+        })),
+      );
+      type = "application/msword; charset=utf-8";
+    } else if (deel === "duo_taken") {
+      inhoud = csvBestand(
+        ["Taak", "Afgevinkt", "Deadline"],
+        rijen.map((t) => [t.tekst, t.gedaan ? "ja" : "nee", t.deadline ?? ""]),
+      );
+      type = "text/csv; charset=utf-8";
     }
   }
   return { inhoud, type };
