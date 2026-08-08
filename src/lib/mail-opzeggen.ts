@@ -72,7 +72,14 @@ export type Opzegging = {
   link: string;
 };
 
-export const OPZEGGING_ONDERWERP = "We ruimen je leerlinggegevens op, je eigen werk blijft";
+/* ⭐ KORT EN NIEUWSGIERIG MAKEND (keuze eigenaar 8-8-2026). Er stond eerst
+   "…, je eigen werk blijft" achter, om meteen gerust te stellen. Twee redenen
+   waarom dat weg is: in de lijstweergave van een postvak wordt een onderwerp
+   afgekapt (op een telefoon rond de 35 tekens), dus juist het geruststellende
+   deel viel weg — en los daarvan roept de korte versie de vraag op die de mail
+   beantwoordt. De geruststelling staat in het groene blok in de mail zelf.
+   Zelfde tekst als de H1, zodat openen voelt als doorlezen. */
+export const OPZEGGING_ONDERWERP = "We ruimen je leerlinggegevens op";
 
 export function opzeggingTekst(h: Opzegging): string {
   const datum = nlDatum(h.wistOp);
