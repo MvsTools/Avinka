@@ -30,17 +30,34 @@ export const metadata: Metadata = {
 export default async function NieuwWachtwoordPage({
   searchParams,
 }: {
-  searchParams: Promise<{ token_hash?: string }>;
+  searchParams: Promise<{ token_hash?: string; email?: string }>;
 }) {
-  const { token_hash } = await searchParams;
+  const { token_hash, email } = await searchParams;
 
-  // Voor welk account is dit? Met een token is er nog geen sessie, dus dat weten
-  // we alleen uit de cookie die bij het aanvragen is gezet. Staat die er niet
-  // (mail op een ander apparaat geopend), dan laat het formulier het veld weg.
+  // Voor welk account is dit? Met een token is er nog geen sessie, dus het moet
+  // ergens anders vandaan komen. Twee bronnen, in deze volgorde:
+  //
+  //   1. uit de link zelf ({{ .Email }} in het mailsjabloon). Deze hoort bij het
+  //      token en werkt dus op ELK apparaat.
+  //   2. anders uit de cookie van het aanvragen. Die geldt alleen in dezelfde
+  //      browser, en dat is op mobiel vaak net niet: mailapps openen een link in
+  //      hun eigen ingebouwde browser, die zijn cookies niet deelt.
+  //
+  // ⚠️ De waarde uit de link is niet te vertrouwen — hij is door iedereen aan te
+  // passen. Dat mag hier: dit adres bepaalt NIET welk account een nieuw
+  // wachtwoord krijgt (dat doet het token), het is alleen het opschrift op het
+  // scherm en de gebruikersnaam voor de wachtwoordbeheerder.
+  //
+  // 🔑 Spaties terug naar `+`: een plusje in een adres (jij+school@…) betekent
+  // in een webadres een spatie, dus zo komt het hier binnen. Een spatie kán niet
+  // in een gewoon e-mailadres voorkomen, dus deze omzetting is veilig.
   let adres = "";
   let heeftSessie = false;
   if (token_hash) {
-    adres = (await cookies()).get(HERSTEL_ADRES_COOKIE)?.value ?? "";
+    adres =
+      (email ? email.replace(/ /g, "+") : "") ||
+      (await cookies()).get(HERSTEL_ADRES_COOKIE)?.value ||
+      "";
   } else {
     // Zonder token hoort dit scherm alleen te werken voor wie al is ingelogd.
     const supabase = await createClient();

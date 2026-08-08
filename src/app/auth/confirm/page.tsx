@@ -25,7 +25,13 @@ import Knop from "./Knop";
    ⚠️ De mailsjablonen zijn hier NIET voor aangepast. Dezelfde link, dezelfde
    parameters; alleen wat er aan onze kant gebeurt is veranderd. */
 
-type Zoek = { code?: string; token_hash?: string; type?: string; next?: string };
+type Zoek = {
+  code?: string;
+  token_hash?: string;
+  type?: string;
+  next?: string;
+  email?: string;
+};
 
 // De tekst hangt af van waaróm iemand hier is. Bewust zonder uitleg over
 // mailscanners: dat is een probleem van ons, niet van de lezer (keuze eigenaar
@@ -72,7 +78,7 @@ export default async function ConfirmPagina({
 }: {
   searchParams: Promise<Zoek>;
 }) {
-  const { code, token_hash, type, next } = await searchParams;
+  const { code, token_hash, type, next, email } = await searchParams;
   const bestemming = veiligIntern(next);
 
   // Zit er geen bruikbaar kaartje in de link, dan is er niets te bevestigen en
@@ -85,7 +91,11 @@ export default async function ConfirmPagina({
   // Het token gaat mee in de link en wordt daar pas bij het versturen ingewisseld,
   // dus dit doorsturen gebruikt niets op.
   if (type === "recovery" && token_hash) {
-    redirect(`/nieuw-wachtwoord?token_hash=${encodeURIComponent(token_hash)}`);
+    const naar = new URLSearchParams({ token_hash });
+    // Het adres reist mee als de mail het meestuurde, zodat het wachtwoordscherm
+    // ook op een ánder apparaat weet om welk account het gaat.
+    if (email) naar.set("email", email);
+    redirect(`/nieuw-wachtwoord?${naar}`);
   }
 
   const t = tekstVoor(type);
