@@ -129,19 +129,15 @@ create table if not exists public.klassen (
 --   alter table public.klassen add column if not exists leerlingen_data jsonb not null default '[]'::jsonb;
 --   alter table public.klassen add column if not exists actief boolean not null default true;
 
--- ── 3) TEKSTEN — bewaarde teksten-bibliotheek ───────────────────────────
-create table if not exists public.teksten (
-  id          uuid primary key default gen_random_uuid(),
-  user_id     uuid not null default auth.uid() references auth.users(id) on delete cascade,
-  titel       text not null default 'Naamloze tekst',
-  inhoud      text not null,
-  tool        text,
-  created_at  timestamptz default now()
-);
+-- ── 3) TEKSTEN — VERVALLEN ──────────────────────────────────────────────
+-- Hier stond `public.teksten`, de eerste bewaarde-teksten-bibliotheek. Die is
+-- opgevolgd door BESTANDEN (punt 5 hieronder) en op 8-8-2026 verwijderd: nul
+-- rijen, geen code die hem nog aanriep, maar hij kón voornamen bevatten en
+-- moest daarom wél mee in elke opruimronde. Zie database/migratie-teksten-weg.sql.
+-- Het nummer blijft leeg staan zodat de verwijzingen naar 4/5/6 blijven kloppen.
 
 -- ── Indexen (snel zoeken per gebruiker) ─────────────────────────────────
 create index if not exists idx_klassen_user on public.klassen(user_id);
-create index if not exists idx_teksten_user on public.teksten(user_id);
 
 -- ── Triggers voor updated_at ────────────────────────────────────────────
 drop trigger if exists trg_instellingen_updated on public.instellingen;
@@ -157,7 +153,6 @@ create trigger trg_klassen_updated
 -- ── ROW LEVEL SECURITY ──────────────────────────────────────────────────
 alter table public.instellingen enable row level security;
 alter table public.klassen      enable row level security;
-alter table public.teksten      enable row level security;
 
 -- Beleid: iedereen mag alleen zijn EIGEN rijen (lezen + schrijven).
 drop policy if exists "eigen instellingen" on public.instellingen;
@@ -166,10 +161,6 @@ create policy "eigen instellingen" on public.instellingen
 
 drop policy if exists "eigen klassen" on public.klassen;
 create policy "eigen klassen" on public.klassen
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
-drop policy if exists "eigen teksten" on public.teksten;
-create policy "eigen teksten" on public.teksten
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- ── KLASLIMIET PER PAKKET ─────────────────────────────────────────────────
@@ -221,7 +212,6 @@ create trigger trg_klassen_limiet
 -- krijgt bewust niets.)
 grant select, insert, update, delete on public.instellingen to authenticated;
 grant select, insert, update, delete on public.klassen      to authenticated;
-grant select, insert, update, delete on public.teksten      to authenticated;
 
 -- ⚠️ DE SERVERROL HEEFT EIGEN RECHTEN NODIG. `service_role` (de rol achter
 -- SUPABASE_SERVICE_ROLE_KEY) erft NIETS van `authenticated`. Hij had hier lang
@@ -287,9 +277,8 @@ create policy "eigen bestanden" on public.bestanden
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 grant select, insert, update, delete on public.bestanden to authenticated;
 
--- MIGRATIE van bestaande bewaarde teksten naar Bestanden (draai één keer):
---   insert into public.bestanden (user_id, parent_id, type, naam, inhoud, tool, created_at)
---   select user_id, null, 'tekst', titel, inhoud, tool, created_at from public.teksten;
+-- (Hier stond de eenmalige migratie van de oude tabel `teksten` naar Bestanden.
+--  Die is uitgevoerd en de tabel bestaat sinds 8-8-2026 niet meer.)
 
 -- ── 6) STATISTIEK — cumulatieve tellers per gebruiker (voor "Mijn statistieken") ─
 --  tellers = jsonb-map { 'rapport': 12, 'analyse': 3, 'gesprek': 8, ... }.

@@ -43,7 +43,6 @@ export type Klas = {
   actief: boolean; // eigenaar-eigen "actief"-vlag (alleen betekenisvol als eigenKlas)
   eigenKlas: boolean; // van jou, of een gedeelde klas van je duo-partner?
 };
-export type Tekst = { id: string; titel: string; inhoud: string; created_at: string };
 export type Rapport = { naam: string; verhaal: string; updated_at: string };
 
 // ── INSTELLINGEN ────────────────────────────────────────────────────────
@@ -380,40 +379,9 @@ export async function getRapporten(): Promise<Rapport[]> {
   return data as Rapport[];
 }
 
-// ── TEKSTEN ─────────────────────────────────────────────────────────────
-export async function getTeksten(): Promise<Tekst[]> {
-  const sb = createClient();
-  const { data, error } = await sb
-    .from("teksten")
-    .select("id, titel, inhoud, created_at")
-    .order("created_at", { ascending: false });
-  if (error || !data) return [];
-  return data as Tekst[];
-}
-
-export async function addTekst(
-  titel: string,
-  inhoud: string,
-  tool?: string,
-): Promise<Tekst | null> {
-  const sb = createClient();
-  const {
-    data: { user },
-  } = await sb.auth.getUser();
-  if (!user) return null;
-  const { data, error } = await sb
-    .from("teksten")
-    .insert({ user_id: user.id, titel, inhoud, tool: tool ?? null })
-    .select("id, titel, inhoud, created_at")
-    .single();
-  if (error || !data) return null;
-  return data as Tekst;
-}
-
-export async function deleteTekst(id: string): Promise<void> {
-  const sb = createClient();
-  await sb.from("teksten").delete().eq("id", id);
-}
+// De oude "bewaarde teksten"-bibliotheek (tabel public.teksten) stond hier.
+// Opgevolgd door BESTANDEN hieronder; tabel en functies zijn 8-8-2026
+// verwijderd — zie database/migratie-teksten-weg.sql voor het waarom.
 
 // ── BESTANDEN (mappen + bestanden in één boom) ────────────────────────────
 export type BestandType = "map" | "tekst" | "plattegrond" | "les";
