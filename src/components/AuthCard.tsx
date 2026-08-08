@@ -150,7 +150,13 @@ export default function AuthCard({
             id="email"
             name="email"
             type="email"
-            autoComplete="email"
+            // 🔑 `username` en niet `email`, ook al staat er een e-mailadres in.
+            // `type="email"` regelt het toetsenbord en de invoercontrole;
+            // `autocomplete` vertelt de wachtwoordbeheerder wélk veld de
+            // gebruikersnaam is die bij dit wachtwoord hoort. Met `email` ziet
+            // hij een los adresveld naast een los wachtwoordveld en koppelt hij
+            // ze niet, en dan biedt hij ook niets aan om op te slaan.
+            autoComplete="username"
             required
             placeholder="jij@voorbeeld.nl"
             value={email}
