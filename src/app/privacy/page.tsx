@@ -296,9 +296,24 @@ export default function PrivacyPage() {
             <strong>De overdracht:</strong> maximaal 30 dagen na het laatste bericht, en
             eerder als diezelfde persoon een nieuw bericht stuurt (dat vervangt het oude).
           </li>
+          {/* ⚠️ Hier stond: "Account-, klas- en eigen gegevens: zolang je een
+              account hebt." Dat klopt niet meer sinds opzeggen de leerlinggegevens
+              opruimt (database/migratie-verwijder-klasdata.sql): die verdwijnen
+              90 dagen ná je abonnement, óók als je je account houdt.
+              ⚠️ En schrijf hier nooit één termijn voor "alle gegevens over
+              kinderen": rapportconcepten en de overdracht hebben hun eigen klok
+              (de twee punten hierboven), los van het abonnement. */}
           <li>
-            <strong>Account-, klas- en eigen gegevens:</strong> zolang je een account hebt.
-            Verwijder je je account, dan verwijderen we deze gegevens.
+            <strong>Gegevens over je leerlingen</strong> (je klassenlijst, plattegronden,
+            agenda-afspraken en taken): zolang je abonnement loopt, en daarna nog 90 dagen.
+            Daarna verwijderen we ze automatisch, ook als je je account houdt. We laten je
+            dat ruim van tevoren per e-mail weten, zodat je ze eerst kunt downloaden.
+          </li>
+          <li>
+            <strong>Je eigen werk en je account</strong> (lesontwerpen, werkbladen,
+            draaiboeken, je weekrooster en je voorkeuren): zolang je een account hebt. Daar
+            staan geen leerlinggegevens in, dus die bewaren we gewoon voor je. Verwijder je
+            je account, dan verwijderen we alles.
           </li>
           <li>
             <strong>Technische gebruiks- en AI-logs</strong> (tellingen, geen inhoud):
@@ -327,13 +342,21 @@ export default function PrivacyPage() {
           <li>een gegeven toestemming weer in te trekken.</li>
         </ul>
         <p>
-          Veel kun je zelf direct in het platform doen. Bij{" "}
-          <strong>Instellingen &rsaquo; Mijn gegevens</strong> zie je in een leesbaar overzicht
-          precies wat we van je bewaren, dat je ook kunt downloaden (inzage en
-          overdraagbaarheid), en kun je je hele account,
-          met alle bijbehorende gegevens, definitief laten verwijderen. Je klas, je
-          opgeslagen teksten en je plattegronden verwijder je daar los van ook op elk moment
-          zelf. Kom je ergens niet uit, of wil je iets anders regelen, mail dan{" "}
+          {/* ⚠️ Verwees eerst naar "Instellingen › Mijn gegevens". Dat scherm zit
+              sinds 8-8-2026 op /mijn-gegevens, bewust BUITEN het dashboard: wie
+              geen abonnement meer heeft komt het dashboard niet meer in, en juist
+              die persoon wil zijn gegevens ophalen. Verhuis deze verwijzing dus
+              nooit terug naar een pagina onder /dashboard. */}
+          Veel kun je zelf direct in het platform doen. Op{" "}
+          <strong>Wat we van jou bewaren</strong> (avinka.nl/mijn-gegevens) zie je in een
+          leesbaar overzicht precies wat er onder je account staat, en kun je per onderdeel
+          downloaden wat je wilt meenemen: je rapportteksten als Word-bestand, je klassenlijst
+          en taken als Excel, je agenda als agendabestand, of alles in één keer (inzage en
+          overdraagbaarheid). Inloggen is daarvoor genoeg; een abonnement heb je niet nodig.
+          Je hele account, met alle bijbehorende gegevens, laat je definitief verwijderen bij{" "}
+          <strong>Instellingen</strong>; je klas, je opgeslagen teksten en je plattegronden
+          verwijder je daar los van ook op elk moment zelf. Kom je ergens niet uit, of wil je
+          iets anders regelen, mail dan{" "}
           {CONTACT_EMAIL}; we handelen zo&apos;n verzoek uiterlijk binnen 30 dagen af. Ben je
           het ergens niet mee eens, dan kun je ook een klacht indienen bij de Autoriteit
           Persoonsgegevens (autoriteitpersoonsgegevens.nl).
