@@ -82,10 +82,13 @@ export default function WachtwoordWijzigen({ email }: { email: string }) {
       return;
     }
 
+    // Eerst dichtklappen, dán melden. Het dichtklappen haalt het formulier uit
+    // de pagina, en dat is precies het signaal waaraan een browser een geslaagde
+    // wachtwoordwijziging herkent (zie de opmerking bij het formulier).
     sluit();
     setUitkomst({
       ok: true,
-      tekst: "Je wachtwoord is gewijzigd. Vanaf nu log je in met het nieuwe.",
+      tekst: "Je wachtwoord is gewijzigd. Vanaf nu log je in met het nieuwe wachtwoord.",
     });
   }
 
@@ -102,7 +105,23 @@ export default function WachtwoordWijzigen({ email }: { email: string }) {
         <p className="text-ink">••••••••</p>
 
         {open && (
-          <div className="mt-3 space-y-3">
+          /* 🔑 DIT MOET EEN ECHT <form> ZIJN, en niet een paar losse velden.
+             Een browser biedt "wachtwoord opslaan" alleen aan als hij herkent
+             dát er een wachtwoord wordt gewijzigd, en daarvoor kijkt hij naar
+             een formulier met de juiste `autocomplete`-waarden: `username`,
+             `current-password` en `new-password`. Losse invoervelden met een
+             knop eronder ziet hij niet als zodanig, en dan biedt hij niets aan.
+             Wij kunnen het opslaan niet afdwingen (daar is geen knop voor, en
+             terecht), maar dit is precies het deel waar wij wél over gaan.
+             Het formulier verdwijnt bovendien uit de pagina zodra het gelukt is,
+             en dat is het tweede signaal waar diezelfde herkenning op leunt. */
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              opslaan();
+            }}
+            className="mt-3 space-y-3"
+          >
             {/* Verborgen, maar wel aanwezig: een wachtwoordbeheerder heeft een
                 gebruikersnaam nodig om het nieuwe wachtwoord aan het juiste
                 account te koppelen. */}
@@ -144,24 +163,19 @@ export default function WachtwoordWijzigen({ email }: { email: string }) {
                 autoComplete="new-password"
                 value={herhaling}
                 onChange={(e) => setHerhaling(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    opslaan();
-                  }
-                }}
                 className={"mt-1 " + veld}
               />
             </div>
+            {/* Een echte verzendknop, zodat Enter in een veld het formulier
+                verstuurt zonder dat we dat zelf hoeven na te bouwen. */}
             <button
-              type="button"
-              onClick={opslaan}
+              type="submit"
               disabled={bezig}
               className="rounded-xl bg-brand px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-dark disabled:opacity-50"
             >
               {bezig ? "Bezig…" : "Wachtwoord opslaan"}
             </button>
-          </div>
+          </form>
         )}
 
         {uitkomst && (
