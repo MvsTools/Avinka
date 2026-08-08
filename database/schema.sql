@@ -1945,6 +1945,13 @@ revoke execute on function public.set_updated_at() from public, anon;
 revoke execute on function public.duo_koppel_voorbeeld(text) from public, anon;
 revoke execute on function public.duo_koppel_accepteren(text) from public, anon;
 
+-- De duo-uitnodiging persoonlijk maken (database/migratie-uitnodiging-voornaam.sql).
+-- ⚠️ Ziet er onschuldig uit, is het niet: wie deze mag aanroepen kan adressen
+-- aftasten en zien of ze een Avinka-account hebben én hoe die persoon heet.
+-- Alleen de server, nooit 'authenticated'.
+revoke execute on function public.wijs_voornaam_van_adres(text) from public, anon, authenticated;
+grant  execute on function public.wijs_voornaam_van_adres(text) to service_role;
+
 -- Opzeggen verwijdert de klasgegevens (database/migratie-verwijder-klasdata.sql).
 -- Deze drie gaan verder dan anon buitensluiten: ook 'authenticated' mag er niet
 -- bij. De eerste twee geven gegevens van ANDERE gebruikers terug of wissen ze;

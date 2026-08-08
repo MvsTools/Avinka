@@ -25,6 +25,8 @@
  * eerder heeft gehad. Zet de verzending dus nooit uit "omdat het toch niemand
  * raakt": dan raakt het ook niemand meer die zijn gegevens kwijtraakt. */
 
+import { groet } from "./mail";
+
 function veilig(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -45,19 +47,6 @@ export function nlDatum(datum: string): string {
   const d = new Date(datum);
   if (Number.isNaN(d.getTime())) return datum;
   return `${d.getDate()} ${MAANDEN[d.getMonth()]} ${d.getFullYear()}`;
-}
-
-/* "Hallo Marieke," — of gewoon "Hallo," als we geen naam hebben.
- * ⚠️ De voornaam KAN leeg zijn (de databasefunctie geeft coalesce(..., '')
- * terug), en "Hallo ," is precies het soort slordigheid dat een persoonlijke
- * opening juist onpersoonlijk maakt.
- * ⚠️ Deze mail heeft als ENIGE een groet. Dat is bewust (eigenaar 8-8): het
- * gaat hier over gegevens van jouw kinderen, en dat is persoonlijker dan een
- * proef die afloopt. In mail-proef-verlopen.ts is de aanhef juist bewust
- * weggelaten. Trek ze dus niet "voor de consistentie" gelijk. */
-function groet(voornaam: string): string {
-  const naam = voornaam.trim();
-  return naam ? `Hallo ${naam},` : "Hallo,";
 }
 
 export type Opzegging = {

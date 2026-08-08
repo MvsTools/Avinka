@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { verstuurMail } from "@/lib/mail";
+import { serviceClient } from "@/lib/supabase-service";
 import { uitnodigingHtml, uitnodigingOnderwerp, uitnodigingTekst } from "@/lib/mail-duo";
 
 // Een collega uitnodigen bij een groep, met de uitnodiging per mail.
@@ -79,7 +80,35 @@ export async function POST(request: NextRequest) {
 
   const oorsprong = new URL(request.url).origin;
   const link = `${oorsprong}/dashboard/instellingen?duo=${code}`;
-  const gegevens = { vanWie, klasNaam, link };
+
+  // Kennen we deze collega al? Dan wordt het "Hallo Marieke," in plaats van
+  // "Hallo,". Zo niet, dan is dat geen fout: je nodigt juist vaak iemand uit
+  // die nog geen account heeft.
+  //
+  // ⚠️ ALLEEN SERVER-SIDE, met de servicesleutel. De functie vertelt of een
+  // adres een account heeft en hoe die persoon heet; met de sessie van de
+  // uitnodiger erop zou iedere gebruiker adressen kunnen aftasten. De uitkomst
+  // blijft hier: hij bepaalt alleen de aanhef van een mail die naar dát adres
+  // gaat, en gaat nooit terug naar de uitnodiger.
+  //
+  // Geen servicesleutel of een fout? Dan gewoon geen naam. Een persoonlijke
+  // aanhef is een extraatje, geen voorwaarde om te kunnen uitnodigen.
+  let voornaam = "";
+  const db = serviceClient();
+  if (db) {
+    const { data: gevonden, error: naamFout } = await db.rpc("wijs_voornaam_van_adres", {
+      p_email: email,
+    });
+    if (naamFout) {
+      // Loggen, niet laten struikelen (zie mail-verzendstraat: log bij een
+      // mislukte actie ALTIJD de reden, ook als je gewoon doorgaat).
+      console.error("voornaam opzoeken mislukt:", naamFout.message);
+    } else if (typeof gevonden === "string") {
+      voornaam = gevonden;
+    }
+  }
+
+  const gegevens = { vanWie, klasNaam, link, voornaam };
 
   const verstuurd = await verstuurMail({
     naar: email,
