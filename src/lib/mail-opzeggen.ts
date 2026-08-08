@@ -56,8 +56,18 @@ export type Opzegging = {
   /* Sinds wanneer deze leerkracht geen abonnement meer heeft, als jjjj-mm-dd.
      ⚠️ NODIG OM NIET TE LIEGEN: deze mail gaat op dag 83, niet op dag 90. Een
      zin als "je gebruikt Avinka al 90 dagen niet meer" is op het moment van
-     versturen dus onwaar. Met deze datum noemt de mail de REGEL (90 dagen) en
-     de twee datums eromheen, en klopt elke zin. */
+     versturen dus onwaar. Met deze datum noemt de mail de termijn én de twee
+     datums eromheen, en klopt elke zin.
+
+     ⚠️ EN DE TERMIJN LOOPT VANAF DEZE DATUM, niet vanaf het ontstaan van de
+     gegevens. "Gegevens over kinderen bewaren wij maximaal 90 dagen" stond hier
+     eerst en dát was onwaar (gevonden door de eigenaar, 8-8): zolang iemand
+     betaalt bewaren we zijn klassenlijst en agenda gewoon. De 90 dagen gaan pas
+     lopen ná het einde van het abonnement. Vandaar "daarna nog 90 dagen".
+     ⚠️ Twee gegevens hebben wél een eigen termijn, los van het abonnement:
+     rapportteksten na 90 dagen (wis-oude-rapporten) en de duo-overdracht na 30
+     dagen (wis-oude-overdracht). Beweer hier dus nooit iets over "alle" of
+     "álle gegevens over kinderen" — dan klopt het weer niet. */
   abonnementTot: string;
   /* De datum waarop er echt gewist wordt, als jjjj-mm-dd. Komt uit
      wijs_verwijder_waarschuwing() en houdt al rekening met de respijttermijn,
@@ -87,7 +97,7 @@ export function opzeggingTekst(h: Opzegging): string {
   return [
     groet(h.voornaam),
     "",
-    `Sinds ${tot} heb je geen abonnement meer op Avinka. Gegevens over kinderen bewaren wij maximaal 90 dagen, dus op ${datum} ruimen we ze op.`,
+    `Sinds ${tot} heb je geen abonnement meer op Avinka. Gegevens over je leerlingen bewaren we daarna nog 90 dagen, dus op ${datum} ruimen we ze op.`,
     "",
     "Je eigen werk bewaren we wel: lesontwerpen, werkbladen en draaiboeken, mocht je ze ooit nog nodig hebben.",
     "",
@@ -115,7 +125,7 @@ export function opzeggingHtml(h: Opzegging): string {
       <tr><td style="padding:34px 36px 0;">
         <h1 style="margin:0;font-family:'Bricolage Grotesque',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:800;font-size:26px;line-height:1.25;color:#221c3a;">We ruimen je leerlinggegevens op</h1>
         <p style="margin:16px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">${hoi}</p>
-        <p style="margin:10px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Sinds ${tot} heb je geen abonnement meer op Avinka. Gegevens over kinderen bewaren wij maximaal 90 dagen, dus op <strong style="color:#221c3a;">${datum}</strong> ruimen we ze op.</p>
+        <p style="margin:10px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Sinds ${tot} heb je geen abonnement meer op Avinka. Gegevens over je leerlingen bewaren we daarna nog 90 dagen, dus op <strong style="color:#221c3a;">${datum}</strong> ruimen we ze op.</p>
       </td></tr>
       <tr><td style="padding:20px 36px 0;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f1f8f4;border-radius:14px;">
