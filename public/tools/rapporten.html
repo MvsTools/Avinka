@@ -2055,7 +2055,13 @@ async function vulMijnKlas(toevoegFn){
         avinkaMagRapportenBewerken=(d.magRapportenBewerken!==false);
         window.avinkaKlasGeslacht={};
         ((d&&d.leerlingenData)||[]).forEach(function(l){ if(l&&l.naam) window.avinkaKlasGeslacht[l.naam.toLowerCase()] = l.geslacht==='j'?'jongen':(l.geslacht==='m'?'meisje':''); });
-        if(!avinkaMagRapportenBewerken){ toonMeekijkMelding(); zetLeesstandAan(); }
+        /* ⚠️ Wél meteen de schrijfknoppen uitzetten, NIET meteen de melding
+           tonen. Die melding hoort bij het scherm waar je op landt; toonden we
+           hem hier, dan stond hij in zijn eentje boven een lege pagina terwijl
+           de kaarten nog moesten komen. Dat zag de eigenaar 8-8 en het is
+           precies zo slordig als het klinkt. toonMeekijkMelding() wordt nu
+           aangeroepen zodra er echt een scherm staat. */
+        if(!avinkaMagRapportenBewerken){ zetLeesstandAan(); }
         return {naam:d.naam||'', leerlingen:d.leerlingen||[]};
       }catch(e){
         // Niet bewaren: een tijdelijke storing mag niet de hele sessie blijven hangen.
@@ -2100,6 +2106,7 @@ async function vulMijnKlas(toevoegFn){
     if(typeof maakKaarten!=='function'||typeof naamLijst==='undefined'){
       stopWachtregel();
       if(startWacht) startWacht.toon();
+      toonMeekijkMelding();
       return;
     }
     /* 🔑 HIER VALT HET BESLUIT, EN DAT MOET ZO VROEG MOGELIJK.
@@ -2124,6 +2131,7 @@ async function vulMijnKlas(toevoegFn){
       if(startWacht) startWacht.toon();
       var s=document.getElementById('scherm-start');
       if(s) s.style.display='';
+      toonMeekijkMelding();
       return;
     }
     // maakKaarten() zet zelf het overzichtsscherm actief, dus scherm 1 hoeft
@@ -2131,6 +2139,8 @@ async function vulMijnKlas(toevoegFn){
     stopWachtregel();
     if(startWacht) startWacht.laatStaan();
     maakKaarten();
+    // Pas nu, als de kaarten er staan, hoort de melding erbij.
+    toonMeekijkMelding();
   }
 
   /* Alles waarmee je een rapport zou schrijven, uitzetten op het
