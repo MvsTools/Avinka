@@ -2,7 +2,7 @@
 
 Voor de privacyjurist. Dit blad beschrijft feitelijk wat het platform doet met gegevens, zodat de beoordeling en de verwerkersovereenkomst niet met uitvraagwerk hoeven te beginnen. Alles hieronder is nagelopen in de broncode; onderaan staat een eerlijke lijst met punten waar de praktijk en de bestaande teksten nog niet kloppen.
 
-Versie: 24 juli 2026. Status: nog niet live, geen echte gebruikers.
+Versie: 8 augustus 2026. Status: nog niet live, geen echte gebruikers.
 
 Bijgewerkt op 24 juli 2026: paragraaf 4 over het koppelen van de schoolagenda is
 nieuw, met bijbehorende vragen en openstaande punten. Dat onderdeel is na de
@@ -122,14 +122,30 @@ Voornemen richting Anthropic: hun DPA tekenen en Zero Data Retention aanvragen (
 
 ## 6. Rechten van betrokkenen, nu al gebouwd
 
-- Data-export van het eigen account, als leesbare pagina of als JSON.
-- Account verwijderen met één actie; alle gekoppelde gegevens gaan mee via cascade.
-- Per item wissen (klas, rapport, bestand, taak).
-- Automatische opschoning van concept-rapportteksten na 90 dagen (nachtelijke databasetaak).
+**Inzage en overdraagbaarheid (art. 15 en 20).** Op een eigen pagina, `/mijn-gegevens`, ziet de leerkracht per categorie wat er onder zijn account staat, met een uitklapbare weergave van de inhoud. Elke categorie is los te downloaden in een formaat dat op zijn computer bruikbaar is: rapportteksten en de duo-overdracht als tekstverwerkerbestand, klassenlijst en taken als spreadsheet, de agenda als agendabestand (ics). Meerdere categorieën tegelijk komen als zip. Daarnaast is er één machineleesbaar JSON-bestand met alles.
+
+Twee keuzes daarin die wij bewust hebben gemaakt:
+
+- **De pagina staat buiten de afgeschermde omgeving.** Wie geen abonnement meer heeft, komt niet meer in het dashboard. Zou de export daar onder hangen, dan is het inzagerecht onbereikbaar voor precies de groep die er het vaakst gebruik van maakt: mensen die net gestopt zijn. Inloggen volstaat; een abonnement is niet nodig.
+- **Twee velden gaan er nooit uit:** de privélink naar een gekoppelde schoolagenda en het deel-token van een draaiboek. Beide geven toegang aan wie ze in handen krijgt, en een geëxporteerd bestand gaat per mail rond of blijft in een downloadmap staan.
+
+**Wissen (art. 17).** Account verwijderen met één actie; alle gekoppelde gegevens gaan mee via cascade. Per item wissen (klas, rapport, bestand, taak).
+
+**Bewaartermijnen, automatisch afgedwongen.** Drie nachtelijke databasetaken:
+
+| wat | termijn | loopt vanaf |
+|---|---|---|
+| Concept-rapportteksten | 90 dagen | de laatste bewerking, ongeacht abonnement |
+| Overdracht tussen duo-collega's | 30 dagen | de laatste bewerking, ongeacht abonnement |
+| Klassenlijst, plattegronden, agenda-afspraken, taken en de duo-gegevens | 90 dagen | het einde van het abonnement |
+
+De derde is nieuw. Wie zijn abonnement laat aflopen raakt zijn gegevens over kinderen dus kwijt, ook als hij zijn account houdt; zijn eigen lesmateriaal (lesontwerpen, werkbladen, draaiboeken) blijft staan, omdat daar geen leerlinggegevens in zitten. Er gaat een aankondiging per e-mail uit, en de verwijdering kan pas plaatsvinden als die mail minstens zeven dagen eerder is verstuurd — dat is een voorwaarde in de databasefunctie zelf, geen procedureafspraak.
+
+⚠️ **Eerlijk over de huidige stand:** deze derde taak draait elke nacht, maar verwijdert op dit moment niets. De aankondigingsmail gaat namelijk pas uit zodra de betaalfunctie live is, en zonder die mail weigert de verwijderfunctie te wissen. Vanaf de livegang werkt de keten volledig.
 
 ## 7. Wat er al aan juridische teksten ligt
 
-Een privacyverklaring en algemene voorwaarden, beide met versienummer en met een registratie van wie welke versie heeft geaccepteerd. In beide staan nog placeholders voor bedrijfsnaam, adres, KvK-nummer en contactadres. Deze teksten zijn opgesteld zonder juridische toetsing en zijn precies wat wij graag nagekeken zien.
+Een privacyverklaring en algemene voorwaarden, beide met versienummer en met een registratie van wie welke versie heeft geaccepteerd. Bedrijfsnaam, vestigingsadres, KvK-nummer en contactadres staan er inmiddels in. Deze teksten zijn opgesteld zonder juridische toetsing en zijn precies wat wij graag nagekeken zien.
 
 Een verwerkersovereenkomst bestaat nog niet. De voorwaarden beloven er wel al een op verzoek.
 
@@ -140,7 +156,7 @@ Een verwerkersovereenkomst bestaat nog niet. De voorwaarden beloven er wel al ee
 3. **Status van de gemaskeerde data.** Blijft dit een persoonsgegeven, en zo ja: wat mogen wij hier richting scholen feitelijk over beweren zonder dat het misleidend wordt?
 4. **Een verwerkersovereenkomst die scholen direct kunnen tekenen**, bij voorkeur toegesneden vanuit het model van het Privacyconvenant Onderwijs, inclusief de bijlagen (gegevenscategorieën, subverwerkers, beveiligingsmaatregelen, bewaartermijnen). Dat model verwachten schoolbestuurders en functionarissen gegevensbescherming.
 5. Nakijken van de privacyverklaring en de voorwaarden.
-6. Zijn onze bewaartermijnen verdedigbaar, met name de 90 dagen voor concept-rapportteksten?
+6. **Zijn onze bewaartermijnen verdedigbaar** (paragraaf 6)? Met name: 90 dagen voor concept-rapportteksten, en 90 dagen ná het einde van een abonnement voor de klassenlijst en de agenda. Is die tweede termijn te lang, of juist redelijk als hersteltermijn voor iemand die per ongeluk niet verlengt? En mogen wij de klassenlijst wél onbeperkt bewaren zolang het abonnement loopt, of verwacht u ook daar een grens?
 7. Is een digitaal klik-akkoord rechtsgeldig, en hoe borgen wij proportioneel dat de ondertekenaar bevoegd is namens de school?
 8. Hebben wij een functionaris gegevensbescherming nodig, en moeten wij een DPIA uitvoeren?
 9. **De schoolagenda (paragraaf 4).** De leerkracht koppelt een agenda die van de school is en die hij zelf niet heeft opgesteld. Mag hij die link op eigen houtje aan een externe dienst geven, of is daar toestemming van de school voor nodig? En wie is voor die binnengehaalde afspraken verwerkingsverantwoordelijke: de school, de leerkracht, of wij?
@@ -153,14 +169,16 @@ Deze punten zijn ons bekend en nog niet opgelost. Wij noemen ze liever zelf dan 
 
 1. De privacyverklaring noemt een bewaartermijn van 24 maanden voor technische logs. Daar zit nog geen automatische opschoning achter.
 2. Google Fonts, cdnjs en jsDelivr worden vanuit de browser geladen op alle toolpagina's, maar staan niet in de subverwerkerslijst van de privacyverklaring.
-3. Bij het delen van een draaiboek worden e-mailadressen van ontvangers opgeslagen en is er een deel-link die buiten de inlog om werkt. Deze tabel ontbreekt in onze data-export.
-4. Ingestuurde feedback en de AI-verbruikslogs zitten niet in de data-export.
+3. Bij het delen van een draaiboek worden e-mailadressen van ontvangers opgeslagen en is er een deel-link die buiten de inlog om werkt. ~~Deze tabel ontbreekt in onze data-export.~~ **Opgelost:** de gedeelde bestanden staan sinds 8 augustus 2026 in de export, zonder het deel-token zelf (zie paragraaf 6). De deel-link die buiten de inlog om werkt bestaat nog wel; dat blijft een aandachtspunt.
+4. ~~Ingestuurde feedback en de AI-verbruikslogs zitten niet in de data-export.~~ **Opgelost** op 8 augustus 2026; beide staan er nu in.
 5. De opslagregio van Supabase staat als bewering in onze privacyverklaring maar is niet uit de configuratie te controleren; wij verifiëren dat in het Supabase-dashboard vóór het gesprek.
 6. De maskering is client-side, zonder controle aan de serverkant (zie paragraaf 3).
 7. De maskering van agendatitels dekt alleen de kinderen uit de eigen klassen van de leerkracht. Een naam van een kind uit een andere groep blijft staan (paragraaf 4).
-8. De gekoppelde agenda's en de opgehaalde afspraken zitten nog niet in de data-export van het account.
-9. Voor de agenda-afspraken geldt nog geen automatische bewaartermijn. Ze blijven staan tot de leerkracht de agenda loskoppelt of zijn account verwijdert. Voornemen is om afspraken van afgesloten schooljaren op te ruimen, in lijn met het uitgangspunt dat wij alleen het huidige en het vorige schooljaar tonen.
+8. ~~De gekoppelde agenda's en de opgehaalde afspraken zitten nog niet in de data-export van het account.~~ **Opgelost** op 8 augustus 2026. De privélink naar de agenda zelf blijft er bewust buiten (zie paragraaf 6).
+9. Voor agenda-afspraken gold lange tijd géén bewaartermijn. Sinds 8 augustus 2026 vallen zij onder de opruiming van 90 dagen na het einde van het abonnement (paragraaf 6). **Er blijft één gat:** voor een leerkracht met een lopend abonnement staan afspraken van afgesloten schooljaren er nog steeds. Voornemen is die alsnog op te ruimen, in lijn met het uitgangspunt dat wij alleen het huidige en het vorige schooljaar tonen.
 10. Wij hebben niet gecontroleerd of de gebruiksvoorwaarden van Parro, Social Schools, Outlook of Google het uitlezen van hun agendalink door een derde partij toestaan.
+11. **Plattegronden zijn niet als afbeelding te downloaden.** Ze verdwijnen wél bij de opruiming van 90 dagen. De gegevens zitten in het JSON-bestand, maar dat is voor een leerkracht niet bruikbaar om de plattegrond terug te zien. Wij vinden dat het recht op overdraagbaarheid daarmee formeel gedekt is maar praktisch niet, en willen het opgelost hebben.
+12. **De opruiming van 90 dagen is nog nooit op echte gebruikersgegevens uitgevoerd**, omdat de keten pas werkt zodra de betaalfunctie live gaat. Wel volledig getest met een wegwerpaccount dat de hele molen doorging (klas, rapporten, bestanden, taken, agenda-afspraken): negentien controles, alle geslaagd, tweemaal uitgevoerd. Het testscript is bijgevoegd op verzoek.
 
 ---
 
