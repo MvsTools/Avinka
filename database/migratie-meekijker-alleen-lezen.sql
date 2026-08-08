@@ -80,3 +80,18 @@ create policy "gedeelde map beheren" on public.bestanden
         and public.binnen_gedeelde_map(bestanden.id, k.gedeelde_map_id)
     )
   );
+
+-- ============================================================================
+-- VERVOLG, ZELFDE AVOND: DE ROLKEUZE GAAT UIT HET SCHERM
+-- ----------------------------------------------------------------------------
+-- ⚖️ Besluit eigenaar 8-8-2026, na de vraag of een rol wel bij dit platform
+-- past. Voor nu niet: er is één echte situatie, twee leerkrachten die samen één
+-- groep draaien. Uitnodigen maakt altijd 'volledig'.
+--
+-- ⚠️ De kolom en de policies hierboven BLIJVEN staan. Ze zijn correct en kosten
+-- niets; bij de schoollicentie wordt de keuze weer aangezet.
+--
+-- Bestaande meekijk-koppels omzetten, anders hangen ze voorgoed in een rol die
+-- nergens meer te wijzigen is. Het was er precies één (een testkoppeling).
+update public.duo_koppels set rol = 'volledig' where rol <> 'volledig';
+alter table public.duo_koppels alter column rol set default 'volledig';

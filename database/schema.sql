@@ -1473,10 +1473,15 @@ create table if not exists public.duo_koppels (
   status          text not null default 'uitgenodigd', -- 'uitgenodigd' | 'actief'
   -- 'volledig'  = alles, zoals je duo-partner: klas, rapporten, bestanden,
   --               taken en overdracht.
-  -- 'meekijken' = de dagelijkse samenwerking (klas, gedeelde map, taken,
-  --               overdracht) maar GEEN rapporten. Voor een assistent: die
-  --               werkt met de kinderen, maar geschreven oordelen over
-  --               kinderen zijn een ander soort gegeven.
+  -- 'meekijken' = alles van de groep LEZEN, niets schrijven (aangescherpt 8-8).
+  --
+  -- ⚖️ 8-8-2026: DE ROLKEUZE STAAT NIET MEER IN HET SCHERM. Uitnodigen maakt
+  -- altijd 'volledig' — voor nu is er één situatie, twee leerkrachten die samen
+  -- één groep draaien en samen verantwoordelijk zijn. De kolom en de policies
+  -- blijven bewust staan: rolprofielen per beroep (OA, IB, directie) horen bij
+  -- de schoollicentie, en dan wordt de keuze hier weer aangezet in plaats van
+  -- dat het mechaniek opnieuw gebouwd moet worden. Bestaande meekijk-rijen zijn
+  -- omgezet (het was er één, een testkoppeling).
   rol             text not null default 'volledig',
   code            text unique,
   created_at      timestamptz default now(),
