@@ -23,7 +23,29 @@ export type Uitnodiging = {
   klasNaam: string;
   /* De volledige link naar de instellingenpagina met de code erin. */
   link: string;
+  /* Wat je straks mag. Ontbreekt hij, dan zegt de mail er niets over. */
+  rol?: "volledig" | "meekijken";
 };
+
+/* 🔑 WAT JE MAG, IN DE MAIL ZELF (8-8-2026).
+   Dit stond er niet, en de eigenaar merkte bij het testen dat hij pas dóórhad
+   dat hij meekijker was toen hij op Rapporten klikte en het daar zag staan. Je
+   hoort vooraf te weten waar je ja tegen zegt.
+   ⚠️ Het woord "meekijken" is ons eigen jargon. In de mail dus niet de rolnaam
+   maar wat je ermee kunt, en wie wat blijft doen. */
+function watJeMag(u: Uitnodiging): string {
+  if (u.rol === "meekijken") {
+    const wie = u.vanWie.trim();
+    return (
+      "Je kunt meekijken bij deze groep: je ziet de gedeelde bestanden, taken en de overdracht. " +
+      `Rapporten schrijven blijft bij ${wie || "je collega"}.`
+    );
+  }
+  if (u.rol === "volledig") {
+    return "Je krijgt volledige toegang: rapporten, gedeelde bestanden, taken en de overdracht.";
+  }
+  return "";
+}
 
 export function uitnodigingOnderwerp(u: Uitnodiging): string {
   const wie = u.vanWie.trim() || "Een collega";
@@ -38,6 +60,7 @@ export function uitnodigingTekst(u: Uitnodiging): string {
     "Hallo,",
     "",
     `${wie} draait ${u.klasNaam} en wil dat samen met jou doen in Avinka.`,
+    ...(watJeMag(u) ? ["", watJeMag(u)] : []),
     "",
     u.link,
     "",
@@ -53,6 +76,10 @@ export function uitnodigingHtml(u: Uitnodiging): string {
   const wie = veilig(u.vanWie.trim() || "Een collega");
   const klas = veilig(u.klasNaam);
   const link = veilig(u.link);
+  const mag = veilig(watJeMag(u));
+  const magRegel = mag
+    ? `<p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#4a4458;">${mag}</p>`
+    : "";
   return `<style>
   @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Plus+Jakarta+Sans:wght@400;700&display=swap');
 </style>
@@ -62,6 +89,7 @@ export function uitnodigingHtml(u: Uitnodiging): string {
       <tr><td style="padding:34px 36px 0;">
         <h1 style="margin:0;font-family:'Bricolage Grotesque',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:800;font-size:26px;line-height:1.25;color:#221c3a;">${wie} nodigt je uit</h1>
         <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Om <strong style="color:#221c3a;">${klas}</strong> samen te draaien in Avinka.</p>
+        ${magRegel}
       </td></tr>
       <tr><td align="center" style="padding:26px 36px 0;">
         <table cellpadding="0" cellspacing="0" border="0"><tr>

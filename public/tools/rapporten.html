@@ -1986,7 +1986,16 @@ async function vulMijnKlas(toevoegFn){
      de groep van een collega, dan niet. Standaard true, zodat een oudere
      server die dit veld nog niet meestuurt niets kapotmaakt. */
   var avinkaMagRapportenBewerken=true;
-  async function haalKlas(){ try{ var r=await api('/api/klas'); if(!r.ok)return {naam:'',leerlingen:[]}; var d=await r.json(); avinkaKlasId=d.id||''; avinkaMagRapportenBewerken=(d.magRapportenBewerken!==false); window.avinkaKlasGeslacht={}; ((d&&d.leerlingenData)||[]).forEach(function(l){ if(l&&l.naam) window.avinkaKlasGeslacht[l.naam.toLowerCase()] = l.geslacht==='j'?'jongen':(l.geslacht==='m'?'meisje':''); }); if(!avinkaMagRapportenBewerken){ toonMeekijkMelding(); zetLeesstandAan(); } return {naam:d.naam||'', leerlingen:d.leerlingen||[]}; }catch(e){ return {naam:'',leerlingen:[]}; } }
+  /* De uitkomst van /api/klas, één keer opgehaald.
+     🔑 Dit stond er niet en dat kostte een zichtbare fout: haalKlas() werd twee
+     keer aangeroepen (prefillStart én autoVul), dus de klas werd twee keer over
+     het net gehaald. Samen met /api/rapporten waren dat drie aanvragen vóórdat
+     de tool wist of jij meekijker bent — terwijl het vangnet van de schermwacht
+     na 700ms scherm 1 alsnog laat zien. Vandaar de flits die de eigenaar zag.
+     ⚠️ Een mislukte poging bewaren we NIET, anders blijft een tijdelijke storing
+     de hele sessie hangen. */
+  var avinkaKlasCache=null;
+  async function haalKlas(){ if(avinkaKlasCache) return avinkaKlasCache; try{ var r=await api('/api/klas'); if(!r.ok)return {naam:'',leerlingen:[]}; var d=await r.json(); avinkaKlasId=d.id||''; avinkaMagRapportenBewerken=(d.magRapportenBewerken!==false); window.avinkaKlasGeslacht={}; ((d&&d.leerlingenData)||[]).forEach(function(l){ if(l&&l.naam) window.avinkaKlasGeslacht[l.naam.toLowerCase()] = l.geslacht==='j'?'jongen':(l.geslacht==='m'?'meisje':''); }); if(!avinkaMagRapportenBewerken){ toonMeekijkMelding(); zetLeesstandAan(); } avinkaKlasCache={naam:d.naam||'', leerlingen:d.leerlingen||[]}; return avinkaKlasCache; }catch(e){ return {naam:'',leerlingen:[]}; } }
   async function haalRapporten(){ try{ var r=await api('/api/rapporten'); if(!r.ok)return []; var d=await r.json(); return d.rapporten||[]; }catch(e){ return []; } }
 
   /* Eén stille regel boven de tool. Bewust kaal en grijs, geen gekleurd
@@ -2019,8 +2028,27 @@ async function vulMijnKlas(toevoegFn){
       if(startWacht) startWacht.toon();
       return;
     }
+    /* 🔑 HIER VALT HET BESLUIT, EN DAT MOET ZO VROEG MOGELIJK.
+       Alles wat we nodig hebben om te weten dat scherm 1 niet getoond hoeft te
+       worden — je bent meekijker én er staan namen in de klas — staat al in het
+       antwoord van /api/klas. Dit stond hieronder, ná het ophalen van de
+       rapporten, en dan tikt het vangnet van 700ms af terwijl we nog aan het
+       laden zijn: scherm 1 licht op en springt daarna weg. */
+    var namenBekend=(avinkaKlasCache&&avinkaKlasCache.leerlingen||[]).length>0;
+    if(namenBekend&&startWacht) startWacht.laatStaan();
+
     await autoVul();
-    if(!naamLijst.length){ if(startWacht) startWacht.toon(); return; }
+
+    if(!naamLijst.length){
+      /* Toch geen namen, terwijl de klas ze wél leek te hebben. De wacht is
+         dan misschien al losgelaten en `toon()` doet daarna niets meer, dus
+         halen we scherm 1 zelf tevoorschijn. Een leeg scherm is veel erger dan
+         een scherm dat te vroeg komt. */
+      if(startWacht) startWacht.toon();
+      var s=document.getElementById('scherm-start');
+      if(s) s.style.display='';
+      return;
+    }
     // maakKaarten() zet zelf het overzichtsscherm actief, dus scherm 1 hoeft
     // niet meer tevoorschijn te komen.
     if(startWacht) startWacht.laatStaan();
