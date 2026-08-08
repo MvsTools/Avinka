@@ -306,6 +306,20 @@ export default function DuoCollega() {
   const ikBenEigenaar = (klasId: string) =>
     klassen.find((k) => k.id === klasId)?.eigenKlas === true;
 
+  /* 🔑 UITNODIGEN KAN ALLEEN VOOR EEN GROEP DIE VAN JOU IS.
+     De database dwingt dat al af: de insert-policy op `duo_koppels` eist
+     `k.user_id = auth.uid()` (zie schema.sql). Maar het scherm liet álle
+     groepen zien, dus ook die van een collega — en dan sta je een uitnodiging
+     te versturen die achteraf geweigerd wordt. De eigenaar liep daar 8-8
+     tegenaan als meekijker.
+     ⚠️ Dit is dus geen beveiliging, dat is de policy. Dit voorkomt dat we iets
+     aanbieden wat niet kan; een knop die niets doet is erger dan geen knop. */
+  const eigenKlassen = klassen.filter((k) => k.eigenKlas === true);
+  /* Heb je alleen groepen van anderen, dan hoort het hele blok weg. Heb je nog
+     helemaal niets, dan blijft het staan met "Maak eerst een klas aan" — dat is
+     geen dode knop maar een zetje. */
+  const toonUitnodigen = eigenKlassen.length > 0 || klassen.length === 0;
+
   const groepen = [...new Set(koppels.map((k) => k.klasId))].map((klasId) => ({
     klasId,
     klasNaam: koppels.find((k) => k.klasId === klasId)?.klasNaam || klasNaamVan(klasId),
@@ -673,14 +687,15 @@ export default function DuoCollega() {
       )}
 
       {/* ── Nieuwe uitnodiging maken ── */}
+      {toonUitnodigen && (
       <div className="mt-5 border-t border-black/5 pt-5">
         <p className="text-sm font-bold text-ink">Collega uitnodigen</p>
-        {klassen.length === 0 ? (
+        {eigenKlassen.length === 0 ? (
           <p className="mt-2 text-sm text-ink/55">Maak eerst een klas aan.</p>
         ) : (
           <>
             <div className="mt-3 flex flex-wrap gap-2">
-              {klassen.map((k) => (
+              {eigenKlassen.map((k) => (
                 <button
                   key={k.id}
                   type="button"
@@ -798,6 +813,7 @@ export default function DuoCollega() {
           </>
         )}
       </div>
+      )}
     </div>
   );
 }

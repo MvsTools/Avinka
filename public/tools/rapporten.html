@@ -728,7 +728,7 @@
   <!-- ════════ SCHERM 3: OVERZICHT ════════ -->
   <div class="scherm" id="scherm-overzicht">
     <div class="topbar">
-      <button class="btn-back" onclick="terugNaarNamen()">← Namen aanpassen</button>
+      <button class="btn-back" id="btn-namen-aanpassen" onclick="terugNaarNamen()">← Namen aanpassen</button>
       <span class="ctx-badge" id="overzicht-ctx"></span>
     </div>
     <div class="kop">
@@ -2156,6 +2156,13 @@ async function vulMijnKlas(toevoegFn){
     if(thema) thema.style.display='none';
     var veld=document.getElementById('verhaal-tekst');
     if(veld){ veld.readOnly=true; veld.setAttribute('aria-readonly','true'); }
+    /* ⚠️ Ook de weg terug naar het namenscherm. Een meekijker mag de klaslijst
+       NIET aanpassen: de database geeft hem op `klassen` alleen een
+       select-policy ("meekijkende collega klas" in schema.sql), terwijl
+       wijzigen achter `klas_toegang_volledig` zit. Die knop beloofde dus iets
+       wat de server weigert. Gevonden door de eigenaar, 8-8. */
+    var namen=document.getElementById('btn-namen-aanpassen');
+    if(namen) namen.style.display='none';
   }
 
   /* Opslaan meldt het nu als het mislukt. Stond hier eerder als een fetch in
