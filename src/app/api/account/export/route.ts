@@ -187,7 +187,7 @@ function label(key: string): string {
  * ⚠️ Het formaat is het halve werk. Een leerkracht die haar rapportteksten
  * ophaalt wil ze in Word kunnen plakken, niet in JSON kunnen lezen. Kies dus per
  * categorie het bestand dat op haar computer ergens IN gaat. */
-const MEENEMEN: Record<string, { formaat: "csv" | "ics" | "doc"; bestand: string; knop: string }> = {
+export const MEENEMEN: Record<string, { formaat: "csv" | "ics" | "doc"; bestand: string; knop: string }> = {
   klassen: { formaat: "csv", bestand: "avinka-klassenlijst.csv", knop: "Klassenlijst (Excel)" },
   rapporten: { formaat: "doc", bestand: "avinka-rapportteksten.doc", knop: "Rapportteksten (Word)" },
   taken: { formaat: "csv", bestand: "avinka-takenlijst.csv", knop: "Takenlijst (Excel)" },
@@ -274,6 +274,99 @@ function icsBestand(rijen: Record<string, unknown>[]): string {
   }
   uit.push("END:VCALENDAR");
   return uit.map(icsVouw).join("\r\n") + "\r\n";
+}
+
+/* ── EEN ZIP MAKEN ──────────────────────────────────────────────────────────
+ * Vink je drie categorieën aan, dan zijn dat drie verschillende bestandssoorten
+ * (Excel, Word, agenda). Die kun je niet in één bestand plakken, dus gaan ze in
+ * een zip.
+ *
+ * ⚠️ BEWUST GEEN PAKKET ERVOOR. De tools gebruiken JSZip, maar die halen ze bij
+ * een externe server vandaan; dat is precies wat deze pagina niet moet doen
+ * (zie het feitenblad: cdnjs staat niet in onze subverwerkerslijst). En een
+ * npm-pakket toevoegen voor 60 regels is duurder in onderhoud dan die 60 regels.
+ *
+ * We slaan de bestanden ONGECOMPRIMEERD op (methode 0). Dat mag van het
+ * zip-formaat, scheelt de halve implementatie, en het gaat hier om een paar
+ * tientallen kilobytes tekst. */
+function crc32(bytes: Uint8Array): number {
+  let crc = 0xffffffff;
+  for (let i = 0; i < bytes.length; i++) {
+    crc ^= bytes[i];
+    for (let k = 0; k < 8; k++) crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+export function zipBestand(bestanden: { naam: string; inhoud: string }[]): Uint8Array {
+  const enc = new TextEncoder();
+  const delen: Uint8Array[] = [];
+  const index: { naam: Uint8Array; crc: number; lengte: number; positie: number }[] = [];
+  let positie = 0;
+
+  const kop = (grootte: number) => {
+    const b = new Uint8Array(grootte);
+    return { b, v: new DataView(b.buffer) };
+  };
+
+  for (const bestand of bestanden) {
+    const naam = enc.encode(bestand.naam);
+    const inhoud = enc.encode(bestand.inhoud);
+    const crc = crc32(inhoud);
+
+    const { b, v } = kop(30);
+    v.setUint32(0, 0x04034b50, true); // "hier begint een bestand"
+    v.setUint16(4, 20, true); // minimale versie om dit te lezen
+    v.setUint16(6, 0x0800, true); // bestandsnamen zijn UTF-8
+    v.setUint16(8, 0, true); // methode 0 = niet gecomprimeerd
+    v.setUint16(10, 0, true); // tijd en datum laten we op nul; niet elk
+    v.setUint16(12, 0, true); // zip-programma toont ze, en ze zeggen hier niets
+    v.setUint32(14, crc, true);
+    v.setUint32(18, inhoud.length, true);
+    v.setUint32(22, inhoud.length, true);
+    v.setUint16(26, naam.length, true);
+    v.setUint16(28, 0, true);
+
+    index.push({ naam, crc, lengte: inhoud.length, positie });
+    delen.push(b, naam, inhoud);
+    positie += 30 + naam.length + inhoud.length;
+  }
+
+  // De inhoudsopgave achteraan: zonder deze lijst ziet een zip-programma een
+  // leeg archief, ook al staan de bestanden er gewoon in.
+  const startInhoudsopgave = positie;
+  for (const e of index) {
+    const { b, v } = kop(46);
+    v.setUint32(0, 0x02014b50, true);
+    v.setUint16(4, 20, true);
+    v.setUint16(6, 20, true);
+    v.setUint16(8, 0x0800, true);
+    v.setUint16(10, 0, true);
+    v.setUint32(16, e.crc, true);
+    v.setUint32(20, e.lengte, true);
+    v.setUint32(24, e.lengte, true);
+    v.setUint16(28, e.naam.length, true);
+    v.setUint32(42, e.positie, true);
+    delen.push(b, e.naam);
+    positie += 46 + e.naam.length;
+  }
+
+  const { b: eind, v } = kop(22);
+  v.setUint32(0, 0x06054b50, true);
+  v.setUint16(8, index.length, true);
+  v.setUint16(10, index.length, true);
+  v.setUint32(12, positie - startInhoudsopgave, true);
+  v.setUint32(16, startInhoudsopgave, true);
+  delen.push(eind);
+
+  const totaal = delen.reduce((n, d) => n + d.length, 0);
+  const uit = new Uint8Array(totaal);
+  let op = 0;
+  for (const d of delen) {
+    uit.set(d, op);
+    op += d.length;
+  }
+  return uit;
 }
 
 /** Word opent een HTML-bestand met de extensie .doc gewoon als document, mét
@@ -432,14 +525,36 @@ export async function GET(request: NextRequest) {
   // ?deel=rapporten geeft alleen die categorie terug, in het formaat dat er
   // hoort. Zo hoeft niemand een bestand met álles te openen om bij zijn
   // rapportteksten te komen.
-  const deel = request.nextUrl.searchParams.get("deel");
-  if (deel && MEENEMEN[deel]) {
-    const cfg = MEENEMEN[deel];
-    const { inhoud, type } = deelBestand(deel, gegevens[deel] ?? []);
+  // Het formulier op de pagina stuurt één ?deel= per aangevinkt hokje mee.
+  const gekozen = request.nextUrl.searchParams.getAll("deel").filter((d) => MEENEMEN[d]);
+
+  // Eén categorie? Dan gewoon dat bestand. Iemand die alleen zijn rapportteksten
+  // wil, moet geen zip hoeven uitpakken om erbij te komen.
+  if (gekozen.length === 1) {
+    const cfg = MEENEMEN[gekozen[0]];
+    const { inhoud, type } = deelBestand(gekozen[0], gegevens[gekozen[0]] ?? []);
     return new NextResponse(inhoud, {
       headers: {
         "content-type": type,
         "content-disposition": `attachment; filename="${cfg.bestand}"`,
+      },
+    });
+  }
+
+  // Meerdere categorieën zijn meerdere bestandssoorten, dus die gaan in een zip.
+  if (gekozen.length > 1) {
+    const zip = zipBestand(
+      gekozen.map((d) => ({
+        naam: MEENEMEN[d].bestand,
+        inhoud: deelBestand(d, gegevens[d] ?? []).inhoud,
+      })),
+    );
+    // Buffer en niet de kale Uint8Array: die laatste accepteert het antwoordtype
+    // niet, en een omweg via een string sloopt de bytes.
+    return new NextResponse(Buffer.from(zip), {
+      headers: {
+        "content-type": "application/zip",
+        "content-disposition": 'attachment; filename="avinka-mijn-gegevens.zip"',
       },
     });
   }
@@ -531,22 +646,35 @@ export function exportPaginaHtml(
   // een gat tussen de twee en valt de kaart uit elkaar in twee losse dingen.
   // ⚠️ De knop zit binnen <summary>, dus een klik erop zou ook de sectie
   // open- en dichtklappen. Vandaar de stopPropagation.
-  const sectie = (tabel: string) => {
+  // ⚠️ HET VINKHOKJE STAAT BUITEN <summary>, EN DAT IS GEEN SMAAKKWESTIE. Een
+  // hokje binnen een summary klapt de sectie open zodra je hem aanvinkt: het
+  // hele blok is dan de knop. Dat is alleen te onderdrukken met JavaScript, en
+  // dan werkt aanvinken niet meer als dat script niet laadt. Nu staat het hokje
+  // ernaast, in hetzelfde raster, en is het een gewoon formulierveld.
+  const sectie = (tabel: string, inMeenemen = false) => {
     const cfg = SECTIES[tabel];
     const rijen = gegevens[tabel] ?? [];
     if (rijen.length === 0) return "";
     const mee = MEENEMEN[tabel];
-    const knop = mee
-      ? `<a class="dl" href="/api/account/export?deel=${tabel}" onclick="event.stopPropagation()">${escapeHtml(mee.knop)}</a>`
-      : "";
     const body = rijen.map(rijHtml).filter(Boolean).join('<hr class="sep">');
-    return `<section>
+    // Een categorie in dit blok zonder hokje (bestanden, want plattegronden
+    // tekenen kan nog niet) krijgt tóch de lege kolom, anders staat zijn titel
+    // uit de rooilijn met de rest en lijkt dat een fout.
+    const hokje = mee
+      ? `<label class="vink" title="Aanvinken om mee te nemen">
+           <input type="checkbox" name="deel" value="${tabel}">
+           <span class="hoklabel">${escapeHtml(cfg.titel)} meenemen</span>
+         </label>`
+      : inMeenemen
+        ? `<span class="vink" aria-hidden="true"></span>`
+        : "";
+    return `<section class="${mee || inMeenemen ? "mee" : ""}">
+      ${hokje}
       <details>
         <summary>
           <span class="tit">${escapeHtml(cfg.titel)}</span>
           <span class="telling">${rijen.length}</span>
-          <span class="rek"></span>
-          ${knop}
+          ${mee ? `<span class="rek"></span><span class="soort">${escapeHtml(mee.formaat === "doc" ? "Word" : mee.formaat === "csv" ? "Excel" : "Agenda")}</span>` : ""}
         </summary>
         <div class="inhoud">${body}</div>
       </details>
@@ -569,15 +697,27 @@ export function exportPaginaHtml(
   const overig = TABELLEN.filter((t) => !EIGEN_WERK.includes(t));
   const secties =
     `<h2 class="groep">Meenemen</h2>` +
-    `<p class="groepuitleg">Deze gegevens gaan over je klas, en die ruimen we 90 dagen na je laatste
-       abonnement op. Neem ze mee zolang ze er zijn.</p>` +
-    EIGEN_WERK.map(sectie).join("") +
+    `<p class="groepuitleg">Vink aan wat je wilt bewaren. Deze gegevens gaan over je klas, en die
+       ruimen we 90 dagen na je laatste abonnement op.</p>` +
+    // Een gewoon formulier: elk aangevinkt hokje wordt een ?deel= in de link.
+    // Werkt dus ook zonder JavaScript; het script eronder maakt er alleen een
+    // meelopende telling bij.
+    `<form method="get" action="/api/account/export">` +
+    EIGEN_WERK.map((t) => sectie(t, true)).join("") +
+    `<div class="balk">
+       <button type="submit" id="dlknop">Download wat je hebt aangevinkt</button>
+       <span class="hint" id="dlhint">Nog niets aangevinkt</span>
+     </div>` +
+    `</form>` +
     leegRegel(EIGEN_WERK) +
     `<p class="blijft"><strong>Je eigen vakwerk bewaren we gewoon voor je.</strong>
        Lesontwerpen, werkbladen, draaiboeken en je weekrooster blijven staan, ook als je stopt.
        Ze staan er nog als je terugkomt.</p>` +
     `<h2 class="groep">En dit weten we verder van je</h2>` +
-    overig.map(sectie).join("") +
+    // ⚠️ Met de losse functienaam geeft map() de INDEX mee als tweede argument,
+    // en dat is hier de vlag "zit in het meeneem-blok". Alles behalve de eerste
+    // sectie kreeg daardoor een lege vinkkolom en stond ingesprongen.
+    overig.map((t) => sectie(t)).join("") +
     leegRegel(overig);
 
   const html = `<!doctype html>
@@ -621,18 +761,32 @@ export function exportPaginaHtml(
   .telling{ color:var(--muted); font-weight:600; font-size:14px; background:var(--cream);
     border-radius:999px; padding:2px 10px; }
   .inhoud{ padding:4px 22px 20px; border-top:1px solid var(--line); }
-  a.dl{ display:inline-block; font-size:14px; font-weight:700; text-decoration:none;
-    color:#fff; background:var(--brand-dark); border-radius:12px; padding:8px 15px;
+  .soort{ color:var(--muted); font-size:13px; font-weight:600; }
+  /* Sectie met een vinkhokje: hokje links, de rest ernaast. Het hokje staat
+     bewust buiten <details>, zie de opmerking bij sectie(). */
+  section.mee{ display:grid; grid-template-columns:auto 1fr; align-items:start; }
+  .vink{ display:flex; align-items:center; padding:18px 0 18px 20px; cursor:pointer;
+    min-width:40px; }
+  .vink input{ width:20px; height:20px; accent-color:var(--brand-dark); cursor:pointer; margin:0; }
+  .vink input:focus-visible{ outline:3px solid var(--ink); outline-offset:2px; }
+  /* Voor wie het scherm voorleest: het hokje heeft een eigen naam nodig, maar
+     op het scherm zou die de titel ernaast herhalen. */
+  .hoklabel{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);
     white-space:nowrap; }
-  a.dl:hover{ background:#1f6f4b; }
-  a.dl:focus-visible{ outline:3px solid var(--ink); outline-offset:2px; }
+  .balk{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin:18px 0 0; }
+  #dlknop{ font:inherit; font-size:15px; font-weight:700; cursor:pointer; border:0;
+    color:#fff; background:var(--brand-dark); border-radius:14px; padding:12px 22px; }
+  #dlknop:hover{ background:#1f6f4b; }
+  #dlknop:focus-visible{ outline:3px solid var(--ink); outline-offset:2px; }
+  #dlknop[disabled]{ background:#c9d3cd; cursor:not-allowed; }
+  .hint{ color:var(--muted); font-size:14px; }
   .niets{ color:var(--muted); font-size:14px; margin:10px 4px 0; }
   /* Op een smal scherm past titel + aantal + knop niet naast elkaar; dan zakt
      de knop naar een eigen regel in plaats van de titel af te knijpen. */
   @media(max-width:560px){
-    summary{ flex-wrap:wrap; padding:14px 18px; }
-    .rek{ flex-basis:100%; height:0; }
-    a.dl{ flex-basis:100%; text-align:center; margin-top:2px; padding:11px 15px; }
+    summary{ padding:14px 16px; }
+    .vink{ padding:16px 0 16px 14px; }
+    #dlknop{ width:100%; }
   }
   .rij{ display:grid; grid-template-columns:220px 1fr; gap:6px 18px; }
   @media(max-width:560px){ .rij{ grid-template-columns:1fr; gap:2px; } .k{ margin-top:8px; } }
@@ -658,7 +812,28 @@ export function exportPaginaHtml(
     <a href="/api/account/export?format=json">Ook als bestand (JSON)</a>
   </div>
   <p class="foot">Je account verwijderen doe je in Avinka onder Instellingen.</p>
-</div></body></html>`;
+</div>
+<script>
+  /* Alleen een meelopende telling op de knop. Zet dit script uit en het
+     formulier werkt nog steeds: de hokjes worden dan gewoon meegestuurd. */
+  (function () {
+    var hokjes = Array.prototype.slice.call(document.querySelectorAll('input[name="deel"]'));
+    var knop = document.getElementById('dlknop');
+    var hint = document.getElementById('dlhint');
+    if (!hokjes.length || !knop || !hint) return;
+    function bij() {
+      var n = hokjes.filter(function (h) { return h.checked; }).length;
+      knop.disabled = n === 0;
+      knop.textContent = n === 0 ? 'Download wat je hebt aangevinkt'
+        : n === 1 ? 'Download 1 onderdeel' : 'Download ' + n + ' onderdelen';
+      hint.textContent = n === 0 ? 'Nog niets aangevinkt'
+        : n === 1 ? '' : 'Je krijgt ze samen in een zip-bestand';
+    }
+    hokjes.forEach(function (h) { h.addEventListener('change', bij); });
+    bij();
+  })();
+</script>
+</body></html>`;
 
   return html;
 }

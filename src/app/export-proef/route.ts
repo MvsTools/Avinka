@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { deelBestand, exportPaginaHtml } from "@/app/api/account/export/route";
+import { MEENEMEN, deelBestand, exportPaginaHtml, zipBestand } from "@/app/api/account/export/route";
 
 /* ⚠️ TIJDELIJK — WEG ZODRA DE EIGENAAR HET EXPORTSCHERM HEEFT GOEDGEKEURD.
  * Zelfde soort proefpagina als destijds /wek-proef en /cijfers-proef.
@@ -102,11 +102,25 @@ export async function GET(request: NextRequest) {
 
   // Zo kun je ook de downloadbestanden zelf bekijken, in de browser in plaats
   // van als download: /export-proef?deel=agenda_items
-  const deel = request.nextUrl.searchParams.get("deel");
-  if (deel) {
-    const { inhoud } = deelBestand(deel, gegevens[deel] ?? []);
+  const gekozen = request.nextUrl.searchParams.getAll("deel");
+  if (gekozen.length === 1) {
+    const { inhoud } = deelBestand(gekozen[0], gegevens[gekozen[0]] ?? []);
     return new NextResponse(inhoud, {
       headers: { "content-type": "text/plain; charset=utf-8" },
+    });
+  }
+  if (gekozen.length > 1) {
+    const zip = zipBestand(
+      gekozen.map((d) => ({
+        naam: MEENEMEN[d].bestand,
+        inhoud: deelBestand(d, gegevens[d] ?? []).inhoud,
+      })),
+    );
+    return new NextResponse(Buffer.from(zip), {
+      headers: {
+        "content-type": "application/zip",
+        "content-disposition": 'attachment; filename="avinka-proef.zip"',
+      },
     });
   }
 
