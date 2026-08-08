@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/proef-verlopen",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/verwijder-waarschuwing",
+      "schedule": "0 9 * * *"
     }
   ]
 }

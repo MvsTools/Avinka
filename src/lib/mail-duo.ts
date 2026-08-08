@@ -9,6 +9,8 @@
  * De knop is #25855a en niet het gewone merkgroen: wit daarop haalt 4,58:1 in
  * plaats van 3,37:1. */
 
+import { groet } from "./mail";
+
 function veilig(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -23,6 +25,12 @@ export type Uitnodiging = {
   klasNaam: string;
   /* De volledige link naar de instellingenpagina met de code erin. */
   link: string;
+  /* Voornaam van de ONTVANGER, als dit adres al een Avinka-account heeft.
+     ⚠️ Vaak leeg, en dat is normaal: een uitnodiging gaat juist regelmatig
+     naar iemand die nog geen account heeft. Dan wordt het gewoon "Hallo,".
+     De opzoekactie staat in /api/duo/uitnodigen en mag ALLEEN server-side —
+     zie de databasefunctie wijs_voornaam_van_adres. */
+  voornaam?: string;
   /* Wat je straks mag. Ontbreekt hij, dan zegt de mail er niets over. */
   rol?: "volledig" | "meekijken";
 };
@@ -54,13 +62,17 @@ export function uitnodigingOnderwerp(u: Uitnodiging): string {
 
 export function uitnodigingTekst(u: Uitnodiging): string {
   return [
-    "Hallo,",
+    groet(u.voornaam),
     "",
     openingTekst(u),
     "",
     u.link,
     "",
-    "Heb je nog geen Avinka-account? Maak er dan één aan met dit e-mailadres.",
+    // Kennen we deze persoon al, dan is "maak een account aan" onzin: hij hééft
+    // er een. De tweede zin blijft wel staan, die geldt voor allebei.
+    ...(u.voornaam?.trim()
+      ? []
+      : ["Heb je nog geen Avinka-account? Maak er dan één aan met dit e-mailadres."]),
     "De uitnodiging is aan dit adres gekoppeld en werkt niet op een ander.",
     "",
     "Met vriendelijke groet,",
@@ -72,6 +84,9 @@ export function uitnodigingHtml(u: Uitnodiging): string {
   const wie = veilig(u.vanWie.trim() || "Een collega");
   const klas = veilig(u.klasNaam);
   const link = veilig(u.link);
+  const hoi = veilig(groet(u.voornaam));
+  // Weten we wie dit is, dan heeft hij een account en is "maak er een aan" onzin.
+  const kentOns = !!u.voornaam?.trim();
   // Zelfde zin als in de platte tekst, maar met de groepsnaam vet. Vandaar hier
   // een eigen regel en geen hergebruik van openingTekst().
   const opening =
@@ -86,7 +101,8 @@ export function uitnodigingHtml(u: Uitnodiging): string {
     <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:20px;font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
       <tr><td style="padding:34px 36px 0;">
         <h1 style="margin:0;font-family:'Bricolage Grotesque',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:800;font-size:26px;line-height:1.25;color:#221c3a;">${wie} nodigt je uit</h1>
-        <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">${opening}</p>
+        <p style="margin:16px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">${hoi}</p>
+        <p style="margin:10px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">${opening}</p>
       </td></tr>
       <tr><td align="center" style="padding:26px 36px 0;">
         <table cellpadding="0" cellspacing="0" border="0"><tr>
@@ -96,7 +112,7 @@ export function uitnodigingHtml(u: Uitnodiging): string {
         </tr></table>
       </td></tr>
       <tr><td style="padding:24px 36px 0;">
-        <p style="margin:0;font-size:15px;line-height:1.65;color:#4a4458;">Heb je nog geen Avinka-account? Maak er dan één aan met <strong style="color:#221c3a;">dit e-mailadres</strong>. De uitnodiging is eraan gekoppeld en werkt niet op een ander adres.</p>
+        <p style="margin:0;font-size:15px;line-height:1.65;color:#4a4458;">${kentOns ? "" : "Heb je nog geen Avinka-account? Maak er dan één aan met <strong style=\"color:#221c3a;\">dit e-mailadres</strong>. "}De uitnodiging is gekoppeld aan <strong style="color:#221c3a;">dit e-mailadres</strong> en werkt niet op een ander.</p>
       </td></tr>
       <tr><td style="padding:24px 36px 30px;">
         <div style="border-top:1px solid #ece7e0;padding-top:16px;">

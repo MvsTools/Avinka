@@ -22,6 +22,24 @@ export const AFZENDER = "Avinka <no-reply@avinka.nl>";
    juist wél een echt adres (zie docs/plan-mail.md). */
 export const SUPPORT = "support@avinka.nl";
 
+/* De aanhef van een PERSOONLIJKE mail: "Hallo Marieke," of gewoon "Hallo,"
+ * als we geen naam hebben.
+ *
+ * ⚠️ Regel van de eigenaar (8-8): een persoonlijke mail begint met een aanhef
+ * (aanmelding, de opruimmail over leerlinggegevens, de duo-uitnodiging), een
+ * ZAKELIJKE mail niet (wachtwoord opnieuw instellen, e-mailadres bevestigen,
+ * proef loopt af, proef verlopen). Trek die twee niet gelijk.
+ *
+ * ⚠️ "Hallo", niet "Hoi". En de lege naam moet je afvangen: "Hallo ," met een
+ * losse komma maakt een persoonlijke opening juist onpersoonlijk.
+ *
+ * ⚠️ De voornaam vult iemand zelf in bij het aanmelden, dus onbetrouwbare
+ * invoer: haal 'm in de HTML-versie altijd nog door je eigen veilig(). */
+export function groet(voornaam?: string | null): string {
+  const naam = (voornaam ?? "").trim();
+  return naam ? `Hallo ${naam},` : "Hallo,";
+}
+
 export type MailAntwoord = { ok: true; id: string } | { ok: false; melding: string };
 
 type MailOpdracht = {

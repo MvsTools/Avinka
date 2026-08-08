@@ -74,6 +74,12 @@ create table if not exists public.instellingen (
   -- vast inlogadres; Esis werkt per school, dus die vult lvs_url zelf in.
   lvs_systeem    text not null default '',
   lvs_url        text not null default '',
+  -- Wanneer de "we ruimen je leerlinggegevens op"-mail is verstuurd. Leeg =
+  -- nog niet gemaild, en dan wist wijs_verwijder_klasdata() bij deze gebruiker
+  -- niets. Dit veld is dus het SLOT op de verwijdering, geen administratie.
+  -- Zie database/migratie-verwijder-klasdata.sql (3 maanden; het eigen vakwerk
+  -- van de leerkracht blijft bewaard).
+  verwijder_waarschuwing_op timestamptz,
   created_at     timestamptz default now(),
   updated_at     timestamptz default now()
 );
@@ -98,6 +104,7 @@ create table if not exists public.instellingen (
 --   alter table public.instellingen add column if not exists lvs_systeem text not null default '';
 --   alter table public.instellingen add column if not exists lvs_url text not null default '';
 --   alter table public.instellingen add column if not exists communicatie_url text not null default '';
+--   alter table public.instellingen add column if not exists verwijder_waarschuwing_op timestamptz;
 create index if not exists idx_instellingen_verwezen on public.instellingen(verwezen_door);
 
 -- ── 2) KLASSEN — je klassenlijst (meerdere klassen per leerkracht mogelijk) ───
@@ -122,19 +129,15 @@ create table if not exists public.klassen (
 --   alter table public.klassen add column if not exists leerlingen_data jsonb not null default '[]'::jsonb;
 --   alter table public.klassen add column if not exists actief boolean not null default true;
 
--- ── 3) TEKSTEN — bewaarde teksten-bibliotheek ───────────────────────────
-create table if not exists public.teksten (
-  id          uuid primary key default gen_random_uuid(),
-  user_id     uuid not null default auth.uid() references auth.users(id) on delete cascade,
-  titel       text not null default 'Naamloze tekst',
-  inhoud      text not null,
-  tool        text,
-  created_at  timestamptz default now()
-);
+-- ── 3) TEKSTEN — VERVALLEN ──────────────────────────────────────────────
+-- Hier stond `public.teksten`, de eerste bewaarde-teksten-bibliotheek. Die is
+-- opgevolgd door BESTANDEN (punt 5 hieronder) en op 8-8-2026 verwijderd: nul
+-- rijen, geen code die hem nog aanriep, maar hij kón voornamen bevatten en
+-- moest daarom wél mee in elke opruimronde. Zie database/migratie-teksten-weg.sql.
+-- Het nummer blijft leeg staan zodat de verwijzingen naar 4/5/6 blijven kloppen.
 
 -- ── Indexen (snel zoeken per gebruiker) ─────────────────────────────────
 create index if not exists idx_klassen_user on public.klassen(user_id);
-create index if not exists idx_teksten_user on public.teksten(user_id);
 
 -- ── Triggers voor updated_at ────────────────────────────────────────────
 drop trigger if exists trg_instellingen_updated on public.instellingen;
@@ -150,7 +153,6 @@ create trigger trg_klassen_updated
 -- ── ROW LEVEL SECURITY ──────────────────────────────────────────────────
 alter table public.instellingen enable row level security;
 alter table public.klassen      enable row level security;
-alter table public.teksten      enable row level security;
 
 -- Beleid: iedereen mag alleen zijn EIGEN rijen (lezen + schrijven).
 drop policy if exists "eigen instellingen" on public.instellingen;
@@ -159,10 +161,6 @@ create policy "eigen instellingen" on public.instellingen
 
 drop policy if exists "eigen klassen" on public.klassen;
 create policy "eigen klassen" on public.klassen
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
-drop policy if exists "eigen teksten" on public.teksten;
-create policy "eigen teksten" on public.teksten
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- ── KLASLIMIET PER PAKKET ─────────────────────────────────────────────────
@@ -214,7 +212,6 @@ create trigger trg_klassen_limiet
 -- krijgt bewust niets.)
 grant select, insert, update, delete on public.instellingen to authenticated;
 grant select, insert, update, delete on public.klassen      to authenticated;
-grant select, insert, update, delete on public.teksten      to authenticated;
 
 -- ⚠️ DE SERVERROL HEEFT EIGEN RECHTEN NODIG. `service_role` (de rol achter
 -- SUPABASE_SERVICE_ROLE_KEY) erft NIETS van `authenticated`. Hij had hier lang
@@ -280,9 +277,8 @@ create policy "eigen bestanden" on public.bestanden
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 grant select, insert, update, delete on public.bestanden to authenticated;
 
--- MIGRATIE van bestaande bewaarde teksten naar Bestanden (draai één keer):
---   insert into public.bestanden (user_id, parent_id, type, naam, inhoud, tool, created_at)
---   select user_id, null, 'tekst', titel, inhoud, tool, created_at from public.teksten;
+-- (Hier stond de eenmalige migratie van de oude tabel `teksten` naar Bestanden.
+--  Die is uitgevoerd en de tabel bestaat sinds 8-8-2026 niet meer.)
 
 -- ── 6) STATISTIEK — cumulatieve tellers per gebruiker (voor "Mijn statistieken") ─
 --  tellers = jsonb-map { 'rapport': 12, 'analyse': 3, 'gesprek': 8, ... }.
@@ -1272,9 +1268,21 @@ create trigger on_auth_user_created_toestemming
 -- is een sleutel tot die agenda, dus hij staat VERSLEUTELD opgeslagen: de code
 -- versleutelt hem met AVINKA_GEHEIM_SLEUTEL, de database ziet alleen ruis.
 --
--- AVG: namen van kinderen worden uit de titel gehaald vóór het opslaan
--- (maskeerNamen in src/lib/agenda-ophalen.ts). Wat overblijft is het soort
--- afspraak en het tijdstip, en dat mag gewoon.
+-- AVG: bij een GEKOPPELDE agenda worden namen van kinderen uit de titel
+-- gehaald vóór het opslaan (maskeerNamen, aangeroepen in
+-- src/lib/agenda-opslaan.ts). Wat overblijft is het soort afspraak en het
+-- tijdstip, en dat mag gewoon.
+--
+-- ⚠️ Dat geldt NIET voor een afspraak die je zélf toevoegt via
+-- /api/agenda/afspraak: die titel wordt letterlijk opgeslagen. Dat is een
+-- bewuste keuze (eigenaar 8-8-2026) en geen omissie: een geïmporteerde agenda
+-- levert namen aan die de leerkracht nooit zelf koos, soms van kinderen uit
+-- andere groepen, terwijl een zelf getikte naam werkdata is van een kind dat
+-- toch al in de klassenlijst staat.
+-- 🔑 Gevolg: agenda_items KAN voornamen bevatten, en daarom hoort de tabel bij
+-- wat na 90 dagen zonder abonnement wordt opgeruimd. Zie
+-- database/migratie-verwijder-klasdata.sql — haal hem daar niet weg, anders is
+-- de belofte "na het einde van je abonnement bewaren we ze nog 90 dagen" onwaar.
 
 create table if not exists public.agenda_bronnen (
   id            uuid primary key default gen_random_uuid(),
@@ -1956,6 +1964,24 @@ revoke execute on function public.registreer_toestemming() from public, anon;
 revoke execute on function public.set_updated_at() from public, anon;
 revoke execute on function public.duo_koppel_voorbeeld(text) from public, anon;
 revoke execute on function public.duo_koppel_accepteren(text) from public, anon;
+
+-- De duo-uitnodiging persoonlijk maken (database/migratie-uitnodiging-voornaam.sql).
+-- ⚠️ Ziet er onschuldig uit, is het niet: wie deze mag aanroepen kan adressen
+-- aftasten en zien of ze een Avinka-account hebben én hoe die persoon heet.
+-- Alleen de server, nooit 'authenticated'.
+revoke execute on function public.wijs_voornaam_van_adres(text) from public, anon, authenticated;
+grant  execute on function public.wijs_voornaam_van_adres(text) to service_role;
+
+-- Opzeggen verwijdert de klasgegevens (database/migratie-verwijder-klasdata.sql).
+-- Deze drie gaan verder dan anon buitensluiten: ook 'authenticated' mag er niet
+-- bij. De eerste twee geven gegevens van ANDERE gebruikers terug of wissen ze;
+-- de derde is een kale rekenfunctie maar hoort in hetzelfde slot.
+revoke execute on function public.wijs_toegang_tot(text, timestamptz, timestamptz) from public, anon, authenticated;
+revoke execute on function public.wijs_verwijder_waarschuwing(int, int) from public, anon, authenticated;
+revoke execute on function public.wijs_verwijder_klasdata(int, int, int, boolean) from public, anon, authenticated;
+grant  execute on function public.wijs_toegang_tot(text, timestamptz, timestamptz) to service_role;
+grant  execute on function public.wijs_verwijder_waarschuwing(int, int) to service_role;
+grant  execute on function public.wijs_verwijder_klasdata(int, int, int, boolean) to service_role;
 
 -- Blijft open voor anon (deellink zonder account), maar met een EIGEN recht in
 -- plaats van via de brede PUBLIC-regel.

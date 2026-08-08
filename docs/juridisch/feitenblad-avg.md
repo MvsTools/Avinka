@@ -30,8 +30,7 @@ e-mailadres, versleuteld wachtwoord en voornaam (Supabase-auth); schoolnaam plus
 | Klassenlijst: voornaam + geslacht per kind | tabel `klassen` | voedt de tools |
 | Concept-rapportteksten per kind (naam + verhaal) | tabel `rapporten` | wordt na 90 dagen automatisch gewist |
 | Plattegronden met voornamen, opgeslagen lesmateriaal | tabel `bestanden` | door de gebruiker zelf bewaard |
-| Vrije teksten van de leerkracht | tabel `teksten` | kan namen bevatten |
-| Afspraken uit de gekoppelde schoolagenda | tabel `agenda_items` | titel gemaskeerd vóór opslaan; zie paragraaf 4 |
+| Afspraken uit de schoolagenda | tabel `agenda_items` | titel van een *gekoppelde* agenda wordt gemaskeerd vóór opslaan; een afspraak die de leerkracht zélf toevoegt wordt letterlijk bewaard en kan dus een voornaam bevatten. Zie paragraaf 4 |
 
 **Uitdrukkelijk niet opgeslagen:** toetsanalyses. De uitvoer van de toetsanalyse-tool (cijfers en niveaus per kind) wordt nergens naar de server geschreven; die ontstaat in de browser van de leerkracht en gaat als download naar het eigen apparaat. Verder geen BSN, geen diagnoses, geen medische of gedragsgegevens; de tools sturen daar actief van weg.
 
@@ -71,7 +70,7 @@ worden samengevouwen tot één blok.
 | Wat | Bewaard? |
 |---|---|
 | Datum, einddatum, begintijd, eindtijd, hele dag ja/nee | ja |
-| Titel van de afspraak, gemaskeerd, maximaal 300 tekens | ja |
+| Titel van de afspraak, gemaskeerd, maximaal 300 tekens | ja (maskering geldt voor de gekoppelde agenda; een zelf toegevoegde afspraak wordt letterlijk bewaard) |
 | Herkend soort en het aantal samengevouwen tijdvakken | ja |
 | **Omschrijving of notitieveld van de afspraak** | **nee, wordt niet eens uitgelezen** |
 | **Locatie** | **nee, wordt wel gelezen maar niet opgeslagen** |
@@ -125,7 +124,7 @@ Voornemen richting Anthropic: hun DPA tekenen en Zero Data Retention aanvragen (
 
 - Data-export van het eigen account, als leesbare pagina of als JSON.
 - Account verwijderen met één actie; alle gekoppelde gegevens gaan mee via cascade.
-- Per item wissen (klas, rapport, tekst, bestand, taak).
+- Per item wissen (klas, rapport, bestand, taak).
 - Automatische opschoning van concept-rapportteksten na 90 dagen (nachtelijke databasetaak).
 
 ## 7. Wat er al aan juridische teksten ligt
