@@ -31,7 +31,27 @@ export type Uitnodiging = {
      De opzoekactie staat in /api/duo/uitnodigen en mag ALLEEN server-side —
      zie de databasefunctie wijs_voornaam_van_adres. */
   voornaam?: string;
+  /* Wat je straks mag. Ontbreekt hij, dan zegt de mail er niets over. */
+  rol?: "volledig" | "meekijken";
 };
+
+/* 🔑 WAT JE MAG STAAT IN DE OPENINGSZIN ZELF (8-8-2026).
+   Dit stond er eerst helemaal niet: de eigenaar merkte bij het testen dat hij
+   pas dóórhad dat hij meekijker was toen hij op Rapporten klikte en het daar
+   zag staan. Je hoort vooraf te weten waar je ja tegen zegt.
+   ⚠️ Mijn eerste poging was een apart alinea'tje eronder dat opsomde wat je wel
+   en niet kunt. Oordeel eigenaar: "dan heb je zo'n lap tekst eronder." Terecht.
+   Uitnodigen om **mee te kijken** is iets anders dan uitnodigen om iets **samen
+   te draaien** — dat verschil zit al in de zin, dus het hoeft er niet los onder.
+   Het scheelt drie regels en je leest het meteen.
+   ⚠️ Niet het woord "meekijken" als rolnaam noemen: dat is ons eigen jargon. */
+function openingTekst(u: Uitnodiging): string {
+  const wie = u.vanWie.trim() || "Een collega";
+  if (u.rol === "meekijken") {
+    return `${wie} draait ${u.klasNaam} en nodigt je uit om mee te kijken in Avinka.`;
+  }
+  return `${wie} draait ${u.klasNaam} en wil dat samen met jou doen in Avinka.`;
+}
 
 export function uitnodigingOnderwerp(u: Uitnodiging): string {
   const wie = u.vanWie.trim() || "Een collega";
@@ -41,11 +61,10 @@ export function uitnodigingOnderwerp(u: Uitnodiging): string {
 }
 
 export function uitnodigingTekst(u: Uitnodiging): string {
-  const wie = u.vanWie.trim() || "Een collega";
   return [
     groet(u.voornaam),
     "",
-    `${wie} draait ${u.klasNaam} en wil dat samen met jou doen in Avinka.`,
+    openingTekst(u),
     "",
     u.link,
     "",
@@ -68,6 +87,12 @@ export function uitnodigingHtml(u: Uitnodiging): string {
   const hoi = veilig(groet(u.voornaam));
   // Weten we wie dit is, dan heeft hij een account en is "maak er een aan" onzin.
   const kentOns = !!u.voornaam?.trim();
+  // Zelfde zin als in de platte tekst, maar met de groepsnaam vet. Vandaar hier
+  // een eigen regel en geen hergebruik van openingTekst().
+  const opening =
+    u.rol === "meekijken"
+      ? `Om mee te kijken bij <strong style="color:#221c3a;">${klas}</strong> in Avinka.`
+      : `Om <strong style="color:#221c3a;">${klas}</strong> samen te draaien in Avinka.`;
   return `<style>
   @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Plus+Jakarta+Sans:wght@400;700&display=swap');
 </style>
@@ -77,7 +102,7 @@ export function uitnodigingHtml(u: Uitnodiging): string {
       <tr><td style="padding:34px 36px 0;">
         <h1 style="margin:0;font-family:'Bricolage Grotesque',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:800;font-size:26px;line-height:1.25;color:#221c3a;">${wie} nodigt je uit</h1>
         <p style="margin:16px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">${hoi}</p>
-        <p style="margin:10px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Om <strong style="color:#221c3a;">${klas}</strong> samen te draaien in Avinka.</p>
+        <p style="margin:10px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">${opening}</p>
       </td></tr>
       <tr><td align="center" style="padding:26px 36px 0;">
         <table cellpadding="0" cellspacing="0" border="0"><tr>

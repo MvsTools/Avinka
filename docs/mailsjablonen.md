@@ -132,6 +132,27 @@ gestuurd zodra hij probeert in te loggen op een onbevestigd account.
 Zelfde opzet; alleen de kop, de tekst, het opschrift van de knop en het `type`
 in de link verschillen.
 
+⭐ **8-8: DEZE MOET OPNIEUW GEPLAKT WORDEN** (de andere twee niet). Er is één
+ding aan de link toegevoegd: `&email={{ .Email }}`.
+
+🔑 **Waarom.** Het scherm waar je een nieuw wachtwoord kiest laat zien om welk
+account het gaat. Dat is niet alleen netjes: een wachtwoordbeheerder heeft een
+gebruikersnaam nodig om het nieuwe wachtwoord aan het juiste account te koppelen.
+Maar op dat moment is er nog geen sessie, en uit het token valt geen adres af te
+leiden. Eerst haalden we het uit een cookie van het aanvragen — en die geldt
+alleen in dezelfde browser. Op mobiel is dat vaak net niet: Gmail en Outlook
+openen een link in hun eigen ingebouwde browser, die zijn cookies niet deelt. Via
+de link werkt het op elk apparaat.
+
+⚠️ **De keerzijde, bewust geaccepteerd door de eigenaar:** het adres staat
+daarmee in de URL, dus in de browsergeschiedenis van dat apparaat en in de
+serverlogs bij Vercel. Microsoft ziet het sowieso al, want het staat in de mail.
+
+⚠️ **Een plusje in een adres (`jij+school@…`) komt als spatie binnen**, want zo
+werkt een webadres. `nieuw-wachtwoord/page.tsx` draait dat terug; een spatie kan
+niet in een gewoon e-mailadres voorkomen, dus dat is veilig. Ga dus niet ook nog
+in het sjabloon zitten coderen.
+
 ```html
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Plus+Jakarta+Sans:wght@400;700&display=swap');
@@ -146,7 +167,7 @@ in de link verschillen.
       <tr><td align="center" style="padding:26px 36px 0;">
         <table cellpadding="0" cellspacing="0" border="0"><tr>
           <td align="center" bgcolor="#25855a" style="border-radius:12px;">
-            <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/nieuw-wachtwoord"
+            <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/nieuw-wachtwoord&email={{ .Email }}"
                style="display:inline-block;padding:14px 30px;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;">Wachtwoord opnieuw instellen</a>
           </td>
         </tr></table>
@@ -158,7 +179,7 @@ in de link verschillen.
       <tr><td style="padding:24px 36px 30px;">
         <div style="border-top:1px solid #ece7e0;padding-top:16px;">
           <p style="margin:0;font-size:13px;line-height:1.6;color:#8a8798;">Werkt de knop niet? Kopieer dan deze link:<br>
-            <span style="color:#25855a;word-break:break-all;">{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/nieuw-wachtwoord</span>
+            <span style="color:#25855a;word-break:break-all;">{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/nieuw-wachtwoord&email={{ .Email }}</span>
           </p>
           <p style="margin:14px 0 0;font-size:13px;line-height:1.6;color:#8a8798;">Avinka &middot; van to-do naar gedaan<br>Michael van Spanje</p>
         </div>

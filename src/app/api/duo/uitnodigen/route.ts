@@ -2,7 +2,12 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { verstuurMail } from "@/lib/mail";
 import { serviceClient } from "@/lib/supabase-service";
-import { uitnodigingHtml, uitnodigingOnderwerp, uitnodigingTekst } from "@/lib/mail-duo";
+import {
+  uitnodigingHtml,
+  uitnodigingOnderwerp,
+  uitnodigingTekst,
+  type Uitnodiging,
+} from "@/lib/mail-duo";
 
 // Een collega uitnodigen bij een groep, met de uitnodiging per mail.
 //
@@ -108,7 +113,14 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const gegevens = { vanWie, klasNaam, link, voornaam };
+  // `rol` gaat mee zodat de mail zegt wat je straks mag. Zonder dat merkte de
+  // eigenaar bij het testen pas dát hij meekijker was toen hij op Rapporten
+  // klikte en het daar zag staan.
+  // `voornaam` bepaalt de aanhef, zie hierboven. De twee staan los van elkaar:
+  // wie je uitnodigt (rol) en of we hem al kennen (voornaam).
+  // Met het type erbij, anders verbreedt TypeScript "meekijken" | "volledig"
+  // tot een gewone string zodra het in dit object belandt.
+  const gegevens: Uitnodiging = { vanWie, klasNaam, link, rol, voornaam };
 
   const verstuurd = await verstuurMail({
     naar: email,

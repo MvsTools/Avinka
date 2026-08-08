@@ -502,12 +502,56 @@
   <!-- ════════ SCHERM 1: INSTELLINGEN ════════ -->
   <div class="scherm actief" id="scherm-start">
   <script>
+  (function(){
+    /* 🔑 DE KLAS WORDT HIER AL OPGEVRAAGD, HELEMAAL BOVENAAN.
+       Hij werd pas onderaan de pagina opgehaald (regel ~2130), dus ná 1600
+       regels HTML en vier grote scriptblokken. De klok van de schermwacht liep
+       ondertussen al, en was voor een flink deel op vóórdat er überhaupt iets
+       aan de server was gevraagd. Vandaar dat de eigenaar het instellingen-
+       scherm een volle seconde zag staan.
+       Deze aanvraag is precies dezelfde als die van api() verderop; haalKlas()
+       gebruikt hem als hij er is. ⚠️ Een Response kun je maar één keer uitlezen,
+       dus haalKlas() bewaart de uitkomst en pakt hem daarna uit zijn eigen
+       geheugen. */
+    try {
+      window.__klasAanvraag = fetch('/api/klas', { headers: { accept: 'application/json' } });
+      window.__klasAanvraag.catch(function(){ /* haalKlas() meldt het wel */ });
+    } catch (e) {
+      window.__klasAanvraag = null;
+    }
+
     /* Verbergt dit scherm op hetzelfde moment dat het bestaat, niet pas nadat
        de browser het al één frame heeft laten zien (de meekijker-flits).
-       Zie avinka-schermwacht.js. */
+       Zie avinka-schermwacht.js.
+       ⚠️ RUIMER DAN 700ms, EN DAT MAG ALLEEN OMDAT ER NU IETS NEUTRAALS STAAT.
+       Op een koude server duurt dat ene antwoord soms langer dan 700ms, en dan
+       liet het oude vangnet precies het scherm zien dat een meekijker niet mag
+       gebruiken. Nu ziet hij in dat geval een regel "Even geduld", en pas als de
+       server helemaal niets zegt komt alsnog het gewone scherm. Een leeg scherm
+       is erger dan een scherm dat te vroeg komt, maar een VERKEERD scherm is
+       erger dan allebei. */
+    var scherm = document.getElementById('scherm-start');
     window.__startWacht = window.avinkaSchermwacht
-      ? avinkaSchermwacht.houdVast(document.getElementById('scherm-start'), 700)
+      ? avinkaSchermwacht.houdVast(scherm, 6000)
       : null;
+
+    if (window.__startWacht && scherm) {
+      var wachtregel = document.createElement('p');
+      wachtregel.id = 'scherm-start-wacht';
+      wachtregel.setAttribute('role', 'status');
+      wachtregel.style.cssText =
+        'margin:32px 0;text-align:center;font-size:14px;color:#6b6880;';
+      wachtregel.textContent = 'Even geduld, we halen je groep op…';
+      scherm.parentNode.insertBefore(wachtregel, scherm);
+      window.__wachtWeg = function(){
+        if (wachtregel.parentNode) wachtregel.parentNode.removeChild(wachtregel);
+      };
+      /* Zegt de server helemaal niets, dan laat de schermwacht na diezelfde
+         6 seconden het gewone scherm alsnog zien. Zonder deze regel bleef
+         "Even geduld" daar dan boven staan. */
+      setTimeout(window.__wachtWeg, 6000);
+    }
+  })();
   </script>
     <div class="apikey-card">
       <div class="apikey-label">API Sleutel</div>
@@ -684,7 +728,7 @@
   <!-- ════════ SCHERM 3: OVERZICHT ════════ -->
   <div class="scherm" id="scherm-overzicht">
     <div class="topbar">
-      <button class="btn-back" onclick="terugNaarNamen()">← Namen aanpassen</button>
+      <button class="btn-back" id="btn-namen-aanpassen" onclick="terugNaarNamen()">← Namen aanpassen</button>
       <span class="ctx-badge" id="overzicht-ctx"></span>
     </div>
     <div class="kop">
@@ -1986,7 +2030,47 @@ async function vulMijnKlas(toevoegFn){
      de groep van een collega, dan niet. Standaard true, zodat een oudere
      server die dit veld nog niet meestuurt niets kapotmaakt. */
   var avinkaMagRapportenBewerken=true;
-  async function haalKlas(){ try{ var r=await api('/api/klas'); if(!r.ok)return {naam:'',leerlingen:[]}; var d=await r.json(); avinkaKlasId=d.id||''; avinkaMagRapportenBewerken=(d.magRapportenBewerken!==false); window.avinkaKlasGeslacht={}; ((d&&d.leerlingenData)||[]).forEach(function(l){ if(l&&l.naam) window.avinkaKlasGeslacht[l.naam.toLowerCase()] = l.geslacht==='j'?'jongen':(l.geslacht==='m'?'meisje':''); }); if(!avinkaMagRapportenBewerken){ toonMeekijkMelding(); zetLeesstandAan(); } return {naam:d.naam||'', leerlingen:d.leerlingen||[]}; }catch(e){ return {naam:'',leerlingen:[]}; } }
+  /* De uitkomst van /api/klas, één keer opgehaald.
+     🔑 Dit stond er niet en dat kostte een zichtbare fout: haalKlas() werd twee
+     keer aangeroepen (prefillStart én autoVul), dus de klas werd twee keer over
+     het net gehaald. Samen met /api/rapporten waren dat drie aanvragen vóórdat
+     de tool wist of jij meekijker bent — terwijl het vangnet van de schermwacht
+     na 700ms scherm 1 alsnog laat zien. Vandaar de flits die de eigenaar zag.
+     ⚠️ Een mislukte poging bewaren we NIET, anders blijft een tijdelijke storing
+     de hele sessie hangen. */
+  var avinkaKlasBelofte=null;
+  function haalKlas(){
+    /* Eén belofte, niet één uitkomst: roepen twee stukken code dit tegelijk aan
+       (autoVul doet een Promise.all), dan wachten ze op dezelfde aanvraag in
+       plaats van er allebei een te starten. */
+    if(avinkaKlasBelofte) return avinkaKlasBelofte;
+    avinkaKlasBelofte=(async function(){
+      try{
+        // De aanvraag die bovenaan de pagina al vertrok, als die er is.
+        var vooruit=window.__klasAanvraag; window.__klasAanvraag=null;
+        var r=vooruit?await vooruit:await api('/api/klas');
+        if(!r.ok){ avinkaKlasBelofte=null; return {naam:'',leerlingen:[]}; }
+        var d=await r.json();
+        avinkaKlasId=d.id||'';
+        avinkaMagRapportenBewerken=(d.magRapportenBewerken!==false);
+        window.avinkaKlasGeslacht={};
+        ((d&&d.leerlingenData)||[]).forEach(function(l){ if(l&&l.naam) window.avinkaKlasGeslacht[l.naam.toLowerCase()] = l.geslacht==='j'?'jongen':(l.geslacht==='m'?'meisje':''); });
+        /* ⚠️ Wél meteen de schrijfknoppen uitzetten, NIET meteen de melding
+           tonen. Die melding hoort bij het scherm waar je op landt; toonden we
+           hem hier, dan stond hij in zijn eentje boven een lege pagina terwijl
+           de kaarten nog moesten komen. Dat zag de eigenaar 8-8 en het is
+           precies zo slordig als het klinkt. toonMeekijkMelding() wordt nu
+           aangeroepen zodra er echt een scherm staat. */
+        if(!avinkaMagRapportenBewerken){ zetLeesstandAan(); }
+        return {naam:d.naam||'', leerlingen:d.leerlingen||[]};
+      }catch(e){
+        // Niet bewaren: een tijdelijke storing mag niet de hele sessie blijven hangen.
+        avinkaKlasBelofte=null;
+        return {naam:'',leerlingen:[]};
+      }
+    })();
+    return avinkaKlasBelofte;
+  }
   async function haalRapporten(){ try{ var r=await api('/api/rapporten'); if(!r.ok)return []; var d=await r.json(); return d.rapporten||[]; }catch(e){ return []; } }
 
   /* Eén stille regel boven de tool. Bewust kaal en grijs, geen gekleurd
@@ -2013,18 +2097,50 @@ async function vulMijnKlas(toevoegFn){
      server (/api/klas), en zolang dat onderweg was stond scherm 1 er gewoon:
      je zag de instellingen dus even oplichten voordat je werd doorgestuurd.
      Precies dezelfde flits als in Toetsanalyse; zie avinka-schermwacht.js. */
+  /* De regel "Even geduld" hoort weg te zijn zodra er een écht scherm staat,
+     welk scherm dat ook is. Daarom op één plek, en overal aangeroepen. */
+  function stopWachtregel(){ if(window.__wachtWeg) window.__wachtWeg(); }
+
   async function meekijkerNaarOverzicht(){
-    if(avinkaMagRapportenBewerken){ if(startWacht) startWacht.toon(); return; }
+    if(avinkaMagRapportenBewerken){ stopWachtregel(); if(startWacht) startWacht.toon(); return; }
     if(typeof maakKaarten!=='function'||typeof naamLijst==='undefined'){
+      stopWachtregel();
       if(startWacht) startWacht.toon();
+      toonMeekijkMelding();
       return;
     }
+    /* 🔑 HIER VALT HET BESLUIT, EN DAT MOET ZO VROEG MOGELIJK.
+       Alles wat we nodig hebben om te weten dat scherm 1 niet getoond hoeft te
+       worden — je bent meekijker én er staan namen in de klas — staat al in het
+       antwoord van /api/klas. Dit stond hieronder, ná het ophalen van de
+       rapporten, en dan tikt het vangnet van 700ms af terwijl we nog aan het
+       laden zijn: scherm 1 licht op en springt daarna weg. */
+    // haalKlas() is al opgehaald en bewaard, dus dit kost geen aanvraag meer.
+    var klas=await haalKlas();
+    var namenBekend=((klas&&klas.leerlingen)||[]).length>0;
+    if(namenBekend&&startWacht) startWacht.laatStaan();
+
     await autoVul();
-    if(!naamLijst.length){ if(startWacht) startWacht.toon(); return; }
+
+    if(!naamLijst.length){
+      /* Toch geen namen, terwijl de klas ze wél leek te hebben. De wacht is
+         dan misschien al losgelaten en `toon()` doet daarna niets meer, dus
+         halen we scherm 1 zelf tevoorschijn. Een leeg scherm is veel erger dan
+         een scherm dat te vroeg komt. */
+      stopWachtregel();
+      if(startWacht) startWacht.toon();
+      var s=document.getElementById('scherm-start');
+      if(s) s.style.display='';
+      toonMeekijkMelding();
+      return;
+    }
     // maakKaarten() zet zelf het overzichtsscherm actief, dus scherm 1 hoeft
     // niet meer tevoorschijn te komen.
+    stopWachtregel();
     if(startWacht) startWacht.laatStaan();
     maakKaarten();
+    // Pas nu, als de kaarten er staan, hoort de melding erbij.
+    toonMeekijkMelding();
   }
 
   /* Alles waarmee je een rapport zou schrijven, uitzetten op het
@@ -2040,6 +2156,13 @@ async function vulMijnKlas(toevoegFn){
     if(thema) thema.style.display='none';
     var veld=document.getElementById('verhaal-tekst');
     if(veld){ veld.readOnly=true; veld.setAttribute('aria-readonly','true'); }
+    /* ⚠️ Ook de weg terug naar het namenscherm. Een meekijker mag de klaslijst
+       NIET aanpassen: de database geeft hem op `klassen` alleen een
+       select-policy ("meekijkende collega klas" in schema.sql), terwijl
+       wijzigen achter `klas_toegang_volledig` zit. Die knop beloofde dus iets
+       wat de server weigert. Gevonden door de eigenaar, 8-8. */
+    var namen=document.getElementById('btn-namen-aanpassen');
+    if(namen) namen.style.display='none';
   }
 
   /* Opslaan meldt het nu als het mislukt. Stond hier eerder als een fetch in
@@ -2095,6 +2218,7 @@ async function vulMijnKlas(toevoegFn){
   var startWacht = window.__startWacht || null;
   prefillStart().then(meekijkerNaarOverzicht, function(){
     // Ging het ophalen mis, dan hoor je gewoon het normale scherm te zien.
+    stopWachtregel();
     if(startWacht) startWacht.toon();
   });
 })();

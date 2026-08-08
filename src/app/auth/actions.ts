@@ -2,10 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { VOORWAARDEN, PRIVACY } from "@/lib/juridisch";
 import { veiligIntern } from "@/lib/paden";
+import { HERSTEL_ADRES_COOKIE } from "@/lib/herstel";
 import { isWegwerpAdres } from "@/lib/email-normaliseren";
 
 // Het resultaat dat de formulieren tonen (foutmelding of bevestiging).
@@ -317,37 +318,120 @@ export async function requestPasswordReset(
     console.error("resetPasswordForEmail:", error.message);
   }
 
+  // Het adres onthouden voor het scherm waar het nieuwe wachtwoord wordt
+  // gekozen. Dat scherm kan het namelijk nergens anders vandaan halen: er is op
+  // dat moment nog geen sessie, en uit het token valt geen adres af te leiden.
+  // 🔑 Het staat er niet alleen om te tonen: een wachtwoordbeheerder heeft een
+  // gebruikersnaam nodig om het nieuwe wachtwoord aan het juiste account te
+  // koppelen. Zonder dat veld slaat hij het los of onder de verkeerde site op.
+  // Een uur geldig, net als het token zelf. Opent iemand de mail op een ander
+  // apparaat, dan is er geen cookie en laat dat scherm het veld gewoon weg.
+  const koekjes = await cookies();
+  koekjes.set(HERSTEL_ADRES_COOKIE, email, {
+    maxAge: 60 * 60,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+  });
+
   return {
     message:
-      "Als er een account bij dit e-mailadres hoort, hebben we je een mail gestuurd om een nieuw wachtwoord in te stellen.",
+      "Als er een account bij dit e-mailadres hoort, hebben we je een mail gestuurd. Reken op een paar minuten voordat hij binnen is.",
   };
 }
 
-// NIEUW WACHTWOORD OPSLAAN — kan alleen met een geldige herstelsessie
-// (de gebruiker komt hier via de link uit de herstelmail).
+// NIEUW WACHTWOORD OPSLAAN.
+//
+// 🔑 HIER WORDT HET TOKEN UIT DE HERSTELMAIL INGEWISSELD (8-8-2026)
+// Dat gebeurde vroeger al zodra de link werd geopend, en dat is precies wat
+// misgaat bij scholen met Microsoft Safe Links: Microsoft haalt élke link in een
+// binnenkomende mail eerst zélf op om hem te controleren, en een eenmalig token
+// is daarmee opgebruikt vóórdat de leerkracht klikt. Nu doet het openen van het
+// scherm niets en gebeurt het inwisselen pas bij het VERSTUREN van dit
+// formulier. Een scanner opent pagina's, maar vult geen wachtwoorden in.
+// Zo werkt het bij de meeste grote partijen ook. Zie [[mail-verzendstraat]].
+//
+// Twee manieren om hier te komen, allebei geldig:
+//   1. mét `token_hash` uit de mail en nog géén sessie (de gewone route)
+//   2. met een bestaande sessie, zonder token (iemand die al ingelogd is)
 export async function updatePassword(
   _prev: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
   const password = String(formData.get("password") ?? "");
+  const herhaling = String(formData.get("password2") ?? "");
+  const token_hash = String(formData.get("token_hash") ?? "");
   if (password.length < 6) {
     return { error: "Kies een wachtwoord van minstens 6 tekens." };
   }
+  // Het scherm controleert dit ook al terwijl je typt. Hier stáát het omdat een
+  // controle in de browser geen controle is: dit is de plek die het echt afdwingt.
+  if (password !== herhaling) {
+    return { error: "De wachtwoorden komen niet overeen." };
+  }
 
   const supabase = await createClient();
-  const {
+  let {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user && token_hash) {
+    const { data, error } = await supabase.auth.verifyOtp({
+      type: "recovery",
+      token_hash,
+    });
+    if (error) {
+      console.error("Herstel-token inwisselen mislukte:", error.message);
+      // ⚠️ nlFout() kent hier de juiste tekst niet: Supabase zegt bij een
+      // opgebruikte link "Email link is invalid or has expired", en dat matcht
+      // geen van zijn patronen → dan zou hier "Er ging iets mis" staan terwijl
+      // we precies weten wat er aan de hand is. En de tekst van nlFout gaat over
+      // een códe ("Deze code klopt niet"), wat hier het verkeerde woord is.
+      const b = error.message.toLowerCase();
+      const verlopen =
+        b.includes("expired") || b.includes("invalid") || b.includes("not found");
+      return {
+        error: verlopen
+          ? "Deze herstellink is verlopen of al gebruikt."
+          : nlFout(error.message),
+      };
+    }
+    // GEEN FOUT MAAR OOK GEEN SESSIE. Blijf hierop toetsen: "er kwam geen fout
+    // terug" is niet hetzelfde als "er is een sessie". `verifyOtp` bewaart een
+    // sessie alleen als er een access_token in het antwoord zit, dus zonder deze
+    // toets zou iemand dóórgaan zonder sessie en pas veel later merken dat er
+    // niets is opgeslagen.
+    //
+    // 🔑 De `pkce_`-vraag is hiermee BEANTWOORD (8-8-2026, echte test op
+    // schoolmail): `resetPasswordForEmail` stuurt een code_challenge mee omdat
+    // @supabase/ssr standaard op flowType 'pkce' staat, en het token in de mail
+    // begint dus met `pkce_` — maar POST /verify slikt dat gewoon en geeft een
+    // sessie terug. Er hoeft géén code-uitwisseling bijgebouwd te worden.
+    // Fijne bijkomstigheid: `verifyOtp` raakt de code-verifier niet aan, dus dit
+    // werkt óók als de mail op een ander apparaat wordt geopend dan waar het
+    // herstel is aangevraagd.
+    if (!data.session) {
+      console.error("Herstel-token gaf geen fout maar ook geen sessie");
+      return { error: "Deze herstellink werkte niet." };
+    }
+    user = data.session.user;
+  }
+
+  // "hieronder" stond hier vroeger, maar de knop om een nieuwe aan te vragen
+  // staat in de melding zelf, niet eronder.
   if (!user) {
-    return {
-      error: "Je herstellink is verlopen. Vraag hieronder een nieuwe aan.",
-    };
+    return { error: "Deze herstellink is verlopen of al gebruikt." };
   }
 
   const { error } = await supabase.auth.updateUser({ password });
   if (error) {
     return { error: nlFout(error.message) };
   }
+
+  // Het onthouden adres heeft zijn werk gedaan; laat het niet rondslingeren op
+  // wat een gedeelde schoolcomputer kan zijn.
+  (await cookies()).delete(HERSTEL_ADRES_COOKIE);
 
   revalidatePath("/", "layout");
   redirect("/dashboard");
