@@ -35,8 +35,11 @@ function nlFout(bericht: string): string {
   const b = bericht.toLowerCase();
   if (b.includes("invalid login credentials"))
     return "E-mailadres of wachtwoord klopt niet.";
+  // ⚠️ Er zit sinds 8-8 geen link meer in de aanmeldmail maar een code. Deze
+  // tekst is een vangnet: normaal stuurt login() zo iemand meteen door naar
+  // /bevestigen in plaats van deze melding te tonen.
   if (b.includes("email not confirmed"))
-    return "Bevestig eerst je e-mailadres via de link in je mail.";
+    return "Je e-mailadres is nog niet bevestigd. Vul de code uit je mail in.";
   if (b.includes("user already registered") || b.includes("already been registered"))
     return "Er bestaat al een account met dit e-mailadres. Log in.";
   if (b.includes("password should be at least"))
@@ -47,6 +50,8 @@ function nlFout(bericht: string): string {
     return "Kies een nieuw wachtwoord dat anders is dan je huidige.";
   if (b.includes("for security purposes") || b.includes("rate limit"))
     return "Even geduld — je hebt dit net al geprobeerd. Wacht een minuutje en probeer opnieuw.";
+  if (b.includes("token has expired") || b.includes("invalid token") || b.includes("otp"))
+    return "Deze code klopt niet of is verlopen. Vraag hieronder een nieuwe aan.";
   // Onbekende Supabase-melding: de gebruiker krijgt een nette generieke tekst,
   // maar de echte reden mag niet verloren gaan — anders is dit soort fout
   // straks niet meer te herleiden (zie mail-verzendstraat: altijd de reden loggen).
@@ -85,6 +90,15 @@ export async function login(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
+    // Nog niet bevestigd? Dan is een foutmelding een doodlopende weg: opnieuw
+    // aanmelden kan niet (het account bestaat al) en het wachtscherm met het
+    // codeveld is weg. Stuur deze persoon meteen naar de plek waar hij het
+    // alsnog kan afmaken, mét de mogelijkheid een nieuwe code aan te vragen.
+    // ⚠️ Dit verraadt niets nieuws: de oude foutmelding zei ook al dat het
+    // adres bekend maar onbevestigd was.
+    if (error.message.toLowerCase().includes("email not confirmed")) {
+      redirect(`/bevestigen?email=${encodeURIComponent(email)}&reden=onbevestigd`);
+    }
     return { error: nlFout(error.message) };
   }
 
@@ -160,6 +174,24 @@ export async function signup(
     return { error: nlFout(error.message) };
   }
 
+  // 🔴 BESTAAT DIT ADRES AL? Dan doet Supabase met opzet alsof het gelukt is:
+  // hij maakt niets aan en verstuurt niets, maar geeft wél succes terug. Dat is
+  // een beveiliging — zou hij "dit adres bestaat al" zeggen, dan kan een vreemde
+  // uitvinden of iemand een Avinka-account heeft.
+  //
+  // ⚠️ Zonder het onderstaande is dat een DOODLOPENDE WEG: je belandt op het
+  // wachtscherm en wacht op een code die nooit komt. Dat overkwam de eigenaar
+  // 8-8 zelf, en die weet hoe het werkt; een leerkracht haakt hier af.
+  //
+  // Herkennen kan aan een lege `identities`-lijst: dat is Supabase' manier om
+  // het tóch door te geven aan de app zonder het aan de bezoeker te vertellen.
+  // Wij kiezen ervoor het wél te zeggen. Dat verraadt dat een adres bekend is,
+  // maar het alternatief kost je een gebruiker die niets fout deed — en de app
+  // zegt het elders al ("Er bestaat al een account met dit e-mailadres").
+  if (data.user && (data.user.identities?.length ?? 0) === 0) {
+    redirect("/sign-in?fout=bestaat-al");
+  }
+
   // Staat e-mailbevestiging UIT, dan is de gebruiker meteen ingelogd → dashboard.
   if (data.session) {
     revalidatePath("/", "layout");
@@ -171,6 +203,51 @@ export async function signup(
   // heeft het nodig. De teller start hier al — er is zojuist een mail de deur
   // uit gegaan, dus die minuut loopt vanaf nu.
   return { message: "verstuurd", email, opnieuwNa: Date.now() + MAIL_INTERVAL_MS };
+}
+
+// AANMELDING BEVESTIGEN MET EEN CODE UIT DE MAIL.
+//
+// 🔑 WAAROM EEN CODE EN GEEN LINK (besloten 8-8-2026, na meten op de echte site)
+// Schoolbesturen draaien Microsoft Defender met "Safe Links": élke link in élke
+// binnenkomende mail wordt herschreven naar een adres van Microsoft, en Microsoft
+// haalt hem eerst zélf op om te controleren of hij veilig is. Bij een eenmalige
+// bevestigingslink is het kaartje daarmee al gebruikt vóórdat de leerkracht
+// klikt. Dat verklaarde óók de vertraging van minuten: dat controleren kost tijd.
+// Een code is niets om op te klikken en dus niets om op te gebruiken.
+// Tweede winst: je blijft in het tabblad waar je je aanmeldde, in plaats van in
+// een nieuw venster te belanden (op mobiel vaak zelfs binnen de mail-app).
+// Zie [[mail-verzendstraat]]. ⚠️ De herstelmail houdt bewust wél een link: daar
+// verwacht iedereen er een, en dat probleem pakken we apart aan.
+export async function bevestigMetCode(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const email = String(formData.get("email") ?? "").trim();
+  // Spaties eruit: mensen plakken de code geregeld mét de ruimte die ze in de
+  // mail zien, of typen er zelf een.
+  const code = String(formData.get("code") ?? "").replace(/\s/g, "");
+  const volgende = veiligeVolgende(formData.get("volgende"));
+
+  if (!email || !code) {
+    return { error: "Vul je e-mailadres en de code uit de mail in.", email };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token: code,
+    type: "signup",
+  });
+
+  if (error) {
+    // De reden altijd loggen, anders is een mislukte bevestiging later niet te
+    // herleiden (zelfde les als bij de 535-storing).
+    console.error("Bevestigen met code mislukte:", error.message);
+    return { error: nlFout(error.message), email };
+  }
+
+  revalidatePath("/", "layout");
+  redirect(volgende);
 }
 
 // BEVESTIGINGSMAIL OPNIEUW STUREN — vanaf het wachtscherm, voor wie niets
