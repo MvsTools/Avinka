@@ -212,7 +212,7 @@ export default function DuoCollega() {
           d.error === "ongeldig_adres"
             ? "Dat lijkt geen geldig e-mailadres."
             : d.error === "eigen_adres"
-              ? "Dat is je eigen adres. Vul het adres van je collega in."
+              ? "Dat is je eigen adres. Vul het adres van je duo in."
               : d.error === "mail_mislukt"
                 ? "De uitnodiging staat klaar, maar de mail is niet verstuurd. Stuur de link hieronder zelf even door."
                 : "Het uitnodigen lukte niet. Probeer het zo nog eens.",
@@ -248,7 +248,7 @@ export default function DuoCollega() {
 
   async function loskoppelen(koppel: DuoKoppel) {
     setActieFout("");
-    const wie = koppel.status === "actief" ? "Deze collega loskoppelen?" : "Uitnodiging intrekken?";
+    const wie = koppel.status === "actief" ? "Je duo loskoppelen?" : "Uitnodiging intrekken?";
     if (!confirm(`${wie} Gedeelde toegang stopt meteen.`)) return;
     if (await verbreekDuo(koppel.id)) laadAlles();
     else setActieFout("Loskoppelen is niet gelukt. Probeer het zo nog eens.");
@@ -325,7 +325,7 @@ export default function DuoCollega() {
       id="collegas"
       className="scroll-mt-24 rounded-3xl border border-black/5 bg-white p-6 shadow-sm sm:p-7"
     >
-      <h2 className="text-lg font-bold text-ink">Collega&apos;s bij deze groep</h2>
+      <h2 className="text-lg font-bold text-ink">Je duo</h2>
       <p className="mt-2 text-sm text-ink/65">
         Draai je samen een groep? Koppel je duo-partner of een onderwijsassistent: jullie
         delen dan de klas, een gezamenlijke takenlijst, een gedeelde map en de overdracht.
@@ -680,7 +680,7 @@ export default function DuoCollega() {
       {/* ── Nieuwe uitnodiging maken ── */}
       {toonUitnodigen && (
       <div className="mt-5 border-t border-black/5 pt-5">
-        <p className="text-sm font-bold text-ink">Collega uitnodigen</p>
+        <p className="text-sm font-bold text-ink">Je duo uitnodigen</p>
         {eigenKlassen.length === 0 ? (
           <p className="mt-2 text-sm text-ink/55">Maak eerst een klas aan.</p>
         ) : (
@@ -726,7 +726,7 @@ export default function DuoCollega() {
                 schoolmail, een typefout, of je collega zit naast je en je wilt
                 het in tien seconden regelen. */}
             <label htmlFor="duo-email" className="mt-4 block text-sm font-bold text-ink">
-              E-mailadres van je collega{" "}
+              E-mailadres van je duo{" "}
               <span className="font-normal text-ink/50">(optioneel)</span>
             </label>
             <input

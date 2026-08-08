@@ -54,10 +54,14 @@ export default function CollegaUitnodigen() {
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-black/5 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <p className="font-bold text-ink">Nodig je collega&apos;s van deze groep uit</p>
+        {/* ⚠️ Noemde ook de onderwijsassistent. Sinds 8-8 is er één soort
+            gedeelde toegang, en die geeft je duo álles wat jij ook kunt,
+            inclusief de rapporten. Dat wil je niet aan een assistent aanbieden;
+            zie de rolbeslissing in DuoCollega.tsx. */}
+        <p className="font-bold text-ink">Nodig je duo uit voor deze groep</p>
         <p className="text-sm leading-6 text-ink/60">
-          Draai je de groep samen met een duo-partner of een onderwijsassistent? Dan delen
-          jullie de klas, een gezamenlijke takenlijst en de overdracht.
+          Draai je de groep samen? Dan delen jullie de klas, de rapporten, een
+          gezamenlijke takenlijst en de overdracht.
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
@@ -65,7 +69,7 @@ export default function CollegaUitnodigen() {
           href="/dashboard/instellingen#collegas"
           className="rounded-xl bg-brand px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-brand-dark"
         >
-          Collega uitnodigen
+          Duo uitnodigen
         </Link>
         <button
           onClick={nietNu}
