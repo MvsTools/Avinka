@@ -11,8 +11,8 @@
 --
 -- WAAROM WEG EN NIET LATEN STAAN. De tabel kan voornamen bevatten — een
 -- rapporttekst met "Sanne" erin is een gegeven over een kind. Zolang hij
--- bestaat valt hij dus onder de belofte "gegevens over kinderen bewaren wij
--- maximaal 90 dagen" en had hij mee moeten gaan in wijs_verwijder_klasdata()
+-- bestaat valt hij dus onder de belofte "na je abonnement bewaren we ze nog
+-- 90 dagen" en had hij mee moeten gaan in wijs_verwijder_klasdata()
 -- (database/migratie-verwijder-klasdata.sql). Een lege tabel die niemand
 -- vult, maar die je wél moet blijven meenemen in elke opruimronde, is precies
 -- het soort ding dat over een half jaar vergeten wordt. Weghalen is hier

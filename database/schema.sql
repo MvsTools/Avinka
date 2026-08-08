@@ -1282,7 +1282,7 @@ create trigger on_auth_user_created_toestemming
 -- 🔑 Gevolg: agenda_items KAN voornamen bevatten, en daarom hoort de tabel bij
 -- wat na 90 dagen zonder abonnement wordt opgeruimd. Zie
 -- database/migratie-verwijder-klasdata.sql — haal hem daar niet weg, anders is
--- de belofte "gegevens over kinderen bewaren wij maximaal 90 dagen" onwaar.
+-- de belofte "na het einde van je abonnement bewaren we ze nog 90 dagen" onwaar.
 
 create table if not exists public.agenda_bronnen (
   id            uuid primary key default gen_random_uuid(),

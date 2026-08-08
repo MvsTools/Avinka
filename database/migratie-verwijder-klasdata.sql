@@ -1,18 +1,32 @@
 -- ============================================================================
 -- Opzeggen ruimt de leerlinggegevens op (AVG)
 -- ----------------------------------------------------------------------------
--- ⭐ DE REGEL, in één zin: GEGEVENS OVER KINDEREN BEWAREN WIJ MAXIMAAL 90 DAGEN.
+-- ⭐ DE REGEL, in één zin: NA HET EINDE VAN EEN ABONNEMENT BEWAREN WIJ GEGEVENS
+--    OVER KINDEREN NOG 90 DAGEN.
 --
 -- Wie 90 dagen geen abonnement meer heeft, raakt zijn gegevens OVER KINDEREN
 -- kwijt: klassen, rapporten, plattegronden, agenda-afspraken, taken en de
 -- duo-overdracht.
 --
+-- 🔴 HIER STOND EERST "GEGEVENS OVER KINDEREN BEWAREN WIJ MAXIMAAL 90 DAGEN",
+-- EN DAT WAS ONWAAR. Gevonden door de eigenaar (8-8-2026) toen hij de
+-- opzegmail las: zolang iemand betáált bewaren we zijn klassenlijst en agenda
+-- gewoon, zonder termijn. De 90 dagen gaan pas lopen ná het abonnement. Zelfde
+-- soort fout als "Onbeperkt gebruik" op de prijzenpagina: een zin die klopt
+-- voor het geval waar je aan dacht, en niet voor de lezer die hem krijgt.
+-- ⚠️ Deze zin staat óók in de opzegmail, in /privacy en in het feitenblad voor
+-- de jurist. Wijzig je hem hier, loop die drie dan na.
+--
+-- ⚠️ EN ER IS NIET ÉÉN TERMIJN. Twee dingen hebben een eigen klok die los staat
+-- van het abonnement, allebei in retention.sql:
+--   • rapportconcepten  → 90 dagen na de laatste bewerking, ook als je betaalt
+--   • duo-overdracht    → 30 dagen na de laatste bewerking, ook als je betaalt
+-- Alleen de klas, plattegronden, agenda-afspraken en taken hangen echt aan het
+-- abonnement. Beweer dus nergens "álle gegevens over kinderen na 90 dagen".
+--
 -- ⚠️ Zeg overal "90 dagen", niet "3 maanden" (besluit eigenaar 8-8-2026).
--- Het is tastbaarder, het is exact wat de code doet, en het is hetzelfde getal
--- als wis-oude-rapporten in retention.sql. Daarmee heeft het hele platform één
--- bewaartermijn voor alles wat over kinderen gaat, en dat is een regel die je
--- aan een directeur of een jurist kunt uitleggen. "3 maanden" is vaag: dat kan
--- 89 of 92 dagen zijn.
+-- Het is tastbaarder en het is exact wat de code doet. "3 maanden" is vaag:
+-- dat kan 89 of 92 dagen zijn.
 --
 -- ⭐ WAT BLIJFT: het eigen vakwerk van de leerkracht (lesontwerpen, werkbladen,
 -- draaiboeken). Daar staat geen kind in, er is dus geen reden om het te wissen,
@@ -278,8 +292,8 @@ begin
       with weg as (delete from public.taken t where t.user_id = r.uid returning 1)
         select count(*) into n_taken from weg;
 
-      -- ⚠️ De agenda moet mee, anders is de belofte "gegevens over kinderen
-      -- bewaren wij maximaal 90 dagen" niet waar. Een titel die iemand ZELF
+      -- ⚠️ De agenda moet mee, anders is de belofte "na je abonnement bewaren
+      -- we ze nog 90 dagen" niet waar. Een titel die iemand ZELF
       -- intikt ("Oudergesprek Sanne") wordt namelijk niet gemaskeerd; alleen
       -- het importpad van een gekoppelde agenda haalt namen eruit
       -- (maskeerNamen in src/lib/agenda-opslaan.ts). Besluit eigenaar 8-8:
