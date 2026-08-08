@@ -152,7 +152,12 @@ const LABELS: Record<string, string> = {
 };
 
 // Puur technische velden die niets toevoegen voor een mens.
-const VERBERG = new Set(["id", "user_id", "parent_id", "per_dag"]);
+//
+// ⚠️ `leerlingen` staat hier omdat een klas de namen TWEE KEER opslaat: de kale
+// lijst (oud) en `leerlingen_data` met jongen/meisje erbij (nieuw). Allebei
+// tonen leverde dezelfde klas twee keer onder elkaar op. We tonen de rijke
+// versie; valt die weg, dan springt de kale lijst in (zie rijHtml).
+const VERBERG = new Set(["id", "user_id", "parent_id", "per_dag", "leerlingen"]);
 
 function escapeHtml(s: string): string {
   return s
@@ -164,6 +169,127 @@ function escapeHtml(s: string): string {
 
 function label(key: string): string {
   return LABELS[key] ?? key;
+}
+
+/* ── MEENEMEN ───────────────────────────────────────────────────────────────
+ * Welke categorieën kun je downloaden, en in welk formaat. De regel komt van de
+ * eigenaar (8-8-2026) en is scherper dan "alles downloadbaar maken":
+ *
+ *   ⭐ DOWNLOADBAAR IS PRECIES WAT WIJ WEGGOOIEN.
+ *
+ * Rapporten, plattegronden, agenda-afspraken, je klas en je taken verdwijnen 90
+ * dagen na je laatste abonnement (wijs_verwijder_klasdata). Die moet je dus mee
+ * kunnen nemen, anders ben je ze kwijt. Je lesontwerpen, werkbladen, draaiboeken
+ * en je weekrooster bewaren we juist voor altijd — daar hoort géén knop bij,
+ * maar de zin dat we ze voor je bewaren. Een knop die niet werkt leest als
+ * gijzeling; een zin leest als zorg.
+ *
+ * ⚠️ Het formaat is het halve werk. Een leerkracht die haar rapportteksten
+ * ophaalt wil ze in Word kunnen plakken, niet in JSON kunnen lezen. Kies dus per
+ * categorie het bestand dat op haar computer ergens IN gaat. */
+const MEENEMEN: Record<string, { formaat: "csv" | "ics" | "doc"; bestand: string; knop: string }> = {
+  klassen: { formaat: "csv", bestand: "avinka-klassenlijst.csv", knop: "Klassenlijst (Excel)" },
+  rapporten: { formaat: "doc", bestand: "avinka-rapportteksten.doc", knop: "Rapportteksten (Word)" },
+  taken: { formaat: "csv", bestand: "avinka-takenlijst.csv", knop: "Takenlijst (Excel)" },
+  agenda_items: { formaat: "ics", bestand: "avinka-agenda.ics", knop: "Agenda (Outlook, Google)" },
+};
+
+// Bovenaan de pagina staat wat je mee kunt nemen, daaronder de rest. Dat is de
+// volgorde waarin een leerkracht kijkt; de onderkant is er voor de wet.
+const EIGEN_WERK = ["klassen", "rapporten", "taken", "agenda_items", "bestanden"];
+
+/** ⚠️ Een cel die met = + - of @ begint, voert Excel uit als formule. Dat is een
+ *  bekende manier om via een onschuldig ogend bestand iets te laten draaien op
+ *  de computer van de ontvanger. Alles hier is door een gebruiker ingetypt, dus
+ *  zo'n cel krijgt er een apostrof voor en blijft gewoon tekst. */
+function csvCel(waarde: unknown): string {
+  const s = waarde === null || waarde === undefined ? "" : String(waarde);
+  const veilig = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+  return `"${veilig.replace(/"/g, '""')}"`;
+}
+
+/** Puntkomma's en een BOM: zo opent het bestand meteen goed in een Nederlandse
+ *  Excel, met accenten en al. Met komma's belandt alles in één kolom. */
+function csvBestand(koppen: string[], rijen: unknown[][]): string {
+  const regels = [koppen.map(csvCel).join(";")];
+  for (const r of rijen) regels.push(r.map(csvCel).join(";"));
+  return "﻿" + regels.join("\r\n") + "\r\n";
+}
+
+/** Tekst veilig in een agendabestand: komma's, puntkomma's en backslashes
+ *  hebben daar een betekenis, en een echte regelovergang breekt het bestand. */
+function icsTekst(s: string): string {
+  return String(s ?? "")
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\r?\n/g, "\\n");
+}
+
+function icsDatum(d: string): string {
+  return String(d ?? "").slice(0, 10).replace(/-/g, "");
+}
+
+/** Een dag erbij voor de einddatum: in een agendabestand is die exclusief, dus
+ *  zonder dit valt de laatste dag van een schoolkamp van de kalender af. */
+function dagErbij(datum: string): string {
+  const d = new Date(`${String(datum).slice(0, 10)}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return icsDatum(datum);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10).replace(/-/g, "");
+}
+
+/** ⚠️ Een agendabestand mag geen regels langer dan 75 tekens hebben; langere
+ *  regels breek je af en laat je verdergaan met een spatie ervoor. Een
+ *  agendatitel mag bij ons 300 tekens zijn, dus zonder dit maak je een bestand
+ *  dat een strenge agenda-app weigert — en dat merk je pas bij de leerkracht
+ *  die hem probeert te importeren. */
+function icsVouw(regel: string): string {
+  if (regel.length <= 75) return regel;
+  const stukken = [regel.slice(0, 75)];
+  for (let i = 75; i < regel.length; i += 74) stukken.push(" " + regel.slice(i, i + 74));
+  return stukken.join("\r\n");
+}
+
+function icsBestand(rijen: Record<string, unknown>[]): string {
+  const uit = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Avinka//Agenda-export//NL", "CALSCALE:GREGORIAN"];
+  // Wanneer dit bestand is gemaakt. Sommige agenda-apps weigeren een afspraak
+  // zonder dit veld.
+  const nu = new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z";
+  for (const r of rijen) {
+    uit.push("BEGIN:VEVENT");
+    uit.push(`UID:${icsTekst(String(r.id ?? r.uid ?? Math.random()))}@avinka.nl`);
+    uit.push(`DTSTAMP:${nu}`);
+    uit.push(`SUMMARY:${icsTekst(String(r.titel ?? ""))}`);
+    if (r.hele_dag || !r.begintijd) {
+      uit.push(`DTSTART;VALUE=DATE:${icsDatum(String(r.datum))}`);
+      uit.push(`DTEND;VALUE=DATE:${dagErbij(String(r.tot_datum ?? r.datum))}`);
+    } else {
+      const t = (x: unknown) => String(x ?? "00:00").slice(0, 5).replace(":", "") + "00";
+      uit.push(`DTSTART:${icsDatum(String(r.datum))}T${t(r.begintijd)}`);
+      uit.push(`DTEND:${icsDatum(String(r.tot_datum ?? r.datum))}T${t(r.eindtijd ?? r.begintijd)}`);
+    }
+    if (r.locatie) uit.push(`LOCATION:${icsTekst(String(r.locatie))}`);
+    uit.push("END:VEVENT");
+  }
+  uit.push("END:VCALENDAR");
+  return uit.map(icsVouw).join("\r\n") + "\r\n";
+}
+
+/** Word opent een HTML-bestand met de extensie .doc gewoon als document, mét
+ *  koppen en alinea's. Dat scheelt een hele docx-bouwer aan de serverkant, en
+ *  het is precies waar een rapporttekst heen moet: een document dat je nog
+ *  bewerkt voordat je hem in ParnasSys of IEP plakt. */
+function docBestand(titel: string, blokken: { kop: string; tekst: string }[]): string {
+  const body = blokken
+    .map(
+      (b) =>
+        `<h2 style="font-family:Calibri,sans-serif;font-size:14pt;">${escapeHtml(b.kop)}</h2>` +
+        `<p style="font-family:Calibri,sans-serif;font-size:11pt;line-height:1.5;">${escapeHtml(b.tekst).replace(/\r?\n/g, "<br>")}</p>`,
+    )
+    .join("");
+  return `<html xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${escapeHtml(titel)}</title></head>
+<body><h1 style="font-family:Calibri,sans-serif;font-size:18pt;">${escapeHtml(titel)}</h1>${body}</body></html>`;
 }
 
 // Lange vrije tekst (rapporttekst, les-inhoud) niet volledig uitschrijven, maar
@@ -215,8 +341,11 @@ function toonWaarde(key: string, val: unknown): string {
 
 // Eén rij → een lijstje label/waarde.
 function rijHtml(rij: Record<string, unknown>): string {
+  // Een oude klas heeft alleen de kale namenlijst en nog geen leerlingen_data.
+  // Dan tonen we die alsnog, anders zie je je klas helemaal niet.
+  const rijkeLijst = Array.isArray(rij.leerlingen_data) && rij.leerlingen_data.length > 0;
   const items = Object.entries(rij)
-    .filter(([k]) => !VERBERG.has(k))
+    .filter(([k]) => !(VERBERG.has(k) && (k !== "leerlingen" || rijkeLijst)))
     .map(([k, v]) => [label(k), toonWaarde(k, v)] as const)
     .filter(([, w]) => w !== "");
   if (items.length === 0) return "";
@@ -299,6 +428,22 @@ export async function GET(request: NextRequest) {
     aangemaakt: user.created_at,
   };
 
+  // ── Eén categorie downloaden ──────────────────────────────────────────────
+  // ?deel=rapporten geeft alleen die categorie terug, in het formaat dat er
+  // hoort. Zo hoeft niemand een bestand met álles te openen om bij zijn
+  // rapportteksten te komen.
+  const deel = request.nextUrl.searchParams.get("deel");
+  if (deel && MEENEMEN[deel]) {
+    const cfg = MEENEMEN[deel];
+    const { inhoud, type } = deelBestand(deel, gegevens[deel] ?? []);
+    return new NextResponse(inhoud, {
+      headers: {
+        "content-type": type,
+        "content-disposition": `attachment; filename="${cfg.bestand}"`,
+      },
+    });
+  }
+
   // Machineleesbaar (voor overzetten naar een andere dienst).
   if (request.nextUrl.searchParams.get("format") === "json") {
     const payload = {
@@ -316,16 +461,124 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  // Leesbare pagina.
-  const secties = TABELLEN.map((tabel) => {
+  return new NextResponse(exportPaginaHtml(account, gegevens), {
+    headers: { "content-type": "text/html; charset=utf-8" },
+  });
+}
+
+/* Eén categorie omzetten naar het bestand dat erbij hoort. Los van de route,
+ * zodat je de uitkomst kunt bekijken zonder in te loggen — een .ics of .csv die
+ * niemand ooit geopend heeft, is een belofte en geen functie. */
+export function deelBestand(
+  deel: string,
+  rijen: Record<string, unknown>[],
+): { inhoud: string; type: string } {
+  let inhoud = "";
+  let type = "text/plain; charset=utf-8";
+  {
+    if (deel === "klassen") {
+      // Eén regel per kind, niet één regel per klas: zo kun je er in Excel op
+      // sorteren en hem volgend jaar opnieuw gebruiken.
+      const uit: unknown[][] = [];
+      for (const k of rijen) {
+        const rijk = Array.isArray(k.leerlingen_data) ? k.leerlingen_data : [];
+        if (rijk.length > 0) {
+          for (const l of rijk as { naam?: string; geslacht?: string }[]) {
+            const g = l.geslacht === "j" ? "jongen" : l.geslacht === "m" ? "meisje" : "";
+            uit.push([k.naam, l.naam ?? "", g]);
+          }
+        } else {
+          for (const naam of (k.leerlingen as string[]) ?? []) uit.push([k.naam, naam, ""]);
+        }
+      }
+      inhoud = csvBestand(["Klas", "Leerling", "Jongen of meisje"], uit);
+      type = "text/csv; charset=utf-8";
+    } else if (deel === "taken") {
+      inhoud = csvBestand(
+        ["Taak", "Afgevinkt", "Deadline", "Hoort bij", "Wekelijks"],
+        rijen.map((t) => [t.tekst, t.gedaan ? "ja" : "nee", t.deadline ?? "", t.kopje ?? "", t.wekelijks ? "ja" : "nee"]),
+      );
+      type = "text/csv; charset=utf-8";
+    } else if (deel === "agenda_items") {
+      inhoud = icsBestand(rijen);
+      type = "text/calendar; charset=utf-8";
+    } else if (deel === "rapporten") {
+      inhoud = docBestand(
+        "Mijn rapportteksten",
+        rijen.map((r) => ({ kop: String(r.naam ?? ""), tekst: String(r.verhaal ?? "") })),
+      );
+      type = "application/msword; charset=utf-8";
+    }
+  }
+  return { inhoud, type };
+}
+
+/* ── DE LEESBARE PAGINA ─────────────────────────────────────────────────────
+ * Los van de route, zodat je hem met verzonnen gegevens kunt bekijken zonder in
+ * te loggen. Zonder die mogelijkheid is dit scherm alleen te beoordelen door er
+ * echt in te zitten, en dan kijkt niemand er meer naar.
+ *
+ * ⚠️ ALLES STAAT DICHTGEKLAPT. De eigenaar had 149 agenda-afspraken en die
+ * stonden allemaal uitgeschreven onder elkaar: de pagina werd onleesbaar en je
+ * vond je rapportteksten niet meer terug. Een kopje met een aantal erachter
+ * vertelt in één blik wat er is; uitklappen doe je alleen waar je iets zoekt. */
+export function exportPaginaHtml(
+  account: { email?: string | null; voornaam?: string | null },
+  gegevens: Record<string, Record<string, unknown>[]>,
+): string {
+  // Eén regel per categorie: titel, aantal en de downloadknop naast elkaar.
+  // Een eerdere versie zette de knop ONDER de dichtgeklapte titel; dan staat er
+  // een gat tussen de twee en valt de kaart uit elkaar in twee losse dingen.
+  // ⚠️ De knop zit binnen <summary>, dus een klik erop zou ook de sectie
+  // open- en dichtklappen. Vandaar de stopPropagation.
+  const sectie = (tabel: string) => {
     const cfg = SECTIES[tabel];
-    const rijen = gegevens[tabel];
-    const body =
-      rijen.length === 0
-        ? `<p class="leeg">${escapeHtml(cfg.leeg)}</p>`
-        : rijen.map(rijHtml).filter(Boolean).join('<hr class="sep">');
-    return `<section><h2>${escapeHtml(cfg.titel)}</h2>${body}</section>`;
-  }).join("");
+    const rijen = gegevens[tabel] ?? [];
+    if (rijen.length === 0) return "";
+    const mee = MEENEMEN[tabel];
+    const knop = mee
+      ? `<a class="dl" href="/api/account/export?deel=${tabel}" onclick="event.stopPropagation()">${escapeHtml(mee.knop)}</a>`
+      : "";
+    const body = rijen.map(rijHtml).filter(Boolean).join('<hr class="sep">');
+    return `<section>
+      <details>
+        <summary>
+          <span class="tit">${escapeHtml(cfg.titel)}</span>
+          <span class="telling">${rijen.length}</span>
+          <span class="rek"></span>
+          ${knop}
+        </summary>
+        <div class="inhoud">${body}</div>
+      </details>
+    </section>`;
+  };
+
+  // Lege categorieën kregen elk een eigen kaart met "Je hebt hier niets
+  // ingevuld" erin. Dat is een half scherm vullen met niets. Ze staan nu samen
+  // op één regel: je ziet nog steeds dát we die categorie hebben, zonder dat het
+  // de pagina opeet.
+  const leegRegel = (tabellen: readonly string[]) => {
+    const leeg = tabellen.filter((t) => (gegevens[t] ?? []).length === 0);
+    if (leeg.length === 0) return "";
+    const namen = leeg.map((t) => SECTIES[t].titel.replace(/^Je /, "").toLowerCase());
+    const lijst =
+      namen.length === 1 ? namen[0] : namen.slice(0, -1).join(", ") + " en " + namen.at(-1);
+    return `<p class="niets">Hier staat niets: ${escapeHtml(lijst)}.</p>`;
+  };
+
+  const overig = TABELLEN.filter((t) => !EIGEN_WERK.includes(t));
+  const secties =
+    `<h2 class="groep">Meenemen</h2>` +
+    `<p class="groepuitleg">Deze gegevens gaan over je klas, en die ruimen we 90 dagen na je laatste
+       abonnement op. Neem ze mee zolang ze er zijn.</p>` +
+    EIGEN_WERK.map(sectie).join("") +
+    leegRegel(EIGEN_WERK) +
+    `<p class="blijft"><strong>Je eigen vakwerk bewaren we gewoon voor je.</strong>
+       Lesontwerpen, werkbladen, draaiboeken en je weekrooster blijven staan, ook als je stopt.
+       Ze staan er nog als je terugkomt.</p>` +
+    `<h2 class="groep">En dit weten we verder van je</h2>` +
+    overig.map(sectie).join("") +
+    leegRegel(overig);
 
   const html = `<!doctype html>
 <html lang="nl"><head><meta charset="utf-8">
@@ -333,17 +586,54 @@ export async function GET(request: NextRequest) {
 <title>Wat Avinka van jou bewaart</title>
 <link rel="icon" href="/Avinka_vinkje.png">
 <style>
-  :root{ --ink:#1f2a37; --muted:#6b7280; --brand:#2f9e6e; --line:#e5e7eb; --cream:#f9faf8; }
+  /* brand-dark en niet brand: wit op #2f9e6e haalt 3,37:1 en dus geen AA. */
+  :root{ --ink:#1f2a37; --muted:#6b7280; --brand:#2f9e6e; --brand-dark:#25855a;
+         --line:#e5e7eb; --cream:#f9faf8; }
   *{ box-sizing:border-box; }
   body{ margin:0; background:var(--cream); color:var(--ink);
     font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; line-height:1.6; }
   .wrap{ max-width:760px; margin:0 auto; padding:40px 20px 80px; }
   .merk{ display:block; height:28px; width:auto; margin:0 0 24px; }
   h1{ font-size:28px; font-weight:800; margin:0 0 6px; }
-  .intro{ color:var(--muted); margin:0 0 8px; }
   .meta{ color:var(--muted); font-size:14px; margin:0 0 28px; }
-  section{ background:#fff; border:1px solid var(--line); border-radius:20px; padding:22px 24px; margin-bottom:16px; }
+  section{ background:#fff; border:1px solid var(--line); border-radius:20px; padding:0; margin-bottom:10px; overflow:hidden; }
   h2{ font-size:18px; font-weight:800; margin:0 0 14px; }
+  .groep{ font-size:14px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted);
+    margin:32px 0 6px; }
+  .groep:first-of-type{ margin-top:8px; }
+  .groepuitleg{ color:var(--muted); font-size:14px; margin:0 0 14px; max-width:52ch; }
+  .blijft{ background:#f1f8f4; border-radius:16px; padding:16px 20px; color:#265c42;
+    font-size:15px; margin:16px 0 0; }
+  .blijft strong{ color:#1c4a34; }
+  summary{ list-style:none; cursor:pointer; display:flex; align-items:center; gap:12px;
+    padding:16px 22px; font-weight:700; }
+  summary::-webkit-details-marker{ display:none; }
+  summary::before{ content:"›"; color:var(--muted); font-size:20px; line-height:1;
+    transition:transform .15s; }
+  details[open] summary::before{ transform:rotate(90deg); }
+  summary:hover{ background:#fafbfa; }
+  summary:focus-visible{ outline:3px solid var(--brand); outline-offset:-3px; }
+  /* Het aantal staat direct achter de titel, niet ergens rechts. Stond het aan
+     de rechterkant, dan verschoof het per regel mee met de breedte van de knop
+     ernaast en sprongen de getallen alle kanten op. */
+  .tit{ flex:0 1 auto; min-width:0; }
+  .rek{ flex:1; }
+  .telling{ color:var(--muted); font-weight:600; font-size:14px; background:var(--cream);
+    border-radius:999px; padding:2px 10px; }
+  .inhoud{ padding:4px 22px 20px; border-top:1px solid var(--line); }
+  a.dl{ display:inline-block; font-size:14px; font-weight:700; text-decoration:none;
+    color:#fff; background:var(--brand-dark); border-radius:12px; padding:8px 15px;
+    white-space:nowrap; }
+  a.dl:hover{ background:#1f6f4b; }
+  a.dl:focus-visible{ outline:3px solid var(--ink); outline-offset:2px; }
+  .niets{ color:var(--muted); font-size:14px; margin:10px 4px 0; }
+  /* Op een smal scherm past titel + aantal + knop niet naast elkaar; dan zakt
+     de knop naar een eigen regel in plaats van de titel af te knijpen. */
+  @media(max-width:560px){
+    summary{ flex-wrap:wrap; padding:14px 18px; }
+    .rek{ flex-basis:100%; height:0; }
+    a.dl{ flex-basis:100%; text-align:center; margin-top:2px; padding:11px 15px; }
+  }
   .rij{ display:grid; grid-template-columns:220px 1fr; gap:6px 18px; }
   @media(max-width:560px){ .rij{ grid-template-columns:1fr; gap:2px; } .k{ margin-top:8px; } }
   .k{ color:var(--muted); font-weight:600; font-size:14px; }
@@ -359,8 +649,6 @@ export async function GET(request: NextRequest) {
 <body><div class="wrap">
   <img class="merk" src="/Avinka_wordmerk.png" alt="Avinka">
   <h1>Wat Avinka van jou bewaart</h1>
-  <p class="intro">Wat we onder jouw account bewaren, in gewone taal op een rij.
-     Mis je hier iets? Mail ons, dan zoeken we het erbij.</p>
   <p class="meta">Account: ${escapeHtml(account.email ?? "")}${
     account.voornaam ? " · " + escapeHtml(account.voornaam) : ""
   }</p>
@@ -369,10 +657,8 @@ export async function GET(request: NextRequest) {
     <button onclick="window.print()">Afdrukken of opslaan als pdf</button>
     <a href="/api/account/export?format=json">Ook als bestand (JSON)</a>
   </div>
-  <p class="foot">Mis je hier iets, of wil je je account verwijderen? Dat regel je in Avinka onder Instellingen, of mail ons.</p>
+  <p class="foot">Je account verwijderen doe je in Avinka onder Instellingen.</p>
 </div></body></html>`;
 
-  return new NextResponse(html, {
-    headers: { "content-type": "text/html; charset=utf-8" },
-  });
+  return html;
 }
