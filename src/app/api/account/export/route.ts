@@ -150,12 +150,60 @@ function rijHtml(rij: Record<string, unknown>): string {
   );
 }
 
+/* Uitgelogd op deze pagina belanden is geen fout maar het normale geval: de
+   link naar je gegevens is bruikbaar voor wie is gestopt, en die is meestal
+   niet meer ingelogd. Een kale {"error":"unauthorized"} op een wit scherm is
+   dan een doodlopende weg op precies het moment dat iemand een recht uitoefent
+   (AVG art. 15/20). Dus: een gewone pagina met de weg terug. De JSON-variant
+   houdt wél zijn JSON, want daar zit een programma aan de andere kant. */
+function inlogPagina(): NextResponse {
+  const html = `<!doctype html>
+<html lang="nl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Even inloggen</title>
+<link rel="icon" href="/Avinka_vinkje.png">
+<style>
+  :root{ --ink:#1f2a37; --muted:#6b7280; --brand:#25855a; --line:#e5e7eb; --cream:#f9faf8; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--cream); color:var(--ink); display:flex; min-height:100vh;
+    align-items:center; justify-content:center; padding:24px;
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; line-height:1.6; }
+  .kaart{ background:#fff; border:1px solid var(--line); border-radius:20px; padding:32px 34px; max-width:460px; }
+  .merk{ display:block; height:26px; width:auto; margin:0 0 20px; }
+  h1{ font-size:22px; font-weight:800; margin:0 0 10px; }
+  p{ color:var(--muted); margin:0 0 20px; }
+  a.knop{ display:inline-block; background:var(--brand); color:#fff; text-decoration:none;
+    font-weight:700; font-size:15px; border-radius:12px; padding:12px 22px; }
+  .foot{ font-size:13px; margin:20px 0 0; }
+  .foot a{ color:var(--brand); font-weight:700; }
+</style></head>
+<body><div class="kaart">
+  <img class="merk" src="/Avinka_wordmerk.png" alt="Avinka">
+  <h1>Even inloggen</h1>
+  <p>Om te kunnen laten zien wat we van jou bewaren, moeten we eerst zeker weten
+     dat jij het bent. Log in met het adres van je Avinka-account; daarna kom je
+     hier vanzelf op je eigen overzicht.</p>
+  <a class="knop" href="/sign-in?volgende=%2Fapi%2Faccount%2Fexport">Inloggen</a>
+  <p class="foot">Lukt het inloggen niet? Mail dan naar
+     <a href="mailto:support@avinka.nl">support@avinka.nl</a>, dan sturen we je
+     gegevens met de hand toe.</p>
+</div></body></html>`;
+  return new NextResponse(html, {
+    status: 401,
+    headers: { "content-type": "text/html; charset=utf-8" },
+  });
+}
+
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!user) {
+    return request.nextUrl.searchParams.get("format") === "json"
+      ? NextResponse.json({ error: "unauthorized" }, { status: 401 })
+      : inlogPagina();
+  }
 
   const gegevens: Record<string, Record<string, unknown>[]> = {};
   for (const tabel of TABELLEN) {
@@ -202,12 +250,14 @@ export async function GET(request: NextRequest) {
 <html lang="nl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Wat Avinka van jou bewaart</title>
+<link rel="icon" href="/Avinka_vinkje.png">
 <style>
   :root{ --ink:#1f2a37; --muted:#6b7280; --brand:#2f9e6e; --line:#e5e7eb; --cream:#f9faf8; }
   *{ box-sizing:border-box; }
   body{ margin:0; background:var(--cream); color:var(--ink);
     font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; line-height:1.6; }
   .wrap{ max-width:760px; margin:0 auto; padding:40px 20px 80px; }
+  .merk{ display:block; height:28px; width:auto; margin:0 0 24px; }
   h1{ font-size:28px; font-weight:800; margin:0 0 6px; }
   .intro{ color:var(--muted); margin:0 0 8px; }
   .meta{ color:var(--muted); font-size:14px; margin:0 0 28px; }
@@ -226,6 +276,7 @@ export async function GET(request: NextRequest) {
   .foot{ color:var(--muted); font-size:13px; margin-top:28px; }
 </style></head>
 <body><div class="wrap">
+  <img class="merk" src="/Avinka_wordmerk.png" alt="Avinka">
   <h1>Wat Avinka van jou bewaart</h1>
   <p class="intro">Dit is alles wat we onder jouw account bewaren, in gewone taal op een rij.</p>
   <p class="meta">Account: ${escapeHtml(account.email ?? "")}${

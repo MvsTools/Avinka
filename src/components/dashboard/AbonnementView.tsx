@@ -231,6 +231,32 @@ export default function AbonnementView() {
       </div>
       )}
 
+      {/* ⚠️ DEZE LINK MOET HIER BLIJVEN STAAN, en juist op deze pagina.
+          Zodra BETALINGEN_LIVE aan staat stuurt de middleware iemand zonder
+          toegang van élke dashboardpagina door naar /dashboard/abonnement (zie
+          src/utils/supabase/middleware.ts). Dit is dan de enige pagina die hij
+          nog ziet — en dus de enige plek waar hij zijn eigen gegevens nog kan
+          vinden. Zonder deze link is het recht op inzage en overdracht (AVG
+          art. 15/20) in de praktijk onbereikbaar voor precies de groep die er
+          het vaakst gebruik van maakt: mensen die net gestopt zijn.
+          De export zelf zit op een losse pagina buiten het dashboard, dus deze
+          link geeft geen toegang tot iets anders. */}
+      <div className="rounded-2xl border border-black/10 bg-white/60 px-5 py-4">
+        <h3 className="text-sm font-bold text-ink">Wat we van je bewaren</h3>
+        <p className="mt-1 text-sm leading-6 text-ink/60">
+          Je kunt altijd inzien welke gegevens er onder jouw account staan, en ze
+          downloaden om mee te nemen. Dat kan ook zonder abonnement.
+        </p>
+        <a
+          href="/api/account/export"
+          target="_blank"
+          rel="noopener"
+          className="mt-3 inline-block rounded-xl border-2 border-ink/10 px-4 py-2 text-sm font-bold text-ink transition hover:border-ink/20"
+        >
+          Bekijk je gegevens
+        </a>
+      </div>
+
       {/* Pop-up na een geslaagde betaling: een feestelijk welkomstmoment met
           een knop die meteen naar het dashboard gaat. */}
       {melding === "ok" && (
