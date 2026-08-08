@@ -259,9 +259,14 @@ export const FAQ = [
       "Avinka is nu gemaakt voor jou als individuele leerkracht. Een schoolvariant staat op de planning.",
   },
   {
-    vraag: "Kan ik samenwerken met een collega?",
+    vraag: "Kan ik samenwerken met mijn duo?",
+    // ⚠️ Stond hier veel te uitgebreid, mét de zin "je kiest zelf of iemand
+    // volledig meewerkt of alleen meekijkt" — en die was sinds 8-8 onwaar (de
+    // rolkeuze is eruit). Kort gehouden op verzoek van de eigenaar: wat je
+    // precies deelt hoort op het uitnodigingsscherm te staan, op het moment dat
+    // je het doet, niet in een vraag op de voorpagina.
     antwoord:
-      "Ja. Je nodigt een collega uit voor dezelfde groep, bijvoorbeeld een duo-partner of onderwijsassistent. Samen deel je de klas, een takenlijst, een map en de overdracht. Je kiest zelf of iemand volledig meewerkt of alleen meekijkt, en de toegang gaat pas open als de ander de uitnodiging accepteert.",
+      "Ja. Je koppelt je duo aan dezelfde groep, en dan werken jullie er allebei in.",
   },
   {
     vraag: "Wat als ik ergens niet uitkom?",
