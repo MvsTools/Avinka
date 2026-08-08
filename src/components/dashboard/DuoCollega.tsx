@@ -11,7 +11,6 @@ import {
   bekijkDuoUitnodiging,
   accepteerDuoUitnodiging,
   verbreekDuo,
-  zetDuoRol,
   zetGedeeldeMap,
   getBestanden,
   addMap,
@@ -42,11 +41,6 @@ function gedeeldeMapNaam(klasNaam: string): string {
   return `Groep ${naam}`;
 }
 
-const ROL_TEKST: Record<DuoRol, string> = {
-  volledig: "Volledig",
-  meekijken: "Meekijken (leest mee)",
-};
-
 export default function DuoCollega() {
   const router = useRouter();
   const pathname = usePathname();
@@ -62,7 +56,11 @@ export default function DuoCollega() {
   const [mapBezig, setMapBezig] = useState(false);
 
   const [gekozenKlas, setGekozenKlas] = useState("");
-  const [gekozenRol, setGekozenRol] = useState<DuoRol>("volledig");
+  /* Er is nog maar één soort toegang, dus dit is geen keuze meer maar een vaste
+     waarde. Bewust wél meegestuurd naar de server in plaats van weggelaten: dan
+     staat er in de rij expliciet wat er bedoeld is, ook als de rolkeuze later
+     bij de schoollicentie terugkomt. */
+  const gekozenRol: DuoRol = "volledig";
   const [nieuweLink, setNieuweLink] = useState("");
   /* Het adres van je collega. Leeg = de oude werkwijze: je krijgt een link die
      je zelf doorstuurt. Ingevuld = het bericht gaat automatisch de deur uit,
@@ -214,7 +212,7 @@ export default function DuoCollega() {
           d.error === "ongeldig_adres"
             ? "Dat lijkt geen geldig e-mailadres."
             : d.error === "eigen_adres"
-              ? "Dat is je eigen adres. Vul het adres van je collega in."
+              ? "Dat is je eigen adres. Vul het adres van je duo in."
               : d.error === "mail_mislukt"
                 ? "De uitnodiging staat klaar, maar de mail is niet verstuurd. Stuur de link hieronder zelf even door."
                 : "Het uitnodigen lukte niet. Probeer het zo nog eens.",
@@ -250,7 +248,7 @@ export default function DuoCollega() {
 
   async function loskoppelen(koppel: DuoKoppel) {
     setActieFout("");
-    const wie = koppel.status === "actief" ? "Deze collega loskoppelen?" : "Uitnodiging intrekken?";
+    const wie = koppel.status === "actief" ? "Je duo loskoppelen?" : "Uitnodiging intrekken?";
     if (!confirm(`${wie} Gedeelde toegang stopt meteen.`)) return;
     if (await verbreekDuo(koppel.id)) laadAlles();
     else setActieFout("Loskoppelen is niet gelukt. Probeer het zo nog eens.");
@@ -264,13 +262,6 @@ export default function DuoCollega() {
     if (!confirm(`${klasNaam || "Deze groep"} verlaten? Je toegang stopt meteen.`)) return;
     if (await verbreekDuo(koppel.id)) laadAlles();
     else setActieFout("Verlaten is niet gelukt. Probeer het zo nog eens.");
-  }
-
-  async function wisselRol(koppel: DuoKoppel) {
-    setActieFout("");
-    const nieuw: DuoRol = koppel.rol === "volledig" ? "meekijken" : "volledig";
-    if (await zetDuoRol(koppel.id, nieuw)) laadAlles();
-    else setActieFout("De rol wijzigen is niet gelukt. Alleen de eigenaar van de groep mag dat.");
   }
 
   async function kiesGedeeldeMap(klasId: string, mapId: string) {
@@ -334,7 +325,7 @@ export default function DuoCollega() {
       id="collegas"
       className="scroll-mt-24 rounded-3xl border border-black/5 bg-white p-6 shadow-sm sm:p-7"
     >
-      <h2 className="text-lg font-bold text-ink">Collega&apos;s bij deze groep</h2>
+      <h2 className="text-lg font-bold text-ink">Je duo</h2>
       <p className="mt-2 text-sm text-ink/65">
         Draai je samen een groep? Koppel je duo-partner of een onderwijsassistent: jullie
         delen dan de klas, een gezamenlijke takenlijst, een gedeelde map en de overdracht.
@@ -559,21 +550,15 @@ export default function DuoCollega() {
                         </a>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        <span className="rounded-full bg-cream px-2.5 py-1 text-xs font-semibold text-ink/60">
-                          {ROL_TEKST[lid.rol]}
-                        </span>
+                        {/* Geen rolpilletje en geen "Rol wijzigen" meer: er is
+                            nog maar één soort toegang. Zie de opmerking bij het
+                            uitnodigen. */}
                         {/* Alleen de eigenaar van de groep beheert de leden.
                             Ben je er zelf als collega bij gekomen, dan hoort
                             hier niets: je stapt eruit met de knop onder de
-                            lijst, en de rol van een ander is niet aan jou. */}
+                            lijst. */}
                         {koppel && ikBenEigenaar(g.klasId) && (
                           <>
-                            <button
-                              onClick={() => wisselRol(koppel)}
-                              className="rounded-lg px-2 py-1 text-xs font-semibold text-brand transition hover:bg-brand-soft"
-                            >
-                              Rol wijzigen
-                            </button>
                             <button
                               onClick={() => loskoppelen(koppel)}
                               className="rounded-lg px-2 py-1 text-xs font-semibold text-ink/50 transition hover:text-red-600"
@@ -599,9 +584,7 @@ export default function DuoCollega() {
                           {k.code}
                         </span>
                       </p>
-                      <p className="text-xs text-ink/45">
-                        Wacht op acceptatie · {ROL_TEKST[k.rol]}
-                      </p>
+                      <p className="text-xs text-ink/45">Wacht op acceptatie</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       {k.benIkUitnodiger && k.code && (
@@ -647,14 +630,22 @@ export default function DuoCollega() {
                       {mappen[g.klasId]?.naam ?? "nog niet gekozen"}
                     </strong>
                   </span>
-                  <button
-                    onClick={() =>
-                      setMapKiezerVoor(mapKiezerVoor === g.klasId ? null : g.klasId)
-                    }
-                    className="font-semibold text-brand hover:underline"
-                  >
-                    {mappen[g.klasId] ? "Wijzigen" : "Map kiezen"}
-                  </button>
+                  {/* ⚠️ Kiezen wélke map de gedeelde map is, is de groep
+                      INRICHTEN — net als iemand uitnodigen of een rol wijzigen.
+                      Dat hoort bij de eigenaar. De database dacht daar al zo
+                      over (`klassen` bijwerken vraagt klas_toegang_volledig);
+                      het scherm bood het toch aan, en het koppelen mislukte dan
+                      stil. Gevonden door de eigenaar, 8-8. */}
+                  {ikBenEigenaar(g.klasId) && (
+                    <button
+                      onClick={() =>
+                        setMapKiezerVoor(mapKiezerVoor === g.klasId ? null : g.klasId)
+                      }
+                      className="font-semibold text-brand hover:underline"
+                    >
+                      {mappen[g.klasId] ? "Wijzigen" : "Map kiezen"}
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -689,7 +680,7 @@ export default function DuoCollega() {
       {/* ── Nieuwe uitnodiging maken ── */}
       {toonUitnodigen && (
       <div className="mt-5 border-t border-black/5 pt-5">
-        <p className="text-sm font-bold text-ink">Collega uitnodigen</p>
+        <p className="text-sm font-bold text-ink">Je duo uitnodigen</p>
         {eigenKlassen.length === 0 ? (
           <p className="mt-2 text-sm text-ink/55">Maak eerst een klas aan.</p>
         ) : (
@@ -712,31 +703,21 @@ export default function DuoCollega() {
               ))}
             </div>
 
-            {/* Rol: bepaalt of iemand rapporten mag VASTLEGGEN. Lezen mag
-                sinds 4-8 allebei; het verschil zit in het schrijven en in het
-                aanpassen van de klassenlijst. Bewust een keuze vooraf en niet
-                iets wat je achteraf moet ontdekken. */}
-            <div className="mt-3 flex flex-wrap gap-2">
-              {(["volledig", "meekijken"] as DuoRol[]).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setGekozenRol(r)}
-                  className={
-                    "rounded-xl border px-4 py-2 text-sm font-semibold transition " +
-                    (gekozenRol === r
-                      ? "border-brand bg-brand-soft text-brand"
-                      : "border-black/10 text-ink/60 hover:border-black/20")
-                  }
-                >
-                  {ROL_TEKST[r]}
-                </button>
-              ))}
-            </div>
-            <p className="mt-1.5 text-xs text-ink/50">
-              {gekozenRol === "volledig"
-                ? "Ziet en bewerkt alles van deze groep, inclusief de rapporten en de klassenlijst."
-                : "Werkt mee aan de takenlijst, de gedeelde map en de overdracht, en leest de rapporten mee. Schrijft ze niet en past de klassenlijst niet aan."}
+            {/* ⚖️ GEEN ROLKEUZE MEER (besluit eigenaar 8-8-2026). Er was een
+                tweede rol "meekijken", bedoeld voor een assistent. Die is eruit
+                omdat er nu één echte situatie is: twee leerkrachten die samen
+                één groep draaien, en die zijn samen verantwoordelijk.
+                🔑 Die rol beschermde bovendien niet wat je zou denken: een
+                meekijker mocht de rapporten gewoon LEZEN, alleen niet schrijven.
+                Rolprofielen per beroep (OA, IB, directie) horen bij de
+                schoollicentie, wáár je weet wie iemand is.
+                ⚠️ De kolom `rol` en de policies blijven staan en zijn correct;
+                daar bouwt de schoollicentie op voort. Uitnodigen maakt altijd
+                'volledig'. */}
+            <p className="mt-2 text-xs text-ink/50">
+              Je duo ziet en bewerkt alles van deze groep, net als jij: de
+              rapporten, de klassenlijst, de gedeelde map, de taken en de
+              overdracht.
             </p>
 
             {/* Het adres van je collega. Leeg laten mag: dan krijg je de oude
@@ -745,7 +726,7 @@ export default function DuoCollega() {
                 schoolmail, een typefout, of je collega zit naast je en je wilt
                 het in tien seconden regelen. */}
             <label htmlFor="duo-email" className="mt-4 block text-sm font-bold text-ink">
-              E-mailadres van je collega{" "}
+              E-mailadres van je duo{" "}
               <span className="font-normal text-ink/50">(optioneel)</span>
             </label>
             <input

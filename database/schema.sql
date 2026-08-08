@@ -1481,10 +1481,15 @@ create table if not exists public.duo_koppels (
   status          text not null default 'uitgenodigd', -- 'uitgenodigd' | 'actief'
   -- 'volledig'  = alles, zoals je duo-partner: klas, rapporten, bestanden,
   --               taken en overdracht.
-  -- 'meekijken' = de dagelijkse samenwerking (klas, gedeelde map, taken,
-  --               overdracht) maar GEEN rapporten. Voor een assistent: die
-  --               werkt met de kinderen, maar geschreven oordelen over
-  --               kinderen zijn een ander soort gegeven.
+  -- 'meekijken' = alles van de groep LEZEN, niets schrijven (aangescherpt 8-8).
+  --
+  -- ⚖️ 8-8-2026: DE ROLKEUZE STAAT NIET MEER IN HET SCHERM. Uitnodigen maakt
+  -- altijd 'volledig' — voor nu is er één situatie, twee leerkrachten die samen
+  -- één groep draaien en samen verantwoordelijk zijn. De kolom en de policies
+  -- blijven bewust staan: rolprofielen per beroep (OA, IB, directie) horen bij
+  -- de schoollicentie, en dan wordt de keuze hier weer aangezet in plaats van
+  -- dat het mechaniek opnieuw gebouwd moet worden. Bestaande meekijk-rijen zijn
+  -- omgezet (het was er één, een testkoppeling).
   rol             text not null default 'volledig',
   code            text unique,
   created_at      timestamptz default now(),
@@ -1787,15 +1792,32 @@ $$;
 -- de policy wordt voor elke rij gecheckt, ongeacht of er een duo-koppel is.
 grant execute on function public.binnen_gedeelde_map(uuid, uuid) to authenticated;
 
--- De gedeelde map staat nu op de klas; iedereen die bij de groep hoort mag
--- erin (ook meekijkers — dat is werkmateriaal, geen kindbeoordeling).
+-- De gedeelde map staat op de klas. ⚖️ 8-8-2026: iedereen bij de groep mag erin
+-- KIJKEN, maar beheren (toevoegen, wijzigen, verwijderen) vraagt volledige
+-- toegang. Stond eerst voor iedereen open met de redenering "werkmateriaal, geen
+-- kindbeoordeling"; dat paste bij een meekijker die meewerkte, en die rol is nu
+-- puur meekijken. ⚠️ Wat dit NIET dichtzet: een meekijker kan nog een EIGEN
+-- bestand in de map zetten via "eigen bestanden" hierboven, want permissieve
+-- policies tellen bij elkaar op. Het gevaarlijke deel — andermans bestanden
+-- wijzigen of weggooien — gaat hiermee wel dicht.
 drop policy if exists "duo-partner bestanden" on public.bestanden;
-create policy "duo-partner bestanden" on public.bestanden
-  for all using (
+drop policy if exists "gedeelde map lezen" on public.bestanden;
+create policy "gedeelde map lezen" on public.bestanden
+  for select using (
     exists (
       select 1 from public.klassen k
       where k.gedeelde_map_id is not null
         and public.klas_toegang(k.id)
+        and public.binnen_gedeelde_map(bestanden.id, k.gedeelde_map_id)
+    )
+  );
+drop policy if exists "gedeelde map beheren" on public.bestanden;
+create policy "gedeelde map beheren" on public.bestanden
+  for all using (
+    exists (
+      select 1 from public.klassen k
+      where k.gedeelde_map_id is not null
+        and public.klas_toegang_volledig(k.id)
         and public.binnen_gedeelde_map(bestanden.id, k.gedeelde_map_id)
     )
   )
@@ -1803,7 +1825,7 @@ create policy "duo-partner bestanden" on public.bestanden
     exists (
       select 1 from public.klassen k
       where k.gedeelde_map_id is not null
-        and public.klas_toegang(k.id)
+        and public.klas_toegang_volledig(k.id)
         and public.binnen_gedeelde_map(bestanden.id, k.gedeelde_map_id)
     )
   );
@@ -1831,10 +1853,17 @@ create trigger trg_duo_taken_updated
 
 alter table public.duo_taken enable row level security;
 drop policy if exists "duo taken voor het koppel" on public.duo_taken;
+-- ⚖️ 8-8-2026: lezen mag elk lid, SCHRIJVEN alleen wie volledige toegang heeft.
+-- Een meekijker is een directeur of IB'er die meekijkt, geen assistent die
+-- meewerkt (besluit eigenaar). Zie database/migratie-meekijker-alleen-lezen.sql.
 drop policy if exists "duo taken voor de groep" on public.duo_taken;
-create policy "duo taken voor de groep" on public.duo_taken
-  for all using (public.klas_toegang(duo_taken.klas_id))
-  with check (public.klas_toegang(duo_taken.klas_id));
+drop policy if exists "duo taken van de groep lezen" on public.duo_taken;
+create policy "duo taken van de groep lezen" on public.duo_taken
+  for select using (public.klas_toegang(duo_taken.klas_id));
+drop policy if exists "duo taken van de groep schrijven" on public.duo_taken;
+create policy "duo taken van de groep schrijven" on public.duo_taken
+  for all using (public.klas_toegang_volledig(duo_taken.klas_id))
+  with check (public.klas_toegang_volledig(duo_taken.klas_id));
 grant select, insert, update, delete on public.duo_taken to authenticated;
 
 -- ── Overdracht op Start: ÉÉN rij per koppel, altijd overschreven ─────────
@@ -1863,10 +1892,12 @@ drop policy if exists "duo overdracht voor de groep" on public.duo_overdracht;
 drop policy if exists "overdracht van de groep lezen" on public.duo_overdracht;
 create policy "overdracht van de groep lezen" on public.duo_overdracht
   for select using (public.klas_toegang(duo_overdracht.klas_id));
+-- ⚖️ 8-8-2026: schrijven vraagt nu volledige toegang. Een meekijker leest de
+-- overdracht wel maar schrijft er niet in.
 drop policy if exists "eigen overdracht schrijven" on public.duo_overdracht;
 create policy "eigen overdracht schrijven" on public.duo_overdracht
-  for all using (auteur = auth.uid() and public.klas_toegang(duo_overdracht.klas_id))
-  with check (auteur = auth.uid() and public.klas_toegang(duo_overdracht.klas_id));
+  for all using (auteur = auth.uid() and public.klas_toegang_volledig(duo_overdracht.klas_id))
+  with check (auteur = auth.uid() and public.klas_toegang_volledig(duo_overdracht.klas_id));
 
 -- Wanneer heb JIJ de overdracht van deze groep voor het laatst gelezen? Nodig
 -- voor de teller op Start ("2 nieuwe berichten"). Eén regel per persoon per
