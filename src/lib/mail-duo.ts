@@ -40,7 +40,7 @@ export type Uitnodiging = {
 function openingTekst(u: Uitnodiging): string {
   const wie = u.vanWie.trim() || "Een collega";
   if (u.rol === "meekijken") {
-    return `${wie} draait ${u.klasNaam} en nodigt je uit om mee te kijken.`;
+    return `${wie} draait ${u.klasNaam} en nodigt je uit om mee te kijken in Avinka.`;
   }
   return `${wie} draait ${u.klasNaam} en wil dat samen met jou doen in Avinka.`;
 }
@@ -76,7 +76,7 @@ export function uitnodigingHtml(u: Uitnodiging): string {
   // een eigen regel en geen hergebruik van openingTekst().
   const opening =
     u.rol === "meekijken"
-      ? `Om mee te kijken bij <strong style="color:#221c3a;">${klas}</strong>.`
+      ? `Om mee te kijken bij <strong style="color:#221c3a;">${klas}</strong> in Avinka.`
       : `Om <strong style="color:#221c3a;">${klas}</strong> samen te draaien in Avinka.`;
   return `<style>
   @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Plus+Jakarta+Sans:wght@400;700&display=swap');
