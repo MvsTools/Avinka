@@ -25,8 +25,9 @@ export default function WachtwoordWijzigen({ email }: { email: string }) {
   const [bezig, setBezig] = useState(false);
   const [uitkomst, setUitkomst] = useState<{ ok: boolean; tekst: string } | null>(null);
 
-  const verschilt = herhaling.length > 0 && nieuw !== herhaling;
-
+  // ⚠️ Bewust GEEN controle tijdens het typen: dan staat er "komen niet overeen"
+  // terwijl je nog gewoon bezig bent met het tweede veld. Pas melden bij het
+  // opslaan, zoals ook op het herstelscherm.
   function sluit() {
     setOpen(false);
     setHuidig("");
@@ -45,7 +46,7 @@ export default function WachtwoordWijzigen({ email }: { email: string }) {
       return;
     }
     if (nieuw !== herhaling) {
-      setUitkomst({ ok: false, tekst: "De twee nieuwe wachtwoorden zijn niet gelijk." });
+      setUitkomst({ ok: false, tekst: "De wachtwoorden komen niet overeen." });
       return;
     }
     if (nieuw === huidig) {
@@ -143,30 +144,19 @@ export default function WachtwoordWijzigen({ email }: { email: string }) {
                 autoComplete="new-password"
                 value={herhaling}
                 onChange={(e) => setHerhaling(e.target.value)}
-                aria-invalid={verschilt}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
                     opslaan();
                   }
                 }}
-                className={
-                  "mt-1 " +
-                  (verschilt
-                    ? "w-full max-w-xs rounded-xl border border-rose-300 bg-cream px-4 py-2.5 text-ink outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-200"
-                    : veld)
-                }
+                className={"mt-1 " + veld}
               />
-              {verschilt && (
-                <p className="mt-1 text-sm font-semibold text-rose-700">
-                  Deze twee zijn nog niet gelijk.
-                </p>
-              )}
             </div>
             <button
               type="button"
               onClick={opslaan}
-              disabled={bezig || verschilt}
+              disabled={bezig}
               className="rounded-xl bg-brand px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-dark disabled:opacity-50"
             >
               {bezig ? "Bezig…" : "Wachtwoord opslaan"}

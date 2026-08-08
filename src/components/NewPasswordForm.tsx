@@ -32,10 +32,20 @@ export default function NewPasswordForm({
   );
   const [eerste, setEerste] = useState("");
   const [tweede, setTweede] = useState("");
+  const [fout, setFout] = useState("");
 
-  // Pas klagen als er in het tweede veld iets staat: meetypen mag niet
-  // aanvoelen als fout maken.
-  const verschilt = tweede.length > 0 && eerste !== tweede;
+  // 🔑 PAS CONTROLEREN BIJ HET VERSTUREN, niet tijdens het typen.
+  // Dit stond eerst mee te kijken met elke toetsaanslag, en dan staat er "nog
+  // niet gelijk" terwijl je nog gewoon bezig bent. Je krijgt een standje voor
+  // iets wat je nog niet af hebt. Dat is ook de gangbare richtlijn (GOV.UK,
+  // Nielsen Norman): onderbreek niemand tijdens het invullen, meld het bij het
+  // verlaten van het veld of bij het versturen.
+  function controleer(e: React.FormEvent<HTMLFormElement>) {
+    if (eerste !== tweede) {
+      e.preventDefault();
+      setFout("De wachtwoorden komen niet overeen.");
+    }
+  }
 
   return (
     <div className="w-full max-w-md rounded-3xl border border-black/5 bg-white p-8 shadow-xl sm:p-10">
@@ -58,7 +68,7 @@ export default function NewPasswordForm({
         </div>
       )}
 
-      <form action={formAction} className="mt-6 space-y-4">
+      <form action={formAction} onSubmit={controleer} className="mt-6 space-y-4">
         <input type="hidden" name="token_hash" value={tokenHash} />
 
         {email && (
@@ -93,7 +103,10 @@ export default function NewPasswordForm({
             required
             minLength={6}
             value={eerste}
-            onChange={(e) => setEerste(e.target.value)}
+            onChange={(e) => {
+              setEerste(e.target.value);
+              setFout("");
+            }}
             placeholder="Minstens 6 tekens"
             className="mt-1.5 w-full rounded-xl border border-black/10 bg-cream px-4 py-3 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
           />
@@ -111,27 +124,34 @@ export default function NewPasswordForm({
             required
             minLength={6}
             value={tweede}
-            onChange={(e) => setTweede(e.target.value)}
-            aria-invalid={verschilt}
-            aria-describedby={verschilt ? "password2-fout" : undefined}
+            onChange={(e) => {
+              setTweede(e.target.value);
+              setFout("");
+            }}
+            aria-invalid={Boolean(fout)}
+            aria-describedby={fout ? "password2-fout" : undefined}
             placeholder="Typ hetzelfde wachtwoord"
             className={
               "mt-1.5 w-full rounded-xl border bg-cream px-4 py-3 text-ink outline-none transition focus:ring-2 " +
-              (verschilt
+              (fout
                 ? "border-rose-300 focus:border-rose-400 focus:ring-rose-200"
                 : "border-black/10 focus:border-brand focus:ring-brand/20")
             }
           />
-          {verschilt && (
-            <p id="password2-fout" className="mt-1.5 text-sm font-semibold text-rose-700">
-              Deze twee zijn nog niet gelijk.
+          {fout && (
+            <p
+              id="password2-fout"
+              role="alert"
+              className="mt-1.5 text-sm font-semibold text-rose-700"
+            >
+              {fout}
             </p>
           )}
         </div>
 
         <button
           type="submit"
-          disabled={pending || verschilt}
+          disabled={pending}
           className="w-full rounded-2xl bg-brand px-6 py-3.5 text-base font-bold text-white shadow-lg shadow-brand/25 transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pending ? "Opslaan…" : "Wachtwoord opslaan"}

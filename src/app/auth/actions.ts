@@ -368,7 +368,7 @@ export async function updatePassword(
   // Het scherm controleert dit ook al terwijl je typt. Hier stáát het omdat een
   // controle in de browser geen controle is: dit is de plek die het echt afdwingt.
   if (password !== herhaling) {
-    return { error: "De twee wachtwoorden zijn niet gelijk." };
+    return { error: "De wachtwoorden komen niet overeen." };
   }
 
   const supabase = await createClient();
