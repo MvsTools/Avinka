@@ -35,15 +35,11 @@ export async function verzilverMailLink(formData: FormData) {
   const supabase = await createClient();
 
   // 🔑 GESLAAGD = ER IS EEN SESSIE. Niet: "er kwam geen foutmelding terug."
-  // Dat verschil is echt. `verifyOtp` heeft geen enkel PKCE-besef: het stuurt een
-  // POST naar /verify en bewaart de sessie alleen `if (session?.access_token)`
-  // (auth-js GoTrueClient.js). En ons herstel-token IS een pkce-token: sinds
-  // @supabase/ssr standaard op flowType 'pkce' staat, stuurt
-  // `resetPasswordForEmail` een `code_challenge` mee, en daarom begint
-  // `{{ .TokenHash }}` in de mail met `pkce_`. Komt er dan een antwoord zonder
-  // sessie terug, dan zou "geen fout = gelukt" iemand doorsturen naar
-  // /nieuw-wachtwoord zónder sessie. Die ziet daar "Link verlopen", en in de log
-  // staat niets. Precies de klacht die we niet konden herleiden.
+  // Dat verschil is echt: `verifyOtp` bewaart de sessie alleen
+  // `if (session?.access_token)` (auth-js GoTrueClient.js). Komt er een antwoord
+  // zónder sessie, dan zou "geen fout = gelukt" iemand doorsturen zonder sessie,
+  // die vervolgens "Link verlopen" ziet terwijl er niets in de log staat.
+  // Precies de klacht die we 8-8 niet konden herleiden.
   let gelukt = false;
   if (code) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
@@ -55,16 +51,7 @@ export async function verzilverMailLink(formData: FormData) {
     if (error) {
       console.error("auth/confirm verifyOtp:", error.message);
     } else if (!data.session) {
-      // ⏳ Deze regel is er om één open vraag te beantwoorden: wat geeft
-      // /verify terug bij een `pkce_`-token? Verschijnt hij bij een echte
-      // herstelmail, dan is dát het antwoord en moeten we de code-uitwisseling
-      // erbij bouwen. Verschijnt hij nooit, dan slikt /verify het pkce-token
-      // gewoon en is de vraag van tafel. Weghalen zodra dat duidelijk is.
-      console.error(
-        "auth/confirm: verifyOtp gaf GEEN fout maar ook GEEN sessie |",
-        "type=", type,
-        "| pkce-token=", token_hash.startsWith("pkce_"),
-      );
+      console.error("auth/confirm: verifyOtp gaf geen fout maar ook geen sessie | type=", type);
     } else {
       gelukt = true;
     }

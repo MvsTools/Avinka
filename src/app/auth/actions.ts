@@ -373,17 +373,22 @@ export async function updatePassword(
           : nlFout(error.message),
       };
     }
-    // ⏳ GEEN FOUT MAAR OOK GEEN SESSIE: dit is de open vraag over het
-    // `pkce_`-token. `resetPasswordForEmail` stuurt een code_challenge mee omdat
-    // @supabase/ssr standaard op flowType 'pkce' staat, en `verifyOtp` heeft
-    // daar geen enkel besef van (het bewaart een sessie alleen als er een
-    // access_token in het antwoord zit). Staat deze regel in de logs, dan moet
-    // de code-uitwisseling erbij gebouwd worden. Weghalen zodra dat duidelijk is.
+    // GEEN FOUT MAAR OOK GEEN SESSIE. Blijf hierop toetsen: "er kwam geen fout
+    // terug" is niet hetzelfde als "er is een sessie". `verifyOtp` bewaart een
+    // sessie alleen als er een access_token in het antwoord zit, dus zonder deze
+    // toets zou iemand dóórgaan zonder sessie en pas veel later merken dat er
+    // niets is opgeslagen.
+    //
+    // 🔑 De `pkce_`-vraag is hiermee BEANTWOORD (8-8-2026, echte test op
+    // schoolmail): `resetPasswordForEmail` stuurt een code_challenge mee omdat
+    // @supabase/ssr standaard op flowType 'pkce' staat, en het token in de mail
+    // begint dus met `pkce_` — maar POST /verify slikt dat gewoon en geeft een
+    // sessie terug. Er hoeft géén code-uitwisseling bijgebouwd te worden.
+    // Fijne bijkomstigheid: `verifyOtp` raakt de code-verifier niet aan, dus dit
+    // werkt óók als de mail op een ander apparaat wordt geopend dan waar het
+    // herstel is aangevraagd.
     if (!data.session) {
-      console.error(
-        "Herstel-token gaf GEEN fout maar ook GEEN sessie | pkce-token=",
-        token_hash.startsWith("pkce_"),
-      );
+      console.error("Herstel-token gaf geen fout maar ook geen sessie");
       return { error: "Deze herstellink werkte niet." };
     }
     user = data.session.user;
