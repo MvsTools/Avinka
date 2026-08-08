@@ -6,6 +6,7 @@ import AccountBeheer from "@/components/dashboard/AccountBeheer";
 import AiCredits from "@/components/dashboard/AiCredits";
 import DuoCollega from "@/components/dashboard/DuoCollega";
 import EmailWijzigen from "@/components/dashboard/EmailWijzigen";
+import WachtwoordWijzigen from "@/components/dashboard/WachtwoordWijzigen";
 
 export default async function InstellingenPage() {
   const supabase = await createClient();
@@ -39,18 +40,7 @@ export default async function InstellingenPage() {
           <EmailWijzigen huidig={email} />
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/5 py-4">
-          <div>
-            <p className="text-sm font-semibold text-ink/55">Wachtwoord</p>
-            <p className="text-ink">••••••••</p>
-          </div>
-          <Link
-            href="/wachtwoord-vergeten"
-            className="rounded-xl border border-black/10 px-4 py-2 text-sm font-semibold text-ink/70 transition hover:border-black/20 hover:text-ink"
-          >
-            Wachtwoord wijzigen
-          </Link>
-        </div>
+        <WachtwoordWijzigen email={email} />
 
         <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
           <div>

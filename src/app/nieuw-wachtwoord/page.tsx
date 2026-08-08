@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import NewPasswordForm from "@/components/NewPasswordForm";
 import Logo from "@/components/Logo";
 import { createClient } from "@/utils/supabase/server";
+import { HERSTEL_ADRES_COOKIE } from "@/lib/herstel";
 
 /* Bereikbaar via de link in de herstelmail.
 
@@ -32,16 +34,21 @@ export default async function NieuwWachtwoordPage({
 }) {
   const { token_hash } = await searchParams;
 
-  // Alleen opzoeken als er geen token is: met een token hoort dit scherm juist
-  // zónder sessie te werken, en dan is de vraag "ben je al ingelogd" niet aan de
-  // orde.
+  // Voor welk account is dit? Met een token is er nog geen sessie, dus dat weten
+  // we alleen uit de cookie die bij het aanvragen is gezet. Staat die er niet
+  // (mail op een ander apparaat geopend), dan laat het formulier het veld weg.
+  let adres = "";
   let heeftSessie = false;
-  if (!token_hash) {
+  if (token_hash) {
+    adres = (await cookies()).get(HERSTEL_ADRES_COOKIE)?.value ?? "";
+  } else {
+    // Zonder token hoort dit scherm alleen te werken voor wie al is ingelogd.
     const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
     heeftSessie = Boolean(user);
+    adres = user?.email ?? "";
   }
 
   return (
@@ -51,7 +58,7 @@ export default async function NieuwWachtwoordPage({
       </Link>
 
       {token_hash || heeftSessie ? (
-        <NewPasswordForm tokenHash={token_hash ?? ""} />
+        <NewPasswordForm tokenHash={token_hash ?? ""} email={adres} />
       ) : (
         <div className="w-full max-w-md rounded-3xl border border-black/5 bg-white p-8 text-center shadow-xl sm:p-10">
           <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 text-3xl">

@@ -2,10 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { VOORWAARDEN, PRIVACY } from "@/lib/juridisch";
 import { veiligIntern } from "@/lib/paden";
+import { HERSTEL_ADRES_COOKIE } from "@/lib/herstel";
 import { isWegwerpAdres } from "@/lib/email-normaliseren";
 
 // Het resultaat dat de formulieren tonen (foutmelding of bevestiging).
@@ -317,9 +318,26 @@ export async function requestPasswordReset(
     console.error("resetPasswordForEmail:", error.message);
   }
 
+  // Het adres onthouden voor het scherm waar het nieuwe wachtwoord wordt
+  // gekozen. Dat scherm kan het namelijk nergens anders vandaan halen: er is op
+  // dat moment nog geen sessie, en uit het token valt geen adres af te leiden.
+  // 🔑 Het staat er niet alleen om te tonen: een wachtwoordbeheerder heeft een
+  // gebruikersnaam nodig om het nieuwe wachtwoord aan het juiste account te
+  // koppelen. Zonder dat veld slaat hij het los of onder de verkeerde site op.
+  // Een uur geldig, net als het token zelf. Opent iemand de mail op een ander
+  // apparaat, dan is er geen cookie en laat dat scherm het veld gewoon weg.
+  const koekjes = await cookies();
+  koekjes.set(HERSTEL_ADRES_COOKIE, email, {
+    maxAge: 60 * 60,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+  });
+
   return {
     message:
-      "Als er een account bij dit e-mailadres hoort, hebben we je een mail gestuurd om een nieuw wachtwoord in te stellen.",
+      "Als er een account bij dit e-mailadres hoort, hebben we je een mail gestuurd. Reken op een paar minuten voordat hij binnen is.",
   };
 }
 
@@ -342,9 +360,15 @@ export async function updatePassword(
   formData: FormData,
 ): Promise<AuthState> {
   const password = String(formData.get("password") ?? "");
+  const herhaling = String(formData.get("password2") ?? "");
   const token_hash = String(formData.get("token_hash") ?? "");
   if (password.length < 6) {
     return { error: "Kies een wachtwoord van minstens 6 tekens." };
+  }
+  // Het scherm controleert dit ook al terwijl je typt. Hier stáát het omdat een
+  // controle in de browser geen controle is: dit is de plek die het echt afdwingt.
+  if (password !== herhaling) {
+    return { error: "De twee wachtwoorden zijn niet gelijk." };
   }
 
   const supabase = await createClient();
@@ -404,6 +428,10 @@ export async function updatePassword(
   if (error) {
     return { error: nlFout(error.message) };
   }
+
+  // Het onthouden adres heeft zijn werk gedaan; laat het niet rondslingeren op
+  // wat een gedeelde schoolcomputer kan zijn.
+  (await cookies()).delete(HERSTEL_ADRES_COOKIE);
 
   revalidatePath("/", "layout");
   redirect("/dashboard");
