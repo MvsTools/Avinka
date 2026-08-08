@@ -6,6 +6,17 @@ import { createClient } from "@/utils/supabase/server";
 // je alleen je eigen rijen krijgt.
 //   standaard      → een leesbare webpagina, zodat je gewoon kunt zíen wat we bewaren
 //   ?format=json   → een machineleesbaar bestand, om je gegevens over te zetten
+// ⚠️ DEZE LIJST MOET MEEGROEIEN. Stond er lang op acht tabellen terwijl de
+// pagina beweerde "dit is alles wat we onder jouw account bewaren" — en dat was
+// het niet: het weekrooster, de agenda en de ingestuurde feedback ontbraken
+// allemaal. Zelfde soort fout als "Onbeperkt gebruik" op de prijzenpagina: een
+// zin die waar was toen hij geschreven werd en het daarna niet meer is.
+// Bouw je een tabel met gegevens van een gebruiker erin, zet hem hier dan bij
+// én geef hem een regel in SECTIES hieronder.
+//
+// ⚠️ Veiligheid leunt volledig op RLS: de route leest met de sessie van de
+// bezoeker, dus hij krijgt per definitie alleen zijn eigen rijen. Zet er dus
+// nooit een tabel bij die RLS uit heeft staan — dan lekt de export alles.
 const TABELLEN = [
   "instellingen",
   "klassen",
@@ -15,7 +26,21 @@ const TABELLEN = [
   "taken",
   "reviews",
   "toestemmingen",
+  "agenda_bronnen",
+  "agenda_items",
+  "basisrooster",
+  "rooster_week",
+  "feedback",
+  "proef_feedback",
+  "ai_verbruik",
 ] as const;
+
+// ⚠️ GEHEIMEN GAAN NOOIT MEE. `agenda_bronnen.link_geheim` is de privélink naar
+// iemands schoolagenda: wie die heeft, leest die agenda. Die hoort niet in een
+// bestand dat per mail rondgaat of in een downloadmap blijft slingeren.
+// Dit filter grijpt vóór ALLEBEI de uitvoerpaden, ook de JSON — de VERBERG-lijst
+// verderop werkt alleen op de leesbare pagina en zou hier dus te laat komen.
+const GEHEIM = new Set(["link_geheim"]);
 
 // Vriendelijke titel per categorie.
 const SECTIES: Record<string, { titel: string; leeg: string }> = {
@@ -27,6 +52,25 @@ const SECTIES: Record<string, { titel: string; leeg: string }> = {
   taken: { titel: "Je takenlijst", leeg: "Geen taken." },
   reviews: { titel: "Je beoordeling", leeg: "Je hebt geen beoordeling achtergelaten." },
   toestemmingen: { titel: "Je akkoord op de voorwaarden", leeg: "Nog geen akkoord vastgelegd." },
+  agenda_bronnen: {
+    titel: "Je gekoppelde agenda's",
+    leeg: "Je hebt geen agenda gekoppeld.",
+  },
+  agenda_items: {
+    titel: "Afspraken uit je agenda",
+    leeg: "Geen afspraken opgehaald of toegevoegd.",
+  },
+  basisrooster: { titel: "Je basisrooster", leeg: "Nog geen basisrooster ingevuld." },
+  rooster_week: { titel: "Je weekroosters", leeg: "Nog geen week ingevuld." },
+  feedback: { titel: "Feedback die je instuurde", leeg: "Je hebt geen feedback ingestuurd." },
+  proef_feedback: {
+    titel: "Je reactie na de proefperiode",
+    leeg: "Je hebt hier niets ingevuld.",
+  },
+  ai_verbruik: {
+    titel: "Je AI-gebruik",
+    leeg: "Nog geen AI-gebruik.",
+  },
 };
 
 // Nette labels voor de velden die ertoe doen.
@@ -47,11 +91,14 @@ const LABELS: Record<string, string> = {
   naam: "Naam",
   leerlingen: "Leerlingen (voornamen)",
   leerlingen_data: "Leerlingen",
-  actief: "Actieve klas",
+  // ⚠️ Deze lijst geldt voor ALLE tabellen tegelijk, dus een label moet kloppen
+  // voor elke tabel die de kolom heeft. `actief` bestaat bij een klas én bij
+  // een agenda; daarom het neutrale "Actief" en niet "Actieve klas".
+  actief: "Actief",
   verhaal: "Tekst",
   type: "Soort",
   inhoud: "Inhoud",
-  tool: "Gemaakt met",
+  tool: "Welke tool",
   tellers: "Aantal keer gebruikt",
   minuten: "Tijd bespaard (minuten)",
   streak: "Reeks actieve dagen",
@@ -70,6 +117,38 @@ const LABELS: Record<string, string> = {
   privacy_versie: "Versie privacyverklaring",
   geaccepteerd_op: "Akkoord gegeven op",
   bron: "Waar akkoord gegeven",
+  // Agenda
+  systeem: "Soort agenda",
+  modus: "Wat we ophalen",
+  kleur: "Kleur in de kalender",
+  laatst_gelukt: "Laatst opgehaald",
+  aantal_items: "Aantal afspraken",
+  datum: "Datum",
+  tot_datum: "Tot en met",
+  hele_dag: "Hele dag",
+  begintijd: "Begintijd",
+  eindtijd: "Eindtijd",
+  titel: "Titel",
+  soort: "Soort",
+  tijdvakken: "Aantal tijdvakken",
+  locatie: "Locatie",
+  bijgewerkt: "Bijgewerkt op",
+  // Rooster
+  schooljaar: "Schooljaar",
+  maandag: "Week vanaf maandag",
+  // AI-gebruik
+  model: "AI-model",
+  input_tokens: "Omvang van de vraag",
+  output_tokens: "Omvang van het antwoord",
+  cache_creation_tokens: "Opgeslagen voor hergebruik",
+  cache_read_tokens: "Hergebruikt uit eerdere vragen",
+  // Feedback
+  bericht: "Je bericht",
+  pagina: "Vanaf welke pagina",
+  status: "Status",
+  categorie: "Categorie",
+  intentie: "Wat je van plan was",
+  reden: "Je toelichting",
 };
 
 // Puur technische velden die niets toevoegen voor een mens.
@@ -208,7 +287,9 @@ export async function GET(request: NextRequest) {
   const gegevens: Record<string, Record<string, unknown>[]> = {};
   for (const tabel of TABELLEN) {
     const { data } = await supabase.from(tabel).select("*");
-    gegevens[tabel] = (data as Record<string, unknown>[]) ?? [];
+    gegevens[tabel] = ((data as Record<string, unknown>[]) ?? []).map((rij) =>
+      Object.fromEntries(Object.entries(rij).filter(([k]) => !GEHEIM.has(k))),
+    );
   }
 
   const account = {
@@ -278,7 +359,8 @@ export async function GET(request: NextRequest) {
 <body><div class="wrap">
   <img class="merk" src="/Avinka_wordmerk.png" alt="Avinka">
   <h1>Wat Avinka van jou bewaart</h1>
-  <p class="intro">Dit is alles wat we onder jouw account bewaren, in gewone taal op een rij.</p>
+  <p class="intro">Wat we onder jouw account bewaren, in gewone taal op een rij.
+     Mis je hier iets? Mail ons, dan zoeken we het erbij.</p>
   <p class="meta">Account: ${escapeHtml(account.email ?? "")}${
     account.voornaam ? " · " + escapeHtml(account.voornaam) : ""
   }</p>
