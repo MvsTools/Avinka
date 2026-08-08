@@ -9,6 +9,7 @@ import {
   markeerOverdrachtGelezen,
   zetDuoOverdracht,
   getMijnGebruikerId,
+  magKlasBewerken,
   type DuoOverdracht as Bericht,
 } from "@/lib/db";
 import { maakNetter } from "@/lib/overdracht-ai";
@@ -45,6 +46,10 @@ export default function DuoOverdracht({ initieleGroepen = [] }: { initieleGroepe
   const [namen, setNamen] = useState<Record<string, string>>({});
   const [mijnId, setMijnId] = useState<string | null>(null);
   const [invoer, setInvoer] = useState<Record<string, string>>({});
+  /* Mag ik in deze groep schrijven? Gevraagd aan dezelfde databasefunctie die
+     het slot gebruikt (magKlasBewerken → klas_toegang_volledig), niet zelf
+     nagerekend uit de rol. Zie DuoTaken voor dezelfde afweging. */
+  const [magSchrijven, setMagSchrijven] = useState<Record<string, boolean>>({});
   const [versturen, setVersturen] = useState(false);
   const [fout, setFout] = useState(false);
   const [open, setOpen] = useState(false);
@@ -63,19 +68,23 @@ export default function DuoOverdracht({ initieleGroepen = [] }: { initieleGroepe
       setMijnId(mij);
       setGroepen(actief);
       setActieveGroep(actief[0]?.klasId ?? "");
-      const [alle, collegas, gelezen] = await Promise.all([
+      const [alle, collegas, gelezen, rechten] = await Promise.all([
         Promise.all(actief.map((g) => getDuoOverdrachten(g.klasId))),
         Promise.all(actief.map((g) => getKlasCollegas(g.klasId))),
         Promise.all(actief.map((g) => getOverdrachtGelezen(g.klasId))),
+        Promise.all(actief.map((g) => magKlasBewerken(g.klasId))),
       ]);
       const b: Record<string, Bericht[]> = {};
       const inv: Record<string, string> = {};
       const gl: Record<string, string | null> = {};
+      const mag: Record<string, boolean> = {};
       actief.forEach((g, i) => {
         b[g.klasId] = alle[i];
         inv[g.klasId] = "";
         gl[g.klasId] = gelezen[i];
+        mag[g.klasId] = rechten[i];
       });
+      setMagSchrijven(mag);
       const n: Record<string, string> = {};
       collegas.flat().forEach((c) => (n[c.userId] = c.voornaam || "Collega"));
       setBerichten(b);
@@ -352,7 +361,17 @@ export default function DuoOverdracht({ initieleGroepen = [] }: { initieleGroepe
             <div ref={onderaan} />
           </div>
 
-          {/* ── Onderin: typen ── */}
+          {/* ── Onderin: typen ──
+              Alleen voor wie in deze groep mag schrijven. Een meekijker (sinds
+              8-8 echt alleen meekijken) leest de berichten wel maar schrijft er
+              niet in; hij kreeg hier anders een veld en een knop die de
+              database weigert. */}
+          {!magSchrijven[actieveGroep] ? (
+            <p className="mt-3 border-t border-black/5 pt-3 text-sm text-ink/50">
+              Je kijkt mee bij deze groep, dus je leest de overdracht wel maar
+              schrijft er niet in.
+            </p>
+          ) : (
           <div className="mt-3 border-t border-black/5 pt-3">
             <label htmlFor="overdracht-invoer" className="text-sm font-semibold text-ink">
               Wat wil je delen met je collega&apos;s?
@@ -457,6 +476,7 @@ export default function DuoOverdracht({ initieleGroepen = [] }: { initieleGroepe
               informatie
             </p>
           </div>
+          )}
         </Kaartvenster>
       )}
     </>

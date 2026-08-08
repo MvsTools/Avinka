@@ -813,13 +813,19 @@ export async function verbreekDuo(id: string): Promise<boolean> {
 
 // De gedeelde map hoort bij de GROEP, niet bij een koppeling: met drie mensen
 // wil je één gedeelde map. Staat daarom op `klassen`.
+// ⚠️ Met `.select()`, net als saveKlas en deleteKlas. Zonder dat is dit een
+// STILLE MISLUKKING: een update die RLS tegenhoudt raakt nul rijen en geeft
+// géén fout, dus `!error` was altijd waar. Een meekijker maakte zo een map aan
+// die vervolgens nergens aan gekoppeld werd, en het scherm zei dat het gelukt
+// was. Gevonden door de eigenaar, 8-8-2026.
 export async function zetGedeeldeMap(klasId: string, mapId: string | null): Promise<boolean> {
   const sb = createClient();
-  const { error } = await sb
+  const { data, error } = await sb
     .from("klassen")
     .update({ gedeelde_map_id: mapId })
-    .eq("id", klasId);
-  return !error;
+    .eq("id", klasId)
+    .select("id");
+  return !error && Array.isArray(data) && data.length > 0;
 }
 
 export async function getGedeeldeMap(

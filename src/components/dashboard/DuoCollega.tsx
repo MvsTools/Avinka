@@ -647,14 +647,22 @@ export default function DuoCollega() {
                       {mappen[g.klasId]?.naam ?? "nog niet gekozen"}
                     </strong>
                   </span>
-                  <button
-                    onClick={() =>
-                      setMapKiezerVoor(mapKiezerVoor === g.klasId ? null : g.klasId)
-                    }
-                    className="font-semibold text-brand hover:underline"
-                  >
-                    {mappen[g.klasId] ? "Wijzigen" : "Map kiezen"}
-                  </button>
+                  {/* ⚠️ Kiezen wélke map de gedeelde map is, is de groep
+                      INRICHTEN — net als iemand uitnodigen of een rol wijzigen.
+                      Dat hoort bij de eigenaar. De database dacht daar al zo
+                      over (`klassen` bijwerken vraagt klas_toegang_volledig);
+                      het scherm bood het toch aan, en het koppelen mislukte dan
+                      stil. Gevonden door de eigenaar, 8-8. */}
+                  {ikBenEigenaar(g.klasId) && (
+                    <button
+                      onClick={() =>
+                        setMapKiezerVoor(mapKiezerVoor === g.klasId ? null : g.klasId)
+                      }
+                      className="font-semibold text-brand hover:underline"
+                    >
+                      {mappen[g.klasId] ? "Wijzigen" : "Map kiezen"}
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -734,9 +742,13 @@ export default function DuoCollega() {
               ))}
             </div>
             <p className="mt-1.5 text-xs text-ink/50">
+              {/* ⚠️ Deze tekst moet meebewegen met de policies. Hij beschreef
+                  tot 8-8 een meekijker die meewerkte aan de takenlijst en de
+                  gedeelde map; dat kan sinds de rol echt alleen-lezen is niet
+                  meer, en dan staat er een belofte die de database weigert. */}
               {gekozenRol === "volledig"
                 ? "Ziet en bewerkt alles van deze groep, inclusief de rapporten en de klassenlijst."
-                : "Werkt mee aan de takenlijst, de gedeelde map en de overdracht, en leest de rapporten mee. Schrijft ze niet en past de klassenlijst niet aan."}
+                : "Leest alles van deze groep mee: de rapporten, de takenlijst, de overdracht en de gedeelde map. Verandert er niets aan."}
             </p>
 
             {/* Het adres van je collega. Leeg laten mag: dan krijg je de oude

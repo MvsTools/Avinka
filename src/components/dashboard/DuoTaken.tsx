@@ -10,6 +10,7 @@ import {
   setDuoTaakToegewezen,
   deleteDuoTaak,
   getMijnGebruikerId,
+  magKlasBewerken,
   type DuoTaak,
   type KlasCollega,
 } from "@/lib/db";
@@ -30,24 +31,35 @@ export default function DuoTaken() {
   const [taken, setTaken] = useState<Record<string, DuoTaak[]>>({});
   const [invoer, setInvoer] = useState<Record<string, string>>({});
   const [geladen, setGeladen] = useState(false);
+  /* Mag ik in deze groep schrijven, of kijk ik alleen mee? 🔑 Gevraagd aan
+     dezelfde databasefunctie die het slot zelf gebruikt (`magKlasBewerken` →
+     `klas_toegang_volledig`), en niet zelf nagerekend uit de rol. Zo kunnen het
+     scherm en het slot niet uit elkaar lopen. Sinds 8-8 mag een meekijker hier
+     niets meer schrijven; zonder deze controle zag hij knoppen die de database
+     weigert. */
+  const [magSchrijven, setMagSchrijven] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     (async () => {
       const [mij, gedeeld] = await Promise.all([getMijnGebruikerId(), getGedeeldeKlassen()]);
       setMijnId(mij);
       setGroepen(gedeeld);
-      const [lijsten, ledenLijsten] = await Promise.all([
+      const [lijsten, ledenLijsten, rechten] = await Promise.all([
         Promise.all(gedeeld.map((g) => getDuoTaken(g.klasId))),
         Promise.all(gedeeld.map((g) => getKlasCollegas(g.klasId))),
+        Promise.all(gedeeld.map((g) => magKlasBewerken(g.klasId))),
       ]);
       const t: Record<string, DuoTaak[]> = {};
       const l: Record<string, KlasCollega[]> = {};
+      const m: Record<string, boolean> = {};
       gedeeld.forEach((g, i) => {
         t[g.klasId] = lijsten[i];
         l[g.klasId] = ledenLijsten[i];
+        m[g.klasId] = rechten[i];
       });
       setTaken(t);
       setLeden(l);
+      setMagSchrijven(m);
       setGeladen(true);
     })();
   }, []);
@@ -109,6 +121,7 @@ export default function DuoTaken() {
               </p>
             </div>
 
+            {magSchrijven[g.klasId] && (
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -130,6 +143,7 @@ export default function DuoTaken() {
                 Toevoegen
               </button>
             </form>
+            )}
 
             {open.length === 0 && af.length === 0 ? (
               <p className="px-6 py-8 text-center text-sm text-ink/50">Nog geen gedeelde taken.</p>
@@ -140,10 +154,13 @@ export default function DuoTaken() {
                     key={t.id}
                     className="flex flex-wrap items-center gap-2.5 border-b border-black/5 px-5 py-3 transition last:border-0 hover:bg-cream/40 sm:px-6"
                   >
-                    <Rondje gedaan={false} onClick={() => toggle(g.klasId, t)} />
+                    <Rondje
+                      gedaan={false}
+                      onClick={magSchrijven[g.klasId] ? () => toggle(g.klasId, t) : undefined}
+                    />
                     <span className="min-w-0 flex-1 text-ink">{t.tekst}</span>
                     <div className="flex shrink-0 flex-wrap gap-1">
-                      {knoppen.map((k) => (
+                      {(magSchrijven[g.klasId] ? knoppen : []).map((k) => (
                         <button
                           key={k.id}
                           type="button"
@@ -159,14 +176,16 @@ export default function DuoTaken() {
                         </button>
                       ))}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => verwijder(g.klasId, t.id)}
-                      aria-label="Verwijderen"
-                      className="shrink-0 rounded-lg px-1 text-lg text-ink/25 transition hover:text-rose-500"
-                    >
-                      ✕
-                    </button>
+                    {magSchrijven[g.klasId] && (
+                      <button
+                        type="button"
+                        onClick={() => verwijder(g.klasId, t.id)}
+                        aria-label="Verwijderen"
+                        className="shrink-0 rounded-lg px-1 text-lg text-ink/25 transition hover:text-rose-500"
+                      >
+                        ✕
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -179,7 +198,10 @@ export default function DuoTaken() {
                     key={t.id}
                     className="flex items-center gap-3 border-b border-black/5 px-5 py-2.5 last:border-0 sm:px-6"
                   >
-                    <Rondje gedaan onClick={() => toggle(g.klasId, t)} />
+                    <Rondje
+                      gedaan
+                      onClick={magSchrijven[g.klasId] ? () => toggle(g.klasId, t) : undefined}
+                    />
                     <span className="flex-1 text-ink/45 line-through">{t.tekst}</span>
                     <button
                       type="button"
@@ -200,17 +222,24 @@ export default function DuoTaken() {
   );
 }
 
-function Rondje({ gedaan, onClick }: { gedaan: boolean; onClick: () => void }) {
+// `onClick` mag ontbreken: wie alleen meekijkt ziet het rondje wél (anders
+// verspringt de hele lijst) maar kan er niets mee. Dan geen knop maar een
+// plaatje, zodat het ook niet aanklikbaar lijkt of met Tab bereikbaar is.
+function Rondje({ gedaan, onClick }: { gedaan: boolean; onClick?: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={!onClick}
+      aria-hidden={!onClick}
+      tabIndex={onClick ? undefined : -1}
       aria-label={gedaan ? "Markeer als niet gedaan" : "Afvinken"}
       className={
         "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition " +
+        (!onClick ? "cursor-default " : "") +
         (gedaan
           ? "border-brand bg-brand text-white"
-          : "border-ink/25 text-transparent hover:border-brand hover:text-brand/40")
+          : "border-ink/25 text-transparent" + (onClick ? " hover:border-brand hover:text-brand/40" : ""))
       }
     >
       <svg
