@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { kort, volledig, zijkantLabel } from "@/lib/planning";
 import type { Dagbeeld, PlanItem } from "@/lib/planning";
@@ -277,7 +278,50 @@ export default function SchooljaarDagkaart({
             </ul>
           )}
 
-          {!afspraken.length && !beeld.vakantie && !beeld.startweek && (
+          {/* ⭐ §5 VAN HET PLAN, de andere kant op: "een taak met een datum
+              verschijnt in de planning op die dag."
+              De motor rekende dit al uit (dagbeeld.ts filtert taken op deadline)
+              maar geen enkel scherm liet het zien — de lijst werd berekend en
+              weggegooid. Zonder dit blijft je planning en je takenlijst twee
+              losse dingen, terwijl juist het samenkomen de belofte is.
+              ⚠️ Alleen tonen, niet afvinken: je takenlijst is de plek waar je ze
+              beheert. Twee plekken waar je hetzelfde kunt afvinken is twee
+              plekken die uit elkaar kunnen lopen. */}
+          {beeld.taken.length > 0 && (
+            <div className="mt-5">
+              <h3 className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink/45">
+                Van je takenlijst
+              </h3>
+              <ul className="mt-2 flex flex-col gap-1.5">
+                {beeld.taken.map((taak) => (
+                  <li
+                    key={taak.id}
+                    className="flex items-start gap-2.5 rounded-xl bg-cream px-3 py-2 text-sm"
+                  >
+                    <span
+                      aria-hidden
+                      className={
+                        "mt-0.5 shrink-0 " + (taak.gedaan ? "text-brand" : "text-ink/30")
+                      }
+                    >
+                      {taak.gedaan ? "✓" : "○"}
+                    </span>
+                    <span className={taak.gedaan ? "text-ink/45 line-through" : "text-ink/80"}>
+                      {taak.tekst}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/dashboard/taken"
+                className="mt-2 inline-block text-sm font-bold text-brand-dark hover:underline"
+              >
+                Naar je takenlijst →
+              </Link>
+            </div>
+          )}
+
+          {!afspraken.length && !beeld.taken.length && !beeld.vakantie && !beeld.startweek && (
             <p className="mt-4 text-ink/60">
               {beeld.weekend ? "Niets gepland." : "Niets bijzonders deze dag."}
             </p>
