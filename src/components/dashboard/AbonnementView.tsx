@@ -247,14 +247,12 @@ export default function AbonnementView() {
           Je kunt altijd inzien welke gegevens er onder jouw account staan, en ze
           downloaden om mee te nemen. Dat kan ook zonder abonnement.
         </p>
-        <a
-          href="/api/account/export"
-          target="_blank"
-          rel="noopener"
+        <Link
+          href="/mijn-gegevens"
           className="mt-3 inline-block rounded-xl border-2 border-ink/10 px-4 py-2 text-sm font-bold text-ink transition hover:border-ink/20"
         >
           Bekijk je gegevens
-        </a>
+        </Link>
       </div>
 
       {/* Pop-up na een geslaagde betaling: een feestelijk welkomstmoment met
