@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { MEENEMEN, deelBestand, exportPaginaHtml, zipBestand } from "@/app/api/account/export/route";
+import { bestandsnaamVoor, deelBestand, exportPaginaHtml, zipBestand } from "@/app/api/account/export/route";
 
 /* ⚠️ TIJDELIJK — WEG ZODRA DE EIGENAAR HET EXPORTSCHERM HEEFT GOEDGEKEURD.
  * Zelfde soort proefpagina als destijds /wek-proef en /cijfers-proef.
@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
   if (gekozen.length > 1) {
     const zip = zipBestand(
       gekozen.map((d) => ({
-        naam: MEENEMEN[d].bestand,
+        naam: bestandsnaamVoor(d),
         inhoud: deelBestand(d, gegevens[d] ?? []).inhoud,
       })),
     );

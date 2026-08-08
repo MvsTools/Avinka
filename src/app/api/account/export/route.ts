@@ -134,6 +134,7 @@ const LABELS: Record<string, string> = {
   locatie: "Locatie",
   bijgewerkt: "Bijgewerkt op",
   // Rooster
+  data: "Opgeslagen indeling",
   schooljaar: "Schooljaar",
   maandag: "Week vanaf maandag",
   // AI-gebruik
@@ -197,6 +198,20 @@ export const MEENEMEN: Record<string, { formaat: "csv" | "ics" | "doc"; bestand:
 // Bovenaan de pagina staat wat je mee kunt nemen, daaronder de rest. Dat is de
 // volgorde waarin een leerkracht kijkt; de onderkant is er voor de wet.
 const EIGEN_WERK = ["klassen", "rapporten", "taken", "agenda_items", "bestanden"];
+
+/* Alles in de onderste helft is ook per stuk te downloaden, maar dan als gewone
+ * Excel-tabel. Daar zitten te veel verschillende soorten tussen om er per
+ * categorie een eigen vorm voor te bedenken, en het doel is er ook een ander:
+ * niet "hiermee werk je verder" maar "dit is de kopie waar je recht op hebt".
+ *
+ * ⚠️ `bestanden` staat hier BEWUST niet bij en heeft dus geen hokje. Daarin
+ * zitten je lesontwerpen, werkbladen en draaiboeken, en de afspraak is dat die
+ * bij ons bewaard blijven in plaats van dat je ze meeneemt. Plattegronden zitten
+ * er óók in en die verdwijnen wél — daar hoort een tekening bij, en die kunnen
+ * we nog niet maken. Zolang dat zo is: geen half werkende knop. */
+export function bestandsnaamVoor(tabel: string): string {
+  return MEENEMEN[tabel]?.bestand ?? `avinka-${tabel.replace(/_/g, "-")}.csv`;
+}
 
 /** ⚠️ Een cel die met = + - of @ begint, voert Excel uit als formule. Dat is een
  *  bekende manier om via een onschuldig ogend bestand iets te laten draaien op
@@ -526,17 +541,22 @@ export async function GET(request: NextRequest) {
   // hoort. Zo hoeft niemand een bestand met álles te openen om bij zijn
   // rapportteksten te komen.
   // Het formulier op de pagina stuurt één ?deel= per aangevinkt hokje mee.
-  const gekozen = request.nextUrl.searchParams.getAll("deel").filter((d) => MEENEMEN[d]);
+  // ⚠️ Alleen namen uit TABELLEN worden geaccepteerd. Zonder die controle zou
+  // ?deel=<wat dan ook> een tabelnaam kunnen zijn die hier niet hoort.
+  const gekozen = request.nextUrl.searchParams
+    .getAll("deel")
+    .filter((d) => (TABELLEN as readonly string[]).includes(d) && d !== "bestanden");
+
+  const bestandsnaam = bestandsnaamVoor;
 
   // Eén categorie? Dan gewoon dat bestand. Iemand die alleen zijn rapportteksten
   // wil, moet geen zip hoeven uitpakken om erbij te komen.
   if (gekozen.length === 1) {
-    const cfg = MEENEMEN[gekozen[0]];
     const { inhoud, type } = deelBestand(gekozen[0], gegevens[gekozen[0]] ?? []);
     return new NextResponse(inhoud, {
       headers: {
         "content-type": type,
-        "content-disposition": `attachment; filename="${cfg.bestand}"`,
+        "content-disposition": `attachment; filename="${bestandsnaam(gekozen[0])}"`,
       },
     });
   }
@@ -545,7 +565,7 @@ export async function GET(request: NextRequest) {
   if (gekozen.length > 1) {
     const zip = zipBestand(
       gekozen.map((d) => ({
-        naam: MEENEMEN[d].bestand,
+        naam: bestandsnaam(d),
         inhoud: deelBestand(d, gegevens[d] ?? []).inhoud,
       })),
     );
@@ -590,6 +610,32 @@ export function deelBestand(
 ): { inhoud: string; type: string } {
   let inhoud = "";
   let type = "text/plain; charset=utf-8";
+
+  // Categorieën zonder eigen vorm worden een gewone tabel: één regel per rij,
+  // één kolom per veld. De kolommen komen uit de gegevens zelf, zodat een nieuw
+  // veld vanzelf meegaat en niemand deze lijst hoeft bij te werken.
+  if (!MEENEMEN[deel]) {
+    const kolommen = [...new Set(rijen.flatMap((r) => Object.keys(r)))].filter(
+      (k) => !VERBERG.has(k),
+    );
+    inhoud = csvBestand(
+      kolommen.map(label),
+      rijen.map((r) =>
+        kolommen.map((k) => {
+          const w = r[k];
+          if (w === null || w === undefined) return "";
+          if (typeof w === "boolean") return w ? "ja" : "nee";
+          // Een opgeslagen indeling (rooster, plattegrond, tellers) is geen
+          // tekst. Die gaat er als JSON in: onleesbaar in Excel, maar wel
+          // compleet, en dat is waar deze helft van de pagina voor is.
+          if (typeof w === "object") return JSON.stringify(w);
+          return String(w);
+        }),
+      ),
+    );
+    return { inhoud, type: "text/csv; charset=utf-8" };
+  }
+
   {
     if (deel === "klassen") {
       // Eén regel per kind, niet één regel per klas: zo kun je er in Excel op
@@ -660,26 +706,39 @@ export function exportPaginaHtml(
     // Een categorie in dit blok zonder hokje (bestanden, want plattegronden
     // tekenen kan nog niet) krijgt tóch de lege kolom, anders staat zijn titel
     // uit de rooilijn met de rest en lijkt dat een fout.
-    const hokje = mee
-      ? `<label class="vink" title="Aanvinken om mee te nemen">
+    // Bestanden is de enige categorie zonder hokje; zie de opmerking bij
+    // algemeneBestandsnaam(). Die krijgt wel de lege kolom, anders staat zijn
+    // titel uit de rooilijn.
+    const teKiezen = tabel !== "bestanden";
+    const hokje = teKiezen
+      ? `<label class="vink" title="Aanvinken om te downloaden">
            <input type="checkbox" name="deel" value="${tabel}">
-           <span class="hoklabel">${escapeHtml(cfg.titel)} meenemen</span>
+           <span class="hoklabel">${escapeHtml(cfg.titel)} downloaden</span>
          </label>`
       : inMeenemen
         ? `<span class="vink" aria-hidden="true"></span>`
         : "";
-    return `<section class="${mee || inMeenemen ? "mee" : ""}">
+    const soort = mee ? (mee.formaat === "doc" ? "Word" : mee.formaat === "csv" ? "Excel" : "Agenda") : "Excel";
+    return `<section class="${teKiezen || inMeenemen ? "mee" : ""}">
       ${hokje}
       <details>
         <summary>
           <span class="tit">${escapeHtml(cfg.titel)}</span>
           <span class="telling">${rijen.length}</span>
-          ${mee ? `<span class="rek"></span><span class="soort">${escapeHtml(mee.formaat === "doc" ? "Word" : mee.formaat === "csv" ? "Excel" : "Agenda")}</span>` : ""}
+          ${teKiezen ? `<span class="rek"></span><span class="soort">${soort}</span>` : ""}
         </summary>
         <div class="inhoud">${body}</div>
       </details>
     </section>`;
   };
+
+  // Dezelfde knop onder allebei de blokken. Twee losse formulieren, zodat een
+  // vinkje boven niet meekomt met een download onderin en andersom.
+  const knopBalk = (hint: string) =>
+    `<div class="balk">
+       <button type="submit" class="dlknop">Download wat je hebt aangevinkt</button>
+       <span class="hint">${escapeHtml(hint)}</span>
+     </div>`;
 
   // Lege categorieën kregen elk een eigen kaart met "Je hebt hier niets
   // ingevuld" erin. Dat is een half scherm vullen met niets. Ze staan nu samen
@@ -704,20 +763,21 @@ export function exportPaginaHtml(
     // meelopende telling bij.
     `<form method="get" action="/api/account/export">` +
     EIGEN_WERK.map((t) => sectie(t, true)).join("") +
-    `<div class="balk">
-       <button type="submit" id="dlknop">Download wat je hebt aangevinkt</button>
-       <span class="hint" id="dlhint">Nog niets aangevinkt</span>
-     </div>` +
+    knopBalk("Nog niets aangevinkt") +
     `</form>` +
     leegRegel(EIGEN_WERK) +
     `<p class="blijft"><strong>Je eigen vakwerk bewaren we gewoon voor je.</strong>
        Lesontwerpen, werkbladen, draaiboeken en je weekrooster blijven staan, ook als je stopt.
        Ze staan er nog als je terugkomt.</p>` +
     `<h2 class="groep">En dit weten we verder van je</h2>` +
+    `<p class="groepuitleg">Hier kun je ook los iets van ophalen. Deze komen als Excel-tabel.</p>` +
+    `<form method="get" action="/api/account/export">` +
     // ⚠️ Met de losse functienaam geeft map() de INDEX mee als tweede argument,
     // en dat is hier de vlag "zit in het meeneem-blok". Alles behalve de eerste
     // sectie kreeg daardoor een lege vinkkolom en stond ingesprongen.
-    overig.map((t) => sectie(t)).join("") +
+    overig.map((t) => sectie(t, true)).join("") +
+    knopBalk("Nog niets aangevinkt") +
+    `</form>` +
     leegRegel(overig);
 
   const html = `<!doctype html>
@@ -774,11 +834,11 @@ export function exportPaginaHtml(
   .hoklabel{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);
     white-space:nowrap; }
   .balk{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin:18px 0 0; }
-  #dlknop{ font:inherit; font-size:15px; font-weight:700; cursor:pointer; border:0;
+  .dlknop{ font:inherit; font-size:15px; font-weight:700; cursor:pointer; border:0;
     color:#fff; background:var(--brand-dark); border-radius:14px; padding:12px 22px; }
-  #dlknop:hover{ background:#1f6f4b; }
-  #dlknop:focus-visible{ outline:3px solid var(--ink); outline-offset:2px; }
-  #dlknop[disabled]{ background:#c9d3cd; cursor:not-allowed; }
+  .dlknop:hover{ background:#1f6f4b; }
+  .dlknop:focus-visible{ outline:3px solid var(--ink); outline-offset:2px; }
+  .dlknop[disabled]{ background:#c9d3cd; cursor:not-allowed; }
   .hint{ color:var(--muted); font-size:14px; }
   .niets{ color:var(--muted); font-size:14px; margin:10px 4px 0; }
   /* Op een smal scherm past titel + aantal + knop niet naast elkaar; dan zakt
@@ -786,7 +846,7 @@ export function exportPaginaHtml(
   @media(max-width:560px){
     summary{ padding:14px 16px; }
     .vink{ padding:16px 0 16px 14px; }
-    #dlknop{ width:100%; }
+    .dlknop{ width:100%; }
   }
   .rij{ display:grid; grid-template-columns:220px 1fr; gap:6px 18px; }
   @media(max-width:560px){ .rij{ grid-template-columns:1fr; gap:2px; } .k{ margin-top:8px; } }
@@ -816,10 +876,12 @@ export function exportPaginaHtml(
 <script>
   /* Alleen een meelopende telling op de knop. Zet dit script uit en het
      formulier werkt nog steeds: de hokjes worden dan gewoon meegestuurd. */
-  (function () {
-    var hokjes = Array.prototype.slice.call(document.querySelectorAll('input[name="deel"]'));
-    var knop = document.getElementById('dlknop');
-    var hint = document.getElementById('dlhint');
+  /* Elk blok telt zijn eigen vinkjes: een vinkje boven mag niet meekomen met
+     een download onderin. */
+  Array.prototype.forEach.call(document.querySelectorAll('form'), function (form) {
+    var hokjes = Array.prototype.slice.call(form.querySelectorAll('input[name="deel"]'));
+    var knop = form.querySelector('.dlknop');
+    var hint = form.querySelector('.hint');
     if (!hokjes.length || !knop || !hint) return;
     function bij() {
       var n = hokjes.filter(function (h) { return h.checked; }).length;
@@ -831,7 +893,7 @@ export function exportPaginaHtml(
     }
     hokjes.forEach(function (h) { h.addEventListener('change', bij); });
     bij();
-  })();
+  });
 </script>
 </body></html>`;
 
