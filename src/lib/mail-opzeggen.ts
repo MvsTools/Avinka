@@ -47,7 +47,22 @@ export function nlDatum(datum: string): string {
   return `${d.getDate()} ${MAANDEN[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+/* "Hallo Marieke," — of gewoon "Hallo," als we geen naam hebben.
+ * ⚠️ De voornaam KAN leeg zijn (de databasefunctie geeft coalesce(..., '')
+ * terug), en "Hallo ," is precies het soort slordigheid dat een persoonlijke
+ * opening juist onpersoonlijk maakt.
+ * ⚠️ Deze mail heeft als ENIGE een groet. Dat is bewust (eigenaar 8-8): het
+ * gaat hier over gegevens van jouw kinderen, en dat is persoonlijker dan een
+ * proef die afloopt. In mail-proef-verlopen.ts is de aanhef juist bewust
+ * weggelaten. Trek ze dus niet "voor de consistentie" gelijk. */
+function groet(voornaam: string): string {
+  const naam = voornaam.trim();
+  return naam ? `Hallo ${naam},` : "Hallo,";
+}
+
 export type Opzegging = {
+  /* ⚠️ Vult iemand zelf in bij het aanmelden, dus onbetrouwbare invoer: in de
+     HTML-versie altijd door veilig() halen. */
   voornaam: string;
   /* Sinds wanneer deze leerkracht geen abonnement meer heeft, als jjjj-mm-dd.
      ⚠️ NODIG OM NIET TE LIEGEN: deze mail gaat op dag 83, niet op dag 90. Een
@@ -74,6 +89,8 @@ export function opzeggingTekst(h: Opzegging): string {
   const datum = nlDatum(h.wistOp);
   const tot = nlDatum(h.abonnementTot);
   return [
+    groet(h.voornaam),
+    "",
     `Sinds ${tot} heb je geen abonnement meer op Avinka. Gegevens over kinderen bewaren wij maximaal 90 dagen, dus op ${datum} ruimen we ze op.`,
     "",
     "Je eigen werk bewaren we wel: lesontwerpen, werkbladen en draaiboeken, mocht je ze ooit nog nodig hebben.",
@@ -92,6 +109,7 @@ export function opzeggingHtml(h: Opzegging): string {
   const link = veilig(h.link);
   const datum = veilig(nlDatum(h.wistOp));
   const tot = veilig(nlDatum(h.abonnementTot));
+  const hoi = veilig(groet(h.voornaam));
   return `<style>
   @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Plus+Jakarta+Sans:wght@400;700&display=swap');
 </style>
@@ -100,7 +118,8 @@ export function opzeggingHtml(h: Opzegging): string {
     <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:20px;font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
       <tr><td style="padding:34px 36px 0;">
         <h1 style="margin:0;font-family:'Bricolage Grotesque',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:800;font-size:26px;line-height:1.25;color:#221c3a;">We ruimen je leerlinggegevens op</h1>
-        <p style="margin:14px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Sinds ${tot} heb je geen abonnement meer op Avinka. Gegevens over kinderen bewaren wij maximaal 90 dagen, dus op <strong style="color:#221c3a;">${datum}</strong> ruimen we ze op.</p>
+        <p style="margin:16px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">${hoi}</p>
+        <p style="margin:10px 0 0;font-size:16px;line-height:1.65;color:#4a4458;">Sinds ${tot} heb je geen abonnement meer op Avinka. Gegevens over kinderen bewaren wij maximaal 90 dagen, dus op <strong style="color:#221c3a;">${datum}</strong> ruimen we ze op.</p>
       </td></tr>
       <tr><td style="padding:20px 36px 0;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f1f8f4;border-radius:14px;">
