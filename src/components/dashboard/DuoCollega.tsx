@@ -327,9 +327,15 @@ export default function DuoCollega() {
     >
       <h2 className="text-lg font-bold text-ink">Je duo</h2>
       <p className="mt-2 text-sm text-ink/65">
-        Draai je samen een groep? Koppel je duo-partner of een onderwijsassistent: jullie
-        delen dan de klas, een gezamenlijke takenlijst, een gedeelde map en de overdracht.
-        Bijzondere persoonsgegevens (medisch, gezinssituatie, diagnoses) horen hier nooit in.
+        {/* ⚠️ Twee dingen die hier 8-8 uit moesten. De onderwijsassistent, want
+            gedeelde toegang geeft je duo álles wat jij kunt. En de opsomming
+            noemde de RAPPORTEN niet, terwijl dat het gevoeligste is wat je
+            deelt — juist die moet erin staan vóórdat iemand op uitnodigen
+            drukt. Gevonden door de eigenaar. */}
+        Draai je samen een groep? Koppel je duo: jullie delen dan de klas, de rapporten,
+        een gezamenlijke takenlijst, een gedeelde map en de overdracht. Je duo kan dus
+        alles wat jij kunt. Bijzondere persoonsgegevens (medisch, gezinssituatie,
+        diagnoses) horen hier nooit in.
       </p>
 
       {actieFout && (
