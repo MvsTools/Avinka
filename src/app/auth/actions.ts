@@ -323,25 +323,76 @@ export async function requestPasswordReset(
   };
 }
 
-// NIEUW WACHTWOORD OPSLAAN — kan alleen met een geldige herstelsessie
-// (de gebruiker komt hier via de link uit de herstelmail).
+// NIEUW WACHTWOORD OPSLAAN.
+//
+// 🔑 HIER WORDT HET TOKEN UIT DE HERSTELMAIL INGEWISSELD (8-8-2026)
+// Dat gebeurde vroeger al zodra de link werd geopend, en dat is precies wat
+// misgaat bij scholen met Microsoft Safe Links: Microsoft haalt élke link in een
+// binnenkomende mail eerst zélf op om hem te controleren, en een eenmalig token
+// is daarmee opgebruikt vóórdat de leerkracht klikt. Nu doet het openen van het
+// scherm niets en gebeurt het inwisselen pas bij het VERSTUREN van dit
+// formulier. Een scanner opent pagina's, maar vult geen wachtwoorden in.
+// Zo werkt het bij de meeste grote partijen ook. Zie [[mail-verzendstraat]].
+//
+// Twee manieren om hier te komen, allebei geldig:
+//   1. mét `token_hash` uit de mail en nog géén sessie (de gewone route)
+//   2. met een bestaande sessie, zonder token (iemand die al ingelogd is)
 export async function updatePassword(
   _prev: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
   const password = String(formData.get("password") ?? "");
+  const token_hash = String(formData.get("token_hash") ?? "");
   if (password.length < 6) {
     return { error: "Kies een wachtwoord van minstens 6 tekens." };
   }
 
   const supabase = await createClient();
-  const {
+  let {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user && token_hash) {
+    const { data, error } = await supabase.auth.verifyOtp({
+      type: "recovery",
+      token_hash,
+    });
+    if (error) {
+      console.error("Herstel-token inwisselen mislukte:", error.message);
+      // ⚠️ nlFout() kent hier de juiste tekst niet: Supabase zegt bij een
+      // opgebruikte link "Email link is invalid or has expired", en dat matcht
+      // geen van zijn patronen → dan zou hier "Er ging iets mis" staan terwijl
+      // we precies weten wat er aan de hand is. En de tekst van nlFout gaat over
+      // een códe ("Deze code klopt niet"), wat hier het verkeerde woord is.
+      const b = error.message.toLowerCase();
+      const verlopen =
+        b.includes("expired") || b.includes("invalid") || b.includes("not found");
+      return {
+        error: verlopen
+          ? "Deze herstellink is verlopen of al gebruikt."
+          : nlFout(error.message),
+      };
+    }
+    // ⏳ GEEN FOUT MAAR OOK GEEN SESSIE: dit is de open vraag over het
+    // `pkce_`-token. `resetPasswordForEmail` stuurt een code_challenge mee omdat
+    // @supabase/ssr standaard op flowType 'pkce' staat, en `verifyOtp` heeft
+    // daar geen enkel besef van (het bewaart een sessie alleen als er een
+    // access_token in het antwoord zit). Staat deze regel in de logs, dan moet
+    // de code-uitwisseling erbij gebouwd worden. Weghalen zodra dat duidelijk is.
+    if (!data.session) {
+      console.error(
+        "Herstel-token gaf GEEN fout maar ook GEEN sessie | pkce-token=",
+        token_hash.startsWith("pkce_"),
+      );
+      return { error: "Deze herstellink werkte niet." };
+    }
+    user = data.session.user;
+  }
+
+  // "hieronder" stond hier vroeger, maar de knop om een nieuwe aan te vragen
+  // staat in de melding zelf, niet eronder.
   if (!user) {
-    return {
-      error: "Je herstellink is verlopen. Vraag hieronder een nieuwe aan.",
-    };
+    return { error: "Deze herstellink is verlopen of al gebruikt." };
   }
 
   const { error } = await supabase.auth.updateUser({ password });

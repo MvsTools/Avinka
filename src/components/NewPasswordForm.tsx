@@ -6,7 +6,13 @@ import { updatePassword, type AuthState } from "@/app/auth/actions";
 
 // Hier stelt de gebruiker een nieuw wachtwoord in, na het klikken op de
 // link in de herstelmail. Bij succes gaat hij door naar het dashboard.
-export default function NewPasswordForm() {
+//
+// 🔑 `tokenHash` reist mee als verborgen veld en wordt pas bij het VERSTUREN
+// ingewisseld (zie updatePassword). Daarom staat er geen token te wachten in een
+// sessie: het openen van dit scherm doet niets, en een mailscanner die de link
+// vooruit ophaalt kan hem dus niet opgebruiken. Ontbreekt het token, dan werkt
+// het formulier op een bestaande sessie, zoals het altijd deed.
+export default function NewPasswordForm({ tokenHash = "" }: { tokenHash?: string }) {
   const [state, formAction, pending] = useActionState<AuthState, FormData>(
     updatePassword,
     {},
@@ -34,6 +40,7 @@ export default function NewPasswordForm() {
       )}
 
       <form action={formAction} className="mt-6 space-y-4">
+        <input type="hidden" name="token_hash" value={tokenHash} />
         <div>
           <label htmlFor="password" className="block text-sm font-bold text-ink">
             Nieuw wachtwoord

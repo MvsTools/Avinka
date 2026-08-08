@@ -6,9 +6,17 @@ import { veiligIntern } from "@/lib/paden";
 import { verzilverMailLink } from "./actie";
 import Knop from "./Knop";
 
-/* Hierheen komt de gebruiker via de link in de herstelmail of de mail over een
-   nieuw e-mailadres. Deze pagina DOET NIETS bij het openen: ze toont alleen een
-   knop. Pas die klik verzilvert het token (zie ./actie.ts voor het waarom).
+/* Hierheen komt de gebruiker via de link in een bevestigingsmail. Deze pagina
+   DOET NIETS bij het openen: ze toont alleen een knop. Pas die klik verzilvert
+   het token (zie ./actie.ts voor het waarom).
+
+   ⚠️ HERSTELMAIL GAAT HIER NIET LANGS, die wordt doorgestuurd. Bij wachtwoord
+   vergeten is er al een vervolgscherm waar iets in te vullen valt, en dan is een
+   knoppagina ervóór een klik voor niets: we sturen het token dóór naar
+   /nieuw-wachtwoord en wisselen het pas in bij het versturen van dát formulier.
+   Zo werkt het bij de meeste grote partijen ook. Doorsturen mag hier gerust,
+   want er wordt niets verzilverd. Bij een adreswijziging kan dat niet: daar is
+   geen vervolgformulier, dus die houdt de knop.
 
    Werkt met beide soorten Supabase-links:
      - ?code=...                    (standaard-mailtemplate)
@@ -23,13 +31,8 @@ type Zoek = { code?: string; token_hash?: string; type?: string; next?: string }
 // mailscanners: dat is een probleem van ons, niet van de lezer (keuze eigenaar
 // 8-8). De kop noemt gewoon de handeling.
 const TEKST: Record<string, { teken: string; kop: string; uitleg: string; knop: string }> = {
-  recovery: {
-    teken: "🔑",
-    kop: "Wachtwoord opnieuw instellen",
-    uitleg:
-      "Druk op de knop om verder te gaan naar het scherm waar je een nieuw wachtwoord kiest.",
-    knop: "Ga verder",
-  },
+  // Geen `recovery` hier: die wordt hierboven doorgestuurd naar het scherm waar
+  // je een nieuw wachtwoord kiest.
   // ⚠️ Kop kort houden en zonder streepje: "Bevestig je nieuwe e-mailadres"
   // brak in de kaart af als "Bevestig je nieuwe e- / mailadres".
   email_change: {
@@ -76,6 +79,13 @@ export default async function ConfirmPagina({
   // heeft een knop tonen geen zin.
   if (!code && !(token_hash && type)) {
     redirect("/sign-in?fout=link-verlopen");
+  }
+
+  // Wachtwoord vergeten: meteen dóór naar het scherm waar iets in te vullen valt.
+  // Het token gaat mee in de link en wordt daar pas bij het versturen ingewisseld,
+  // dus dit doorsturen gebruikt niets op.
+  if (type === "recovery" && token_hash) {
+    redirect(`/nieuw-wachtwoord?token_hash=${encodeURIComponent(token_hash)}`);
   }
 
   const t = tekstVoor(type);
