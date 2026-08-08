@@ -22,6 +22,10 @@ export type Kaart = {
   telling: string;
   /** "Word" / "Excel" / "Agenda", of null als er niets te downloaden valt. */
   formaat: string | null;
+  /** Wanneer dit weggaat, in gewone taal. Staat op de kaart zelf en niet in één
+   *  zin boven het blok: de termijnen verschillen per categorie, en één zin
+   *  daarover was voor twee van de zeven kaarten onwaar. */
+  termijn: string | null;
   /** Per rij de label/waarde-paren voor de preview. */
   rijen: { label: string; waarde: string }[][];
 };
@@ -77,7 +81,7 @@ export default function GegevensBlok({
                 <h3 className="font-serif text-lg font-semibold leading-snug text-ink">
                   {k.titel}
                 </h3>
-                <p className="mt-0.5 text-sm text-ink/55">
+                <p className="mt-0.5 text-sm text-ink/65">
                   {k.telling}
                   {k.formaat && toonFormaat && (
                     <>
@@ -86,6 +90,9 @@ export default function GegevensBlok({
                     </>
                   )}
                 </p>
+                {k.termijn && (
+                  <p className="mt-1.5 text-xs leading-snug text-ink/65">{k.termijn}</p>
+                )}
 
                 <details className="group mt-3">
                   <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-sm font-bold text-brand-dark hover:underline">
@@ -103,7 +110,7 @@ export default function GegevensBlok({
                       >
                         {velden.map((v, j) => (
                           <div key={j} className="contents">
-                            <dt className="font-semibold text-ink/50">{v.label}</dt>
+                            <dt className="font-semibold text-ink/65">{v.label}</dt>
                             <dd className="mb-1 break-words whitespace-pre-wrap text-ink sm:mb-0">
                               {v.waarde}
                             </dd>
@@ -123,7 +130,7 @@ export default function GegevensBlok({
         <button
           type="submit"
           disabled={n === 0}
-          className="rounded-2xl bg-brand-dark px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand/20 transition hover:bg-brand-dark/90 disabled:cursor-not-allowed disabled:bg-ink/15 disabled:text-ink/40 disabled:shadow-none"
+          className="rounded-2xl bg-brand-dark px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand/20 transition hover:bg-brand-dark/90 disabled:cursor-not-allowed disabled:bg-ink/15 disabled:text-ink/65 disabled:shadow-none"
         >
           {n === 0
             ? "Download wat je hebt aangevinkt"
@@ -131,7 +138,7 @@ export default function GegevensBlok({
               ? "Download 1 onderdeel"
               : `Download ${n} onderdelen`}
         </button>
-        <span className="text-sm text-ink/50">
+        <span className="text-sm text-ink/65">
           {n === 0
             ? "Nog niets aangevinkt"
             : n === 1

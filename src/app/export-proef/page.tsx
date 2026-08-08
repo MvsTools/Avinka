@@ -133,17 +133,17 @@ export default function ExportProef() {
       <p className="mb-6 rounded-2xl bg-accent-soft px-5 py-3 text-sm font-semibold text-ink/70">
         Proefpagina met verzonnen gegevens. De echte staat op /mijn-gegevens.
       </p>
-      <h2 className="text-xs font-extrabold uppercase tracking-[0.09em] text-ink/45">Meenemen</h2>
-      <p className="mb-4 mt-1 max-w-[60ch] text-sm text-ink/55">
-        Vink aan wat je wilt bewaren. Deze gegevens gaan over je klas, en die ruimen we 90 dagen
-        na je laatste abonnement op.
+      <h2 className="text-xs font-extrabold uppercase tracking-[0.09em] text-ink/65">Meenemen</h2>
+      <p className="mb-4 mt-1 max-w-[60ch] text-sm text-ink/65">
+        Deze gegevens gaan over je klas en verdwijnen na verloop van tijd. Vink aan wat je wilt
+        bewaren.
       </p>
       <GegevensBlok kaarten={bouwKaarten(EIGEN_WERK, gegevens)} actie="/export-proef" />
 
-      <h2 className="mt-12 text-xs font-extrabold uppercase tracking-[0.09em] text-ink/45">
+      <h2 className="mt-12 text-xs font-extrabold uppercase tracking-[0.09em] text-ink/65">
         En dit weten we verder van je
       </h2>
-      <p className="mb-4 mt-1 max-w-[60ch] text-sm text-ink/55">
+      <p className="mb-4 mt-1 max-w-[60ch] text-sm text-ink/65">
         Hier kun je ook los iets van ophalen. Deze komen als Excel-tabel.
       </p>
       <GegevensBlok kaarten={bouwKaarten(OVERIG, gegevens)} actie="/export-proef" toonFormaat={false} />

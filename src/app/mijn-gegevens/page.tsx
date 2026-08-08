@@ -66,7 +66,7 @@ export default async function MijnGegevensPagina() {
     if (namen.length === 0) return null;
     const lijst =
       namen.length === 1 ? namen[0] : `${namen.slice(0, -1).join(", ")} en ${namen.at(-1)}`;
-    return <p className="mt-3 text-sm text-ink/45">Hier staat niets: {lijst}.</p>;
+    return <p className="mt-3 text-sm text-ink/65">Hier staat niets: {lijst}.</p>;
   };
 
   /* De uitnodiging om te blijven hoort bij het groene blok — dat gaat over "je
@@ -94,7 +94,7 @@ export default async function MijnGegevensPagina() {
           <h1 className="font-serif text-3xl font-semibold tracking-tight text-ink">
             Wat we van jou bewaren
           </h1>
-          <p className="mt-1 text-sm text-ink/55">
+          <p className="mt-1 text-sm text-ink/65">
             {voornaam && `${voornaam} · `}
             {user.email}
           </p>
@@ -107,12 +107,14 @@ export default async function MijnGegevensPagina() {
         </Link>
       </header>
 
-      <h2 className="text-xs font-extrabold uppercase tracking-[0.09em] text-ink/45">
+      <h2 className="text-xs font-extrabold uppercase tracking-[0.09em] text-ink/65">
         Meenemen
       </h2>
-      <p className="mb-4 mt-1 max-w-[60ch] text-sm text-ink/55">
-        Vink aan wat je wilt bewaren. Deze gegevens gaan over je klas, en die ruimen we 90 dagen
-        na je laatste abonnement op.
+      {/* Bewust geen bewaartermijn meer in deze zin: die verschilt per categorie
+          en staat nu op de kaart zelf. Zie TERMIJN in lib/export-gegevens.ts. */}
+      <p className="mb-4 mt-1 max-w-[60ch] text-sm text-ink/65">
+        Deze gegevens gaan over je klas en verdwijnen na verloop van tijd. Vink aan wat je wilt
+        bewaren.
       </p>
       <GegevensBlok kaarten={meenemen} actie="/api/account/export" />
       {leeg(EIGEN_WERK)}
@@ -133,10 +135,10 @@ export default async function MijnGegevensPagina() {
         )}
       </div>
 
-      <h2 className="mt-12 text-xs font-extrabold uppercase tracking-[0.09em] text-ink/45">
+      <h2 className="mt-12 text-xs font-extrabold uppercase tracking-[0.09em] text-ink/65">
         En dit weten we verder van je
       </h2>
-      <p className="mb-4 mt-1 max-w-[60ch] text-sm text-ink/55">
+      <p className="mb-4 mt-1 max-w-[60ch] text-sm text-ink/65">
         Hier kun je ook los iets van ophalen. Deze komen als Excel-tabel.
       </p>
       <GegevensBlok kaarten={overig} actie="/api/account/export" toonFormaat={false} />
@@ -150,7 +152,7 @@ export default async function MijnGegevensPagina() {
           Alles als één bestand (JSON)
         </a>
       </div>
-      <p className="mt-6 text-xs leading-relaxed text-ink/45">
+      <p className="mt-6 text-xs leading-relaxed text-ink/65">
         Waarom we dit bewaren, hoe lang, en met wie we het delen staat in de{" "}
         <Link href="/privacy" className="font-semibold text-brand-dark hover:underline">
           privacyverklaring

@@ -273,6 +273,35 @@ export const EIGEN_WERK = [
 
 export const OVERIG = TABELLEN.filter((t) => !EIGEN_WERK.includes(t));
 
+/* ⭐ WAT ER PER CATEGORIE ÉCHT GEBEURT, op de kaart zelf.
+ *
+ * Er stond eerst één zin boven het hele blok: "deze ruimen we 90 dagen na je
+ * laatste abonnement op". Dat klopte voor vijf van de zeven kaarten en niet
+ * voor twee — en juist die twee kunnen iemand pijn doen. Een leerkracht die dat
+ * las dacht: mijn rapportteksten staan veilig zolang ik betaal, ik download ze
+ * later wel. Maar die verdwijnen 90 dagen na haar laatste bewerking, óók als ze
+ * gewoon abonnee is (wis-oude-rapporten). De overdracht met haar duo zelfs na
+ * 30 dagen (wis-oude-overdracht).
+ *
+ * Daarom vertelt elke kaart nu zijn eigen waarheid. Dan hoef je nergens een
+ * uitzondering uit te leggen, en kan één regel niet meer onwaar worden doordat
+ * er een categorie bijkomt.
+ *
+ * ⚠️ Bouw je een nieuwe taak in retention.sql of raak je
+ * wijs_verwijder_klasdata() aan, werk dan deze regel bij. Een termijn op het
+ * scherm die niet meer klopt is erger dan geen termijn. */
+export const TERMIJN: Record<string, string> = {
+  klassen: "Verdwijnt 90 dagen na je abonnement",
+  taken: "Verdwijnt 90 dagen na je abonnement",
+  agenda_items: "Verdwijnt 90 dagen na je abonnement",
+  duo_taken: "Verdwijnt 90 dagen na je abonnement",
+  rapporten: "Verdwijnt 90 dagen na je laatste bewerking",
+  duo_overdracht: "Verdwijnt 30 dagen na je laatste bewerking",
+  // Gemengd: de plattegronden gaan mee met de opruiming, het eigen vakwerk
+  // blijft. Eén termijn zou hier dus per definitie half onwaar zijn.
+  bestanden: "Plattegronden verdwijnen 90 dagen na je abonnement, je eigen werk blijft",
+};
+
 /** Alles behalve `bestanden` is aan te vinken; zie de opmerking bij EIGEN_WERK. */
 export function isTeKiezen(tabel: string): boolean {
   return tabel !== "bestanden";
@@ -368,6 +397,7 @@ export function bouwKaarten(tabellen: readonly string[], gegevens: Gegevens) {
         titel: SECTIES[t].titel,
         telling: `${rijen.length} ${rijen.length === 1 ? enkel : meer}`,
         formaat: isTeKiezen(t) ? formaatNaam(t) : null,
+        termijn: TERMIJN[t] ?? null,
         rijen: rijen.map(rijVelden).filter((v) => v.length > 0),
       };
     });
