@@ -2287,14 +2287,6 @@ function RailKaarten({
 export function ToolRail() {
   const rail = useRef<HTMLDivElement>(null);
   const greep = useRef({ actief: false, startX: 0, startScroll: 0, vangt: 0 });
-  /* ⚠️ TIJDELIJK MEETSTROOKJE — hoort bij de werkbank /nieuw6 en gaat er weer
-     uit. Op de telefoon van de eigenaar openen de kaarten niet, en ik kan hier
-     geen echte aanraking nabootsen: dit venster heeft altijd een muis. In
-     plaats van nóg een keer te gokken laat dit strookje op zíjn scherm zien
-     welke gebeurtenissen zijn telefoon werkelijk stuurt. */
-  const [meting, setMeting] = useState<string[]>([]);
-  const meld = (regel: string) =>
-    setMeting((oud) => [...oud.slice(-7), regel]);
   /* Staat op waar zodra er ECHT een sleepbeweging is begonnen. Zie isVersleept.
      De beginwaarde is met opzet `false`: gebeurt er onverwacht niets met dit
      vlaggetje, dan opent een kaart gewoon. */
@@ -2345,12 +2337,7 @@ export function ToolRail() {
   const isVersleept = (e: ReactMouseEvent) => e.detail !== 0 && gesleept.current;
 
   const opOpenen = (index: number, vanaf: DOMRect, e: ReactMouseEvent) => {
-    meld(`klik op kaart ${index + 1}, detail ${e.detail}`);
-    if (isVersleept(e)) {
-      meld("→ geweigerd: gold als sleepbeweging");
-      return;
-    }
-    meld("→ paneel gaat open");
+    if (isVersleept(e)) return;
     setOpen({ index, vanaf });
     setKaartVerborgen(true);
   };
@@ -2403,50 +2390,6 @@ export function ToolRail() {
     return () => io.disconnect();
   }, []);
 
-  /* ⚠️ TIJDELIJK, hoort bij het meetstrookje hierboven.
-     Ronde 1 luisterde op de rij zelf en ving NIETS op — de vinger bereikt de
-     kaarten dus helemaal niet en er ligt iets overheen. Daarom luisteren we nu
-     op het hele document en melden we WELK element geraakt wordt. Dat wijst
-     het ding aan dat ertussen zit. */
-  useEffect(() => {
-    /* 🔑 DIT IS DE BELANGRIJKSTE REGEL VAN DE HELE METING. Het strookje wordt
-       óók door de server meegestuurd, dus "nog niets ontvangen" bewijst niet
-       dat javascript draait — het kan ook de kale servertekst zijn waar nooit
-       iets overheen is gekomen. Draait javascript wél, dan komt deze regel
-       erbij. Blijft hij weg, dan is niet het aantikken stuk maar valt het hele
-       script om, en dan zoeken we in een compleet andere hoek. */
-    meld("javascript draait");
-    const bijFout = (ev: ErrorEvent) => meld(`FOUT: ${ev.message}`);
-    const bijBelofte = (ev: PromiseRejectionEvent) => meld(`FOUT: ${String(ev.reason)}`);
-    window.addEventListener("error", bijFout);
-    window.addEventListener("unhandledrejection", bijBelofte);
-
-    const soorten = ["touchstart", "pointerdown", "click"] as const;
-    const omschrijf = (n: EventTarget | null) => {
-      const el = n as HTMLElement | null;
-      if (!el || !el.tagName) return "niets";
-      const klas = (typeof el.className === "string" ? el.className : "")
-        .split(" ")
-        .filter(Boolean)
-        .slice(0, 3)
-        .join(".");
-      const r = el.getBoundingClientRect();
-      const vast = getComputedStyle(el).position;
-      return `${el.tagName}${klas ? "." + klas : ""} [${Math.round(r.width)}x${Math.round(
-        r.height,
-      )} ${vast}]`;
-    };
-    const luister = (ev: Event) => {
-      const p = ev as PointerEvent;
-      meld(`${ev.type}${p.pointerType ? ` (${p.pointerType})` : ""} → ${omschrijf(ev.target)}`);
-    };
-    soorten.forEach((s) => document.addEventListener(s, luister, true));
-    return () => {
-      window.removeEventListener("error", bijFout);
-      window.removeEventListener("unhandledrejection", bijBelofte);
-      soorten.forEach((s) => document.removeEventListener(s, luister, true));
-    };
-  }, []);
   useEffect(() => {
     if (!wakker) return;
     bijScroll();
@@ -2543,27 +2486,6 @@ export function ToolRail() {
             opKnopKlik={opKnopKlik}
             openId={open && kaartVerborgen ? KAARTEN[open.index].id : null}
           />
-        </div>
-
-        {/* ⚠️ TIJDELIJK MEETSTROOKJE — gaat er weer uit zodra het aantikken
-           werkt. Staat bewust in de pagina zelf en niet in de console: op een
-           telefoon is er geen console om in te kijken.
-           Vast onderin, zodat je overal op de pagina kunt tikken en meteen
-           ziet wat je raakt. pointer-events-none, anders vangt het strookje
-           zelf de tikken op die we juist willen meten. */}
-        <div className="pointer-events-none fixed inset-x-2 bottom-2 z-[9999]">
-          <div className="rounded-2xl bg-ink/95 p-3 font-mono text-[10px] leading-[14px] text-cream shadow-xl">
-            <p className="mb-1 font-bold text-accent">meting — tik ergens</p>
-            {meting.length === 0 ? (
-              <p className="text-cream/50">nog niets ontvangen</p>
-            ) : (
-              meting.map((r, i) => (
-                <p key={i} className="truncate">
-                  {r}
-                </p>
-              ))
-            )}
-          </div>
         </div>
 
         <div className="mx-auto flex w-full max-w-5xl justify-end px-6">
