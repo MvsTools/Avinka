@@ -63,8 +63,42 @@ select cron.schedule(
   $$delete from public.ai_verbruik where created_at < now() - interval '24 months'$$
 );
 
+-- 5) Agenda-afspraken van oude schooljaren opruimen (04:00).
+--
+--    "Wij bewaren dit schooljaar en het vorige" was tot 9-8-2026 alleen waar
+--    voor wat je te ZIEN kreeg. De afspraken zelf bleven staan zolang je
+--    abonnement liep, en daar kunnen voornamen in staan (een zelf toegevoegde
+--    afspraak wordt niet gemaskeerd — bewuste keuze, zie schema.sql).
+--
+--    ⚠️ DEZE TAAK ALLEEN IS NIET GENOEG, en dat is het echte inzicht: bij het
+--    verversen wordt álles van een gekoppelde agenda weggegooid en opnieuw
+--    ingelezen, zonder datumgrens. Een schoolagenda bevat vaak jaren
+--    geschiedenis, dus de eerstvolgende verversing zette alles gewoon terug.
+--    De grens zit daarom óók bij het binnenhalen (`oudsteBewaardeDag` in
+--    src/lib/planning/schooljaar.ts). Deze taak ruimt op wat er al ligt en
+--    vangt agenda's op die vóór die wijziging zijn ingelezen.
+--
+--    De grens: 1 augustus van het vorige schooljaar. De "- 7 months" laat het
+--    jaar op 1 augustus omslaan, precies zoals een schooljaar dat doet.
+--    ⚠️ Dezelfde grens staat in TypeScript. Verander je hem hier, verander hem
+--    daar dan ook.
+select cron.schedule(
+  'wis-oude-afspraken',
+  '0 4 * * *',
+  $$delete from public.agenda_items
+    where coalesce(tot_datum, datum) < make_date(extract(year from (now() - interval '7 months'))::int - 1, 8, 1)$$
+);
+
 -- Controle (optioneel): toont de geplande taken.
 -- select jobname, schedule, command from cron.job;
+--
+-- Wat de opruiming van oude schooljaren vandaag zou raken:
+--   select count(*) filter (
+--            where coalesce(tot_datum, datum)
+--                  < make_date(extract(year from (now() - interval '7 months'))::int - 1, 8, 1)
+--          ) as te_wissen,
+--          count(*) as totaal, min(datum) as oudste
+--   from public.agenda_items;
 --
 -- Wat de opruiming van 24 maanden vandaag zou raken:
 --   select count(*) filter (where created_at < now() - interval '24 months') as te_wissen,

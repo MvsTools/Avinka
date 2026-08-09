@@ -95,6 +95,31 @@ export function beschikbareSchooljaren(
   return uit;
 }
 
+/**
+ * De vroegste dag die we nog bewaren: 1 augustus van het vórige schooljaar.
+ *
+ * Hoort bij het besluit hierboven (dit jaar en het vorige, verder terug niet).
+ * Dat gold tot 9-8-2026 alleen voor wat je te ZIEN kreeg; de afspraken zelf
+ * bleven staan zolang je abonnement liep. Deze grens maakt van dat uitgangspunt
+ * ook echt een bewaartermijn.
+ *
+ * 🔑 Waarom 1 augustus en niet de eerste schooldag: de startweek en het
+ * klaarmaken van je lokaal vallen dáárvoor, en die horen bij het schooljaar dat
+ * begint. Zou je de eerste schooldag als grens nemen, dan gooi je precies die
+ * week weg.
+ *
+ * ⚠️ Dezelfde grens staat in SQL in `database/retention.sql` (de nachtelijke
+ * opruiming). Verander je hem hier, verander hem daar dan ook. Die SQL-versie
+ * rekent met "1 augustus" als jaargrens en is daardoor in de twee weken tussen
+ * de laatste schooldag en 1 augustus één jaar ruimer. Bewust die kant op: te
+ * veel bewaren is een schoonheidsfout, te weinig is gegevensverlies.
+ */
+export function oudsteBewaardeDag(regio: Regio = STANDAARD_REGIO, nu: string = vandaag()): string {
+  const jaren = beschikbareSchooljaren(regio, nu);
+  const oudste = jaren[jaren.length - 1];
+  return `${oudste.id.slice(0, 4)}-08-01`;
+}
+
 /** De vakantie waarin deze datum valt, als die er is. */
 export function vakantieOp(jaar: Schooljaar, datum: string) {
   return jaar.vakanties.find((v) => datum >= v.van && datum <= v.tot);

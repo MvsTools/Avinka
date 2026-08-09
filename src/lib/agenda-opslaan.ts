@@ -3,6 +3,7 @@ import { haalAgenda, maskeerNamen } from "./agenda-ophalen";
 import { herkenAlles, vouwSamen } from "./agenda-herken";
 import { ontsleutel } from "./geheim";
 import { isEigenBron } from "./agenda-eigen";
+import { oudsteBewaardeDag } from "./planning/schooljaar";
 
 // Een gekoppelde agenda ophalen en de afspraken bijwerken. Gebruikt bij het
 // koppelen zelf en straks bij het nachtelijke verversen.
@@ -56,6 +57,20 @@ export async function ververBron(
 
   let groepen = vouwSamen(herkenAlles(opgehaald.agenda.afspraken));
   if (bron.modus === "heledagen") groepen = groepen.filter((g) => g.heleDag);
+
+  // ⚠️ NIETS OUDER DAN HET VORIGE SCHOOLJAAR OPSLAAN.
+  // Een schoolagenda bevat vaak jaren aan geschiedenis, en verversen zet elke
+  // keer alles terug wat erin staat. Zonder deze grens groeide `agenda_items`
+  // dus eeuwig door met afspraken uit jaren die we niet eens tonen — en daar
+  // kunnen voornamen in staan.
+  // 🔑 Dit moest hier, bij de bron. Alleen een nachtelijke opruiming zou een
+  // dweil bij een lopende kraan zijn: de eerstvolgende verversing zet alles
+  // gewoon weer terug. De opruiming in retention.sql ruimt op wat er al staat;
+  // deze regel zorgt dat er niets nieuws bij komt.
+  // De bovenkant laten we bewust open: scholen publiceren in juni al de
+  // kalender van volgend jaar, en dat is geen geschiedenis maar planning.
+  const grens = oudsteBewaardeDag();
+  groepen = groepen.filter((g) => (g.tot || g.van) >= grens);
 
   const namen = await eigenVoornamen(supabase);
 
