@@ -1856,10 +1856,15 @@ function RailKop() {
         >
           {/* Hetzelfde pijltje als bij de polaroids, horizontaal gespiegeld
              (x wordt 40 − x), zodat het naar de kaarten linksonder wijst in
-             plaats van naar rechts. */}
+             plaats van naar rechts.
+             ⚠️ Op een telefoon staat hij uit. Daar staat de regel gecentreerd
+             en loopt hij over twee regels, en dan wijst het pijltje niet meer
+             naar de kaarten maar naar de tekst van zijn eigen tweede regel —
+             een aanwijspijl die nergens meer heen wijst. Op een breed scherm
+             staat de regel op één regel rechts naast de kop en klopt hij wel. */}
           <svg
             viewBox="0 0 40 28"
-            className="h-6 w-9 shrink-0"
+            className="h-6 w-9 shrink-0 max-sm:hidden"
             fill="none"
             stroke={KOP}
             strokeWidth="2"
@@ -2283,7 +2288,8 @@ export function ToolRail() {
   const rail = useRef<HTMLDivElement>(null);
   const greep = useRef({ actief: false, startX: 0, startScroll: 0, vangt: 0 });
   // Waar de muis of vinger neerkwam; zo weten we bij de klik of er gesleept is.
-  const neer = useRef({ x: 0, y: 0 });
+  // `vinger` onthoudt of het een aanraking was — zie isVersleept hieronder.
+  const neer = useRef({ x: 0, y: 0, vinger: false });
   const [kanTerug, setKanTerug] = useState(false);
   const [kanVerder, setKanVerder] = useState(true);
   const [gezien, setGezien] = useState<boolean[]>(() => KAARTEN.map(() => false));
@@ -2301,9 +2307,26 @@ export function ToolRail() {
   /* Een sleepbeweging mag geen kaart openen. We vergelijken daarom waar de
      klik viel met waar de muis neerkwam: meer dan een paar pixels verschil is
      slepen geweest. Een klik via het toetsenbord heeft geen positie
-     (detail 0) en opent altijd. */
+     (detail 0) en opent altijd.
+
+     ⚠️ MAAR ALLEEN VOOR DE MUIS, en dat is een echte bug geweest: op een
+     telefoon was geen enkele kaart aan te tikken. Die grens van 6 pixels is
+     gekozen met een muis in de hand. Een vinger staat nooit stil — tussen
+     neerzetten en loslaten schuift hij er standaard meer op, Android rekent
+     zelf met ongeveer 8. Chrome besloot dus "dit was een tik" en stuurde een
+     klik, waarna wij hem weggooiden als sleepbeweging.
+
+     🔑 En de beveiliging is bij aanraking sowieso overbodig: schuift een vinger
+     ver genoeg om te schuiven, dan scrollt de rij en stuurt de browser
+     helemaal GEEN klik. Bij aanraking mogen we de browser dus vertrouwen; bij
+     de muis moeten we het zelf doen, want daar komt de klik altijd.
+     🔑 De les die breder geldt: een drempel in pixels die je met een muis hebt
+     afgesteld, klopt niet voor een vinger. Test zo'n getal op allebei, of maak
+     hem afhankelijk van het invoerapparaat zoals hier. */
   const isVersleept = (e: ReactMouseEvent) =>
-    e.detail !== 0 && Math.hypot(e.clientX - neer.current.x, e.clientY - neer.current.y) > 6;
+    !neer.current.vinger &&
+    e.detail !== 0 &&
+    Math.hypot(e.clientX - neer.current.x, e.clientY - neer.current.y) > 6;
 
   const opOpenen = (index: number, vanaf: DOMRect, e: ReactMouseEvent) => {
     if (isVersleept(e)) return;
@@ -2381,7 +2404,7 @@ export function ToolRail() {
      browser de klik af bij de rail in plaats van bij de kaart, en opent er
      dus nooit iets. */
   const pakVast = (e: ReactPointerEvent<HTMLDivElement>) => {
-    neer.current = { x: e.clientX, y: e.clientY };
+    neer.current = { x: e.clientX, y: e.clientY, vinger: e.pointerType !== "mouse" };
     const el = rail.current;
     if (e.pointerType !== "mouse" || !el) return;
     greep.current = { actief: true, startX: e.clientX, startScroll: el.scrollLeft, vangt: 0 };
