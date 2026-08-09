@@ -109,6 +109,86 @@ export function volledig(iso: string): string {
 }
 
 /**
+ * De titel van een afspraak zonder de datum die wij er zélf al bij zetten.
+ *
+ * Scholen zetten de datum vaak in de titel: "Zomerfeest disco 18 september
+ * 2026". Staat daar in ons scherm "vrijdag 18 september" onder, dan lees je
+ * hem twee keer. Dit haalt hem weg — waar hij ook staat: vooraan
+ * ("18 september: Zomerfeest"), achteraan of tussendoor.
+ *
+ * 🔑 DE REGEL DIE DIT VEILIG MAAKT: alleen een datum die de ÓNZE is.
+ * "Inschrijven vóór 10 september" bij een feest op 18 september blijft dus
+ * staan — dat is geen herhaling maar informatie, en die weghalen is veel erger
+ * dan hem twee keer tonen. Vandaar dat de datums waar het om gaat worden
+ * meegegeven in plaats van dat we elke datum wegpoetsen.
+ *
+ * ⚠️ Drie dingen laat hij bewust met rust, allemaal echte schoolgevallen:
+ * - `1/2` in "Groep 1/2 uitje" is geen 1 februari.
+ * - een datum naast "t/m" of "tot" hoort bij een periode; er één uit slopen
+ *   maakt van "3 t/m 4 augustus" een kreupel "3 t/m".
+ * - een los jaartal ("Kamp 2026") is geen datum.
+ * Blijft er na het schrappen niets over (de titel wás alleen een datum), dan
+ * houden we de originele titel: een lege kop is erger dan een dubbele datum.
+ */
+export function zonderDatum(titel: string, datums: string[]): string {
+  const doelen = datums.filter(Boolean).map((d) => ({
+    dag: Number(d.slice(8, 10)),
+    maand: Number(d.slice(5, 7)),
+    jaar: Number(d.slice(0, 4)),
+  }));
+  if (!doelen.length || !titel) return titel;
+
+  // "vrijdag 18 september 2026" / "vr 18 sep" / "18 september"
+  // ⚠️ De weekdagen staan hier VOLUIT plus als afkorting, met een \b erachter.
+  // Eerst stond er `(ma|di|wo|do|vr|za|zo)[a-z]*` en dat vrat halve woorden op:
+  // "Zomerfeest disco 18 september" werd "Zomerfeest", want "disco" begint met
+  // "di". Gevonden door het te testen, niet door ernaar te kijken.
+  const tekstueel =
+    /(?:\b(?:maandag|dinsdag|woensdag|donderdag|vrijdag|zaterdag|zondag|ma|di|wo|do|vr|za|zo)\b\.?\s+)?\b(\d{1,2})\s+(jan|feb|mrt|maa|apr|mei|jun|jul|aug|sep|okt|nov|dec)[a-z]*\.?(?:\s+(\d{4}))?/gi;
+  // "18-09-2026" / "18/9"
+  const numeriek = /\b(\d{1,2})[-/](\d{1,2})(?:[-/](\d{2,4}))?\b/g;
+  const AFK = ["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
+
+  function magWeg(heel: string, dag: number, maand: number, jaar: number | null, index: number) {
+    if (!doelen.some((d) => d.dag === dag && d.maand === maand && (jaar === null || d.jaar === jaar)))
+      return false;
+    const ervoor = titel.slice(Math.max(0, index - 12), index).toLowerCase();
+    const erna = titel.slice(index + heel.length, index + heel.length + 6).toLowerCase();
+    if (/groep\s*$/.test(ervoor)) return false;
+    if (/(t\/m|tot)\s*$/.test(ervoor) || /^\s*(t\/m|tot)\b/.test(erna)) return false;
+    return true;
+  }
+
+  let uit = titel.replace(tekstueel, (heel, d, m, j, index: number) => {
+    const maand = AFK.indexOf(String(m).toLowerCase().slice(0, 3)) + 1;
+    // "maa" van maart valt buiten de afkortingenlijst; die vangen we hier op.
+    const maandNr = maand > 0 ? maand : String(m).toLowerCase().startsWith("maa") ? 3 : 0;
+    if (!maandNr) return heel;
+    return magWeg(heel, Number(d), maandNr, j ? Number(j) : null, index) ? " " : heel;
+  });
+
+  uit = uit.replace(numeriek, (heel, d, m, j, index: number) => {
+    const jaar = j ? Number(j.length === 2 ? `20${j}` : j) : null;
+    // De index verwijst naar de al bewerkte tekst; voor de buur-controle is dat
+    // precies wat we willen (we kijken naar wat er NU omheen staat).
+    const ervoor = uit.slice(Math.max(0, index - 12), index).toLowerCase();
+    if (/groep\s*$/.test(ervoor)) return heel;
+    if (/(t\/m|tot)\s*$/.test(ervoor)) return heel;
+    if (!doelen.some((x) => x.dag === Number(d) && x.maand === Number(m) && (jaar === null || x.jaar === jaar)))
+      return heel;
+    return " ";
+  });
+
+  const schoon = uit
+    .replace(/\(\s*\)|\[\s*\]/g, "") // haakjes die leeg achterbleven
+    .replace(/\s+/g, " ")
+    .replace(/^[\s:;,\-–—|]+/, "")
+    .replace(/[\s:;,\-–—|]+$/, "")
+    .trim();
+  return schoon || titel;
+}
+
+/**
  * Een periode in gewone taal: "12 t/m 16 november", of korter als het binnen
  * dezelfde maand valt. Voor één dag gewoon die dag.
  */

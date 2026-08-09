@@ -22,7 +22,7 @@
 
 import { SOORT_INFO } from "../agenda-herken";
 import { toolBySlug, type Tool } from "../tools";
-import { bereikTekst, dagnaam, kort, plus, reeks, verschil, weekdag } from "./datum";
+import { bereikTekst, dagnaam, kort, plus, reeks, verschil, weekdag, zonderDatum } from "./datum";
 import { groep8Momenten, heeftGroep8 } from "./groep8";
 import { beoordeel } from "./relevantie";
 import type { PlanItem, PlanningBron, Soort } from "./types";
@@ -388,8 +388,17 @@ function kopVoor(item: PlanItem, soort: Soort, dagen: number, aard: "doen" | "vo
       if (aard === "voorbereiden") return `${wanneer} beginnen de toetsen`;
       return dagen === 0 ? "De toetsen zijn vandaag" : "De toetsen zijn net geweest";
     default:
-      return `${wanneer}: ${item.titel}`;
+      // De datum eruit als hij er al onder staat: scholen zetten hem vaak in
+      // de titel ("Zomerfeest disco 18 september 2026") en dan las je hem twee
+      // keer, één regel uit elkaar. Zie zonderDatum: alleen ONZE datum gaat
+      // weg, een andere datum in de titel is informatie en blijft.
+      return `${wanneer}: ${titelKort(item)}`;
   }
+}
+
+/** De titel van de afspraak zonder de datum die er in het scherm al bij staat. */
+function titelKort(item: PlanItem): string {
+  return zonderDatum(item.titel, [item.datum, item.totDatum || item.datum]);
 }
 
 /**
@@ -674,7 +683,10 @@ export function aanleidingen(
       taakDatum: tip || kopjeFase ? laatsteWerkdagVoor(item.datum, werkdagen) : undefined,
       link: tip?.link,
       alOpDeLijst: opLijst(tip ? [tip.taak] : undefined),
-      kopje: kopjeFase ? item.titel : undefined,
+      // Ook hier de datum eruit: dit kopje wordt de naam waaronder je taken in
+      // je takenlijst komen te staan, en "Zomerfeest disco 18 september 2026"
+      // is daar een rare kop.
+      kopje: kopjeFase ? titelKort(item) : undefined,
       dagen,
       kop: kopVoor(item, item.soort, dagen, aard),
       wanneer,
@@ -682,7 +694,7 @@ export function aanleidingen(
       // het nuttigst hoe ver je al bent.
       detail:
         item.soort === "toets"
-          ? item.titel
+          ? titelKort(item)
           : item.soort === "rapport" && toolFase
             ? voortgangTekst(extra.rapporten)
             : undefined,
