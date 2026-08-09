@@ -422,6 +422,11 @@ async function insertBestand(
     .insert({ user_id: user.id, ...velden })
     .select(BESTAND_COLS)
     .single();
+  // Log altijd de échte reden bij een geweigerde schrijfactie. Sinds 9-8 kan
+  // de database dit weigeren omdat Bestanden bij Compleet/Pro hoort
+  // (trg_bestanden_tier); zonder deze regel zie je alleen dat er "niets
+  // gebeurt" en moet je in de database gaan zoeken waarom.
+  if (error) console.error("bestand aanmaken geweigerd:", error.message);
   if (error || !data) return null;
   return data as Bestand;
 }

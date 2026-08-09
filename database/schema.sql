@@ -277,6 +277,52 @@ create policy "eigen bestanden" on public.bestanden
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 grant select, insert, update, delete on public.bestanden to authenticated;
 
+-- Bestanden hoort bij Compleet en Pro, en dat wordt hier afgedwongen — niet
+-- alleen in het scherm en in /api/bestanden. Het dashboard schrijft namelijk
+-- RECHTSTREEKS in deze tabel (`insertBestand` in src/lib/db.ts), dus wie die
+-- aanroep nadoet met de sleutel uit zijn browser had Bestanden zonder ervoor te
+-- betalen. Alleen bij het AANMAKEN: lezen, wijzigen en verwijderen blijft mogen,
+-- anders kan iemand die terugstapt naar Start zijn eigen werk niet meer opruimen
+-- én breekt de wettelijke inzage op /mijn-gegevens.
+-- ⚠️ Dezelfde regel staat in src/lib/abonnement.ts (magBestandenGebruiken).
+-- Zie database/migratie-bestanden-tier.sql (9-8-2026, gedraaid en nagemeten).
+create or replace function public.bestanden_tier_bewaakt()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+declare
+  st text;
+  pl text;
+begin
+  -- Alleen de browserkant; de servicesleutel gaat hier langs.
+  -- ⚠️ BEWUST GEEN `security definer` — de functie moet zien WIE er schrijft.
+  if current_user not in ('authenticated', 'anon') then
+    return new;
+  end if;
+
+  select abon_status, abon_plan into st, pl
+  from public.instellingen where user_id = new.user_id;
+
+  -- Geen betaald pakket = geen grens (proef en testfase).
+  if pl is null or st is null or st not in ('actief', 'opgezegd') then
+    return new;
+  end if;
+
+  if pl = 'start' then
+    raise exception 'Bestanden hoort bij Compleet en Pro.'
+      using errcode = '42501';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_bestanden_tier on public.bestanden;
+create trigger trg_bestanden_tier
+  before insert on public.bestanden
+  for each row execute function public.bestanden_tier_bewaakt();
+
 -- (Hier stond de eenmalige migratie van de oude tabel `teksten` naar Bestanden.
 --  Die is uitgevoerd en de tabel bestaat sinds 8-8-2026 niet meer.)
 
@@ -1961,6 +2007,7 @@ revoke execute on function public.wijs_ref_code() from public, anon;
 revoke execute on function public.wijs_koppel_verwijzing(text) from public, anon;
 revoke execute on function public.instellingen_bewaakt() from public, anon;
 revoke execute on function public.klassen_limiet_bewaakt() from public, anon;
+revoke execute on function public.bestanden_tier_bewaakt() from public, anon;
 revoke execute on function public.statistiek_bewaakt() from public, anon;
 revoke execute on function public.wijs_proef_claim(uuid) from public, anon;
 revoke execute on function public.wijs_email_norm(text) from public, anon;
