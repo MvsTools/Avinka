@@ -1851,7 +1851,11 @@ function RailKop() {
           /* max-sm:justify-center hoort bij de gecentreerde koppen: staat de kop
              erboven in het midden en dit duwtje links, dan valt juist dit ding
              op als scheef. */
-          className={`flex shrink-0 items-center gap-2 max-sm:justify-center lg:pb-1 ${HAND_WENK}`}
+          /* max-sm:text-center MOET hier naast justify-center staan. Dit is een
+             flex-regel: justify-center zet het tekstblok als geheel in het
+             midden, maar zodra de tekst over twee regels valt lijnt hij bínnen
+             dat blok nog gewoon links uit. Dat leest als scheef. */
+          className={`flex shrink-0 items-center gap-2 max-sm:justify-center max-sm:text-center max-sm:[text-wrap:balance] lg:pb-1 ${HAND_WENK}`}
           style={{ fontFamily: "var(--font-hand)", color: KOP }}
         >
           {/* Hetzelfde pijltje als bij de polaroids, horizontaal gespiegeld
@@ -1874,7 +1878,17 @@ function RailKop() {
             <path d="M38 4 C 26 6, 14 10, 8 22" />
             <path d="M14 20 L 7.5 23 L 6 16" />
           </svg>
-          sleep de rij opzij om ze allemaal te zien
+          {/* ⚠️ Het AANTIKKEN staat vooraan, en dat is de hele reden dat deze
+             regel is veranderd. Het slepen wijst zichzelf aan: de volgende
+             kaart piept er altijd half naast. Dat je een kaart kunt ÓPENEN wees
+             niets aan — de hint "Bekijk" op de kaart zit in een hover-regel, en
+             hover bestaat op een telefoon niet. Daar was dus geen enkel teken
+             dat er meer achter zat.
+             🔑 Een aanwijzing hoort te gaan over wat je NIET vanzelf ziet.
+             Tekst van de eigenaar; niet gladstrijken. Er stond ", en sleep",
+             en dat las als een opsomming in plaats van twee dingen die je kunt
+             doen. */}
+          tik een kaart aan, sleep de rij opzij voor de rest
         </p>
       </div>
     </div>
