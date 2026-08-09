@@ -662,9 +662,23 @@ export function WereldIntro() {
           >
             De slimme werkplek voor leerkrachten in het basisonderwijs
           </h2>
-          <div data-reveal className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <BlobKnop href="/sign-up" className="w-full sm:w-auto">Probeer Avinka gratis</BlobKnop>
-            <BlobKnop href="#tools" variant="licht" className="w-full sm:w-auto">Bekijk de tools</BlobKnop>
+          {/* ⚠️ Op een telefoon stonden deze twee ONDER elkaar en allebei over
+              de volle breedte; samen namen ze bijna een derde van het scherm.
+              Nu naast elkaar en kleiner (14px tekst, minder ruimte eromheen).
+              Nagerekend voor 360px: na de zijmarges blijft er 312px over en de
+              twee knoppen vragen er samen ~288 — dus het past, ook op de
+              smalste telefoon die je nog tegenkomt.
+              De hoofdknop heet daar "Probeer gratis" en niet "Probeer Avinka
+              gratis": dat is dezelfde tekst als in de balk bovenaan, en het
+              scheelt precies de breedte die het naast elkaar mogelijk maakt. */}
+          <div data-reveal className="mt-6 flex gap-2 sm:mt-8 sm:gap-3">
+            <BlobKnop href="/sign-up" className="max-sm:px-3.5 max-sm:py-2.5 max-sm:text-sm">
+              <span className="sm:hidden">Probeer gratis</span>
+              <span className="hidden sm:inline">Probeer Avinka gratis</span>
+            </BlobKnop>
+            <BlobKnop href="#tools" variant="licht" className="max-sm:px-3.5 max-sm:py-2.5 max-sm:text-sm">
+              Bekijk de tools
+            </BlobKnop>
           </div>
         </div>
         {/* Dit is de uitleg van het hele product en stond er in dezelfde maat
@@ -676,7 +690,9 @@ export function WereldIntro() {
         <div className="max-w-2xl lg:pt-1">
           <p
             data-reveal
-            className="text-[1.375rem] font-semibold leading-9 [text-wrap:balance] sm:text-2xl sm:leading-10"
+            /* Op een telefoon was deze openingszin 22px met een regelafstand
+               van 36: bijna sectiekop-formaat, terwijl het lopende tekst is. */
+            className="text-[17px] font-semibold leading-6 [text-wrap:balance] sm:text-2xl sm:leading-10"
             style={{ color: KOP }}
           >
             {/* ⚠️ HIER STONDEN ACHTEREENVOLGENS: "Avinka brengt de hulpmiddelen
@@ -757,7 +773,7 @@ export function WereldIntro() {
              tegenstelling die niet kwam (aandacht en energie zeiden hetzelfde),
              en "aandacht" stond er twee keer terwijl het het slotwoord moest
              zijn. Niet verder gladstrijken. */}
-          <p data-reveal className="mt-4 text-lg leading-8 text-ink/75" style={{ transitionDelay: "90ms" }}>
+          <p data-reveal className="mt-3 text-sm leading-6 text-ink/75 sm:mt-4 sm:text-lg sm:leading-8" style={{ transitionDelay: "90ms" }}>
             Toch vraagt het werk na schooltijd net zoveel van je, en juist dat
             kost energie. Avinka zorgt voor overzicht, denkt vooruit en laat AI
             het schrijfwerk doen, zodat jij meer rust en aandacht overhoudt voor
