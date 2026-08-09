@@ -2287,9 +2287,10 @@ function RailKaarten({
 export function ToolRail() {
   const rail = useRef<HTMLDivElement>(null);
   const greep = useRef({ actief: false, startX: 0, startScroll: 0, vangt: 0 });
-  // Waar de muis of vinger neerkwam; zo weten we bij de klik of er gesleept is.
-  // `vinger` onthoudt of het een aanraking was — zie isVersleept hieronder.
-  const neer = useRef({ x: 0, y: 0, vinger: false });
+  /* Staat op waar zodra er ECHT een sleepbeweging is begonnen. Zie isVersleept.
+     De beginwaarde is met opzet `false`: gebeurt er onverwacht niets met dit
+     vlaggetje, dan opent een kaart gewoon. */
+  const gesleept = useRef(false);
   const [kanTerug, setKanTerug] = useState(false);
   const [kanVerder, setKanVerder] = useState(true);
   const [gezien, setGezien] = useState<boolean[]>(() => KAARTEN.map(() => false));
@@ -2304,29 +2305,36 @@ export function ToolRail() {
     () => null,
   );
 
-  /* Een sleepbeweging mag geen kaart openen. We vergelijken daarom waar de
-     klik viel met waar de muis neerkwam: meer dan een paar pixels verschil is
-     slepen geweest. Een klik via het toetsenbord heeft geen positie
-     (detail 0) en opent altijd.
+  /* Een sleepbeweging mag geen kaart openen.
 
-     ⚠️ MAAR ALLEEN VOOR DE MUIS, en dat is een echte bug geweest: op een
-     telefoon was geen enkele kaart aan te tikken. Die grens van 6 pixels is
-     gekozen met een muis in de hand. Een vinger staat nooit stil — tussen
-     neerzetten en loslaten schuift hij er standaard meer op, Android rekent
-     zelf met ongeveer 8. Chrome besloot dus "dit was een tik" en stuurde een
-     klik, waarna wij hem weggooiden als sleepbeweging.
+     ⚠️ HIER IS HET TWEE KEER MISGEGAAN, EN DE TWEEDE KEER IS DE LEERZAAMSTE.
+     Wat er stond was: vergelijk waar de klik viel met waar de aanwijzer
+     neerkwam, en is dat meer dan 6 pixels, dan was het slepen. Op een telefoon
+     opende daardoor geen enkele kaart. Twee dingen mis:
 
-     🔑 En de beveiliging is bij aanraking sowieso overbodig: schuift een vinger
-     ver genoeg om te schuiven, dan scrollt de rij en stuurt de browser
-     helemaal GEEN klik. Bij aanraking mogen we de browser dus vertrouwen; bij
-     de muis moeten we het zelf doen, want daar komt de klik altijd.
-     🔑 De les die breder geldt: een drempel in pixels die je met een muis hebt
-     afgesteld, klopt niet voor een vinger. Test zo'n getal op allebei, of maak
-     hem afhankelijk van het invoerapparaat zoals hier. */
-  const isVersleept = (e: ReactMouseEvent) =>
-    !neer.current.vinger &&
-    e.detail !== 0 &&
-    Math.hypot(e.clientX - neer.current.x, e.clientY - neer.current.y) > 6;
+     1. Die 6 pixels is afgesteld met een muis in de hand. Een vinger staat
+        nooit stil; Android rekent zelf met zo'n 8 pixels speling voor een tik.
+     2. En dat was niet eens de echte oorzaak. De vergelijking leunde op een
+        `pointerdown` die eerst langs moest komen om het beginpunt te zetten.
+        Kwam die er niet, dan stond het beginpunt nog op 0,0 — en dan lijkt
+        élke tik ergens midden op het scherm een sleep van honderden pixels.
+        Eén ontbrekende gebeurtenis en de hele rij is dood.
+
+     🔑 DE LES: een beveiliging die standaard BLOKKEERT als er iets ontbreekt,
+     is verkeerd om. Draai hem om, zodat het gewone geval werkt tenzij je het
+     bijzondere geval echt hebt zien gebeuren. Daarom zetten we nu een vlaggetje
+     op het moment dat er aantoonbaar gesleept wordt (dat is in `beweeg`, en dat
+     gebeurt alleen bij een muis), in plaats van achteraf uit twee coördinaten
+     te concluderen wat er gebeurd zal zijn. Geen drempel meer, en niets om
+     verkeerd af te stellen.
+
+     Bij aanraking is de beveiliging sowieso overbodig: schuift een vinger ver
+     genoeg om te schuiven, dan scrollt de rij en stuurt de browser helemaal
+     GEEN klik. Daar mogen we de browser dus vertrouwen.
+
+     `e.detail !== 0` blijft staan voor het toetsenbord: zo'n klik heeft geen
+     positie en hoort altijd te openen, ook vlak na een sleep met de muis. */
+  const isVersleept = (e: ReactMouseEvent) => e.detail !== 0 && gesleept.current;
 
   const opOpenen = (index: number, vanaf: DOMRect, e: ReactMouseEvent) => {
     if (isVersleept(e)) return;
@@ -2404,7 +2412,9 @@ export function ToolRail() {
      browser de klik af bij de rail in plaats van bij de kaart, en opent er
      dus nooit iets. */
   const pakVast = (e: ReactPointerEvent<HTMLDivElement>) => {
-    neer.current = { x: e.clientX, y: e.clientY, vinger: e.pointerType !== "mouse" };
+    // Elke nieuwe aanraking of muisdruk begint schoon; pas als er daarna echt
+    // gesleept wordt gaat het vlaggetje om.
+    gesleept.current = false;
     const el = rail.current;
     if (e.pointerType !== "mouse" || !el) return;
     greep.current = { actief: true, startX: e.clientX, startScroll: el.scrollLeft, vangt: 0 };
@@ -2415,6 +2425,10 @@ export function ToolRail() {
     const verzet = e.clientX - greep.current.startX;
     if (!greep.current.vangt) {
       if (Math.abs(verzet) <= 5) return;
+      // Hier is het aantoonbaar slepen: de rij gaat mee met de muis. Dit is het
+      // enige punt waar het vlaggetje omgaat, en het wordt alleen bereikt via
+      // een muis (bij aanraking scrollt de browser zelf).
+      gesleept.current = true;
       greep.current.vangt = e.pointerId;
       el.setPointerCapture(e.pointerId);
       el.classList.add("sleept");
@@ -2947,6 +2961,21 @@ function StijlBlok() {
       }
       .kaart-knop:focus-visible .kaart-hint { opacity: 1; }
       .kaart-knop:focus-visible .kaart-hint > span { transform: translateY(0); }
+
+      /* ⚠️ OP EEN APPARAAT ZONDER MUIS STAAT "Bekijk" GEWOON AAN. De regels
+         hierboven zitten in de hover-mediaquery, en die is op een telefoon
+         nooit waar — daar was dus niets dat vertelde dat een kaart open kan.
+         (En schrijf hier geen accent grave: dit hele blok is één template-
+         string in JS, dus zo'n teken sluit de stijl halverwege af.)
+         De eigenaar zei het precies zo: "de hele 'bekijk' optie is er niet".
+         🔑 Een aanwijzing die alleen bij hover verschijnt, bestaat op een
+         telefoon niet. Zo'n hint hoort daar permanent te staan, want er is geen
+         tussenstap waarin het apparaat kan verklappen dat iets aanklikbaar is.
+         Kijk dus bij élke hover-only aanwijzing wat de telefoon overhoudt. */
+      @media (hover: none) {
+        .kaart-hint { opacity: 1; }
+        .kaart-hint > span { transform: none; }
+      }
 
       /* De tekst in het paneel komt net na de beweging binnen. */
       .paneel-tekst > * {
