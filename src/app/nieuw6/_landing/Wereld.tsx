@@ -152,12 +152,23 @@ export function schaduw(y: number, blur: number, spread: number, alpha: number, 
    houden de korte koppen hun kracht — in de browser vergeleken, niet gegokt.
    🔑 De maat van een gedeelde kop wordt bepaald door de LANGSTE kop die hem
    gebruikt, niet door de mooiste. ──────────────────────────────────────────── */
+/* ⚠️ WERKBANK: de ONDERGRENZEN zijn hier verlaagd voor de telefoon.
+   De bovengrens en de groeisnelheid zijn ongemoeid, dus op een breed scherm
+   verandert er niets — daar wint de bovenwaarde toch.
+
+   🔑 WAAROM HET MIS GING: bij clamp() bepaalt de EERSTE waarde wat een telefoon
+   krijgt. Op 390px is 5,5vw maar 21px, dus won de ondergrens van 40px: de
+   hero-kop was op een telefoon net zo groot als op een laptop. Die drie
+   ondergrenzen zijn ooit gekozen met een breed scherm voor je neus, en dat is
+   precies de val die overal beschreven staat.
+   Nieuw: 30 / 24 / 18px op een telefoon. Vanaf ongeveer 545px breed neemt de
+   vw-term het over en loopt alles weer naar de oude maten toe. */
 export const KOP_GROOT =
-  "font-display text-[clamp(2.5rem,5.5vw,4rem)] font-black leading-[1.02] tracking-[-0.025em] [text-wrap:balance]";
+  "font-display text-[clamp(1.875rem,5.5vw,4rem)] font-black leading-[1.05] tracking-[-0.025em] [text-wrap:balance]";
 export const KOP_SECTIE =
-  "font-display text-[clamp(2rem,4.4vw,2.75rem)] font-black leading-[1.05] tracking-[-0.025em] [text-wrap:balance]";
+  "font-display text-[clamp(1.5rem,4.4vw,2.75rem)] font-black leading-[1.1] tracking-[-0.02em] [text-wrap:balance]";
 export const KOP_BLOK =
-  "font-display text-[clamp(1.25rem,1.9vw,1.5rem)] font-black leading-[1.25] tracking-[-0.02em]";
+  "font-display text-[clamp(1.125rem,1.9vw,1.5rem)] font-black leading-[1.3] tracking-[-0.015em]";
 
 /* ── DE TEKST ONDER EEN KOP ────────────────────────────────────────────────
    Stond op 16, 16,3, 16,8 en 18px. Die eerste drie zijn geen keuzes maar
