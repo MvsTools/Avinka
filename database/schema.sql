@@ -1159,6 +1159,13 @@ create index if not exists idx_taken_user on public.taken(user_id);
 -- je dat met de hand instelt. Klopt een gok niet, dan klik je het seintje
 -- weg; deze tabel onthoudt alleen welke Aanleiding.id een leerkracht al heeft
 -- weggeklikt. Zie database/migratie-aanleiding-genegeerd.sql.
+--
+-- ⚠️ `aanleiding_id` is NIET altijd een kaal id. Sinds 9-8-2026 kun je een
+-- seintje ook AFVINKEN ("dit heb ik gedaan"), en dat komt hier binnen als
+-- `klaar:<id>:<fase>`. Bewust dezelfde tabel: het gaat allebei om "dit seintje
+-- hoeft niet meer", alleen de reden verschilt. Wie de sleutel maakt, is
+-- klaarSleutel() in src/lib/planning/aanleiding.ts — zoek daar vóór je hier iets
+-- aan de vorm van de waarde verandert. Geen migratie nodig geweest.
 create table if not exists public.aanleiding_genegeerd (
   id            uuid primary key default gen_random_uuid(),
   user_id       uuid not null default auth.uid() references auth.users(id) on delete cascade,

@@ -311,6 +311,24 @@ export type Aanleiding = {
 };
 
 /**
+ * Onder welke sleutel we onthouden dat JIJ dit seintje hebt afgevinkt.
+ *
+ * Ligt in dezelfde tabel als het wegklikken (`aanleiding_genegeerd`), met een
+ * eigen voorvoegsel ervoor. Dat scheelt een migratie, en die tabel bewaart toch
+ * al niets anders dan "dit seintje hoeft niet meer" — alleen de réden verschilt:
+ * wegklikken is *dit klopt niet*, afvinken is *dit heb ik gedaan*.
+ *
+ * ⚠️ DE FASE HOORT IN DE SLEUTEL, en dat is geen detail. Eén toets in je agenda
+ * levert na elkaar twee stukken werk op met hetzelfde id: eerst klaarzetten, tien
+ * dagen later analyseren. Vink je het klaarzetten af, dan moet het analyseren
+ * later gewoon nog verschijnen. Wegklikken werkt juist wél op het kale id: dan
+ * klopt de herkenning zelf niet en is álles eromheen onzin.
+ */
+export function klaarSleutel(a: Aanleiding): string {
+  return `klaar:${a.id}:${a.aard}`;
+}
+
+/**
  * Het adres van de tool, met de context van dit signaal erin.
  *
  * Je klikt niet zomaar op Oudercontact, je klikt omdat de oudergesprekken over

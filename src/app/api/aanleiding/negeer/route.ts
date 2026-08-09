@@ -1,9 +1,14 @@
 import { createClient } from "@/utils/supabase/server";
 
-// Een seintje in "Wat eraan komt" wegklikken. Geen scherm laat je meer
+// Een seintje in "Wat eraan komt" wegleggen. Geen scherm laat je meer
 // vooraf het soort instellen (zie AfspraakFormulier.tsx) — klopt een gok
 // een keer niet, dan klik je het seintje hier weg op het moment dat het
 // er is. RLS zorgt dat je alleen je eigen id's kunt wegleggen.
+//
+// Twee knoppen komen hier binnen en de reden zit in de sleutel zelf: het kale
+// id ("dit klopt niet") of `klaar:<id>:<fase>` ("dit heb ik gedaan"). Voor deze
+// route maakt dat niets uit — het is en blijft een string die dit seintje niet
+// meer laat zien. Wie de sleutels maakt: klaarSleutel in lib/planning.
 
 export async function POST(request: Request) {
   const supabase = await createClient();
