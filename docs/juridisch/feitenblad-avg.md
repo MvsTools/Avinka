@@ -4,27 +4,22 @@ Voor de privacyjurist. Dit blad beschrijft feitelijk wat het platform doet met g
 
 Versie: 9 augustus 2026. Status: nog niet live, geen echte gebruikers.
 
-Bijgewerkt op 24 juli 2026: paragraaf 4 over het koppelen van de schoolagenda is
-nieuw, met bijbehorende vragen en openstaande punten. Dat onderdeel is na de
-eerste versie van dit blad gebouwd en is bewust apart beschreven, omdat het het
-enige onderdeel is waarbij gegevens de applicatie binnenkomen zonder dat de
-leerkracht ze zelf intypt.
+## Wat wij u vragen
 
-Bijgewerkt op 9 augustus 2026. Er is die dag een aantal dingen veranderd dat
-rechtstreeks raakt aan wat hieronder staat, dus wij noemen ze hier bij elkaar:
+1. **Onze privacyverklaring en algemene voorwaarden nakijken.** Ze liggen er, met versienummer, maar zijn opgesteld zonder juridische toetsing.
+2. **Een verwerkersovereenkomst die scholen direct kunnen tekenen**, bij voorkeur toegesneden vanuit het model van het Privacyconvenant Onderwijs. Dat model verwachten schoolbestuurders en functionarissen gegevensbescherming.
+3. **Antwoord op de dertien vragen in paragraaf 8.**
 
-- Er is nu **een controle op de server** die weigert een AI-opdracht door te
-  sturen waar een naam uit de klassenlijst in staat (paragraaf 3). Dat was het
-  belangrijkste openstaande punt van de vorige versie.
-- De bewaartermijn van **24 maanden voor technische logs** wordt nu ook echt
-  uitgevoerd; die stond wel in onze privacyverklaring maar had geen uitvoering.
-- **Agenda-afspraken van afgesloten schooljaren** worden opgeruimd, en er komen
-  er ook geen meer binnen bij het verversen.
-- Wij hebben nagemeten wat er bij het **verwijderen van een account** precies
-  gebeurt en daarbij één ding gevonden dat blijft staan (paragraaf 6 en punt 12).
-- **Bestanden** zit nu ook in de database achter het abonnement in plaats van
-  alleen in het scherm; niet AVG-relevant, wel relevant voor de vraag of onze
-  toegangscontrole afdwingbaar is.
+⚠️ **Drie van die vragen houden onze lancering tegen; de andere tien kunnen daarna.** Het gaat om vraag **1** (is de leerkracht of de school verwerkingsverantwoordelijke — dit bepaalt onze hele opzet), vraag **2** (is onze doorgifte naar de Verenigde Staten houdbaar) en vraag **6** (zijn onze bewaartermijnen verdedigbaar). Wilt u met beperkte tijd beginnen, begin dan daar.
+
+## Hoe u dit blad het snelst leest
+
+Het geheel is ongeveer een kwartier lezen. Wilt u sneller:
+
+- **Paragraaf 8** zijn onze vragen. Daar zit uw werk.
+- **Paragraaf 9** is onze eigen lijst met wat er nog niet klopt. Wij noemen die punten liever zelf dan dat ze uit uw beoordeling rollen.
+- **Paragraaf 2 tot en met 6** beschrijven feitelijk wat het platform met gegevens doet, voor als u wilt narekenen waar een antwoord op steunt.
+- **Paragraaf 4** (het koppelen van de schoolagenda) staat apart omdat het het enige onderdeel is waarbij gegevens binnenkomen zonder dat de leerkracht ze zelf intypt. Als u één technische paragraaf leest, dan die.
 
 ---
 
@@ -216,6 +211,22 @@ Deze punten zijn ons bekend en nog niet opgelost. Wij noemen ze liever zelf dan 
 11. **Plattegronden zijn niet als afbeelding te downloaden.** Ze verdwijnen wél bij de opruiming van 90 dagen. De gegevens zitten in het JSON-bestand, maar dat is voor een leerkracht niet bruikbaar om de plattegrond terug te zien. Wij vinden dat het recht op overdraagbaarheid daarmee formeel gedekt is maar praktisch niet, en willen het opgelost hebben.
 12. 🔴 **Eén e-mailadres overleeft het verwijderen van een account, en onze privacyverklaring zegt dat er niets overblijft.** Wij geven één gratis proefperiode per mailbox. Om te voorkomen dat iemand die opnieuw pakt door een nieuw account te maken, leggen wij het genormaliseerde e-mailadres vast in een aparte tabel (`proef_gebruikt`). Die regel blijft bewust staan als het account wordt verwijderd — anders zou het verwijderen van je account precies de manier zijn om het slot te openen. Nagemeten op 9 augustus 2026: alle andere tabellen verdwijnen wél volledig mee, en de AI-logs blijven achter zonder gebruiker (dus geanonimiseerd). **Wij zien twee vragen voor u:** (a) is bewaren voor fraudepreventie hier het juiste gerechtvaardigd belang, en zo ja hoe lang, en (b) volstaat het om dit in de privacyverklaring te benoemen, of moet het adres onherkenbaar worden opgeslagen (als hash)? Technisch kan dat laatste: het adres wordt alleen gebruikt om exact te vergelijken, nooit om terug te lezen.
 13. **De opruiming van 90 dagen is nog nooit op echte gebruikersgegevens uitgevoerd**, omdat de keten pas werkt zodra de betaalfunctie live gaat. Wel volledig getest met een wegwerpaccount dat de hele molen doorging (klas, rapporten, bestanden, taken, agenda-afspraken): negentien controles, alle geslaagd, tweemaal uitgevoerd. Het testscript is bijgevoegd op verzoek.
+
+---
+
+## 10. Colofon: wat er sinds de vorige versie is veranderd
+
+Voor wie dit blad eerder heeft gelezen. Leest u het voor het eerst, dan kunt u deze paragraaf overslaan.
+
+**24 juli 2026.** Paragraaf 4 over het koppelen van de schoolagenda is toegevoegd, met bijbehorende vragen en openstaande punten. Dat onderdeel is na de eerste versie van dit blad gebouwd.
+
+**9 augustus 2026.** Vijf wijzigingen die raken aan wat hierboven staat:
+
+- Er is nu **een controle op de server** die weigert een AI-opdracht door te sturen waar een naam uit de klassenlijst in staat (paragraaf 3). Dat was het belangrijkste openstaande punt van de vorige versie.
+- De bewaartermijn van **24 maanden voor technische logs** wordt nu ook echt uitgevoerd; die stond wel in onze privacyverklaring maar had geen uitvoering.
+- **Agenda-afspraken van afgesloten schooljaren** worden opgeruimd, en er komen er ook geen meer binnen bij het verversen.
+- Wij hebben nagemeten wat er bij het **verwijderen van een account** precies gebeurt, per tabel, en daarbij één gegeven gevonden dat blijft staan (paragraaf 6 en punt 12).
+- **Bestanden** zit nu ook in de database achter het abonnement in plaats van alleen in het scherm. Niet AVG-relevant, wel relevant voor de vraag of onze toegangscontrole afdwingbaar is.
 
 ---
 
