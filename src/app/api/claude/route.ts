@@ -10,6 +10,7 @@ import {
   modelVoor,
 } from "@/lib/abonnement";
 import { aanbiederVoor } from "@/lib/ai-providers";
+import { bevatNaam, namenRegex } from "@/lib/namen-vangnet";
 import {
   beginVanDezeMaand,
   limietMelding,
@@ -178,6 +179,48 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
     const model = modelVoor(mapAbonnementRow(abonRow as AbonnementRow | null));
     if (model) (body as Record<string, unknown>).model = model;
+  }
+
+  // 2b-bis) HET NAMENVANGNET — de laatste controle vóór er iets de deur uitgaat.
+  //     Zie src/lib/namen-vangnet.ts voor het waarom. Kort: de belofte "namen
+  //     gaan nooit naar de AI" hing tot nu toe volledig aan de browser. Dit is
+  //     de enige laag die niet kapot kan gaan doordat er in een tool iets misgaat.
+  //
+  //     Het gaat alleen af als de maskering vóór dit punt heeft gefaald: werkt
+  //     die, dan staan er codes (KN-001) in de tekst en vindt dit niets.
+  //
+  //     ⚠️ Bij een LEESFOUT laten we door, met een logregel. Dezelfde afweging
+  //     als bij het kostenplafond en de pakketcontrole hierboven: een leerkracht
+  //     midden in de rapportweek mag niet stilvallen door een hapering van ons.
+  //     Er zijn dan twee dingen tegelijk stuk (de browserlaag én onze database)
+  //     en Anthropic heeft een verwerkersovereenkomst met zero data retention.
+  //     Vind je dat te ruim, dan is dít de regel die je omdraait.
+  try {
+    const { data: klasRijen } = await supabase.from("klassen").select("leerlingen");
+    const namen: string[] = [];
+    for (const rij of klasRijen ?? []) {
+      const lijst: unknown = (rij as { leerlingen?: unknown }).leerlingen;
+      if (Array.isArray(lijst)) for (const n of lijst) namen.push(String(n ?? ""));
+    }
+    const re = namenRegex(namen);
+    if (bevatNaam(JSON.stringify(body ?? ""), re)) {
+      // Nooit de naam zelf loggen — dat is precies het gegeven dat we beschermen.
+      console.error(
+        `namenvangnet: opdracht geweigerd, er stond een leerlingnaam in (tool: ${toolVan(request) ?? "onbekend"})`,
+      );
+      return NextResponse.json(
+        {
+          error: {
+            type: "naam_in_opdracht",
+            message:
+              "Er staat een naam uit je klas in deze opdracht. Avinka stuurt namen van kinderen nooit naar de AI, dus we hebben dit tegengehouden. Ververs de pagina en probeer het opnieuw; blijft het gebeuren, laat het ons dan weten.",
+          },
+        },
+        { status: 422 },
+      );
+    }
+  } catch {
+    console.error("namenvangnet: klassenlijst niet te lezen, opdracht doorgelaten");
   }
 
   // 2c) Welke AI-aanbieder hoort bij deze gebruiker? Vandaag krijgt iedereen
