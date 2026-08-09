@@ -1848,7 +1848,10 @@ function RailKop() {
            andere. Nu op de gedeelde maat. */}
         <h2 className={`max-w-2xl ${KOP_SECTIE}`}>Alle tools, één werkplek</h2>
         <p
-          className={`flex shrink-0 items-center gap-2 lg:pb-1 ${HAND_WENK}`}
+          /* max-sm:justify-center hoort bij de gecentreerde koppen: staat de kop
+             erboven in het midden en dit duwtje links, dan valt juist dit ding
+             op als scheef. */
+          className={`flex shrink-0 items-center gap-2 max-sm:justify-center lg:pb-1 ${HAND_WENK}`}
           style={{ fontFamily: "var(--font-hand)", color: KOP }}
         >
           {/* Hetzelfde pijltje als bij de polaroids, horizontaal gespiegeld

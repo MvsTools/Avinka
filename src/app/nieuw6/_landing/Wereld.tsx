@@ -162,11 +162,22 @@ export function schaduw(y: number, blur: number, spread: number, alpha: number, 
    ondergrenzen zijn ooit gekozen met een breed scherm voor je neus, en dat is
    precies de val die overal beschreven staat.
    Nieuw: 30 / 24 / 18px op een telefoon. Vanaf ongeveer 545px breed neemt de
-   vw-term het over en loopt alles weer naar de oude maten toe. */
+   vw-term het over en loopt alles weer naar de oude maten toe.
+
+   ⚠️ EN OP EEN TELEFOON STAAT ALLES IN HET MIDDEN — vandaar `max-sm:text-center`
+   hieronder. Dat lijkt in strijd met de huisregel "niet alles centreren", maar
+   die regel gaat over een BREED scherm: daar is links uitlijnen wat een pagina
+   een ruggengraat geeft, omdat er een kolom naast staat om tegen af te zetten.
+   Op een telefoon is er geen kolom ernaast. Een kop die daar links begint hangt
+   scheef in het scherm, want de marges links en rechts zijn zelden even breed —
+   precies wat de eigenaar zag bij de twee knoppen (24 links, 38 rechts).
+   🔑 Het staat HIER en niet bij elke sectie apart, om dezelfde reden als de
+   maten zelf: op tien plekken los ingetypt loopt het gegarandeerd uit elkaar.
+   Wie een kop centreert of juist links wil, doet dat hier voor de hele pagina. */
 export const KOP_GROOT =
-  "font-display text-[clamp(1.875rem,5.5vw,4rem)] font-black leading-[1.05] tracking-[-0.025em] [text-wrap:balance]";
+  "font-display text-[clamp(1.875rem,5.5vw,4rem)] font-black leading-[1.05] tracking-[-0.025em] [text-wrap:balance] max-sm:text-center";
 export const KOP_SECTIE =
-  "font-display text-[clamp(1.5rem,4.4vw,2.75rem)] font-black leading-[1.1] tracking-[-0.02em] [text-wrap:balance]";
+  "font-display text-[clamp(1.5rem,4.4vw,2.75rem)] font-black leading-[1.1] tracking-[-0.02em] [text-wrap:balance] max-sm:text-center";
 export const KOP_BLOK =
   "font-display text-[clamp(1.125rem,1.9vw,1.5rem)] font-black leading-[1.3] tracking-[-0.015em]";
 
@@ -671,7 +682,10 @@ export function WereldIntro() {
               De hoofdknop heet daar "Probeer gratis" en niet "Probeer Avinka
               gratis": dat is dezelfde tekst als in de balk bovenaan, en het
               scheelt precies de breedte die het naast elkaar mogelijk maakt. */}
-          <div data-reveal className="mt-6 flex gap-2 sm:mt-8 sm:gap-3">
+          {/* max-sm:justify-center: de twee knoppen zijn samen ~298px breed in
+              een scherm van 360. Links uitgelijnd bleef er 24 links en 38 rechts
+              over, en dat zie je — het rijtje hangt dan net naast het midden. */}
+          <div data-reveal className="mt-6 flex gap-2 max-sm:justify-center sm:mt-8 sm:gap-3">
             <BlobKnop href="/sign-up" className="max-sm:px-3.5 max-sm:py-2.5 max-sm:text-sm">
               <span className="sm:hidden">Probeer gratis</span>
               <span className="hidden sm:inline">Probeer Avinka gratis</span>
@@ -692,7 +706,7 @@ export function WereldIntro() {
             data-reveal
             /* Op een telefoon was deze openingszin 22px met een regelafstand
                van 36: bijna sectiekop-formaat, terwijl het lopende tekst is. */
-            className="text-[17px] font-semibold leading-6 [text-wrap:balance] sm:text-2xl sm:leading-10"
+            className="text-[17px] font-semibold leading-6 [text-wrap:balance] max-sm:text-center sm:text-2xl sm:leading-10"
             style={{ color: KOP }}
           >
             {/* ⚠️ HIER STONDEN ACHTEREENVOLGENS: "Avinka brengt de hulpmiddelen
@@ -773,7 +787,11 @@ export function WereldIntro() {
              tegenstelling die niet kwam (aandacht en energie zeiden hetzelfde),
              en "aandacht" stond er twee keer terwijl het het slotwoord moest
              zijn. Niet verder gladstrijken. */}
-          <p data-reveal className="mt-3 text-sm leading-6 text-ink/75 sm:mt-4 sm:text-lg sm:leading-8" style={{ transitionDelay: "90ms" }}>
+          {/* [text-wrap:pretty] hoort bij het centreren en niet bij de maat: een
+              gecentreerde alinea van vier regels valt zonder dat vaak uit op een
+              korte slotregel van één woord, en dat staat midden in het scherm
+              een stuk lelijker dan links. */}
+          <p data-reveal className="mt-3 text-sm leading-6 text-ink/75 max-sm:text-center max-sm:[text-wrap:pretty] sm:mt-4 sm:text-lg sm:leading-8" style={{ transitionDelay: "90ms" }}>
             Toch vraagt het werk na schooltijd net zoveel van je, en juist dat
             kost energie. Avinka zorgt voor overzicht, denkt vooruit en laat AI
             het schrijfwerk doen, zodat jij meer rust en aandacht overhoudt voor
@@ -872,8 +890,20 @@ export function WereldHerken() {
               className={`${KOP_SECTIE} lg:sticky lg:top-28`}
               style={{ color: DONKER }}
             >
-              Herken
-              <br />
+              {/* De regelbreek is er voor de SMALLE KOLOM op een breed scherm
+                 (0.78fr naast de kaarten); daar past "Herken je dit?" niet op
+                 één regel. Op een telefoon is er geen kolom en dus geen reden om
+                 te breken — daar stonden twee woorden op twee regels midden in
+                 het scherm.
+                 ⚠️ `lg:inline` en niet `lg:block`: inline is de eigen weergave
+                 van een <br>. Zet je hem op block, dan is de breek er nog wel
+                 maar krijgt het element ook een eigen regelhoogte. */}
+              {/* ⚠️ Die {" "} is GEEN opsmuk. JSX gooit de witruimte weg die
+                 tegen een tag aan ligt, dus met alleen een verborgen <br> stond
+                 er letterlijk "Herkenje dit?" — onzichtbaar zolang de breek nog
+                 aan stond, meteen zichtbaar zodra hij uit ging. */}
+              Herken{" "}
+              <br className="hidden lg:inline" />
               je dit?
             </h2>
             {/* Drie regels in plaats van twee. Kalam loopt breder dan de Caveat
@@ -929,7 +959,7 @@ export function WereldHerken() {
             ))}
             {/* Op een telefoon sluit de handgeschreven regel de drie problemen
                af in plaats van ze aan te kondigen. */}
-            <HandRegel className="mt-8 lg:hidden" />
+            <HandRegel className="mt-8 text-center lg:hidden" />
           </div>
         </div>
       </div>
