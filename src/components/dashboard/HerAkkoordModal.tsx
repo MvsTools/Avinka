@@ -14,6 +14,14 @@ import { VOORWAARDEN, PRIVACY, WIJZIGING_SAMENVATTING } from "@/lib/juridisch";
 export default function HerAkkoordModal() {
   const [status, setStatus] = useState<"laden" | "verborgen" | "open" | "bezig">("laden");
   const [eersteKeer, setEersteKeer] = useState(false);
+  // Welk document is er gewijzigd? De pop-up noemde altijd allebei, ook als er
+  // maar één was bijgewerkt — dan stond er "Onze voorwaarden zijn bijgewerkt"
+  // boven een wijziging die alleen de privacyverklaring raakte. Onnodig
+  // verwarrend, en op precies het scherm waar je dat het minst kunt hebben.
+  const [wat, setWat] = useState<{ voorwaarden: boolean; privacy: boolean }>({
+    voorwaarden: true,
+    privacy: true,
+  });
   const [fout, setFout] = useState(false);
 
   useEffect(() => {
@@ -24,12 +32,13 @@ export default function HerAkkoordModal() {
         return;
       }
       heeftToestemmingVoor(VOORWAARDEN.versie, PRIVACY.versie).then(
-        ({ actueel, eersteKeer }) => {
+        ({ actueel, eersteKeer, voorwaardenOud, privacyOud }) => {
           if (actueel) {
             setStatus("verborgen");
             return;
           }
           setEersteKeer(eersteKeer);
+          setWat({ voorwaarden: voorwaardenOud, privacy: privacyOud });
           setStatus("open");
         },
       );
@@ -62,11 +71,31 @@ export default function HerAkkoordModal() {
     </Link>
   );
 
+  // Alleen noemen wat er echt is bijgewerkt. Het lidwoord en het "lees hem/ze"
+  // verschillen per geval, dus die staan hier bij elkaar in plaats van
+  // verspreid door de tekst.
+  const beide = wat.voorwaarden && wat.privacy;
+  const kop = beide
+    ? "Onze voorwaarden zijn bijgewerkt"
+    : wat.privacy
+      ? "Onze privacyverklaring is bijgewerkt"
+      : "Onze algemene voorwaarden zijn bijgewerkt";
+  const document = beide ? (
+    <>
+      {voorwaardenLink} en {privacyLink}
+    </>
+  ) : wat.privacy ? (
+    privacyLink
+  ) : (
+    voorwaardenLink
+  );
+  const leesDoor = beide || wat.voorwaarden ? "Lees ze gerust even door." : "Lees hem gerust even door.";
+
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl sm:p-8">
         <h2 className="font-serif text-2xl font-semibold text-ink">
-          {eersteKeer ? "Nog even bevestigen" : "Onze voorwaarden zijn bijgewerkt"}
+          {eersteKeer ? "Nog even bevestigen" : kop}
         </h2>
 
         <div className="mt-3 flex flex-col gap-2.5 leading-7 text-ink/75">
@@ -78,8 +107,7 @@ export default function HerAkkoordModal() {
           ) : (
             <>
               <p>
-                We hebben onze {voorwaardenLink} en {privacyLink} bijgewerkt. Lees ze gerust even
-                door.
+                We hebben onze {document} bijgewerkt. {leesDoor}
               </p>
               {WIJZIGING_SAMENVATTING.length > 0 && (
                 <div className="rounded-2xl bg-brand-soft px-4 py-3">

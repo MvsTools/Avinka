@@ -175,7 +175,13 @@ export async function markWelkomGezien(): Promise<void> {
 export async function heeftToestemmingVoor(
   voorwaardenVersie: string,
   privacyVersie: string,
-): Promise<{ actueel: boolean; eersteKeer: boolean }> {
+): Promise<{
+  actueel: boolean;
+  eersteKeer: boolean;
+  /** Welk document is verlopen? Zodat de pop-up alleen noemt wat écht veranderde. */
+  voorwaardenOud: boolean;
+  privacyOud: boolean;
+}> {
   const sb = createClient();
   const { data, error } = await sb
     .from("toestemmingen")
@@ -185,14 +191,18 @@ export async function heeftToestemmingVoor(
   // de volgende keer inloggen vraagt het alsnog.
   if (error) {
     console.error("toestemmingen lezen mislukt:", error.message);
-    return { actueel: true, eersteKeer: false };
+    return { actueel: true, eersteKeer: false, voorwaardenOud: false, privacyOud: false };
   }
   const rijen = (data ?? []) as { voorwaarden_versie?: string; privacy_versie?: string }[];
+  // Per document apart: je hoeft alleen opnieuw akkoord te gaan met wat er
+  // gewijzigd is, en de pop-up hoort dan ook alleen dát te noemen.
+  const voorwaardenOk = rijen.some((r) => r.voorwaarden_versie === voorwaardenVersie);
+  const privacyOk = rijen.some((r) => r.privacy_versie === privacyVersie);
   return {
-    actueel:
-      rijen.some((r) => r.voorwaarden_versie === voorwaardenVersie) &&
-      rijen.some((r) => r.privacy_versie === privacyVersie),
+    actueel: voorwaardenOk && privacyOk,
     eersteKeer: rijen.length === 0,
+    voorwaardenOud: !voorwaardenOk,
+    privacyOud: !privacyOk,
   };
 }
 
