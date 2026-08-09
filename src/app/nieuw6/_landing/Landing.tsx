@@ -744,11 +744,15 @@ export default function Landing({
           film ? "" : "film-klaar"
         } [&.film-klaar]:border-b [&.film-klaar]:border-black/5 [&.film-klaar]:bg-[color-mix(in_srgb,var(--w-papier,#fcfbf7)_85%,transparent)] [&.film-klaar]:backdrop-blur`}
       >
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <span className="rounded-xl bg-cream/95 px-2.5 py-1.5 shadow-sm ring-1 ring-black/5">
+        {/* ⚠️ Op een telefoon moet deze balk SLANK zijn: de richtlijn is 50-70px
+            en de belofte eronder mag er niet achter wegvallen. Hij was 68px met
+            drie elementen erin. Nu: kleiner logo, minder lucht, en één actie
+            (zie hieronder). Vanaf 640px alles onveranderd. */}
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-3 py-2 sm:px-6 sm:py-3">
+          <span className="rounded-xl bg-cream/95 px-2 py-1 shadow-sm ring-1 ring-black/5 sm:px-2.5 sm:py-1.5">
             {/* Gewone img: de dev-optimizer van next/image laadt traag. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/Avinka_logo.png" alt="Avinka" className="h-8 w-auto" />
+            <img src="/Avinka_logo.png" alt="Avinka" className="h-6 w-auto sm:h-8" />
           </span>
           {/* ⚠️ De balk is tijdens de film doorzichtig, en de film BEGINT op de
              donkergroene avondlaag en eindigt op licht papier. Een gewone
@@ -787,11 +791,16 @@ export default function Landing({
               <>
                 <Link
                   href="/dashboard"
-                  className="rounded-xl bg-brand px-4 py-3 text-sm font-bold text-white shadow-sm shadow-brand/20 transition hover:bg-brand-dark sm:py-2 sm:text-base"
+                  className="whitespace-nowrap rounded-xl bg-brand px-3 py-2 text-[13px] font-bold text-white shadow-sm shadow-brand/20 transition hover:bg-brand-dark sm:px-4 sm:py-2 sm:text-base"
                 >
                   Mijn dashboard
                 </Link>
-                <form action={signout}>
+                {/* ⚠️ Uitloggen verdwijnt op de telefoon. Op 390px is er na het
+                    logo ruimte voor ÉÉN knop; met twee viel de balk over de
+                    belofte heen. Dit is ook de tweede-keus-actie: wie op de
+                    voorpagina staat wil naar zijn dashboard, niet uitloggen.
+                    Uitloggen kan gewoon in het dashboard zelf. */}
+                <form action={signout} className="hidden sm:block">
                   <button
                     type="submit"
                     className="rounded-xl bg-cream/95 px-3.5 py-3 text-sm font-semibold text-ink/80 shadow-sm ring-1 ring-black/5 transition hover:text-ink sm:py-2 sm:text-base"
@@ -802,9 +811,12 @@ export default function Landing({
               </>
             ) : (
               <>
+                {/* Zelfde reden als Uitloggen hierboven: op een telefoon past er
+                    één knop naast het logo, en dat moet de hoofdactie zijn.
+                    Inloggen staat ook onderaan de pagina in de voettekst. */}
                 <Link
                   href="/sign-in"
-                  className="rounded-xl bg-cream/95 px-3.5 py-3 text-sm font-semibold text-ink/80 shadow-sm ring-1 ring-black/5 transition hover:text-ink sm:py-2 sm:text-base"
+                  className="hidden rounded-xl bg-cream/95 px-3.5 py-3 text-sm font-semibold text-ink/80 shadow-sm ring-1 ring-black/5 transition hover:text-ink sm:inline-block sm:py-2 sm:text-base"
                 >
                   Inloggen
                 </Link>
@@ -853,8 +865,13 @@ export default function Landing({
           </div>
           <div data-daglaag className="pointer-events-none absolute inset-0" style={SPECKLE_STIJL} aria-hidden />
 
-          {/* De grote belofte: groots, muisstil, en niets komt eroverheen */}
-          <div data-intro className="relative z-30 mx-auto mt-[1.5vh] w-[min(94vw,62rem)] text-center">
+          {/* De grote belofte: groots, muisstil, en niets komt eroverheen.
+             ⚠️ Op een telefoon begon hij ONDER de vaste balk door te lopen,
+             waardoor de bovenste regel half wegviel. `mt-16` duwt hem onder de
+             balk (die is daar ~54px). En `px-5` in plaats van alleen een
+             94vw-breedte: zonder echte zijmarge kwam de laatste letter tegen
+             de schermrand — dat is de afgeknipte g. */}
+          <div data-intro className="relative z-30 mx-auto mt-16 w-[min(94vw,62rem)] px-5 text-center sm:mt-[1.5vh] sm:px-0">
             <h1
               data-belofte
               className={`${KOP_GROOT} ${film ? "text-cream" : "text-ink"}`}
@@ -944,7 +961,7 @@ export default function Landing({
               <Venster
                 naam="plattegrond"
                 titel="plattegrond_lokaal_v4_ECHT.png"
-                className="hidden w-44 rotate-[6deg] max-sm:right-[4%] max-sm:top-[21%] max-sm:block max-sm:w-32 lg:left-[4%] lg:top-[58%] lg:block"
+                className="hidden w-44 rotate-[6deg] max-sm:right-[3%] max-sm:top-[24%] max-sm:block max-sm:w-32 lg:left-[4%] lg:top-[58%] lg:block"
               >
                 <div className="grid grid-cols-4 gap-1.5 p-3">
                   {Array.from({ length: 8 }).map((_, i) => (
@@ -991,13 +1008,13 @@ export default function Landing({
                 data-venster="toetsanalyse"
                 /* max-sm: = alleen onder 640px. Zo komt dit briefje terug op de
                    telefoon zonder dat er iets verandert aan het brede scherm. */
-                className="absolute hidden w-32 rotate-[3deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] max-sm:right-[6%] max-sm:top-[33%] max-sm:block max-sm:w-28 max-sm:p-2.5 max-sm:text-[10px] sm:left-[15%] sm:top-[70%] sm:block"
+                className="absolute hidden w-32 rotate-[3deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] max-sm:left-[8%] max-sm:top-[36%] max-sm:block max-sm:w-28 max-sm:p-2.5 max-sm:text-[10px] sm:left-[15%] sm:top-[70%] sm:block"
               >
                 toetsen analyseren
               </div>
               <div
                 data-venster="weektaak"
-                className="absolute hidden w-32 rotate-[4deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] max-sm:left-[5%] max-sm:top-[15%] max-sm:block max-sm:w-28 max-sm:p-2.5 max-sm:text-[10px] sm:right-[14%] sm:top-[30%] sm:block"
+                className="absolute hidden w-32 rotate-[4deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] max-sm:left-[4%] max-sm:top-[25%] max-sm:block max-sm:w-28 max-sm:p-2.5 max-sm:text-[10px] sm:right-[14%] sm:top-[30%] sm:block"
               >
                 weektaak maken
               </div>
