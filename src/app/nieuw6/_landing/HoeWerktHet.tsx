@@ -83,8 +83,22 @@ export function WereldHoeWerktHet() {
         </h2>
 
         {/* De haarlijnen zitten op de kolommen zelf: links van kolom 2 en 3 op
-           een breed scherm, bovenop elke stap zodra ze onder elkaar staan. */}
-        <div data-reveal className="mt-12 grid gap-x-10 gap-y-10 sm:grid-cols-3">
+           een breed scherm, bovenop elke stap zodra ze onder elkaar staan.
+
+           ⚠️ OP EEN TELEFOON IS DIT EEN VEEGBARE RAIL, geen stapel. Onder
+           elkaar kostten drie stappen bijna twee schermen en las het als een
+           lap tekst; naast elkaar vegen is korter én het laat meteen zien dát
+           het drie stappen zijn. Zelfde mechaniek als de tool-rail verderop:
+           `overflow-x-auto` met verborgen schuifbalk en `snap-x` zodat elke
+           stap netjes inklikt.
+           🔑 De kaarten zijn 78% breed en niet 100%: daardoor piept de
+           volgende er altijd naast, en dát vertelt iemand dat er meer is —
+           zonder dat er een pijltje of tekstje bij hoeft.
+           Vanaf 640px is het weer gewoon het bestaande raster van drie. */}
+        <div
+          data-reveal
+          className="mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] sm:mt-12 sm:grid sm:grid-cols-3 sm:gap-x-10 sm:gap-y-10 sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden"
+        >
           {STAPPEN.map((s, i) => (
             <div
               key={s.titel}
@@ -94,21 +108,25 @@ export function WereldHoeWerktHet() {
                  in het stylesheet en niet van de volgorde hier — de eerste
                  kolom kreeg zo toch inspringing en lijnde niet meer uit met de
                  kop erboven. */
-              className={`border-ink/10 pt-7 sm:border-t-0 sm:pt-0 ${
-                i === 0 ? "border-t-0" : "border-t sm:border-l sm:pl-10"
+              /* In de rail is elke stap een eigen kaartje: geen haarlijn
+                 erboven (die scheidde stappen die nu naast elkaar staan) en
+                 een vaste breedte zodat de volgende erlangs piept. Vanaf 640px
+                 komen de haarlijnen en de kolombreedte gewoon terug. */
+              className={`w-[78%] shrink-0 snap-center border-ink/10 pt-0 sm:w-auto sm:pt-0 ${
+                i === 0 ? "border-t-0" : "border-t-0 sm:border-l sm:pl-10"
               }`}
             >
               <p
-                className="font-display text-5xl font-black leading-none tracking-tight"
+                className="font-display text-4xl font-black leading-none tracking-tight sm:text-5xl"
                 style={{ color: KOP, opacity: 0.35 }}
                 aria-hidden
               >
                 {String(i + 1).padStart(2, "0")}
               </p>
-              <h3 className="mt-4 font-display text-2xl font-black tracking-tight text-ink">
+              <h3 className="mt-3 font-display text-xl font-black tracking-tight text-ink sm:mt-4 sm:text-2xl">
                 {s.titel}
               </h3>
-              <p className="mt-3 text-lg leading-8 text-ink/75">{s.tekst}</p>
+              <p className="mt-2 text-base leading-7 text-ink/75 sm:mt-3 sm:text-lg sm:leading-8">{s.tekst}</p>
             </div>
           ))}
         </div>
