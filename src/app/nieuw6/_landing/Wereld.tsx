@@ -887,10 +887,10 @@ export function WereldHerken() {
                    blijft ongemoeid; wat ervóór staat geldt alleen op een
                    telefoon. Zo krimpt de kaart daar (kleinere binnenmarge,
                    minder tussenruimte) zonder dat het brede scherm iets merkt. */
-                className={`${KAART} relative mb-4 flex items-start gap-4 p-5 sm:mb-6 sm:gap-5 sm:p-7 lg:ml-[var(--stap)]`}
+                className={`${KAART} relative mb-3 flex items-start gap-3 p-4 sm:mb-6 sm:gap-5 sm:p-7 lg:ml-[var(--stap)]`}
               >
-                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand sm:h-9 sm:w-9" aria-hidden>
-                  <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" stroke="#fff" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round">
+                <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand sm:h-9 sm:w-9 sm:rounded-xl" aria-hidden>
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" fill="none" stroke="#fff" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 13l4 4L19 7" />
                   </svg>
                 </span>
@@ -903,8 +903,11 @@ export function WereldHerken() {
                       dat zou op een smalle laptop (1024px) óók 19,5px geven
                       in plaats van 24, en het brede scherm is af. Alleen de
                       telefoon krimpt dus. */}
-                  <h3 className="font-display text-xl font-black tracking-tight text-ink sm:text-2xl">{p.titel}</h3>
-                  <p className="mt-1.5 text-base leading-6 text-ink/70 sm:text-lg sm:leading-7">{p.tekst}</p>
+                  {/* Kleiner dan de sectiekop erboven (die is 24px op een
+                      telefoon): een kaartkop hoort de sectiekop niet te
+                      beconcurreren. 17px titel, 14px tekst. */}
+                  <h3 className="font-display text-[17px] font-black leading-tight tracking-tight text-ink sm:text-2xl">{p.titel}</h3>
+                  <p className="mt-1 text-sm leading-5 text-ink/70 sm:mt-1.5 sm:text-lg sm:leading-7">{p.tekst}</p>
                 </div>
               </div>
             ))}
