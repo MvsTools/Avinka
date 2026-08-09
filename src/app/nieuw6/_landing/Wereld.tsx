@@ -185,8 +185,19 @@ export const KOP_BLOK =
    Stond op 16, 16,3, 16,8 en 18px. Die eerste drie zijn geen keuzes maar
    afrondingen van drie verschillende clamps die allemaal ongeveer hetzelfde
    probeerden te zijn. Eén maat: 18px met een ruime regelafstand, want dit is
-   lopende tekst en geen bijschrift. */
-export const TEKST_SECTIE = "text-[1.125rem] leading-[1.78]";
+   lopende tekst en geen bijschrift.
+
+   ⚠️ OP EEN TELEFOON BLIJFT DE MAAT 18px — alleen de regelafstand zakt van 1,78
+   naar 1,55. Dat onderscheid is de hele les van deze ronde. Toen de pagina op
+   een telefoon "veel te groot" was, heb ik óók de lopende tekst verkleind, tot
+   14px. Fout: te groot waren de KOPPEN (40px) en de WITRUIMTE. De tekst zelf
+   was nooit het probleem, en op 14px werden die twee secties de kleinste van de
+   pagina — precies wat de eigenaar op zijn S21 Ultra zag.
+   🔑 Wat een blok op een telefoon hoog maakt is zelden de lettergrootte; het is
+   de ruimte eromheen. Krimp dus eerst marges en regelafstand, en pas de letter
+   als het dan nog niet past. Leesbaarheid inleveren is de laatste stap, niet de
+   eerste. */
+export const TEKST_SECTIE = "text-[1.125rem] leading-[1.55] sm:leading-[1.78]";
 
 /* ── HET HANDSCHRIFT ───────────────────────────────────────────────────────
    Hier stonden drie maten (20, 22,4 en 24px) voor wat op het oog hetzelfde is.
@@ -706,7 +717,10 @@ export function WereldIntro() {
             data-reveal
             /* Op een telefoon was deze openingszin 22px met een regelafstand
                van 36: bijna sectiekop-formaat, terwijl het lopende tekst is. */
-            className="text-[17px] font-semibold leading-6 [text-wrap:balance] max-sm:text-center sm:text-2xl sm:leading-10"
+            /* Deze zin moet boven de lopende tekst uitkomen, en die is op een
+               telefoon 18px. Op 17px stond hij er ónder — de rangorde stond
+               omgekeerd. Nu 20px: groter dan de alinea, kleiner dan de kop. */
+            className="text-xl font-semibold leading-7 [text-wrap:balance] max-sm:text-center sm:text-2xl sm:leading-10"
             style={{ color: KOP }}
           >
             {/* ⚠️ HIER STONDEN ACHTEREENVOLGENS: "Avinka brengt de hulpmiddelen
@@ -791,7 +805,7 @@ export function WereldIntro() {
               gecentreerde alinea van vier regels valt zonder dat vaak uit op een
               korte slotregel van één woord, en dat staat midden in het scherm
               een stuk lelijker dan links. */}
-          <p data-reveal className="mt-3 text-sm leading-6 text-ink/75 max-sm:text-center max-sm:[text-wrap:pretty] sm:mt-4 sm:text-lg sm:leading-8" style={{ transitionDelay: "90ms" }}>
+          <p data-reveal className={`mt-3 ${TEKST_SECTIE} text-ink/75 max-sm:text-center max-sm:[text-wrap:pretty] sm:mt-4`} style={{ transitionDelay: "90ms" }}>
             Toch vraagt het werk na schooltijd net zoveel van je, en juist dat
             kost energie. Avinka zorgt voor overzicht, denkt vooruit en laat AI
             het schrijfwerk doen, zodat jij meer rust en aandacht overhoudt voor
@@ -951,9 +965,16 @@ export function WereldHerken() {
                       telefoon krimpt dus. */}
                   {/* Kleiner dan de sectiekop erboven (die is 24px op een
                       telefoon): een kaartkop hoort de sectiekop niet te
-                      beconcurreren. 17px titel, 14px tekst. */}
-                  <h3 className="font-display text-[17px] font-black leading-tight tracking-tight text-ink sm:text-2xl">{p.titel}</h3>
-                  <p className="mt-1 text-sm leading-5 text-ink/70 sm:mt-1.5 sm:text-lg sm:leading-7">{p.tekst}</p>
+                      beconcurreren. 18px titel, 16px tekst.
+                      ⚠️ Dit stond eerst op 17 en 14. Die 14 maakte deze kaarten
+                      de kleinste tekst van de hele pagina; de andere kaarten
+                      (Zo werkt het, Veilig omgaan met AI) staan allebei op 16.
+                      De 18 voor de titel is de ondergrens van KOP_BLOK, de maat
+                      die volgens de ladder bovenaan dit bestand bij een kop
+                      BINNEN een sectie hoort. Beide waarden zijn dus overgenomen
+                      en niet opnieuw verzonnen — zo blijven ze gelijklopen. */}
+                  <h3 className="font-display text-lg font-black leading-tight tracking-tight text-ink sm:text-2xl">{p.titel}</h3>
+                  <p className="mt-1 text-base leading-6 text-ink/70 sm:mt-1.5 sm:text-lg sm:leading-7">{p.tekst}</p>
                 </div>
               </div>
             ))}
