@@ -311,6 +311,39 @@ export type Aanleiding = {
 };
 
 /**
+ * Het adres van de tool, met de context van dit signaal erin.
+ *
+ * Je klikt niet zomaar op Oudercontact, je klikt omdat de oudergesprekken over
+ * twee weken zijn. Die wetenschap gaat mee, zodat je niet opnieuw hoeft in te
+ * typen wat het scherm ernaast al wist.
+ *
+ * ⚠️ ALLEEN WAT DE AGENDA ECHT WEET. De datum van een afspraak is een feit; wat
+ * voor soort gesprek het is, of welk rapport het betreft, is dat niet. Een
+ * verkeerd voorgevuld veld is erger dan een leeg veld, want het stuurt de tekst
+ * die de tool schrijft en je ziet het niet terug.
+ *
+ * Twee tools staan hier daarom NIET in, en dat is geen vergeten werk:
+ * - **Rapporten** vult "midden- of eindrapport" al zelf in op de maand van
+ *   vandaag. Dat is preciezer dan de datum van dit signaal: een rapport dat op
+ *   3 maart meegaat is gewoon het middenrapport.
+ * - **Toetsanalyse** vult groep én meetmoment al zelf in (groep uit je klas,
+ *   M/E uit de maand). Daar valt niets aan toe te voegen.
+ */
+export function toolLink(a: Aanleiding, van: "start" | "schooljaar"): string {
+  const pad = a.tool?.pad;
+  if (!pad) return "/dashboard";
+  const p = new URLSearchParams({ van });
+  // Oudergesprekken: open meteen de juiste module, met de dag erbij die in je
+  // agenda staat. De tool zet zelf de datum van vandaag neer als er niets
+  // meekomt — en dat is precies de dag waarop het gesprek NIET is.
+  if (a.tool?.slug === "oudercontact" && a.soort === "gesprek") {
+    p.set("m", "gesprekken");
+    p.set("datum", a.datum);
+  }
+  return `${pad}?${p.toString()}`;
+}
+
+/**
  * Hoe lang nog, in gewone taal. Vanaf een week rekenen we in weken, want
  * "over 9 dagen" is een getal waar niemand iets mee doet. Zelfde afronding als
  * de vakantieteller op Start, zodat de twee elkaar nooit tegenspreken.

@@ -209,6 +209,7 @@ export default function SchooljaarView({
             systemen={systemen}
             context={context}
             genegeerd={genegeerd}
+            van="schooljaar"
           />
 
           {telDubbelingen(items) > 0 && (

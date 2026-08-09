@@ -103,6 +103,7 @@ export default async function DashboardStart() {
         maximaal={2}
         vergrendeld={tools.filter((t) => vergrendeld(t.slug)).map((t) => t.slug)}
         genegeerd={genegeerd}
+        van="start"
       />
 
       <OnboardingCard />

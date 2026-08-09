@@ -196,7 +196,9 @@ export default function TakenView() {
         )}
         {tl && (
           <Link
-            href={tl.href}
+            // `van=taken` laat de terug-knop in de tool hierheen wijzen in
+            // plaats van naar het dashboard (zie public/avinka-terug.js).
+            href={tl.href + (tl.href.includes("?") ? "&" : "?") + "van=taken"}
             title={`Openen in ${tl.naam}`}
             className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-bold text-brand transition hover:bg-brand/15"
           >

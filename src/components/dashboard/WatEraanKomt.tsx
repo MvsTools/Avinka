@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { addTaak } from "@/lib/db";
-import { aanleidingen } from "@/lib/planning";
+import { aanleidingen, toolLink } from "@/lib/planning";
 import type { Context, PlanningBron, Schoolsystemen } from "@/lib/planning";
 import TaakKnop from "./TaakKnop";
 
@@ -44,6 +44,7 @@ export default function WatEraanKomt({
   vergrendeld = [],
   genegeerd = [],
   titel = "Wat eraan komt",
+  van,
 }: {
   bron: PlanningBron;
   vandaag: string;
@@ -59,6 +60,8 @@ export default function WatEraanKomt({
   /** Seintje-id's die je zelf al hebt weggeklikt. */
   genegeerd?: string[];
   titel?: string;
+  /** Waar deze strook staat — de tool brengt je daarna weer hierheen terug. */
+  van: "start" | "schooljaar";
 }) {
   const router = useRouter();
   // Optimistisch verbergen zodra je klikt, niet pas als de server het
@@ -180,7 +183,7 @@ export default function WatEraanKomt({
                 />
               ) : (
                 <Link
-                  href={opSlot ? "/dashboard/abonnement" : a.tool!.pad!}
+                  href={opSlot ? "/dashboard/abonnement" : toolLink(a, van)}
                   className={
                     "shrink-0 self-start rounded-xl px-4 py-2 text-sm font-bold transition-transform duration-150 active:scale-[0.97] sm:self-auto " +
                     (opSlot

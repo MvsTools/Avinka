@@ -461,6 +461,7 @@
   <script src="/avinka-voorkeuren.js"></script>
   <script src="/avinka-communicatie-app.js"></script>
   <script src="/avinka-lvs-app.js"></script>
+  <script src="/avinka-terug.js"></script>
   <script src="/avinka-dropdown.js"></script>
   <script src="/avinka-groep.js"></script>
   <script src="/avinka-verlaten.js"></script>
@@ -1676,9 +1677,16 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   renderTegels();
   renderSuggesties();
-  // Directe deeplink vanuit de takenlijst: ?m=<module> opent meteen die module.
+  // Directe deeplink vanuit de takenlijst of Mijn schooljaar: ?m=<module>
+  // opent meteen die module. Bij de oudergesprekken mag er een datum mee:
+  // die staat in je agenda, dus die hoef je niet nog eens op te zoeken.
+  // We zetten hem VÓÓR kiesType, want die vult zelf de dag van vandaag in als
+  // er nog niets staat — en vandaag is juist de dag dat het gesprek niet is.
   try {
-    const _m = new URLSearchParams(location.search).get('m');
+    const _p = new URLSearchParams(location.search);
+    const _m = _p.get('m');
+    const _datum = _p.get('datum') || '';
+    if (_m === 'gesprekken' && /^\d{4}-\d{2}-\d{2}$/.test(_datum)) gesp.datum = _datum;
     if (_m && TEGELS.some(t => t.actief && t.id === _m)) kiesType(_m);
   } catch (e) { /* stil */ }
   // Onthoud met welk vak de gebruiker bezig is, zodat een nieuw vak er direct
