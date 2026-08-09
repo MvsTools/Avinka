@@ -45,9 +45,16 @@
     <p class="regel fout" id="stap3">3. los scriptbestand — NIET geladen</p>
     <p class="regel fout" id="stap4">4. knop indrukken — nog niet gedaan</p>
     <p class="regel" id="fouten">fouten: nog geen</p>
-    <p class="regel"><code id="browser">browser: onbekend</code></p>
 
     <button id="knop" type="button">Druk hier</button>
+
+    <!-- Telt élke aanraking op de hele pagina apart van de knop. Blijft de knop
+         op rood staan terwijl deze tellers wél oplopen, dan komt de aanraking
+         aan maar wordt er geen klik van gemaakt — een heel ander mankement dan
+         wanneer er niets binnenkomt. -->
+    <p class="regel" id="tikken">aanrakingen: touchstart 0 · touchend 0 · klik 0</p>
+
+    <p class="regel"><code id="browser">browser: onbekend</code></p>
 
     <script>
       // Vangt fouten van alles wat hierna komt.
