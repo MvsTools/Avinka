@@ -181,6 +181,13 @@
         [76, "definitie", "Definitie schrijven", [{ type: "definitie", opdracht: "Schrijf zelf op wat elk woord betekent.", woorden: [{ woord: "telescoop", betekenis: "een kijkbuis om ver weg naar de sterren te kijken" }, { woord: "komeet", betekenis: "een hemellichaam met een lichtende staart" }, { woord: "krater", betekenis: "een grote kuil, bijvoorbeeld op de maan" }] }]],
         [77, "woordraadsel", "Woordraadsel (zelf schrijven)", [{ type: "woordraadsel", opdracht: "Lees de omschrijving en schrijf het woord op.", items: [{ omschrijving: "rond hemellichaam dat 's nachts schijnt", antwoord: "maan" }, { omschrijving: "hij vliegt met veel vuur de ruimte in", antwoord: "raket" }, { omschrijving: "fonkelt 's nachts aan de hemel", antwoord: "ster" }] }]],
         [78, "verhaal", "Verhaaltje met doelwoorden", [{ type: "verhaal", opdracht: "Schrijf een kort verhaal. Gebruik alle woorden.", woorden: ["raket", "planeet", "ster", "ruimte"], regels: 6 }]],
+      ]],
+      // Batch 2 van de reken-uitbreiding (verhoudingen, breuken, procenten).
+      // Achteraan toegevoegd en niet tussen de rekentegels: de nummers lopen op
+      // positie en de eigenaar keurt PER NUMMER — ertussen schuiven zou zijn
+      // eerdere goedkeuringen ongeldig maken.
+      ["Rekenen — nieuw (in test)", "🆕", "batch 2: verhoudingen, breuken en procenten — code maakt de getallen, de AI alleen de context", [
+        [83, "verhoudingstabel", "Verhoudingstabel aanvullen", [{ type: "verhoudingstabel", opdracht: "Vul de verhoudingstabellen aan.", tabellen: [{ boven: "pakken", onder: "euro", per: [1, 3] }, { boven: "minuten", onder: "km", per: [15, 20] }] }]],
       ]]
     ];
 
@@ -216,6 +223,9 @@
         case "getallenlijn": spec("lijnen", N); break;
         case "kleuropsom": spec("grootte", { kort: 8, middel: 10, groot: 12 }[lengte]); break; // 8×8 / 10×10 / 12×12
         case "staafdiagram": spec("vragen", { kort: 4, middel: 6, groot: 8 }[lengte]); break;
+        // Bij een verhoudingstabel schaalt het werk met het aantal KOLOMMEN,
+        // niet met het aantal tabellen: meer kolommen = meer lege vakjes.
+        case "verhoudingstabel": spec("kolommen", { kort: 4, middel: 5, groot: 6 }[lengte]); break;
         case "sudoku": // werk schaalt met roostergrootte: 4×4 → 6×6 → 9×9
           spec("grootte", { kort: 4, middel: 6, groot: 9 }[lengte]); break;
         case "rekenmuurtje": spec("aantal", N); break; // 1/2/3 muurtjes naast elkaar

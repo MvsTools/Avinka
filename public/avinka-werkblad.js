@@ -568,6 +568,66 @@
     return items;
   }
 
+  // Verhoudingstabel: hét rekenmodel uit de Nederlandse methodes. Twee rijen met
+  // een vaste verhouding ertussen; een paar vakjes zijn leeg.
+  //
+  // De AI levert alleen de CONTEXT (waar gaat het over: pakken en euro's,
+  // minuten en kilometers). De GETALLEN maakt de code, en daarmee kloppen ze
+  // altijd — dat is precies waarom dit type bestaat en we het niet als gewone
+  // sommen laten schrijven.
+  //
+  // Drie regels die het didactisch bruikbaar houden:
+  // 1. De eerste kolom blijft ALTIJD ingevuld: dat is de verhouding zelf, en
+  //    zonder die kolom is de tabel niet op te lossen.
+  // 2. Nooit twee lege vakjes in dezelfde kolom, om dezelfde reden.
+  // 3. Alle waarden zijn hele getallen. Een verhoudingstabel met 2,33 erin
+  //    oefent niet het model maar het rekenen met kommagetallen.
+  function genVerhoudingstabel(b) {
+    b = b || {};
+    var spec = b.spec || {};
+    var paren = arr(b.tabellen).filter(function (t) { return t && (t.boven || t.onder); });
+    if (!paren.length) paren = [{ boven: "aantal", onder: "prijs" }];
+    var kolommen = Math.min(6, Math.max(3, spec.kolommen || 5));
+    var STAPPEN = [2, 3, 4, 5, 6, 8, 10];
+    var tabellen = paren.slice(0, 3).map(function (p) {
+      // ⚠️ DE VERHOUDING KOMT VAN DE AI, DE REST VAN DE CODE.
+      // Eerst verzon de code ook de basisverhouding, en dat gaf tabellen die
+      // rekenkundig klopten maar nergens op sloegen: "4 minuten → 11 km" is
+      // 165 km/u. De code weet niet waar het over gaat, de AI wel. Levert die
+      // niets bruikbaars, dan valt hij terug op een prijs-achtige verhouding —
+      // die is in bijna elke context nog te verdedigen.
+      var per = arr(p.per).map(Number).filter(function (n) { return n > 0 && n === Math.round(n); });
+      var basisB = per.length === 2 ? per[0] : randInt(1, 4);
+      var basisO = per.length === 2 ? per[1] : randInt(2, 12);
+      // Stappen kiezen: altijd 1 erbij (de verhouding zelf), de rest oplopend.
+      // Bij een grote basisverhouding kleinere stappen, anders lopen de getallen
+      // in de laatste kolom in de duizenden en past de tabel didactisch niet
+      // meer bij de groep.
+      var groot = Math.max(basisB, basisO) >= 10;
+      var pool = shuffle((groot ? [2, 3, 4, 5, 6] : STAPPEN).slice())
+        .slice(0, kolommen - 1)
+        .sort(function (x, y) { return x - y; });
+      var stappen = [1].concat(pool);
+      var cellen = stappen.map(function (s) {
+        return { boven: basisB * s, onder: basisO * s };
+      });
+      // Leeg maken: 2 of 3 vakjes, nooit in kolom 0, nooit twee in één kolom.
+      var kandidaten = [];
+      for (var i = 1; i < cellen.length; i++) kandidaten.push(i);
+      kandidaten = shuffle(kandidaten).slice(0, Math.min(3, Math.max(2, cellen.length - 2)));
+      var leeg = kandidaten.map(function (i) {
+        return { kolom: i, rij: Math.random() < 0.5 ? "boven" : "onder" };
+      });
+      return {
+        boven: String(p.boven || "aantal"),
+        onder: String(p.onder || "prijs"),
+        cellen: cellen,
+        leeg: leeg,
+      };
+    });
+    return { tabellen: tabellen };
+  }
+
   // Tafelkaart: óf één tafel (1..10 × n, max 10 sommen), óf meerdere tafels door
   // elkaar (spec.tafels = [2,3,4,5,10]) met spec.aantal sommen (tot 20).
   function genTafel(spec) {
@@ -1190,6 +1250,7 @@
       if (b.type === "breuken" && !b._breuk) b._breuk = genBreuken(b.spec || b);
       if (b.type === "kleuropsom" && !b._kleur) b._kleur = genKleurplaat(b.spec || b);
       if (b.type === "staafdiagram" && !b._staaf) b._staaf = genStaaf(b);
+      if (b.type === "verhoudingstabel" && !b._vht) b._vht = genVerhoudingstabel(b);
       if (b.type === "sudoku" && !b._sudoku) b._sudoku = genSudoku(b.spec || b);
       if (b.type === "geheimschrift" && !b._geheim) b._geheim = genGeheim(b.woorden);
       if (b.type === "anagram" && !b._hussel) b._hussel = genHussel(b.woorden);
@@ -1745,6 +1806,33 @@
       h += "</tr>";
     }
     h += "</tbody></table>";
+    return '<div class="wb-blok">' + h + "</div>";
+  }
+
+  function rVerhoudingstabel(b, nr, ant) {
+    var V = b._vht || genVerhoudingstabel(b);
+    var h = opdrachtKop(nr, b.opdracht || "Vul de verhoudingstabellen aan.", b.em);
+    V.tabellen.forEach(function (t) {
+      function isLeeg(kolom, rij) {
+        return t.leeg.some(function (l) { return l.kolom === kolom && l.rij === rij; });
+      }
+      function cel(kolom, rij) {
+        var waarde = t.cellen[kolom][rij];
+        if (!isLeeg(kolom, rij)) return "<td>" + waarde + "</td>";
+        // Op het antwoordblad staat het getal in de accentkleur, zodat je in één
+        // oogopslag ziet wat de leerling zelf moest invullen.
+        return ant ? '<td class="wb-vht-in"><span class="wb-ant">' + waarde + "</span></td>" : '<td class="wb-vht-in"></td>';
+      }
+      var rijBoven = "", rijOnder = "";
+      for (var k = 0; k < t.cellen.length; k++) {
+        rijBoven += cel(k, "boven");
+        rijOnder += cel(k, "onder");
+      }
+      h += '<div class="wb-vht-wrap"><table class="wb-vht">' +
+        '<tr><th>' + esc(t.boven) + "</th>" + rijBoven + "</tr>" +
+        '<tr><th>' + esc(t.onder) + "</th>" + rijOnder + "</tr>" +
+        "</table></div>";
+    });
     return '<div class="wb-blok">' + h + "</div>";
   }
 
@@ -2541,6 +2629,7 @@
       case "breuken": return rBreuken(b, nr, ant);
       case "kleuropsom": return rKleur(b, nr, ant);
       case "staafdiagram": return rStaaf(b, nr, ant);
+      case "verhoudingstabel": return rVerhoudingstabel(b, nr, ant);
       case "sudoku": return rSudoku(b, nr, ant);
       case "geheimschrift": return rGeheim(b, nr, ant);
       case "anagram": return rHussel(b, nr, ant);
@@ -2867,6 +2956,15 @@
       ".wb-staaf-basis{stroke:var(--wb-ink);stroke-width:1.5}",
       ".wb-staaf-as{font-size:9px;fill:var(--wb-ink);text-anchor:end;font-family:var(--wb-font)}",
       ".wb-staaf-l{font-size:12px;fill:var(--wb-ink);text-anchor:middle;font-family:var(--wb-font)}",
+      // Verhoudingstabel
+      ".wb-vht-wrap{display:flex;justify-content:center;margin:0 0 10px}",
+      ".wb-vht{border-collapse:collapse;font-variant-numeric:tabular-nums}",
+      ".wb-vht th,.wb-vht td{border:1.5px solid var(--wb-ink);height:34px;min-width:52px;text-align:center;font-size:15px;font-weight:700;padding:0 8px}",
+      // Vaste breedte voor de labelkolom, zodat twee tabellen onder elkaar met
+      // verschillend lange labels ("pakken" en "minuten") tóch uitlijnen.
+      ".wb-vht th{background:var(--wb-soft);text-align:left;font-size:13.5px;font-weight:800;min-width:78px;white-space:nowrap}",
+      // Leeg vakje: iets lichter zodat je meteen ziet waar je moet schrijven.
+      ".wb-vht-in{background:#fff}",
       // Sudoku
       ".wb-sudoku{border-collapse:collapse;margin:0 auto;border:2.5px solid var(--wb-ink)}",
       ".wb-sudoku td{width:34px;height:34px;border:1px solid var(--wb-ink);text-align:center;font-weight:700;font-size:17px;font-family:var(--wb-font)}",
