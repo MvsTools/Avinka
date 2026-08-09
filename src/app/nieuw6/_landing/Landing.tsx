@@ -2403,28 +2403,49 @@ export function ToolRail() {
     return () => io.disconnect();
   }, []);
 
-  /* ⚠️ TIJDELIJK, hoort bij het meetstrookje hierboven. Luistert los van React
-     mee op de rij, zodat we zien wat de telefoon écht stuurt en niet wat React
-     ervan doorgeeft. */
+  /* ⚠️ TIJDELIJK, hoort bij het meetstrookje hierboven.
+     Ronde 1 luisterde op de rij zelf en ving NIETS op — de vinger bereikt de
+     kaarten dus helemaal niet en er ligt iets overheen. Daarom luisteren we nu
+     op het hele document en melden we WELK element geraakt wordt. Dat wijst
+     het ding aan dat ertussen zit. */
   useEffect(() => {
-    const el = rail.current;
-    if (!el) return;
-    const soorten = [
-      "touchstart",
-      "touchend",
-      "touchcancel",
-      "pointerdown",
-      "pointerup",
-      "pointercancel",
-      "click",
-    ] as const;
+    /* 🔑 DIT IS DE BELANGRIJKSTE REGEL VAN DE HELE METING. Het strookje wordt
+       óók door de server meegestuurd, dus "nog niets ontvangen" bewijst niet
+       dat javascript draait — het kan ook de kale servertekst zijn waar nooit
+       iets overheen is gekomen. Draait javascript wél, dan komt deze regel
+       erbij. Blijft hij weg, dan is niet het aantikken stuk maar valt het hele
+       script om, en dan zoeken we in een compleet andere hoek. */
+    meld("javascript draait");
+    const bijFout = (ev: ErrorEvent) => meld(`FOUT: ${ev.message}`);
+    const bijBelofte = (ev: PromiseRejectionEvent) => meld(`FOUT: ${String(ev.reason)}`);
+    window.addEventListener("error", bijFout);
+    window.addEventListener("unhandledrejection", bijBelofte);
+
+    const soorten = ["touchstart", "pointerdown", "click"] as const;
+    const omschrijf = (n: EventTarget | null) => {
+      const el = n as HTMLElement | null;
+      if (!el || !el.tagName) return "niets";
+      const klas = (typeof el.className === "string" ? el.className : "")
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 3)
+        .join(".");
+      const r = el.getBoundingClientRect();
+      const vast = getComputedStyle(el).position;
+      return `${el.tagName}${klas ? "." + klas : ""} [${Math.round(r.width)}x${Math.round(
+        r.height,
+      )} ${vast}]`;
+    };
     const luister = (ev: Event) => {
       const p = ev as PointerEvent;
-      const soort = p.pointerType ? ` (${p.pointerType})` : "";
-      meld(ev.type + soort);
+      meld(`${ev.type}${p.pointerType ? ` (${p.pointerType})` : ""} → ${omschrijf(ev.target)}`);
     };
-    soorten.forEach((s) => el.addEventListener(s, luister, true));
-    return () => soorten.forEach((s) => el.removeEventListener(s, luister, true));
+    soorten.forEach((s) => document.addEventListener(s, luister, true));
+    return () => {
+      window.removeEventListener("error", bijFout);
+      window.removeEventListener("unhandledrejection", bijBelofte);
+      soorten.forEach((s) => document.removeEventListener(s, luister, true));
+    };
   }, []);
   useEffect(() => {
     if (!wakker) return;
@@ -2526,14 +2547,21 @@ export function ToolRail() {
 
         {/* ⚠️ TIJDELIJK MEETSTROOKJE — gaat er weer uit zodra het aantikken
            werkt. Staat bewust in de pagina zelf en niet in de console: op een
-           telefoon is er geen console om in te kijken. */}
-        <div className="mx-auto mt-2 w-full max-w-5xl px-6">
-          <div className="rounded-2xl bg-ink/90 p-3 font-mono text-[11px] leading-4 text-cream">
-            <p className="mb-1 font-bold text-accent">meting — tik een kaart aan</p>
+           telefoon is er geen console om in te kijken.
+           Vast onderin, zodat je overal op de pagina kunt tikken en meteen
+           ziet wat je raakt. pointer-events-none, anders vangt het strookje
+           zelf de tikken op die we juist willen meten. */}
+        <div className="pointer-events-none fixed inset-x-2 bottom-2 z-[9999]">
+          <div className="rounded-2xl bg-ink/95 p-3 font-mono text-[10px] leading-[14px] text-cream shadow-xl">
+            <p className="mb-1 font-bold text-accent">meting — tik ergens</p>
             {meting.length === 0 ? (
               <p className="text-cream/50">nog niets ontvangen</p>
             ) : (
-              meting.map((r, i) => <p key={i}>{r}</p>)
+              meting.map((r, i) => (
+                <p key={i} className="truncate">
+                  {r}
+                </p>
+              ))
             )}
           </div>
         </div>
