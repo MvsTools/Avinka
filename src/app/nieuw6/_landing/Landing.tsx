@@ -2287,6 +2287,14 @@ function RailKaarten({
 export function ToolRail() {
   const rail = useRef<HTMLDivElement>(null);
   const greep = useRef({ actief: false, startX: 0, startScroll: 0, vangt: 0 });
+  /* ⚠️ TIJDELIJK MEETSTROOKJE — hoort bij de werkbank /nieuw6 en gaat er weer
+     uit. Op de telefoon van de eigenaar openen de kaarten niet, en ik kan hier
+     geen echte aanraking nabootsen: dit venster heeft altijd een muis. In
+     plaats van nóg een keer te gokken laat dit strookje op zíjn scherm zien
+     welke gebeurtenissen zijn telefoon werkelijk stuurt. */
+  const [meting, setMeting] = useState<string[]>([]);
+  const meld = (regel: string) =>
+    setMeting((oud) => [...oud.slice(-7), regel]);
   /* Staat op waar zodra er ECHT een sleepbeweging is begonnen. Zie isVersleept.
      De beginwaarde is met opzet `false`: gebeurt er onverwacht niets met dit
      vlaggetje, dan opent een kaart gewoon. */
@@ -2337,7 +2345,12 @@ export function ToolRail() {
   const isVersleept = (e: ReactMouseEvent) => e.detail !== 0 && gesleept.current;
 
   const opOpenen = (index: number, vanaf: DOMRect, e: ReactMouseEvent) => {
-    if (isVersleept(e)) return;
+    meld(`klik op kaart ${index + 1}, detail ${e.detail}`);
+    if (isVersleept(e)) {
+      meld("→ geweigerd: gold als sleepbeweging");
+      return;
+    }
+    meld("→ paneel gaat open");
     setOpen({ index, vanaf });
     setKaartVerborgen(true);
   };
@@ -2388,6 +2401,30 @@ export function ToolRail() {
     );
     io.observe(el);
     return () => io.disconnect();
+  }, []);
+
+  /* ⚠️ TIJDELIJK, hoort bij het meetstrookje hierboven. Luistert los van React
+     mee op de rij, zodat we zien wat de telefoon écht stuurt en niet wat React
+     ervan doorgeeft. */
+  useEffect(() => {
+    const el = rail.current;
+    if (!el) return;
+    const soorten = [
+      "touchstart",
+      "touchend",
+      "touchcancel",
+      "pointerdown",
+      "pointerup",
+      "pointercancel",
+      "click",
+    ] as const;
+    const luister = (ev: Event) => {
+      const p = ev as PointerEvent;
+      const soort = p.pointerType ? ` (${p.pointerType})` : "";
+      meld(ev.type + soort);
+    };
+    soorten.forEach((s) => el.addEventListener(s, luister, true));
+    return () => soorten.forEach((s) => el.removeEventListener(s, luister, true));
   }, []);
   useEffect(() => {
     if (!wakker) return;
@@ -2485,6 +2522,20 @@ export function ToolRail() {
             opKnopKlik={opKnopKlik}
             openId={open && kaartVerborgen ? KAARTEN[open.index].id : null}
           />
+        </div>
+
+        {/* ⚠️ TIJDELIJK MEETSTROOKJE — gaat er weer uit zodra het aantikken
+           werkt. Staat bewust in de pagina zelf en niet in de console: op een
+           telefoon is er geen console om in te kijken. */}
+        <div className="mx-auto mt-2 w-full max-w-5xl px-6">
+          <div className="rounded-2xl bg-ink/90 p-3 font-mono text-[11px] leading-4 text-cream">
+            <p className="mb-1 font-bold text-accent">meting — tik een kaart aan</p>
+            {meting.length === 0 ? (
+              <p className="text-cream/50">nog niets ontvangen</p>
+            ) : (
+              meting.map((r, i) => <p key={i}>{r}</p>)
+            )}
+          </div>
         </div>
 
         <div className="mx-auto flex w-full max-w-5xl justify-end px-6">
@@ -2962,20 +3013,14 @@ function StijlBlok() {
       .kaart-knop:focus-visible .kaart-hint { opacity: 1; }
       .kaart-knop:focus-visible .kaart-hint > span { transform: translateY(0); }
 
-      /* ⚠️ OP EEN APPARAAT ZONDER MUIS STAAT "Bekijk" GEWOON AAN. De regels
-         hierboven zitten in de hover-mediaquery, en die is op een telefoon
-         nooit waar — daar was dus niets dat vertelde dat een kaart open kan.
-         (En schrijf hier geen accent grave: dit hele blok is één template-
-         string in JS, dus zo'n teken sluit de stijl halverwege af.)
-         De eigenaar zei het precies zo: "de hele 'bekijk' optie is er niet".
-         🔑 Een aanwijzing die alleen bij hover verschijnt, bestaat op een
-         telefoon niet. Zo'n hint hoort daar permanent te staan, want er is geen
-         tussenstap waarin het apparaat kan verklappen dat iets aanklikbaar is.
-         Kijk dus bij élke hover-only aanwijzing wat de telefoon overhoudt. */
-      @media (hover: none) {
-        .kaart-hint { opacity: 1; }
-        .kaart-hint > span { transform: none; }
-      }
+      /* ⚠️ HIER STOND EVEN: "Bekijk" permanent tonen op een apparaat zonder
+         muis, omdat die hint in de hover-mediaquery zit en daar op een telefoon
+         dus nooit verschijnt. Afgekeurd door de eigenaar — een knop die er
+         altijd op ligt maakt de kaart druk. De constatering blijft wel staan:
+         op een telefoon vertelt niets dat een kaart open kan. Als daar iets
+         voor moet komen, dan iets rustigers dan deze balk.
+         (Schrijf hier geen accent grave: dit hele blok is één template-string
+         in JS, dus zo'n teken sluit de stijl halverwege af.) */
 
       /* De tekst in het paneel komt net na de beweging binnen. */
       .paneel-tekst > * {
