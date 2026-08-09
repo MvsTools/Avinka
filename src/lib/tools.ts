@@ -1,5 +1,10 @@
 // De Avinka-tools, op één plek. Wordt gebruikt op de Start-pagina en elders.
 // De kleur-klassen staan voluit (niet samengesteld), zodat Tailwind ze meepakt.
+//
+// ⚠️ `pad` is de plek waar het adres van een tool hoort te staan — met één
+// uitzondering: `VERWIJZINGEN` in `src/components/dashboard/TakenView.tsx` heeft
+// negen adressen met de hand (incl. de `?m=`-modules van Oudercontact).
+// Verplaats je een tool, werk die lijst dan mee bij.
 export type Tool = {
   slug: string;
   naam: string;

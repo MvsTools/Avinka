@@ -428,6 +428,12 @@ function capitaliseer(s: string): string {
 // Slimme tool-/module-verwijzing. Herkent trefwoorden (incl. synoniemen én
 // kleine typefouten) in de taaktekst en wijst naar de juiste tool/module.
 // Eerste (meest specifieke) match wint, dus modules staan boven de tool.
+//
+// ⚠️ HIER STAAN TOOL-ADRESSEN MET DE HAND, en dat is de enige plek buiten
+// `src/lib/tools.ts` waar dat zo is. Verhuizen de tools (van losse HTML naar
+// dashboardpagina's), dan wijst deze lijst naar bestanden die niet meer
+// bestaan — en dat merk je niet aan een foutmelding, alleen aan een knopje dat
+// nergens op uitkomt. Werk hem in dezelfde beweging bij.
 type Verwijzing = { naam: string; href: string; emoji: string; woorden: string[] };
 const VERWIJZINGEN: Verwijzing[] = [
   { naam: "Rapporten", emoji: "📝", href: "/tools/rapporten.html",
