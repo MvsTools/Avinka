@@ -808,9 +808,13 @@ export default function Landing({
                 >
                   Inloggen
                 </Link>
+                {/* ⚠️ `whitespace-nowrap`: op 360px brak "Probeer gratis" over
+                    twee regels, werd de knop bijna twee keer zo hoog en legde
+                    de hele balk zich over de kop van de sectie eronder. Een
+                    knop van twee woorden hoort nooit af te breken. */}
                 <Link
                   href="/sign-up"
-                  className="rounded-xl bg-brand px-4 py-3 text-sm font-bold text-white shadow-sm shadow-brand/20 transition hover:bg-brand-dark sm:py-2 sm:text-base"
+                  className="whitespace-nowrap rounded-xl bg-brand px-3.5 py-3 text-sm font-bold text-white shadow-sm shadow-brand/20 transition hover:bg-brand-dark sm:px-4 sm:py-2 sm:text-base"
                 >
                   Probeer gratis
                 </Link>

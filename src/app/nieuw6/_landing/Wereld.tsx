@@ -786,6 +786,31 @@ export const PIJN = [
   },
 ];
 
+/* De handgeschreven regel bij "Herken je dit?".
+   ⚠️ ÉÉN definitie, twee plekken — en dat is met opzet. Op een breed scherm
+   staat hij naast de kaarten (meelopend onder de sticky kop): daar is het een
+   onderschrift bij wat je ernaast ziet. Op een telefoon valt die kolom bóvenop
+   de kaarten, en dan lees je de conclusie ("het kan slimmer") vóór de drie
+   problemen waar hij over gaat. Daarom staat hij op mobiel ná de kaarten.
+   🔑 Niet twee keer overtypen: dan loopt de tekst vroeg of laat uit elkaar en
+   corrigeer je er maar één. Zie de Prijzen-kopie die ooit een rechtgezette
+   belofte terugbracht op de voorpagina. */
+function HandRegel({ className = "" }: { className?: string }) {
+  return (
+    <p
+      data-reveal
+      className={`${HAND_REGEL} ${className}`}
+      style={{ fontFamily: "var(--font-hand)", color: KOP }}
+    >
+      Het hoort bij het werk,
+      <br />
+      maar het kan slimmer,
+      <br />
+      sneller en efficiënter
+    </p>
+  );
+}
+
 export function WereldHerken() {
   return (
     <section className="relative overflow-hidden" style={{ background: MINT_LICHT }}>
@@ -840,18 +865,9 @@ export function WereldHerken() {
                derde regel viel — een wees. Kleiner zetten hielp wel maar kostte
                aanwezigheid; drie korte regels lezen bij handschrift juist
                natuurlijk, dus de maat kon terug omhoog. De tekst is
-               ongewijzigd, alleen de regelval. */}
-            <p
-              data-reveal
-              className={`mt-6 lg:sticky lg:top-60 ${HAND_REGEL}`}
-              style={{ fontFamily: "var(--font-hand)", color: KOP }}
-            >
-              Het hoort bij het werk,
-              <br />
-              maar het kan slimmer,
-              <br />
-              sneller en efficiënter
-            </p>
+               ongewijzigd, alleen de regelval.
+               Op een telefoon staat deze regel ná de kaarten; zie HandRegel. */}
+            <HandRegel className="mt-6 hidden lg:sticky lg:top-60 lg:block" />
           </div>
 
           <div className="relative">
@@ -867,19 +883,34 @@ export function WereldHerken() {
                     rotate: `${i % 2 ? 0.8 : -0.8}deg`,
                   } as CSSProperties
                 }
-                className={`${KAART} relative mb-6 flex items-start gap-5 p-7 lg:ml-[var(--stap)]`}
+                /* ⚠️ Alles met een `sm:` ervoor is de bestaande desktopmaat en
+                   blijft ongemoeid; wat ervóór staat geldt alleen op een
+                   telefoon. Zo krimpt de kaart daar (kleinere binnenmarge,
+                   minder tussenruimte) zonder dat het brede scherm iets merkt. */
+                className={`${KAART} relative mb-4 flex items-start gap-4 p-5 sm:mb-6 sm:gap-5 sm:p-7 lg:ml-[var(--stap)]`}
               >
-                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand" aria-hidden>
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand sm:h-9 sm:w-9" aria-hidden>
                   <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" stroke="#fff" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 13l4 4L19 7" />
                   </svg>
                 </span>
                 <div>
-                  <h3 className="font-display text-2xl font-black tracking-tight text-ink">{p.titel}</h3>
-                  <p className="mt-1.5 text-lg leading-7 text-ink/70">{p.tekst}</p>
+                  {/* ⚠️ Hier stond `text-2xl` hardgecodeerd, terwijl de
+                      type-ladder bovenaan dit bestand zegt dat juist de
+                      kaartjes van "Herken je dit?" KOP_BLOK horen te
+                      gebruiken. Op een telefoon gaf dat een kop van 24px op
+                      een kaart van 5cm breed. Niet vervangen door KOP_BLOK:
+                      dat zou op een smalle laptop (1024px) óók 19,5px geven
+                      in plaats van 24, en het brede scherm is af. Alleen de
+                      telefoon krimpt dus. */}
+                  <h3 className="font-display text-xl font-black tracking-tight text-ink sm:text-2xl">{p.titel}</h3>
+                  <p className="mt-1.5 text-base leading-6 text-ink/70 sm:text-lg sm:leading-7">{p.tekst}</p>
                 </div>
               </div>
             ))}
+            {/* Op een telefoon sluit de handgeschreven regel de drie problemen
+               af in plaats van ze aan te kondigen. */}
+            <HandRegel className="mt-8 lg:hidden" />
           </div>
         </div>
       </div>
