@@ -944,7 +944,7 @@ export default function Landing({
               <Venster
                 naam="plattegrond"
                 titel="plattegrond_lokaal_v4_ECHT.png"
-                className="hidden w-44 rotate-[6deg] lg:left-[4%] lg:top-[58%] lg:block"
+                className="hidden w-44 rotate-[6deg] max-sm:right-[4%] max-sm:top-[21%] max-sm:block max-sm:w-32 lg:left-[4%] lg:top-[58%] lg:block"
               >
                 <div className="grid grid-cols-4 gap-1.5 p-3">
                   {Array.from({ length: 8 }).map((_, i) => (
@@ -989,13 +989,15 @@ export default function Landing({
               </div>
               <div
                 data-venster="toetsanalyse"
-                className="absolute hidden w-32 rotate-[3deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:left-[15%] sm:top-[70%] sm:block"
+                /* max-sm: = alleen onder 640px. Zo komt dit briefje terug op de
+                   telefoon zonder dat er iets verandert aan het brede scherm. */
+                className="absolute hidden w-32 rotate-[3deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] max-sm:right-[6%] max-sm:top-[33%] max-sm:block max-sm:w-28 max-sm:p-2.5 max-sm:text-[10px] sm:left-[15%] sm:top-[70%] sm:block"
               >
                 toetsen analyseren
               </div>
               <div
                 data-venster="weektaak"
-                className="absolute hidden w-32 rotate-[4deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:right-[14%] sm:top-[30%] sm:block"
+                className="absolute hidden w-32 rotate-[4deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] max-sm:left-[5%] max-sm:top-[15%] max-sm:block max-sm:w-28 max-sm:p-2.5 max-sm:text-[10px] sm:right-[14%] sm:top-[30%] sm:block"
               >
                 weektaak maken
               </div>
