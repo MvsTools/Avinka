@@ -309,11 +309,22 @@ export default function PrivacyPage() {
             Daarna verwijderen we ze automatisch, ook als je je account houdt. We laten je
             dat ruim van tevoren per e-mail weten, zodat je ze eerst kunt downloaden.
           </li>
+          {/* ⚠️ "dan verwijderen we alles" was niet helemaal waar, en dat is
+              gevonden door de tabellen na te lopen op wat er bij het
+              verwijderen van een account écht gebeurt (9-8-2026). Alles
+              verdwijnt mee, de AI-logs blijven achter zónder gebruiker (dus
+              geanonimiseerd), maar `proef_gebruikt` houdt je genormaliseerde
+              adres vast — met opzet, want anders is je account verwijderen
+              precies de manier om een tweede gratis proef te pakken.
+              Zie database/migratie-proef-per-brievenbus.sql. Verandert dat
+              slot ooit, dan hoort deze zin mee te veranderen. */}
           <li>
             <strong>Je eigen werk en je account</strong> (lesontwerpen, werkbladen,
             draaiboeken, je weekrooster en je voorkeuren): zolang je een account hebt. Daar
             staan geen leerlinggegevens in, dus die bewaren we gewoon voor je. Verwijder je
-            je account, dan verwijderen we alles.
+            je account, dan verwijderen we alles. Eén ding houden we bij: dat dit e-mailadres
+            al eens een gratis proefperiode heeft gehad. Anders zou een nieuw account steeds
+            een nieuwe gratis week geven.
           </li>
           <li>
             <strong>Technische gebruiks- en AI-logs</strong> (tellingen, geen inhoud):

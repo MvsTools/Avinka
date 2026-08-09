@@ -22,9 +22,18 @@ export const VOORWAARDEN = {
    bewaartermijnen staan alleen in de privacyverklaring, dus twee pop-ups voor
    één wijziging zou hier onterecht zijn. Dat is de keerzijde van de regel
    hierboven: samen bumpen als het allebei raakt, apart als dat niet zo is. */
+/* ⚠️ OPNIEUW ALLEEN PRIVACY, 9-8-2026. Zelfde afweging als hierboven: dit gaat
+   over bewaren, en dat staat niet in de voorwaarden.
+   🔑 Deze bump komt niet uit nieuw beleid maar uit een CORRECTIE. Bij het
+   nalopen van wat er echt gebeurt als je je account verwijdert, bleek één
+   e-mailadres bewaard te blijven (het slot tegen een tweede gratis proef,
+   `proef_gebruikt`), terwijl de pagina zei dat alles weg gaat. Er verandert
+   dus niets aan wat we doen — alleen aan wat we erover opschrijven. Zeg dat
+   ook zo in de samenvatting hieronder; een pop-up over een correctie hoort
+   niet te lezen als een nieuwe maatregel. */
 export const PRIVACY = {
-  versie: "2026-08-08",
-  weergave: "8 augustus 2026",
+  versie: "2026-08-09",
+  weergave: "9 augustus 2026",
 };
 
 // Korte samenvatting van wat er in de LAATSTE inhoudelijke wijziging veranderde.
@@ -43,8 +52,7 @@ export const PRIVACY = {
    hoort en kunt meenemen, dan wat er juist blijft. Niet andersom — beginnen met
    het goede nieuws leest als iets wegmoffelen. */
 export const WIJZIGING_SAMENVATTING: string[] = [
-  "Gegevens over je leerlingen (je klassenlijst, plattegronden, agenda-afspraken en taken) bewaren we voortaan tot 90 dagen na het einde van je abonnement. Daarna verwijderen we ze automatisch, ook als je je account houdt.",
-  "Je krijgt daar ruim van tevoren een e-mail over, zodat je ze eerst kunt downloaden.",
-  "Je eigen werk blijft gewoon staan: lesontwerpen, werkbladen, draaiboeken en je weekrooster.",
-  "Nieuw: op avinka.nl/mijn-gegevens zie je precies wat we van je bewaren, en kun je per onderdeel downloaden wat je wilt meenemen.",
+  "We hebben twee dingen preciezer opgeschreven. Er verandert niets aan wat we met je gegevens doen.",
+  "Verwijder je je account, dan verwijderen we alles. Eén ding houden we bij: dat dit e-mailadres al eens een gratis proefperiode heeft gehad. Anders zou een nieuw account steeds een nieuwe gratis week geven. Dat deden we al, maar het stond er nog niet.",
+  "Technische logs (tellingen van je AI-gebruik, geen inhoud) verdwijnen nu ook echt automatisch na 24 maanden. Die termijn stond er al; de opruiming liep nog niet.",
 ];
