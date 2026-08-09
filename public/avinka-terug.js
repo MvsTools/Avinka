@@ -24,7 +24,7 @@
     var van = "";
     try {
       van = new URLSearchParams(location.search).get("van") || "";
-    } catch (e) {
+    } catch {
       return;
     }
     var plek = PLEK[van];

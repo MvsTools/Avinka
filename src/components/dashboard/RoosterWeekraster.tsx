@@ -7,6 +7,7 @@ import { ETIKET } from "./schooljaar-stijl";
 import {
   Bewerkraster,
   Blokkaart,
+  lesontwerpLink,
   VakKiezer,
   SlotIcoon,
   DAG_ID,
@@ -467,6 +468,7 @@ export default function RoosterWeekraster({
                 zetOmschrijving={(tekst, overal) => zetOmschrijving(gekozenBlok.id, tekst, overal)}
                 aantalZelfdeVak={zelfdeVak.length}
                 overalGelijk={overalGelijk}
+                lesLink={lesontwerpLink(gekozenBlok)}
                 weghalen={() => verwijder(gekozenBlok.id)}
                 sluit={() => setGekozen(null)}
               />

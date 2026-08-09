@@ -54,6 +54,49 @@ export const STANDAARD_VAKKEN: { id: string; naam: string }[] = [
   { id: "gym", naam: "Gym" },
 ];
 
+/**
+ * Welk vak in de Lesontwerp-tool hoort bij een vak uit je rooster?
+ *
+ * ⚠️ Alleen vakken die dáár ook echt bestaan. Wat hier niet in staat, krijgt
+ * geen knop — een les laten ontwerpen voor "Muziek" of "Gym" kan die tool niet,
+ * en een knop die op een leeg scherm uitkomt is erger dan geen knop.
+ * "Wereldoriëntatie" staat er bewust niet in: Lesontwerp kent aardrijkskunde,
+ * geschiedenis en natuur & techniek apart, en welke van de drie jij vandaag
+ * geeft weten wij niet. Dan kies je het daar zelf, in één klik.
+ */
+const LESONTWERP_VAK: Record<string, string> = {
+  rekenen: "Rekenen",
+  taal: "Taal",
+  spelling: "Spelling",
+  tlezen: "(Voortgezet) technisch lezen",
+  blezen: "Begrijpend lezen",
+  engels: "Engels",
+  creatief: "Creatief / handvaardigheid",
+};
+
+/** De lesduren die de Lesontwerp-tool kent; we ronden naar de dichtstbijzijnde. */
+const LESDUREN = [15, 30, 45, 60, 90];
+
+/**
+ * Het adres van de Lesontwerp-tool met dit lesblok al ingevuld — of niets als
+ * dit vak daar niet bestaat.
+ *
+ * Bewust NIET meegestuurd: je eigen aantekening bij het blok. Die is vrije
+ * tekst, en hoe vaak er ook staat dat er geen kindnamen in horen, "extra uitleg
+ * voor Sanne" is precies wat iemand opschrijft. Doorgeven zou die naam
+ * ongemerkt in een AI-opdracht zetten. Het lesdoel typ je zelf; dat is één zin.
+ */
+export function lesontwerpLink(blok: Roosterblok): string | null {
+  const vak = LESONTWERP_VAK[blok.vak];
+  if (!vak || blok.soort !== "les") return null;
+  const duur = minuten(blok.eind) - minuten(blok.begin);
+  const dichtstbij = LESDUREN.reduce((a, b) =>
+    Math.abs(b - duur) < Math.abs(a - duur) ? b : a,
+  );
+  const p = new URLSearchParams({ van: "schooljaar", vak, duur: `${dichtstbij} min` });
+  return `/tools/lesontwerp.html?${p.toString()}`;
+}
+
 /** Ronden op 5 minuten, zodat slepen netjes "klikt". */
 function snap5(m: number): number {
   return Math.round(m / 5) * 5;
@@ -1545,6 +1588,7 @@ export function Blokkaart({
   zetOmschrijving,
   aantalZelfdeVak,
   overalGelijk,
+  lesLink,
   weghalen,
   sluit,
 }: {
@@ -1563,6 +1607,13 @@ export function Blokkaart({
   aantalZelfdeVak: number;
   /** Hebben die blokken nu al allemaal dezelfde omschrijving? */
   overalGelijk: boolean;
+  /**
+   * Adres van de Lesontwerp-tool met dit vak en deze lesduur al ingevuld
+   * (zie lesontwerpLink). Alleen meegegeven vanuit het WEEKrooster: daar gaat
+   * het over een echte les op een echte dag. In het basisrooster stel je het
+   * sjabloon voor élke week in — daar hoort geen knop naar één les.
+   */
+  lesLink?: string | null;
   weghalen: () => void;
   sluit: () => void;
 }) {
@@ -1719,6 +1770,24 @@ export function Blokkaart({
             ))}
           </div>
         </>
+      )}
+
+      {/* De brug van je rooster naar een echte les. Staat er alleen als de
+          Lesontwerp-tool dit vak kent; vak en lesduur reizen mee, het lesdoel
+          typ je daar zelf. Nieuw tabblad, want je bent hier midden in je week
+          aan het schuiven en dat wil je niet kwijtraken. */}
+      {lesLink && (
+        <a
+          href={lesLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-black/10 bg-white px-3 py-2 text-sm font-bold text-ink/75 transition-transform duration-150 hover:text-ink active:scale-[0.98]"
+        >
+          {/* Zelfde zinswending als "Maak hier een werkblad bij" in Lesontwerp,
+              zodat de twee bruggen tussen tools hetzelfde klinken. */}
+          <span aria-hidden>📓</span>
+          Maak hier een les bij
+        </a>
       )}
 
       <button

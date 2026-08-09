@@ -226,6 +226,7 @@
   <script src="/avinka-masking.js"></script>
   <script src="/avinka-bestanden.js"></script>
   <script src="/avinka-dropdown.js"></script>
+  <script src="/avinka-terug.js"></script>
   <script src="/avinka-groep.js"></script>
   <script src="/avinka-woordenbank.js"></script>
   <script src="/avinka-leerlijnen.js"></script>
@@ -1309,6 +1310,38 @@
     }
     // Na het laden van de pagina (en de andere scripts) een eventuele opgeslagen les inladen.
     window.addEventListener('load', laadOpgeslagenLes);
+
+    // ── Vanuit Mijn schooljaar (?vak=…&duur=…) ───────────────────────────────
+    // Je klikt in je weekrooster op het rekenblok van dinsdag en komt hier met
+    // rekenen en 45 minuten al ingevuld; alleen het lesdoel typ je zelf.
+    // We KLIKKEN de vakkaart in plaats van het verborgen veld te vullen: aan
+    // dat klikken hangt vakGewijzigd(), die bepaalt welke lestypes en lesvormen
+    // bij dit vak passen. Alleen het veld zetten geeft een menu dat niet klopt.
+    // Onbekende waarde = niets doen; dan kies je gewoon zelf.
+    (function () {
+      function vulVoor() {
+        var p;
+        try { p = new URLSearchParams(location.search); } catch (e) { return; }
+        var vak = p.get('vak');
+        if (vak) {
+          var kaart = Array.from(document.querySelectorAll('#vak-grid .vakkaart'))
+            .find(function (k) { return k.dataset.v === vak; });
+          if (kaart) kaart.click();
+        }
+        var duur = p.get('duur');
+        var sel = document.getElementById('duur');
+        if (duur && sel && Array.from(sel.options).some(function (o) { return o.value === duur || o.text === duur; })) {
+          sel.value = duur;
+          // ⚠️ Een 'change' AFVUREN, niet alleen de waarde zetten. De huisstijl-
+          // keuzelijst (avinka-dropdown.js) tekent een eigen knop over de echte
+          // select heen en werkt zijn opschrift alleen bij op dat event. Zonder
+          // dit staat er "45 min" op het scherm terwijl er 30 in het formulier
+          // zit — en dat merk je pas aan de les die eruit komt.
+          sel.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+      window.addEventListener('load', vulVoor);
+    })();
 
     // Verwijder markdown-scheidingslijnen (---, ***, ___) die de AI soms tussen
     // secties zet. Onze renderer kent ze niet, dus anders blijven ze als losse

@@ -4,9 +4,12 @@
 // De knoppen praten hier met de echte API en krijgen dus een 401; het gaat om
 // de vorm, niet om de werking.
 
+"use client";
+
+import { Blokkaart, lesontwerpLink } from "@/components/dashboard/RoosterBewerken";
 import WatEraanKomt from "@/components/dashboard/WatEraanKomt";
 import { maakSchooljaar, periodesVan } from "@/lib/planning";
-import type { PlanItem, PlanningBron } from "@/lib/planning";
+import type { PlanItem, PlanningBron, Roosterblok } from "@/lib/planning";
 
 const VANDAAG = "2027-02-01";
 
@@ -60,6 +63,38 @@ export default function WekProef() {
         context={{ werkdagen: "01234", rapporten: { klaar: 12, totaal: 28 } }}
         van="schooljaar"
       />
+
+      {/* Het kaartje dat opengaat als je in het weekrooster op een lesblok
+          klikt — hier los neergezet, want het echte rooster komt van de server
+          en die laat niemand binnen zonder inloggen. */}
+      <Blokkaart
+        blok={LESBLOK}
+        x={40}
+        y={420}
+        kant="rechts"
+        beginEerder={() => {}}
+        beginLater={() => {}}
+        eindeEerder={() => {}}
+        eindeLater={() => {}}
+        zetOmschrijving={() => {}}
+        aantalZelfdeVak={4}
+        overalGelijk={false}
+        lesLink={lesontwerpLink(LESBLOK)}
+        weghalen={() => {}}
+        sluit={() => {}}
+      />
     </main>
   );
 }
+
+const LESBLOK: Roosterblok = {
+  id: "proef-blok",
+  weekdag: 1,
+  begin: "09:15",
+  eind: "10:00",
+  vak: "rekenen",
+  naam: "Rekenen",
+  kleur: { bg: "#e0f2fe", tekst: "#075985" },
+  omschrijving: "Blok 4, les 3 — breuken vergelijken",
+  soort: "les",
+};
