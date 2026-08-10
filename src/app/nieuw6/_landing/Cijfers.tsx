@@ -478,16 +478,20 @@ function Rapport({
            🔑 De bredere les: een negatieve `bottom` werkt alleen in een sectie
            die afknipt. Kijk dus eerst naar de overflow van de sectie voor je een
            vlak over de rand laat lopen — dat verschilt hier per sectie. */}
-        {/* ⚠️ Ook hier smaller en verder naar buiten dan mijn eerste poging
-           (was 340 breed op -30%): de eigen omtrek van het vlak liep als een
-           curve door het veld in plaats van dat er een hoek onder de golf
-           vandaan kwam. Nu 260 op -42%, dus ongeveer 100px zichtbaar. */}
+        {/* ⚠️ `bottom: 0` en flink hoger dan mijn eerdere pogingen. De vorige
+           stond op bottom 30 met hoogte 160: dan raakt hij de afsluitende golf
+           maar net, en zie je vooral zijn eigen omtrek in het veld hangen in
+           plaats van een vorm die eronder duikt.
+           Nu loopt hij van 483 tot 683 in een sectie van 683, terwijl de golf de
+           band 614-684 beslaat — de onderste 70px zit dus onder de golf en die
+           doet het snijwerk. `bottom: 0` en niet negatief, want deze sectie
+           knipt verticaal niet af (zie de opmerking hierboven). */}
         <KaartVlak
           kleur={VLAK_MINT}
           vorm="ei"
-          breedte={260}
-          hoogte={160}
-          style={{ left: "-42%", bottom: 30, transform: "rotate(-6deg)" }}
+          breedte={300}
+          hoogte={200}
+          style={{ left: "-36%", bottom: 0, transform: "rotate(-6deg)" }}
           className="lg:hidden"
           tel={7}
         />

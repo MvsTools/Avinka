@@ -991,7 +991,8 @@ export function WereldHerken() {
         breedte={380}
         hoogte={170}
         style={{ left: "-34%", bottom: 120, transform: "rotate(6deg)" }}
-        className="z-[6] lg:hidden"
+        /* ook onder de golf, om dezelfde reden als de twee hieronder */
+        className="-z-10 lg:hidden"
         tel={5}
       />
       {/* Twee erbij op verzoek: dit veld is lang (drie kaarten plus de
@@ -1000,35 +1001,42 @@ export function WereldHerken() {
          afsluitende golf in. Samen met het vlak hierboven links geeft dat het
          zigzagje dat op pc over de hele pagina loopt, maar dan bínnen één
          sectie — want op een telefoon is dit veld zelf al twee schermen hoog. */}
-      {/* ⚠️⚠️ DEZE TWEE STONDEN TE VER HET SCHERM IN EN DAT WAS FOUT.
-         Ze waren 320-340 breed op -28%/-32%, en dan begint de vorm al op een
-         derde van het scherm. Je ziet dan niet een veld met een zachte hoek,
-         maar de EIGEN OMTREK van de vorm als een grote curve dwars door het
-         veld — bij de bovenste liep die pal door de kop "Herken je dit?" heen.
-         🔑 Dat is dezelfde fout als regel 2 uit mijn aantekeningen, alleen aan
-         de zijkant in plaats van onderaan: zodra je de omtrek van het vlak zíét,
-         is het geen achtergrond meer maar een vorm.
-         Nu smaller en verder naar buiten (-42%/-40%), zodat er nog maar een
-         hoek van ongeveer 100px binnenkomt — vergelijkbaar met het vlak in
-         "Veilig omgaan met AI" dat wél goed werd bevonden.
-         De bovenste ligt strak tegen de openingsgolf, de onderste duikt in de
-         afsluitende golf. */}
+      {/* ⚠️⚠️ `-z-10` EN NIET `z-[6]` — HIER ZAT DE ECHTE FOUT, en het kostte
+         twee ronden omdat ik naar de MATEN keek terwijl het de STAPELING was.
+
+         De golf ligt op z-[5]. Deze twee vlakken hadden z-[6] meegekregen —
+         overgenomen van het brede vlak hierboven, dat die waarde heeft omdat het
+         midden in het veld ligt en geen golf raakt. Met z-6 liggen ze dus BOVEN
+         de golf: de golf kan ze niet afsnijden, en dus liepen ze niet mee met de
+         curve maar lagen ze er als losse vorm overheen. De eigenaar zag het
+         meteen: "ze moeten meelopen met de golf, dat doen alle andere wel".
+         En dat klopte: elders staan de vlakken op `auto` of `-z-10`, allemaal
+         onder de golf.
+
+         🔑 DE LES: als een vlak "niet meeloopt met de golf", is dat bijna nooit
+         een kwestie van positie of maat maar van volgorde. Mijn eerste correctie
+         (kleiner maken tot het in het vak paste) bestreed het symptoom en maakte
+         het erger — precies wat de eigenaar terugkoppelde.
+
+         Nu ze onder de golf liggen mogen ze ook weer groter en dieper in de
+         golfband steken: de golf doet het snijwerk, dus de eigen omtrek van de
+         vorm is daar niet meer te zien. */}
       <KaartVlak
         kleur={VLAK_MINT}
         vorm="ei"
-        breedte={260}
-        hoogte={150}
-        style={{ right: "-42%", top: -10, transform: "rotate(-7deg)" }}
-        className="z-[6] lg:hidden"
+        breedte={330}
+        hoogte={185}
+        style={{ right: "-30%", top: -55, transform: "rotate(-7deg)" }}
+        className="-z-10 lg:hidden"
         tel={2}
       />
       <KaartVlak
         kleur={VLAK_MINT_ZACHT}
         vorm="schelp"
-        breedte={280}
-        hoogte={170}
-        style={{ right: "-40%", bottom: -30, transform: "rotate(8deg)" }}
-        className="z-[6] lg:hidden"
+        breedte={330}
+        hoogte={200}
+        style={{ right: "-32%", bottom: -70, transform: "rotate(8deg)" }}
+        className="-z-10 lg:hidden"
         tel={7}
       />
       <Drijvers punten={[{ x: "46%", y: "88%", amber: true, tel: 2 }, { x: "88%", y: "80%", tel: 4 }]} />
