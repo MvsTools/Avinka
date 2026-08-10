@@ -730,7 +730,23 @@ function StapelScene() {
             aria-label={omgedraaid[bovenste] ? `Draai de foto van ${KAARTEN[bovenste].naam} terug` : `Lees de ervaring van ${KAARTEN[bovenste].naam} (${KAARTEN[bovenste].rol})`}
             className="pk-schaduw block h-full w-full select-none rounded-[5px] text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
           >
-            <PolaroidKaart kaart={KAARTEN[bovenste]} omgedraaid={omgedraaid[bovenste]} klein />
+            {/* ⚠️⚠️ DEZE `key` IS DE ECHTE FIX VOOR "hij zet zichzelf eerst recht".
+               Zonder key hergebruikt React ditzelfde stukje HTML voor de
+               vólgende polaroid. Het draai-laagje (.pk-flip) heeft een
+               transition van 0,65s, en dat laagje stond op rotateY(180deg) als
+               je de kaart had omgedraaid om te lezen. Veeg je dan door, dan
+               krijgt hetzelfde element rotateY(0deg) voor de nieuwe kaart — en
+               dus zie je de nieuwe foto binnendraaien alsof hij zichzelf
+               rechtzet. Met een key maakt React een nieuw element; dat begint
+               op 0 graden en heeft niets om vanaf te animeren.
+               🔑 Dit trad alleen op ALS je de kaart eerst had omgedraaid, en
+               precies zo gebruik je hem: tikken om te lezen, dan doorvegen.
+               Ik had eerder de verkeerde bron aangepast (de transition op de
+               stapelkaarten). Die was ook overbodig, maar dit was het.
+               🔑 Les: een resterende animatie na een wissel komt vaak niet van
+               je eigen code maar van HERGEBRUIKTE HTML. Vraag je bij "hij
+               animeert nog steeds" af of het element wel echt nieuw is. */}
+            <PolaroidKaart key={KAARTEN[bovenste].naam} kaart={KAARTEN[bovenste]} omgedraaid={omgedraaid[bovenste]} klein />
           </button>
         </div>
       </div>
