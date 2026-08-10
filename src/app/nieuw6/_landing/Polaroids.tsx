@@ -808,8 +808,21 @@ function StapelScene() {
                  waar je naar kijkt.
                  De stapel staat nu meteen in zijn nieuwe stand. Dat mag: je hebt
                  je aandacht toch bij de kaart die wegvliegt. */
+              /* ⚠️ DE MATEN ZIJN VERKLEIND, EN DAT IS DE FIX VOOR "hij schiet
+                 iets omhoog". De stapel stond op 16px per laag en 5,5% kleiner
+                 per laag. Zolang dat verschil werd wegGEANIMEERD zag je het als
+                 rechtzetten (afgekeurd); animeert het niet meer, dan moet de
+                 kaart die naar voren komt datzelfde verschil in één beeld
+                 overbruggen — en dat leest als een sprong omhoog.
+                 🔑 Het is dus geen keuze tussen "animeren" en "springen": de
+                 afstand zelf was te groot. Nu 5px en 1,5% per laag: genoeg om te
+                 zien dat er een stapel ligt, te weinig om een sprong te zijn.
+                 De rotatie doet het meeste werk — die valt op als vorm, niet als
+                 beweging.
+                 ⚠️ Zet hier geen transition terug om dit glad te strijken; dan
+                 is het rechtzetten precies terug. */
               style={{
-                transform: `translateY(${diepte * 16}px) scale(${1 - diepte * 0.055}) rotate(${diepte % 2 ? -2.4 : 2}deg)`,
+                transform: `translateY(${diepte * 5}px) scale(${1 - diepte * 0.015}) rotate(${diepte % 2 ? -2.2 : 1.8}deg)`,
                 zIndex: 5 - diepte,
               }}
               aria-hidden
