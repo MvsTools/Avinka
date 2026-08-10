@@ -492,6 +492,28 @@ function abonneerReduced(cb: () => void) {
    omslaat als alle `max-sm:`-regels in de rest van de pagina. Liepen die uit
    elkaar, dan krijg je een strook breedtes met de film aan én de mobiele
    opmaak — precies de tussenstand die niemand ooit bekijkt. */
+/* ⭐ PROEF 10-8 — DE MOBIELE OPENING. ZET DEZE OP `false` EN ALLES IS TERUG.
+   De eigenaar zei er expliciet bij: "we zijn maar een beetje wat aan het
+   proberen nu, hopelijk kunnen we straks weer terug". Daarom staat de hele
+   proef achter deze ene vlag in plaats van verspreid door het bestand — dan is
+   terugdraaien een woord en geen archeologie.
+
+   Wat de proef doet, alleen onder 640px:
+   1. De vaste bovenbalk begint ONZICHTBAAR. Je opent de pagina en er is geen
+      balk, alleen de pagina zelf.
+   2. Het Avinka-wordmerk staat gecentreerd bovenaan, als briefhoofd.
+   3. Daaronder het dashboard, dan pas de belofte, dan de knoppen.
+   4. Zodra je de knoppen voorbij bent, schuift de balk alsnog in beeld — met
+      het vinkje links en "Probeer gratis" rechts.
+
+   🔑 De gedachte erachter is van de eigenaar en het is een goede: op een
+   telefoon is het eerste scherm alles wat je hebt. Een vaste balk kost daar
+   ~60px én hij zegt hetzelfde als het logo dat er toch al staat. Pas als het
+   logo weggescrold is, hoort er iets terug te komen dat merk en actie vasthoudt.
+   Bij ons is dat het vinkje, niet het hele wordmerk: een merkteken hoeft zich
+   maar één keer voor te stellen. */
+const PROEF_MOBIELE_HERO = true;
+
 const SMAL_QUERY = "(max-width: 639px)";
 
 function abonneerSmal(cb: () => void) {
@@ -543,6 +565,41 @@ export default function Landing({
     () => null,
   );
   const film = reduced === false && smal === false;
+
+  /* ── PROEF: de balk komt pas ná de knoppen ────────────────────────────────
+     `wachtpost` is een onzichtbaar streepje direct onder de knoppen. Zolang dat
+     streepje nog in beeld is (of eronder), blijft de balk weg; is het naar
+     boven weggescrold, dan schuift de balk in.
+
+     🔑 Waarom een streepje en geen scrollteller met een vast getal: de hoogte
+     van dit blok verandert met de tekstgrootte van de telefoon en met de vraag
+     of iemand is ingelogd. Een getal als "na 700 pixels" klopt dan op mijn
+     scherm en nergens anders. Het streepje verhuist gewoon mee.
+     ⚠️ De vergelijking `top < 0` moet erbij: zonder die toets slaat de balk óók
+     aan wanneer het streepje nog niet in beeld is omdat het er nog ONDER zit —
+     en dan staat de balk er meteen, precies wat de proef wil voorkomen. */
+  const wachtpost = useRef<HTMLDivElement>(null);
+  const [balkInBeeld, setBalkInBeeld] = useState(false);
+
+  useEffect(() => {
+    if (!PROEF_MOBIELE_HERO || smal !== true) {
+      setBalkInBeeld(false);
+      return;
+    }
+    const el = wachtpost.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => setBalkInBeeld(!e.isIntersecting && e.boundingClientRect.top < 0),
+      { threshold: 0 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [smal]);
+
+  /* Alleen waar als de proef draait én we op een telefoon zitten. Overal
+     hieronder is dit de enige toets, zodat een breed scherm gegarandeerd
+     buiten schot blijft. */
+  const proefMobiel = PROEF_MOBIELE_HERO && smal === true;
 
   /* ── De film: rommelig bureaublad → tablet-dashboard ── */
   useGSAP(
@@ -774,8 +831,20 @@ export default function Landing({
       {/* ── Vaste bovenbalk ── */}
       <header
         data-header
+        /* PROEF: op een telefoon begint de balk boven het scherm en schuift hij
+           pas in zodra je de knoppen voorbij bent. `pointer-events-none` erbij
+           zolang hij weg is — anders vangt een onzichtbare balk je eerste tik
+           bovenaan het scherm op. */
         className={`fixed inset-x-0 top-0 z-40 transition-colors duration-500 ${
           film ? "" : "film-klaar"
+        } ${
+          proefMobiel
+            ? `transition-[transform,opacity,background-color] ${
+                balkInBeeld
+                  ? "translate-y-0 opacity-100"
+                  : "pointer-events-none -translate-y-full opacity-0"
+              }`
+            : ""
         } [&.film-klaar]:border-b [&.film-klaar]:border-black/5 [&.film-klaar]:bg-[color-mix(in_srgb,var(--w-papier,#fcfbf7)_85%,transparent)] [&.film-klaar]:backdrop-blur`}
       >
         {/* ⚠️ Op een telefoon moet deze balk SLANK zijn: de richtlijn is 50-70px
@@ -785,8 +854,16 @@ export default function Landing({
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-3 py-2 sm:px-6 sm:py-3">
           <span className="rounded-xl bg-cream/95 px-2 py-1 shadow-sm ring-1 ring-black/5 sm:px-2.5 sm:py-1.5">
             {/* Gewone img: de dev-optimizer van next/image laadt traag. */}
+            {/* PROEF: op een telefoon staat het volledige wordmerk al gecentreerd
+               bovenaan de pagina. Deze balk komt pas ná dat wordmerk in beeld,
+               dus hier is het merkteken genoeg — het hoeft zich niet twee keer
+               voor te stellen. Scheelt bovendien breedte voor de knop ernaast. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/Avinka_logo.png" alt="Avinka" className="h-6 w-auto sm:h-8" />
+            <img
+              src={proefMobiel ? "/Avinka_vinkje.png" : "/Avinka_logo.png"}
+              alt="Avinka"
+              className={proefMobiel ? "h-6 w-auto" : "h-6 w-auto sm:h-8"}
+            />
           </span>
           {/* ⚠️ De balk is tijdens de film doorzichtig, en de film BEGINT op de
              donkergroene avondlaag en eindigt op licht papier. Een gewone
@@ -880,7 +957,10 @@ export default function Landing({
           className={
             film
               ? "sticky top-0 flex h-screen flex-col items-center overflow-hidden px-4 pt-12 sm:pt-14"
-              : "relative flex flex-col items-center gap-8 overflow-hidden px-4 pb-16 pt-28"
+              /* PROEF: op een telefoon mag de pagina niet met een lege band
+                 beginnen. De pt-28 stond er om onder de vaste balk uit te komen
+                 — en die balk is er nu juist niet meer bij het openen. */
+              : "relative flex flex-col items-center gap-8 overflow-hidden px-4 pb-16 pt-28 max-sm:gap-6 max-sm:pt-7"
           }
         >
           {/* Lichtlagen: avond onder, dag erboven ingefaded.
@@ -899,13 +979,30 @@ export default function Landing({
           </div>
           <div data-daglaag className="pointer-events-none absolute inset-0" style={SPECKLE_STIJL} aria-hidden />
 
+          {/* ⭐ PROEF: HET WORDMERK ALS BRIEFHOOFD, alleen op de telefoon.
+             Dit vervangt de vaste balk op het eerste scherm. Gecentreerd, want
+             op een telefoon staat alles in het midden, en zonder het crème
+             plaatje eromheen dat het in de balk wél heeft: daar moet het logo
+             leesbaar blijven op de donkere film, hier ligt het gewoon op papier.
+             `order-1` hieronder is niet nodig (het staat toch al vooraan) maar
+             staat er wél, zodat de vier volgnummers bij elkaar te lezen zijn. */}
+          {proefMobiel && (
+            <div className="relative z-30 max-sm:order-1 sm:hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/Avinka_logo.png" alt="Avinka" className="h-9 w-auto" />
+            </div>
+          )}
+
           {/* De grote belofte: groots, muisstil, en niets komt eroverheen.
              ⚠️ Op een telefoon begon hij ONDER de vaste balk door te lopen,
              waardoor de bovenste regel half wegviel. `mt-16` duwt hem onder de
              balk (die is daar ~54px). En `px-5` in plaats van alleen een
              94vw-breedte: zonder echte zijmarge kwam de laatste letter tegen
              de schermrand — dat is de afgeknipte g. */}
-          <div data-intro className="relative z-30 mx-auto mt-16 w-[min(94vw,62rem)] px-5 text-center sm:mt-[1.5vh] sm:px-0">
+          {/* PROEF: `order-3` zet de belofte ONDER het dashboard. De mt-16 hield
+             hem vrij van de vaste balk; die staat er op het eerste scherm niet
+             meer, dus op de telefoon mag die marge weg. */}
+          <div data-intro className="relative z-30 mx-auto mt-16 w-[min(94vw,62rem)] px-5 text-center max-sm:order-3 max-sm:mt-0 sm:mt-[1.5vh] sm:px-0">
             <h1
               data-belofte
               className={`${KOP_GROOT} ${film ? "text-cream" : "text-ink"}`}
@@ -1084,8 +1181,24 @@ export default function Landing({
           {/* ── De werkplek waar alles landt: een tablet met het Avinka-dashboard ──
              finaleRef is de krimp-wrapper hierboven; data-paneel blijft het
              element dat de GSAP-tijdlijn zelf animeert (y/scale/autoAlpha). */}
-          <div ref={finaleRef}>
-            <div data-paneel className="relative z-10 mx-auto mt-[clamp(0.375rem,1vh,1rem)] w-[min(94vw,39rem)]">
+          {/* PROEF — `max-sm:contents`, en dit is de hele truc van de nieuwe
+             volgorde. Deze wrapper is op een breed scherm de krimp-wrapper die
+             paneel + zekerheden samen schaalt op een lage vensterhoogte; die
+             moet blijven. Maar hij zit ook in de weg: zolang paneel, knoppen en
+             zekerheden ERIN zitten, kunnen ze niet los van de belofte worden
+             gerangschikt, want die staat een niveau hoger.
+             `display: contents` laat de wrapper zelf uit de opmaak verdwijnen
+             en promoveert zijn kinderen tot directe flex-kinderen van de hero.
+             Daarmee kunnen alle vier de blokken op één rij genummerd worden.
+             🔑 De winst is dat er GEEN tweede versie van de hero nodig is: de
+             HTML blijft voor telefoon en pc precies gelijk, alleen de volgorde
+             verschilt. Anders zou de server de brede opbouw sturen en de
+             telefoon die na het laden omgooien — een zichtbare sprong op het
+             allereerste scherm.
+             ⚠️ Op een breed scherm blijft dit een gewone div, dus de krimp-
+             wrapper en zijn GSAP-schaal werken daar onveranderd. */}
+          <div ref={finaleRef} className="max-sm:contents">
+            <div data-paneel className="relative z-10 mx-auto mt-[clamp(0.375rem,1vh,1rem)] w-[min(94vw,39rem)] max-sm:order-2 max-sm:mt-0">
             {/* tablet-behuizing: alles wordt in dit apparaat opgeruimd */}
             <div className="rounded-[1.4rem] bg-ink/90 p-1 shadow-[0_34px_80px_-24px_rgba(8,5,20,0.75)] ring-1 ring-white/10">
               <div className="relative overflow-hidden rounded-[1.05rem] bg-cream">
@@ -1267,34 +1380,18 @@ export default function Landing({
               </div>
             </div>
 
-            {/* ⭐ DE TWEE KNOPPEN, ALLEEN OP DE TELEFOON (`sm:hidden`).
-                Op een breed scherm draait de film nog en daar hóórt hier niets:
-                die hero is één beweging van chaos naar overzicht, en een knop
-                halverwege zet daar een rem op. Bovendien is de brede versie af.
-
-                Waarom ze hier wél moeten: zonder film is dit een gewone hero, en
-                dan staat de eerste echte knop pas twee secties lager. De
-                eigenaar zei het als de opbouw van de mobiele Duolingo-site:
-                merk, beeld, de zin, de knoppen — en dan houdt het op.
-                🔑 De belofte blijft bovenaan staan, boven het beeld. Bij
-                Duolingo staat het plaatje eerst, maar dat is een mascotte; ons
-                beeld is het dashboard, en dat werkt als BEWIJS van de zin
-                erboven, niet als opwarmer ervoor. De eigenaar zei zelf dat de
-                belofte bovenaan goed is. */}
-            <div className="mt-7 flex flex-col gap-3 px-1 sm:hidden">
-              <BlobKnop href="/sign-up" className="w-full border-2 border-transparent px-5">
-                Probeer Avinka gratis
-              </BlobKnop>
-              <BlobKnop href="#tools" variant="licht" className="w-full px-5">
-                Bekijk de tools
-              </BlobKnop>
-            </div>
-
             {/* Finale: de vier zekerheden poppen binnen en dragen je de pagina in.
                De marge hierboven is vh-clamped (krimpt mee op een lage
                vensterhoogte); de krimp-wrapper (finaleRef, hierboven om
                data-paneel heen) vangt de rest op als dat nog niet genoeg is. */}
-            <div className="mt-[clamp(0.5rem,1.2vh,1.5rem)] flex flex-col items-center gap-2">
+            {/* PROEF: op een telefoon staan de zekerheden onder de knoppen, en
+               daarvoor staat hieronder een eigen kopie. Deze blijft dus voor het
+               brede scherm. ⚠️ Waarom een kopie en geen verhuizing: dit blok zit
+               ín data-paneel en dat paneel wordt op een breed scherm door de
+               film geanimeerd (y, scale, autoAlpha). Haal je de zekerheden daar
+               weg, dan lopen ze niet meer mee met die beweging — en de brede
+               versie is af. Een kopie raakt de brede opbouw niet. */}
+            <div className="mt-[clamp(0.5rem,1.2vh,1.5rem)] flex flex-col items-center gap-2 max-sm:hidden">
               {/* Twee vaste rijen van twee i.p.v. één grid: bij een grid over
                  alle vier bepaalt het breedste chipje in een kolom de hele
                  kolombreedte, en dan staat een kort chipje ernaast (bv.
@@ -1314,6 +1411,63 @@ export default function Landing({
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* ⭐ DE TWEE KNOPPEN, ALLEEN OP DE TELEFOON (`sm:hidden`).
+             Op een breed scherm draait de film nog en daar hóórt hier niets: die
+             hero is één beweging van chaos naar overzicht, en een knop halverwege
+             zet daar een rem op. Bovendien is de brede versie af.
+
+             ⚠️ DIT BLOK STOND EERST ÍN `data-paneel` EN DAT WERKTE NIET. Een
+             volgnummer (`order`) geldt alleen tussen kinderen van dezelfde
+             flexbox; data-paneel is een gewoon blok, dus het nummer deed daar
+             niets en de knoppen bleven gewoon in het dashboardblok hangen — mét
+             de belofte eronder in plaats van erboven. Nu staan ze een niveau
+             hoger, naast het paneel, waar `contents` ze tot flex-kind maakt.
+             🔑 Zag ik niet aan de code: de vier `</div>`'s die ik voor het einde
+             van het paneel aanzag, sloten de binnenkant van de tablet af. Aan de
+             schermafdruk was het ook niet te zien, want in een blok stáát dit
+             blokje gewoon op de goede plek. Alleen de gemeten volgorde verried
+             het. Tel bij diep geneste opmaak niet de sluittekens maar vraag het
+             de browser: `element.parentElement`. */}
+          {/* ⚠️ `relative z-10` is GEEN opsmuk maar noodzaak, en het kostte me een
+             verkeerde diagnose. Toen dit blok nog ín data-paneel zat erfde het
+             diens z-10. Losgemaakt zakte het onder `data-daglaag` — de
+             gespikkelde papierlaag die als `absolute inset-0` over de hele hero
+             ligt. Gevolg: de knoppen wáren er (gemeten: 367×153 op de goede
+             plek, volledig ondoorzichtig) maar je zag ze niet.
+             🔑 "Het element is er en is zichtbaar" bewijst niet dat het IN BEELD
+             is. Een positielaag zonder z-index verliest het van elke
+             gepositioneerde laag die erna komt. Kijk bij onzichtbaar-maar-
+             aanwezig dus niet naar opacity maar naar wat eroverheen ligt. */}
+          <div className="relative z-10 flex w-[min(94vw,39rem)] flex-col gap-3 px-1 max-sm:order-4 sm:hidden">
+            <BlobKnop href="/sign-up" className="w-full border-2 border-transparent px-5">
+              Probeer Avinka gratis
+            </BlobKnop>
+            <BlobKnop href="#tools" variant="licht" className="w-full px-5">
+              Bekijk de tools
+            </BlobKnop>
+            {/* De wachtpost: een streepje van niets, precies onder de knoppen.
+               Zodra dit de bovenkant van het scherm uit is, schuift de balk in.
+               Zie de uitleg bij `wachtpost` bovenaan dit component. */}
+            <div ref={wachtpost} aria-hidden className="h-px w-full" />
+          </div>
+
+          {/* De zekerheden, telefoonversie: onder de knoppen. Zie de opmerking
+             bij het origineel hierboven waarom dit een kopie is. */}
+          <div className="relative z-10 flex flex-col items-center gap-2 max-sm:order-5 sm:hidden">
+            {[STRIP.slice(0, 2), STRIP.slice(2, 4)].map((rij, i) => (
+              <div key={i} className="flex flex-wrap items-center justify-center gap-2">
+                {rij.map((s) => (
+                  <span
+                    key={s}
+                    className="rounded-full bg-white px-3.5 py-1.5 text-center text-xs font-bold text-ink/75 shadow-sm ring-1 ring-black/5"
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
+            ))}
           </div>
           </div>
 
