@@ -940,6 +940,24 @@ function RapportStijl() {
          schoolpapier. Eruit op verzoek: op een crème kaartje met blobvorm las
          hij als een losse streep in plaats van als papierdetail. */
 
+      /* ⚠️ OP EEN TELEFOON OVER DE VOLLE BREEDTE. De vaste breedte hierboven
+         (172-205px) hoort bij een breed bureau, waar dit het vierde losse
+         papiertje tussen de andere is. Onder elkaar geplaatst wordt datzelfde
+         briefje het enige smalle ding onderaan, met een half scherm leegte
+         ernaast - de eigenaar: "valt een beetje buiten de boot".
+         🔑 Het bleef opvallen omdat de rest van het bord op een telefoon WEL
+         meeschaalt: de andere drie vullen de kolom, dit briefje niet. Een vaste
+         breedte tussen meeschalende buren valt altijd op, ook als de maat op
+         zichzelf klopt. Kijk bij zo'n los element dus niet naar het element maar
+         naar wat ernaast staat.
+         De hoek en de crèmekleur blijven: die maken er papier van, en dat is
+         precies wat het moet zijn. Alleen de breedte volgt nu de kolom.
+         (GEEN BACKTICKS in dit commentaar - dit stijlblok staat in een
+         template-string.) */
+      @media (max-width: 639px) {
+        .rp-bron { width: 100%; }
+      }
+
       .rp-bronlabel {
         font-family: var(--font-display), Georgia, serif;
         font-weight: 800;
