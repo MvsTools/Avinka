@@ -933,6 +933,18 @@ export function WereldPolaroids() {
           className="hidden lg:block"
           tel={1}
         />
+        {/* Telefoonversie: zelfde vorm en kant, ongeveer half zo groot. Hij
+           staat vóór de <Golf> hieronder in dezelfde laag — die volgorde IS de
+           ingreep, want zo snijdt de golf hem netjes op de veldrand af. */}
+        <KaartVlak
+          kleur={VLAK_MINT}
+          vorm="schelp"
+          breedte={330}
+          hoogte={235}
+          style={{ left: "-30%", top: 26, transform: "rotate(-7deg)" }}
+          className="lg:hidden"
+          tel={1}
+        />
 
         <Golf kleur="var(--w-papier, #fcfbf7)" vorm="speels" hoogte="h-[90px] sm:h-[130px] lg:h-[170px]" />
       </div>

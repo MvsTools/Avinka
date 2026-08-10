@@ -451,6 +451,18 @@ function Rapport({
           className="hidden lg:block"
           tel={4}
         />
+        {/* Telefoonversie: zelfde vorm en kant, ongeveer half zo groot. Ook hier
+           staat het vlak VÓÓR de golf in dezelfde laag; daardoor snijdt de golf
+           hem op de mintrand af in plaats van dat hij eroverheen ligt. */}
+        <KaartVlak
+          kleur={VLAK_MINT}
+          vorm="koepel"
+          breedte={350}
+          hoogte={195}
+          style={{ right: "-30%", top: 36, transform: "rotate(5deg)" }}
+          className="lg:hidden"
+          tel={4}
+        />
 
         {/* Vorm "zacht": een rustige dubbele deining die links en rechts op
            dezelfde hoogte begint en eindigt. Hij was als enige nog ongebruikt,

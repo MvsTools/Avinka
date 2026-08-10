@@ -979,6 +979,21 @@ export function WereldHerken() {
         className="z-[6] hidden lg:block"
         tel={5}
       />
+      {/* Telefoonversie: zelfde vorm, zelfde kant, ongeveer half zo groot.
+         ⚠️ De zijmarge moet in PROCENTEN groter dan op pc: -18% van 1440 is 260
+         pixels, -18% van 390 maar 70. Wil je hetzelfde "loopt het beeld uit",
+         dan moet het percentage mee omhoog — hier -34%. Dat is de val bij het
+         overzetten van een brede compositie: dezelfde waarde is niet dezelfde
+         maat. */}
+      <KaartVlak
+        kleur={VLAK_MINT_ZACHT}
+        vorm="koepel"
+        breedte={380}
+        hoogte={170}
+        style={{ left: "-34%", bottom: 120, transform: "rotate(6deg)" }}
+        className="z-[6] lg:hidden"
+        tel={5}
+      />
       <Drijvers punten={[{ x: "46%", y: "88%", amber: true, tel: 2 }, { x: "88%", y: "80%", tel: 4 }]} />
 
       <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pb-28 pt-32 lg:pb-36 lg:pt-40">
@@ -1175,6 +1190,18 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
             hoogte={260}
             style={{ right: "-6%", top: -50, transform: "rotate(7deg)" }}
             className="hidden lg:block"
+            tel={5}
+          />
+          {/* Telefoonversie. De negatieve top houdt hem onder de kleurrand
+             vandaan komen — dat is de stand die volgens mijn aantekeningen
+             werkt, en hij draagt hier de golf. */}
+          <KaartVlak
+            kleur={VLAK_MINT}
+            vorm="ei"
+            breedte={300}
+            hoogte={165}
+            style={{ right: "-26%", top: -40, transform: "rotate(7deg)" }}
+            className="lg:hidden"
             tel={5}
           />
         </div>
@@ -1971,6 +1998,17 @@ export function WereldSlot() {
         hoogte={380}
         style={{ left: "-8%", bottom: 55, transform: "rotate(-9deg)" }}
         className="hidden lg:block"
+        tel={2}
+      />
+      {/* Telefoonversie. Het donkergroene slotveld is het donkerste vlak van de
+         pagina, dus hier is wit-op-5% precies genoeg: meer zou een vlek worden. */}
+      <KaartVlak
+        kleur="rgba(255,255,255,0.05)"
+        vorm="schelp"
+        breedte={340}
+        hoogte={205}
+        style={{ left: "-28%", bottom: 45, transform: "rotate(-9deg)" }}
+        className="lg:hidden"
         tel={2}
       />
 
