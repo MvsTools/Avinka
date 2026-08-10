@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { PROEF_DAGEN } from "@/lib/abonnement";
 
@@ -152,19 +152,61 @@ export function schaduw(y: number, blur: number, spread: number, alpha: number, 
    houden de korte koppen hun kracht — in de browser vergeleken, niet gegokt.
    🔑 De maat van een gedeelde kop wordt bepaald door de LANGSTE kop die hem
    gebruikt, niet door de mooiste. ──────────────────────────────────────────── */
+/* ⚠️ De ONDERGRENZEN zijn hier verlaagd voor de telefoon.
+   De bovengrens en de groeisnelheid zijn ongemoeid, dus op een breed scherm
+   verandert er niets — daar wint de bovenwaarde toch.
+
+   🔑 WAAROM HET MIS GING: bij clamp() bepaalt de EERSTE waarde wat een telefoon
+   krijgt. Op 390px is 5,5vw maar 21px, dus won de ondergrens van 40px: de
+   hero-kop was op een telefoon net zo groot als op een laptop. Die drie
+   ondergrenzen zijn ooit gekozen met een breed scherm voor je neus, en dat is
+   precies de val die overal beschreven staat.
+   Nu: 36 / 30 / 18px op een telefoon. Vanaf ongeveer 650px breed neemt de
+   vw-term het over en loopt alles weer naar de oude maten toe.
+
+   ⚠️ 10-8: DIT IS DE TWEEDE POGING, en de eerste zat te laag. Ik had 30 / 24 / 18
+   gezet en de eigenaar zag het meteen: "de titelvelden mogen allemaal wat groter,
+   zijn nu best klein". Een sectiekop van 24px is op een telefoon nauwelijks meer
+   dan de lopende tekst eronder (18px), en dan doet hij zijn werk niet — je ziet
+   niet meer dát je een nieuwe sectie in gaat. Nu 30px voor een sectiekop.
+   🔑 KOP_GROOT MOEST DUS MEE, ook al ging de vraag daar niet over. Op 30 zou de
+   belofte bovenaan even groot zijn geworden als élke sectiekop eronder, en dan is
+   de ladder weg. De afstand tussen de treden is het punt, niet de losse maat.
+
+   ⚠️ EN OP EEN TELEFOON STAAT ALLES IN HET MIDDEN — vandaar `max-sm:text-center`
+   hieronder. Dat lijkt in strijd met de huisregel "niet alles centreren", maar
+   die regel gaat over een BREED scherm: daar is links uitlijnen wat een pagina
+   een ruggengraat geeft, omdat er een kolom naast staat om tegen af te zetten.
+   Op een telefoon is er geen kolom ernaast. Een kop die daar links begint hangt
+   scheef in het scherm, want de marges links en rechts zijn zelden even breed —
+   precies wat de eigenaar zag bij de twee knoppen (24 links, 38 rechts).
+   🔑 Het staat HIER en niet bij elke sectie apart, om dezelfde reden als de
+   maten zelf: op tien plekken los ingetypt loopt het gegarandeerd uit elkaar.
+   Wie een kop centreert of juist links wil, doet dat hier voor de hele pagina. */
 export const KOP_GROOT =
-  "font-display text-[clamp(2.5rem,5.5vw,4rem)] font-black leading-[1.02] tracking-[-0.025em] [text-wrap:balance]";
+  "font-display text-[clamp(2.25rem,5.5vw,4rem)] font-black leading-[1.05] tracking-[-0.025em] [text-wrap:balance] max-sm:text-center";
 export const KOP_SECTIE =
-  "font-display text-[clamp(2rem,4.4vw,2.75rem)] font-black leading-[1.05] tracking-[-0.025em] [text-wrap:balance]";
+  "font-display text-[clamp(1.875rem,4.4vw,2.75rem)] font-black leading-[1.1] tracking-[-0.02em] [text-wrap:balance] max-sm:text-center";
 export const KOP_BLOK =
-  "font-display text-[clamp(1.25rem,1.9vw,1.5rem)] font-black leading-[1.25] tracking-[-0.02em]";
+  "font-display text-[clamp(1.125rem,1.9vw,1.5rem)] font-black leading-[1.3] tracking-[-0.015em]";
 
 /* ── DE TEKST ONDER EEN KOP ────────────────────────────────────────────────
    Stond op 16, 16,3, 16,8 en 18px. Die eerste drie zijn geen keuzes maar
    afrondingen van drie verschillende clamps die allemaal ongeveer hetzelfde
    probeerden te zijn. Eén maat: 18px met een ruime regelafstand, want dit is
-   lopende tekst en geen bijschrift. */
-export const TEKST_SECTIE = "text-[1.125rem] leading-[1.78]";
+   lopende tekst en geen bijschrift.
+
+   ⚠️ OP EEN TELEFOON BLIJFT DE MAAT 18px — alleen de regelafstand zakt van 1,78
+   naar 1,55. Dat onderscheid is de hele les van deze ronde. Toen de pagina op
+   een telefoon "veel te groot" was, heb ik óók de lopende tekst verkleind, tot
+   14px. Fout: te groot waren de KOPPEN (40px) en de WITRUIMTE. De tekst zelf
+   was nooit het probleem, en op 14px werden die twee secties de kleinste van de
+   pagina — precies wat de eigenaar op zijn S21 Ultra zag.
+   🔑 Wat een blok op een telefoon hoog maakt is zelden de lettergrootte; het is
+   de ruimte eromheen. Krimp dus eerst marges en regelafstand, en pas de letter
+   als het dan nog niet past. Leesbaarheid inleveren is de laatste stap, niet de
+   eerste. */
+export const TEKST_SECTIE = "text-[1.125rem] leading-[1.55] sm:leading-[1.78]";
 
 /* ── HET HANDSCHRIFT ───────────────────────────────────────────────────────
    Hier stonden drie maten (20, 22,4 en 24px) voor wat op het oog hetzelfde is.
@@ -353,10 +395,17 @@ function Drijvers({ punten }: { punten: Array<{ x: string; y: string; amber?: bo
    vinkje, `licht` = wit met inkt, `wit` = wit met donkergroen (voor op het
    donkere slotveld). */
 export function BlobKnop({
-  href, variant = "vol", maat = "normaal", className = "", onClick, children,
+  href, variant = "vol", maat = "normaal", vinkje = true, className = "", onClick, children,
 }: {
   href: string;
   variant?: "vol" | "licht" | "wit";
+  /* Het vinkje in de gevulde knop is het merkmotief en staat er standaard.
+     ⚠️ Zet het uit als de knop NIET naar aanmelden gaat. Op "Naar de prijzen"
+     (een sprong naar beneden binnen de pagina) leest een vinkje als afvinken:
+     het belooft dat er iets klaar is terwijl er alleen iets verplaatst.
+     🔑 Een merkteken dat overal hetzelfde betekent is sterk; een merkteken dat
+     op één plek iets anders lijkt te beloven, kost meer dan het oplevert. */
+  vinkje?: boolean;
   /* `klein` is voor krappe plekken (de knop óp een toolkaart): zelfde vorm en
      gewicht, alleen minder ruimte eromheen, zodat het label bij een smalle
      kaart niet buiten de knop valt. */
@@ -383,7 +432,7 @@ export function BlobKnop({
       } ${stijl} ${className}`}
       style={variant === "wit" ? { color: DONKER } : undefined}
     >
-      {variant === "vol" && (
+      {variant === "vol" && vinkje && (
         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/20" aria-hidden>
           <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="#fff" strokeWidth="3.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
         </span>
@@ -638,7 +687,16 @@ export function WereldIntro() {
          1 / 1,05): de uitleg hiernaast is de kern van de hele pagina en las
          als een zijopmerking. Met een bredere kolom past de eerste zin op
          minder regels en kan hij groter staan zonder te versnipperen. */}
-      <div className="relative mx-auto grid w-full max-w-5xl gap-10 px-6 pb-24 pt-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16 lg:pb-32 lg:pt-24">
+      {/* ⚠️ ALLEEN `pt` OP DE TELEFOON, NIET `pb`. De eigenaar miste ruimte tussen
+         de handgeschreven regel van "Herken je dit?" en de kop hier, en zei er
+         meteen bij: "de tussenruimte richting De tools is perfect". Dat is dus
+         geen sectie die te krap staat maar één rand die te krap staat.
+         🔑 Ruimte hoort bij de kant waar hij ontbreekt. Was ik hier op de hele
+         sectie gaan sleutelen (of op de gap), dan had ik de onderkant meeverpest
+         die al goed was — en dat merk je pas twee schermen verder.
+         Gemeten: het gat was 176px, waarvan 82px van deze sectie en de rest de
+         staart van de vorige plus de golf. Nu 208px. */}
+      <div className="relative mx-auto grid w-full max-w-5xl gap-10 px-6 pb-24 pt-16 max-sm:pt-24 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16 lg:pb-32 lg:pt-24">
         {/* Papier: alleen zichtbaar met de schakelaar aan (zie RUIS_OP_PAPIER). */}
         {RUIS_OP_PAPIER && (
           <Confetti punten={[{ x: "2%", y: "18%", r: 4, amber: true }, { x: "96%", y: "70%", r: 5 }, { x: "88%", y: "8%", r: 3 }]} />
@@ -651,9 +709,86 @@ export function WereldIntro() {
           >
             De slimme werkplek voor leerkrachten in het basisonderwijs
           </h2>
-          <div data-reveal className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <BlobKnop href="/sign-up" className="w-full sm:w-auto">Probeer Avinka gratis</BlobKnop>
-            <BlobKnop href="#tools" variant="licht" className="w-full sm:w-auto">Bekijk de tools</BlobKnop>
+          {/* ⚠️ DEZE TWEE KNOPPEN ZIJN AL TWEE KEER VAN VORM GEWISSELD — lees dit
+              vóór je ze een derde keer verandert.
+
+              Ze stonden ONDER elkaar over de volle breedte, en samen namen ze
+              bijna een derde van het scherm. Daarom heb ik ze 9-8 NAAST elkaar
+              gezet en gekrompen (14px tekst, krappe ruimte eromheen): het paste
+              precies op 360px, dus het probleem "ze vreten het scherm op" was
+              opgelost.
+              🔑 En dat was de verkeerde oplossing, want ik loste de verkeerde
+              klacht op. De eigenaar 10-8: "zijn te klein". Ruimte besparen was
+              MIJN zorg; op een telefoon scrol je toch, dus verticale ruimte is
+              het goedkoopste wat er is. Een knop die je makkelijk raakt is meer
+              waard dan een halve schermhoogte winst.
+
+              Nu dus weer onder elkaar, maar met een verschil: over de VOLLE
+              BREEDTE. Dat is wat het de vorige keer niet was — twee smalle
+              knoppen onder elkaar zien er slap uit, twee brede lezen als een
+              keuze. Ze zijn ook weer op de gewone paginamaat (18px tekst, px-8
+              py-4), zodat ze niet langer de kleinste knoppen van de pagina zijn.
+              Aanraakvlak: ~59px hoog, ruim boven de 44px die WCAG 2.2 vraagt. */}
+          <div data-reveal className="mt-6 flex gap-3 max-sm:flex-col sm:mt-8">
+            {/* ⚠️ De doorzichtige rand is GEEN opsmuk. De lichte knop hieronder
+                heeft `border-2`, deze niet, dus die werd 64px hoog en deze 60.
+                Naast elkaar zie je dat niet; recht boven elkaar en allebei even
+                breed wél — dan lijkt de onderste knop groter. Alleen op de
+                telefoon, want op een breed scherm staan ze naast elkaar en is
+                de hoogte van de gevulde knop af. */}
+            {/* ⭐ DEZE EERSTE KNOP IS OP TELEFOON EN PC NIET DEZELFDE, en dat is
+                een bewust verschil — het enige op deze pagina.
+
+                Op een TELEFOON gaat hij naar de prijzen. Reden van de eigenaar:
+                sinds de proef staat "Probeer gratis" daar al vast in de balk
+                bovenaan zodra je de hero voorbij bent, en die balk is hier in
+                beeld. Twee keer dezelfde actie binnen één blikveld is er één te
+                veel; de vraag die op dít punt open staat is wat het kost.
+                Op een BREED SCHERM blijft "Probeer Avinka gratis" staan. Daar
+                heeft de hero geen knoppen (die is één doorlopende film) en is
+                dit de eerste echte aanmeldknop van de pagina. Weghalen zou daar
+                een conversiepunt schrappen uit een versie die af is.
+
+                🔑 De naam is van de eigenaar en is onderweg nog gedraaid. Eerst
+                "Naar de prijzen" (uit vier voorstellen), daarna toch
+                "Bekijk abonnementen": het gaat om het abonnement dat je kiest,
+                niet om een prijslijst, en "Naar de abonnementen" vond hij te
+                groot staan. De knop ernaast heet daarom nu "Ontdek de tools" —
+                anders begonnen ze allebei met "Bekijk".
+                ⚠️ Het adres blijft `#prijzen`; dat is het id van de sectie en dat
+                staat los van wat er op de knop staat.
+                ⚠️ Het blijft de gevulde knop: het is de hoofdactie van déze
+                sectie. Voelt twee keer groen in beeld te druk, dan is `variant`
+                het enige wat daarvoor hoeft te wijzigen.
+
+                De krappere zijruimte op de telefoon (px-5 in plaats van px-8) is
+                nodig omdat een langere tekst met het vinkje ernaast anders niet
+                op één regel past op 360px — en `whitespace-nowrap` laat hem niet
+                afbreken. Bij een knop over de volle breedte doet die zijruimte
+                toch niets: de tekst staat gecentreerd. */}
+            <BlobKnop
+              href="#prijzen"
+              vinkje={false}
+              className="max-sm:w-full max-sm:border-2 max-sm:border-transparent max-sm:px-5 sm:hidden"
+            >
+              Bekijk abonnementen
+            </BlobKnop>
+            <BlobKnop href="/sign-up" className="max-sm:hidden">
+              Probeer Avinka gratis
+            </BlobKnop>
+            {/* ⚠️ "Ontdek de tools", was "Bekijk de tools". De aanleiding is de
+                knop hierboven: op een telefoon heet die nu "Bekijk
+                abonnementen", en twee knoppen die allebei met hetzelfde
+                werkwoord beginnen lezen als één rijtje in plaats van als twee
+                keuzes. Keuze van de eigenaar.
+                🔑 Deze tekst is NIET gesplitst tussen telefoon en pc, met opzet:
+                één belofte hoort één naam te hebben, en "ontdek" past ook op een
+                breed scherm bij wat er gebeurt (de kaartenrij die je zelf
+                opzijschuift). Op pc staat er dus wél "Probeer Avinka gratis"
+                naast "Ontdek de tools" — geen botsing. */}
+            <BlobKnop href="#tools" variant="licht" className="max-sm:w-full">
+              Ontdek de tools
+            </BlobKnop>
           </div>
         </div>
         {/* Dit is de uitleg van het hele product en stond er in dezelfde maat
@@ -665,7 +800,12 @@ export function WereldIntro() {
         <div className="max-w-2xl lg:pt-1">
           <p
             data-reveal
-            className="text-[1.375rem] font-semibold leading-9 [text-wrap:balance] sm:text-2xl sm:leading-10"
+            /* Op een telefoon was deze openingszin 22px met een regelafstand
+               van 36: bijna sectiekop-formaat, terwijl het lopende tekst is. */
+            /* Deze zin moet boven de lopende tekst uitkomen, en die is op een
+               telefoon 18px. Op 17px stond hij er ónder — de rangorde stond
+               omgekeerd. Nu 20px: groter dan de alinea, kleiner dan de kop. */
+            className="text-xl font-semibold leading-7 [text-wrap:balance] max-sm:text-center sm:text-2xl sm:leading-10"
             style={{ color: KOP }}
           >
             {/* ⚠️ HIER STONDEN ACHTEREENVOLGENS: "Avinka brengt de hulpmiddelen
@@ -746,7 +886,11 @@ export function WereldIntro() {
              tegenstelling die niet kwam (aandacht en energie zeiden hetzelfde),
              en "aandacht" stond er twee keer terwijl het het slotwoord moest
              zijn. Niet verder gladstrijken. */}
-          <p data-reveal className="mt-4 text-lg leading-8 text-ink/75" style={{ transitionDelay: "90ms" }}>
+          {/* [text-wrap:pretty] hoort bij het centreren en niet bij de maat: een
+              gecentreerde alinea van vier regels valt zonder dat vaak uit op een
+              korte slotregel van één woord, en dat staat midden in het scherm
+              een stuk lelijker dan links. */}
+          <p data-reveal className={`mt-3 ${TEKST_SECTIE} text-ink/75 max-sm:text-center max-sm:[text-wrap:pretty] sm:mt-4`} style={{ transitionDelay: "90ms" }}>
             Toch vraagt het werk na schooltijd net zoveel van je, en juist dat
             kost energie. Avinka zorgt voor overzicht, denkt vooruit en laat AI
             het schrijfwerk doen, zodat jij meer rust en aandacht overhoudt voor
@@ -774,6 +918,31 @@ export const PIJN = [
     tekst: "Taken die je eigenlijk allang af had willen hebben, blijven op de stapel liggen.",
   },
 ];
+
+/* De handgeschreven regel bij "Herken je dit?".
+   ⚠️ ÉÉN definitie, twee plekken — en dat is met opzet. Op een breed scherm
+   staat hij naast de kaarten (meelopend onder de sticky kop): daar is het een
+   onderschrift bij wat je ernaast ziet. Op een telefoon valt die kolom bóvenop
+   de kaarten, en dan lees je de conclusie ("het kan slimmer") vóór de drie
+   problemen waar hij over gaat. Daarom staat hij op mobiel ná de kaarten.
+   🔑 Niet twee keer overtypen: dan loopt de tekst vroeg of laat uit elkaar en
+   corrigeer je er maar één. Zie de Prijzen-kopie die ooit een rechtgezette
+   belofte terugbracht op de voorpagina. */
+function HandRegel({ className = "" }: { className?: string }) {
+  return (
+    <p
+      data-reveal
+      className={`${HAND_REGEL} ${className}`}
+      style={{ fontFamily: "var(--font-hand)", color: KOP }}
+    >
+      Het hoort bij het werk,
+      <br />
+      maar het kan slimmer,
+      <br />
+      sneller en efficiënter
+    </p>
+  );
+}
 
 export function WereldHerken() {
   return (
@@ -810,6 +979,90 @@ export function WereldHerken() {
         className="z-[6] hidden lg:block"
         tel={5}
       />
+      {/* Telefoonversie: zelfde vorm, zelfde kant, ongeveer half zo groot.
+         ⚠️ De zijmarge moet in PROCENTEN groter dan op pc: -18% van 1440 is 260
+         pixels, -18% van 390 maar 70. Wil je hetzelfde "loopt het beeld uit",
+         dan moet het percentage mee omhoog — hier -34%. Dat is de val bij het
+         overzetten van een brede compositie: dezelfde waarde is niet dezelfde
+         maat. */}
+      <KaartVlak
+        kleur={VLAK_MINT_ZACHT}
+        vorm="koepel"
+        breedte={380}
+        hoogte={170}
+        style={{ left: "-34%", bottom: 120, transform: "rotate(6deg)" }}
+        /* ook onder de golf, om dezelfde reden als de twee hieronder */
+        className="z-[1] lg:hidden"
+        tel={5}
+      />
+      {/* Twee erbij op verzoek: dit veld is lang (drie kaarten plus de
+         handgeschreven regel) en droeg met één vorm te weinig.
+         Boven rechts komt onder de openingsgolf vandaan, onder rechts duikt de
+         afsluitende golf in. Samen met het vlak hierboven links geeft dat het
+         zigzagje dat op pc over de hele pagina loopt, maar dan bínnen één
+         sectie — want op een telefoon is dit veld zelf al twee schermen hoog. */}
+      {/* ⚠️⚠️ `z-[1]` — ONDER DE GOLF (z-5) MAAR BOVEN DE SECTIE-ACHTERGROND.
+         Dit getal is in drie stappen goed gekomen en alle drie zijn de moeite
+         waard om te onthouden:
+
+         1. `z-[6]` (overgenomen van het brede vlak hiernaast): dan liggen ze
+            BOVEN de golf, die kan ze niet afsnijden en dus lopen ze niet mee
+            met de curve. Dat was de klacht van de eigenaar.
+         2. `-z-10` (overgenomen van de toolsectie): daar werkt het, want die
+            sectie heeft `isolate` en houdt zijn negatieve lagen dus binnen.
+            DEZE sectie heeft dat niet — `relative` zonder z-index maakt geen
+            eigen stapelcontext — dus zakten de vlakken door tot achter de
+            sectie-achtergrond en waren ze helemaal onzichtbaar.
+         3. `z-[1]`: boven de achtergrond, onder de golf. Klaar.
+
+         🔑 DE LES: een z-waarde is niet overdraagbaar tussen secties. Hij zegt
+         alleen iets binnen zijn eigen stapelcontext, en of een sectie die heeft
+         hangt af van `isolate`/`transform`/een eigen z-index. Ik heb twee keer
+         een getal gekopieerd van een plek waar het wél werkte.
+
+         De golf ligt op z-[5]. Deze twee vlakken hadden z-[6] meegekregen —
+         overgenomen van het brede vlak hierboven, dat die waarde heeft omdat het
+         midden in het veld ligt en geen golf raakt. Met z-6 liggen ze dus BOVEN
+         de golf: de golf kan ze niet afsnijden, en dus liepen ze niet mee met de
+         curve maar lagen ze er als losse vorm overheen. De eigenaar zag het
+         meteen: "ze moeten meelopen met de golf, dat doen alle andere wel".
+         En dat klopte: elders staan de vlakken op `auto` of `-z-10`, allemaal
+         onder de golf.
+
+         🔑 DE LES: als een vlak "niet meeloopt met de golf", is dat bijna nooit
+         een kwestie van positie of maat maar van volgorde. Mijn eerste correctie
+         (kleiner maken tot het in het vak paste) bestreed het symptoom en maakte
+         het erger — precies wat de eigenaar terugkoppelde.
+
+         Nu ze onder de golf liggen mogen ze ook weer groter en dieper in de
+         golfband steken: de golf doet het snijwerk, dus de eigen omtrek van de
+         vorm is daar niet meer te zien. */}
+      {/* Groter op verzoek: hij mag meer van het veld dragen. Van 330x185 naar
+         420x265. De top blijft ruim ONDER de golfband (top -70 bij een golf van
+         0 tot 79), want dat is wat hem laat meelopen met de curve; alleen zijn
+         onderkant komt verder het veld in.
+         ⚠️ Alleen de HOOGTE fors mee omhoog en de breedte maar iets: breder
+         betekent dat zijn linkerrand verder het scherm in kruipt, en dat was
+         precies het probleem van twee ronden geleden. Dieper is veilig, breder
+         niet. */}
+      <KaartVlak
+        kleur={VLAK_MINT}
+        vorm="ei"
+        breedte={420}
+        hoogte={265}
+        style={{ right: "-30%", top: -70, transform: "rotate(-7deg)" }}
+        className="z-[1] lg:hidden"
+        tel={2}
+      />
+      <KaartVlak
+        kleur={VLAK_MINT_ZACHT}
+        vorm="schelp"
+        breedte={330}
+        hoogte={200}
+        style={{ right: "-32%", bottom: -70, transform: "rotate(8deg)" }}
+        className="z-[1] lg:hidden"
+        tel={7}
+      />
       <Drijvers punten={[{ x: "46%", y: "88%", amber: true, tel: 2 }, { x: "88%", y: "80%", tel: 4 }]} />
 
       <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pb-28 pt-32 lg:pb-36 lg:pt-40">
@@ -820,8 +1073,20 @@ export function WereldHerken() {
               className={`${KOP_SECTIE} lg:sticky lg:top-28`}
               style={{ color: DONKER }}
             >
-              Herken
-              <br />
+              {/* De regelbreek is er voor de SMALLE KOLOM op een breed scherm
+                 (0.78fr naast de kaarten); daar past "Herken je dit?" niet op
+                 één regel. Op een telefoon is er geen kolom en dus geen reden om
+                 te breken — daar stonden twee woorden op twee regels midden in
+                 het scherm.
+                 ⚠️ `lg:inline` en niet `lg:block`: inline is de eigen weergave
+                 van een <br>. Zet je hem op block, dan is de breek er nog wel
+                 maar krijgt het element ook een eigen regelhoogte. */}
+              {/* ⚠️ Die {" "} is GEEN opsmuk. JSX gooit de witruimte weg die
+                 tegen een tag aan ligt, dus met alleen een verborgen <br> stond
+                 er letterlijk "Herkenje dit?" — onzichtbaar zolang de breek nog
+                 aan stond, meteen zichtbaar zodra hij uit ging. */}
+              Herken{" "}
+              <br className="hidden lg:inline" />
               je dit?
             </h2>
             {/* Drie regels in plaats van twee. Kalam loopt breder dan de Caveat
@@ -829,18 +1094,9 @@ export function WereldHerken() {
                derde regel viel — een wees. Kleiner zetten hielp wel maar kostte
                aanwezigheid; drie korte regels lezen bij handschrift juist
                natuurlijk, dus de maat kon terug omhoog. De tekst is
-               ongewijzigd, alleen de regelval. */}
-            <p
-              data-reveal
-              className={`mt-6 lg:sticky lg:top-60 ${HAND_REGEL}`}
-              style={{ fontFamily: "var(--font-hand)", color: KOP }}
-            >
-              Het hoort bij het werk,
-              <br />
-              maar het kan slimmer,
-              <br />
-              sneller en efficiënter
-            </p>
+               ongewijzigd, alleen de regelval.
+               Op een telefoon staat deze regel ná de kaarten; zie HandRegel. */}
+            <HandRegel className="mt-6 hidden lg:sticky lg:top-60 lg:block" />
           </div>
 
           <div className="relative">
@@ -856,19 +1112,44 @@ export function WereldHerken() {
                     rotate: `${i % 2 ? 0.8 : -0.8}deg`,
                   } as CSSProperties
                 }
-                className={`${KAART} relative mb-6 flex items-start gap-5 p-7 lg:ml-[var(--stap)]`}
+                /* ⚠️ Alles met een `sm:` ervoor is de bestaande desktopmaat en
+                   blijft ongemoeid; wat ervóór staat geldt alleen op een
+                   telefoon. Zo krimpt de kaart daar (kleinere binnenmarge,
+                   minder tussenruimte) zonder dat het brede scherm iets merkt. */
+                className={`${KAART} relative mb-3 flex items-start gap-3 p-4 sm:mb-6 sm:gap-5 sm:p-7 lg:ml-[var(--stap)]`}
               >
-                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand" aria-hidden>
-                  <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" stroke="#fff" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round">
+                <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand sm:h-9 sm:w-9 sm:rounded-xl" aria-hidden>
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" fill="none" stroke="#fff" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 13l4 4L19 7" />
                   </svg>
                 </span>
                 <div>
-                  <h3 className="font-display text-2xl font-black tracking-tight text-ink">{p.titel}</h3>
-                  <p className="mt-1.5 text-lg leading-7 text-ink/70">{p.tekst}</p>
+                  {/* ⚠️ Hier stond `text-2xl` hardgecodeerd, terwijl de
+                      type-ladder bovenaan dit bestand zegt dat juist de
+                      kaartjes van "Herken je dit?" KOP_BLOK horen te
+                      gebruiken. Op een telefoon gaf dat een kop van 24px op
+                      een kaart van 5cm breed. Niet vervangen door KOP_BLOK:
+                      dat zou op een smalle laptop (1024px) óók 19,5px geven
+                      in plaats van 24, en het brede scherm is af. Alleen de
+                      telefoon krimpt dus. */}
+                  {/* Kleiner dan de sectiekop erboven (die is 24px op een
+                      telefoon): een kaartkop hoort de sectiekop niet te
+                      beconcurreren. 18px titel, 16px tekst.
+                      ⚠️ Dit stond eerst op 17 en 14. Die 14 maakte deze kaarten
+                      de kleinste tekst van de hele pagina; de andere kaarten
+                      (Zo werkt het, Veilig omgaan met AI) staan allebei op 16.
+                      De 18 voor de titel is de ondergrens van KOP_BLOK, de maat
+                      die volgens de ladder bovenaan dit bestand bij een kop
+                      BINNEN een sectie hoort. Beide waarden zijn dus overgenomen
+                      en niet opnieuw verzonnen — zo blijven ze gelijklopen. */}
+                  <h3 className="font-display text-lg font-black leading-tight tracking-tight text-ink sm:text-2xl">{p.titel}</h3>
+                  <p className="mt-1 text-base leading-6 text-ink/70 sm:mt-1.5 sm:text-lg sm:leading-7">{p.tekst}</p>
                 </div>
               </div>
             ))}
+            {/* Op een telefoon sluit de handgeschreven regel de drie problemen
+               af in plaats van ze aan te kondigen. */}
+            <HandRegel className="mt-8 text-center lg:hidden" />
           </div>
         </div>
       </div>
@@ -937,6 +1218,17 @@ export function WereldHerken() {
    - Het is een vorm die iedereen kent, dus er valt niets uit te leggen. */
 
 export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
+  /* ⭐ ALLEEN OP DE TELEFOON: het CV is ingeklapt tot de groene band.
+     Verzoek van de eigenaar: "kap hem af waar het groene vlak eindigt en maak
+     hem uitklapbaar — dan neemt hij minder in, maar kunnen mensen hem wel
+     openen als ze willen."
+     🔑 De groene band is precies de goede knip, want dat is het stuk dat de
+     vraag "wie is dit?" beantwoordt: naam, rol en gezicht. Alles eronder
+     (personalia en het verhaal) is verdieping, en verdieping mag achter een
+     klik. Op een breed scherm staat het CV naast de tekst en is er ruimte zat,
+     dus daar blijft alles gewoon staan. */
+  const [cvOpen, setCvOpen] = useState(false);
+
 
   return (
     <section className="relative overflow-hidden">
@@ -978,6 +1270,18 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
             hoogte={260}
             style={{ right: "-6%", top: -50, transform: "rotate(7deg)" }}
             className="hidden lg:block"
+            tel={5}
+          />
+          {/* Telefoonversie. De negatieve top houdt hem onder de kleurrand
+             vandaan komen — dat is de stand die volgens mijn aantekeningen
+             werkt, en hij draagt hier de golf. */}
+          <KaartVlak
+            kleur={VLAK_MINT}
+            vorm="ei"
+            breedte={300}
+            hoogte={165}
+            style={{ right: "-26%", top: -40, transform: "rotate(7deg)" }}
+            className="lg:hidden"
             tel={5}
           />
         </div>
@@ -1217,6 +1521,38 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                  maat waarop lopende tekst het prettigst leest.
                  Boven elkaar zet het bovendien de volgorde neer die de eigenaar
                  vroeg: "beetje persoonlijke info, daarna vooral over Avinka". */}
+              {/* ⭐ DE UITKLAPKNOP, alleen op de telefoon. Staat direct onder de
+                 groene band, dus precies op de knip.
+                 ⚠️ `aria-expanded` en `aria-controls` horen erbij: zonder die
+                 twee is dit voor een schermlezer een knop die iets onzichtbaars
+                 doet. */}
+              <button
+                type="button"
+                onClick={() => setCvOpen((v) => !v)}
+                aria-expanded={cvOpen}
+                aria-controls="cv-vervolg"
+                className="w-cv-meer"
+              >
+                {cvOpen ? "Minder lezen" : "Lees meer over mij"}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={cvOpen ? "w-cv-pijl w-cv-pijl-op" : "w-cv-pijl"}>
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+
+              {/* ⚠️ De hoogte-animatie loopt via `grid-template-rows` van 0fr naar
+                 1fr, en dat is met opzet: zo hoeft niemand de hoogte van de
+                 inhoud te weten. Met een vaste `max-height` moet je een getal
+                 gokken dat groter is dan de inhoud, en dan klapt hij te snel of
+                 te traag open zodra de tekst verandert.
+                 Het kind eronder heeft `overflow-hidden` — zonder dat knipt er
+                 niets en zie je de inhoud gewoon staan. */}
+              <div
+                id="cv-vervolg"
+                className={`max-sm:grid max-sm:transition-[grid-template-rows] max-sm:duration-300 max-sm:ease-out ${
+                  cvOpen ? "max-sm:grid-rows-[1fr]" : "max-sm:grid-rows-[0fr]"
+                }`}
+              >
+              <div className="max-sm:overflow-hidden">
               <div className="w-cv-strook">
                 {/* Alle gegevens hieronder komen van de eigenaar zelf. Niets
                    hiervan invullen, afronden of bijstellen zonder hem: het zijn
@@ -1334,6 +1670,8 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                    🔑 Als er ooit een derde blok bij moet: dan moet er ook een
                    ander blok uit, of het document past niet meer. */}
               </div>
+              </div>
+              </div>
 
             </article>
         </div>
@@ -1371,6 +1709,42 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           .w-mkr-rij { grid-template-columns: minmax(0, 1fr) 32rem; }
         }
         .w-mkr-tekst { max-width: 42ch; }
+        /* ⭐ OP EEN TELEFOON KOMT HET CV TUSSEN DE INLEIDING EN DE UITNODIGING.
+           De eigenaar: op pc klopt het, want links de tekst en rechts het CV,
+           naast elkaar. Onder elkaar niet, en dat is meer dan smaak — het maakt
+           de VOLGORDE onlogisch. Je las eerst de inleiding, dan "laat me weten
+           wat je ervan vindt" met een mailadres, en pas dáárna wie die "me" dan
+           is. De uitnodiging kwam dus vóór de voorstelling.
+           Nu: kop, inleiding, het CV, en dan pas de uitnodiging met het adres.
+           Dat is de volgorde van een echte kennismaking, en het zet het adres
+           bovendien onderaan de sectie waar het als afsluiter werkt.
+
+           🔑 Bewust GEEN nieuw mechaniek hier. Bij dit blok zijn al drie dingen
+           afgekeurd (het schrift, de 3D-kanteling, de losse kaartindelingen) en
+           de les daarvan was steeds dezelfde: het effect wérkte, het hoorde
+           alleen niet bij een pagina die verder plat is. Een andere volgorde is
+           geen effect.
+
+           ⚠️ "display: contents" op de tekstkolom laat die kolom zelf uit de
+           opmaak verdwijnen, zodat kop, inleiding, uitnodiging en adres directe
+           kinderen van het raster worden en dus los te nummeren zijn. De
+           row-gap gaat daarom op 0: anders komt die tussen álle vier te staan
+           en zou elk element zijn eigen marge kwijtraken aan een dubbele
+           tussenruimte. Het CV krijgt zijn afstand met een eigen marge.
+
+           ⚠️⚠️ GEEN BACKTICKS IN DIT COMMENTAAR. Deze hele stijlblok staat in
+           een template-string; één backtick sluit hem en de pagina valt om. Ik
+           ben er zojuist weer ingetrapt — het stond in mijn aantekeningen én er
+           staat verderop in dit bestand een waarschuwing over. */
+        @media (max-width: 639px) {
+          .w-mkr-rij { row-gap: 0; }
+          .w-mkr-tekst { display: contents; }
+          .w-mkr-kop { order: 1; }
+          .w-mkr-inleiding { order: 2; }
+          .w-cv { order: 3; margin-top: clamp(26px, 7vw, 38px); }
+          .w-mkr-belofte { order: 4; margin-top: clamp(26px, 7vw, 38px); }
+          .w-mkr-contact { order: 5; }
+        }
         /* De handgeschreven uitnodiging onder de inleiding. Groter dan de
            lopende tekst, maar in handschrift en niet in de display-letter:
            grote display-regels in deze kolom zijn eerder afgekeurd met "een
@@ -1597,6 +1971,54 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            (zie .w-mkr-rij).
            De middelste kolom krijgt iets meer breedte: daar staat de langste
            waarde (de schoolnaam), en in een gelijke derde liep die om. */
+        /* ── de uitklapknop onder de groene band (alleen telefoon) ──
+           Geen echte knopvorm: dit is geen actie maar een uitnodiging om verder
+           te lezen, en een tweede groene knop zou concurreren met de knoppen in
+           de rest van de sectie. Vandaar een regel met een pijltje, in de
+           kopkleur, over de volle breedte zodat hij makkelijk te raken is. */
+        /* ⚠️⚠️ HET VERBERGEN OP PC MOET HIER GEBEUREN, NIET MET DE KLASSE
+           sm:hidden. Ik had de knop die klasse gegeven en dat werkte niet: hij
+           zet display op none, maar de regel hieronder zette hem op flex. Beide
+           zijn even zwaar (één klasse), dus wint wie later in het stijlblad
+           staat — en dit blok staat ín het component, dus ná de Tailwind-stijlen.
+           Gevolg: op een breed scherm stond er een "Lees meer over mij"-knop die
+           daar niets te zoeken heeft, want daar staat het CV gewoon open.
+           🔑 Meng geen eigen CSS-regel met een Tailwind-klasse voor dezelfde
+           eigenschap. Regel het in één van de twee — hier dus in de media-query.
+           ⚠️⚠️ EN GEEN ACCENT-AANHALINGSTEKENS IN DIT BLOK, ook niet in een
+           opmerking: dat sluit de tekst en de hele pagina valt om. Dat staat
+           twintig regels hierboven al gewaarschuwd en ik ben er vandaag drie
+           keer ingetrapt. */
+        .w-cv-meer { display: none; }
+        @media (max-width: 639px) {
+          .w-cv-meer {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            padding: 0.85rem 1rem;
+            font-family: var(--font-display), Georgia, serif;
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: ${KOP};
+            border-bottom: 1px solid rgba(var(--w-schaduw-rgb, 23,80,58), 0.1);
+          }
+        }
+        .w-cv-meer:focus-visible {
+          outline: 2px solid var(--color-brand, #2f9e6e);
+          outline-offset: -3px;
+        }
+        .w-cv-pijl {
+          height: 1rem;
+          width: 1rem;
+          transition: transform 0.25s ease;
+        }
+        .w-cv-pijl-op { transform: rotate(180deg); }
+        @media (prefers-reduced-motion: reduce) {
+          .w-cv-pijl { transition: none; }
+        }
+
         .w-cv-feiten {
           display: grid;
           grid-template-columns: 0.85fr 1.3fr 0.85fr;
@@ -1738,6 +2160,17 @@ export function WereldSlot() {
         hoogte={380}
         style={{ left: "-8%", bottom: 55, transform: "rotate(-9deg)" }}
         className="hidden lg:block"
+        tel={2}
+      />
+      {/* Telefoonversie. Het donkergroene slotveld is het donkerste vlak van de
+         pagina, dus hier is wit-op-5% precies genoeg: meer zou een vlek worden. */}
+      <KaartVlak
+        kleur="rgba(255,255,255,0.05)"
+        vorm="schelp"
+        breedte={340}
+        hoogte={205}
+        style={{ left: "-28%", bottom: 45, transform: "rotate(-9deg)" }}
+        className="lg:hidden"
         tel={2}
       />
 

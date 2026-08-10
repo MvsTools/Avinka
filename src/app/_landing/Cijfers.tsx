@@ -451,6 +451,50 @@ function Rapport({
           className="hidden lg:block"
           tel={4}
         />
+        {/* Telefoonversie: zelfde vorm en kant, ongeveer half zo groot. Ook hier
+           staat het vlak VÓÓR de golf in dezelfde laag; daardoor snijdt de golf
+           hem op de mintrand af in plaats van dat hij eroverheen ligt. */}
+        <KaartVlak
+          kleur={VLAK_MINT}
+          vorm="koepel"
+          breedte={350}
+          hoogte={195}
+          style={{ right: "-30%", top: 36, transform: "rotate(5deg)" }}
+          className="lg:hidden"
+          tel={4}
+        />
+        {/* Tweede vlak, onderin — op verzoek van de eigenaar. Links, tegenover
+           het vlak hierboven rechts.
+
+           ⚠️⚠️ `bottom: 20` EN GEEN NEGATIEVE WAARDE, en dat is hier geen smaak.
+           Deze sectie knipt verticaal NIET af (overflow-y: visible, terwijl de
+           andere mintvelden `overflow-hidden` hebben). Met bottom -60 stak het
+           vlak 76px onder de sectie uit en lag het als mintvlek op het papier
+           van de prijzensectie — precies wat de afspraak "vormen alleen in de
+           mintvelden" verbiedt.
+           🔑 Met +20 eindigt hij binnen de band van de afsluitende golf (die
+           loopt van 614 tot 684 in een sectie van 683), dus de golf schildert
+           eroverheen en je ziet hetzelfde "duikt eronder"-effect zonder het lek.
+           🔑 De bredere les: een negatieve `bottom` werkt alleen in een sectie
+           die afknipt. Kijk dus eerst naar de overflow van de sectie voor je een
+           vlak over de rand laat lopen — dat verschilt hier per sectie. */}
+        {/* ⚠️ `bottom: 0` en flink hoger dan mijn eerdere pogingen. De vorige
+           stond op bottom 30 met hoogte 160: dan raakt hij de afsluitende golf
+           maar net, en zie je vooral zijn eigen omtrek in het veld hangen in
+           plaats van een vorm die eronder duikt.
+           Nu loopt hij van 483 tot 683 in een sectie van 683, terwijl de golf de
+           band 614-684 beslaat — de onderste 70px zit dus onder de golf en die
+           doet het snijwerk. `bottom: 0` en niet negatief, want deze sectie
+           knipt verticaal niet af (zie de opmerking hierboven). */}
+        <KaartVlak
+          kleur={VLAK_MINT}
+          vorm="ei"
+          breedte={300}
+          hoogte={200}
+          style={{ left: "-36%", bottom: 0, transform: "rotate(-6deg)" }}
+          className="lg:hidden"
+          tel={7}
+        />
 
         {/* Vorm "zacht": een rustige dubbele deining die links en rechts op
            dezelfde hoogte begint en eindigt. Hij was als enige nog ongebruikt,
@@ -939,6 +983,24 @@ function RapportStijl() {
       /* ⚠️ Hier stond een amberkleurige kantlijn, als de rode marge van
          schoolpapier. Eruit op verzoek: op een crème kaartje met blobvorm las
          hij als een losse streep in plaats van als papierdetail. */
+
+      /* ⚠️ OP EEN TELEFOON OVER DE VOLLE BREEDTE. De vaste breedte hierboven
+         (172-205px) hoort bij een breed bureau, waar dit het vierde losse
+         papiertje tussen de andere is. Onder elkaar geplaatst wordt datzelfde
+         briefje het enige smalle ding onderaan, met een half scherm leegte
+         ernaast - de eigenaar: "valt een beetje buiten de boot".
+         🔑 Het bleef opvallen omdat de rest van het bord op een telefoon WEL
+         meeschaalt: de andere drie vullen de kolom, dit briefje niet. Een vaste
+         breedte tussen meeschalende buren valt altijd op, ook als de maat op
+         zichzelf klopt. Kijk bij zo'n los element dus niet naar het element maar
+         naar wat ernaast staat.
+         De hoek en de crèmekleur blijven: die maken er papier van, en dat is
+         precies wat het moet zijn. Alleen de breedte volgt nu de kolom.
+         (GEEN BACKTICKS in dit commentaar - dit stijlblok staat in een
+         template-string.) */
+      @media (max-width: 639px) {
+        .rp-bron { width: 100%; }
+      }
 
       .rp-bronlabel {
         font-family: var(--font-display), Georgia, serif;

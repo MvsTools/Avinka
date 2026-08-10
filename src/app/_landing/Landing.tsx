@@ -52,6 +52,10 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
    `true` zodra er echte reacties uit de proefgroep binnen zijn — verder hoeft
    er niets te gebeuren, alle code en foto's blijven staan.
    Zie [[landing-niet-generiek]] en de go-live-checklist. */
+/* ⚠️ 10-8: dit stond in de mobiele werkbank op `true`, want daar moesten we de
+   polaroids kunnen inrichten. Bij het terugzetten van dat werk hoort deze vlag
+   nadrukkelijk NIET mee — de sectie blijft uit tot er echte reacties zijn.
+   Het mobiele ontwerp van die sectie is er wél, hij staat alleen niet aan. */
 const TOON_ERVARINGEN = false;
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -77,7 +81,16 @@ const STRIP = [
      verderop (Privacy.tsx), i.p.v. zelf een aparte belofte te doen. */
   "🔒 Privacy voorop",
   "🇳🇱 Volledig Nederlands",
-  "💚 Door een leerkracht gemaakt",
+  /* ⚠️ 10-8: WAS "Door een leerkracht gemaakt", en de reden voor het inkorten is
+     opmaak, niet stijl. Ze horen in twee rijen van twee te staan; deze was zo
+     breed dat hij op een telefoon zijn buurman naar een derde regel duwde. Dan
+     staan er twee naast elkaar en twee eronder — scheef, en dat viel de eigenaar
+     meteen op. De kortere tekst is van hem.
+     🔑 Bijvangst die het een verbetering maakt en geen concessie: "Van een
+     leerkracht" ligt dichter bij de tagline die overal op de pagina staat, "van
+     leerkracht voor leerkrachten". Het zegt hetzelfde in minder woorden.
+     ⚠️ Deze regel wordt door telefoon én pc gebruikt; er is bewust één tekst. */
+  "💚 Van een leerkracht",
   "✓ Maandelijks opzegbaar",
 ];
 
@@ -468,6 +481,55 @@ function abonneerReduced(cb: () => void) {
   return () => mq.removeEventListener("change", cb);
 }
 
+/* ⚠️ 10-8: OP EEN TELEFOON DRAAIT DE FILM NIET MEER.
+   Besluit van de eigenaar, en het is een ontwerpbesluit, geen storing: "op
+   telefoon die film eruit, dat is veel te druk". Wat hij wil is de rust van de
+   mobiele Duolingo-site — je opent hem en ziet het merk, een beeld, de zin, de
+   knoppen. Meer niet.
+
+   🔑 DIT KOSTTE BIJNA NIETS, en dat is de moeite waard om te weten: de pagina
+   had de film-loze versie al helemaal staan, als terugval voor wie in zijn
+   toestel "minder beweging" heeft aangezet. Overal in dit bestand staat
+   `film ? … : …`. De hele klus was dus die ene vlag ook op smal laten
+   uitgaan — geen nieuwe hero bouwen.
+   ⚠️ Kijk dus altijd eerst of er al een uit-stand bestaat vóór je iets nieuws
+   maakt. Een goede toegankelijkheidsterugval is vaak precies de rustige versie
+   die iemand op een telefoon wil.
+
+   639px is de Tailwind-grens `sm`, zodat deze schakelaar op dezelfde breedte
+   omslaat als alle `max-sm:`-regels in de rest van de pagina. Liepen die uit
+   elkaar, dan krijg je een strook breedtes met de film aan én de mobiele
+   opmaak — precies de tussenstand die niemand ooit bekijkt. */
+/* ⭐ PROEF 10-8 — DE MOBIELE OPENING. ZET DEZE OP `false` EN ALLES IS TERUG.
+   De eigenaar zei er expliciet bij: "we zijn maar een beetje wat aan het
+   proberen nu, hopelijk kunnen we straks weer terug". Daarom staat de hele
+   proef achter deze ene vlag in plaats van verspreid door het bestand — dan is
+   terugdraaien een woord en geen archeologie.
+
+   Wat de proef doet, alleen onder 640px:
+   1. De vaste bovenbalk begint ONZICHTBAAR. Je opent de pagina en er is geen
+      balk, alleen de pagina zelf.
+   2. Het Avinka-wordmerk staat gecentreerd bovenaan, als briefhoofd.
+   3. Daaronder het dashboard, dan pas de belofte, dan de knoppen.
+   4. Zodra je de knoppen voorbij bent, schuift de balk alsnog in beeld — met
+      het vinkje links en "Probeer gratis" rechts.
+
+   🔑 De gedachte erachter is van de eigenaar en het is een goede: op een
+   telefoon is het eerste scherm alles wat je hebt. Een vaste balk kost daar
+   ~60px én hij zegt hetzelfde als het logo dat er toch al staat. Pas als het
+   logo weggescrold is, hoort er iets terug te komen dat merk en actie vasthoudt.
+   Bij ons is dat het vinkje, niet het hele wordmerk: een merkteken hoeft zich
+   maar één keer voor te stellen. */
+const PROEF_MOBIELE_HERO = true;
+
+const SMAL_QUERY = "(max-width: 639px)";
+
+function abonneerSmal(cb: () => void) {
+  const mq = window.matchMedia(SMAL_QUERY);
+  mq.addEventListener("change", cb);
+  return () => mq.removeEventListener("change", cb);
+}
+
 /* De landingspagina zelf. Het serverwerk (wie is de bezoeker, mag die de
    prijzen zien, staat er een foto klaar) gebeurt in ../page.tsx; hier komt dat
    binnen als drie kale props, zodat dit een client-component kan blijven — de
@@ -503,7 +565,49 @@ export default function Landing({
     () => window.matchMedia(REDUCED_QUERY).matches,
     () => null,
   );
-  const film = reduced === false;
+  /* null op de server, net als `reduced`: dan rendert de server de film-loze
+     versie en klopt de eerste paint op een telefoon meteen. */
+  const smal = useSyncExternalStore<boolean | null>(
+    abonneerSmal,
+    () => window.matchMedia(SMAL_QUERY).matches,
+    () => null,
+  );
+  const film = reduced === false && smal === false;
+
+  /* ── PROEF: de balk komt pas ná de knoppen ────────────────────────────────
+     `wachtpost` is een onzichtbaar streepje direct onder de knoppen. Zolang dat
+     streepje nog in beeld is (of eronder), blijft de balk weg; is het naar
+     boven weggescrold, dan schuift de balk in.
+
+     🔑 Waarom een streepje en geen scrollteller met een vast getal: de hoogte
+     van dit blok verandert met de tekstgrootte van de telefoon en met de vraag
+     of iemand is ingelogd. Een getal als "na 700 pixels" klopt dan op mijn
+     scherm en nergens anders. Het streepje verhuist gewoon mee.
+     ⚠️ De vergelijking `top < 0` moet erbij: zonder die toets slaat de balk óók
+     aan wanneer het streepje nog niet in beeld is omdat het er nog ONDER zit —
+     en dan staat de balk er meteen, precies wat de proef wil voorkomen. */
+  const wachtpost = useRef<HTMLDivElement>(null);
+  const [balkInBeeld, setBalkInBeeld] = useState(false);
+
+  useEffect(() => {
+    if (!PROEF_MOBIELE_HERO || smal !== true) {
+      setBalkInBeeld(false);
+      return;
+    }
+    const el = wachtpost.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => setBalkInBeeld(!e.isIntersecting && e.boundingClientRect.top < 0),
+      { threshold: 0 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [smal]);
+
+  /* Alleen waar als de proef draait én we op een telefoon zitten. Overal
+     hieronder is dit de enige toets, zodat een breed scherm gegarandeerd
+     buiten schot blijft. */
+  const proefMobiel = PROEF_MOBIELE_HERO && smal === true;
 
   /* ── De film: rommelig bureaublad → tablet-dashboard ── */
   useGSAP(
@@ -735,15 +839,39 @@ export default function Landing({
       {/* ── Vaste bovenbalk ── */}
       <header
         data-header
+        /* PROEF: op een telefoon begint de balk boven het scherm en schuift hij
+           pas in zodra je de knoppen voorbij bent. `pointer-events-none` erbij
+           zolang hij weg is — anders vangt een onzichtbare balk je eerste tik
+           bovenaan het scherm op. */
         className={`fixed inset-x-0 top-0 z-40 transition-colors duration-500 ${
           film ? "" : "film-klaar"
+        } ${
+          proefMobiel
+            ? `transition-[transform,opacity,background-color] ${
+                balkInBeeld
+                  ? "translate-y-0 opacity-100"
+                  : "pointer-events-none -translate-y-full opacity-0"
+              }`
+            : ""
         } [&.film-klaar]:border-b [&.film-klaar]:border-black/5 [&.film-klaar]:bg-[color-mix(in_srgb,var(--w-papier,#fcfbf7)_85%,transparent)] [&.film-klaar]:backdrop-blur`}
       >
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <span className="rounded-xl bg-cream/95 px-2.5 py-1.5 shadow-sm ring-1 ring-black/5">
+        {/* ⚠️ Op een telefoon moet deze balk SLANK zijn: de richtlijn is 50-70px
+            en de belofte eronder mag er niet achter wegvallen. Hij was 68px met
+            drie elementen erin. Nu: kleiner logo, minder lucht, en één actie
+            (zie hieronder). Vanaf 640px alles onveranderd. */}
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-3 py-2 sm:px-6 sm:py-3">
+          <span className="rounded-xl bg-cream/95 px-2 py-1 shadow-sm ring-1 ring-black/5 sm:px-2.5 sm:py-1.5">
             {/* Gewone img: de dev-optimizer van next/image laadt traag. */}
+            {/* PROEF: op een telefoon staat het volledige wordmerk al gecentreerd
+               bovenaan de pagina. Deze balk komt pas ná dat wordmerk in beeld,
+               dus hier is het merkteken genoeg — het hoeft zich niet twee keer
+               voor te stellen. Scheelt bovendien breedte voor de knop ernaast. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/Avinka_logo.png" alt="Avinka" className="h-8 w-auto" />
+            <img
+              src={proefMobiel ? "/Avinka_vinkje.png" : "/Avinka_logo.png"}
+              alt="Avinka"
+              className={proefMobiel ? "h-6 w-auto" : "h-6 w-auto sm:h-8"}
+            />
           </span>
           {/* ⚠️ De balk is tijdens de film doorzichtig, en de film BEGINT op de
              donkergroene avondlaag en eindigt op licht papier. Een gewone
@@ -782,11 +910,16 @@ export default function Landing({
               <>
                 <Link
                   href="/dashboard"
-                  className="rounded-xl bg-brand px-4 py-3 text-sm font-bold text-white shadow-sm shadow-brand/20 transition hover:bg-brand-dark sm:py-2 sm:text-base"
+                  className="whitespace-nowrap rounded-xl bg-brand px-3 py-2 text-[13px] font-bold text-white shadow-sm shadow-brand/20 transition hover:bg-brand-dark sm:px-4 sm:py-2 sm:text-base"
                 >
                   Mijn dashboard
                 </Link>
-                <form action={signout}>
+                {/* ⚠️ Uitloggen verdwijnt op de telefoon. Op 390px is er na het
+                    logo ruimte voor ÉÉN knop; met twee viel de balk over de
+                    belofte heen. Dit is ook de tweede-keus-actie: wie op de
+                    voorpagina staat wil naar zijn dashboard, niet uitloggen.
+                    Uitloggen kan gewoon in het dashboard zelf. */}
+                <form action={signout} className="hidden sm:block">
                   <button
                     type="submit"
                     className="rounded-xl bg-cream/95 px-3.5 py-3 text-sm font-semibold text-ink/80 shadow-sm ring-1 ring-black/5 transition hover:text-ink sm:py-2 sm:text-base"
@@ -797,15 +930,22 @@ export default function Landing({
               </>
             ) : (
               <>
+                {/* Zelfde reden als Uitloggen hierboven: op een telefoon past er
+                    één knop naast het logo, en dat moet de hoofdactie zijn.
+                    Inloggen staat ook onderaan de pagina in de voettekst. */}
                 <Link
                   href="/sign-in"
-                  className="rounded-xl bg-cream/95 px-3.5 py-3 text-sm font-semibold text-ink/80 shadow-sm ring-1 ring-black/5 transition hover:text-ink sm:py-2 sm:text-base"
+                  className="hidden rounded-xl bg-cream/95 px-3.5 py-3 text-sm font-semibold text-ink/80 shadow-sm ring-1 ring-black/5 transition hover:text-ink sm:inline-block sm:py-2 sm:text-base"
                 >
                   Inloggen
                 </Link>
+                {/* ⚠️ `whitespace-nowrap`: op 360px brak "Probeer gratis" over
+                    twee regels, werd de knop bijna twee keer zo hoog en legde
+                    de hele balk zich over de kop van de sectie eronder. Een
+                    knop van twee woorden hoort nooit af te breken. */}
                 <Link
                   href="/sign-up"
-                  className="rounded-xl bg-brand px-4 py-3 text-sm font-bold text-white shadow-sm shadow-brand/20 transition hover:bg-brand-dark sm:py-2 sm:text-base"
+                  className="whitespace-nowrap rounded-xl bg-brand px-3.5 py-3 text-sm font-bold text-white shadow-sm shadow-brand/20 transition hover:bg-brand-dark sm:px-4 sm:py-2 sm:text-base"
                 >
                   Probeer gratis
                 </Link>
@@ -825,7 +965,18 @@ export default function Landing({
           className={
             film
               ? "sticky top-0 flex h-screen flex-col items-center overflow-hidden px-4 pt-12 sm:pt-14"
-              : "relative flex flex-col items-center gap-8 overflow-hidden px-4 pb-16 pt-28"
+              /* PROEF: op een telefoon mag de pagina niet met een lege band
+                 beginnen. De pt-28 stond er om onder de vaste balk uit te komen
+                 — en die balk is er nu juist niet meer bij het openen. */
+              /* ⚠️ De tussenruimte staat op ÉÉN plek (de gap van deze kolom) en
+                 niet als losse marges op de vier blokken. Dat is met opzet: de
+                 eigenaar vroeg "dashboard iets lager, belofte iets lager, knop
+                 iets lager", en dat is drie keer dezelfde wens — de afstand
+                 tussen de blokken. Met losse marges moet je dat op drie plekken
+                 bijhouden en lopen ze gegarandeerd uit elkaar.
+                 Er was ruimte voor: na het weghalen van de zekerheden bleef er
+                 ruim 200px onder de knop over op een scherm van 844. */
+              : "relative flex flex-col items-center gap-8 overflow-hidden px-4 pb-16 pt-28 max-sm:gap-10 max-sm:pt-7"
           }
         >
           {/* Lichtlagen: avond onder, dag erboven ingefaded.
@@ -844,8 +995,30 @@ export default function Landing({
           </div>
           <div data-daglaag className="pointer-events-none absolute inset-0" style={SPECKLE_STIJL} aria-hidden />
 
-          {/* De grote belofte: groots, muisstil, en niets komt eroverheen */}
-          <div data-intro className="relative z-30 mx-auto mt-[1.5vh] w-[min(94vw,62rem)] text-center">
+          {/* ⭐ PROEF: HET WORDMERK ALS BRIEFHOOFD, alleen op de telefoon.
+             Dit vervangt de vaste balk op het eerste scherm. Gecentreerd, want
+             op een telefoon staat alles in het midden, en zonder het crème
+             plaatje eromheen dat het in de balk wél heeft: daar moet het logo
+             leesbaar blijven op de donkere film, hier ligt het gewoon op papier.
+             `order-1` hieronder is niet nodig (het staat toch al vooraan) maar
+             staat er wél, zodat de vier volgnummers bij elkaar te lezen zijn. */}
+          {proefMobiel && (
+            <div className="relative z-30 max-sm:order-1 sm:hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/Avinka_logo.png" alt="Avinka" className="h-9 w-auto" />
+            </div>
+          )}
+
+          {/* De grote belofte: groots, muisstil, en niets komt eroverheen.
+             ⚠️ Op een telefoon begon hij ONDER de vaste balk door te lopen,
+             waardoor de bovenste regel half wegviel. `mt-16` duwt hem onder de
+             balk (die is daar ~54px). En `px-5` in plaats van alleen een
+             94vw-breedte: zonder echte zijmarge kwam de laatste letter tegen
+             de schermrand — dat is de afgeknipte g. */}
+          {/* PROEF: `order-3` zet de belofte ONDER het dashboard. De mt-16 hield
+             hem vrij van de vaste balk; die staat er op het eerste scherm niet
+             meer, dus op de telefoon mag die marge weg. */}
+          <div data-intro className="relative z-30 mx-auto mt-16 w-[min(94vw,62rem)] px-5 text-center max-sm:order-3 max-sm:mt-0 sm:mt-[1.5vh] sm:px-0">
             <h1
               data-belofte
               className={`${KOP_GROOT} ${film ? "text-cream" : "text-ink"}`}
@@ -935,7 +1108,7 @@ export default function Landing({
               <Venster
                 naam="plattegrond"
                 titel="plattegrond_lokaal_v4_ECHT.png"
-                className="hidden w-44 rotate-[6deg] lg:left-[4%] lg:top-[58%] lg:block"
+                className="hidden w-44 rotate-[6deg] max-sm:right-[3%] max-sm:top-[24%] max-sm:block max-sm:w-32 lg:left-[4%] lg:top-[58%] lg:block"
               >
                 <div className="grid grid-cols-4 gap-1.5 p-3">
                   {Array.from({ length: 8 }).map((_, i) => (
@@ -980,13 +1153,15 @@ export default function Landing({
               </div>
               <div
                 data-venster="toetsanalyse"
-                className="absolute hidden w-32 rotate-[3deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:left-[15%] sm:top-[70%] sm:block"
+                /* max-sm: = alleen onder 640px. Zo komt dit briefje terug op de
+                   telefoon zonder dat er iets verandert aan het brede scherm. */
+                className="absolute hidden w-32 rotate-[3deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] max-sm:left-[8%] max-sm:top-[36%] max-sm:block max-sm:w-28 max-sm:p-2.5 max-sm:text-[10px] sm:left-[15%] sm:top-[70%] sm:block"
               >
                 toetsen analyseren
               </div>
               <div
                 data-venster="weektaak"
-                className="absolute hidden w-32 rotate-[4deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] sm:right-[14%] sm:top-[30%] sm:block"
+                className="absolute hidden w-32 rotate-[4deg] rounded-sm bg-accent-soft p-3 text-[11px] font-semibold leading-snug text-ink/80 shadow-[0_16px_36px_-10px_rgba(8,5,20,0.6)] max-sm:left-[4%] max-sm:top-[25%] max-sm:block max-sm:w-28 max-sm:p-2.5 max-sm:text-[10px] sm:right-[14%] sm:top-[30%] sm:block"
               >
                 weektaak maken
               </div>
@@ -1022,8 +1197,24 @@ export default function Landing({
           {/* ── De werkplek waar alles landt: een tablet met het Avinka-dashboard ──
              finaleRef is de krimp-wrapper hierboven; data-paneel blijft het
              element dat de GSAP-tijdlijn zelf animeert (y/scale/autoAlpha). */}
-          <div ref={finaleRef}>
-            <div data-paneel className="relative z-10 mx-auto mt-[clamp(0.375rem,1vh,1rem)] w-[min(94vw,39rem)]">
+          {/* PROEF — `max-sm:contents`, en dit is de hele truc van de nieuwe
+             volgorde. Deze wrapper is op een breed scherm de krimp-wrapper die
+             paneel + zekerheden samen schaalt op een lage vensterhoogte; die
+             moet blijven. Maar hij zit ook in de weg: zolang paneel, knoppen en
+             zekerheden ERIN zitten, kunnen ze niet los van de belofte worden
+             gerangschikt, want die staat een niveau hoger.
+             `display: contents` laat de wrapper zelf uit de opmaak verdwijnen
+             en promoveert zijn kinderen tot directe flex-kinderen van de hero.
+             Daarmee kunnen alle vier de blokken op één rij genummerd worden.
+             🔑 De winst is dat er GEEN tweede versie van de hero nodig is: de
+             HTML blijft voor telefoon en pc precies gelijk, alleen de volgorde
+             verschilt. Anders zou de server de brede opbouw sturen en de
+             telefoon die na het laden omgooien — een zichtbare sprong op het
+             allereerste scherm.
+             ⚠️ Op een breed scherm blijft dit een gewone div, dus de krimp-
+             wrapper en zijn GSAP-schaal werken daar onveranderd. */}
+          <div ref={finaleRef} className="max-sm:contents">
+            <div data-paneel className="relative z-10 mx-auto mt-[clamp(0.375rem,1vh,1rem)] w-[min(94vw,39rem)] max-sm:order-2 max-sm:mt-0">
             {/* tablet-behuizing: alles wordt in dit apparaat opgeruimd */}
             <div className="rounded-[1.4rem] bg-ink/90 p-1 shadow-[0_34px_80px_-24px_rgba(8,5,20,0.75)] ring-1 ring-white/10">
               <div className="relative overflow-hidden rounded-[1.05rem] bg-cream">
@@ -1209,7 +1400,14 @@ export default function Landing({
                De marge hierboven is vh-clamped (krimpt mee op een lage
                vensterhoogte); de krimp-wrapper (finaleRef, hierboven om
                data-paneel heen) vangt de rest op als dat nog niet genoeg is. */}
-            <div className="mt-[clamp(0.5rem,1.2vh,1.5rem)] flex flex-col items-center gap-2">
+            {/* PROEF: op een telefoon staan de zekerheden onder de knoppen, en
+               daarvoor staat hieronder een eigen kopie. Deze blijft dus voor het
+               brede scherm. ⚠️ Waarom een kopie en geen verhuizing: dit blok zit
+               ín data-paneel en dat paneel wordt op een breed scherm door de
+               film geanimeerd (y, scale, autoAlpha). Haal je de zekerheden daar
+               weg, dan lopen ze niet meer mee met die beweging — en de brede
+               versie is af. Een kopie raakt de brede opbouw niet. */}
+            <div className="mt-[clamp(0.5rem,1.2vh,1.5rem)] flex flex-col items-center gap-2 max-sm:hidden">
               {/* Twee vaste rijen van twee i.p.v. één grid: bij een grid over
                  alle vier bepaalt het breedste chipje in een kolom de hele
                  kolombreedte, en dan staat een kort chipje ernaast (bv.
@@ -1230,6 +1428,65 @@ export default function Landing({
               ))}
             </div>
           </div>
+
+          {/* ⭐ DE TWEE KNOPPEN, ALLEEN OP DE TELEFOON (`sm:hidden`).
+             Op een breed scherm draait de film nog en daar hóórt hier niets: die
+             hero is één beweging van chaos naar overzicht, en een knop halverwege
+             zet daar een rem op. Bovendien is de brede versie af.
+
+             ⚠️ DIT BLOK STOND EERST ÍN `data-paneel` EN DAT WERKTE NIET. Een
+             volgnummer (`order`) geldt alleen tussen kinderen van dezelfde
+             flexbox; data-paneel is een gewoon blok, dus het nummer deed daar
+             niets en de knoppen bleven gewoon in het dashboardblok hangen — mét
+             de belofte eronder in plaats van erboven. Nu staan ze een niveau
+             hoger, naast het paneel, waar `contents` ze tot flex-kind maakt.
+             🔑 Zag ik niet aan de code: de vier `</div>`'s die ik voor het einde
+             van het paneel aanzag, sloten de binnenkant van de tablet af. Aan de
+             schermafdruk was het ook niet te zien, want in een blok stáát dit
+             blokje gewoon op de goede plek. Alleen de gemeten volgorde verried
+             het. Tel bij diep geneste opmaak niet de sluittekens maar vraag het
+             de browser: `element.parentElement`. */}
+          {/* ⚠️ `relative z-10` is GEEN opsmuk maar noodzaak, en het kostte me een
+             verkeerde diagnose. Toen dit blok nog ín data-paneel zat erfde het
+             diens z-10. Losgemaakt zakte het onder `data-daglaag` — de
+             gespikkelde papierlaag die als `absolute inset-0` over de hele hero
+             ligt. Gevolg: de knoppen wáren er (gemeten: 367×153 op de goede
+             plek, volledig ondoorzichtig) maar je zag ze niet.
+             🔑 "Het element is er en is zichtbaar" bewijst niet dat het IN BEELD
+             is. Een positielaag zonder z-index verliest het van elke
+             gepositioneerde laag die erna komt. Kijk bij onzichtbaar-maar-
+             aanwezig dus niet naar opacity maar naar wat eroverheen ligt. */}
+          <div className="relative z-10 flex w-[min(94vw,39rem)] flex-col gap-3 px-1 max-sm:order-4 sm:hidden">
+            {/* ⚠️ HIER STOND OOK "Bekijk de tools" EN DIE IS ER BEWUST UIT.
+               Besluit van de eigenaar: die knop bewaren we voor "De slimme
+               werkplek" verderop, waar hij al staat. Op het openingsscherm hoort
+               één actie — twee knoppen naast de belofte maken van een uitnodiging
+               een keuzemenu, en dat is precies de rust die deze proef zoekt.
+               De tools blijven bereikbaar: die sectie komt vanzelf, en er staat
+               ook nog een tegel-rij onderweg. */}
+            <BlobKnop href="/sign-up" className="w-full border-2 border-transparent px-5">
+              Probeer Avinka gratis
+            </BlobKnop>
+            {/* De wachtpost: een streepje van niets, precies onder de knoppen.
+               Zodra dit de bovenkant van het scherm uit is, schuift de balk in.
+               Zie de uitleg bij `wachtpost` bovenaan dit component. */}
+            <div ref={wachtpost} aria-hidden className="h-px w-full" />
+          </div>
+
+          {/* ⛔ HIER STONDEN DE VIER ZEKERHEDEN OP DE TELEFOON, EN DIE ZIJN ERUIT.
+             Besluit van de eigenaar 10-8: "ik vind die zekerheden onrustig, haal
+             ze op mobiel maar weg."
+             🔑 De les zit in de weg ernaartoe. Ik heb ze eerst netjes twee bij
+             twee gekregen (kortere tekst, andere paren, gemeten op drie
+             breedtes) — en toen bleek het probleem niet de UITLIJNING maar de
+             AANWEZIGHEID. Vier los zwevende pilletjes onder een rustig
+             openingsscherm zijn onrustig, hoe recht ze ook staan.
+             ⚠️ Dus: als iets er na het rechtzetten nog steeds niet goed uitziet,
+             vraag je af of het er wel hoort te staan. Ik was aan het schuiven
+             met iets dat weg moest.
+             Op een breed scherm blijven ze staan; daar horen ze bij de finale
+             van de film en hebben ze de ruimte. Het origineel zit in
+             `data-paneel` en heeft nu `max-sm:hidden`. */}
           </div>
 
           {/* Scrollhint */}
@@ -1325,6 +1582,29 @@ export default function Landing({
             style={{ right: "-12%", top: -120, transform: "rotate(4deg)" }}
             className="-z-10 hidden lg:block"
             tel={4}
+          />
+          {/* Telefoonversie, twee stuks. Boven dezelfde kiezel als op pc (rechts,
+             onder de golf vandaan); onder een tweede vorm links die met zijn
+             onderkant de afsluitende golf in duikt, zodat díé hem afsnijdt.
+             Dat is dezelfde ingreep als bovenaan, alleen aan de andere rand — op
+             pc gebeurt dat ook (zie het schelp-vlak in de privacysectie). */}
+          <KaartVlak
+            kleur={VLAK_MINT}
+            vorm="kiezel"
+            breedte={430}
+            hoogte={250}
+            style={{ right: "-28%", top: -70, transform: "rotate(4deg)" }}
+            className="-z-10 lg:hidden"
+            tel={4}
+          />
+          <KaartVlak
+            kleur={VLAK_MINT}
+            vorm="wig"
+            breedte={330}
+            hoogte={210}
+            style={{ left: "-30%", bottom: -70, transform: "rotate(-6deg)" }}
+            className="-z-10 lg:hidden"
+            tel={6}
           />
 
           {/* Hier stonden drie verf-klodders achter de kaarten. Die kaarten
@@ -1820,15 +2100,27 @@ function RailKop() {
            andere. Nu op de gedeelde maat. */}
         <h2 className={`max-w-2xl ${KOP_SECTIE}`}>Alle tools, één werkplek</h2>
         <p
-          className={`flex shrink-0 items-center gap-2 lg:pb-1 ${HAND_WENK}`}
+          /* max-sm:justify-center hoort bij de gecentreerde koppen: staat de kop
+             erboven in het midden en dit duwtje links, dan valt juist dit ding
+             op als scheef. */
+          /* max-sm:text-center MOET hier naast justify-center staan. Dit is een
+             flex-regel: justify-center zet het tekstblok als geheel in het
+             midden, maar zodra de tekst over twee regels valt lijnt hij bínnen
+             dat blok nog gewoon links uit. Dat leest als scheef. */
+          className={`flex shrink-0 items-center gap-2 max-sm:justify-center max-sm:text-center max-sm:[text-wrap:balance] lg:pb-1 ${HAND_WENK}`}
           style={{ fontFamily: "var(--font-hand)", color: KOP }}
         >
           {/* Hetzelfde pijltje als bij de polaroids, horizontaal gespiegeld
              (x wordt 40 − x), zodat het naar de kaarten linksonder wijst in
-             plaats van naar rechts. */}
+             plaats van naar rechts.
+             ⚠️ Op een telefoon staat hij uit. Daar staat de regel gecentreerd
+             en loopt hij over twee regels, en dan wijst het pijltje niet meer
+             naar de kaarten maar naar de tekst van zijn eigen tweede regel —
+             een aanwijspijl die nergens meer heen wijst. Op een breed scherm
+             staat de regel op één regel rechts naast de kop en klopt hij wel. */}
           <svg
             viewBox="0 0 40 28"
-            className="h-6 w-9 shrink-0"
+            className="h-6 w-9 shrink-0 max-sm:hidden"
             fill="none"
             stroke={KOP}
             strokeWidth="2"
@@ -1838,7 +2130,17 @@ function RailKop() {
             <path d="M38 4 C 26 6, 14 10, 8 22" />
             <path d="M14 20 L 7.5 23 L 6 16" />
           </svg>
-          sleep de rij opzij om ze allemaal te zien
+          {/* ⚠️ Het AANTIKKEN staat vooraan, en dat is de hele reden dat deze
+             regel is veranderd. Het slepen wijst zichzelf aan: de volgende
+             kaart piept er altijd half naast. Dat je een kaart kunt ÓPENEN wees
+             niets aan — de hint "Bekijk" op de kaart zit in een hover-regel, en
+             hover bestaat op een telefoon niet. Daar was dus geen enkel teken
+             dat er meer achter zat.
+             🔑 Een aanwijzing hoort te gaan over wat je NIET vanzelf ziet.
+             Tekst van de eigenaar; niet gladstrijken. Er stond ", en sleep",
+             en dat las als een opsomming in plaats van twee dingen die je kunt
+             doen. */}
+          tik een kaart aan, sleep de rij opzij voor de rest
         </p>
       </div>
     </div>
@@ -2064,7 +2366,7 @@ function ToolPaneel({
             data-paneelbeeld
             className="relative aspect-[16/9] overflow-hidden sm:aspect-auto sm:min-h-[22rem]"
           >
-            <KaartBeeld soort={kaart.id} />
+            <KaartBeeld soort={kaart.id} paneel />
             <div className="kaart-grain pointer-events-none absolute inset-0" aria-hidden />
           </div>
 
@@ -2251,8 +2553,10 @@ function RailKaarten({
 export function ToolRail() {
   const rail = useRef<HTMLDivElement>(null);
   const greep = useRef({ actief: false, startX: 0, startScroll: 0, vangt: 0 });
-  // Waar de muis of vinger neerkwam; zo weten we bij de klik of er gesleept is.
-  const neer = useRef({ x: 0, y: 0 });
+  /* Staat op waar zodra er ECHT een sleepbeweging is begonnen. Zie isVersleept.
+     De beginwaarde is met opzet `false`: gebeurt er onverwacht niets met dit
+     vlaggetje, dan opent een kaart gewoon. */
+  const gesleept = useRef(false);
   const [kanTerug, setKanTerug] = useState(false);
   const [kanVerder, setKanVerder] = useState(true);
   const [gezien, setGezien] = useState<boolean[]>(() => KAARTEN.map(() => false));
@@ -2267,12 +2571,36 @@ export function ToolRail() {
     () => null,
   );
 
-  /* Een sleepbeweging mag geen kaart openen. We vergelijken daarom waar de
-     klik viel met waar de muis neerkwam: meer dan een paar pixels verschil is
-     slepen geweest. Een klik via het toetsenbord heeft geen positie
-     (detail 0) en opent altijd. */
-  const isVersleept = (e: ReactMouseEvent) =>
-    e.detail !== 0 && Math.hypot(e.clientX - neer.current.x, e.clientY - neer.current.y) > 6;
+  /* Een sleepbeweging mag geen kaart openen.
+
+     ⚠️ HIER IS HET TWEE KEER MISGEGAAN, EN DE TWEEDE KEER IS DE LEERZAAMSTE.
+     Wat er stond was: vergelijk waar de klik viel met waar de aanwijzer
+     neerkwam, en is dat meer dan 6 pixels, dan was het slepen. Op een telefoon
+     opende daardoor geen enkele kaart. Twee dingen mis:
+
+     1. Die 6 pixels is afgesteld met een muis in de hand. Een vinger staat
+        nooit stil; Android rekent zelf met zo'n 8 pixels speling voor een tik.
+     2. En dat was niet eens de echte oorzaak. De vergelijking leunde op een
+        `pointerdown` die eerst langs moest komen om het beginpunt te zetten.
+        Kwam die er niet, dan stond het beginpunt nog op 0,0 — en dan lijkt
+        élke tik ergens midden op het scherm een sleep van honderden pixels.
+        Eén ontbrekende gebeurtenis en de hele rij is dood.
+
+     🔑 DE LES: een beveiliging die standaard BLOKKEERT als er iets ontbreekt,
+     is verkeerd om. Draai hem om, zodat het gewone geval werkt tenzij je het
+     bijzondere geval echt hebt zien gebeuren. Daarom zetten we nu een vlaggetje
+     op het moment dat er aantoonbaar gesleept wordt (dat is in `beweeg`, en dat
+     gebeurt alleen bij een muis), in plaats van achteraf uit twee coördinaten
+     te concluderen wat er gebeurd zal zijn. Geen drempel meer, en niets om
+     verkeerd af te stellen.
+
+     Bij aanraking is de beveiliging sowieso overbodig: schuift een vinger ver
+     genoeg om te schuiven, dan scrollt de rij en stuurt de browser helemaal
+     GEEN klik. Daar mogen we de browser dus vertrouwen.
+
+     `e.detail !== 0` blijft staan voor het toetsenbord: zo'n klik heeft geen
+     positie en hoort altijd te openen, ook vlak na een sleep met de muis. */
+  const isVersleept = (e: ReactMouseEvent) => e.detail !== 0 && gesleept.current;
 
   const opOpenen = (index: number, vanaf: DOMRect, e: ReactMouseEvent) => {
     if (isVersleept(e)) return;
@@ -2327,6 +2655,7 @@ export function ToolRail() {
     io.observe(el);
     return () => io.disconnect();
   }, []);
+
   useEffect(() => {
     if (!wakker) return;
     bijScroll();
@@ -2350,7 +2679,9 @@ export function ToolRail() {
      browser de klik af bij de rail in plaats van bij de kaart, en opent er
      dus nooit iets. */
   const pakVast = (e: ReactPointerEvent<HTMLDivElement>) => {
-    neer.current = { x: e.clientX, y: e.clientY };
+    // Elke nieuwe aanraking of muisdruk begint schoon; pas als er daarna echt
+    // gesleept wordt gaat het vlaggetje om.
+    gesleept.current = false;
     const el = rail.current;
     if (e.pointerType !== "mouse" || !el) return;
     greep.current = { actief: true, startX: e.clientX, startScroll: el.scrollLeft, vangt: 0 };
@@ -2361,6 +2692,10 @@ export function ToolRail() {
     const verzet = e.clientX - greep.current.startX;
     if (!greep.current.vangt) {
       if (Math.abs(verzet) <= 5) return;
+      // Hier is het aantoonbaar slepen: de rij gaat mee met de muis. Dit is het
+      // enige punt waar het vlaggetje omgaat, en het wordt alleen bereikt via
+      // een muis (bij aanraking scrollt de browser zelf).
+      gesleept.current = true;
       greep.current.vangt = e.pointerId;
       el.setPointerCapture(e.pointerId);
       el.classList.add("sleept");
@@ -2489,7 +2824,20 @@ function Tafelgroep({
 }
 
 /* ── De kaartbeelden: acht kleine werelden in de merktaal. ─────────────── */
-export function KaartBeeld({ soort }: { soort: string }) {
+/* ⚠️ `paneel` = deze tekening staat in de OPENGEKLAPTE kaart, niet op de kaart
+   zelf. Dat is een wezenlijk ander vlak: op de kaart is het staand (ongeveer
+   296×370), in het paneel op een telefoon LIGGEND (16:9, dus zo'n 358×201).
+   🔑 Alles in deze tekeningen staat op procenten van de hoogte. Halveert die
+   hoogte, dan schuiven drie losjes gestapelde elementen over elkaar heen — en
+   dat is precies wat de eigenaar zag bij Oudercontact en Draaiboek. De
+   elementen met een VASTE afstand van boven (`top-12`) zijn daarbij de boosdoener:
+   die blijven even ver van de rand terwijl de rest naar elkaar toe kruipt.
+   ⚠️ Ik heb bewust NIET het beeldvak hoger gemaakt. Dat leek de goedkope
+   oplossing, maar een vierkant vlak is de enige maat waarop álles vanzelf goed
+   valt, en dan begint de uitleg pas ónder de vouw — je opent een tool en ziet
+   alleen een plaatje. Bovendien had het de zes tekeningen aangeraakt die volgens
+   de eigenaar al goed stonden. Per tekening bijsturen is saaier en veiliger. */
+export function KaartBeeld({ soort, paneel = false }: { soort: string; paneel?: boolean }) {
   if (soort === "rapporten")
     return (
       <div className="absolute inset-0 bg-ink">
@@ -2530,7 +2878,7 @@ export function KaartBeeld({ soort }: { soort: string }) {
           <p className="font-hand mt-6 self-start text-xl text-white sm:mt-0">groep 5 · middenmeting</p>
           {/* Per vak één balk, niet per rekendomein: een toetsronde gaat net
              zo goed over spelling en begrijpend lezen. */}
-          <div className="mt-4 space-y-3" aria-hidden>
+          <div className="mt-4 space-y-3 max-sm:mt-2 max-sm:space-y-1.5" aria-hidden>
             {[
               { naam: "Rekenen", breed: 78, aandacht: false },
               { naam: "Begrijpend lezen", breed: 64, aandacht: false },
@@ -2555,7 +2903,19 @@ export function KaartBeeld({ soort }: { soort: string }) {
               </div>
             ))}
           </div>
-          <p className="mt-auto pt-4 text-sm font-bold leading-6 text-white">
+          {/* ⚠️ DE KRAPPERE MARGES HIERBOVEN EN HIER ZIJN GEEN SMAAK MAAR EEN FIX.
+             Op de mobiele kaart liep deze zin met zijn onderkant tot 336 terwijl
+             de toolnaam "Toetsanalyse" op 326 begint — de laatste regel stond
+             dus half achter de naam.
+             🔑 De oorzaak zat NIET bij deze zin en ook niet bij de `pb-16` van de
+             kolom: die 64px is ruim genoeg voor de naam. De inhoud van de hele
+             tekening (regel, vier balken, deze zin) was op een kaart van 370px
+             simpelweg ~30px te hoog, en dan kan `mt-auto` niets meer duwen —
+             het spul loopt gewoon voorbij de padding.
+             Daarom is er ruimte weggehaald tússen de onderdelen, en is de
+             LETTER met rust gelaten. Op een breed scherm is de kaart hoger en
+             verandert er niets. */}
+          <p className="mt-auto pt-4 text-sm font-bold leading-6 text-white max-sm:pt-1">
             Sofie en Yassin vallen op bij spelling: werkwoorden.
           </p>
         </div>
@@ -2567,22 +2927,56 @@ export function KaartBeeld({ soort }: { soort: string }) {
       <div className="absolute inset-0 bg-accent">
         <div className="absolute -bottom-24 -right-20 h-72 w-72 rounded-full bg-white/30 blur-3xl" aria-hidden />
         <div className="absolute -left-14 -top-14 h-56 w-56 rounded-full bg-ink/10 blur-3xl" aria-hidden />
-        {/* het weekbericht */}
-        <div className="absolute left-5 right-12 top-[22%] -rotate-1 rounded-2xl rounded-bl-md bg-white p-4 shadow-xl">
-          <p className="text-sm font-bold text-ink">Beste ouders, wat een week!</p>
-          <p className="mt-1 text-sm leading-6 text-ink/70">
+        {/* het weekbericht.
+           ⚠️ IN HET PANEEL OP EEN TELEFOON MOETEN BEIDE BUBBELS KRIMPEN, en dat
+           is geen smaakkeuze maar rekenwerk: ze waren samen 194px hoog in een
+           vak van 193. Alleen verschuiven loste het dus nooit op — waar je de
+           onderste ook zet, hij botst. Met p-3 en een kleinere letter passen ze
+           allebei mét ruimte ertussen.
+           🔑 Als twee dingen niet naast of onder elkaar passen, is verschuiven
+           verspilde moeite; dan moet er iets kleiner of iets weg. Ik heb dat hier
+           twee keer moeten meten voor ik het doorhad. */}
+        <div
+          className={`absolute left-5 right-12 top-[22%] -rotate-1 rounded-2xl rounded-bl-md bg-white p-4 shadow-xl ${
+            paneel ? "max-sm:top-[18%] max-sm:p-3" : ""
+          }`}
+        >
+          <p className={`text-sm font-bold text-ink ${paneel ? "max-sm:text-xs" : ""}`}>
+            Beste ouders, wat een week!
+          </p>
+          <p className={`mt-1 text-sm leading-6 text-ink/70 ${paneel ? "max-sm:text-xs max-sm:leading-5" : ""}`}>
             De spreekbeurten waren een feestje, en woensdag…
           </p>
         </div>
-        {/* het antwoord van thuis */}
-        <div className="absolute bottom-[24%] left-12 right-5 rotate-1 rounded-2xl rounded-br-md bg-ink p-4 shadow-xl">
-          <p className="text-sm leading-6 text-cream">Wat leuk om zo mee te kijken. Dankjewel! ❤️</p>
+        {/* het antwoord van thuis.
+           In het paneel op een telefoon zakt dit blokje naar de onderrand: bij
+           bottom-[24%] van 201px begint het op 97 terwijl het bericht hierboven
+           tot 120 loopt, en dan liggen de twee bubbels over elkaar. */}
+        <div
+          className={`absolute bottom-[24%] left-12 right-5 rotate-1 rounded-2xl rounded-br-md bg-ink p-4 shadow-xl ${
+            paneel ? "max-sm:bottom-3 max-sm:p-3" : ""
+          }`}
+        >
+          {/* ⚠️ Hier stond een ❤️ achter "Dankjewel!". Eruit op verzoek van de
+             eigenaar, en op ÁLLE schermen — dit stukje tekening heeft geen
+             aparte mobiele versie, dus het verdwijnt ook op pc. Dat was zijn
+             expliciete keuze ("als dat op pc ook is, ook weghalen"). */}
+          <p className={`text-sm leading-6 text-cream ${paneel ? "max-sm:text-xs max-sm:leading-5" : ""}`}>
+            Wat leuk om zo mee te kijken. Dankjewel!
+          </p>
         </div>
         {/* Zit iets lager dan de andere kaarten hun hoektekst: deze regel is
            breed genoeg om tot voorbij het midden te lopen, en het tijdwinst-
            chipje rechtsboven viel er anders overheen. Onder het chipje langs
            houdt de regel zijn volledige tekst. */}
-        <p className="font-hand absolute left-6 top-12 -rotate-2 text-xl text-ink/80">
+        {/* De vaste `top-12` is hier de boosdoener in het paneel: 48px van boven
+           blijft 48px, ook als het vlak nog maar 201px hoog is, en dan loopt deze
+           regel dwars door het weekbericht dat op 22% begint. */}
+        <p
+          className={`font-hand absolute left-6 top-12 -rotate-2 text-xl text-ink/80 ${
+            paneel ? "max-sm:top-1 max-sm:text-base" : ""
+          }`}
+        >
           vrijdag 16:02 · verstuurd
         </p>
       </div>
@@ -2665,7 +3059,16 @@ export function KaartBeeld({ soort }: { soort: string }) {
            hele vlak en kwam de rechterbovenhoek onder het tijdwinst-chipje
            uit; daar staat het nu iets smaller en iets lager. Vanaf sm is er
            ruimte zat en blijft de oude maat staan. */}
-        <div className="absolute left-1/2 top-[50%] w-[76%] -translate-x-1/2 -translate-y-1/2 rotate-2 rounded-xl bg-white p-4 shadow-2xl sm:top-[46%] sm:w-[80%] sm:p-5">
+        {/* ⚠️ `max-sm:scale-90` en niet een kleinere `w-[…]`, en dat scheelt echt.
+           Smaller maken laat de tekst binnenin opnieuw afbreken: de woordzoeker
+           is een raster van vaste hokjes, dus die krimpt niet mee en het blad
+           wordt juist HOGER. Schalen verkleint alles in verhouding, inclusief de
+           letters, en kan dus niets herschikken.
+           🔑 In Tailwind v4 zijn translate, rotate en scale losse CSS-eigen-
+           schappen, dus deze stapelen netjes op de -translate-x-1/2 hiernaast —
+           in v3 hadden ze elkaar overschreven. En omdat het draaipunt het midden
+           is, blijft het blad op precies dezelfde plek staan. */}
+        <div className="absolute left-1/2 top-[50%] w-[76%] -translate-x-1/2 -translate-y-1/2 rotate-2 rounded-xl bg-white p-4 shadow-2xl max-sm:scale-90 sm:top-[46%] sm:w-[80%] sm:p-5">
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-ink/40">
             Werkblad · spelling
           </p>
@@ -2717,7 +3120,20 @@ export function KaartBeeld({ soort }: { soort: string }) {
             </ul>
           </div>
         </div>
-        <p className="font-hand absolute left-6 top-5 -rotate-2 text-xl text-white">
+        {/* ⛔ Weg in het opengeklapte paneel, maar ALLEEN op een telefoon.
+           Besluit van de eigenaar, in twee stappen: eerst "eruit bij
+           opengeklapt", daarna "op pc moet die wel blijven, daar is het plaatje
+           goed". Dat klopt ook met wat je meet — in het paneel op pc staat de
+           tekening in een hoge, smalle kolom en heeft die regel gewoon zijn
+           eigen plek; op een telefoon is het vak liggend en ligt hij over het
+           werkblad heen.
+           ⚠️ Dus `max-sm:hidden` binnen paneel-modus, en niet `!paneel`: dat
+           laatste haalde hem ook op pc weg. */}
+        <p
+          className={`font-hand absolute left-6 top-5 -rotate-2 text-xl text-white ${
+            paneel ? "max-sm:hidden" : ""
+          }`}
+        >
           klaar om te printen
         </p>
       </div>
@@ -2730,7 +3146,14 @@ export function KaartBeeld({ soort }: { soort: string }) {
         {/* Iets lager dan de andere hoekteksten, net als bij oudercontact: dit
            labeltje is breed genoeg om op de smalle kaart tot onder het
            tijdwinst-chipje rechtsboven te lopen. */}
-        <p className="absolute left-5 top-12 -rotate-2 rounded-lg bg-ink px-3 py-1.5 font-display text-sm font-bold text-cream shadow-md">
+        {/* Zelfde val als bij oudercontact: `top-12` blijft 48px terwijl de
+           tijdlijn eronder op 24% staat. In het paneel op een telefoon is 24%
+           nog maar 48px, dus dan valt de titel precies achter het eerste tijdstip. */}
+        <p
+          className={`absolute left-5 top-12 -rotate-2 rounded-lg bg-ink px-3 py-1.5 font-display text-sm font-bold text-cream shadow-md ${
+            paneel ? "max-sm:top-2" : ""
+          }`}
+        >
           Kerstdiner · het draaiboek
         </p>
         {/* de tijdlijn van de avond */}
@@ -2893,6 +3316,15 @@ function StijlBlok() {
       }
       .kaart-knop:focus-visible .kaart-hint { opacity: 1; }
       .kaart-knop:focus-visible .kaart-hint > span { transform: translateY(0); }
+
+      /* ⚠️ HIER STOND EVEN: "Bekijk" permanent tonen op een apparaat zonder
+         muis, omdat die hint in de hover-mediaquery zit en daar op een telefoon
+         dus nooit verschijnt. Afgekeurd door de eigenaar — een knop die er
+         altijd op ligt maakt de kaart druk. De constatering blijft wel staan:
+         op een telefoon vertelt niets dat een kaart open kan. Als daar iets
+         voor moet komen, dan iets rustigers dan deze balk.
+         (Schrijf hier geen accent grave: dit hele blok is één template-string
+         in JS, dus zo'n teken sluit de stijl halverwege af.) */
 
       /* De tekst in het paneel komt net na de beweging binnen. */
       .paneel-tekst > * {

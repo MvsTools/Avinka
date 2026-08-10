@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
@@ -559,74 +560,180 @@ function DraadScene() {
 function StapelScene() {
   const [volgorde, setVolgorde] = useState<number[]>(() => KAARTEN.map((_, i) => i));
   const [omgedraaid, setOmgedraaid] = useState<boolean[]>(() => KAARTEN.map(() => false));
-  const [vertrekkend, setVertrekkend] = useState(false);
+  /* De kaart die je zojuist wegveegde en die nog het scherm uit vliegt. Hij is
+     op dat moment al GEEN bovenste kaart meer — hij ligt er alleen nog even
+     overheen als losse laag, zodat hij niets blokkeert. */
+  const [vliegt, setVliegt] = useState<{ idx: number; kant: number; dx: number; omgedraaid: boolean } | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
-  const greep = useRef<{ startY: number; startX: number; laatsteY: number; laatsteT: number; snelheid: number; bewogen: boolean } | null>(null);
-  /* zelfde click-na-veeg-vlag als op desktop */
-  const netGeveegd = useRef(false);
+  /* `richting` blijft null tot duidelijk is welke kant de vinger op gaat.
+     Zodra dat "omhoog/omlaag" is laten we de veeg helemaal los: dan hoort hij
+     bij de PAGINA en niet bij de stapel. */
+  const greep = useRef<{
+    startY: number; startX: number; laatsteX: number; laatsteT: number;
+    snelheid: number; bewogen: boolean; richting: "zij" | "vert" | null;
+  } | null>(null);
+  /* ⛔ HIER STOND `netGeveegd`: een vlag die de click na een veeg moest
+     onderdrukken. Die is niet meer nodig nu het omdraaien op pointerup gebeurt
+     en er dus geen click meer in het spel is. Niet terugbouwen — die vlag WAS
+     de bug (zie opUp). */
 
   const bovenste = volgorde[0];
 
-  const zetTransform = (dy: number, dx: number, animatie: string) => {
+  /* De bovenste plek schoonvegen zodra er een andere kaart op ligt.
+     ⚠️ `useLayoutEffect` en niet `useEffect`: deze moet draaien ná het opnieuw
+     tekenen maar vóór het schilderen. Met een gewone useEffect kan de browser
+     er een beeld tussen schuiven waarin de nieuwe kaart nog de verschoven
+     stand van de vorige draagt, en dat is precies het soort hapering waar we
+     hier vanaf willen. */
+  useLayoutEffect(() => {
+    const el = topRef.current;
+    if (!el) return;
+    el.style.transition = "none";
+    el.style.transform = "translate3d(0,0,0)";
+  }, [bovenste]);
+
+  /* ⚠️ DE KAART GAAT NU OPZIJ, NIET OMHOOG. Zie de uitleg bij touchAction
+     hieronder waarom. De verticale verplaatsing is alleen nog een lichte dip:
+     een polaroid die je opzij schuift zakt een beetje mee, dat leest als
+     gewicht. */
+  const zetTransform = (dx: number, animatie: string) => {
     const el = topRef.current;
     if (!el) return;
     el.style.transition = animatie;
-    el.style.transform = `translate3d(${dx * 0.3}px, ${dy}px, 0) rotate(${dx * 0.04}deg)`;
+    el.style.transform = `translate3d(${dx}px, ${Math.abs(dx) * 0.06}px, 0) rotate(${dx * 0.05}deg)`;
   };
 
   const opDown = (e: ReactPointerEvent) => {
-    if (vertrekkend) return;
-    greep.current = { startY: e.clientY, startX: e.clientX, laatsteY: e.clientY, laatsteT: performance.now(), snelheid: 0, bewogen: false };
+    /* ⚠️ Hier stond `if (vertrekkend) return;`. Weg: de wegvliegende kaart is
+       geen bovenste kaart meer, dus er is niets om op te wachten. Je mag de
+       volgende meteen pakken. */
+    greep.current = {
+      startY: e.clientY, startX: e.clientX, laatsteX: e.clientX,
+      laatsteT: performance.now(), snelheid: 0, bewogen: false, richting: null,
+    };
   };
   const opMove = (e: ReactPointerEvent) => {
     const g = greep.current;
-    if (!g || vertrekkend) return;
+    if (!g) return;
     const dy = e.clientY - g.startY;
     const dx = e.clientX - g.startX;
+
+    /* 🔑 DE KERN VAN DE FIX: pas bij 8px beweging bepalen we welke kant deze
+       veeg op wil, en dat besluit staat daarna vast voor de rest van het
+       gebaar. Gaat hij vooral omhoog of omlaag, dan laten we hem LOS — geen
+       pointer-capture, geen transform — en scrolt de pagina gewoon door.
+       ⚠️ Dat besluit moet één keer vallen en niet elke muisbeweging opnieuw:
+       tijdens een schuine veeg wisselt de grootste van de twee anders heen en
+       weer, en dan pakt en lost de kaart om beurten. */
     if (!g.bewogen && Math.hypot(dx, dy) > 8) {
       g.bewogen = true;
-      (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+      g.richting = Math.abs(dx) > Math.abs(dy) ? "zij" : "vert";
+      if (g.richting === "zij") (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
     }
-    if (g.bewogen) {
+    if (g.bewogen && g.richting === "zij") {
       const nu = performance.now();
-      g.snelheid = (e.clientY - g.laatsteY) / Math.max(1, nu - g.laatsteT);
-      g.laatsteY = e.clientY;
+      g.snelheid = (e.clientX - g.laatsteX) / Math.max(1, nu - g.laatsteT);
+      g.laatsteX = e.clientX;
       g.laatsteT = nu;
-      /* omlaag slepen remt af: de stapel wil maar één kant op */
-      const gedempt = dy < 0 ? dy : dy * 0.25;
-      zetTransform(gedempt, dx, "none");
+      zetTransform(dx, "none");
     }
   };
   const opUp = (e: ReactPointerEvent) => {
     const g = greep.current;
     greep.current = null;
-    if (!g || vertrekkend) return;
-    netGeveegd.current = g.bewogen;
-    if (!g.bewogen) return; // klik → flip (via onClick)
-    const dy = e.clientY - g.startY;
-    const weg = dy < -90 || g.snelheid < -0.55;
-    if (weg) {
-      setVertrekkend(true);
-      zetTransform(-window.innerHeight * 0.9, e.clientX - g.startX, "transform 0.42s cubic-bezier(0.23, 1, 0.32, 1)");
-      window.setTimeout(() => {
-        setVolgorde((v) => [...v.slice(1), v[0]]);
-        setOmgedraaid((o) => o.map((val, i) => (i === bovenste ? false : val)));
-        const el = topRef.current;
-        if (el) {
-          el.style.transition = "none";
-          el.style.transform = "translate3d(0,0,0)";
-        }
-        setVertrekkend(false);
-      }, 430);
-    } else {
-      zetTransform(0, 0, "transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)");
-    }
-  };
-  const opKlik = () => {
-    if (netGeveegd.current || vertrekkend) {
-      netGeveegd.current = false;
+    if (!g) return;
+    /* ⚠️ DEZE REGEL MOET VÓÓR DE VERTICALE UITSTAP STAAN. Zet je hem erna, dan
+       telt een verticale sleep als een gewone tik en klapt de foto om terwijl
+       je alleen wilde scrollen. Precies dat gebeurde in de test.
+       🔑 Een sleep is geen tik, ongeacht de richting. Dat de veeg niet voor ons
+       was betekent alleen dat de KAART niets doet, niet dat er niets gebeurde. */
+    /* ⭐⭐ HET OMDRAAIEN GEBEURT HIER, OP POINTERUP — NIET MEER OP EEN CLICK.
+       Dit is de derde en laatste ronde aan deze bug, en de vorige twee gingen
+       mis omdat ik de OORZAAK bestreed in plaats van de constructie.
+
+       Hoe het was: vegen luisterde naar pointer-events, omdraaien naar een
+       click. Een vlag (netGeveegd) moest de click onderdrukken die na een veeg
+       komt. Maar op een aanraakscherm is het niet gegarandeerd of, en hoe snel,
+       die click ná de veeg volgt. Kwam hij te laat, dan at hij de tik op die jij
+       daarna deed — en of dat gebeurde hing dus af van hoe snel je tikte. Dat is
+       exact wat de eigenaar beschreef: meteen tikken faalt, twee seconden
+       wachten werkt.
+
+       🔑 DE LES: als het gedrag van tijd afhangt, zoek dan niet naar de juiste
+       wachttijd maar naar de twee dingen die op elkaar wachten. Hier waren dat
+       twee soorten events voor één gebaar. Eén soort gebruiken laat de race
+       verdwijnen in plaats van hem te winnen.
+
+       Nu: heb je niet bewogen, dan is het een tik en draaien we hier meteen om.
+       Er is geen click meer bij betrokken, dus er valt niets te onderdrukken en
+       niets te missen. Het toetsenbord loopt apart via onKeyDown hieronder. */
+    if (g.richting === "vert") return; // die veeg was voor de pagina
+    if (!g.bewogen) {
+      setOmgedraaid((v) => v.map((o, i) => (i === bovenste ? !o : o)));
       return;
     }
+    const dx = e.clientX - g.startX;
+    /* ⚠️ Drempel van 90 naar 60px, en de snelheidsdrempel van 0,55 naar 0,40.
+       90px is een derde van de kaartbreedte (296px): met een gewone duimveeg
+       haal je dat lang niet altijd, en dan VEERT DE KAART TERUG — precies het
+       "hij zet zichzelf eerst recht" dat de eigenaar beschrijft. De veeg voelde
+       dus als mislukt terwijl hij hem wel degelijk had gemaakt.
+       🔑 Een drempel die je met een normale beweging niet haalt, leest niet als
+       "dat was te weinig" maar als "het ding werkt niet". */
+    const weg = Math.abs(dx) > 60 || Math.abs(g.snelheid) > 0.4;
+    if (weg) {
+      /* ⭐⭐ HIER ZAT DE ECHTE OORZAAK VAN "HIJ ZET ZICHZELF EERST RECHT" EN VAN
+         DE DODE EERSTE KLIK — één oorzaak, twee symptomen.
+
+         Zoals het was: de weggeveegde kaart bleef 430ms de bovenste, want pas
+         ná die tijd draaide de volgorde door. In die 430ms zag je dus de kaart
+         eronder, en die staat in de stapel scheef en iets kleiner (-2,4° en
+         0,945×). Na 430ms werd hij pas de echte bovenste en sprong hij naar
+         recht en op ware grootte. Dát is het rechtzetten.
+         En in diezelfde 430ms stond `vertrekkend` op waar, waardoor opKlik
+         élke tik negeerde. Tikte je in dat venster — en dat is precies wat je
+         doet, want de kaart ligt er al — dan gebeurde er niets. Vandaar de
+         eerste klik die niks doet.
+
+         🔑 Ik heb dit twee keer misgediagnosticeerd omdat mijn testen ná die
+         430ms tikten. De klacht ging over het venster zelf, niet over wat
+         erna gebeurt. Als een gebruiker zegt "eerst X, dan een dode klik, dan
+         pas Y", is de kans groot dat X en de dode klik hetzelfde wachtvenster
+         zijn — zoek naar de timer, niet naar twee losse fouten.
+
+         Nu: de volgorde draait METEEN door. De nieuwe kaart is dus onmiddellijk
+         de bovenste, staat recht en reageert op je eerste tik. De weggeveegde
+         kaart leeft nog kort verder als een losse laag die zelfstandig het
+         scherm uit vliegt (`vliegt`), zonder iets te blokkeren. */
+      const kant = dx < 0 ? -1 : 1;
+      /* ⚠️ `dx` gaat MEE naar de wegvliegende laag. Zonder dat begon zijn
+         animatie op 0 terwijl je vinger de kaart al 70px opzij had geschoven —
+         dus sprong hij eerst terug naar het midden en vloog dán pas weg. Dat is
+         de hapering die de eigenaar zag: "alsof die weer iets terug gaat".
+         🔑 Een overname tussen twee elementen moet beginnen waar de vorige
+         stopte. Anders zie je de naad, hoe kort hij ook is. */
+      setVliegt({ idx: bovenste, kant, dx, omgedraaid: omgedraaid[bovenste] });
+      setVolgorde((v) => [...v.slice(1), v[0]]);
+      setOmgedraaid((o) => o.map((val, i) => (i === bovenste ? false : val)));
+      /* ⚠️ De bovenste plek wordt NIET hier teruggezet. Dat gebeurde eerst wel,
+         en dat was de tweede helft van dezelfde hapering: deze regel loopt vóór
+         React opnieuw tekent, dus er kon één beeld voorbijkomen met de OUDE
+         kaart alweer keurig in het midden. Terugzetten gebeurt nu in een
+         useLayoutEffect op `bovenste` — ná het opnieuw tekenen, vóór het
+         schilderen, dus onzichtbaar. */
+      window.setTimeout(() => setVliegt(null), 460);
+    } else {
+      /* Terugveren mag, maar kort: dit is de bevestiging dat je veeg te klein
+         was, geen animatie om naar te kijken. Stond op 0,5s. */
+      zetTransform(0, "transform 0.28s cubic-bezier(0.23, 1, 0.32, 1)");
+    }
+  };
+  /* Alleen voor het toetsenbord: een knop reageert op Enter en spatie, en die
+     komen zonder pointer-events binnen. Een muisklik komt hier NIET langs — die
+     is al als pointerup afgehandeld — dus dubbel omdraaien kan niet. */
+  const opToets = (e: React.KeyboardEvent) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
     setOmgedraaid((v) => v.map((o, i) => (i === bovenste ? !o : o)));
   };
 
@@ -634,7 +741,50 @@ function StapelScene() {
 
   return (
     <div className="lg:hidden">
-      <div className="relative mx-auto" style={{ width: kaartBreed, height: `calc(${kaartBreed} * ${KAART_RATIO} + 44px)`, touchAction: "none" }}>
+      {/* ⚠️⚠️ `touchAction: "pan-y"` EN NIET "none" — HIER ZAT EEN ECHTE BUG.
+         Met "none" belooft dit blok aan de browser dat het ÉLKE veeg zelf
+         afhandelt, ook een verticale. Gevolg: wilde je bij de foto's gewoon
+         verder naar beneden scrollen, dan gebeurde er niets — je stond stil op
+         de polaroids. Gevonden door de eigenaar.
+         Met "pan-y" houdt de browser het verticale pannen zelf (de pagina
+         scrolt door) en krijgen wij alleen het horizontale gebaar.
+
+         🔑 De tweede helft van de fix zit in opMove: `touch-action` regelt wat
+         de BROWSER doet, maar onze eigen code moet dezelfde grens trekken.
+         Zonder de richtingtoets daar zou een schuine veeg alsnog de kaart
+         meenemen én de pagina laten scrollen.
+         🔑 En de derde helft is de tekst eronder: die zei "veeg omhoog". Een
+         gebaar veranderen zonder de aanwijzing te veranderen levert een
+         instructie op die actief tegenwerkt. */}
+      <div className="relative mx-auto" style={{ width: kaartBreed, height: `calc(${kaartBreed} * ${KAART_RATIO} + 44px)`, touchAction: "pan-y" }}>
+        {/* ⭐ DE WEGGEVEEGDE KAART, als losse laag bovenop.
+           Hij is op dit moment al geen bovenste kaart meer — de stapel is
+           doorgedraaid — en hij vliegt hier alleen nog het scherm uit.
+           `pointer-events-none` is essentieel: hij ligt over de nieuwe kaart
+           heen en mag geen enkele tik afvangen. Precies dat blokkeren was de
+           oude dode klik. */}
+        {vliegt && (
+          <div
+            key={`vliegt-${KAARTEN[vliegt.idx].naam}`}
+            aria-hidden
+            className="pk-schaduw pointer-events-none absolute left-0 top-0 z-20 h-full w-full rounded-[5px]"
+            /* ⚠️ Een ANIMATIE en geen transition. Een transition heeft een
+               beginwaarde nodig die al in de opmaak stond; dit element bestaat
+               pas sinds deze render, dus er valt niets te overbruggen en het zou
+               meteen op zijn eindstand staan — de kaart zou verdwijnen in plaats
+               van wegvliegen. Een animatie speelt wél af bij het verschijnen. */
+            style={{
+              /* het beginpunt van de animatie = waar je vinger losliet */
+              ["--pk-van-x" as string]: `${vliegt.dx}px`,
+              ["--pk-van-y" as string]: `${Math.abs(vliegt.dx) * 0.06}px`,
+              ["--pk-van-r" as string]: `${vliegt.dx * 0.05}deg`,
+              animation: `${vliegt.kant < 0 ? "pk-weg-links" : "pk-weg-rechts"} 0.4s cubic-bezier(0.32, 0, 0.67, 0) forwards`,
+            }}
+          >
+            <PolaroidKaart kaart={KAARTEN[vliegt.idx]} omgedraaid={vliegt.omgedraaid} klein />
+          </div>
+        )}
+
         {/* de stapel eronder: alleen de eerstvolgende twee, steeds iets
            kleiner en lager — genoeg om de stapel te voelen */}
         {[2, 1].map((diepte) => {
@@ -644,9 +794,49 @@ function StapelScene() {
             <div
               key={KAARTEN[idx].naam}
               className="pk-schaduw absolute left-0 top-0 h-full w-full rounded-[5px]"
+              /* ⚠️ GEEN TRANSITION HIER, en dat is een bewuste verwijdering.
+                 Er stond transform 0.45s. Gevolg: zodra je de bovenste kaart
+                 wegveegde, schoof de kaart eronder van de diepte-2-stand naar
+                 de diepte-1-stand — van +2° naar -2,4° en een stukje groter — en
+                 dat duurde bijna een halve seconde. De eigenaar zag dat als "hij
+                 zet zichzelf eerst recht" en wilde het weg.
+                 🔑 Wat hier animeerde was niet de kaart die je pakte maar de
+                 kaart eróchter. Zonder meten had ik de verkeerde aangepast: de
+                 nieuwe bovenste kaart stond meteen goed (transition 0s), de
+                 beweging kwam van de buur. Meet bij "er beweegt iets ongewenst"
+                 dus welk element het is, in plaats van het element te pakken
+                 waar je naar kijkt.
+                 De stapel staat nu meteen in zijn nieuwe stand. Dat mag: je hebt
+                 je aandacht toch bij de kaart die wegvliegt. */
+              /* ⭐⭐ DE KAART VLAK ONDER DE BOVENSTE LIGT ER PRECIES ONDER, en dat
+                 is wat "hij zet zichzelf als nog een beetje recht" wegneemt.
+
+                 Waar het steeds op stukliep: elke laag had zijn eigen stand
+                 (lager, kleiner, gedraaid). Kwam een kaart naar voren, dan moest
+                 hij dat verschil goedmaken. Animeerde ik dat, dan zag je hem
+                 rechtzetten; animeerde ik het niet, dan zag je hem springen. Ik
+                 heb die twee drie rondes tegen elkaar uitgeruild.
+
+                 🔑 De uitweg zit in hoe een ECHTE stapel werkt: daar beweegt er
+                 niets als je de bovenste eraf haalt. De kaarten eronder liggen
+                 stil; alleen het aantal wordt minder. Dat kan hier ook, want er
+                 zijn altijd meer kaarten:
+                 - laag 1 ligt EXACT onder de bovenste (geen verschuiving, geen
+                   schaal, geen draai). Komt hij naar voren, dan verandert er
+                   dus letterlijk niets aan hem — hij was al waar hij moet zijn.
+                 - laag 2 is het randje dat je ziet uitsteken. Als laag 1
+                   doorschuift naar boven, schuift laag 2 naar die onzichtbare
+                   plek en komt er een nieuwe kaart op laag 2. Dat randje is dus
+                   altijd bezet en staat altijd op dezelfde plek: het lijkt stil
+                   te liggen terwijl er onderhuids doorgeschoven wordt.
+                 🔑 De les: het probleem zat niet in de animatie maar in het
+                 model. Ik liet elke kaart een plek OPSCHUIVEN terwijl een stapel
+                 juist vaste plekken heeft die van bewoner wisselen. */
               style={{
-                transform: `translateY(${diepte * 16}px) scale(${1 - diepte * 0.055}) rotate(${diepte % 2 ? -2.4 : 2}deg)`,
-                transition: "transform 0.45s cubic-bezier(0.23, 1, 0.32, 1)",
+                transform:
+                  diepte === 1
+                    ? "translateY(0px) scale(1) rotate(0deg)"
+                    : "translateY(9px) scale(0.972) rotate(2deg)",
                 zIndex: 5 - diepte,
               }}
               aria-hidden
@@ -664,22 +854,38 @@ function StapelScene() {
           onPointerDown={opDown}
           onPointerMove={opMove}
           onPointerUp={opUp}
-          onPointerCancel={() => { greep.current = null; zetTransform(0, 0, "transform 0.5s cubic-bezier(0.23,1,0.32,1)"); }}
+          onPointerCancel={() => { greep.current = null; zetTransform(0, "transform 0.5s cubic-bezier(0.23,1,0.32,1)"); }}
         >
           <button
             type="button"
-            onClick={opKlik}
+            onKeyDown={opToets}
             aria-expanded={omgedraaid[bovenste]}
             aria-label={omgedraaid[bovenste] ? `Draai de foto van ${KAARTEN[bovenste].naam} terug` : `Lees de ervaring van ${KAARTEN[bovenste].naam} (${KAARTEN[bovenste].rol})`}
             className="pk-schaduw block h-full w-full select-none rounded-[5px] text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
           >
-            <PolaroidKaart kaart={KAARTEN[bovenste]} omgedraaid={omgedraaid[bovenste]} klein />
+            {/* ⚠️⚠️ DEZE `key` IS DE ECHTE FIX VOOR "hij zet zichzelf eerst recht".
+               Zonder key hergebruikt React ditzelfde stukje HTML voor de
+               vólgende polaroid. Het draai-laagje (.pk-flip) heeft een
+               transition van 0,65s, en dat laagje stond op rotateY(180deg) als
+               je de kaart had omgedraaid om te lezen. Veeg je dan door, dan
+               krijgt hetzelfde element rotateY(0deg) voor de nieuwe kaart — en
+               dus zie je de nieuwe foto binnendraaien alsof hij zichzelf
+               rechtzet. Met een key maakt React een nieuw element; dat begint
+               op 0 graden en heeft niets om vanaf te animeren.
+               🔑 Dit trad alleen op ALS je de kaart eerst had omgedraaid, en
+               precies zo gebruik je hem: tikken om te lezen, dan doorvegen.
+               Ik had eerder de verkeerde bron aangepast (de transition op de
+               stapelkaarten). Die was ook overbodig, maar dit was het.
+               🔑 Les: een resterende animatie na een wissel komt vaak niet van
+               je eigen code maar van HERGEBRUIKTE HTML. Vraag je bij "hij
+               animeert nog steeds" af of het element wel echt nieuw is. */}
+            <PolaroidKaart key={KAARTEN[bovenste].naam} kaart={KAARTEN[bovenste]} omgedraaid={omgedraaid[bovenste]} klein />
           </button>
         </div>
       </div>
 
       <p className="mt-6 text-center text-sm font-semibold text-ink/60">
-        tik om te lezen · veeg omhoog voor de volgende
+        tik om te lezen · veeg opzij voor de volgende
       </p>
       <div className="mt-3 flex items-center justify-center gap-1.5" aria-hidden>
         {KAARTEN.map((k, i) => (
@@ -725,6 +931,18 @@ export function WereldPolaroids() {
           hoogte={430}
           style={{ left: "-9%", top: 40, transform: "rotate(-7deg)" }}
           className="hidden lg:block"
+          tel={1}
+        />
+        {/* Telefoonversie: zelfde vorm en kant, ongeveer half zo groot. Hij
+           staat vóór de <Golf> hieronder in dezelfde laag — die volgorde IS de
+           ingreep, want zo snijdt de golf hem netjes op de veldrand af. */}
+        <KaartVlak
+          kleur={VLAK_MINT}
+          vorm="schelp"
+          breedte={330}
+          hoogte={235}
+          style={{ left: "-30%", top: 26, transform: "rotate(-7deg)" }}
+          className="lg:hidden"
           tel={1}
         />
 
@@ -790,6 +1008,20 @@ export function WereldPolaroids() {
            (zie SCHADUW_HELLING in Wereld.tsx) */
         .pk-schaduw { box-shadow: -7px 18px 38px -20px rgba(23,80,58,0.45), -1px 3px 8px -4px rgba(23,80,58,0.25); }
         .pk-flip { transition: transform 0.65s cubic-bezier(0.3, 0.9, 0.25, 1); }
+        /* De weggeveegde kaart die het scherm uit vliegt.
+           De from-waarden komen uit variabelen die per veeg worden meegegeven:
+           de stand waarin je hem losliet. Begon dit op 0, dan sprong de kaart
+           eerst terug naar het midden voor hij wegvloog.
+           De curve loopt versnellend (ease-in): hij heeft al snelheid van jouw
+           duim en hoort niet eerst opnieuw op gang te komen. */
+        @keyframes pk-weg-links {
+          from { transform: translate3d(var(--pk-van-x, 0px), var(--pk-van-y, 0px), 0) rotate(var(--pk-van-r, 0deg)); }
+          to { transform: translate3d(-125%, 30px, 0) rotate(-9deg); }
+        }
+        @keyframes pk-weg-rechts {
+          from { transform: translate3d(var(--pk-van-x, 0px), var(--pk-van-y, 0px), 0) rotate(var(--pk-van-r, 0deg)); }
+          to { transform: translate3d(125%, 30px, 0) rotate(9deg); }
+        }
         @media (prefers-reduced-motion: reduce) {
           /* geen 3D-draai: de kanten faden over elkaar heen */
           .pk-flip { transition: none; }

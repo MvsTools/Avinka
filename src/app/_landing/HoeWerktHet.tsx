@@ -1,4 +1,6 @@
-import type { CSSProperties } from "react";
+"use client";
+
+import { useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { Confetti, DONKER, KOP, KOP_SECTIE, KaartVlak, RUIS_OP_PAPIER, VLAK_PAPIER } from "./Wereld";
 
 /* ── Zo werkt het ───────────────────────────────────────────────────────────
@@ -37,6 +39,80 @@ const STAPPEN = [
 ];
 
 export function WereldHoeWerktHet() {
+  /* ⭐ ALLEEN VOOR DE TELEFOON: welke stap staat open. Op een breed scherm staan
+     alle drie de stappen gewoon naast elkaar en doet deze stand niets. */
+  const [actief, setActief] = useState(0);
+
+  /* ⭐ UIT WELKE KANT DE NIEUWE TEKST BINNENKOMT.
+     De eigenaar: "het voelt niet of er iets gebeurt, er verschijnt random
+     nieuwe tekst". Precies: het wisselen wérkte, maar zonder richting is een
+     wissel niet te onderscheiden van een herlading. Een stap naar rechts hoort
+     van rechts binnen te komen, een stap terug van links.
+     🔑 Dit geldt ook bij het TIKKEN op een cijfer, en dat is het aardige: uit
+     welk nummer je aantikt volgt vanzelf een richting. Springen van 01 naar 03
+     komt dus ook van rechts. Zo hoort tikken en vegen bij elkaar in plaats van
+     dat het twee losse dingen zijn. */
+  const [richting, setRichting] = useState(1);
+
+  const naarStap = (i: number) => {
+    const doel = Math.min(STAPPEN.length - 1, Math.max(0, i));
+    if (doel === actief) return;
+    setRichting(doel > actief ? 1 : -1);
+    setActief(doel);
+  };
+
+  /* ⭐ VEGEN ALS TWEEDE MANIER, NAAST DE CIJFERS.
+     De veegrail is hier ooit weggehaald omdat je vlak erboven bij de tools ook
+     al moest vegen. Dat argument gold toen vegen de ENIGE manier was: dan is het
+     twee keer hetzelfde werk. Nu blijven de cijfers gewoon staan en is vegen een
+     kortere weg voor wie hem kent. Keuze van de eigenaar, en het verschil is
+     wezenlijk: een tweede manier kost niets, een tweede verplichting wel.
+
+     🔑 De richtingtoets is overgenomen van de polaroids: bij 8px beweging valt
+     eenmalig het besluit "zijwaarts of verticaal", en bij verticaal laten we
+     het gebaar los zodat de pagina gewoon scrolt. Dat besluit staat daarna vast
+     voor de rest van de veeg — anders wisselt bij een schuine beweging de
+     grootste van de twee heen en weer.
+     ⚠️ Er zit hier bewust GEEN click-afhandeling in, precies om de reden die de
+     polaroids drie rondes kostte: één gebaar hoort aan één soort event te
+     hangen. De cijfers erboven zijn gewone knoppen en staan hier los van. */
+  const paneel = useRef<HTMLDivElement>(null);
+  const veeg = useRef<{ startX: number; startY: number; richting: "zij" | "vert" | null } | null>(null);
+
+  const zetSchuif = (dx: number, animatie: string) => {
+    const el = paneel.current;
+    if (!el) return;
+    el.style.transition = animatie;
+    el.style.transform = `translate3d(${dx}px, 0, 0)`;
+  };
+
+  const veegDown = (e: ReactPointerEvent) => {
+    veeg.current = { startX: e.clientX, startY: e.clientY, richting: null };
+  };
+  const veegMove = (e: ReactPointerEvent) => {
+    const v = veeg.current;
+    if (!v) return;
+    const dx = e.clientX - v.startX;
+    const dy = e.clientY - v.startY;
+    if (!v.richting && Math.hypot(dx, dy) > 8) {
+      v.richting = Math.abs(dx) > Math.abs(dy) ? "zij" : "vert";
+      if (v.richting === "zij") (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    }
+    if (v.richting !== "zij") return;
+    /* Aan de uiteinden mag je wel duwen maar veel minder ver: dat vertelt dat
+       er niets meer komt, zonder een grens te hoeven uitleggen. */
+    const eind = (dx > 0 && actief === 0) || (dx < 0 && actief === STAPPEN.length - 1);
+    zetSchuif(dx * (eind ? 0.18 : 0.55), "none");
+  };
+  const veegUp = (e: ReactPointerEvent) => {
+    const v = veeg.current;
+    veeg.current = null;
+    if (!v || v.richting !== "zij") return;
+    const dx = e.clientX - v.startX;
+    if (Math.abs(dx) > 50) naarStap(actief + (dx < 0 ? 1 : -1));
+    zetSchuif(0, "transform 0.26s cubic-bezier(0.23, 1, 0.32, 1)");
+  };
+
   return (
     /* overflow-x-clip in plaats van overflow-hidden: horizontaal blijft er
        geknipt (anders duwen de vlakken de pagina breder), maar verticaal mag
@@ -82,9 +158,127 @@ export function WereldHoeWerktHet() {
           Zo werkt het
         </h2>
 
+        {/* ⭐ OP EEN TELEFOON: DRIE TABBLADEN, GEEN VEEGRAIL.
+           Hier stond een veegbare rail (zelfde mechaniek als de toolrij). Eruit
+           op verzoek van de eigenaar, en zijn reden is de sterkste die er is:
+           "ik vind die schuifanimatie een beetje te veel omdat je dat bij de
+           tools ook moet doen". Twee keer dezelfde beweging vlak na elkaar leest
+           niet als een patroon maar als werk — en bij de tools verdient vegen
+           zijn plek (acht kaarten, je wilt bladeren), hier niet (drie stappen,
+           je wilt lezen).
+           🔑 De les erachter: een mechaniek beoordeel je niet op zichzelf maar
+           op wat er vlak boven staat. Deze rail was op zichzelf prima.
+
+           Nu: 01 · 02 · 03 naast elkaar bovenaan, en daaronder de tekst van de
+           gekozen stap. Stap 1 staat open bij het laden.
+           ⚠️ De actieve stap is aan DRIE dingen te zien, niet aan één: volle
+           kleur tegenover 30% doorzichtig, een groen streepje eronder, en een
+           zwaarder cijfer. Kleur alleen is niet genoeg — voor wie kleuren slecht
+           onderscheidt blijft het streepje en het gewicht over. */}
+        <div className="mt-9 sm:hidden">
+          <div
+            role="tablist"
+            aria-label="Zo werkt het, in drie stappen"
+            className="flex items-end justify-center gap-9"
+          >
+            {STAPPEN.map((s, i) => (
+              <button
+                key={s.titel}
+                type="button"
+                role="tab"
+                id={`stap-tab-${i}`}
+                aria-selected={i === actief}
+                aria-controls={`stap-paneel-${i}`}
+                onClick={() => naarStap(i)}
+                className="flex flex-col items-center gap-2 rounded-xl px-2 py-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              >
+                <span
+                  className={`font-display text-4xl leading-none tracking-tight transition-opacity duration-200 ${
+                    i === actief ? "font-black opacity-100" : "font-bold opacity-30"
+                  }`}
+                  style={{ color: KOP }}
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                {/* Het streepje staat er ALTIJD, alleen doorzichtig als de stap
+                   dicht is. Zo springt de rij niet op als je wisselt. */}
+                <span
+                  aria-hidden
+                  className={`h-1 w-8 rounded-full bg-brand transition-opacity duration-200 ${
+                    i === actief ? "opacity-100" : "opacity-0"
+                  }`}
+                />
+              </button>
+            ))}
+          </div>
+
+          {/* ⚠️ `min-h` is geen opsmuk: de drie teksten zijn niet even lang, en
+             zonder ondergrens springt alles onder deze sectie omhoog of omlaag
+             zodra je een ander nummer aantikt.
+             🔑 De waarde is GEMETEN, niet geschat: 152px is de langste stap, op
+             360 én op 390 breed (bij 360 worden er twee 152). Mijn eerste gok
+             was 13rem = 208px en dat gaf een lege band van een halve schermhoogte
+             onder de tekst. Meet zo'n ondergrens dus altijd na — te ruim is hier
+             net zo lelijk als te krap, alleen minder makkelijk te zien. */}
+          {/* `touchAction: pan-y` laat het verticale scrollen bij de browser en
+             geeft ons alleen het zijwaartse gebaar — zelfde afspraak als bij de
+             polaroids. `select-none` voorkomt dat je tijdens het vegen per
+             ongeluk de tekst selecteert. */}
+          <div
+            ref={paneel}
+            onPointerDown={veegDown}
+            onPointerMove={veegMove}
+            onPointerUp={veegUp}
+            onPointerCancel={() => { veeg.current = null; zetSchuif(0, "transform 0.26s cubic-bezier(0.23,1,0.32,1)"); }}
+            style={{ touchAction: "pan-y" }}
+            className="mt-7 min-h-[9.5rem] select-none text-center"
+          >
+            {STAPPEN.map((s, i) => (
+              <div
+                /* ⚠️ De `key` draagt `actief` mee, en dat is met opzet: daardoor
+                   maakt React bij elke wissel een nieuw element en speelt de
+                   animatie hieronder opnieuw af. Zonder dat verandert alleen de
+                   tekst en zie je niets bewegen — precies de klacht van de
+                   eigenaar: "er verschijnt random nieuwe tekst".
+                   🔑 Een animatie op een element dat blijft staan doet niets;
+                   een keyframe-animatie speelt alleen bij het VERSCHIJNEN. */
+                key={`${s.titel}-${actief}`}
+                role="tabpanel"
+                id={`stap-paneel-${i}`}
+                aria-labelledby={`stap-tab-${i}`}
+                hidden={i !== actief}
+                style={
+                  i === actief
+                    /* ⚠️ `backwards` en NIET `both`. Met `both` houdt het element
+                       de eindstand vast — maar ook de BEGINstand zolang de
+                       animatie niet is afgelopen, en die begint op doorzichtig.
+                       Loopt de animatie om wat voor reden niet af (achtergrond-
+                       tabblad, een browser die geen beelden tekent), dan blijft
+                       de tekst dus onzichtbaar hangen. Met `backwards` geldt de
+                       beginstand alleen vóór de start en valt het element daarna
+                       terug op zijn gewone opmaak: zichtbaar.
+                       🔑 Een animatie mag bepalen HOE iets verschijnt, nooit ÓF
+                       het er staat. Ik zag dit doordat de tekst in mijn
+                       testbrowser op doorzichtig bleef staan — daar worden geen
+                       beelden getekend, dus de animatie liep nooit af. */
+                    ? { animation: `${richting > 0 ? "stap-van-rechts" : "stap-van-links"} 0.38s cubic-bezier(0.23, 1, 0.32, 1) backwards` }
+                    : undefined
+                }
+              >
+                <h3 className="font-display text-xl font-black tracking-tight text-ink">{s.titel}</h3>
+                <p className="mt-3 text-base leading-7 text-ink/75">{s.tekst}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* De haarlijnen zitten op de kolommen zelf: links van kolom 2 en 3 op
-           een breed scherm, bovenop elke stap zodra ze onder elkaar staan. */}
-        <div data-reveal className="mt-12 grid gap-x-10 gap-y-10 sm:grid-cols-3">
+           een breed scherm. Dit raster is vanaf 640px, en daar verandert de
+           tabblad-opzet hierboven niets aan. */}
+        <div
+          data-reveal
+          className="mt-10 hidden gap-4 pb-2 sm:mt-12 sm:grid sm:grid-cols-3 sm:gap-x-10 sm:gap-y-10 sm:pb-0"
+        >
           {STAPPEN.map((s, i) => (
             <div
               key={s.titel}
@@ -94,25 +288,54 @@ export function WereldHoeWerktHet() {
                  in het stylesheet en niet van de volgorde hier — de eerste
                  kolom kreeg zo toch inspringing en lijnde niet meer uit met de
                  kop erboven. */
-              className={`border-ink/10 pt-7 sm:border-t-0 sm:pt-0 ${
-                i === 0 ? "border-t-0" : "border-t sm:border-l sm:pl-10"
+              className={`border-ink/10 pt-0 sm:w-auto sm:pt-0 ${
+                i === 0 ? "border-t-0" : "border-t-0 sm:border-l sm:pl-10"
               }`}
             >
               <p
-                className="font-display text-5xl font-black leading-none tracking-tight"
+                className="font-display text-4xl font-black leading-none tracking-tight sm:text-5xl"
                 style={{ color: KOP, opacity: 0.35 }}
                 aria-hidden
               >
                 {String(i + 1).padStart(2, "0")}
               </p>
-              <h3 className="mt-4 font-display text-2xl font-black tracking-tight text-ink">
+              <h3 className="mt-3 font-display text-xl font-black tracking-tight text-ink sm:mt-4 sm:text-2xl">
                 {s.titel}
               </h3>
-              <p className="mt-3 text-lg leading-8 text-ink/75">{s.tekst}</p>
+              <p className="mt-2 text-base leading-7 text-ink/75 sm:mt-3 sm:text-lg sm:leading-8">{s.tekst}</p>
             </div>
           ))}
         </div>
       </div>
+
+      {/* De tekst komt binnen van de kant waar je vandaan komt: naar de volgende
+         stap schuift hij van rechts, terug van links.
+         ⚠️ 90px, en dat is de DERDE waarde hier: eerst 18, toen 34, nu 90. De
+         eigenaar zag de eerste twee niet als een verandering. Dat is de les: de
+         klacht was "het voelt niet of er iets gebeurt", en op zo'n klacht is
+         subtiel verhogen zinloos — je blijft dan onder de drempel waar het pas
+         opvalt. Ga in één keer ruim over die drempel heen en zwak daarna af als
+         het te veel is; andersom kost het drie rondes.
+         De duur ging mee naar 0,38s: schuift iets ver maar snel, dan zie je een
+         flits in plaats van een beweging.
+         ⚠️ Bij "minder beweging" in de systeeminstellingen blijft alleen het
+         opkomen over: de richting is dan niet essentieel, de wissel wel.
+         (GEEN BACKTICKS in dit commentaar: dit blok staat in een
+         template-string.) */}
+      <style>{`
+        @keyframes stap-van-rechts {
+          from { opacity: 0; transform: translate3d(90px, 0, 0); }
+          to { opacity: 1; transform: translate3d(0, 0, 0); }
+        }
+        @keyframes stap-van-links {
+          from { opacity: 0; transform: translate3d(-90px, 0, 0); }
+          to { opacity: 1; transform: translate3d(0, 0, 0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          @keyframes stap-van-rechts { from { opacity: 0; } to { opacity: 1; } }
+          @keyframes stap-van-links { from { opacity: 0; } to { opacity: 1; } }
+        }
+      `}</style>
     </section>
   );
 }
