@@ -2843,7 +2843,7 @@ export function KaartBeeld({ soort }: { soort: string }) {
           <p className="font-hand mt-6 self-start text-xl text-white sm:mt-0">groep 5 · middenmeting</p>
           {/* Per vak één balk, niet per rekendomein: een toetsronde gaat net
              zo goed over spelling en begrijpend lezen. */}
-          <div className="mt-4 space-y-3" aria-hidden>
+          <div className="mt-4 space-y-3 max-sm:mt-2 max-sm:space-y-1.5" aria-hidden>
             {[
               { naam: "Rekenen", breed: 78, aandacht: false },
               { naam: "Begrijpend lezen", breed: 64, aandacht: false },
@@ -2868,7 +2868,19 @@ export function KaartBeeld({ soort }: { soort: string }) {
               </div>
             ))}
           </div>
-          <p className="mt-auto pt-4 text-sm font-bold leading-6 text-white">
+          {/* ⚠️ DE KRAPPERE MARGES HIERBOVEN EN HIER ZIJN GEEN SMAAK MAAR EEN FIX.
+             Op de mobiele kaart liep deze zin met zijn onderkant tot 336 terwijl
+             de toolnaam "Toetsanalyse" op 326 begint — de laatste regel stond
+             dus half achter de naam.
+             🔑 De oorzaak zat NIET bij deze zin en ook niet bij de `pb-16` van de
+             kolom: die 64px is ruim genoeg voor de naam. De inhoud van de hele
+             tekening (regel, vier balken, deze zin) was op een kaart van 370px
+             simpelweg ~30px te hoog, en dan kan `mt-auto` niets meer duwen —
+             het spul loopt gewoon voorbij de padding.
+             Daarom is er ruimte weggehaald tússen de onderdelen, en is de
+             LETTER met rust gelaten. Op een breed scherm is de kaart hoger en
+             verandert er niets. */}
+          <p className="mt-auto pt-4 text-sm font-bold leading-6 text-white max-sm:pt-1">
             Sofie en Yassin vallen op bij spelling: werkwoorden.
           </p>
         </div>
@@ -2889,7 +2901,11 @@ export function KaartBeeld({ soort }: { soort: string }) {
         </div>
         {/* het antwoord van thuis */}
         <div className="absolute bottom-[24%] left-12 right-5 rotate-1 rounded-2xl rounded-br-md bg-ink p-4 shadow-xl">
-          <p className="text-sm leading-6 text-cream">Wat leuk om zo mee te kijken. Dankjewel! ❤️</p>
+          {/* ⚠️ Hier stond een ❤️ achter "Dankjewel!". Eruit op verzoek van de
+             eigenaar, en op ÁLLE schermen — dit stukje tekening heeft geen
+             aparte mobiele versie, dus het verdwijnt ook op pc. Dat was zijn
+             expliciete keuze ("als dat op pc ook is, ook weghalen"). */}
+          <p className="text-sm leading-6 text-cream">Wat leuk om zo mee te kijken. Dankjewel!</p>
         </div>
         {/* Zit iets lager dan de andere kaarten hun hoektekst: deze regel is
            breed genoeg om tot voorbij het midden te lopen, en het tijdwinst-
@@ -2978,7 +2994,16 @@ export function KaartBeeld({ soort }: { soort: string }) {
            hele vlak en kwam de rechterbovenhoek onder het tijdwinst-chipje
            uit; daar staat het nu iets smaller en iets lager. Vanaf sm is er
            ruimte zat en blijft de oude maat staan. */}
-        <div className="absolute left-1/2 top-[50%] w-[76%] -translate-x-1/2 -translate-y-1/2 rotate-2 rounded-xl bg-white p-4 shadow-2xl sm:top-[46%] sm:w-[80%] sm:p-5">
+        {/* ⚠️ `max-sm:scale-90` en niet een kleinere `w-[…]`, en dat scheelt echt.
+           Smaller maken laat de tekst binnenin opnieuw afbreken: de woordzoeker
+           is een raster van vaste hokjes, dus die krimpt niet mee en het blad
+           wordt juist HOGER. Schalen verkleint alles in verhouding, inclusief de
+           letters, en kan dus niets herschikken.
+           🔑 In Tailwind v4 zijn translate, rotate en scale losse CSS-eigen-
+           schappen, dus deze stapelen netjes op de -translate-x-1/2 hiernaast —
+           in v3 hadden ze elkaar overschreven. En omdat het draaipunt het midden
+           is, blijft het blad op precies dezelfde plek staan. */}
+        <div className="absolute left-1/2 top-[50%] w-[76%] -translate-x-1/2 -translate-y-1/2 rotate-2 rounded-xl bg-white p-4 shadow-2xl max-sm:scale-90 sm:top-[46%] sm:w-[80%] sm:p-5">
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-ink/40">
             Werkblad · spelling
           </p>
