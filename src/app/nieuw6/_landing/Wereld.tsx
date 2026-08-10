@@ -720,9 +720,23 @@ export function WereldIntro() {
                 breed wél — dan lijkt de onderste knop groter. Alleen op de
                 telefoon, want op een breed scherm staan ze naast elkaar en is
                 de hoogte van de gevulde knop af. */}
-            <BlobKnop href="/sign-up" className="max-sm:w-full max-sm:border-2 max-sm:border-transparent">
-              <span className="sm:hidden">Probeer gratis</span>
-              <span className="hidden sm:inline">Probeer Avinka gratis</span>
+            {/* ⚠️ Hier stond op de telefoon de kortere tekst "Probeer gratis" en
+                op een breed scherm "Probeer Avinka gratis". Dat verschil had één
+                reden: de korte tekst was nodig om de twee knoppen NAAST elkaar
+                te laten passen op 360px. Nu ze onder elkaar over de volle
+                breedte staan is die reden weg — en dan bleef er alleen een
+                nadeel over: dezelfde tekst als de knop in de balk bovenaan, dus
+                twee keer "Probeer gratis" op één scherm.
+                🔑 Overal dezelfde knoptekst dus. Let bij zo'n afkorting altijd
+                op of de aanleiding er nog is; die verdwijnt stilletjes zodra je
+                de vorm eromheen verandert.
+                De krappere zijruimte op de telefoon (px-5 in plaats van px-8) is
+                nodig omdat de langere tekst met het vinkje ernaast anders niet
+                op één regel past op 360px — en `whitespace-nowrap` laat hem niet
+                afbreken. Bij een knop over de volle breedte doet die zijruimte
+                toch niets: de tekst staat gecentreerd. */}
+            <BlobKnop href="/sign-up" className="max-sm:w-full max-sm:border-2 max-sm:border-transparent max-sm:px-5">
+              Probeer Avinka gratis
             </BlobKnop>
             <BlobKnop href="#tools" variant="licht" className="max-sm:w-full">
               Bekijk de tools
