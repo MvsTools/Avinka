@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { Confetti, DONKER, KOP, KOP_SECTIE, KaartVlak, RUIS_OP_PAPIER, VLAK_PAPIER } from "./Wereld";
 
 /* ── Zo werkt het ───────────────────────────────────────────────────────────
@@ -42,6 +42,60 @@ export function WereldHoeWerktHet() {
   /* ⭐ ALLEEN VOOR DE TELEFOON: welke stap staat open. Op een breed scherm staan
      alle drie de stappen gewoon naast elkaar en doet deze stand niets. */
   const [actief, setActief] = useState(0);
+
+  /* ⭐ VEGEN ALS TWEEDE MANIER, NAAST DE CIJFERS.
+     De veegrail is hier ooit weggehaald omdat je vlak erboven bij de tools ook
+     al moest vegen. Dat argument gold toen vegen de ENIGE manier was: dan is het
+     twee keer hetzelfde werk. Nu blijven de cijfers gewoon staan en is vegen een
+     kortere weg voor wie hem kent. Keuze van de eigenaar, en het verschil is
+     wezenlijk: een tweede manier kost niets, een tweede verplichting wel.
+
+     🔑 De richtingtoets is overgenomen van de polaroids: bij 8px beweging valt
+     eenmalig het besluit "zijwaarts of verticaal", en bij verticaal laten we
+     het gebaar los zodat de pagina gewoon scrolt. Dat besluit staat daarna vast
+     voor de rest van de veeg — anders wisselt bij een schuine beweging de
+     grootste van de twee heen en weer.
+     ⚠️ Er zit hier bewust GEEN click-afhandeling in, precies om de reden die de
+     polaroids drie rondes kostte: één gebaar hoort aan één soort event te
+     hangen. De cijfers erboven zijn gewone knoppen en staan hier los van. */
+  const paneel = useRef<HTMLDivElement>(null);
+  const veeg = useRef<{ startX: number; startY: number; richting: "zij" | "vert" | null } | null>(null);
+
+  const zetSchuif = (dx: number, animatie: string) => {
+    const el = paneel.current;
+    if (!el) return;
+    el.style.transition = animatie;
+    el.style.transform = `translate3d(${dx}px, 0, 0)`;
+  };
+
+  const veegDown = (e: ReactPointerEvent) => {
+    veeg.current = { startX: e.clientX, startY: e.clientY, richting: null };
+  };
+  const veegMove = (e: ReactPointerEvent) => {
+    const v = veeg.current;
+    if (!v) return;
+    const dx = e.clientX - v.startX;
+    const dy = e.clientY - v.startY;
+    if (!v.richting && Math.hypot(dx, dy) > 8) {
+      v.richting = Math.abs(dx) > Math.abs(dy) ? "zij" : "vert";
+      if (v.richting === "zij") (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    }
+    if (v.richting !== "zij") return;
+    /* Aan de uiteinden mag je wel duwen maar veel minder ver: dat vertelt dat
+       er niets meer komt, zonder een grens te hoeven uitleggen. */
+    const eind = (dx > 0 && actief === 0) || (dx < 0 && actief === STAPPEN.length - 1);
+    zetSchuif(dx * (eind ? 0.18 : 0.55), "none");
+  };
+  const veegUp = (e: ReactPointerEvent) => {
+    const v = veeg.current;
+    veeg.current = null;
+    if (!v || v.richting !== "zij") return;
+    const dx = e.clientX - v.startX;
+    if (Math.abs(dx) > 50) {
+      setActief((i) => Math.min(STAPPEN.length - 1, Math.max(0, i + (dx < 0 ? 1 : -1))));
+    }
+    zetSchuif(0, "transform 0.26s cubic-bezier(0.23, 1, 0.32, 1)");
+  };
 
   return (
     /* overflow-x-clip in plaats van overflow-hidden: horizontaal blijft er
@@ -150,7 +204,19 @@ export function WereldHoeWerktHet() {
              was 13rem = 208px en dat gaf een lege band van een halve schermhoogte
              onder de tekst. Meet zo'n ondergrens dus altijd na — te ruim is hier
              net zo lelijk als te krap, alleen minder makkelijk te zien. */}
-          <div className="mt-7 min-h-[9.5rem] text-center">
+          {/* `touchAction: pan-y` laat het verticale scrollen bij de browser en
+             geeft ons alleen het zijwaartse gebaar — zelfde afspraak als bij de
+             polaroids. `select-none` voorkomt dat je tijdens het vegen per
+             ongeluk de tekst selecteert. */}
+          <div
+            ref={paneel}
+            onPointerDown={veegDown}
+            onPointerMove={veegMove}
+            onPointerUp={veegUp}
+            onPointerCancel={() => { veeg.current = null; zetSchuif(0, "transform 0.26s cubic-bezier(0.23,1,0.32,1)"); }}
+            style={{ touchAction: "pan-y" }}
+            className="mt-7 min-h-[9.5rem] select-none text-center"
+          >
             {STAPPEN.map((s, i) => (
               <div
                 key={s.titel}
