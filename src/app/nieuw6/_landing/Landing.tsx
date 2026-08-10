@@ -1584,6 +1584,29 @@ export default function Landing({
             className="-z-10 hidden lg:block"
             tel={4}
           />
+          {/* Telefoonversie, twee stuks. Boven dezelfde kiezel als op pc (rechts,
+             onder de golf vandaan); onder een tweede vorm links die met zijn
+             onderkant de afsluitende golf in duikt, zodat díé hem afsnijdt.
+             Dat is dezelfde ingreep als bovenaan, alleen aan de andere rand — op
+             pc gebeurt dat ook (zie het schelp-vlak in de privacysectie). */}
+          <KaartVlak
+            kleur={VLAK_MINT}
+            vorm="kiezel"
+            breedte={430}
+            hoogte={250}
+            style={{ right: "-28%", top: -70, transform: "rotate(4deg)" }}
+            className="-z-10 lg:hidden"
+            tel={4}
+          />
+          <KaartVlak
+            kleur={VLAK_MINT}
+            vorm="wig"
+            breedte={330}
+            hoogte={210}
+            style={{ left: "-30%", bottom: -70, transform: "rotate(-6deg)" }}
+            className="-z-10 lg:hidden"
+            tel={6}
+          />
 
           {/* Hier stonden drie verf-klodders achter de kaarten. Die kaarten
              zijn zelf al het kleurrijkste van de hele pagina (donker, groen,

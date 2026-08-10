@@ -994,6 +994,30 @@ export function WereldHerken() {
         className="z-[6] lg:hidden"
         tel={5}
       />
+      {/* Twee erbij op verzoek: dit veld is lang (drie kaarten plus de
+         handgeschreven regel) en droeg met één vorm te weinig.
+         Boven rechts komt onder de openingsgolf vandaan, onder rechts duikt de
+         afsluitende golf in. Samen met het vlak hierboven links geeft dat het
+         zigzagje dat op pc over de hele pagina loopt, maar dan bínnen één
+         sectie — want op een telefoon is dit veld zelf al twee schermen hoog. */}
+      <KaartVlak
+        kleur={VLAK_MINT}
+        vorm="ei"
+        breedte={320}
+        hoogte={185}
+        style={{ right: "-28%", top: -30, transform: "rotate(-7deg)" }}
+        className="z-[6] lg:hidden"
+        tel={2}
+      />
+      <KaartVlak
+        kleur={VLAK_MINT_ZACHT}
+        vorm="schelp"
+        breedte={340}
+        hoogte={215}
+        style={{ right: "-32%", bottom: -80, transform: "rotate(8deg)" }}
+        className="z-[6] lg:hidden"
+        tel={7}
+      />
       <Drijvers punten={[{ x: "46%", y: "88%", amber: true, tel: 2 }, { x: "88%", y: "80%", tel: 4 }]} />
 
       <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pb-28 pt-32 lg:pb-36 lg:pt-40">

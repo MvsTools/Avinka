@@ -260,6 +260,20 @@ export function WereldPrivacy() {
         className="lg:hidden"
         tel={3}
       />
+      {/* Tweede vlak, linksonder — ter hoogte van de drie AI-icoontjes. Op
+         verzoek van de eigenaar: die hoek was leeg terwijl het veld daar nog
+         doorloopt. Hij duikt met zijn onderkant de afsluitende golf in, dus die
+         snijdt hem af; op pc doet het schelp-vlak in deze sectie precies
+         hetzelfde (left -13%, bottom -105). */}
+      <KaartVlak
+        kleur={VLAK_MINT}
+        vorm="schelp"
+        breedte={330}
+        hoogte={210}
+        style={{ left: "-30%", bottom: -55, transform: "rotate(6deg)" }}
+        className="lg:hidden"
+        tel={7}
+      />
       <KaartVlak
         kleur={VLAK_MINT}
         vorm="koepel"

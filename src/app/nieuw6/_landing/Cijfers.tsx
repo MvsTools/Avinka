@@ -463,6 +463,30 @@ function Rapport({
           className="lg:hidden"
           tel={4}
         />
+        {/* Tweede vlak, onderin — op verzoek van de eigenaar. Links, tegenover
+           het vlak hierboven rechts.
+
+           ⚠️⚠️ `bottom: 20` EN GEEN NEGATIEVE WAARDE, en dat is hier geen smaak.
+           Deze sectie knipt verticaal NIET af (overflow-y: visible, terwijl de
+           andere mintvelden `overflow-hidden` hebben). Met bottom -60 stak het
+           vlak 76px onder de sectie uit en lag het als mintvlek op het papier
+           van de prijzensectie — precies wat de afspraak "vormen alleen in de
+           mintvelden" verbiedt.
+           🔑 Met +20 eindigt hij binnen de band van de afsluitende golf (die
+           loopt van 614 tot 684 in een sectie van 683), dus de golf schildert
+           eroverheen en je ziet hetzelfde "duikt eronder"-effect zonder het lek.
+           🔑 De bredere les: een negatieve `bottom` werkt alleen in een sectie
+           die afknipt. Kijk dus eerst naar de overflow van de sectie voor je een
+           vlak over de rand laat lopen — dat verschilt hier per sectie. */}
+        <KaartVlak
+          kleur={VLAK_MINT}
+          vorm="ei"
+          breedte={340}
+          hoogte={200}
+          style={{ left: "-30%", bottom: 20, transform: "rotate(-6deg)" }}
+          className="lg:hidden"
+          tel={7}
+        />
 
         {/* Vorm "zacht": een rustige dubbele deining die links en rechts op
            dezelfde hoogte begint en eindigt. Hij was als enige nog ongebruikt,
