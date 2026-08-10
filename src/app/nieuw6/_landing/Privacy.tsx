@@ -227,6 +227,39 @@ export function WereldPrivacy() {
   return (
     <section className="relative overflow-hidden" style={{ background: MINT_LICHT }} aria-label="Privacy">
       <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="oploopRechts" hoogte="h-[70px] sm:h-[118px]" />
+
+      {/* ⭐ DE ACHTERGRONDVLAKKEN OP DE TELEFOON.
+         Alle 23 vlakken op deze pagina staan op `hidden lg:block`, dus onder de
+         1024px was er nooit één te zien. Terug op verzoek van de eigenaar, met
+         zijn eigen aanwijzing erbij: ze mogen niet willekeurig midden in een vak
+         liggen maar horen uitgelijnd te zijn met de golven, en alleen in de
+         donkere (mint)velden.
+
+         🔑 HET RECEPT IS AFGEKEKEN VAN DE BREDE VERSIE, niet zelf verzonnen:
+         - de zijkant staat ALTIJD negatief (daar -9% tot -16%), dus het vlak
+           hangt half buiten beeld. Een vorm die helemaal past leest als een
+           plaatje; een vorm die doorloopt leest als achtergrond.
+         - verticaal zit hij BOVENIN het veld, vlak onder de golf die het veld
+           opent, of met een negatieve top zodat hij onder de kleurrand vandaan
+           komt.
+         - links en rechts wisselen elkaar af over de pagina.
+         ⚠️ En de regel uit mijn aantekeningen die me eerder drie rondes kostte:
+         een vlak moet ver VOORBIJ de golfcurve doorlopen. Eindigt het precies op
+         de curve, dan zie je niet de golf maar de bijna rechte onderrand van de
+         vorm zelf, en dat leest als een haperende rand.
+
+         De maten zijn ongeveer de helft van de brede versie: 720x340 wordt hier
+         360x190. Op een scherm van 390 is dat nog steeds bijna een schermbreedte,
+         dus het blijft achtergrond en geen vlek. */}
+      <KaartVlak
+        kleur={VLAK_MINT}
+        vorm="koepel"
+        breedte={360}
+        hoogte={190}
+        style={{ right: "-30%", top: 34, transform: "rotate(-5deg)" }}
+        className="lg:hidden"
+        tel={3}
+      />
       <KaartVlak
         kleur={VLAK_MINT}
         vorm="koepel"
