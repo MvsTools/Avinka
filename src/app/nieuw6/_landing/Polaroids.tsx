@@ -808,21 +808,35 @@ function StapelScene() {
                  waar je naar kijkt.
                  De stapel staat nu meteen in zijn nieuwe stand. Dat mag: je hebt
                  je aandacht toch bij de kaart die wegvliegt. */
-              /* ⚠️ DE MATEN ZIJN VERKLEIND, EN DAT IS DE FIX VOOR "hij schiet
-                 iets omhoog". De stapel stond op 16px per laag en 5,5% kleiner
-                 per laag. Zolang dat verschil werd wegGEANIMEERD zag je het als
-                 rechtzetten (afgekeurd); animeert het niet meer, dan moet de
-                 kaart die naar voren komt datzelfde verschil in één beeld
-                 overbruggen — en dat leest als een sprong omhoog.
-                 🔑 Het is dus geen keuze tussen "animeren" en "springen": de
-                 afstand zelf was te groot. Nu 5px en 1,5% per laag: genoeg om te
-                 zien dat er een stapel ligt, te weinig om een sprong te zijn.
-                 De rotatie doet het meeste werk — die valt op als vorm, niet als
-                 beweging.
-                 ⚠️ Zet hier geen transition terug om dit glad te strijken; dan
-                 is het rechtzetten precies terug. */
+              /* ⭐⭐ DE KAART VLAK ONDER DE BOVENSTE LIGT ER PRECIES ONDER, en dat
+                 is wat "hij zet zichzelf als nog een beetje recht" wegneemt.
+
+                 Waar het steeds op stukliep: elke laag had zijn eigen stand
+                 (lager, kleiner, gedraaid). Kwam een kaart naar voren, dan moest
+                 hij dat verschil goedmaken. Animeerde ik dat, dan zag je hem
+                 rechtzetten; animeerde ik het niet, dan zag je hem springen. Ik
+                 heb die twee drie rondes tegen elkaar uitgeruild.
+
+                 🔑 De uitweg zit in hoe een ECHTE stapel werkt: daar beweegt er
+                 niets als je de bovenste eraf haalt. De kaarten eronder liggen
+                 stil; alleen het aantal wordt minder. Dat kan hier ook, want er
+                 zijn altijd meer kaarten:
+                 - laag 1 ligt EXACT onder de bovenste (geen verschuiving, geen
+                   schaal, geen draai). Komt hij naar voren, dan verandert er
+                   dus letterlijk niets aan hem — hij was al waar hij moet zijn.
+                 - laag 2 is het randje dat je ziet uitsteken. Als laag 1
+                   doorschuift naar boven, schuift laag 2 naar die onzichtbare
+                   plek en komt er een nieuwe kaart op laag 2. Dat randje is dus
+                   altijd bezet en staat altijd op dezelfde plek: het lijkt stil
+                   te liggen terwijl er onderhuids doorgeschoven wordt.
+                 🔑 De les: het probleem zat niet in de animatie maar in het
+                 model. Ik liet elke kaart een plek OPSCHUIVEN terwijl een stapel
+                 juist vaste plekken heeft die van bewoner wisselen. */
               style={{
-                transform: `translateY(${diepte * 5}px) scale(${1 - diepte * 0.015}) rotate(${diepte % 2 ? -2.2 : 1.8}deg)`,
+                transform:
+                  diepte === 1
+                    ? "translateY(0px) scale(1) rotate(0deg)"
+                    : "translateY(9px) scale(0.972) rotate(2deg)",
                 zIndex: 5 - diepte,
               }}
               aria-hidden
