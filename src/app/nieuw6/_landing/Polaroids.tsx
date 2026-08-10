@@ -586,6 +586,21 @@ function StapelScene() {
 
   const opDown = (e: ReactPointerEvent) => {
     if (vertrekkend) return;
+    /* ⚠️⚠️ DIT IS DE "KLIK DIE NIKS DOET". De vlag netGeveegd zegt "de vorige
+       beweging was een sleep, dus slik de klik die er zo achteraan komt". Op een
+       MUIS klopt dat: na een sleep vuurt de browser alsnog een click, die de
+       vlag opeet, en de volgende tik werkt gewoon.
+       Op een AANRAAKSCHERM vuurt die click meestal NIET na een veeg. De vlag
+       bleef dus staan tot de volgende keer dat je tikte — en die tik werd
+       opgegeten. Vandaar: vegen, dan een klik die niets doet, dan pas omdraaien.
+       🔑 Daarom wordt de vlag nu hier gewist, bij het begin van een nieuwe
+       aanraking, in plaats van te wachten op een click die er misschien nooit
+       komt. Een vlag die je door een ander event laat opruimen, moet je ook
+       kunnen opruimen als dat event uitblijft.
+       ⚠️ Dit was met de muis niet te reproduceren — de test zei "eerste tik
+       werkt". Zie [[meekijken-op-eigen-telefoon]]: wat ik over aanraking meet is
+       nagespeeld, en bij twijfel wint wat de eigenaar op zijn toestel ziet. */
+    netGeveegd.current = false;
     greep.current = {
       startY: e.clientY, startX: e.clientX, laatsteX: e.clientX,
       laatsteT: performance.now(), snelheid: 0, bewogen: false, richting: null,
@@ -631,7 +646,14 @@ function StapelScene() {
     if (g.richting === "vert") return;
     if (!g.bewogen) return; // klik → flip (via onClick)
     const dx = e.clientX - g.startX;
-    const weg = Math.abs(dx) > 90 || Math.abs(g.snelheid) > 0.55;
+    /* ⚠️ Drempel van 90 naar 60px, en de snelheidsdrempel van 0,55 naar 0,40.
+       90px is een derde van de kaartbreedte (296px): met een gewone duimveeg
+       haal je dat lang niet altijd, en dan VEERT DE KAART TERUG — precies het
+       "hij zet zichzelf eerst recht" dat de eigenaar beschrijft. De veeg voelde
+       dus als mislukt terwijl hij hem wel degelijk had gemaakt.
+       🔑 Een drempel die je met een normale beweging niet haalt, leest niet als
+       "dat was te weinig" maar als "het ding werkt niet". */
+    const weg = Math.abs(dx) > 60 || Math.abs(g.snelheid) > 0.4;
     if (weg) {
       setVertrekkend(true);
       /* de kaart verlaat het scherm aan de kant waar je hem heen duwde */
@@ -648,7 +670,9 @@ function StapelScene() {
         setVertrekkend(false);
       }, 430);
     } else {
-      zetTransform(0, "transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)");
+      /* Terugveren mag, maar kort: dit is de bevestiging dat je veeg te klein
+         was, geen animatie om naar te kijken. Stond op 0,5s. */
+      zetTransform(0, "transform 0.28s cubic-bezier(0.23, 1, 0.32, 1)");
     }
   };
   const opKlik = () => {
