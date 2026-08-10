@@ -398,7 +398,11 @@ export function WereldPrivacy() {
              twee plekken is een patroon, en dat is iets anders dan twee
              verschillende bewegingen na elkaar — precies de klacht die de veegrail
              daar de kop kostte. */}
-          <div className="mt-10 sm:hidden">
+          {/* De marge hierboven is krap gehouden (en niet de standaard mt-10):
+             de eigenaar wil dat het hele AI-gedeelte in één telefoonscherm past.
+             Gemeten stond er 49px tussen de onderkant van de fotokaart en de
+             icoonrij; dat is nu 29. */}
+          <div className="mt-5 sm:hidden">
             <div
               role="tablist"
               aria-label="Hoe we AI veilig houden"
@@ -449,7 +453,7 @@ export function WereldPrivacy() {
             {/* ⚠️ Gemeten ondergrens, geen gok: zonder min-h springt alles
                eronder op zodra je een ander icoon aantikt, want de drie titels
                zijn niet even lang. */}
-            <div className="mt-5 min-h-[3.5rem] text-center">
+            <div className="mt-4 min-h-[3.5rem] text-center">
               {AI.map((a, i) => (
                 <h4
                   key={a.titel}
