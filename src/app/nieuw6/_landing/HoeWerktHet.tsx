@@ -261,7 +261,7 @@ export function WereldHoeWerktHet() {
                        het er staat. Ik zag dit doordat de tekst in mijn
                        testbrowser op doorzichtig bleef staan — daar worden geen
                        beelden getekend, dus de animatie liep nooit af. */
-                    ? { animation: `${richting > 0 ? "stap-van-rechts" : "stap-van-links"} 0.3s cubic-bezier(0.23, 1, 0.32, 1) backwards` }
+                    ? { animation: `${richting > 0 ? "stap-van-rechts" : "stap-van-links"} 0.38s cubic-bezier(0.23, 1, 0.32, 1) backwards` }
                     : undefined
                 }
               >
@@ -310,21 +310,25 @@ export function WereldHoeWerktHet() {
 
       {/* De tekst komt binnen van de kant waar je vandaan komt: naar de volgende
          stap schuift hij van rechts, terug van links.
-         ⚠️ 34px en niet de 18 waar ik mee begon. De klacht was juist dat het niet
-         voelde alsof er iets gebeurde; dan is "netjes subtiel" precies de
-         verkeerde kant. Genoeg om te zien wélke kant het op gaat, kort genoeg om
-         niet in de weg te zitten.
+         ⚠️ 90px, en dat is de DERDE waarde hier: eerst 18, toen 34, nu 90. De
+         eigenaar zag de eerste twee niet als een verandering. Dat is de les: de
+         klacht was "het voelt niet of er iets gebeurt", en op zo'n klacht is
+         subtiel verhogen zinloos — je blijft dan onder de drempel waar het pas
+         opvalt. Ga in één keer ruim over die drempel heen en zwak daarna af als
+         het te veel is; andersom kost het drie rondes.
+         De duur ging mee naar 0,38s: schuift iets ver maar snel, dan zie je een
+         flits in plaats van een beweging.
          ⚠️ Bij "minder beweging" in de systeeminstellingen blijft alleen het
          opkomen over: de richting is dan niet essentieel, de wissel wel.
          (GEEN BACKTICKS in dit commentaar: dit blok staat in een
          template-string.) */}
       <style>{`
         @keyframes stap-van-rechts {
-          from { opacity: 0; transform: translate3d(34px, 0, 0); }
+          from { opacity: 0; transform: translate3d(90px, 0, 0); }
           to { opacity: 1; transform: translate3d(0, 0, 0); }
         }
         @keyframes stap-van-links {
-          from { opacity: 0; transform: translate3d(-34px, 0, 0); }
+          from { opacity: 0; transform: translate3d(-90px, 0, 0); }
           to { opacity: 1; transform: translate3d(0, 0, 0); }
         }
         @media (prefers-reduced-motion: reduce) {
