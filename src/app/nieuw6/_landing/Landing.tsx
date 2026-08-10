@@ -1466,39 +1466,20 @@ export default function Landing({
             <div ref={wachtpost} aria-hidden className="h-px w-full" />
           </div>
 
-          {/* De zekerheden, telefoonversie: onder de knoppen. Zie de opmerking
-             bij het origineel hierboven waarom dit een kopie is.
-
-             ⚠️ DE PAREN STAAN HIER ANDERS DAN OP EEN BREED SCHERM, en dat is
-             gemeten werk. Twee rijen van twee is de bedoeling; met de volgorde
-             van STRIP zelf past rij 2 net niet op 360px (155 + 174 + 8 = 337 bij
-             328 beschikbaar) en klapt er één chip naar een derde regel. Dan zie
-             je twee naast elkaar en twee eronder — precies wat de eigenaar lelijk
-             noemde.
-             Van de zes mogelijke paren passen deze twee wél:
-               "Privacy voorop" + "Maandelijks opzegbaar"   (135 + 174)
-               "Van een leerkracht" + "Volledig Nederlands" (155 + 159)
-             🔑 Bijvangst: het leest ook beter. Rij 1 gaat over wat je NIET
-             riskeert, rij 2 over waar het vandaan komt.
-             ⚠️ Niet oplossen door de tekst te verkleinen — dat is precies de fout
-             van gisteren. De ruimte eromheen mag krimpen, de letter niet. */}
-          <div className="relative z-10 flex flex-col items-center gap-1.5 max-sm:order-5 sm:hidden">
-            {[
-              [STRIP[0], STRIP[3]],
-              [STRIP[2], STRIP[1]],
-            ].map((rij, i) => (
-              <div key={i} className="flex flex-nowrap items-center justify-center gap-1.5">
-                {rij.map((s) => (
-                  <span
-                    key={s}
-                    className="whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-center text-xs font-bold text-ink/75 shadow-sm ring-1 ring-black/5"
-                  >
-                    {s}
-                  </span>
-                ))}
-              </div>
-            ))}
-          </div>
+          {/* ⛔ HIER STONDEN DE VIER ZEKERHEDEN OP DE TELEFOON, EN DIE ZIJN ERUIT.
+             Besluit van de eigenaar 10-8: "ik vind die zekerheden onrustig, haal
+             ze op mobiel maar weg."
+             🔑 De les zit in de weg ernaartoe. Ik heb ze eerst netjes twee bij
+             twee gekregen (kortere tekst, andere paren, gemeten op drie
+             breedtes) — en toen bleek het probleem niet de UITLIJNING maar de
+             AANWEZIGHEID. Vier los zwevende pilletjes onder een rustig
+             openingsscherm zijn onrustig, hoe recht ze ook staan.
+             ⚠️ Dus: als iets er na het rechtzetten nog steeds niet goed uitziet,
+             vraag je af of het er wel hoort te staan. Ik was aan het schuiven
+             met iets dat weg moest.
+             Op een breed scherm blijven ze staan; daar horen ze bij de finale
+             van de film en hebben ze de ruimte. Het origineel zit in
+             `data-paneel` en heeft nu `max-sm:hidden`. */}
           </div>
 
           {/* Scrollhint */}
