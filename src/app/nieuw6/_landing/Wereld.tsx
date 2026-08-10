@@ -720,22 +720,40 @@ export function WereldIntro() {
                 breed wél — dan lijkt de onderste knop groter. Alleen op de
                 telefoon, want op een breed scherm staan ze naast elkaar en is
                 de hoogte van de gevulde knop af. */}
-            {/* ⚠️ Hier stond op de telefoon de kortere tekst "Probeer gratis" en
-                op een breed scherm "Probeer Avinka gratis". Dat verschil had één
-                reden: de korte tekst was nodig om de twee knoppen NAAST elkaar
-                te laten passen op 360px. Nu ze onder elkaar over de volle
-                breedte staan is die reden weg — en dan bleef er alleen een
-                nadeel over: dezelfde tekst als de knop in de balk bovenaan, dus
-                twee keer "Probeer gratis" op één scherm.
-                🔑 Overal dezelfde knoptekst dus. Let bij zo'n afkorting altijd
-                op of de aanleiding er nog is; die verdwijnt stilletjes zodra je
-                de vorm eromheen verandert.
+            {/* ⭐ DEZE EERSTE KNOP IS OP TELEFOON EN PC NIET DEZELFDE, en dat is
+                een bewust verschil — het enige op deze pagina.
+
+                Op een TELEFOON gaat hij naar de prijzen. Reden van de eigenaar:
+                sinds de proef staat "Probeer gratis" daar al vast in de balk
+                bovenaan zodra je de hero voorbij bent, en die balk is hier in
+                beeld. Twee keer dezelfde actie binnen één blikveld is er één te
+                veel; de vraag die op dít punt open staat is wat het kost.
+                Op een BREED SCHERM blijft "Probeer Avinka gratis" staan. Daar
+                heeft de hero geen knoppen (die is één doorlopende film) en is
+                dit de eerste echte aanmeldknop van de pagina. Weghalen zou daar
+                een conversiepunt schrappen uit een versie die af is.
+
+                🔑 De naam is gekozen door de eigenaar uit vier voorstellen. Zijn
+                eis: het woord "prijzen" of "abonnementen" moet erin, en het mag
+                niet weer met "Bekijk" beginnen — dat staat al op de knop
+                ernaast. "Naar de prijzen" is de enige die het woord noemt én een
+                beweging belooft; het is dan ook een sprong binnen de pagina.
+                ⚠️ Het blijft de gevulde knop: het is de hoofdactie van déze
+                sectie. Voelt twee keer groen in beeld te druk, dan is `variant`
+                het enige wat daarvoor hoeft te wijzigen.
+
                 De krappere zijruimte op de telefoon (px-5 in plaats van px-8) is
-                nodig omdat de langere tekst met het vinkje ernaast anders niet
+                nodig omdat een langere tekst met het vinkje ernaast anders niet
                 op één regel past op 360px — en `whitespace-nowrap` laat hem niet
                 afbreken. Bij een knop over de volle breedte doet die zijruimte
                 toch niets: de tekst staat gecentreerd. */}
-            <BlobKnop href="/sign-up" className="max-sm:w-full max-sm:border-2 max-sm:border-transparent max-sm:px-5">
+            <BlobKnop
+              href="#prijzen"
+              className="max-sm:w-full max-sm:border-2 max-sm:border-transparent max-sm:px-5 sm:hidden"
+            >
+              Naar de prijzen
+            </BlobKnop>
+            <BlobKnop href="/sign-up" className="max-sm:hidden">
               Probeer Avinka gratis
             </BlobKnop>
             <BlobKnop href="#tools" variant="licht" className="max-sm:w-full">
