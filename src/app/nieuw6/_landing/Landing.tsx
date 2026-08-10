@@ -2344,7 +2344,7 @@ function ToolPaneel({
             data-paneelbeeld
             className="relative aspect-[16/9] overflow-hidden sm:aspect-auto sm:min-h-[22rem]"
           >
-            <KaartBeeld soort={kaart.id} />
+            <KaartBeeld soort={kaart.id} paneel />
             <div className="kaart-grain pointer-events-none absolute inset-0" aria-hidden />
           </div>
 
@@ -2802,7 +2802,20 @@ function Tafelgroep({
 }
 
 /* ── De kaartbeelden: acht kleine werelden in de merktaal. ─────────────── */
-export function KaartBeeld({ soort }: { soort: string }) {
+/* ⚠️ `paneel` = deze tekening staat in de OPENGEKLAPTE kaart, niet op de kaart
+   zelf. Dat is een wezenlijk ander vlak: op de kaart is het staand (ongeveer
+   296×370), in het paneel op een telefoon LIGGEND (16:9, dus zo'n 358×201).
+   🔑 Alles in deze tekeningen staat op procenten van de hoogte. Halveert die
+   hoogte, dan schuiven drie losjes gestapelde elementen over elkaar heen — en
+   dat is precies wat de eigenaar zag bij Oudercontact en Draaiboek. De
+   elementen met een VASTE afstand van boven (`top-12`) zijn daarbij de boosdoener:
+   die blijven even ver van de rand terwijl de rest naar elkaar toe kruipt.
+   ⚠️ Ik heb bewust NIET het beeldvak hoger gemaakt. Dat leek de goedkope
+   oplossing, maar een vierkant vlak is de enige maat waarop álles vanzelf goed
+   valt, en dan begint de uitleg pas ónder de vouw — je opent een tool en ziet
+   alleen een plaatje. Bovendien had het de zes tekeningen aangeraakt die volgens
+   de eigenaar al goed stonden. Per tekening bijsturen is saaier en veiliger. */
+export function KaartBeeld({ soort, paneel = false }: { soort: string; paneel?: boolean }) {
   if (soort === "rapporten")
     return (
       <div className="absolute inset-0 bg-ink">
@@ -2892,26 +2905,56 @@ export function KaartBeeld({ soort }: { soort: string }) {
       <div className="absolute inset-0 bg-accent">
         <div className="absolute -bottom-24 -right-20 h-72 w-72 rounded-full bg-white/30 blur-3xl" aria-hidden />
         <div className="absolute -left-14 -top-14 h-56 w-56 rounded-full bg-ink/10 blur-3xl" aria-hidden />
-        {/* het weekbericht */}
-        <div className="absolute left-5 right-12 top-[22%] -rotate-1 rounded-2xl rounded-bl-md bg-white p-4 shadow-xl">
-          <p className="text-sm font-bold text-ink">Beste ouders, wat een week!</p>
-          <p className="mt-1 text-sm leading-6 text-ink/70">
+        {/* het weekbericht.
+           ⚠️ IN HET PANEEL OP EEN TELEFOON MOETEN BEIDE BUBBELS KRIMPEN, en dat
+           is geen smaakkeuze maar rekenwerk: ze waren samen 194px hoog in een
+           vak van 193. Alleen verschuiven loste het dus nooit op — waar je de
+           onderste ook zet, hij botst. Met p-3 en een kleinere letter passen ze
+           allebei mét ruimte ertussen.
+           🔑 Als twee dingen niet naast of onder elkaar passen, is verschuiven
+           verspilde moeite; dan moet er iets kleiner of iets weg. Ik heb dat hier
+           twee keer moeten meten voor ik het doorhad. */}
+        <div
+          className={`absolute left-5 right-12 top-[22%] -rotate-1 rounded-2xl rounded-bl-md bg-white p-4 shadow-xl ${
+            paneel ? "max-sm:top-[18%] max-sm:p-3" : ""
+          }`}
+        >
+          <p className={`text-sm font-bold text-ink ${paneel ? "max-sm:text-xs" : ""}`}>
+            Beste ouders, wat een week!
+          </p>
+          <p className={`mt-1 text-sm leading-6 text-ink/70 ${paneel ? "max-sm:text-xs max-sm:leading-5" : ""}`}>
             De spreekbeurten waren een feestje, en woensdag…
           </p>
         </div>
-        {/* het antwoord van thuis */}
-        <div className="absolute bottom-[24%] left-12 right-5 rotate-1 rounded-2xl rounded-br-md bg-ink p-4 shadow-xl">
+        {/* het antwoord van thuis.
+           In het paneel op een telefoon zakt dit blokje naar de onderrand: bij
+           bottom-[24%] van 201px begint het op 97 terwijl het bericht hierboven
+           tot 120 loopt, en dan liggen de twee bubbels over elkaar. */}
+        <div
+          className={`absolute bottom-[24%] left-12 right-5 rotate-1 rounded-2xl rounded-br-md bg-ink p-4 shadow-xl ${
+            paneel ? "max-sm:bottom-3 max-sm:p-3" : ""
+          }`}
+        >
           {/* ⚠️ Hier stond een ❤️ achter "Dankjewel!". Eruit op verzoek van de
              eigenaar, en op ÁLLE schermen — dit stukje tekening heeft geen
              aparte mobiele versie, dus het verdwijnt ook op pc. Dat was zijn
              expliciete keuze ("als dat op pc ook is, ook weghalen"). */}
-          <p className="text-sm leading-6 text-cream">Wat leuk om zo mee te kijken. Dankjewel!</p>
+          <p className={`text-sm leading-6 text-cream ${paneel ? "max-sm:text-xs max-sm:leading-5" : ""}`}>
+            Wat leuk om zo mee te kijken. Dankjewel!
+          </p>
         </div>
         {/* Zit iets lager dan de andere kaarten hun hoektekst: deze regel is
            breed genoeg om tot voorbij het midden te lopen, en het tijdwinst-
            chipje rechtsboven viel er anders overheen. Onder het chipje langs
            houdt de regel zijn volledige tekst. */}
-        <p className="font-hand absolute left-6 top-12 -rotate-2 text-xl text-ink/80">
+        {/* De vaste `top-12` is hier de boosdoener in het paneel: 48px van boven
+           blijft 48px, ook als het vlak nog maar 201px hoog is, en dan loopt deze
+           regel dwars door het weekbericht dat op 22% begint. */}
+        <p
+          className={`font-hand absolute left-6 top-12 -rotate-2 text-xl text-ink/80 ${
+            paneel ? "max-sm:top-1 max-sm:text-base" : ""
+          }`}
+        >
           vrijdag 16:02 · verstuurd
         </p>
       </div>
@@ -3055,9 +3098,15 @@ export function KaartBeeld({ soort }: { soort: string }) {
             </ul>
           </div>
         </div>
-        <p className="font-hand absolute left-6 top-5 -rotate-2 text-xl text-white">
-          klaar om te printen
-        </p>
+        {/* ⛔ Niet in het paneel. Besluit van de eigenaar: opengeklapt moet
+           "klaar om te printen" eruit. Het is ook dubbelop — in het paneel staat
+           er een echte uitleg naast die hetzelfde belooft, en dan is een
+           handgeschreven kreet over het werkblad heen alleen nog drukte. */}
+        {!paneel && (
+          <p className="font-hand absolute left-6 top-5 -rotate-2 text-xl text-white">
+            klaar om te printen
+          </p>
+        )}
       </div>
     );
 
@@ -3068,7 +3117,14 @@ export function KaartBeeld({ soort }: { soort: string }) {
         {/* Iets lager dan de andere hoekteksten, net als bij oudercontact: dit
            labeltje is breed genoeg om op de smalle kaart tot onder het
            tijdwinst-chipje rechtsboven te lopen. */}
-        <p className="absolute left-5 top-12 -rotate-2 rounded-lg bg-ink px-3 py-1.5 font-display text-sm font-bold text-cream shadow-md">
+        {/* Zelfde val als bij oudercontact: `top-12` blijft 48px terwijl de
+           tijdlijn eronder op 24% staat. In het paneel op een telefoon is 24%
+           nog maar 48px, dus dan valt de titel precies achter het eerste tijdstip. */}
+        <p
+          className={`absolute left-5 top-12 -rotate-2 rounded-lg bg-ink px-3 py-1.5 font-display text-sm font-bold text-cream shadow-md ${
+            paneel ? "max-sm:top-2" : ""
+          }`}
+        >
           Kerstdiner · het draaiboek
         </p>
         {/* de tijdlijn van de avond */}
