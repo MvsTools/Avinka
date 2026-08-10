@@ -571,8 +571,10 @@ function StapelScene() {
     startY: number; startX: number; laatsteX: number; laatsteT: number;
     snelheid: number; bewogen: boolean; richting: "zij" | "vert" | null;
   } | null>(null);
-  /* zelfde click-na-veeg-vlag als op desktop */
-  const netGeveegd = useRef(false);
+  /* ⛔ HIER STOND `netGeveegd`: een vlag die de click na een veeg moest
+     onderdrukken. Die is niet meer nodig nu het omdraaien op pointerup gebeurt
+     en er dus geen click meer in het spel is. Niet terugbouwen — die vlag WAS
+     de bug (zie opUp). */
 
   const bovenste = volgorde[0];
 
@@ -591,21 +593,6 @@ function StapelScene() {
     /* ⚠️ Hier stond `if (vertrekkend) return;`. Weg: de wegvliegende kaart is
        geen bovenste kaart meer, dus er is niets om op te wachten. Je mag de
        volgende meteen pakken. */
-    /* ⚠️⚠️ DIT IS DE "KLIK DIE NIKS DOET". De vlag netGeveegd zegt "de vorige
-       beweging was een sleep, dus slik de klik die er zo achteraan komt". Op een
-       MUIS klopt dat: na een sleep vuurt de browser alsnog een click, die de
-       vlag opeet, en de volgende tik werkt gewoon.
-       Op een AANRAAKSCHERM vuurt die click meestal NIET na een veeg. De vlag
-       bleef dus staan tot de volgende keer dat je tikte — en die tik werd
-       opgegeten. Vandaar: vegen, dan een klik die niets doet, dan pas omdraaien.
-       🔑 Daarom wordt de vlag nu hier gewist, bij het begin van een nieuwe
-       aanraking, in plaats van te wachten op een click die er misschien nooit
-       komt. Een vlag die je door een ander event laat opruimen, moet je ook
-       kunnen opruimen als dat event uitblijft.
-       ⚠️ Dit was met de muis niet te reproduceren — de test zei "eerste tik
-       werkt". Zie [[meekijken-op-eigen-telefoon]]: wat ik over aanraking meet is
-       nagespeeld, en bij twijfel wint wat de eigenaar op zijn toestel ziet. */
-    netGeveegd.current = false;
     greep.current = {
       startY: e.clientY, startX: e.clientX, laatsteX: e.clientX,
       laatsteT: performance.now(), snelheid: 0, bewogen: false, richting: null,
@@ -646,10 +633,31 @@ function StapelScene() {
        je alleen wilde scrollen. Precies dat gebeurde in de test.
        🔑 Een sleep is geen tik, ongeacht de richting. Dat de veeg niet voor ons
        was betekent alleen dat de KAART niets doet, niet dat er niets gebeurde. */
-    netGeveegd.current = g.bewogen;
-    /* Een verticale veeg was voor de pagina, niet voor de stapel. */
-    if (g.richting === "vert") return;
-    if (!g.bewogen) return; // klik → flip (via onClick)
+    /* ⭐⭐ HET OMDRAAIEN GEBEURT HIER, OP POINTERUP — NIET MEER OP EEN CLICK.
+       Dit is de derde en laatste ronde aan deze bug, en de vorige twee gingen
+       mis omdat ik de OORZAAK bestreed in plaats van de constructie.
+
+       Hoe het was: vegen luisterde naar pointer-events, omdraaien naar een
+       click. Een vlag (netGeveegd) moest de click onderdrukken die na een veeg
+       komt. Maar op een aanraakscherm is het niet gegarandeerd of, en hoe snel,
+       die click ná de veeg volgt. Kwam hij te laat, dan at hij de tik op die jij
+       daarna deed — en of dat gebeurde hing dus af van hoe snel je tikte. Dat is
+       exact wat de eigenaar beschreef: meteen tikken faalt, twee seconden
+       wachten werkt.
+
+       🔑 DE LES: als het gedrag van tijd afhangt, zoek dan niet naar de juiste
+       wachttijd maar naar de twee dingen die op elkaar wachten. Hier waren dat
+       twee soorten events voor één gebaar. Eén soort gebruiken laat de race
+       verdwijnen in plaats van hem te winnen.
+
+       Nu: heb je niet bewogen, dan is het een tik en draaien we hier meteen om.
+       Er is geen click meer bij betrokken, dus er valt niets te onderdrukken en
+       niets te missen. Het toetsenbord loopt apart via onKeyDown hieronder. */
+    if (g.richting === "vert") return; // die veeg was voor de pagina
+    if (!g.bewogen) {
+      setOmgedraaid((v) => v.map((o, i) => (i === bovenste ? !o : o)));
+      return;
+    }
     const dx = e.clientX - g.startX;
     /* ⚠️ Drempel van 90 naar 60px, en de snelheidsdrempel van 0,55 naar 0,40.
        90px is een derde van de kaartbreedte (296px): met een gewone duimveeg
@@ -701,11 +709,12 @@ function StapelScene() {
       zetTransform(0, "transform 0.28s cubic-bezier(0.23, 1, 0.32, 1)");
     }
   };
-  const opKlik = () => {
-    if (netGeveegd.current) {
-      netGeveegd.current = false;
-      return;
-    }
+  /* Alleen voor het toetsenbord: een knop reageert op Enter en spatie, en die
+     komen zonder pointer-events binnen. Een muisklik komt hier NIET langs — die
+     is al als pointerup afgehandeld — dus dubbel omdraaien kan niet. */
+  const opToets = (e: React.KeyboardEvent) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
     setOmgedraaid((v) => v.map((o, i) => (i === bovenste ? !o : o)));
   };
 
@@ -799,7 +808,7 @@ function StapelScene() {
         >
           <button
             type="button"
-            onClick={opKlik}
+            onKeyDown={opToets}
             aria-expanded={omgedraaid[bovenste]}
             aria-label={omgedraaid[bovenste] ? `Draai de foto van ${KAARTEN[bovenste].naam} terug` : `Lees de ervaring van ${KAARTEN[bovenste].naam} (${KAARTEN[bovenste].rol})`}
             className="pk-schaduw block h-full w-full select-none rounded-[5px] text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
