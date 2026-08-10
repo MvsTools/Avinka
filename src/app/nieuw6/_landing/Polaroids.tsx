@@ -688,9 +688,22 @@ function StapelScene() {
             <div
               key={KAARTEN[idx].naam}
               className="pk-schaduw absolute left-0 top-0 h-full w-full rounded-[5px]"
+              /* ⚠️ GEEN TRANSITION HIER, en dat is een bewuste verwijdering.
+                 Er stond transform 0.45s. Gevolg: zodra je de bovenste kaart
+                 wegveegde, schoof de kaart eronder van de diepte-2-stand naar
+                 de diepte-1-stand — van +2° naar -2,4° en een stukje groter — en
+                 dat duurde bijna een halve seconde. De eigenaar zag dat als "hij
+                 zet zichzelf eerst recht" en wilde het weg.
+                 🔑 Wat hier animeerde was niet de kaart die je pakte maar de
+                 kaart eróchter. Zonder meten had ik de verkeerde aangepast: de
+                 nieuwe bovenste kaart stond meteen goed (transition 0s), de
+                 beweging kwam van de buur. Meet bij "er beweegt iets ongewenst"
+                 dus welk element het is, in plaats van het element te pakken
+                 waar je naar kijkt.
+                 De stapel staat nu meteen in zijn nieuwe stand. Dat mag: je hebt
+                 je aandacht toch bij de kaart die wegvliegt. */
               style={{
                 transform: `translateY(${diepte * 16}px) scale(${1 - diepte * 0.055}) rotate(${diepte % 2 ? -2.4 : 2}deg)`,
-                transition: "transform 0.45s cubic-bezier(0.23, 1, 0.32, 1)",
                 zIndex: 5 - diepte,
               }}
               aria-hidden
