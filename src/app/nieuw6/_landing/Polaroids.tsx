@@ -559,7 +559,10 @@ function DraadScene() {
 function StapelScene() {
   const [volgorde, setVolgorde] = useState<number[]>(() => KAARTEN.map((_, i) => i));
   const [omgedraaid, setOmgedraaid] = useState<boolean[]>(() => KAARTEN.map(() => false));
-  const [vertrekkend, setVertrekkend] = useState(false);
+  /* De kaart die je zojuist wegveegde en die nog het scherm uit vliegt. Hij is
+     op dat moment al GEEN bovenste kaart meer — hij ligt er alleen nog even
+     overheen als losse laag, zodat hij niets blokkeert. */
+  const [vliegt, setVliegt] = useState<{ idx: number; kant: number; omgedraaid: boolean } | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
   /* `richting` blijft null tot duidelijk is welke kant de vinger op gaat.
      Zodra dat "omhoog/omlaag" is laten we de veeg helemaal los: dan hoort hij
@@ -585,7 +588,9 @@ function StapelScene() {
   };
 
   const opDown = (e: ReactPointerEvent) => {
-    if (vertrekkend) return;
+    /* ⚠️ Hier stond `if (vertrekkend) return;`. Weg: de wegvliegende kaart is
+       geen bovenste kaart meer, dus er is niets om op te wachten. Je mag de
+       volgende meteen pakken. */
     /* ⚠️⚠️ DIT IS DE "KLIK DIE NIKS DOET". De vlag netGeveegd zegt "de vorige
        beweging was een sleep, dus slik de klik die er zo achteraan komt". Op een
        MUIS klopt dat: na een sleep vuurt de browser alsnog een click, die de
@@ -608,7 +613,7 @@ function StapelScene() {
   };
   const opMove = (e: ReactPointerEvent) => {
     const g = greep.current;
-    if (!g || vertrekkend) return;
+    if (!g) return;
     const dy = e.clientY - g.startY;
     const dx = e.clientX - g.startX;
 
@@ -635,7 +640,7 @@ function StapelScene() {
   const opUp = (e: ReactPointerEvent) => {
     const g = greep.current;
     greep.current = null;
-    if (!g || vertrekkend) return;
+    if (!g) return;
     /* ⚠️ DEZE REGEL MOET VÓÓR DE VERTICALE UITSTAP STAAN. Zet je hem erna, dan
        telt een verticale sleep als een gewone tik en klapt de foto om terwijl
        je alleen wilde scrollen. Precies dat gebeurde in de test.
@@ -655,20 +660,41 @@ function StapelScene() {
        "dat was te weinig" maar als "het ding werkt niet". */
     const weg = Math.abs(dx) > 60 || Math.abs(g.snelheid) > 0.4;
     if (weg) {
-      setVertrekkend(true);
-      /* de kaart verlaat het scherm aan de kant waar je hem heen duwde */
+      /* ⭐⭐ HIER ZAT DE ECHTE OORZAAK VAN "HIJ ZET ZICHZELF EERST RECHT" EN VAN
+         DE DODE EERSTE KLIK — één oorzaak, twee symptomen.
+
+         Zoals het was: de weggeveegde kaart bleef 430ms de bovenste, want pas
+         ná die tijd draaide de volgorde door. In die 430ms zag je dus de kaart
+         eronder, en die staat in de stapel scheef en iets kleiner (-2,4° en
+         0,945×). Na 430ms werd hij pas de echte bovenste en sprong hij naar
+         recht en op ware grootte. Dát is het rechtzetten.
+         En in diezelfde 430ms stond `vertrekkend` op waar, waardoor opKlik
+         élke tik negeerde. Tikte je in dat venster — en dat is precies wat je
+         doet, want de kaart ligt er al — dan gebeurde er niets. Vandaar de
+         eerste klik die niks doet.
+
+         🔑 Ik heb dit twee keer misgediagnosticeerd omdat mijn testen ná die
+         430ms tikten. De klacht ging over het venster zelf, niet over wat
+         erna gebeurt. Als een gebruiker zegt "eerst X, dan een dode klik, dan
+         pas Y", is de kans groot dat X en de dode klik hetzelfde wachtvenster
+         zijn — zoek naar de timer, niet naar twee losse fouten.
+
+         Nu: de volgorde draait METEEN door. De nieuwe kaart is dus onmiddellijk
+         de bovenste, staat recht en reageert op je eerste tik. De weggeveegde
+         kaart leeft nog kort verder als een losse laag die zelfstandig het
+         scherm uit vliegt (`vliegt`), zonder iets te blokkeren. */
       const kant = dx < 0 ? -1 : 1;
-      zetTransform(kant * window.innerWidth * 1.1, "transform 0.42s cubic-bezier(0.23, 1, 0.32, 1)");
-      window.setTimeout(() => {
-        setVolgorde((v) => [...v.slice(1), v[0]]);
-        setOmgedraaid((o) => o.map((val, i) => (i === bovenste ? false : val)));
-        const el = topRef.current;
-        if (el) {
-          el.style.transition = "none";
-          el.style.transform = "translate3d(0,0,0)";
-        }
-        setVertrekkend(false);
-      }, 430);
+      setVliegt({ idx: bovenste, kant, omgedraaid: omgedraaid[bovenste] });
+      setVolgorde((v) => [...v.slice(1), v[0]]);
+      setOmgedraaid((o) => o.map((val, i) => (i === bovenste ? false : val)));
+      /* de bovenste plek is nu van de vólgende kaart: meteen recht, geen
+         overgang die nog iets kan naschuiven */
+      const el = topRef.current;
+      if (el) {
+        el.style.transition = "none";
+        el.style.transform = "translate3d(0,0,0)";
+      }
+      window.setTimeout(() => setVliegt(null), 460);
     } else {
       /* Terugveren mag, maar kort: dit is de bevestiging dat je veeg te klein
          was, geen animatie om naar te kijken. Stond op 0,5s. */
@@ -676,7 +702,7 @@ function StapelScene() {
     }
   };
   const opKlik = () => {
-    if (netGeveegd.current || vertrekkend) {
+    if (netGeveegd.current) {
       netGeveegd.current = false;
       return;
     }
@@ -703,6 +729,30 @@ function StapelScene() {
          gebaar veranderen zonder de aanwijzing te veranderen levert een
          instructie op die actief tegenwerkt. */}
       <div className="relative mx-auto" style={{ width: kaartBreed, height: `calc(${kaartBreed} * ${KAART_RATIO} + 44px)`, touchAction: "pan-y" }}>
+        {/* ⭐ DE WEGGEVEEGDE KAART, als losse laag bovenop.
+           Hij is op dit moment al geen bovenste kaart meer — de stapel is
+           doorgedraaid — en hij vliegt hier alleen nog het scherm uit.
+           `pointer-events-none` is essentieel: hij ligt over de nieuwe kaart
+           heen en mag geen enkele tik afvangen. Precies dat blokkeren was de
+           oude dode klik. */}
+        {vliegt && (
+          <div
+            key={`vliegt-${KAARTEN[vliegt.idx].naam}`}
+            aria-hidden
+            className="pk-schaduw pointer-events-none absolute left-0 top-0 z-20 h-full w-full rounded-[5px]"
+            /* ⚠️ Een ANIMATIE en geen transition. Een transition heeft een
+               beginwaarde nodig die al in de opmaak stond; dit element bestaat
+               pas sinds deze render, dus er valt niets te overbruggen en het zou
+               meteen op zijn eindstand staan — de kaart zou verdwijnen in plaats
+               van wegvliegen. Een animatie speelt wél af bij het verschijnen. */
+            style={{
+              animation: `${vliegt.kant < 0 ? "pk-weg-links" : "pk-weg-rechts"} 0.44s cubic-bezier(0.23, 1, 0.32, 1) forwards`,
+            }}
+          >
+            <PolaroidKaart kaart={KAARTEN[vliegt.idx]} omgedraaid={vliegt.omgedraaid} klein />
+          </div>
+        )}
+
         {/* de stapel eronder: alleen de eerstvolgende twee, steeds iets
            kleiner en lager — genoeg om de stapel te voelen */}
         {[2, 1].map((diepte) => {
@@ -887,6 +937,15 @@ export function WereldPolaroids() {
            (zie SCHADUW_HELLING in Wereld.tsx) */
         .pk-schaduw { box-shadow: -7px 18px 38px -20px rgba(23,80,58,0.45), -1px 3px 8px -4px rgba(23,80,58,0.25); }
         .pk-flip { transition: transform 0.65s cubic-bezier(0.3, 0.9, 0.25, 1); }
+        /* de weggeveegde kaart die het scherm uit vliegt */
+        @keyframes pk-weg-links {
+          from { transform: translate3d(0,0,0) rotate(0deg); }
+          to { transform: translate3d(-125%, 28px, 0) rotate(-9deg); }
+        }
+        @keyframes pk-weg-rechts {
+          from { transform: translate3d(0,0,0) rotate(0deg); }
+          to { transform: translate3d(125%, 28px, 0) rotate(9deg); }
+        }
         @media (prefers-reduced-motion: reduce) {
           /* geen 3D-draai: de kanten faden over elkaar heen */
           .pk-flip { transition: none; }
