@@ -1568,6 +1568,42 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
           .w-mkr-rij { grid-template-columns: minmax(0, 1fr) 32rem; }
         }
         .w-mkr-tekst { max-width: 42ch; }
+        /* ⭐ OP EEN TELEFOON KOMT HET CV TUSSEN DE INLEIDING EN DE UITNODIGING.
+           De eigenaar: op pc klopt het, want links de tekst en rechts het CV,
+           naast elkaar. Onder elkaar niet, en dat is meer dan smaak — het maakt
+           de VOLGORDE onlogisch. Je las eerst de inleiding, dan "laat me weten
+           wat je ervan vindt" met een mailadres, en pas dáárna wie die "me" dan
+           is. De uitnodiging kwam dus vóór de voorstelling.
+           Nu: kop, inleiding, het CV, en dan pas de uitnodiging met het adres.
+           Dat is de volgorde van een echte kennismaking, en het zet het adres
+           bovendien onderaan de sectie waar het als afsluiter werkt.
+
+           🔑 Bewust GEEN nieuw mechaniek hier. Bij dit blok zijn al drie dingen
+           afgekeurd (het schrift, de 3D-kanteling, de losse kaartindelingen) en
+           de les daarvan was steeds dezelfde: het effect wérkte, het hoorde
+           alleen niet bij een pagina die verder plat is. Een andere volgorde is
+           geen effect.
+
+           ⚠️ "display: contents" op de tekstkolom laat die kolom zelf uit de
+           opmaak verdwijnen, zodat kop, inleiding, uitnodiging en adres directe
+           kinderen van het raster worden en dus los te nummeren zijn. De
+           row-gap gaat daarom op 0: anders komt die tussen álle vier te staan
+           en zou elk element zijn eigen marge kwijtraken aan een dubbele
+           tussenruimte. Het CV krijgt zijn afstand met een eigen marge.
+
+           ⚠️⚠️ GEEN BACKTICKS IN DIT COMMENTAAR. Deze hele stijlblok staat in
+           een template-string; één backtick sluit hem en de pagina valt om. Ik
+           ben er zojuist weer ingetrapt — het stond in mijn aantekeningen én er
+           staat verderop in dit bestand een waarschuwing over. */
+        @media (max-width: 639px) {
+          .w-mkr-rij { row-gap: 0; }
+          .w-mkr-tekst { display: contents; }
+          .w-mkr-kop { order: 1; }
+          .w-mkr-inleiding { order: 2; }
+          .w-cv { order: 3; margin-top: clamp(26px, 7vw, 38px); }
+          .w-mkr-belofte { order: 4; margin-top: clamp(26px, 7vw, 38px); }
+          .w-mkr-contact { order: 5; }
+        }
         /* De handgeschreven uitnodiging onder de inleiding. Groter dan de
            lopende tekst, maar in handschrift en niet in de display-letter:
            grote display-regels in deze kolom zijn eerder afgekeurd met "een
