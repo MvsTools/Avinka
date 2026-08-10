@@ -161,8 +161,17 @@ export function schaduw(y: number, blur: number, spread: number, alpha: number, 
    hero-kop was op een telefoon net zo groot als op een laptop. Die drie
    ondergrenzen zijn ooit gekozen met een breed scherm voor je neus, en dat is
    precies de val die overal beschreven staat.
-   Nieuw: 30 / 24 / 18px op een telefoon. Vanaf ongeveer 545px breed neemt de
+   Nu: 36 / 30 / 18px op een telefoon. Vanaf ongeveer 650px breed neemt de
    vw-term het over en loopt alles weer naar de oude maten toe.
+
+   ⚠️ 10-8: DIT IS DE TWEEDE POGING, en de eerste zat te laag. Ik had 30 / 24 / 18
+   gezet en de eigenaar zag het meteen: "de titelvelden mogen allemaal wat groter,
+   zijn nu best klein". Een sectiekop van 24px is op een telefoon nauwelijks meer
+   dan de lopende tekst eronder (18px), en dan doet hij zijn werk niet — je ziet
+   niet meer dát je een nieuwe sectie in gaat. Nu 30px voor een sectiekop.
+   🔑 KOP_GROOT MOEST DUS MEE, ook al ging de vraag daar niet over. Op 30 zou de
+   belofte bovenaan even groot zijn geworden als élke sectiekop eronder, en dan is
+   de ladder weg. De afstand tussen de treden is het punt, niet de losse maat.
 
    ⚠️ EN OP EEN TELEFOON STAAT ALLES IN HET MIDDEN — vandaar `max-sm:text-center`
    hieronder. Dat lijkt in strijd met de huisregel "niet alles centreren", maar
@@ -175,9 +184,9 @@ export function schaduw(y: number, blur: number, spread: number, alpha: number, 
    maten zelf: op tien plekken los ingetypt loopt het gegarandeerd uit elkaar.
    Wie een kop centreert of juist links wil, doet dat hier voor de hele pagina. */
 export const KOP_GROOT =
-  "font-display text-[clamp(1.875rem,5.5vw,4rem)] font-black leading-[1.05] tracking-[-0.025em] [text-wrap:balance] max-sm:text-center";
+  "font-display text-[clamp(2.25rem,5.5vw,4rem)] font-black leading-[1.05] tracking-[-0.025em] [text-wrap:balance] max-sm:text-center";
 export const KOP_SECTIE =
-  "font-display text-[clamp(1.5rem,4.4vw,2.75rem)] font-black leading-[1.1] tracking-[-0.02em] [text-wrap:balance] max-sm:text-center";
+  "font-display text-[clamp(1.875rem,4.4vw,2.75rem)] font-black leading-[1.1] tracking-[-0.02em] [text-wrap:balance] max-sm:text-center";
 export const KOP_BLOK =
   "font-display text-[clamp(1.125rem,1.9vw,1.5rem)] font-black leading-[1.3] tracking-[-0.015em]";
 
@@ -684,24 +693,38 @@ export function WereldIntro() {
           >
             De slimme werkplek voor leerkrachten in het basisonderwijs
           </h2>
-          {/* ⚠️ Op een telefoon stonden deze twee ONDER elkaar en allebei over
-              de volle breedte; samen namen ze bijna een derde van het scherm.
-              Nu naast elkaar en kleiner (14px tekst, minder ruimte eromheen).
-              Nagerekend voor 360px: na de zijmarges blijft er 312px over en de
-              twee knoppen vragen er samen ~288 — dus het past, ook op de
-              smalste telefoon die je nog tegenkomt.
-              De hoofdknop heet daar "Probeer gratis" en niet "Probeer Avinka
-              gratis": dat is dezelfde tekst als in de balk bovenaan, en het
-              scheelt precies de breedte die het naast elkaar mogelijk maakt. */}
-          {/* max-sm:justify-center: de twee knoppen zijn samen ~298px breed in
-              een scherm van 360. Links uitgelijnd bleef er 24 links en 38 rechts
-              over, en dat zie je — het rijtje hangt dan net naast het midden. */}
-          <div data-reveal className="mt-6 flex gap-2 max-sm:justify-center sm:mt-8 sm:gap-3">
-            <BlobKnop href="/sign-up" className="max-sm:px-3.5 max-sm:py-2.5 max-sm:text-sm">
+          {/* ⚠️ DEZE TWEE KNOPPEN ZIJN AL TWEE KEER VAN VORM GEWISSELD — lees dit
+              vóór je ze een derde keer verandert.
+
+              Ze stonden ONDER elkaar over de volle breedte, en samen namen ze
+              bijna een derde van het scherm. Daarom heb ik ze 9-8 NAAST elkaar
+              gezet en gekrompen (14px tekst, krappe ruimte eromheen): het paste
+              precies op 360px, dus het probleem "ze vreten het scherm op" was
+              opgelost.
+              🔑 En dat was de verkeerde oplossing, want ik loste de verkeerde
+              klacht op. De eigenaar 10-8: "zijn te klein". Ruimte besparen was
+              MIJN zorg; op een telefoon scrol je toch, dus verticale ruimte is
+              het goedkoopste wat er is. Een knop die je makkelijk raakt is meer
+              waard dan een halve schermhoogte winst.
+
+              Nu dus weer onder elkaar, maar met een verschil: over de VOLLE
+              BREEDTE. Dat is wat het de vorige keer niet was — twee smalle
+              knoppen onder elkaar zien er slap uit, twee brede lezen als een
+              keuze. Ze zijn ook weer op de gewone paginamaat (18px tekst, px-8
+              py-4), zodat ze niet langer de kleinste knoppen van de pagina zijn.
+              Aanraakvlak: ~59px hoog, ruim boven de 44px die WCAG 2.2 vraagt. */}
+          <div data-reveal className="mt-6 flex gap-3 max-sm:flex-col sm:mt-8">
+            {/* ⚠️ De doorzichtige rand is GEEN opsmuk. De lichte knop hieronder
+                heeft `border-2`, deze niet, dus die werd 64px hoog en deze 60.
+                Naast elkaar zie je dat niet; recht boven elkaar en allebei even
+                breed wél — dan lijkt de onderste knop groter. Alleen op de
+                telefoon, want op een breed scherm staan ze naast elkaar en is
+                de hoogte van de gevulde knop af. */}
+            <BlobKnop href="/sign-up" className="max-sm:w-full max-sm:border-2 max-sm:border-transparent">
               <span className="sm:hidden">Probeer gratis</span>
               <span className="hidden sm:inline">Probeer Avinka gratis</span>
             </BlobKnop>
-            <BlobKnop href="#tools" variant="licht" className="max-sm:px-3.5 max-sm:py-2.5 max-sm:text-sm">
+            <BlobKnop href="#tools" variant="licht" className="max-sm:w-full">
               Bekijk de tools
             </BlobKnop>
           </div>
