@@ -561,53 +561,82 @@ function StapelScene() {
   const [omgedraaid, setOmgedraaid] = useState<boolean[]>(() => KAARTEN.map(() => false));
   const [vertrekkend, setVertrekkend] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
-  const greep = useRef<{ startY: number; startX: number; laatsteY: number; laatsteT: number; snelheid: number; bewogen: boolean } | null>(null);
+  /* `richting` blijft null tot duidelijk is welke kant de vinger op gaat.
+     Zodra dat "omhoog/omlaag" is laten we de veeg helemaal los: dan hoort hij
+     bij de PAGINA en niet bij de stapel. */
+  const greep = useRef<{
+    startY: number; startX: number; laatsteX: number; laatsteT: number;
+    snelheid: number; bewogen: boolean; richting: "zij" | "vert" | null;
+  } | null>(null);
   /* zelfde click-na-veeg-vlag als op desktop */
   const netGeveegd = useRef(false);
 
   const bovenste = volgorde[0];
 
-  const zetTransform = (dy: number, dx: number, animatie: string) => {
+  /* ⚠️ DE KAART GAAT NU OPZIJ, NIET OMHOOG. Zie de uitleg bij touchAction
+     hieronder waarom. De verticale verplaatsing is alleen nog een lichte dip:
+     een polaroid die je opzij schuift zakt een beetje mee, dat leest als
+     gewicht. */
+  const zetTransform = (dx: number, animatie: string) => {
     const el = topRef.current;
     if (!el) return;
     el.style.transition = animatie;
-    el.style.transform = `translate3d(${dx * 0.3}px, ${dy}px, 0) rotate(${dx * 0.04}deg)`;
+    el.style.transform = `translate3d(${dx}px, ${Math.abs(dx) * 0.06}px, 0) rotate(${dx * 0.05}deg)`;
   };
 
   const opDown = (e: ReactPointerEvent) => {
     if (vertrekkend) return;
-    greep.current = { startY: e.clientY, startX: e.clientX, laatsteY: e.clientY, laatsteT: performance.now(), snelheid: 0, bewogen: false };
+    greep.current = {
+      startY: e.clientY, startX: e.clientX, laatsteX: e.clientX,
+      laatsteT: performance.now(), snelheid: 0, bewogen: false, richting: null,
+    };
   };
   const opMove = (e: ReactPointerEvent) => {
     const g = greep.current;
     if (!g || vertrekkend) return;
     const dy = e.clientY - g.startY;
     const dx = e.clientX - g.startX;
+
+    /* 🔑 DE KERN VAN DE FIX: pas bij 8px beweging bepalen we welke kant deze
+       veeg op wil, en dat besluit staat daarna vast voor de rest van het
+       gebaar. Gaat hij vooral omhoog of omlaag, dan laten we hem LOS — geen
+       pointer-capture, geen transform — en scrolt de pagina gewoon door.
+       ⚠️ Dat besluit moet één keer vallen en niet elke muisbeweging opnieuw:
+       tijdens een schuine veeg wisselt de grootste van de twee anders heen en
+       weer, en dan pakt en lost de kaart om beurten. */
     if (!g.bewogen && Math.hypot(dx, dy) > 8) {
       g.bewogen = true;
-      (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+      g.richting = Math.abs(dx) > Math.abs(dy) ? "zij" : "vert";
+      if (g.richting === "zij") (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
     }
-    if (g.bewogen) {
+    if (g.bewogen && g.richting === "zij") {
       const nu = performance.now();
-      g.snelheid = (e.clientY - g.laatsteY) / Math.max(1, nu - g.laatsteT);
-      g.laatsteY = e.clientY;
+      g.snelheid = (e.clientX - g.laatsteX) / Math.max(1, nu - g.laatsteT);
+      g.laatsteX = e.clientX;
       g.laatsteT = nu;
-      /* omlaag slepen remt af: de stapel wil maar één kant op */
-      const gedempt = dy < 0 ? dy : dy * 0.25;
-      zetTransform(gedempt, dx, "none");
+      zetTransform(dx, "none");
     }
   };
   const opUp = (e: ReactPointerEvent) => {
     const g = greep.current;
     greep.current = null;
     if (!g || vertrekkend) return;
+    /* ⚠️ DEZE REGEL MOET VÓÓR DE VERTICALE UITSTAP STAAN. Zet je hem erna, dan
+       telt een verticale sleep als een gewone tik en klapt de foto om terwijl
+       je alleen wilde scrollen. Precies dat gebeurde in de test.
+       🔑 Een sleep is geen tik, ongeacht de richting. Dat de veeg niet voor ons
+       was betekent alleen dat de KAART niets doet, niet dat er niets gebeurde. */
     netGeveegd.current = g.bewogen;
+    /* Een verticale veeg was voor de pagina, niet voor de stapel. */
+    if (g.richting === "vert") return;
     if (!g.bewogen) return; // klik → flip (via onClick)
-    const dy = e.clientY - g.startY;
-    const weg = dy < -90 || g.snelheid < -0.55;
+    const dx = e.clientX - g.startX;
+    const weg = Math.abs(dx) > 90 || Math.abs(g.snelheid) > 0.55;
     if (weg) {
       setVertrekkend(true);
-      zetTransform(-window.innerHeight * 0.9, e.clientX - g.startX, "transform 0.42s cubic-bezier(0.23, 1, 0.32, 1)");
+      /* de kaart verlaat het scherm aan de kant waar je hem heen duwde */
+      const kant = dx < 0 ? -1 : 1;
+      zetTransform(kant * window.innerWidth * 1.1, "transform 0.42s cubic-bezier(0.23, 1, 0.32, 1)");
       window.setTimeout(() => {
         setVolgorde((v) => [...v.slice(1), v[0]]);
         setOmgedraaid((o) => o.map((val, i) => (i === bovenste ? false : val)));
@@ -619,7 +648,7 @@ function StapelScene() {
         setVertrekkend(false);
       }, 430);
     } else {
-      zetTransform(0, 0, "transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)");
+      zetTransform(0, "transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)");
     }
   };
   const opKlik = () => {
@@ -634,7 +663,22 @@ function StapelScene() {
 
   return (
     <div className="lg:hidden">
-      <div className="relative mx-auto" style={{ width: kaartBreed, height: `calc(${kaartBreed} * ${KAART_RATIO} + 44px)`, touchAction: "none" }}>
+      {/* ⚠️⚠️ `touchAction: "pan-y"` EN NIET "none" — HIER ZAT EEN ECHTE BUG.
+         Met "none" belooft dit blok aan de browser dat het ÉLKE veeg zelf
+         afhandelt, ook een verticale. Gevolg: wilde je bij de foto's gewoon
+         verder naar beneden scrollen, dan gebeurde er niets — je stond stil op
+         de polaroids. Gevonden door de eigenaar.
+         Met "pan-y" houdt de browser het verticale pannen zelf (de pagina
+         scrolt door) en krijgen wij alleen het horizontale gebaar.
+
+         🔑 De tweede helft van de fix zit in opMove: `touch-action` regelt wat
+         de BROWSER doet, maar onze eigen code moet dezelfde grens trekken.
+         Zonder de richtingtoets daar zou een schuine veeg alsnog de kaart
+         meenemen én de pagina laten scrollen.
+         🔑 En de derde helft is de tekst eronder: die zei "veeg omhoog". Een
+         gebaar veranderen zonder de aanwijzing te veranderen levert een
+         instructie op die actief tegenwerkt. */}
+      <div className="relative mx-auto" style={{ width: kaartBreed, height: `calc(${kaartBreed} * ${KAART_RATIO} + 44px)`, touchAction: "pan-y" }}>
         {/* de stapel eronder: alleen de eerstvolgende twee, steeds iets
            kleiner en lager — genoeg om de stapel te voelen */}
         {[2, 1].map((diepte) => {
@@ -664,7 +708,7 @@ function StapelScene() {
           onPointerDown={opDown}
           onPointerMove={opMove}
           onPointerUp={opUp}
-          onPointerCancel={() => { greep.current = null; zetTransform(0, 0, "transform 0.5s cubic-bezier(0.23,1,0.32,1)"); }}
+          onPointerCancel={() => { greep.current = null; zetTransform(0, "transform 0.5s cubic-bezier(0.23,1,0.32,1)"); }}
         >
           <button
             type="button"
@@ -679,7 +723,7 @@ function StapelScene() {
       </div>
 
       <p className="mt-6 text-center text-sm font-semibold text-ink/60">
-        tik om te lezen · veeg omhoog voor de volgende
+        tik om te lezen · veeg opzij voor de volgende
       </p>
       <div className="mt-3 flex items-center justify-center gap-1.5" aria-hidden>
         {KAARTEN.map((k, i) => (
