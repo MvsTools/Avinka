@@ -687,7 +687,16 @@ export function WereldIntro() {
          1 / 1,05): de uitleg hiernaast is de kern van de hele pagina en las
          als een zijopmerking. Met een bredere kolom past de eerste zin op
          minder regels en kan hij groter staan zonder te versnipperen. */}
-      <div className="relative mx-auto grid w-full max-w-5xl gap-10 px-6 pb-24 pt-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16 lg:pb-32 lg:pt-24">
+      {/* ⚠️ ALLEEN `pt` OP DE TELEFOON, NIET `pb`. De eigenaar miste ruimte tussen
+         de handgeschreven regel van "Herken je dit?" en de kop hier, en zei er
+         meteen bij: "de tussenruimte richting De tools is perfect". Dat is dus
+         geen sectie die te krap staat maar één rand die te krap staat.
+         🔑 Ruimte hoort bij de kant waar hij ontbreekt. Was ik hier op de hele
+         sectie gaan sleutelen (of op de gap), dan had ik de onderkant meeverpest
+         die al goed was — en dat merk je pas twee schermen verder.
+         Gemeten: het gat was 176px, waarvan 82px van deze sectie en de rest de
+         staart van de vorige plus de golf. Nu 208px. */}
+      <div className="relative mx-auto grid w-full max-w-5xl gap-10 px-6 pb-24 pt-16 max-sm:pt-24 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16 lg:pb-32 lg:pt-24">
         {/* Papier: alleen zichtbaar met de schakelaar aan (zie RUIS_OP_PAPIER). */}
         {RUIS_OP_PAPIER && (
           <Confetti punten={[{ x: "2%", y: "18%", r: 4, amber: true }, { x: "96%", y: "70%", r: 5 }, { x: "88%", y: "8%", r: 3 }]} />
