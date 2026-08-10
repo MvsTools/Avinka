@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { DONKER, Golf, HAND_REGEL, KOP, KOP_BLOK, KOP_SECTIE, MINT_LICHT, KaartVlak, VLAK_MINT, schaduw } from "./Wereld";
 
 /* ── De privacysectie ──────────────────────────────────────────────────────
@@ -220,6 +220,10 @@ function AiIcoon({ soort }: { soort: "training" | "vooraf" | "controle" }) {
 }
 
 export function WereldPrivacy() {
+  /* Welk van de drie AI-icoontjes is aangetikt. Alleen op een telefoon; vanaf
+     640px staan de drie blokjes gewoon onder elkaar en doet deze stand niets. */
+  const [aiActief, setAiActief] = useState(0);
+
   return (
     <section className="relative overflow-hidden" style={{ background: MINT_LICHT }} aria-label="Privacy">
       <Golf kleur="var(--w-papier, #fcfbf7)" flip vorm="oploopRechts" hoogte="h-[70px] sm:h-[118px]" />
@@ -377,7 +381,92 @@ export function WereldPrivacy() {
              dus dubbel. Wat overblijft zijn de drie blokjes zelf: geen kop,
              geen tussenzin, geen uitleg-alinea's. Dit blok moet je in één blik
              kunnen lezen, dus alles wat de kop al zegt is weg. */}
-          <div className="lg:pt-10">
+          {/* ⭐ OP EEN TELEFOON: DRIE ICOONTJES, TIK ER EEN AAN OM DE TEKST TE LEZEN.
+             Hier stonden de drie blokjes gewoon onder elkaar, en de eigenaar vond
+             dat lelijk. Terecht: elk blokje is een witte kaart met een tegel van
+             72px waar alléén een titel in staat — geen uitleg, geen tweede regel.
+             Dat is veel gewicht voor weinig inhoud, en samen met de fotokaart
+             erboven werd de sectie 1082px hoog.
+
+             🔑 Waarom dit beter is dan de teksten inkorten (mijn eerste plan): de
+             tekst hoeft niet te krimpen als er maar ÉÉN tegelijk staat. "Je ziet
+             vooraf wat wel en niet mag" past niet in een kolom van een derde
+             scherm, maar wel over de volle breedte eronder. Zo blijft de zin heel
+             en wordt de sectie tóch korter.
+             ⚠️ Ja, dit lijkt op de tabbladen bij "Zo werkt het". Dat is bewust en
+             op verzoek van de eigenaar: hetzelfde gebaar (tik een kopje aan) op
+             twee plekken is een patroon, en dat is iets anders dan twee
+             verschillende bewegingen na elkaar — precies de klacht die de veegrail
+             daar de kop kostte. */}
+          <div className="mt-10 sm:hidden">
+            <div
+              role="tablist"
+              aria-label="Hoe we AI veilig houden"
+              className="flex items-center justify-center gap-5"
+            >
+              {AI.map((a, i) => (
+                <button
+                  key={a.titel}
+                  type="button"
+                  role="tab"
+                  id={`ai-tab-${i}`}
+                  /* Het icoon zegt niets tegen een schermlezer, dus de titel is
+                     hier de naam van de knop. Zonder dit heet hij "knop". */
+                  aria-label={a.titel}
+                  aria-selected={i === aiActief}
+                  aria-controls={`ai-paneel-${i}`}
+                  onClick={() => setAiActief(i)}
+                  className="rounded-2xl transition-transform duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
+                >
+                  <span
+                    /* De actieve tegel is aan drie dingen te herkennen: een
+                       groene rand, volle dekking en iets groter. Alleen kleur is
+                       niet genoeg voor wie kleuren slecht onderscheidt. */
+                    /* ⚠️ WIT, niet de mintkleur van de tegels op pc. Daar liggen
+                       ze ín een witte kaart en steken ze dus af; hier liggen ze
+                       rechtstreeks op het mintveld van de sectie, en dan is
+                       mint-op-mint onzichtbaar — je zag drie zwevende icoontjes
+                       zonder tegel. Wit is bovendien wat de rest van de pagina
+                       op dit veld doet.
+                       🔑 Een kleur is nooit "goed" op zichzelf, alleen tegen de
+                       ondergrond waar hij op ligt. Deze tegel verhuisde van een
+                       witte kaart naar een mintveld en moest dus mee veranderen. */
+                    className={`flex h-[4.5rem] w-[4.5rem] items-center justify-center border-[2.5px] bg-white transition-all duration-200 ${
+                      i === aiActief ? "scale-105 opacity-100" : "scale-100 opacity-70"
+                    }`}
+                    style={{
+                      borderRadius: BLOK_FOTO[i],
+                      borderColor: i === aiActief ? KOP : KAART_RAND,
+                      boxShadow: i === aiActief ? schaduw(14, 30, -18, 0.45) : schaduw(8, 18, -12, 0.35),
+                    }}
+                  >
+                    <AiIcoon soort={a.icoon} />
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* ⚠️ Gemeten ondergrens, geen gok: zonder min-h springt alles
+               eronder op zodra je een ander icoon aantikt, want de drie titels
+               zijn niet even lang. */}
+            <div className="mt-5 min-h-[3.5rem] text-center">
+              {AI.map((a, i) => (
+                <h4
+                  key={a.titel}
+                  role="tabpanel"
+                  id={`ai-paneel-${i}`}
+                  aria-labelledby={`ai-tab-${i}`}
+                  hidden={i !== aiActief}
+                  className="font-display text-[1.15rem] font-black leading-snug [text-wrap:balance]"
+                  style={{ color: DONKER }}
+                >
+                  {a.titel}
+                </h4>
+              ))}
+            </div>
+          </div>
+
+          <div className="max-sm:hidden lg:pt-10">
             {/* Eén data-reveal op de rij, niet op elk blokje.
 
                Elk blokje had er eerst zijn eigen, en dat pakte slecht uit: de
