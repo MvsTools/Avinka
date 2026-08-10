@@ -969,7 +969,15 @@ export default function Landing({
               /* PROEF: op een telefoon mag de pagina niet met een lege band
                  beginnen. De pt-28 stond er om onder de vaste balk uit te komen
                  — en die balk is er nu juist niet meer bij het openen. */
-              : "relative flex flex-col items-center gap-8 overflow-hidden px-4 pb-16 pt-28 max-sm:gap-6 max-sm:pt-7"
+              /* ⚠️ De tussenruimte staat op ÉÉN plek (de gap van deze kolom) en
+                 niet als losse marges op de vier blokken. Dat is met opzet: de
+                 eigenaar vroeg "dashboard iets lager, belofte iets lager, knop
+                 iets lager", en dat is drie keer dezelfde wens — de afstand
+                 tussen de blokken. Met losse marges moet je dat op drie plekken
+                 bijhouden en lopen ze gegarandeerd uit elkaar.
+                 Er was ruimte voor: na het weghalen van de zekerheden bleef er
+                 ruim 200px onder de knop over op een scherm van 844. */
+              : "relative flex flex-col items-center gap-8 overflow-hidden px-4 pb-16 pt-28 max-sm:gap-10 max-sm:pt-7"
           }
         >
           {/* Lichtlagen: avond onder, dag erboven ingefaded.
