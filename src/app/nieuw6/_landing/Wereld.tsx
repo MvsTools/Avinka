@@ -992,7 +992,7 @@ export function WereldHerken() {
         hoogte={170}
         style={{ left: "-34%", bottom: 120, transform: "rotate(6deg)" }}
         /* ook onder de golf, om dezelfde reden als de twee hieronder */
-        className="-z-10 lg:hidden"
+        className="z-[1] lg:hidden"
         tel={5}
       />
       {/* Twee erbij op verzoek: dit veld is lang (drie kaarten plus de
@@ -1001,8 +1001,24 @@ export function WereldHerken() {
          afsluitende golf in. Samen met het vlak hierboven links geeft dat het
          zigzagje dat op pc over de hele pagina loopt, maar dan bínnen één
          sectie — want op een telefoon is dit veld zelf al twee schermen hoog. */}
-      {/* ⚠️⚠️ `-z-10` EN NIET `z-[6]` — HIER ZAT DE ECHTE FOUT, en het kostte
-         twee ronden omdat ik naar de MATEN keek terwijl het de STAPELING was.
+      {/* ⚠️⚠️ `z-[1]` — ONDER DE GOLF (z-5) MAAR BOVEN DE SECTIE-ACHTERGROND.
+         Dit getal is in drie stappen goed gekomen en alle drie zijn de moeite
+         waard om te onthouden:
+
+         1. `z-[6]` (overgenomen van het brede vlak hiernaast): dan liggen ze
+            BOVEN de golf, die kan ze niet afsnijden en dus lopen ze niet mee
+            met de curve. Dat was de klacht van de eigenaar.
+         2. `-z-10` (overgenomen van de toolsectie): daar werkt het, want die
+            sectie heeft `isolate` en houdt zijn negatieve lagen dus binnen.
+            DEZE sectie heeft dat niet — `relative` zonder z-index maakt geen
+            eigen stapelcontext — dus zakten de vlakken door tot achter de
+            sectie-achtergrond en waren ze helemaal onzichtbaar.
+         3. `z-[1]`: boven de achtergrond, onder de golf. Klaar.
+
+         🔑 DE LES: een z-waarde is niet overdraagbaar tussen secties. Hij zegt
+         alleen iets binnen zijn eigen stapelcontext, en of een sectie die heeft
+         hangt af van `isolate`/`transform`/een eigen z-index. Ik heb twee keer
+         een getal gekopieerd van een plek waar het wél werkte.
 
          De golf ligt op z-[5]. Deze twee vlakken hadden z-[6] meegekregen —
          overgenomen van het brede vlak hierboven, dat die waarde heeft omdat het
@@ -1021,13 +1037,21 @@ export function WereldHerken() {
          Nu ze onder de golf liggen mogen ze ook weer groter en dieper in de
          golfband steken: de golf doet het snijwerk, dus de eigen omtrek van de
          vorm is daar niet meer te zien. */}
+      {/* Groter op verzoek: hij mag meer van het veld dragen. Van 330x185 naar
+         420x265. De top blijft ruim ONDER de golfband (top -70 bij een golf van
+         0 tot 79), want dat is wat hem laat meelopen met de curve; alleen zijn
+         onderkant komt verder het veld in.
+         ⚠️ Alleen de HOOGTE fors mee omhoog en de breedte maar iets: breder
+         betekent dat zijn linkerrand verder het scherm in kruipt, en dat was
+         precies het probleem van twee ronden geleden. Dieper is veilig, breder
+         niet. */}
       <KaartVlak
         kleur={VLAK_MINT}
         vorm="ei"
-        breedte={330}
-        hoogte={185}
-        style={{ right: "-30%", top: -55, transform: "rotate(-7deg)" }}
-        className="-z-10 lg:hidden"
+        breedte={420}
+        hoogte={265}
+        style={{ right: "-30%", top: -70, transform: "rotate(-7deg)" }}
+        className="z-[1] lg:hidden"
         tel={2}
       />
       <KaartVlak
@@ -1036,7 +1060,7 @@ export function WereldHerken() {
         breedte={330}
         hoogte={200}
         style={{ right: "-32%", bottom: -70, transform: "rotate(8deg)" }}
-        className="-z-10 lg:hidden"
+        className="z-[1] lg:hidden"
         tel={7}
       />
       <Drijvers punten={[{ x: "46%", y: "88%", amber: true, tel: 2 }, { x: "88%", y: "80%", tel: 4 }]} />
