@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { PROEF_DAGEN } from "@/lib/abonnement";
 
@@ -1218,6 +1218,17 @@ export function WereldHerken() {
    - Het is een vorm die iedereen kent, dus er valt niets uit te leggen. */
 
 export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
+  /* ⭐ ALLEEN OP DE TELEFOON: het CV is ingeklapt tot de groene band.
+     Verzoek van de eigenaar: "kap hem af waar het groene vlak eindigt en maak
+     hem uitklapbaar — dan neemt hij minder in, maar kunnen mensen hem wel
+     openen als ze willen."
+     🔑 De groene band is precies de goede knip, want dat is het stuk dat de
+     vraag "wie is dit?" beantwoordt: naam, rol en gezicht. Alles eronder
+     (personalia en het verhaal) is verdieping, en verdieping mag achter een
+     klik. Op een breed scherm staat het CV naast de tekst en is er ruimte zat,
+     dus daar blijft alles gewoon staan. */
+  const [cvOpen, setCvOpen] = useState(false);
+
 
   return (
     <section className="relative overflow-hidden">
@@ -1510,6 +1521,38 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                  maat waarop lopende tekst het prettigst leest.
                  Boven elkaar zet het bovendien de volgorde neer die de eigenaar
                  vroeg: "beetje persoonlijke info, daarna vooral over Avinka". */}
+              {/* ⭐ DE UITKLAPKNOP, alleen op de telefoon. Staat direct onder de
+                 groene band, dus precies op de knip.
+                 ⚠️ `aria-expanded` en `aria-controls` horen erbij: zonder die
+                 twee is dit voor een schermlezer een knop die iets onzichtbaars
+                 doet. */}
+              <button
+                type="button"
+                onClick={() => setCvOpen((v) => !v)}
+                aria-expanded={cvOpen}
+                aria-controls="cv-vervolg"
+                className="w-cv-meer"
+              >
+                {cvOpen ? "Minder lezen" : "Lees meer over mij"}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={cvOpen ? "w-cv-pijl w-cv-pijl-op" : "w-cv-pijl"}>
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+
+              {/* ⚠️ De hoogte-animatie loopt via `grid-template-rows` van 0fr naar
+                 1fr, en dat is met opzet: zo hoeft niemand de hoogte van de
+                 inhoud te weten. Met een vaste `max-height` moet je een getal
+                 gokken dat groter is dan de inhoud, en dan klapt hij te snel of
+                 te traag open zodra de tekst verandert.
+                 Het kind eronder heeft `overflow-hidden` — zonder dat knipt er
+                 niets en zie je de inhoud gewoon staan. */}
+              <div
+                id="cv-vervolg"
+                className={`max-sm:grid max-sm:transition-[grid-template-rows] max-sm:duration-300 max-sm:ease-out ${
+                  cvOpen ? "max-sm:grid-rows-[1fr]" : "max-sm:grid-rows-[0fr]"
+                }`}
+              >
+              <div className="max-sm:overflow-hidden">
               <div className="w-cv-strook">
                 {/* Alle gegevens hieronder komen van de eigenaar zelf. Niets
                    hiervan invullen, afronden of bijstellen zonder hem: het zijn
@@ -1626,6 +1669,8 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
                    ging geen informatie verloren.
                    🔑 Als er ooit een derde blok bij moet: dan moet er ook een
                    ander blok uit, of het document past niet meer. */}
+              </div>
+              </div>
               </div>
 
             </article>
@@ -1926,6 +1971,54 @@ export function WereldMaker({ fotoBestand }: { fotoBestand?: string }) {
            (zie .w-mkr-rij).
            De middelste kolom krijgt iets meer breedte: daar staat de langste
            waarde (de schoolnaam), en in een gelijke derde liep die om. */
+        /* ── de uitklapknop onder de groene band (alleen telefoon) ──
+           Geen echte knopvorm: dit is geen actie maar een uitnodiging om verder
+           te lezen, en een tweede groene knop zou concurreren met de knoppen in
+           de rest van de sectie. Vandaar een regel met een pijltje, in de
+           kopkleur, over de volle breedte zodat hij makkelijk te raken is. */
+        /* ⚠️⚠️ HET VERBERGEN OP PC MOET HIER GEBEUREN, NIET MET DE KLASSE
+           sm:hidden. Ik had de knop die klasse gegeven en dat werkte niet: hij
+           zet display op none, maar de regel hieronder zette hem op flex. Beide
+           zijn even zwaar (één klasse), dus wint wie later in het stijlblad
+           staat — en dit blok staat ín het component, dus ná de Tailwind-stijlen.
+           Gevolg: op een breed scherm stond er een "Lees meer over mij"-knop die
+           daar niets te zoeken heeft, want daar staat het CV gewoon open.
+           🔑 Meng geen eigen CSS-regel met een Tailwind-klasse voor dezelfde
+           eigenschap. Regel het in één van de twee — hier dus in de media-query.
+           ⚠️⚠️ EN GEEN ACCENT-AANHALINGSTEKENS IN DIT BLOK, ook niet in een
+           opmerking: dat sluit de tekst en de hele pagina valt om. Dat staat
+           twintig regels hierboven al gewaarschuwd en ik ben er vandaag drie
+           keer ingetrapt. */
+        .w-cv-meer { display: none; }
+        @media (max-width: 639px) {
+          .w-cv-meer {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            padding: 0.85rem 1rem;
+            font-family: var(--font-display), Georgia, serif;
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: ${KOP};
+            border-bottom: 1px solid rgba(var(--w-schaduw-rgb, 23,80,58), 0.1);
+          }
+        }
+        .w-cv-meer:focus-visible {
+          outline: 2px solid var(--color-brand, #2f9e6e);
+          outline-offset: -3px;
+        }
+        .w-cv-pijl {
+          height: 1rem;
+          width: 1rem;
+          transition: transform 0.25s ease;
+        }
+        .w-cv-pijl-op { transform: rotate(180deg); }
+        @media (prefers-reduced-motion: reduce) {
+          .w-cv-pijl { transition: none; }
+        }
+
         .w-cv-feiten {
           display: grid;
           grid-template-columns: 0.85fr 1.3fr 0.85fr;
