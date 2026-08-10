@@ -82,7 +82,16 @@ const STRIP = [
      verderop (Privacy.tsx), i.p.v. zelf een aparte belofte te doen. */
   "🔒 Privacy voorop",
   "🇳🇱 Volledig Nederlands",
-  "💚 Door een leerkracht gemaakt",
+  /* ⚠️ 10-8: WAS "Door een leerkracht gemaakt", en de reden voor het inkorten is
+     opmaak, niet stijl. Ze horen in twee rijen van twee te staan; deze was zo
+     breed dat hij op een telefoon zijn buurman naar een derde regel duwde. Dan
+     staan er twee naast elkaar en twee eronder — scheef, en dat viel de eigenaar
+     meteen op. De kortere tekst is van hem.
+     🔑 Bijvangst die het een verbetering maakt en geen concessie: "Van een
+     leerkracht" ligt dichter bij de tagline die overal op de pagina staat, "van
+     leerkracht voor leerkrachten". Het zegt hetzelfde in minder woorden.
+     ⚠️ Deze regel wordt door telefoon én pc gebruikt; er is bewust één tekst. */
+  "💚 Van een leerkracht",
   "✓ Maandelijks opzegbaar",
 ];
 
@@ -1441,11 +1450,15 @@ export default function Landing({
              gepositioneerde laag die erna komt. Kijk bij onzichtbaar-maar-
              aanwezig dus niet naar opacity maar naar wat eroverheen ligt. */}
           <div className="relative z-10 flex w-[min(94vw,39rem)] flex-col gap-3 px-1 max-sm:order-4 sm:hidden">
+            {/* ⚠️ HIER STOND OOK "Bekijk de tools" EN DIE IS ER BEWUST UIT.
+               Besluit van de eigenaar: die knop bewaren we voor "De slimme
+               werkplek" verderop, waar hij al staat. Op het openingsscherm hoort
+               één actie — twee knoppen naast de belofte maken van een uitnodiging
+               een keuzemenu, en dat is precies de rust die deze proef zoekt.
+               De tools blijven bereikbaar: die sectie komt vanzelf, en er staat
+               ook nog een tegel-rij onderweg. */}
             <BlobKnop href="/sign-up" className="w-full border-2 border-transparent px-5">
               Probeer Avinka gratis
-            </BlobKnop>
-            <BlobKnop href="#tools" variant="licht" className="w-full px-5">
-              Bekijk de tools
             </BlobKnop>
             {/* De wachtpost: een streepje van niets, precies onder de knoppen.
                Zodra dit de bovenkant van het scherm uit is, schuift de balk in.
@@ -1454,14 +1467,31 @@ export default function Landing({
           </div>
 
           {/* De zekerheden, telefoonversie: onder de knoppen. Zie de opmerking
-             bij het origineel hierboven waarom dit een kopie is. */}
-          <div className="relative z-10 flex flex-col items-center gap-2 max-sm:order-5 sm:hidden">
-            {[STRIP.slice(0, 2), STRIP.slice(2, 4)].map((rij, i) => (
-              <div key={i} className="flex flex-wrap items-center justify-center gap-2">
+             bij het origineel hierboven waarom dit een kopie is.
+
+             ⚠️ DE PAREN STAAN HIER ANDERS DAN OP EEN BREED SCHERM, en dat is
+             gemeten werk. Twee rijen van twee is de bedoeling; met de volgorde
+             van STRIP zelf past rij 2 net niet op 360px (155 + 174 + 8 = 337 bij
+             328 beschikbaar) en klapt er één chip naar een derde regel. Dan zie
+             je twee naast elkaar en twee eronder — precies wat de eigenaar lelijk
+             noemde.
+             Van de zes mogelijke paren passen deze twee wél:
+               "Privacy voorop" + "Maandelijks opzegbaar"   (135 + 174)
+               "Van een leerkracht" + "Volledig Nederlands" (155 + 159)
+             🔑 Bijvangst: het leest ook beter. Rij 1 gaat over wat je NIET
+             riskeert, rij 2 over waar het vandaan komt.
+             ⚠️ Niet oplossen door de tekst te verkleinen — dat is precies de fout
+             van gisteren. De ruimte eromheen mag krimpen, de letter niet. */}
+          <div className="relative z-10 flex flex-col items-center gap-1.5 max-sm:order-5 sm:hidden">
+            {[
+              [STRIP[0], STRIP[3]],
+              [STRIP[2], STRIP[1]],
+            ].map((rij, i) => (
+              <div key={i} className="flex flex-nowrap items-center justify-center gap-1.5">
                 {rij.map((s) => (
                   <span
                     key={s}
-                    className="rounded-full bg-white px-3.5 py-1.5 text-center text-xs font-bold text-ink/75 shadow-sm ring-1 ring-black/5"
+                    className="whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-center text-xs font-bold text-ink/75 shadow-sm ring-1 ring-black/5"
                   >
                     {s}
                   </span>
