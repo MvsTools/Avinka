@@ -1000,21 +1000,34 @@ export function WereldHerken() {
          afsluitende golf in. Samen met het vlak hierboven links geeft dat het
          zigzagje dat op pc over de hele pagina loopt, maar dan bínnen één
          sectie — want op een telefoon is dit veld zelf al twee schermen hoog. */}
+      {/* ⚠️⚠️ DEZE TWEE STONDEN TE VER HET SCHERM IN EN DAT WAS FOUT.
+         Ze waren 320-340 breed op -28%/-32%, en dan begint de vorm al op een
+         derde van het scherm. Je ziet dan niet een veld met een zachte hoek,
+         maar de EIGEN OMTREK van de vorm als een grote curve dwars door het
+         veld — bij de bovenste liep die pal door de kop "Herken je dit?" heen.
+         🔑 Dat is dezelfde fout als regel 2 uit mijn aantekeningen, alleen aan
+         de zijkant in plaats van onderaan: zodra je de omtrek van het vlak zíét,
+         is het geen achtergrond meer maar een vorm.
+         Nu smaller en verder naar buiten (-42%/-40%), zodat er nog maar een
+         hoek van ongeveer 100px binnenkomt — vergelijkbaar met het vlak in
+         "Veilig omgaan met AI" dat wél goed werd bevonden.
+         De bovenste ligt strak tegen de openingsgolf, de onderste duikt in de
+         afsluitende golf. */}
       <KaartVlak
         kleur={VLAK_MINT}
         vorm="ei"
-        breedte={320}
-        hoogte={185}
-        style={{ right: "-28%", top: -30, transform: "rotate(-7deg)" }}
+        breedte={260}
+        hoogte={150}
+        style={{ right: "-42%", top: -10, transform: "rotate(-7deg)" }}
         className="z-[6] lg:hidden"
         tel={2}
       />
       <KaartVlak
         kleur={VLAK_MINT_ZACHT}
         vorm="schelp"
-        breedte={340}
-        hoogte={215}
-        style={{ right: "-32%", bottom: -80, transform: "rotate(8deg)" }}
+        breedte={280}
+        hoogte={170}
+        style={{ right: "-40%", bottom: -30, transform: "rotate(8deg)" }}
         className="z-[6] lg:hidden"
         tel={7}
       />
