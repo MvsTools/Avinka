@@ -43,6 +43,24 @@ export function WereldHoeWerktHet() {
      alle drie de stappen gewoon naast elkaar en doet deze stand niets. */
   const [actief, setActief] = useState(0);
 
+  /* ⭐ UIT WELKE KANT DE NIEUWE TEKST BINNENKOMT.
+     De eigenaar: "het voelt niet of er iets gebeurt, er verschijnt random
+     nieuwe tekst". Precies: het wisselen wérkte, maar zonder richting is een
+     wissel niet te onderscheiden van een herlading. Een stap naar rechts hoort
+     van rechts binnen te komen, een stap terug van links.
+     🔑 Dit geldt ook bij het TIKKEN op een cijfer, en dat is het aardige: uit
+     welk nummer je aantikt volgt vanzelf een richting. Springen van 01 naar 03
+     komt dus ook van rechts. Zo hoort tikken en vegen bij elkaar in plaats van
+     dat het twee losse dingen zijn. */
+  const [richting, setRichting] = useState(1);
+
+  const naarStap = (i: number) => {
+    const doel = Math.min(STAPPEN.length - 1, Math.max(0, i));
+    if (doel === actief) return;
+    setRichting(doel > actief ? 1 : -1);
+    setActief(doel);
+  };
+
   /* ⭐ VEGEN ALS TWEEDE MANIER, NAAST DE CIJFERS.
      De veegrail is hier ooit weggehaald omdat je vlak erboven bij de tools ook
      al moest vegen. Dat argument gold toen vegen de ENIGE manier was: dan is het
@@ -91,9 +109,7 @@ export function WereldHoeWerktHet() {
     veeg.current = null;
     if (!v || v.richting !== "zij") return;
     const dx = e.clientX - v.startX;
-    if (Math.abs(dx) > 50) {
-      setActief((i) => Math.min(STAPPEN.length - 1, Math.max(0, i + (dx < 0 ? 1 : -1))));
-    }
+    if (Math.abs(dx) > 50) naarStap(actief + (dx < 0 ? 1 : -1));
     zetSchuif(0, "transform 0.26s cubic-bezier(0.23, 1, 0.32, 1)");
   };
 
@@ -173,7 +189,7 @@ export function WereldHoeWerktHet() {
                 id={`stap-tab-${i}`}
                 aria-selected={i === actief}
                 aria-controls={`stap-paneel-${i}`}
-                onClick={() => setActief(i)}
+                onClick={() => naarStap(i)}
                 className="flex flex-col items-center gap-2 rounded-xl px-2 py-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
               >
                 <span
@@ -219,11 +235,35 @@ export function WereldHoeWerktHet() {
           >
             {STAPPEN.map((s, i) => (
               <div
-                key={s.titel}
+                /* ⚠️ De `key` draagt `actief` mee, en dat is met opzet: daardoor
+                   maakt React bij elke wissel een nieuw element en speelt de
+                   animatie hieronder opnieuw af. Zonder dat verandert alleen de
+                   tekst en zie je niets bewegen — precies de klacht van de
+                   eigenaar: "er verschijnt random nieuwe tekst".
+                   🔑 Een animatie op een element dat blijft staan doet niets;
+                   een keyframe-animatie speelt alleen bij het VERSCHIJNEN. */
+                key={`${s.titel}-${actief}`}
                 role="tabpanel"
                 id={`stap-paneel-${i}`}
                 aria-labelledby={`stap-tab-${i}`}
                 hidden={i !== actief}
+                style={
+                  i === actief
+                    /* ⚠️ `backwards` en NIET `both`. Met `both` houdt het element
+                       de eindstand vast — maar ook de BEGINstand zolang de
+                       animatie niet is afgelopen, en die begint op doorzichtig.
+                       Loopt de animatie om wat voor reden niet af (achtergrond-
+                       tabblad, een browser die geen beelden tekent), dan blijft
+                       de tekst dus onzichtbaar hangen. Met `backwards` geldt de
+                       beginstand alleen vóór de start en valt het element daarna
+                       terug op zijn gewone opmaak: zichtbaar.
+                       🔑 Een animatie mag bepalen HOE iets verschijnt, nooit ÓF
+                       het er staat. Ik zag dit doordat de tekst in mijn
+                       testbrowser op doorzichtig bleef staan — daar worden geen
+                       beelden getekend, dus de animatie liep nooit af. */
+                    ? { animation: `${richting > 0 ? "stap-van-rechts" : "stap-van-links"} 0.3s cubic-bezier(0.23, 1, 0.32, 1) backwards` }
+                    : undefined
+                }
               >
                 <h3 className="font-display text-xl font-black tracking-tight text-ink">{s.titel}</h3>
                 <p className="mt-3 text-base leading-7 text-ink/75">{s.tekst}</p>
@@ -267,6 +307,31 @@ export function WereldHoeWerktHet() {
           ))}
         </div>
       </div>
+
+      {/* De tekst komt binnen van de kant waar je vandaan komt: naar de volgende
+         stap schuift hij van rechts, terug van links.
+         ⚠️ 34px en niet de 18 waar ik mee begon. De klacht was juist dat het niet
+         voelde alsof er iets gebeurde; dan is "netjes subtiel" precies de
+         verkeerde kant. Genoeg om te zien wélke kant het op gaat, kort genoeg om
+         niet in de weg te zitten.
+         ⚠️ Bij "minder beweging" in de systeeminstellingen blijft alleen het
+         opkomen over: de richting is dan niet essentieel, de wissel wel.
+         (GEEN BACKTICKS in dit commentaar: dit blok staat in een
+         template-string.) */}
+      <style>{`
+        @keyframes stap-van-rechts {
+          from { opacity: 0; transform: translate3d(34px, 0, 0); }
+          to { opacity: 1; transform: translate3d(0, 0, 0); }
+        }
+        @keyframes stap-van-links {
+          from { opacity: 0; transform: translate3d(-34px, 0, 0); }
+          to { opacity: 1; transform: translate3d(0, 0, 0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          @keyframes stap-van-rechts { from { opacity: 0; } to { opacity: 1; } }
+          @keyframes stap-van-links { from { opacity: 0; } to { opacity: 1; } }
+        }
+      `}</style>
     </section>
   );
 }
