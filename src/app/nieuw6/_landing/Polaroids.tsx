@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
@@ -562,7 +563,7 @@ function StapelScene() {
   /* De kaart die je zojuist wegveegde en die nog het scherm uit vliegt. Hij is
      op dat moment al GEEN bovenste kaart meer — hij ligt er alleen nog even
      overheen als losse laag, zodat hij niets blokkeert. */
-  const [vliegt, setVliegt] = useState<{ idx: number; kant: number; omgedraaid: boolean } | null>(null);
+  const [vliegt, setVliegt] = useState<{ idx: number; kant: number; dx: number; omgedraaid: boolean } | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
   /* `richting` blijft null tot duidelijk is welke kant de vinger op gaat.
      Zodra dat "omhoog/omlaag" is laten we de veeg helemaal los: dan hoort hij
@@ -577,6 +578,19 @@ function StapelScene() {
      de bug (zie opUp). */
 
   const bovenste = volgorde[0];
+
+  /* De bovenste plek schoonvegen zodra er een andere kaart op ligt.
+     ⚠️ `useLayoutEffect` en niet `useEffect`: deze moet draaien ná het opnieuw
+     tekenen maar vóór het schilderen. Met een gewone useEffect kan de browser
+     er een beeld tussen schuiven waarin de nieuwe kaart nog de verschoven
+     stand van de vorige draagt, en dat is precies het soort hapering waar we
+     hier vanaf willen. */
+  useLayoutEffect(() => {
+    const el = topRef.current;
+    if (!el) return;
+    el.style.transition = "none";
+    el.style.transform = "translate3d(0,0,0)";
+  }, [bovenste]);
 
   /* ⚠️ DE KAART GAAT NU OPZIJ, NIET OMHOOG. Zie de uitleg bij touchAction
      hieronder waarom. De verticale verplaatsing is alleen nog een lichte dip:
@@ -692,16 +706,21 @@ function StapelScene() {
          kaart leeft nog kort verder als een losse laag die zelfstandig het
          scherm uit vliegt (`vliegt`), zonder iets te blokkeren. */
       const kant = dx < 0 ? -1 : 1;
-      setVliegt({ idx: bovenste, kant, omgedraaid: omgedraaid[bovenste] });
+      /* ⚠️ `dx` gaat MEE naar de wegvliegende laag. Zonder dat begon zijn
+         animatie op 0 terwijl je vinger de kaart al 70px opzij had geschoven —
+         dus sprong hij eerst terug naar het midden en vloog dán pas weg. Dat is
+         de hapering die de eigenaar zag: "alsof die weer iets terug gaat".
+         🔑 Een overname tussen twee elementen moet beginnen waar de vorige
+         stopte. Anders zie je de naad, hoe kort hij ook is. */
+      setVliegt({ idx: bovenste, kant, dx, omgedraaid: omgedraaid[bovenste] });
       setVolgorde((v) => [...v.slice(1), v[0]]);
       setOmgedraaid((o) => o.map((val, i) => (i === bovenste ? false : val)));
-      /* de bovenste plek is nu van de vólgende kaart: meteen recht, geen
-         overgang die nog iets kan naschuiven */
-      const el = topRef.current;
-      if (el) {
-        el.style.transition = "none";
-        el.style.transform = "translate3d(0,0,0)";
-      }
+      /* ⚠️ De bovenste plek wordt NIET hier teruggezet. Dat gebeurde eerst wel,
+         en dat was de tweede helft van dezelfde hapering: deze regel loopt vóór
+         React opnieuw tekent, dus er kon één beeld voorbijkomen met de OUDE
+         kaart alweer keurig in het midden. Terugzetten gebeurt nu in een
+         useLayoutEffect op `bovenste` — ná het opnieuw tekenen, vóór het
+         schilderen, dus onzichtbaar. */
       window.setTimeout(() => setVliegt(null), 460);
     } else {
       /* Terugveren mag, maar kort: dit is de bevestiging dat je veeg te klein
@@ -755,7 +774,11 @@ function StapelScene() {
                meteen op zijn eindstand staan — de kaart zou verdwijnen in plaats
                van wegvliegen. Een animatie speelt wél af bij het verschijnen. */
             style={{
-              animation: `${vliegt.kant < 0 ? "pk-weg-links" : "pk-weg-rechts"} 0.44s cubic-bezier(0.23, 1, 0.32, 1) forwards`,
+              /* het beginpunt van de animatie = waar je vinger losliet */
+              ["--pk-van-x" as string]: `${vliegt.dx}px`,
+              ["--pk-van-y" as string]: `${Math.abs(vliegt.dx) * 0.06}px`,
+              ["--pk-van-r" as string]: `${vliegt.dx * 0.05}deg`,
+              animation: `${vliegt.kant < 0 ? "pk-weg-links" : "pk-weg-rechts"} 0.4s cubic-bezier(0.32, 0, 0.67, 0) forwards`,
             }}
           >
             <PolaroidKaart kaart={KAARTEN[vliegt.idx]} omgedraaid={vliegt.omgedraaid} klein />
@@ -946,14 +969,19 @@ export function WereldPolaroids() {
            (zie SCHADUW_HELLING in Wereld.tsx) */
         .pk-schaduw { box-shadow: -7px 18px 38px -20px rgba(23,80,58,0.45), -1px 3px 8px -4px rgba(23,80,58,0.25); }
         .pk-flip { transition: transform 0.65s cubic-bezier(0.3, 0.9, 0.25, 1); }
-        /* de weggeveegde kaart die het scherm uit vliegt */
+        /* De weggeveegde kaart die het scherm uit vliegt.
+           De from-waarden komen uit variabelen die per veeg worden meegegeven:
+           de stand waarin je hem losliet. Begon dit op 0, dan sprong de kaart
+           eerst terug naar het midden voor hij wegvloog.
+           De curve loopt versnellend (ease-in): hij heeft al snelheid van jouw
+           duim en hoort niet eerst opnieuw op gang te komen. */
         @keyframes pk-weg-links {
-          from { transform: translate3d(0,0,0) rotate(0deg); }
-          to { transform: translate3d(-125%, 28px, 0) rotate(-9deg); }
+          from { transform: translate3d(var(--pk-van-x, 0px), var(--pk-van-y, 0px), 0) rotate(var(--pk-van-r, 0deg)); }
+          to { transform: translate3d(-125%, 30px, 0) rotate(-9deg); }
         }
         @keyframes pk-weg-rechts {
-          from { transform: translate3d(0,0,0) rotate(0deg); }
-          to { transform: translate3d(125%, 28px, 0) rotate(9deg); }
+          from { transform: translate3d(var(--pk-van-x, 0px), var(--pk-van-y, 0px), 0) rotate(var(--pk-van-r, 0deg)); }
+          to { transform: translate3d(125%, 30px, 0) rotate(9deg); }
         }
         @media (prefers-reduced-motion: reduce) {
           /* geen 3D-draai: de kanten faden over elkaar heen */
