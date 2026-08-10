@@ -3098,15 +3098,22 @@ export function KaartBeeld({ soort, paneel = false }: { soort: string; paneel?: 
             </ul>
           </div>
         </div>
-        {/* ⛔ Niet in het paneel. Besluit van de eigenaar: opengeklapt moet
-           "klaar om te printen" eruit. Het is ook dubbelop — in het paneel staat
-           er een echte uitleg naast die hetzelfde belooft, en dan is een
-           handgeschreven kreet over het werkblad heen alleen nog drukte. */}
-        {!paneel && (
-          <p className="font-hand absolute left-6 top-5 -rotate-2 text-xl text-white">
-            klaar om te printen
-          </p>
-        )}
+        {/* ⛔ Weg in het opengeklapte paneel, maar ALLEEN op een telefoon.
+           Besluit van de eigenaar, in twee stappen: eerst "eruit bij
+           opengeklapt", daarna "op pc moet die wel blijven, daar is het plaatje
+           goed". Dat klopt ook met wat je meet — in het paneel op pc staat de
+           tekening in een hoge, smalle kolom en heeft die regel gewoon zijn
+           eigen plek; op een telefoon is het vak liggend en ligt hij over het
+           werkblad heen.
+           ⚠️ Dus `max-sm:hidden` binnen paneel-modus, en niet `!paneel`: dat
+           laatste haalde hem ook op pc weg. */}
+        <p
+          className={`font-hand absolute left-6 top-5 -rotate-2 text-xl text-white ${
+            paneel ? "max-sm:hidden" : ""
+          }`}
+        >
+          klaar om te printen
+        </p>
       </div>
     );
 

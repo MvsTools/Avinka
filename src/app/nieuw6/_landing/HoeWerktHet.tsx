@@ -1,4 +1,6 @@
-import type { CSSProperties } from "react";
+"use client";
+
+import { useState, type CSSProperties } from "react";
 import { Confetti, DONKER, KOP, KOP_SECTIE, KaartVlak, RUIS_OP_PAPIER, VLAK_PAPIER } from "./Wereld";
 
 /* ── Zo werkt het ───────────────────────────────────────────────────────────
@@ -37,6 +39,10 @@ const STAPPEN = [
 ];
 
 export function WereldHoeWerktHet() {
+  /* ⭐ ALLEEN VOOR DE TELEFOON: welke stap staat open. Op een breed scherm staan
+     alle drie de stappen gewoon naast elkaar en doet deze stand niets. */
+  const [actief, setActief] = useState(0);
+
   return (
     /* overflow-x-clip in plaats van overflow-hidden: horizontaal blijft er
        geknipt (anders duwen de vlakken de pagina breder), maar verticaal mag
@@ -82,22 +88,90 @@ export function WereldHoeWerktHet() {
           Zo werkt het
         </h2>
 
-        {/* De haarlijnen zitten op de kolommen zelf: links van kolom 2 en 3 op
-           een breed scherm, bovenop elke stap zodra ze onder elkaar staan.
+        {/* ⭐ OP EEN TELEFOON: DRIE TABBLADEN, GEEN VEEGRAIL.
+           Hier stond een veegbare rail (zelfde mechaniek als de toolrij). Eruit
+           op verzoek van de eigenaar, en zijn reden is de sterkste die er is:
+           "ik vind die schuifanimatie een beetje te veel omdat je dat bij de
+           tools ook moet doen". Twee keer dezelfde beweging vlak na elkaar leest
+           niet als een patroon maar als werk — en bij de tools verdient vegen
+           zijn plek (acht kaarten, je wilt bladeren), hier niet (drie stappen,
+           je wilt lezen).
+           🔑 De les erachter: een mechaniek beoordeel je niet op zichzelf maar
+           op wat er vlak boven staat. Deze rail was op zichzelf prima.
 
-           ⚠️ OP EEN TELEFOON IS DIT EEN VEEGBARE RAIL, geen stapel. Onder
-           elkaar kostten drie stappen bijna twee schermen en las het als een
-           lap tekst; naast elkaar vegen is korter én het laat meteen zien dát
-           het drie stappen zijn. Zelfde mechaniek als de tool-rail verderop:
-           `overflow-x-auto` met verborgen schuifbalk en `snap-x` zodat elke
-           stap netjes inklikt.
-           🔑 De kaarten zijn 78% breed en niet 100%: daardoor piept de
-           volgende er altijd naast, en dát vertelt iemand dat er meer is —
-           zonder dat er een pijltje of tekstje bij hoeft.
-           Vanaf 640px is het weer gewoon het bestaande raster van drie. */}
+           Nu: 01 · 02 · 03 naast elkaar bovenaan, en daaronder de tekst van de
+           gekozen stap. Stap 1 staat open bij het laden.
+           ⚠️ De actieve stap is aan DRIE dingen te zien, niet aan één: volle
+           kleur tegenover 30% doorzichtig, een groen streepje eronder, en een
+           zwaarder cijfer. Kleur alleen is niet genoeg — voor wie kleuren slecht
+           onderscheidt blijft het streepje en het gewicht over. */}
+        <div className="mt-9 sm:hidden">
+          <div
+            role="tablist"
+            aria-label="Zo werkt het, in drie stappen"
+            className="flex items-end justify-center gap-9"
+          >
+            {STAPPEN.map((s, i) => (
+              <button
+                key={s.titel}
+                type="button"
+                role="tab"
+                id={`stap-tab-${i}`}
+                aria-selected={i === actief}
+                aria-controls={`stap-paneel-${i}`}
+                onClick={() => setActief(i)}
+                className="flex flex-col items-center gap-2 rounded-xl px-2 py-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              >
+                <span
+                  className={`font-display text-4xl leading-none tracking-tight transition-opacity duration-200 ${
+                    i === actief ? "font-black opacity-100" : "font-bold opacity-30"
+                  }`}
+                  style={{ color: KOP }}
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                {/* Het streepje staat er ALTIJD, alleen doorzichtig als de stap
+                   dicht is. Zo springt de rij niet op als je wisselt. */}
+                <span
+                  aria-hidden
+                  className={`h-1 w-8 rounded-full bg-brand transition-opacity duration-200 ${
+                    i === actief ? "opacity-100" : "opacity-0"
+                  }`}
+                />
+              </button>
+            ))}
+          </div>
+
+          {/* ⚠️ `min-h` is geen opsmuk: de drie teksten zijn niet even lang, en
+             zonder ondergrens springt alles onder deze sectie omhoog of omlaag
+             zodra je een ander nummer aantikt.
+             🔑 De waarde is GEMETEN, niet geschat: 152px is de langste stap, op
+             360 én op 390 breed (bij 360 worden er twee 152). Mijn eerste gok
+             was 13rem = 208px en dat gaf een lege band van een halve schermhoogte
+             onder de tekst. Meet zo'n ondergrens dus altijd na — te ruim is hier
+             net zo lelijk als te krap, alleen minder makkelijk te zien. */}
+          <div className="mt-7 min-h-[9.5rem] text-center">
+            {STAPPEN.map((s, i) => (
+              <div
+                key={s.titel}
+                role="tabpanel"
+                id={`stap-paneel-${i}`}
+                aria-labelledby={`stap-tab-${i}`}
+                hidden={i !== actief}
+              >
+                <h3 className="font-display text-xl font-black tracking-tight text-ink">{s.titel}</h3>
+                <p className="mt-3 text-base leading-7 text-ink/75">{s.tekst}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* De haarlijnen zitten op de kolommen zelf: links van kolom 2 en 3 op
+           een breed scherm. Dit raster is vanaf 640px, en daar verandert de
+           tabblad-opzet hierboven niets aan. */}
         <div
           data-reveal
-          className="mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] sm:mt-12 sm:grid sm:grid-cols-3 sm:gap-x-10 sm:gap-y-10 sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden"
+          className="mt-10 hidden gap-4 pb-2 sm:mt-12 sm:grid sm:grid-cols-3 sm:gap-x-10 sm:gap-y-10 sm:pb-0"
         >
           {STAPPEN.map((s, i) => (
             <div
@@ -108,11 +182,7 @@ export function WereldHoeWerktHet() {
                  in het stylesheet en niet van de volgorde hier — de eerste
                  kolom kreeg zo toch inspringing en lijnde niet meer uit met de
                  kop erboven. */
-              /* In de rail is elke stap een eigen kaartje: geen haarlijn
-                 erboven (die scheidde stappen die nu naast elkaar staan) en
-                 een vaste breedte zodat de volgende erlangs piept. Vanaf 640px
-                 komen de haarlijnen en de kolombreedte gewoon terug. */
-              className={`w-[78%] shrink-0 snap-center border-ink/10 pt-0 sm:w-auto sm:pt-0 ${
+              className={`border-ink/10 pt-0 sm:w-auto sm:pt-0 ${
                 i === 0 ? "border-t-0" : "border-t-0 sm:border-l sm:pl-10"
               }`}
             >
