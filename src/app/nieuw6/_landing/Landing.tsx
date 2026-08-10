@@ -473,6 +473,33 @@ function abonneerReduced(cb: () => void) {
   return () => mq.removeEventListener("change", cb);
 }
 
+/* ⚠️ WERKBANK 10-8: OP EEN TELEFOON DRAAIT DE FILM NIET MEER.
+   Besluit van de eigenaar, en het is een ontwerpbesluit, geen storing: "op
+   telefoon die film eruit, dat is veel te druk". Wat hij wil is de rust van de
+   mobiele Duolingo-site — je opent hem en ziet het merk, een beeld, de zin, de
+   knoppen. Meer niet.
+
+   🔑 DIT KOSTTE BIJNA NIETS, en dat is de moeite waard om te weten: de pagina
+   had de film-loze versie al helemaal staan, als terugval voor wie in zijn
+   toestel "minder beweging" heeft aangezet. Overal in dit bestand staat
+   `film ? … : …`. De hele klus was dus die ene vlag ook op smal laten
+   uitgaan — geen nieuwe hero bouwen.
+   ⚠️ Kijk dus altijd eerst of er al een uit-stand bestaat vóór je iets nieuws
+   maakt. Een goede toegankelijkheidsterugval is vaak precies de rustige versie
+   die iemand op een telefoon wil.
+
+   639px is de Tailwind-grens `sm`, zodat deze schakelaar op dezelfde breedte
+   omslaat als alle `max-sm:`-regels in de rest van de pagina. Liepen die uit
+   elkaar, dan krijg je een strook breedtes met de film aan én de mobiele
+   opmaak — precies de tussenstand die niemand ooit bekijkt. */
+const SMAL_QUERY = "(max-width: 639px)";
+
+function abonneerSmal(cb: () => void) {
+  const mq = window.matchMedia(SMAL_QUERY);
+  mq.addEventListener("change", cb);
+  return () => mq.removeEventListener("change", cb);
+}
+
 /* De landingspagina zelf. Het serverwerk (wie is de bezoeker, mag die de
    prijzen zien, staat er een foto klaar) gebeurt in ../page.tsx; hier komt dat
    binnen als drie kale props, zodat dit een client-component kan blijven — de
@@ -508,7 +535,14 @@ export default function Landing({
     () => window.matchMedia(REDUCED_QUERY).matches,
     () => null,
   );
-  const film = reduced === false;
+  /* null op de server, net als `reduced`: dan rendert de server de film-loze
+     versie en klopt de eerste paint op een telefoon meteen. */
+  const smal = useSyncExternalStore<boolean | null>(
+    abonneerSmal,
+    () => window.matchMedia(SMAL_QUERY).matches,
+    () => null,
+  );
+  const film = reduced === false && smal === false;
 
   /* ── De film: rommelig bureaublad → tablet-dashboard ── */
   useGSAP(
@@ -1231,6 +1265,29 @@ export default function Landing({
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* ⭐ DE TWEE KNOPPEN, ALLEEN OP DE TELEFOON (`sm:hidden`).
+                Op een breed scherm draait de film nog en daar hóórt hier niets:
+                die hero is één beweging van chaos naar overzicht, en een knop
+                halverwege zet daar een rem op. Bovendien is de brede versie af.
+
+                Waarom ze hier wél moeten: zonder film is dit een gewone hero, en
+                dan staat de eerste echte knop pas twee secties lager. De
+                eigenaar zei het als de opbouw van de mobiele Duolingo-site:
+                merk, beeld, de zin, de knoppen — en dan houdt het op.
+                🔑 De belofte blijft bovenaan staan, boven het beeld. Bij
+                Duolingo staat het plaatje eerst, maar dat is een mascotte; ons
+                beeld is het dashboard, en dat werkt als BEWIJS van de zin
+                erboven, niet als opwarmer ervoor. De eigenaar zei zelf dat de
+                belofte bovenaan goed is. */}
+            <div className="mt-7 flex flex-col gap-3 px-1 sm:hidden">
+              <BlobKnop href="/sign-up" className="w-full border-2 border-transparent px-5">
+                Probeer Avinka gratis
+              </BlobKnop>
+              <BlobKnop href="#tools" variant="licht" className="w-full px-5">
+                Bekijk de tools
+              </BlobKnop>
             </div>
 
             {/* Finale: de vier zekerheden poppen binnen en dragen je de pagina in.
