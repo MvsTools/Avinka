@@ -395,10 +395,17 @@ function Drijvers({ punten }: { punten: Array<{ x: string; y: string; amber?: bo
    vinkje, `licht` = wit met inkt, `wit` = wit met donkergroen (voor op het
    donkere slotveld). */
 export function BlobKnop({
-  href, variant = "vol", maat = "normaal", className = "", onClick, children,
+  href, variant = "vol", maat = "normaal", vinkje = true, className = "", onClick, children,
 }: {
   href: string;
   variant?: "vol" | "licht" | "wit";
+  /* Het vinkje in de gevulde knop is het merkmotief en staat er standaard.
+     ⚠️ Zet het uit als de knop NIET naar aanmelden gaat. Op "Naar de prijzen"
+     (een sprong naar beneden binnen de pagina) leest een vinkje als afvinken:
+     het belooft dat er iets klaar is terwijl er alleen iets verplaatst.
+     🔑 Een merkteken dat overal hetzelfde betekent is sterk; een merkteken dat
+     op één plek iets anders lijkt te beloven, kost meer dan het oplevert. */
+  vinkje?: boolean;
   /* `klein` is voor krappe plekken (de knop óp een toolkaart): zelfde vorm en
      gewicht, alleen minder ruimte eromheen, zodat het label bij een smalle
      kaart niet buiten de knop valt. */
@@ -425,7 +432,7 @@ export function BlobKnop({
       } ${stijl} ${className}`}
       style={variant === "wit" ? { color: DONKER } : undefined}
     >
-      {variant === "vol" && (
+      {variant === "vol" && vinkje && (
         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/20" aria-hidden>
           <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="#fff" strokeWidth="3.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
         </span>
@@ -733,11 +740,14 @@ export function WereldIntro() {
                 dit de eerste echte aanmeldknop van de pagina. Weghalen zou daar
                 een conversiepunt schrappen uit een versie die af is.
 
-                🔑 De naam is gekozen door de eigenaar uit vier voorstellen. Zijn
-                eis: het woord "prijzen" of "abonnementen" moet erin, en het mag
-                niet weer met "Bekijk" beginnen — dat staat al op de knop
-                ernaast. "Naar de prijzen" is de enige die het woord noemt én een
-                beweging belooft; het is dan ook een sprong binnen de pagina.
+                🔑 De naam is van de eigenaar en is onderweg nog gedraaid. Eerst
+                "Naar de prijzen" (uit vier voorstellen), daarna toch
+                "Bekijk abonnementen": het gaat om het abonnement dat je kiest,
+                niet om een prijslijst, en "Naar de abonnementen" vond hij te
+                groot staan. De knop ernaast heet daarom nu "Ontdek de tools" —
+                anders begonnen ze allebei met "Bekijk".
+                ⚠️ Het adres blijft `#prijzen`; dat is het id van de sectie en dat
+                staat los van wat er op de knop staat.
                 ⚠️ Het blijft de gevulde knop: het is de hoofdactie van déze
                 sectie. Voelt twee keer groen in beeld te druk, dan is `variant`
                 het enige wat daarvoor hoeft te wijzigen.
@@ -749,15 +759,26 @@ export function WereldIntro() {
                 toch niets: de tekst staat gecentreerd. */}
             <BlobKnop
               href="#prijzen"
+              vinkje={false}
               className="max-sm:w-full max-sm:border-2 max-sm:border-transparent max-sm:px-5 sm:hidden"
             >
-              Naar de prijzen
+              Bekijk abonnementen
             </BlobKnop>
             <BlobKnop href="/sign-up" className="max-sm:hidden">
               Probeer Avinka gratis
             </BlobKnop>
+            {/* ⚠️ "Ontdek de tools", was "Bekijk de tools". De aanleiding is de
+                knop hierboven: op een telefoon heet die nu "Bekijk
+                abonnementen", en twee knoppen die allebei met hetzelfde
+                werkwoord beginnen lezen als één rijtje in plaats van als twee
+                keuzes. Keuze van de eigenaar.
+                🔑 Deze tekst is NIET gesplitst tussen telefoon en pc, met opzet:
+                één belofte hoort één naam te hebben, en "ontdek" past ook op een
+                breed scherm bij wat er gebeurt (de kaartenrij die je zelf
+                opzijschuift). Op pc staat er dus wél "Probeer Avinka gratis"
+                naast "Ontdek de tools" — geen botsing. */}
             <BlobKnop href="#tools" variant="licht" className="max-sm:w-full">
-              Bekijk de tools
+              Ontdek de tools
             </BlobKnop>
           </div>
         </div>
